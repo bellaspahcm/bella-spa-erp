@@ -31,7 +31,8 @@ import {
 const mockCustomers = [
   { id: '1', name_mother: 'Nguyễn Thu Thủy', name_baby: 'Gia Bảo', phone: '0901234567', address: 'Quận 7, TP.HCM', status: 'active', dob_baby: '2024-03-15' },
   { id: '2', name_mother: 'Trần Thị Mai', name_baby: 'Minh Anh', phone: '0987654321', address: 'Quận 2, TP.HCM', status: 'active', dob_baby: '2024-01-20' },
-  { id: '3', name_mother: 'Lê Diệu Linh', name_baby: 'Chưa sinh', phone: '0912334455', address: 'Quận 1, TP.HCM', status: 'lead', dob_expected: '2024-06-10' },
+  { id: '3', name_mother: 'Lê Diệu Linh', name_baby: 'Chờ sinh', phone: '0912334455', address: 'Quận 1, TP.HCM', status: 'deposit', dob_expected: '2024-06-10', deposit_amount: '2,000,000đ', package_name: 'Mẹ Bầu Toàn Diện' },
+  { id: '4', name_mother: 'Phạm Hải Yến', name_baby: 'Chưa có', phone: '0933445566', address: 'Quận Bình Thạnh, TP.HCM', status: 'lead', dob_expected: '2024-08-15' },
 ];
 
 export default function CustomersPage() {
@@ -46,7 +47,7 @@ export default function CustomersPage() {
     setActiveMenuId(activeMenuId === id ? null : id);
   };
 
-  const statusOptions = ['Tất cả trạng thái', 'Đang sử dụng', 'Tiềm năng', 'Đã kết thúc'];
+  const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Chờ sinh', 'Tiềm năng', 'Đã kết thúc'];
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
@@ -142,11 +143,21 @@ export default function CustomersPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1">
                 <h3 className="text-lg font-bold text-slate-900 truncate">{customer.name_mother}</h3>
-                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                  customer.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'
-                }`}>
-                  {customer.status === 'active' ? 'Đang chăm sóc' : 'Tiềm năng'}
+                <span className={cn(
+                  "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                  customer.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 
+                  customer.status === 'deposit' ? 'bg-amber-50 text-amber-600' :
+                  'bg-blue-50 text-blue-600'
+                )}>
+                  {customer.status === 'active' ? 'Đang chăm sóc' : 
+                   customer.status === 'deposit' ? 'Chờ sinh (Đã cọc)' : 
+                   'Tiềm năng'}
                 </span>
+                {customer.deposit_amount && (
+                  <span className="px-3 py-1 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    Cọc: {customer.deposit_amount}
+                  </span>
+                )}
               </div>
               <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm font-medium text-slate-500">
                 <div className="flex items-center gap-2">
@@ -155,8 +166,14 @@ export default function CustomersPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Baby className="w-4 h-4 text-slate-400" />
-                  Bé: {customer.name_baby}
+                  {customer.status === 'deposit' ? `Dự sinh: ${customer.dob_expected}` : `Bé: ${customer.name_baby}`}
                 </div>
+                {customer.package_name && (
+                  <div className="flex items-center gap-2 text-rose-500/80">
+                    <ClipboardList className="w-4 h-4" />
+                    Gói: {customer.package_name}
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-slate-400" />
                   {customer.address}
@@ -281,12 +298,25 @@ export default function CustomersPage() {
                       <input type="text" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" placeholder="VD: 0901234567" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Họ tên Bé (nếu có)</label>
-                      <input type="text" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" placeholder="VD: Gia Bảo" />
+                      <label className="text-sm font-bold text-slate-700 ml-1">Họ tên Bé / Tên thân mật</label>
+                      <input type="text" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" placeholder="VD: Gia Bảo" />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Ngày sinh Bé / Dự sinh</label>
-                      <input type="date" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" />
+                      <input type="date" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Gói dịch vụ đăng ký</label>
+                      <select className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none appearance-none font-bold text-slate-600">
+                        <option>Chọn gói...</option>
+                        <option>Mẹ Bầu Toàn Diện</option>
+                        <option>Phục Hồi Sau Sinh</option>
+                        <option>Chăm Sóc Bé Pro</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Số tiền đặt cọc (VNĐ)</label>
+                      <input type="text" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" placeholder="VD: 2,000,000" />
                     </div>
                   </div>
                   <div className="space-y-2">
