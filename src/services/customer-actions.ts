@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
+import { MOCK_CUSTOMERS, MOCK_BOOKINGS, MOCK_SESSIONS } from '@/constants/mock-data';
 
 export async function getCustomers() {
   const supabase = (await createClient()) as any;
@@ -84,25 +85,46 @@ export async function createCustomer(formData: any) {
 
 export async function getCustomerById(id: string) {
   const supabase = (await createClient()) as any;
-  const { data, error } = await supabase
-    .from('customers')
-    .select('*, bookings(*, session_logs(*))')
-    .eq('id', id)
-    .single();
+  
+  try {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*, bookings(*, session_logs(*))')
+      .eq('id', id)
+      .single();
 
-  if (error) {
-    console.error('Error fetching customer detail:', error);
+    if (error) {
+      console.error('Error fetching customer detail from DB:', error);
+      // Fallback to mock data if not found in DB
+      const mockCustomer = MOCK_CUSTOMERS.find(c => c.id === id);
+      if (mockCustomer) {
+        const mockBooking = MOCK_BOOKINGS.find(b => b.customer_id === id);
+        const mockSessions = MOCK_SESSIONS.filter(s => s.booking_id === mockBooking?.id);
+        
+        return {
+          ...mockCustomer,
+          status: mockCustomer.status || 'active',
+          deposit_amount: mockCustomer.deposit_amount || '0đ',
+          package_name: mockCustomer.package_name || 'Gói VIP',
+          dob_expected: mockCustomer.dob_expected || 'Chưa có',
+          sessions: mockSessions || []
+        };
+      }
+      return null;
+    }
+
+    // Flatten or map the data to match UI expectations
+    const latestBooking = data.bookings && data.bookings.length > 0 ? data.bookings[0] : null;
+    return {
+      ...data,
+      status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
+      deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
+      package_name: latestBooking?.package_name || 'Chưa đăng ký',
+      dob_expected: data.dob_expected || (latestBooking?.start_date),
+      sessions: latestBooking?.session_logs || []
+    };
+  } catch (err) {
+    console.error('Exception in getCustomerById:', err);
     return null;
   }
-
-  // Flatten or map the data to match UI expectations
-  const latestBooking = data.bookings && data.bookings.length > 0 ? data.bookings[0] : null;
-  return {
-    ...data,
-    status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
-    deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
-    package_name: latestBooking?.package_name || 'Chưa đăng ký',
-    dob_expected: data.dob_expected || (latestBooking?.start_date),
-    sessions: latestBooking?.session_logs || []
-  };
 }
