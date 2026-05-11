@@ -25,6 +25,12 @@ import {
   getTopTechnicians, 
   getImportantAlerts 
 } from '@/services/dashboard-actions';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 import { 
   MOCK_DASHBOARD_STATS, 
@@ -48,13 +54,17 @@ const item = {
 };
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any[]>([
-    { label: 'Tổng khách hàng', value: MOCK_DASHBOARD_STATS.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Lịch hẹn hôm nay', value: MOCK_DASHBOARD_STATS.todayBookings.toString(), icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { label: 'Doanh thu tháng', value: MOCK_DASHBOARD_STATS.totalRevenue, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Đánh giá KTV', value: MOCK_DASHBOARD_STATS.avgRating, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
-  ]);
-  const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
+  const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS.map(b => ({
+    id: b.id,
+    session_number: b.completed_sessions + 1,
+    assigned_date: b.start_date,
+    status: b.status,
+    bookings: {
+      customers: {
+        name_mother: b.customers?.name_mother
+      }
+    }
+  })));
   const [topKTVs, setTopKTVs] = useState<any[]>(MOCK_TOP_KTVS);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,6 +97,16 @@ export default function DashboardPage() {
     }
     fetchData();
   }, []);
+
+  const getStatusInfo = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed': return { label: 'Hoàn thành', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' };
+      case 'in_progress': return { label: 'Đang thực hiện', color: 'bg-amber-50 text-amber-600 border-amber-100' };
+      case 'scheduled': return { label: 'Chờ thực hiện', color: 'bg-blue-50 text-blue-600 border-blue-100' };
+      case 'booked': return { label: 'Đã đặt lịch', color: 'bg-rose-50 text-rose-600 border-rose-100' };
+      default: return { label: status, color: 'bg-slate-50 text-slate-600 border-slate-100' };
+    }
+  };
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-6 md:p-10">
@@ -175,27 +195,36 @@ export default function DashboardPage() {
           
           <div className="space-y-6">
             {sessions.length > 0 ? (
-              sessions.map((session: any, i: number) => (
-                <div key={session.id} className="flex items-center gap-6 p-6 rounded-3xl hover:bg-white/60 transition-all border border-transparent hover:border-pink-50 group shadow-sm hover:shadow-lg hover:shadow-pink-100/50">
-                  <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center text-primary font-black text-lg border-2 border-white shadow-inner group-hover:scale-105 transition-transform">
-                    {session.bookings?.customers?.name_mother?.substring(0, 2).toUpperCase() || 'BS'}
+              sessions.map((session: any, i: number) => {
+                const statusInfo = getStatusInfo(session.status);
+                const dateObj = new Date(session.assigned_date);
+                const formattedDate = isNaN(dateObj.getTime()) ? session.assigned_date : dateObj.toLocaleDateString('vi-VN');
+
+                return (
+                  <div key={session.id || i} className="flex items-center gap-6 p-6 rounded-3xl hover:bg-white/60 transition-all border border-transparent hover:border-pink-50 group shadow-sm hover:shadow-lg hover:shadow-pink-100/50">
+                    <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center text-primary font-black text-lg border-2 border-white shadow-inner group-hover:scale-105 transition-transform">
+                      {session.bookings?.customers?.name_mother?.substring(0, 2).toUpperCase() || 'BS'}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-black text-lg text-foreground group-hover:text-primary transition-colors">
+                        {session.bookings?.customers?.name_mother} - Buổi {session.session_number}
+                      </h4>
+                      <p className="text-sm text-muted-foreground font-bold flex items-center gap-2 mt-1">
+                        <Calendar className="w-4 h-4" />
+                        Ngày: {formattedDate}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={cn(
+                        "inline-flex items-center px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border",
+                        statusInfo.color
+                      )}>
+                        {statusInfo.label}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-black text-lg text-foreground group-hover:text-primary transition-colors">
-                      {session.bookings?.customers?.name_mother} - Buổi {session.session_number}
-                    </h4>
-                    <p className="text-sm text-muted-foreground font-bold flex items-center gap-2 mt-1">
-                      <Calendar className="w-4 h-4" />
-                      Ngày: {new Date(session.assigned_date).toLocaleDateString('vi-VN')}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="inline-flex items-center px-4 py-2 rounded-2xl text-xs font-black bg-accent/10 text-accent border border-accent/20 uppercase tracking-widest">
-                      {session.status}
-                    </span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="py-20 text-center">
                 <Calendar className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
