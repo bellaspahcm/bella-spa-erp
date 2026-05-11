@@ -34,6 +34,7 @@ export default function CustomerDetailPage() {
 
   const baseCustomer = MOCK_CUSTOMERS.find(c => c.id === id) || MOCK_CUSTOMERS[0];
   const booking = MOCK_BOOKINGS.find(b => b.customer_id === id) || {
+    id: 'none',
     package_name: baseCustomer.package_name || 'Chưa đăng ký',
     total_sessions: 0,
     completed_sessions: 0,
