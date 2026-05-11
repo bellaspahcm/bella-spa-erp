@@ -29,12 +29,9 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-const mockCustomers = [
-  { id: '1', name_mother: 'Nguyễn Thu Thủy', name_baby: 'Gia Bảo', phone: '0901234567', address: 'Quận 7, TP.HCM', status: 'active', dob_baby: '2024-03-15' },
-  { id: '2', name_mother: 'Trần Thị Mai', name_baby: 'Minh Anh', phone: '0987654321', address: 'Quận 2, TP.HCM', status: 'active', dob_baby: '2024-01-20' },
-  { id: '3', name_mother: 'Lê Diệu Linh', name_baby: 'Chờ sinh', phone: '0912334455', address: 'Quận 1, TP.HCM', status: 'deposit', dob_expected: '2024-06-10', deposit_amount: '2,000,000đ', package_name: 'Mẹ Bầu Toàn Diện' },
-  { id: '4', name_mother: 'Phạm Hải Yến', name_baby: 'Chưa có', phone: '0933445566', address: 'Quận Bình Thạnh, TP.HCM', status: 'lead', dob_expected: '2024-08-15' },
-];
+import { MOCK_CUSTOMERS } from '@/constants/mock-data';
+
+const mockCustomers = MOCK_CUSTOMERS;
 
 export default function CustomersPage() {
   const router = useRouter();

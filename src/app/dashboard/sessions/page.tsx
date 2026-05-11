@@ -18,14 +18,15 @@ import { getSessionsWithDetails, completeSession, getSessionLogs } from '@/servi
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence } from 'framer-motion';
+import { MOCK_BOOKINGS } from '@/constants/mock-data';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export default function SessionsPage() {
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
+  const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
@@ -39,7 +40,11 @@ export default function SessionsPage() {
   const loadSessions = async () => {
     setLoading(true);
     const data = await getSessionsWithDetails();
-    setSessions(data);
+    if (data && data.length > 0) {
+      setSessions(data);
+    } else {
+      setSessions(MOCK_BOOKINGS);
+    }
     setLoading(false);
   };
 

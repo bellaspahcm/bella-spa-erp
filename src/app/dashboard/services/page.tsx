@@ -23,38 +23,9 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const mockServices = [
-  { 
-    id: '1', 
-    name: 'Mẹ Bầu Toàn Diện', 
-    price: '15,500,000đ', 
-    duration: '90 phút/buổi', 
-    sessions: 15,
-    details: ['Massage body đá nóng', 'Chăm sóc da mặt thảo dược', 'Gội đầu dưỡng sinh'],
-    offer: 'Tặng 01 buổi massage Foot',
-    status: 'active'
-  },
-  { 
-    id: '2', 
-    name: 'Phục Hồi Sau Sinh', 
-    price: '18,200,000đ', 
-    duration: '120 phút/buổi', 
-    sessions: 20,
-    details: ['Xông hơ toàn thân', 'Massage bụng giảm eo', 'Chăm sóc vết mổ/vết khâu'],
-    offer: 'Giảm 10% khi đăng ký nhóm 2 người',
-    status: 'active'
-  },
-  { 
-    id: '3', 
-    name: 'Chăm Sóc Bé Pro', 
-    price: '12,000,000đ', 
-    duration: '60 phút/buổi', 
-    sessions: 10,
-    details: ['Tắm bé chuẩn y khoa', 'Massage bé giúp ngủ ngon', 'Vệ sinh rốn/mắt/mũi'],
-    offer: 'Tặng bộ set quà tặng sơ sinh',
-    status: 'active'
-  },
-];
+import { MOCK_SERVICES } from '@/constants/mock-data';
+
+const mockServices = MOCK_SERVICES;
 
 export default function ServicesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);

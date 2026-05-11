@@ -16,11 +16,16 @@ import {
   List
 } from 'lucide-react';
 
-const mockBookings = [
-  { id: '1', customer: 'Nguyễn Thu Thủy', package: 'Gói Thông Tắc Tia Sữa', time: '09:00 - 11:00', ktv: 'Nguyễn Thị Hoa', status: 'completed' },
-  { id: '2', customer: 'Trần Thị Mai', package: 'Gói Bầu VIP (21 Buổi)', time: '14:00 - 16:00', ktv: 'Lê Thu Hà', status: 'in_progress' },
-  { id: '3', customer: 'Lê Diệu Linh', package: 'Gói Sau Sinh Basic', time: '16:30 - 18:30', ktv: 'Phạm Minh Tuyết', status: 'scheduled' },
-];
+import { MOCK_BOOKINGS } from '@/constants/mock-data';
+
+const mockBookings = MOCK_BOOKINGS.map(b => ({
+  id: b.id,
+  customer: b.customers?.name_mother || 'Khách hàng',
+  package: b.package_name,
+  time: '09:00 - 11:00', // Mock time
+  ktv: 'Kỹ thuật viên',
+  status: b.status === 'in_progress' ? 'in_progress' : b.status === 'booked' ? 'scheduled' : 'completed'
+}));
 
 export default function BookingsPage() {
   const [view, setView] = useState<'list' | 'calendar'>('list');

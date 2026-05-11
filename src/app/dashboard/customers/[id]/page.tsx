@@ -25,51 +25,42 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const mockCustomerDetails = {
-  '1': { 
-    name_mother: 'Nguyễn Thu Thủy', 
-    phone: '0901234567', 
-    address: 'Quận 7, TP.HCM', 
-    status: 'active',
-    baby: { name: 'Gia Bảo', dob: '2024-03-15', gender: 'Nam' },
-    booking: {
-      package: 'Mẹ Bầu Toàn Diện',
-      total_sessions: 15,
-      completed_sessions: 8,
-      start_date: '2024-04-01',
-      deposit: '2,000,000đ',
-      remaining: '13,500,000đ'
-    },
-    sessions: [
-      { id: 1, date: '2024-04-01', type: 'Massage body', ktv: 'Lê Hoa', status: 'completed' },
-      { id: 2, date: '2024-04-05', type: 'Chăm sóc da mặt', ktv: 'Lê Hoa', status: 'completed' },
-      { id: 3, date: '2024-04-10', type: 'Gội đầu dưỡng sinh', ktv: 'Trần Tâm', status: 'completed' },
-    ]
-  },
-  '3': { 
-    name_mother: 'Lê Diệu Linh', 
-    phone: '0912334455', 
-    address: 'Quận 1, TP.HCM', 
-    status: 'deposit',
-    dob_expected: '2024-06-10',
-    baby: { name: 'Chờ sinh', dob: 'Dự kiến 10/06/2024', gender: 'Chưa biết' },
-    booking: {
-      package: 'Mẹ Bầu Toàn Diện',
-      total_sessions: 15,
-      completed_sessions: 0,
-      start_date: 'Dự kiến sau sinh',
-      deposit: '2,000,000đ',
-      remaining: '13,500,000đ'
-    },
-    sessions: []
-  }
-};
+import { MOCK_CUSTOMERS, MOCK_BOOKINGS, MOCK_SESSIONS } from '@/constants/mock-data';
 
 export default function CustomerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const customer = mockCustomerDetails[id as keyof typeof mockCustomerDetails] || mockCustomerDetails['1'];
+
+  const baseCustomer = MOCK_CUSTOMERS.find(c => c.id === id) || MOCK_CUSTOMERS[0];
+  const booking = MOCK_BOOKINGS.find(b => b.customer_id === id) || {
+    package_name: baseCustomer.package_name || 'Chưa đăng ký',
+    total_sessions: 0,
+    completed_sessions: 0,
+    start_date: baseCustomer.status === 'deposit' ? 'Dự kiến sau sinh' : 'Chưa có',
+    deposit_amount: baseCustomer.deposit_amount || '0đ',
+    full_price: '0đ'
+  };
+
+  const sessions = MOCK_SESSIONS.filter(s => s.booking_id === booking.id);
+
+  const customer = {
+    ...baseCustomer,
+    baby: { 
+      name: baseCustomer.name_baby || 'Chưa có', 
+      dob: baseCustomer.dob_baby || baseCustomer.dob_expected || 'Chưa cập nhật',
+      gender: 'Chưa xác định'
+    },
+    booking: {
+      package: booking.package_name,
+      total_sessions: booking.total_sessions,
+      completed_sessions: booking.completed_sessions,
+      start_date: booking.start_date,
+      deposit: booking.deposit_amount,
+      remaining: booking.full_price
+    },
+    sessions: sessions
+  };
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">

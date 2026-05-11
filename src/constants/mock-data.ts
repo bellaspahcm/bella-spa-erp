@@ -1,0 +1,97 @@
+export const MOCK_CUSTOMERS = [
+  { id: '1', name_mother: 'Nguyễn Thu Thủy', name_baby: 'Gia Bảo', phone: '0901234567', address: 'Quận 7, TP.HCM', status: 'active', dob_baby: '2024-03-15' },
+  { id: '2', name_mother: 'Trần Thị Mai', name_baby: 'Minh Anh', phone: '0987654321', address: 'Quận 2, TP.HCM', status: 'active', dob_baby: '2024-01-20' },
+  { id: '3', name_mother: 'Lê Diệu Linh', name_baby: 'Chờ sinh', phone: '0912334455', address: 'Quận 1, TP.HCM', status: 'deposit', dob_expected: '2024-06-10', deposit_amount: '2,000,000đ', package_name: 'Mẹ Bầu Toàn Diện' },
+  { id: '4', name_mother: 'Phạm Hải Yến', name_baby: 'Chưa có', phone: '0933445566', address: 'Quận Bình Thạnh, TP.HCM', status: 'lead', dob_expected: '2024-08-15' },
+];
+
+export const MOCK_SERVICES = [
+  { 
+    id: 's1', 
+    name: 'Mẹ Bầu Toàn Diện', 
+    price: '15,500,000đ', 
+    duration: '90 phút/buổi', 
+    sessions: 15,
+    details: ['Massage body đá nóng', 'Chăm sóc da mặt thảo dược', 'Gội đầu dưỡng sinh'],
+    offer: 'Tặng 01 buổi massage Foot',
+    status: 'active'
+  },
+  { 
+    id: 's2', 
+    name: 'Phục Hồi Sau Sinh', 
+    price: '18,200,000đ', 
+    duration: '120 phút/buổi', 
+    sessions: 20,
+    details: ['Xông hơ toàn thân', 'Massage bụng giảm eo', 'Chăm sóc vết mổ/vết khâu'],
+    offer: 'Giảm 10% khi đăng ký nhóm 2 người',
+    status: 'active'
+  },
+  { 
+    id: 's3', 
+    name: 'Chăm Sóc Bé Pro', 
+    price: '12,000,000đ', 
+    duration: '60 phút/buổi', 
+    sessions: 10,
+    details: ['Tắm bé chuẩn y khoa', 'Massage bé giúp ngủ ngon', 'Vệ sinh rốn/mắt/mũi'],
+    offer: 'Tặng bộ set quà tặng sơ sinh',
+    status: 'active'
+  },
+];
+
+export const MOCK_BOOKINGS = [
+  {
+    id: 'b1',
+    customer_id: '1',
+    booking_number: 'BK-001',
+    package_name: 'Mẹ Bầu Toàn Diện',
+    status: 'in_progress',
+    total_sessions: 15,
+    completed_sessions: 8,
+    deposit_amount: '2,000,000đ',
+    full_price: '15,500,000đ',
+    start_date: '2024-04-01',
+    customers: {
+      name_mother: 'Nguyễn Thu Thủy',
+      phone: '0901234567'
+    }
+  },
+  {
+    id: 'b2',
+    customer_id: '2',
+    booking_number: 'BK-002',
+    package_name: 'Phục Hồi Sau Sinh',
+    status: 'in_progress',
+    total_sessions: 20,
+    completed_sessions: 12,
+    deposit_amount: '3,000,000đ',
+    full_price: '18,200,000đ',
+    start_date: '2024-03-10',
+    customers: {
+      name_mother: 'Trần Thị Mai',
+      phone: '0987654321'
+    }
+  },
+  {
+    id: 'b3',
+    customer_id: '3',
+    booking_number: 'BK-003',
+    package_name: 'Mẹ Bầu Toàn Diện',
+    status: 'booked',
+    total_sessions: 15,
+    completed_sessions: 0,
+    deposit_amount: '2,000,000đ',
+    full_price: '15,500,000đ',
+    start_date: '2024-06-15',
+    customers: {
+      name_mother: 'Lê Diệu Linh',
+      phone: '0912334455'
+    }
+  }
+];
+
+export const MOCK_SESSIONS = [
+  { id: 'sl1', booking_id: 'b1', session_number: 1, type: 'Massage body', ktv: 'Lê Hoa', status: 'completed', date: '2024-04-01' },
+  { id: 'sl2', booking_id: 'b1', session_number: 2, type: 'Chăm sóc da mặt', ktv: 'Lê Hoa', status: 'completed', date: '2024-04-05' },
+  { id: 'sl3', booking_id: 'b1', session_number: 3, type: 'Gội đầu dưỡng sinh', ktv: 'Trần Tâm', status: 'completed', date: '2024-04-10' },
+  { id: 'sl4', booking_id: 'b1', session_number: 9, type: 'Massage body', ktv: 'Chờ phân công', status: 'scheduled', date: '2024-05-15' },
+];
