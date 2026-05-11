@@ -30,24 +30,41 @@ const mockBookings = MOCK_BOOKINGS.map(b => ({
 export default function BookingsPage() {
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  const getWeekDays = (date: Date) => {
-    const startOfWeek = new Date(date);
-    startOfWeek.setDate(date.getDate() - date.getDay());
-    return Array.from({ length: 7 }, (_, i) => {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
-      return day;
-    });
+  const getMonthDays = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    // First day of month
+    const firstDay = new Date(year, month, 1);
+    // Last day of month
+    const lastDay = new Date(year, month + 1, 0);
+    
+    // Start from the beginning of the week containing the first day
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - startDate.getDay());
+    
+    // End at the end of the week containing the last day
+    const endDate = new Date(lastDay);
+    endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
+    
+    const days = [];
+    let current = new Date(startDate);
+    
+    while (current <= endDate) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return days;
   };
 
-  const weekDays = getWeekDays(selectedDate);
+  const monthDays = getMonthDays(currentMonth);
   const today = new Date();
   
-  const formatDate = (date: Date) => {
+  const formatDateHeader = (date: Date) => {
     return new Intl.DateTimeFormat('vi-VN', { 
-      weekday: 'long', 
-      day: 'numeric', 
       month: 'long', 
       year: 'numeric' 
     }).format(date);
@@ -57,6 +74,10 @@ export default function BookingsPage() {
     return d1.getDate() === d2.getDate() &&
       d1.getMonth() === d2.getMonth() &&
       d1.getFullYear() === d2.getFullYear();
+  };
+
+  const isSameMonth = (d1: Date, d2: Date) => {
+    return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
   };
 
   return (
@@ -89,61 +110,97 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* Date Selector */}
-      <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+      {/* Date Selector (Google Calendar Style Box) */}
+      <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl mb-8 overflow-hidden relative">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center bg-slate-50 rounded-2xl p-1 border border-slate-100">
+              <button 
+                onClick={() => {
+                  const prev = new Date(currentMonth);
+                  prev.setMonth(prev.getMonth() - 1);
+                  setCurrentMonth(prev);
+                }}
+                className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"
+              >
+                <ChevronLeft className="w-5 h-5 text-slate-600" />
+              </button>
+              <button 
+                onClick={() => {
+                  const next = new Date(currentMonth);
+                  next.setMonth(next.getMonth() + 1);
+                  setCurrentMonth(next);
+                }}
+                className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"
+              >
+                <ChevronRight className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 capitalize tracking-tight">
+              {formatDateHeader(currentMonth)}
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
             <button 
               onClick={() => {
-                const prev = new Date(selectedDate);
-                prev.setDate(prev.getDate() - 7);
-                setSelectedDate(prev);
+                setCurrentMonth(new Date());
+                setSelectedDate(new Date());
               }}
-              className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+              className="text-sm font-bold text-slate-600 bg-slate-50 border border-slate-100 px-5 py-2.5 rounded-2xl hover:bg-slate-100 transition-all active:scale-95"
             >
-              <ChevronLeft className="w-6 h-6 text-slate-400" />
-            </button>
-            <h2 className="text-xl font-extrabold text-slate-900 capitalize">{formatDate(selectedDate)}</h2>
-            <button 
-              onClick={() => {
-                const next = new Date(selectedDate);
-                next.setDate(next.getDate() + 7);
-                setSelectedDate(next);
-              }}
-              className="p-2 hover:bg-slate-50 rounded-full transition-colors"
-            >
-              <ChevronRight className="w-6 h-6 text-slate-400" />
+              Hôm nay
             </button>
           </div>
-          <button 
-            onClick={() => setSelectedDate(new Date())}
-            className="text-sm font-bold text-rose-500 bg-rose-50 px-4 py-2 rounded-full hover:bg-rose-100 transition-colors"
-          >
-            Hôm nay
-          </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-2">
-          {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((dayName: string, i: number) => {
-            const date = weekDays[i];
+        {/* Days Header */}
+        <div className="grid grid-cols-7 mb-4">
+          {['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'].map((day) => (
+            <div key={day} className="text-center">
+              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{day}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Grid Box */}
+        <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-3xl overflow-hidden">
+          {monthDays.map((date, i) => {
             const isToday = isSameDay(date, today);
             const isSelected = isSameDay(date, selectedDate);
+            const isCurrentMonth = isSameMonth(date, currentMonth);
             
             return (
-              <div key={i} className="text-center">
-                <p className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">{dayName}</p>
-                <div 
-                  onClick={() => setSelectedDate(date)}
-                  className={`w-10 h-14 mx-auto flex flex-col items-center justify-center rounded-2xl transition-all cursor-pointer ${
+              <div 
+                key={i} 
+                onClick={() => setSelectedDate(date)}
+                className={`min-h-[100px] p-3 bg-white transition-all cursor-pointer group hover:bg-slate-50/80 relative ${
+                  !isCurrentMonth ? 'opacity-40' : ''
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <span className={`flex items-center justify-center w-8 h-8 text-sm font-bold rounded-xl transition-all ${
                     isSelected 
                       ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
                       : isToday 
-                        ? 'bg-rose-50 border border-rose-200 text-rose-500' 
-                        : 'hover:bg-slate-50 text-slate-600'
-                  }`}
-                >
-                  <span className="text-lg font-black">{date.getDate()}</span>
+                        ? 'bg-rose-50 text-rose-500 border border-rose-100' 
+                        : 'text-slate-600 group-hover:text-slate-900'
+                  }`}>
+                    {date.getDate()}
+                  </span>
+                  {isToday && (
+                    <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
+                  )}
                 </div>
+                
+                {/* Mock Event Dot */}
+                {i % 5 === 0 && (
+                  <div className="flex flex-col gap-1">
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-400" style={{ width: '60%' }} />
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-400 truncate">3 Lịch hẹn</span>
+                  </div>
+                )}
               </div>
             );
           })}
