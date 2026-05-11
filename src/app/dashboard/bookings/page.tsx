@@ -29,6 +29,35 @@ const mockBookings = MOCK_BOOKINGS.map(b => ({
 
 export default function BookingsPage() {
   const [view, setView] = useState<'list' | 'calendar'>('list');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const getWeekDays = (date: Date) => {
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - date.getDay());
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      return day;
+    });
+  };
+
+  const weekDays = getWeekDays(selectedDate);
+  const today = new Date();
+  
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('vi-VN', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    }).format(date);
+  };
+
+  const isSameDay = (d1: Date, d2: Date) => {
+    return d1.getDate() === d2.getDate() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getFullYear() === d2.getFullYear();
+  };
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
@@ -64,30 +93,60 @@ export default function BookingsPage() {
       <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm mb-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+            <button 
+              onClick={() => {
+                const prev = new Date(selectedDate);
+                prev.setDate(prev.getDate() - 7);
+                setSelectedDate(prev);
+              }}
+              className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+            >
               <ChevronLeft className="w-6 h-6 text-slate-400" />
             </button>
-            <h2 className="text-xl font-extrabold text-slate-900">Thứ Hai, 11 Tháng 5, 2026</h2>
-            <button className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+            <h2 className="text-xl font-extrabold text-slate-900 capitalize">{formatDate(selectedDate)}</h2>
+            <button 
+              onClick={() => {
+                const next = new Date(selectedDate);
+                next.setDate(next.getDate() + 7);
+                setSelectedDate(next);
+              }}
+              className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+            >
               <ChevronRight className="w-6 h-6 text-slate-400" />
             </button>
           </div>
-          <button className="text-sm font-bold text-rose-500 bg-rose-50 px-4 py-2 rounded-full">
+          <button 
+            onClick={() => setSelectedDate(new Date())}
+            className="text-sm font-bold text-rose-500 bg-rose-50 px-4 py-2 rounded-full hover:bg-rose-100 transition-colors"
+          >
             Hôm nay
           </button>
         </div>
 
         <div className="grid grid-cols-7 gap-2">
-          {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((day: string, i: number) => (
-            <div key={i} className="text-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">{day}</p>
-              <div className={`w-10 h-14 mx-auto flex flex-col items-center justify-center rounded-2xl transition-all cursor-pointer ${
-                i === 1 ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' : 'hover:bg-slate-50 text-slate-600'
-              }`}>
-                <span className="text-lg font-black">{10 + i}</span>
+          {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((dayName: string, i: number) => {
+            const date = weekDays[i];
+            const isToday = isSameDay(date, today);
+            const isSelected = isSameDay(date, selectedDate);
+            
+            return (
+              <div key={i} className="text-center">
+                <p className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">{dayName}</p>
+                <div 
+                  onClick={() => setSelectedDate(date)}
+                  className={`w-10 h-14 mx-auto flex flex-col items-center justify-center rounded-2xl transition-all cursor-pointer ${
+                    isSelected 
+                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-200' 
+                      : isToday 
+                        ? 'bg-rose-50 border border-rose-200 text-rose-500' 
+                        : 'hover:bg-slate-50 text-slate-600'
+                  }`}
+                >
+                  <span className="text-lg font-black">{date.getDate()}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
