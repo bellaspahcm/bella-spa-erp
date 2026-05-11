@@ -2,6 +2,14 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
 import { 
   Search, 
   Plus, 
@@ -13,7 +21,11 @@ import {
   MapPin,
   Calendar,
   ChevronRight,
-  X
+  X,
+  Edit2,
+  Trash2,
+  MessageCircle,
+  ClipboardList
 } from 'lucide-react';
 
 const mockCustomers = [
@@ -23,10 +35,17 @@ const mockCustomers = [
 ];
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  const toggleMenu = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setActiveMenuId(activeMenuId === id ? null : id);
+  };
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
+    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto" onClick={() => setActiveMenuId(null)}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
@@ -74,7 +93,7 @@ export default function CustomersPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all flex flex-col md:flex-row md:items-center gap-6"
+            className="group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all flex flex-col md:flex-row md:items-center gap-6 relative"
           >
             <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
               <UserPlus className="text-rose-500 w-7 h-7" />
@@ -105,17 +124,63 @@ export default function CustomersPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 md:border-l md:pl-6 border-slate-100">
-              <button className="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-600 transition-colors">
+            <div className="flex items-center gap-3 md:border-l md:pl-6 border-slate-100 relative">
+              <button 
+                onClick={() => router.push(`/dashboard/bookings?customer=${customer.name_mother}`)}
+                className="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-600 transition-colors shadow-sm"
+                title="Xem lịch hẹn"
+              >
                 <Calendar className="w-5 h-5" />
               </button>
-              <button className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold transition-all text-sm">
+              <button 
+                onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
+                className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold transition-all text-sm shadow-lg shadow-slate-200"
+              >
                 Chi tiết
                 <ChevronRight className="w-4 h-4" />
               </button>
-              <button className="p-3 text-slate-400 hover:text-slate-600">
-                <MoreVertical className="w-5 h-5" />
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={(e) => toggleMenu(e, customer.id)}
+                  className={cn(
+                    "p-3 rounded-xl transition-all",
+                    activeMenuId === customer.id ? "bg-rose-500 text-white" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+                
+                <AnimatePresence>
+                  {activeMenuId === customer.id && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden"
+                    >
+                      <div className="p-2 space-y-1">
+                        <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
+                          <Edit2 className="w-4 h-4 text-blue-500" />
+                          Chỉnh sửa
+                        </button>
+                        <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
+                          <ClipboardList className="w-4 h-4 text-primary" />
+                          Thẻ liệu trình
+                        </button>
+                        <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
+                          <MessageCircle className="w-4 h-4 text-emerald-500" />
+                          Gửi Zalo
+                        </button>
+                        <div className="h-px bg-slate-100 mx-2 my-1" />
+                        <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                          Xóa hồ sơ
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </motion.div>
         ))}
