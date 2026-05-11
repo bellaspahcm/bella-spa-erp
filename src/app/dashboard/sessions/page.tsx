@@ -38,14 +38,11 @@ export default function SessionsPage() {
   }, []);
 
   const loadSessions = async () => {
-    setLoading(true);
+    // Only fetch in background, don't show full page spinner
     const data = await getSessionsWithDetails();
     if (data && data.length > 0) {
       setSessions(data);
-    } else {
-      setSessions(MOCK_BOOKINGS);
     }
-    setLoading(false);
   };
 
   const handleUpdateProgress = async (bookingId: string) => {

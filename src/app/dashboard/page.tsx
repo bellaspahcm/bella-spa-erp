@@ -26,6 +26,12 @@ import {
   getImportantAlerts 
 } from '@/services/dashboard-actions';
 
+import { 
+  MOCK_DASHBOARD_STATS, 
+  MOCK_TOP_KTVS, 
+  MOCK_BOOKINGS 
+} from '@/constants/mock-data';
+
 const container = {
   hidden: { opacity: 0 },
   show: {
@@ -42,11 +48,16 @@ const item = {
 };
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any[]>([]);
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [topKTVs, setTopKTVs] = useState<any[]>([]);
+  const [stats, setStats] = useState<any[]>([
+    { label: 'Tổng khách hàng', value: MOCK_DASHBOARD_STATS.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Lịch hẹn hôm nay', value: MOCK_DASHBOARD_STATS.todayBookings.toString(), icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: 'Doanh thu tháng', value: MOCK_DASHBOARD_STATS.totalRevenue, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Đánh giá KTV', value: MOCK_DASHBOARD_STATS.avgRating, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+  ]);
+  const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
+  const [topKTVs, setTopKTVs] = useState<any[]>(MOCK_TOP_KTVS);
   const [alerts, setAlerts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -58,31 +69,24 @@ export default function DashboardPage() {
           getImportantAlerts()
         ]);
 
-        setStats([
-          { label: 'Tổng khách hàng', value: statsData.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings.toString(), icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-          { label: 'Doanh thu tháng', value: statsData.totalRevenue, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Đánh giá KTV', value: statsData.avgRating, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
-        ]);
-        setSessions(sessionsData || []);
-        setTopKTVs(ktvsData || []);
+        if (statsData.totalCustomers > 0) {
+          setStats([
+            { label: 'Tổng khách hàng', value: statsData.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+            { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings.toString(), icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
+            { label: 'Doanh thu tháng', value: statsData.totalRevenue, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+            { label: 'Đánh giá KTV', value: statsData.avgRating, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+          ]);
+        }
+        
+        if (sessionsData && sessionsData.length > 0) setSessions(sessionsData);
+        if (ktvsData && ktvsData.length > 0) setTopKTVs(ktvsData);
         setAlerts(alertsData || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-      } finally {
-        setIsLoading(false);
       }
     }
     fetchData();
   }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-background/30">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-6 md:p-10">

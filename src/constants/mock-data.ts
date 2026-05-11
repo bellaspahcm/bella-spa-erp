@@ -89,6 +89,19 @@ export const MOCK_BOOKINGS = [
   }
 ];
 
+export const MOCK_DASHBOARD_STATS = {
+  totalCustomers: 128,
+  todayBookings: 12,
+  totalRevenue: '1.2B',
+  avgRating: '4.9'
+};
+
+export const MOCK_TOP_KTVS = [
+  { name: 'Nguyễn Thị Hoa', sessions: 45, rating: '5.0', status: 'Xuất Sắc', bonus: '+2,000k' },
+  { name: 'Lê Thu Hà', sessions: 38, rating: '4.9', status: 'Xuất Sắc', bonus: '+1,500k' },
+  { name: 'Phạm Minh Tuyết', sessions: 32, rating: '4.8', status: 'Tốt', bonus: '+1,200k' },
+];
+
 export const MOCK_SESSIONS = [
   { id: 'sl1', booking_id: 'b1', session_number: 1, type: 'Massage body', ktv: 'Lê Hoa', status: 'completed', date: '2024-04-01' },
   { id: 'sl2', booking_id: 'b1', session_number: 2, type: 'Chăm sóc da mặt', ktv: 'Lê Hoa', status: 'completed', date: '2024-04-05' },
