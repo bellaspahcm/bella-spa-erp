@@ -74,6 +74,13 @@ export default function CustomersPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Fix: Limit year to 4 digits for date inputs to prevent errors like 20245
+    if (e.target.type === 'date' && value) {
+      const year = value.split('-')[0];
+      if (year && year.length > 4) return;
+    }
+    
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -404,14 +411,15 @@ export default function CustomersPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Ngày sinh Bé / Dự sinh</label>
-                      <input 
-                        type="date" 
-                        name="dob_expected"
-                        min={today}
-                        value={formData.dob_expected}
-                        onChange={handleInputChange}
-                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
-                      />
+                        <input 
+                          type="date" 
+                          name="dob_expected"
+                          min={today}
+                          max="9999-12-31"
+                          value={formData.dob_expected}
+                          onChange={handleInputChange}
+                          className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
+                        />
                     </div>
                     <div className="space-y-2 relative">
                       <label className="text-sm font-bold text-slate-700 ml-1">Gói dịch vụ đăng ký</label>
