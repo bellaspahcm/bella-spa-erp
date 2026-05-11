@@ -30,103 +30,103 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-rose-50 to-teal-50 p-4">
-      {/* Background Decorative Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-rose-200/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-teal-200/30 rounded-full blur-3xl animate-pulse" />
-      </div>
-
+    <div className="min-h-screen flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="w-full max-w-md"
       >
-        <div className="relative bg-white/70 backdrop-blur-xl border border-white/40 shadow-2xl rounded-3xl p-8 md:p-10">
-          <div className="flex flex-col items-center mb-8 text-center">
-            <div className="w-16 h-16 bg-rose-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-rose-200">
-              <LogIn className="text-white w-8 h-8" />
-            </div>
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+        <div className="relative glass-pink shadow-2xl rounded-[2.5rem] p-8 md:p-12 overflow-hidden border-2 border-white">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-secondary to-primary" />
+          
+          <div className="flex flex-col items-center mb-10 text-center">
+            <motion.div 
+              whileHover={{ scale: 1.05 }}
+              className="mb-6 drop-shadow-xl"
+            >
+              <img src="/logo.png" alt="Bella Spa" className="h-24 w-auto object-contain" />
+            </motion.div>
+            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">
               Bella Spa ERP
             </h1>
-            <p className="text-slate-500 mt-2 font-medium">
-              Đăng nhập để quản lý hệ thống
+            <p className="text-muted-foreground mt-2 font-medium">
+              Hệ thống quản lý chăm sóc mẹ & bé
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700 ml-1">
-                Email
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">
+                Email công việc
               </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-rose-500 transition-colors">
-                  <Mail size={18} />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+                  <Mail size={20} />
                 </div>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all outline-none text-slate-700 placeholder:text-slate-400"
-                  placeholder="admin@bellaspa.com.vn"
+                  className="block w-full pl-12 pr-4 py-4 bg-white/60 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none text-foreground placeholder:text-muted-foreground/40 font-medium"
+                  placeholder="admin@bellaspa.vn"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700 ml-1">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">
                 Mật khẩu
               </label>
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 group-focus-within:text-rose-500 transition-colors">
-                  <Lock size={18} />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+                  <Lock size={20} />
                 </div>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition-all outline-none text-slate-700 placeholder:text-slate-400"
+                  className="block w-full pl-12 pr-4 py-4 bg-white/60 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none text-foreground placeholder:text-muted-foreground/40 font-medium"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
             {error && (
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="text-rose-500 text-sm font-medium bg-rose-50 p-3 rounded-lg border border-rose-100"
+                className="text-pink-600 text-sm font-bold bg-pink-50 p-4 rounded-2xl border border-pink-100 flex items-center gap-3"
               >
+                <div className="w-2 h-2 bg-pink-600 rounded-full animate-pulse" />
                 {error}
-              </motion.p>
+              </motion.div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-slate-200 transition-all flex items-center justify-center gap-2"
+              className="w-full bg-primary hover:bg-primary-hover disabled:bg-muted text-white font-black py-5 rounded-2xl shadow-xl shadow-pink-200 transition-all active:scale-95 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
             >
               {loading ? (
-                <Loader2 className="animate-spin w-5 h-5" />
+                <Loader2 className="animate-spin w-6 h-6" />
               ) : (
                 'Đăng nhập ngay'
               )}
             </button>
           </form>
 
-          <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col items-center gap-4">
-            <p className="text-sm text-slate-500">
-              Gặp sự cố đăng nhập? <span className="text-rose-500 font-bold cursor-pointer hover:underline">Liên hệ kỹ thuật</span>
+          <div className="mt-10 pt-6 border-t border-pink-100 flex flex-col items-center gap-4">
+            <p className="text-sm text-muted-foreground font-medium">
+              Gặp sự cố? <span className="text-primary font-bold cursor-pointer hover:underline">Liên hệ kỹ thuật</span>
             </p>
           </div>
         </div>
 
-        <p className="text-center mt-8 text-slate-400 text-sm font-medium">
-          &copy; {new Date().getFullYear()} Bella Spa. All rights reserved.
+        <p className="text-center mt-10 text-muted-foreground/60 text-xs font-bold uppercase tracking-widest">
+          &copy; {new Date().getFullYear()} Bella Spa Group
         </p>
       </motion.div>
     </div>

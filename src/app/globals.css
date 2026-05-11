@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Pink Pastel Theme - Bella Spa */
+  --primary: #FF85A2;
+  --primary-hover: #FF6B8E;
+  --secondary: #FFB3C6;
+  --accent: #FF4D6D;
+  --background: #FFFFFF;
+  --foreground: #2D3436;
+  
+  --card: #FFFFFF;
+  --card-foreground: #2D3436;
+  
+  --muted: #FFF0F3;
+  --muted-foreground: #636E72;
+  
+  --border: #FFE5EC;
+  --input: #FFE5EC;
+  --ring: #FF85A2;
 }
 
 @theme inline {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-pink-soft: #FFF5F7;
+  --color-pink-deep: #FF4D6D;
+  
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', sans-serif;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(340, 100%, 98%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(340, 100%, 99%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(340, 100%, 98%, 1) 0, transparent 50%);
+  min-height: 100vh;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-pink {
+  background: rgba(255, 240, 243, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 133, 162, 0.1);
 }

@@ -541,19 +541,34 @@ A: Yes, IF:
   - [x] **Booking Module**: Giao diện Timeline lịch hẹn + Bộ chọn ngày thông minh.
   - [x] **Finance Module**: Dashboard thu chi + Danh sách giao dịch.
 
+- [x] **Phase 3: Branding & Identity Migration**
+  - [x] Thay thế logo mẫu bằng logo chính thức của Bella Spa (`public/logo.png`).
+  - [x] Áp dụng hệ màu **Pink Pastel** (Primary: `#FF85A2`) trên toàn bộ hệ thống.
+  - [x] Đồng bộ thiết kế Glassmorphism cho ngành chăm sóc mẹ và bé.
+- [x] **Phase 4: User Provisioning**
+  - [x] Cấp quyền Admin cho các tài khoản production:
+    - `46c75ad7-416d-48ef-9386-25cd6a4d4805` (Hệ thống)
+    - `c294c8b0-25d2-4c7e-bed9-21246d957254` (Thành viên Admin)
+  - [x] Liên kết Auth UUID với bảng `public.users` kèm vai trò Admin.
+
 ### 🟡 In Progress (Next Steps)
-- [ ] **Data Integration (Server Actions)**: 
-  - [ ] Kết nối Form thêm khách hàng vào database.
-  - [ ] Truy vấn danh sách lịch hẹn thực tế từ bảng `bookings`.
-  - [ ] Tính toán số dư tài chính từ bảng `revenue` và `expenses`.
-- [ ] **Authentication Logic**:
+- [x] **Data Integration (Server Actions)**: 
+  - [x] Kết nối Form thêm khách hàng vào database (`customer-actions.ts`).
+  - [x] Truy vấn danh sách lịch hẹn thực tế từ bảng `bookings` (`booking-actions.ts`).
+  - [x] Tính toán số dư tài chính từ bảng `revenue` và `expenses` (`dashboard-actions.ts`).
+  - [x] **Top KTV Module**: Xếp hạng KTV theo số buổi và đánh giá.
+  - [x] **Business Alerts**: Cảnh báo dự báo doanh thu và mẹo vận hành.
+- [x] **Booking Automation**:
+  - [x] Tự động tạo 21 nhật ký buổi lẻ (`session_logs`) khi có booking mới qua Server Actions.
+- [ ] **Middleware & Security**:
   - [ ] Viết Middleware bảo vệ các route `/dashboard`.
-  - [ ] Xử lý logic đăng nhập/đăng xuất thực tế qua Supabase Auth.
-- [ ] **KTV Schedule**:
-  - [ ] Xây dựng logic điều phối KTV tự động dựa trên thời gian trống.
+  - [ ] Xây dựng logic phân quyền (RBAC) cho KTV và Kế toán.
+- [ ] **Data Validation**:
+  - [x] Triển khai Zod schema cho Customers và Bookings.
+  - [ ] Thêm validation cho các form KTV đánh giá buổi lẻ.
 
 ### 🔴 Blockers (Stalling)
 - *Không có blocker hiện tại.*
 
 ---
-**Last Updated:** May 11, 2026 (20:45)
+**Last Updated:** May 11, 2026 (21:15)
