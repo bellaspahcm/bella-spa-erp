@@ -19,9 +19,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
 import { MOCK_SERVICES } from '@/constants/mock-data';
 
@@ -30,6 +28,7 @@ const mockServices = MOCK_SERVICES;
 export default function ServicesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [price, setPrice] = useState('');
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
@@ -180,7 +179,13 @@ export default function ServicesPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 ml-1">Giá trọn gói (VNĐ)</label>
-                      <input type="text" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" placeholder="VD: 15,500,000" />
+                      <input 
+                        type="text" 
+                        value={price}
+                        onChange={(e) => setPrice(formatNumberWithSeparator(e.target.value))}
+                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        placeholder="VD: 15,500,000" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 ml-1">Thời lượng (phút)</label>

@@ -6,9 +6,7 @@ import { useRouter } from 'next/navigation';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
 import { 
   Search, 
@@ -41,6 +39,9 @@ export default function CustomersPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState('');
+  const [depositAmount, setDepositAmount] = useState('');
+
+  const today = new Date().toISOString().split('T')[0];
 
   const toggleMenu = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -303,7 +304,11 @@ export default function CustomersPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Ngày sinh Bé / Dự sinh</label>
-                      <input type="date" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" />
+                      <input 
+                        type="date" 
+                        min={today}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
+                      />
                     </div>
                     <div className="space-y-2 relative">
                       <label className="text-sm font-bold text-slate-700 ml-1">Gói dịch vụ đăng ký</label>
@@ -347,7 +352,13 @@ export default function CustomersPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Số tiền đặt cọc (VNĐ)</label>
-                      <input type="text" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" placeholder="VD: 2,000,000" />
+                      <input 
+                        type="text" 
+                        value={depositAmount}
+                        onChange={(e) => setDepositAmount(formatNumberWithSeparator(e.target.value))}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
+                        placeholder="VD: 2,000,000" 
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">

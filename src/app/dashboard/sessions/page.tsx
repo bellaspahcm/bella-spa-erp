@@ -26,9 +26,7 @@ import { twMerge } from 'tailwind-merge';
 import { AnimatePresence } from 'framer-motion';
 import { MOCK_BOOKINGS, MOCK_SESSIONS } from '@/constants/mock-data';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '@/lib/utils';
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
