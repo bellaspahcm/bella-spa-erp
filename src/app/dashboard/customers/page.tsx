@@ -38,14 +38,18 @@ export default function CustomersPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const toggleMenu = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setActiveMenuId(activeMenuId === id ? null : id);
   };
 
+  const statusOptions = ['Tất cả trạng thái', 'Đang sử dụng', 'Tiềm năng', 'Đã kết thúc'];
+
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto" onClick={() => setActiveMenuId(null)}>
+    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
@@ -54,7 +58,7 @@ export default function CustomersPage() {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200"
+          className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 active:scale-95"
         >
           <UserPlus className="w-5 h-5" />
           <span>Thêm khách hàng</span>
@@ -71,17 +75,53 @@ export default function CustomersPage() {
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all font-medium text-slate-700"
           />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto relative">
           <button className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors font-bold text-slate-600 text-sm">
             <Filter className="w-4 h-4" />
             Bộ lọc
           </button>
-          <select className="px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors font-bold text-slate-600 text-sm outline-none cursor-pointer">
-            <option>Tất cả trạng thái</option>
-            <option>Đang sử dụng</option>
-            <option>Tiềm năng</option>
-            <option>Đã kết thúc</option>
-          </select>
+          
+          {/* Custom Premium Select */}
+          <div className="relative min-w-[200px]">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsFilterOpen(!isFilterOpen); }}
+              className="w-full flex items-center justify-between px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:border-rose-300 transition-all font-bold text-slate-600 text-sm outline-none"
+            >
+              <span>{statusFilter}</span>
+              <motion.div
+                animate={{ rotate: isFilterOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronRight className="w-4 h-4 rotate-90" />
+              </motion.div>
+            </button>
+
+            <AnimatePresence>
+              {isFilterOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 4, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden p-1.5"
+                >
+                  {statusOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => { setStatusFilter(option); setIsFilterOpen(false); }}
+                      className={cn(
+                        "w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        statusFilter === option 
+                          ? "bg-rose-500 text-white" 
+                          : "text-slate-600 hover:bg-slate-50"
+                      )}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -156,24 +196,32 @@ export default function CustomersPage() {
                       initial={{ opacity: 0, scale: 0.95, y: 10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden"
+                      className="absolute right-0 top-full mt-4 w-64 bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_70px_rgba(0,0,0,0.15)] border border-white/20 z-50 overflow-hidden p-2.5"
                     >
-                      <div className="p-2 space-y-1">
-                        <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
-                          <Edit2 className="w-4 h-4 text-blue-500" />
+                      <div className="space-y-1">
+                        <button className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item">
+                          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center group-hover/item:bg-blue-100 transition-colors">
+                            <Edit2 className="w-4 h-4 text-blue-500" />
+                          </div>
                           Chỉnh sửa
                         </button>
-                        <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
-                          <ClipboardList className="w-4 h-4 text-primary" />
+                        <button className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item">
+                          <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center group-hover/item:bg-pink-100 transition-colors">
+                            <ClipboardList className="w-4 h-4 text-rose-500" />
+                          </div>
                           Thẻ liệu trình
                         </button>
-                        <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
-                          <MessageCircle className="w-4 h-4 text-emerald-500" />
+                        <button className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center group-hover/item:bg-emerald-100 transition-colors">
+                            <MessageCircle className="w-4 h-4 text-emerald-500" />
+                          </div>
                           Gửi Zalo
                         </button>
-                        <div className="h-px bg-slate-100 mx-2 my-1" />
-                        <button className="flex items-center gap-3 w-full px-4 py-3 text-sm font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
-                          <Trash2 className="w-4 h-4" />
+                        <div className="h-px bg-slate-100/50 mx-4 my-2" />
+                        <button className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-rose-500 hover:bg-rose-50 rounded-2xl transition-all group/item">
+                          <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center group-hover/item:bg-rose-200 transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </div>
                           Xóa hồ sơ
                         </button>
                       </div>

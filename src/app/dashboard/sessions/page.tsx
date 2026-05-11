@@ -11,14 +11,26 @@ import {
   Clock,
   CheckCircle2,
   Loader2,
-  TrendingUp
+  TrendingUp,
+  ChevronDown
 } from 'lucide-react';
 import { getSessionsWithDetails, completeSession, getSessionLogs } from '@/services/booking-actions';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { AnimatePresence } from 'framer-motion';
+
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
+
+  const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Hoàn thành'];
 
   useEffect(() => {
     loadSessions();
@@ -52,7 +64,7 @@ export default function SessionsPage() {
   };
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
+    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto" onClick={() => setIsFilterOpen(false)}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
@@ -75,11 +87,53 @@ export default function SessionsPage() {
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-slate-700"
           />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto relative">
           <button className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors font-bold text-slate-600 text-sm">
             <Filter className="w-4 h-4" />
-            Trạng thái
+            Bộ lọc
           </button>
+          
+          {/* Custom Premium Select */}
+          <div className="relative min-w-[200px]">
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsFilterOpen(!isFilterOpen); }}
+              className="w-full flex items-center justify-between px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:border-primary/30 transition-all font-bold text-slate-600 text-sm outline-none"
+            >
+              <span>{statusFilter}</span>
+              <motion.div
+                animate={{ rotate: isFilterOpen ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </motion.div>
+            </button>
+
+            <AnimatePresence>
+              {isFilterOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 4, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden p-1.5"
+                >
+                  {statusOptions.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => { setStatusFilter(option); setIsFilterOpen(false); }}
+                      className={cn(
+                        "w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition-all",
+                        statusFilter === option 
+                          ? "bg-primary text-white shadow-lg shadow-pink-100" 
+                          : "text-slate-600 hover:bg-slate-50"
+                      )}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
