@@ -25,6 +25,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: Users, label: 'Khách hàng', href: '/dashboard/customers' },
   { icon: Calendar, label: 'Lịch hẹn', href: '/dashboard/bookings' },
+  { icon: Flower2, label: 'Thẻ liệu trình', href: '/dashboard/sessions' },
   { icon: MessageSquare, label: 'Tin nhắn', href: '/dashboard/chat' },
   { icon: DollarSign, label: 'Tài chính', href: '/dashboard/finance' },
   { icon: Settings, label: 'Cài đặt', href: '/dashboard/settings' },
