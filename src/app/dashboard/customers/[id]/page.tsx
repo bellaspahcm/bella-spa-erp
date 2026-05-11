@@ -258,7 +258,7 @@ export default function CustomerDetailPage() {
 
             <div className="space-y-4">
               {customer.sessions.length > 0 ? (
-                customer.sessions.map((session) => (
+                customer.sessions.map((session: any) => (
                   <div key={session.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-slate-100 transition-all group">
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
