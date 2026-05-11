@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -22,7 +22,6 @@ import {
   History,
   Briefcase
 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
 
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
 
@@ -95,7 +94,6 @@ export default function BookingsPage() {
   };
 
   const handleDayDoubleClick = (date: Date) => {
-    // For demo, we just use the first mock booking for details
     const detail = {
       date,
       ...mockBookings[0]
@@ -242,7 +240,56 @@ export default function BookingsPage() {
             transition={{ delay: idx * 0.1 }}
             className="relative pl-8 group"
           >
-            {/* ... rest of the timeline items ... */}
+            {/* Timeline Line */}
+            <div className="absolute left-[11px] top-0 bottom-0 w-[2px] bg-slate-100 group-last:bottom-1/2"></div>
+            {/* Timeline Dot */}
+            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-4 border-white shadow-md z-10 ${
+              booking.status === 'completed' ? 'bg-emerald-500' : booking.status === 'in_progress' ? 'bg-amber-500' : 'bg-slate-300'
+            }`}></div>
+
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group-hover:shadow-xl group-hover:shadow-slate-200/40 transition-all flex flex-col md:flex-row md:items-center gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="flex items-center gap-1.5 text-slate-900 font-black">
+                    <Clock className="w-4 h-4 text-rose-500" />
+                    {booking.time}
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    booking.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
+                    booking.status === 'in_progress' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600'
+                  }`}>
+                    {booking.status === 'completed' ? 'Hoàn thành' : 
+                     booking.status === 'in_progress' ? 'Đang thực hiện' : 'Sắp tới'}
+                  </span>
+                </div>
+                
+                <h3 className="text-xl font-extrabold text-slate-900 mb-2">{booking.customer}</h3>
+                <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
+                  <LayoutGrid className="w-4 h-4 text-slate-300" />
+                  {booking.package}
+                </p>
+              </div>
+
+              <div className="flex flex-col md:items-end gap-3 md:border-l md:pl-8 border-slate-100">
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-slate-400 uppercase">Kỹ thuật viên</p>
+                    <p className="font-bold text-slate-900">{booking.ktv}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold">
+                    {booking.ktv.split(' ').pop()?.[0]}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-xs text-slate-600 transition-colors">
+                    Dời lịch
+                  </button>
+                  <button className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
+                    Check-in
+                  </button>
+                </div>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -377,62 +424,6 @@ export default function BookingsPage() {
           </div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-            {/* Timeline Line */}
-            <div className="absolute left-[11px] top-0 bottom-0 w-[2px] bg-slate-100 group-last:bottom-1/2"></div>
-            {/* Timeline Dot */}
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-4 border-white shadow-md z-10 ${
-              booking.status === 'completed' ? 'bg-emerald-500' : booking.status === 'in_progress' ? 'bg-amber-500' : 'bg-slate-300'
-            }`}></div>
-
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group-hover:shadow-xl group-hover:shadow-slate-200/40 transition-all flex flex-col md:flex-row md:items-center gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="flex items-center gap-1.5 text-slate-900 font-black">
-                    <Clock className="w-4 h-4 text-rose-500" />
-                    {booking.time}
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                    booking.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
-                    booking.status === 'in_progress' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600'
-                  }`}>
-                    {booking.status === 'completed' ? 'Hoàn thành' : 
-                     booking.status === 'in_progress' ? 'Đang thực hiện' : 'Sắp tới'}
-                  </span>
-                </div>
-                
-                <h3 className="text-xl font-extrabold text-slate-900 mb-2">{booking.customer}</h3>
-                <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
-                  <LayoutGrid className="w-4 h-4 text-slate-300" />
-                  {booking.package}
-                </p>
-              </div>
-
-              <div className="flex flex-col md:items-end gap-3 md:border-l md:pl-8 border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Kỹ thuật viên</p>
-                    <p className="font-bold text-slate-900">{booking.ktv}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold">
-                    {booking.ktv.split(' ').pop()?.[0]}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-xs text-slate-600 transition-colors">
-                    Dời lịch
-                  </button>
-                  <button className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
-                    Check-in
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
     </div>
   );
 }
