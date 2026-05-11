@@ -20,3 +20,10 @@ export function formatNumberWithSeparator(value: string) {
   if (!digits) return '';
   return new Intl.NumberFormat('vi-VN').format(parseInt(digits));
 }
+
+export function ensure2026(dateStr: any): string {
+  if (!dateStr || typeof dateStr !== 'string') return dateStr;
+  // Replace 2024 or 2025 with 2026 to ensure consistent demo timeline
+  return dateStr.replace(/202[45]/g, '2026');
+}
+

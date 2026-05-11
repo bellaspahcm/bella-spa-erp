@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { ensure2026 } from '@/lib/utils';
 
 export async function getDashboardStats() {
   const supabase = (await createClient()) as any;
@@ -54,7 +55,11 @@ export async function getUpcomingSessions() {
     return [];
   }
 
-  return data;
+  return (data || []).map((s: any) => ({
+    ...s,
+    assigned_date: ensure2026(s.assigned_date),
+    completed_date: ensure2026(s.completed_date)
+  }));
 }
 
 export async function getTopTechnicians() {

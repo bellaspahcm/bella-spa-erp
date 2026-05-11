@@ -105,6 +105,6 @@ export const MOCK_TOP_KTVS = [
 export const MOCK_SESSIONS = [
   { id: 'sl1', booking_id: 'b1', session_number: 1, type: 'Massage body', ktv: 'Lê Hoa', status: 'completed', date: '2026-05-01' },
   { id: 'sl2', booking_id: 'b1', session_number: 2, type: 'Chăm sóc da mặt', ktv: 'Lê Hoa', status: 'completed', date: '2026-05-04' },
-  { id: 'sl3', booking_id: 'b1', session_number: 3, type: 'Gội đầu dưỡng sinh', ktv: 'Trần Tâm', status: 'completed', date: '2026-05-08' },
+  { id: 'sl3', booking_id: 'b1', session_number: 3, type: 'Gội đầu dưỡng sinh', ktv: 'Trần Tâm', status: 'completed', date: '2026-05-12' },
   { id: 'sl4', booking_id: 'b1', session_number: 9, type: 'Massage body', ktv: 'Chờ phân công', status: 'scheduled', date: '2026-05-15' },
 ];

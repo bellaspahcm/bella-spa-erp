@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { MOCK_CUSTOMERS, MOCK_BOOKINGS, MOCK_SESSIONS } from '@/constants/mock-data';
+import { ensure2026 } from '@/lib/utils';
 
 export async function getCustomers() {
   const supabase = (await createClient()) as any;
@@ -21,10 +22,12 @@ export async function getCustomers() {
     const latestBooking = c.bookings && c.bookings.length > 0 ? c.bookings[0] : null;
     return {
       ...c,
+      dob_baby: ensure2026(c.dob_baby),
+      dob_expected: ensure2026(c.dob_expected),
       status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
       deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
-      package_name: latestBooking?.package_name || null, // Assuming package_name is in bookings or needs another join
-      dob_expected: c.dob_expected || (latestBooking?.start_date)
+      package_name: latestBooking?.package_name || null,
+      start_date: ensure2026(latestBooking?.start_date || c.dob_expected)
     };
   });
 }
@@ -114,11 +117,18 @@ export async function getCustomerById(id: string) {
     
     return {
       ...customer,
+      dob_baby: ensure2026(customer.dob_baby),
+      dob_expected: ensure2026(customer.dob_expected),
       status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
       deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
       package_name: latestBooking?.package_name || 'Chưa đăng ký',
-      dob_expected: customer.dob_expected || (latestBooking?.start_date),
-      sessions: latestBooking?.session_logs || []
+      start_date: ensure2026(latestBooking?.start_date || customer.dob_expected),
+      sessions: (latestBooking?.session_logs || []).map((s: any) => ({
+        ...s,
+        assigned_date: ensure2026(s.assigned_date),
+        completed_date: ensure2026(s.completed_date),
+        date: ensure2026(s.date) // Some components use .date
+      }))
     };
   } catch (err) {
     console.error('Exception in getCustomerById:', err);
@@ -134,11 +144,12 @@ function getMockCustomerFallback(id: string) {
     
     return {
       ...mockCustomer,
+      dob_baby: ensure2026(mockCustomer.dob_baby),
+      dob_expected: ensure2026(mockCustomer.dob_expected),
       status: mockCustomer.status || 'active',
       deposit_amount: mockCustomer.deposit_amount || '0đ',
       package_name: mockCustomer.package_name || 'Gói VIP',
-      dob_expected: mockCustomer.dob_expected || 'Chưa có',
-      sessions: mockSessions || []
+      sessions: mockSessions.map(s => ({ ...s, date: ensure2026(s.date) })) || []
     };
   }
   return null;

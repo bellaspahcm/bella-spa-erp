@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
+import { ensure2026 } from '@/lib/utils';
 
 export async function getBookings() {
   const supabase = (await createClient()) as any;
@@ -14,8 +15,13 @@ export async function getBookings() {
     console.error('Error fetching bookings:', error);
     return [];
   }
-
-  return data;
+  
+  return (data || []).map((b: any) => ({
+    ...b,
+    start_date: ensure2026(b.start_date),
+    end_date: ensure2026(b.end_date),
+    expected_birth_date: ensure2026(b.expected_birth_date)
+  }));
 }
 
 import { bookingSchema } from '@/lib/validations';
@@ -153,8 +159,13 @@ export async function getSessionsWithDetails() {
     console.error('Error fetching sessions with details:', error);
     return [];
   }
-
-  return data;
+  
+  return (data || []).map((b: any) => ({
+    ...b,
+    start_date: ensure2026(b.start_date),
+    end_date: ensure2026(b.end_date),
+    expected_birth_date: ensure2026(b.expected_birth_date)
+  }));
 }
 
 export async function getCalendarSessions() {
@@ -181,8 +192,17 @@ export async function getCalendarSessions() {
     console.error('Error fetching calendar sessions:', error);
     return [];
   }
-
-  return data;
+  
+  return (data || []).map((s: any) => ({
+    ...s,
+    assigned_date: ensure2026(s.assigned_date),
+    completed_date: ensure2026(s.completed_date),
+    bookings: s.bookings ? {
+      ...s.bookings,
+      start_date: ensure2026(s.bookings.start_date),
+      expected_birth_date: ensure2026(s.bookings.expected_birth_date)
+    } : null
+  }));
 }
 
 export async function updateSessionLog(id: string, updates: any) {
