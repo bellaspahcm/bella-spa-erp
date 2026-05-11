@@ -13,8 +13,16 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutGrid,
-  List
+  List,
+  X,
+  FileText,
+  Users,
+  Package,
+  CalendarDays,
+  History,
+  Briefcase
 } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
 
@@ -24,13 +32,19 @@ const mockBookings = MOCK_BOOKINGS.map(b => ({
   package: b.package_name,
   time: '09:00 - 11:00', // Mock time
   ktv: 'Kỹ thuật viên',
-  status: b.status === 'in_progress' ? 'in_progress' : b.status === 'booked' ? 'scheduled' : 'completed'
+  status: b.status === 'in_progress' ? 'in_progress' : b.status === 'booked' ? 'scheduled' : 'completed',
+  location: 'Số 123, Đường ABC, Quận 1, TP.HCM',
+  sessionCount: '10/12 buổi',
+  contractId: 'HD-2024-001',
+  contractDetail: 'Gói chăm sóc Mẹ & Bé chuyên sâu - 12 buổi'
 }));
 
 export default function BookingsPage() {
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [modalData, setModalData] = useState<any>(null);
 
   const getMonthDays = (date: Date) => {
     const year = date.getFullYear();
@@ -78,6 +92,16 @@ export default function BookingsPage() {
 
   const isSameMonth = (d1: Date, d2: Date) => {
     return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
+  };
+
+  const handleDayDoubleClick = (date: Date) => {
+    // For demo, we just use the first mock booking for details
+    const detail = {
+      date,
+      ...mockBookings[0]
+    };
+    setModalData(detail);
+    setShowDetailModal(true);
   };
 
   return (
@@ -173,7 +197,8 @@ export default function BookingsPage() {
               <div 
                 key={i} 
                 onClick={() => setSelectedDate(date)}
-                className={`min-h-[100px] p-3 bg-white transition-all cursor-pointer group hover:bg-slate-50/80 relative ${
+                onDoubleClick={() => handleDayDoubleClick(date)}
+                className={`min-h-[100px] p-3 bg-white transition-all cursor-pointer group hover:bg-slate-50/80 relative select-none ${
                   !isCurrentMonth ? 'opacity-40' : ''
                 }`}
               >
@@ -217,6 +242,144 @@ export default function BookingsPage() {
             transition={{ delay: idx * 0.1 }}
             className="relative pl-8 group"
           >
+            {/* ... rest of the timeline items ... */}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Day Detail Modal */}
+      <AnimatePresence>
+        {showDetailModal && modalData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDetailModal(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900">Chi tiết kế hoạch chăm sóc</h3>
+                    <p className="text-rose-500 font-bold mt-1">
+                      {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full' }).format(modalData.date)}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setShowDetailModal(false)}
+                    className="p-3 hover:bg-slate-100 rounded-2xl transition-colors"
+                  >
+                    <X className="w-6 h-6 text-slate-400" />
+                  </button>
+                </div>
+
+                {/* Modal Content - Bento Style */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Customer & KTV */}
+                  <div className="col-span-2 md:col-span-1 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                    <div className="flex items-center gap-3 mb-4 text-slate-400">
+                      <Users className="w-5 h-5" />
+                      <span className="text-xs font-black uppercase tracking-widest">Nhân sự & Khách hàng</span>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-slate-400 font-bold mb-1">Khách hàng</p>
+                        <p className="font-bold text-slate-900">{modalData.customer}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 font-bold mb-1">Kỹ thuật viên</p>
+                        <p className="font-bold text-slate-900">{modalData.ktv}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Time & Location */}
+                  <div className="col-span-2 md:col-span-1 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                    <div className="flex items-center gap-3 mb-4 text-slate-400">
+                      <Clock className="w-5 h-5" />
+                      <span className="text-xs font-black uppercase tracking-widest">Thời gian & Địa điểm</span>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-slate-400 font-bold mb-1">Giờ chăm sóc</p>
+                        <p className="font-bold text-slate-900">{modalData.time}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 font-bold mb-1">Địa chỉ</p>
+                        <p className="font-bold text-slate-900 text-sm leading-relaxed">{modalData.location}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Package & Progress */}
+                  <div className="col-span-2 md:col-span-1 bg-rose-50/50 p-6 rounded-[32px] border border-rose-100">
+                    <div className="flex items-center gap-3 mb-4 text-rose-400">
+                      <Package className="w-5 h-5" />
+                      <span className="text-xs font-black uppercase tracking-widest">Gói dịch vụ</span>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-rose-400 font-bold mb-1">Liệu trình</p>
+                        <p className="font-bold text-slate-900">{modalData.package}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-rose-400 font-bold mb-1">Số lượng buổi</p>
+                        <div className="flex items-center gap-3">
+                          <p className="font-bold text-slate-900">{modalData.sessionCount}</p>
+                          <div className="h-2 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-rose-500" style={{ width: '83%' }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contract Detail */}
+                  <div className="col-span-2 md:col-span-1 bg-slate-900 p-6 rounded-[32px]">
+                    <div className="flex items-center gap-3 mb-4 text-slate-500">
+                      <FileText className="w-5 h-5" />
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Chi tiết hợp đồng</span>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-xs text-slate-500 font-bold mb-1">Mã hợp đồng</p>
+                        <p className="font-bold text-white">{modalData.contractId}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 font-bold mb-1">Ghi chú hợp đồng</p>
+                        <p className="text-sm text-slate-300 leading-relaxed">{modalData.contractDetail}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex gap-3">
+                  <button className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all">
+                    Chỉnh sửa kế hoạch
+                  </button>
+                  <button 
+                    onClick={() => setShowDetailModal(false)}
+                    className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
             {/* Timeline Line */}
             <div className="absolute left-[11px] top-0 bottom-0 w-[2px] bg-slate-100 group-last:bottom-1/2"></div>
             {/* Timeline Dot */}
