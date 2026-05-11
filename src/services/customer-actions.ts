@@ -87,25 +87,37 @@ export async function getCustomerById(id: string) {
   const supabase = (await createClient()) as any;
   
   try {
-    const { data, error } = await supabase
+    // 1. Fetch Customer first
+    const { data: customer, error: customerError } = await supabase
       .from('customers')
-      .select('*, bookings(*, session_logs(*))')
+      .select('*')
       .eq('id', id)
       .single();
 
-    if (error || !data) {
-      if (error) console.error('Error fetching customer detail from DB:', error);
+    if (customerError || !customer) {
+      if (customerError) console.error('Error fetching customer from DB:', customerError);
       return getMockCustomerFallback(id);
     }
 
-    // Flatten or map the data to match UI expectations
-    const latestBooking = data.bookings && data.bookings.length > 0 ? data.bookings[0] : null;
+    // 2. Fetch Bookings separately to avoid join errors
+    const { data: bookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('*, session_logs(*)')
+      .eq('customer_id', id);
+
+    if (bookingsError) {
+      console.error('Error fetching bookings from DB:', bookingsError);
+    }
+
+    // Map database structure to UI structure
+    const latestBooking = bookings && bookings.length > 0 ? bookings[0] : null;
+    
     return {
-      ...data,
+      ...customer,
       status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
       deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
       package_name: latestBooking?.package_name || 'Chưa đăng ký',
-      dob_expected: data.dob_expected || (latestBooking?.start_date),
+      dob_expected: customer.dob_expected || (latestBooking?.start_date),
       sessions: latestBooking?.session_logs || []
     };
   } catch (err) {
