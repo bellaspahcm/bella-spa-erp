@@ -54,6 +54,12 @@ const item = {
 };
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState<any[]>([
+    { label: 'Tổng khách hàng', value: MOCK_DASHBOARD_STATS.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Lịch hẹn hôm nay', value: MOCK_DASHBOARD_STATS.todayBookings.toString(), icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: 'Doanh thu tháng', value: MOCK_DASHBOARD_STATS.totalRevenue, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Đánh giá KTV', value: MOCK_DASHBOARD_STATS.avgRating, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+  ]);
   const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS.map(b => ({
     id: b.id,
     session_number: b.completed_sessions + 1,
