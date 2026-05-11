@@ -31,7 +31,7 @@ import {
 import { MOCK_CUSTOMERS } from '@/constants/mock-data';
 import { getCustomers, createCustomer } from '@/services/customer-actions';
 
-const mockCustomers = MOCK_CUSTOMERS;
+
 
 export default function CustomersPage() {
   const router = useRouter();
