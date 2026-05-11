@@ -16,7 +16,9 @@ import {
   X,
   FileEdit,
   Save,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck,
+  UserCircle
 } from 'lucide-react';
 import { getSessionsWithDetails, completeSession, getSessionLogs } from '@/services/booking-actions';
 import { clsx, type ClassValue } from 'clsx';
@@ -32,11 +34,11 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('Cập nhật thành công!');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
-
-  const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Hoàn thành'];
+  const [userRole, setUserRole] = useState<'KTV' | 'ADMIN'>('KTV');
 
   useEffect(() => {
     loadSessions();
@@ -49,11 +51,27 @@ export default function SessionsPage() {
     }
   };
 
+  const isUpdatedToday = (booking: any) => {
+    const today = new Date().toISOString().split('T')[0];
+    return booking.last_updated_date === today;
+  };
+
   const handleUpdateProgress = async (bookingId: string) => {
+    const booking = sessions.find(s => s.id === bookingId);
+    
+    // Logic: Only update once per day
+    if (isUpdatedToday(booking) && userRole !== 'ADMIN') {
+      setToastMessage('Bạn đã cập nhật buổi tập hôm nay rồi. Chỉ Admin mới có quyền điều chỉnh thêm!');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+
     setUpdatingId(bookingId);
     try {
       const logs = await getSessionLogs(bookingId);
       const nextSession = logs.find((log: any) => log.status === 'scheduled');
+      const today = new Date().toISOString().split('T')[0];
       
       if (nextSession) {
         await completeSession(nextSession.id, bookingId);
@@ -64,12 +82,17 @@ export default function SessionsPage() {
             const nextCompleted = (s.completed_sessions || 0) + 1;
             const total = s.total_sessions || 21;
             if (nextCompleted > total) return s;
-            return { ...s, completed_sessions: nextCompleted };
+            return { 
+              ...s, 
+              completed_sessions: nextCompleted,
+              last_updated_date: today 
+            };
           }
           return s;
         }));
       }
       
+      setToastMessage('Cập nhật tiến độ thành công!');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } catch (error) {
@@ -81,15 +104,40 @@ export default function SessionsPage() {
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto" onClick={() => setIsFilterOpen(false)}>
-      {/* Header */}
+      {/* Header & Role Switcher */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Thẻ liệu trình</h1>
-          <p className="text-slate-500 font-bold mt-1 uppercase text-xs tracking-widest">Theo dõi tiến độ chăm sóc khách hàng</p>
+          <p className="text-slate-500 font-bold mt-1 uppercase text-xs tracking-widest">Quản lý lộ trình & ghi chú chăm sóc</p>
         </div>
-        <div className="flex items-center gap-3 bg-emerald-50 px-5 py-3 rounded-2xl border border-emerald-100">
-          <TrendingUp className="text-emerald-500 w-5 h-5" />
-          <span className="text-emerald-700 font-black text-sm uppercase tracking-tighter">Hiệu suất: +12% tháng này</span>
+        
+        <div className="flex items-center gap-4">
+          {/* Role Switcher for Demo */}
+          <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+            <button 
+              onClick={() => setUserRole('KTV')}
+              className={cn(
+                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                userRole === 'KTV' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <UserCircle className="w-3.5 h-3.5" /> KTV
+            </button>
+            <button 
+              onClick={() => setUserRole('ADMIN')}
+              className={cn(
+                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
+                userRole === 'ADMIN' ? "bg-emerald-500 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" /> Admin
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3 bg-emerald-50 px-5 py-3 rounded-2xl border border-emerald-100">
+            <TrendingUp className="text-emerald-500 w-5 h-5" />
+            <span className="text-emerald-700 font-black text-sm uppercase tracking-tighter">Hiệu suất: +12%</span>
+          </div>
         </div>
       </div>
 
@@ -156,6 +204,7 @@ export default function SessionsPage() {
             const progress = ((booking.completed_sessions || 0) / (booking.total_sessions || 21)) * 100;
             const isUpdating = updatingId === booking.id;
             const isFullyCompleted = (booking.completed_sessions || 0) >= (booking.total_sessions || 21);
+            const alreadyDoneToday = isUpdatedToday(booking);
 
             return (
               <motion.div 
@@ -186,6 +235,11 @@ export default function SessionsPage() {
                     )}>
                       {isFullyCompleted ? 'Hoàn thành' : 'Đang chăm sóc'}
                     </span>
+                    {alreadyDoneToday && !isFullyCompleted && (
+                      <span className="bg-amber-50 text-amber-600 border border-amber-100 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter">
+                        Đã cập nhật hôm nay
+                      </span>
+                    )}
                   </div>
                   
                   <div className="flex flex-wrap gap-y-3 gap-x-8 text-sm font-bold text-slate-500 mb-5">
@@ -215,10 +269,21 @@ export default function SessionsPage() {
                   {!isFullyCompleted ? (
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleUpdateProgress(booking.id); }}
-                      disabled={isUpdating}
-                      className="flex items-center gap-3 bg-primary hover:bg-primary-hover disabled:bg-slate-200 text-white px-8 py-4 rounded-2xl font-black transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-pink-100 active:scale-95 min-w-[180px] justify-center"
+                      disabled={isUpdating || (alreadyDoneToday && userRole !== 'ADMIN')}
+                      className={cn(
+                        "flex items-center gap-3 px-8 py-4 rounded-2xl font-black transition-all text-[10px] uppercase tracking-widest min-w-[180px] justify-center shadow-lg active:scale-95",
+                        alreadyDoneToday && userRole !== 'ADMIN' 
+                          ? "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed" 
+                          : "bg-primary text-white shadow-pink-100 hover:bg-primary-hover"
+                      )}
                     >
-                      {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ChevronRight className="w-4 h-4" /> Cập nhật buổi { (booking.completed_sessions || 0) + 1 }</>}
+                      {isUpdating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : alreadyDoneToday && userRole !== 'ADMIN' ? (
+                        <><CheckCircle2 className="w-4 h-4" /> Đã xong hôm nay</>
+                      ) : (
+                        <><ChevronRight className="w-4 h-4" /> Cập nhật buổi { (booking.completed_sessions || 0) + 1 }</>
+                      )}
                     </button>
                   ) : (
                     <div className="flex items-center gap-3 text-emerald-500 font-black uppercase tracking-widest text-[10px] bg-emerald-50 px-6 py-4 rounded-2xl border border-emerald-200">
@@ -260,12 +325,21 @@ export default function SessionsPage() {
                     <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">{selectedBooking.package_name} • {selectedBooking.booking_number}</p>
                   </div>
                 </div>
-                <button 
-                  onClick={() => setSelectedBooking(null)}
-                  className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-xl border font-black text-[10px] uppercase tracking-widest",
+                    userRole === 'ADMIN' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
+                  )}>
+                    {userRole === 'ADMIN' ? <ShieldCheck className="w-3 h-3" /> : <UserCircle className="w-3 h-3" />}
+                    Quyền: {userRole}
+                  </div>
+                  <button 
+                    onClick={() => setSelectedBooking(null)}
+                    className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
 
               {/* Modal Content */}
@@ -285,6 +359,17 @@ export default function SessionsPage() {
                         <Save className="w-4 h-4" /> Lưu ghi chú
                       </button>
                     </div>
+
+                    {userRole === 'ADMIN' && (
+                      <div className="bg-amber-50 p-6 rounded-[2rem] border border-amber-200">
+                        <div className="flex items-center gap-3 text-amber-700 font-black uppercase text-[10px] tracking-widest mb-2">
+                          <AlertCircle className="w-4 h-4" /> Chế độ Admin
+                        </div>
+                        <p className="text-[11px] font-bold text-amber-600 leading-relaxed">
+                          Bạn có quyền chỉnh sửa lịch sử và các buổi tập đã hoàn thành. Hãy cẩn trọng khi thay đổi dữ liệu.
+                        </p>
+                      </div>
+                    )}
 
                     <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-xl text-white relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
@@ -326,29 +411,44 @@ export default function SessionsPage() {
                       </div>
 
                       <div className="grid grid-cols-7 gap-3">
-                        {/* Days of week */}
                         {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map(day => (
                           <div key={day} className="text-center py-2">
                             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{day}</span>
                           </div>
                         ))}
                         
-                        {/* Session slots as days */}
                         {Array.from({ length: 35 }).map((_, i) => {
                           const dayNum = i + 1;
-                          const sessionIdx = i; // Map 1-1 for demo
+                          const sessionIdx = i; 
                           const status = sessionIdx < selectedBooking.completed_sessions ? 'completed' : 
                                          sessionIdx === selectedBooking.completed_sessions ? 'current' : 
                                          sessionIdx === 2 ? 'canceled' : 'upcoming';
 
+                          const canEdit = userRole === 'ADMIN' || status === 'current';
+
                           return (
-                            <div key={i} className={cn(
-                              "aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all cursor-pointer group relative overflow-hidden",
-                              status === 'completed' ? 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100 shadow-sm' :
-                              status === 'canceled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm' :
-                              status === 'current' ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
-                              'bg-slate-50/50 border-slate-100 text-slate-300 hover:bg-slate-100'
-                            )}>
+                            <div 
+                              key={i} 
+                              onClick={() => {
+                                if (canEdit) {
+                                  setToastMessage(`Bạn đang chỉnh sửa buổi ${dayNum}`);
+                                  setShowToast(true);
+                                  setTimeout(() => setShowToast(false), 2000);
+                                } else {
+                                  setToastMessage('Bạn không có quyền chỉnh sửa dữ liệu cũ. Hãy liên hệ Admin!');
+                                  setShowToast(true);
+                                  setTimeout(() => setShowToast(false), 3000);
+                                }
+                              }}
+                              className={cn(
+                                "aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all cursor-pointer group relative overflow-hidden",
+                                status === 'completed' ? 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100 shadow-sm' :
+                                status === 'canceled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm' :
+                                status === 'current' ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
+                                'bg-slate-50/50 border-slate-100 text-slate-300 hover:bg-slate-100',
+                                !canEdit && "grayscale opacity-80 cursor-not-allowed"
+                              )}
+                            >
                               {status === 'current' && <div className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full m-2 animate-ping" />}
                               <span className="text-xs font-black mb-1">{dayNum}</span>
                               {status !== 'upcoming' && status !== 'current' && (
@@ -356,13 +456,12 @@ export default function SessionsPage() {
                                   {status === 'completed' ? 'Xong' : 'Hủy'}
                                 </p>
                               )}
-                              {status === 'current' && <p className="text-[8px] font-black uppercase text-amber-600">Đang làm</p>}
+                              {status === 'current' && <p className="text-[8px] font-black uppercase text-amber-600">Làm ngay</p>}
                               
-                              {/* Quick Tooltip on Hover */}
                               <div className="absolute inset-0 bg-slate-900/90 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center z-20 pointer-events-none">
-                                <p className="text-[7px] font-black uppercase mb-1">Ghi chú</p>
-                                <p className="text-[9px] font-bold leading-tight">
-                                  {status === 'completed' ? 'Mẹ & bé khỏe' : status === 'canceled' ? 'Khách bận' : 'Chưa cập nhật'}
+                                <p className="text-[7px] font-black uppercase mb-1">{canEdit ? 'Click chỉnh sửa' : 'Bị khóa'}</p>
+                                <p className="text-[9px] font-bold leading-tight uppercase">
+                                  {status === 'completed' ? 'Mẹ khỏe' : status === 'canceled' ? 'Khách bận' : 'Cập nhật'}
                                 </p>
                               </div>
                             </div>
@@ -385,12 +484,12 @@ export default function SessionsPage() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 border border-white/10"
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 border border-white/10 text-center min-w-[300px]"
           >
-            <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
               <CheckCircle2 className="w-5 h-5 text-white" />
             </div>
-            Cập nhật tiến độ thành công!
+            {toastMessage}
           </motion.div>
         )}
       </AnimatePresence>
