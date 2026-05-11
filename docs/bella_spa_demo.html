@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bella Spa — Premium ERP</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f8f9fc 0%, #e8eef5 100%);
+            min-height: 100vh;
+            color: #1a1a2e;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ==================== SIDEBAR ==================== */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
+            padding: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border-right: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-section {
+            padding: 30px 24px;
+            text-align: center;
+            border-bottom: 1px solid #f0f2f7;
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.05) 0%, rgba(252, 92, 125, 0.05) 100%);
+        }
+
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ec6496 0%, #fc5c7d 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            margin: 0 auto 12px;
+            box-shadow: 0 12px 28px rgba(236, 100, 150, 0.25);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .logo-text h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ec6496, #fc5c7d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text p {
+            font-size: 11px;
+            color: #a0a4b8;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .menu-list {
+            flex: 1;
+            padding: 24px 12px;
+            overflow-y: auto;
+        }
+
+        .menu-item {
+            padding: 12px 16px;
+            margin: 6px 0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #ec6496, #fc5c7d);
+            transform: scaleY(0);
+            transform-origin: top;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item:hover {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.08) 0%, rgba(252, 92, 125, 0.08) 100%);
+            color: #ec6496;
+            transform: translateX(4px);
+        }
+
+        .menu-item.active {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.15) 0%, rgba(252, 92, 125, 0.15) 100%);
+            color: #ec6496;
+            box-shadow: 0 8px 16px rgba(236, 100, 150, 0.15);
+        }
+
+        .menu-item.active::before {
+            transform: scaleY(1);
+        }
+
+        .menu-item i {
+            width: 18px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .user-section {
+            padding: 20px 12px;
+            border-top: 1px solid #f0f2f7;
+            margin-top: auto;
+        }
+
+        .user-card {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.1) 0%, rgba(252, 92, 125, 0.1) 100%);
+            padding: 14px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid rgba(236, 100, 150, 0.2);
+        }
+
+        .user-card:hover {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.15) 0%, rgba(252, 92, 125, 0.15) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(236, 100, 150, 0.15);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #ec6496, #fc5c7d);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            color: white;
+            box-shadow: 0 4px 12px rgba(236, 100, 150, 0.3);
+        }
+
+        .user-info p {
+            font-size: 13px;
+            margin: 0;
+            color: #1a1a2e;
+        }
+
+        .user-info .name {
+            font-weight: 600;
+        }
+
+        .user-info .role {
+            color: #a0a4b8;
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        /* ==================== MAIN CONTENT ==================== */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+            padding: 28px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .header-title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ec6496 0%, #fc5c7d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .time-display {
+            text-align: right;
+        }
+
+        .time-display .date {
+            font-size: 13px;
+            color: #a0a4b8;
+            font-weight: 500;
+        }
+
+        .time-display .time {
+            font-size: 16px;
+            color: #1a1a2e;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        /* ==================== CONTENT AREA ==================== */
+        .content {
+            flex: 1;
+            padding: 40px 40px;
+            overflow-y: auto;
+            background: linear-gradient(135deg, #f8f9fc 0%, #e8eef5 100%);
+        }
+
+        .section {
+            display: none;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ==================== GRID ==================== */
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        /* ==================== METRIC CARD ==================== */
+        .metric-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+            padding: 28px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ec6496, #fc5c7d);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 20px 60px rgba(236, 100, 150, 0.15);
+        }
+
+        .metric-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #a0a4b8;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .metric-change {
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .metric-change.positive {
+            color: #10b981;
+        }
+
+        .metric-change.negative {
+            color: #ef4444;
+        }
+
+        /* ==================== CARD ==================== */
+        .card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            margin-bottom: 28px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 20px 60px rgba(236, 100, 150, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-title i {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ec6496, #fc5c7d);
+            color: white;
+            border-radius: 10px;
+            font-size: 16px;
+            box-shadow: 0 8px 16px rgba(236, 100, 150, 0.25);
+        }
+
+        /* ==================== CHART ==================== */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        /* ==================== TABLE ==================== */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.08) 0%, rgba(252, 92, 125, 0.08) 100%);
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #1a1a2e;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(236, 100, 150, 0.15);
+        }
+
+        th:first-child {
+            border-radius: 10px 0 0 0;
+        }
+
+        th:last-child {
+            border-radius: 0 10px 0 0;
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid #f0f2f7;
+            font-size: 14px;
+            color: #1a1a2e;
+        }
+
+        tr:hover {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.05) 0%, rgba(252, 92, 125, 0.05) 100%);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:last-child td:first-child {
+            border-radius: 0 0 0 10px;
+        }
+
+        tr:last-child td:last-child {
+            border-radius: 0 0 10px 0;
+        }
+
+        /* ==================== BADGE ==================== */
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .badge-warning {
+            background: linear-gradient(135deg, #fef3c7, #fcd34d);
+            color: #78350f;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .badge-danger {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #7f1d1d;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .badge-info {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #0c2d6b;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        /* ==================== BUTTONS ==================== */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ec6496, #fc5c7d);
+            color: white;
+            box-shadow: 0 12px 32px rgba(236, 100, 150, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(236, 100, 150, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f3e8ff, #e9d5ff);
+            color: #6b21a8;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+            transform: translateY(-3px);
+        }
+
+        /* ==================== CALENDAR ==================== */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .day-header {
+            text-align: center;
+            font-weight: 700;
+            color: #ec6496;
+            padding: 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            padding: 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .calendar-day:hover {
+            transform: scale(1.1);
+        }
+
+        .calendar-day.free-full {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border-color: #10b981;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2);
+        }
+
+        .calendar-day.free-partial {
+            background: linear-gradient(135deg, #fef3c7, #fcd34d);
+            color: #78350f;
+            border-color: #f59e0b;
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+        }
+
+        .calendar-day.full {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #7f1d1d;
+            border-color: #ef4444;
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.2);
+        }
+
+        .calendar-day.off {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            color: #6b7280;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ==================== SESSION GRID ==================== */
+        .session-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .session-box {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+
+        .session-box.completed {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border-color: #10b981;
+        }
+
+        .session-box.pending {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #0c2d6b;
+            border-color: #3b82f6;
+        }
+
+        .session-box:hover {
+            transform: scale(1.12);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ==================== TIMELINE ==================== */
+        .timeline-item {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.05) 0%, rgba(252, 92, 125, 0.05) 100%);
+            padding: 20px;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            border-left: 4px solid #ec6496;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: 1px solid rgba(236, 100, 150, 0.1);
+        }
+
+        .timeline-item:hover {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.1) 0%, rgba(252, 92, 125, 0.1) 100%);
+            transform: translateX(6px);
+            box-shadow: 0 12px 32px rgba(236, 100, 150, 0.15);
+        }
+
+        .timeline-time {
+            font-weight: 700;
+            color: #ec6496;
+            min-width: 120px;
+            font-size: 13px;
+        }
+
+        .timeline-info {
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .timeline-name {
+            font-weight: 600;
+            color: #1a1a2e;
+            font-size: 14px;
+        }
+
+        .timeline-address {
+            font-size: 12px;
+            color: #a0a4b8;
+            margin-top: 4px;
+        }
+
+        /* ==================== PROGRESS BAR ==================== */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f0f2f7;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ec6496, #fc5c7d);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(236, 100, 150, 0.3);
+        }
+
+        /* ==================== ALERT ==================== */
+        .alert {
+            padding: 16px 18px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            border-left: 4px solid;
+            transition: all 0.3s;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #0c2d6b;
+            border-color: #3b82f6;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border-color: #10b981;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7, #fcd34d);
+            color: #78350f;
+            border-color: #f59e0b;
+        }
+
+        /* ==================== MODAL ==================== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+            padding: 40px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+            animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                transform: translateY(60px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid rgba(236, 100, 150, 0.1);
+        }
+
+        .modal-header h2 {
+            background: linear-gradient(135deg, #ec6496, #fc5c7d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #a0a4b8;
+            transition: all 0.3s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .close-btn:hover {
+            background: rgba(236, 100, 150, 0.1);
+            color: #ec6496;
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1a1a2e;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #f0f2f7;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+            color: #1a1a2e;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #ec6496;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(236, 100, 150, 0.1);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 2px solid rgba(236, 100, 150, 0.1);
+        }
+
+        /* ==================== STATS ==================== */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.08) 0%, rgba(252, 92, 125, 0.08) 100%);
+            padding: 18px;
+            border-radius: 14px;
+            text-align: center;
+            border: 1px solid rgba(236, 100, 150, 0.1);
+            transition: all 0.3s;
+        }
+
+        .stat:hover {
+            background: linear-gradient(135deg, rgba(236, 100, 150, 0.12) 0%, rgba(252, 92, 125, 0.12) 100%);
+            transform: translateY(-4px);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #a0a4b8;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ec6496, #fc5c7d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ==================== SCROLLBAR ==================== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #ec6496, #fc5c7d);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #fc5c7d, #ec6496);
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 1200px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; max-height: 70px; }
+            .menu-list { display: none; }
+            .content { padding: 20px; }
+            .header { padding: 15px 20px; }
+            .header-title { font-size: 24px; }
+            .grid-3, .grid-4 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-spa"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Bella Spa</h1>
+                    <p>Premium ERP</p>
+                </div>
+            </div>
+
+            <div class="menu-list">
+                <div class="menu-item active" onclick="switchSection('dashboard')">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </div>
+
+                <div class="menu-item" onclick="switchSection('bookings')">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Booking</span>
+                </div>
+
+                <div class="menu-item" onclick="switchSection('schedule')">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Lịch KTV</span>
+                </div>
+
+                <div class="menu-item" onclick="switchSection('sessions')">
+                    <i class="fas fa-list-check"></i>
+                    <span>Thẻ Liệu Trình</span>
+                </div>
+
+                <div class="menu-item" onclick="switchSection('finance')">
+                    <i class="fas fa-money-bill"></i>
+                    <span>Tài Chính</span>
+                </div>
+
+                <div class="menu-item" onclick="switchSection('salary')">
+                    <i class="fas fa-wallet"></i>
+                    <span>Lương KTV</span>
+                </div>
+
+                <div class="menu-item" onclick="switchSection('reviews')">
+                    <i class="fas fa-star"></i>
+                    <span>Đánh Giá</span>
+                </div>
+
+                <div class="menu-item" onclick="switchSection('chat')">
+                    <i class="fas fa-comments"></i>
+                    <span>Chat</span>
+                </div>
+
+                <div class="menu-item" onclick="switchSection('settings')">
+                    <i class="fas fa-cog"></i>
+                    <span>Cài Đặt</span>
+                </div>
+            </div>
+
+            <div class="user-section">
+                <div class="user-card">
+                    <div class="avatar">NH</div>
+                    <div class="user-info">
+                        <p class="name">Nguyễn Hoa</p>
+                        <p class="role">Admin</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- HEADER -->
+            <div class="header">
+                <div class="header-title" id="pageTitle">Dashboard</div>
+                <div class="time-display">
+                    <div class="date" id="currentDate">10/05/2025</div>
+                    <div class="time" id="currentTime">15:30</div>
+                </div>
+            </div>
+
+            <!-- CONTENT -->
+            <div class="content">
+                <!-- DASHBOARD -->
+                <div id="dashboard" class="section active">
+                    <div class="grid-4">
+                        <div class="metric-card">
+                            <div class="metric-label">💰 Doanh Thu</div>
+                            <div class="metric-value">85<span style="font-size: 24px;">tr</span></div>
+                            <div class="metric-change positive">↑ 9% so với tháng trước</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">👥 Khách Mới</div>
+                            <div class="metric-value">12</div>
+                            <div class="metric-change positive">↑ 20% tăng trưởng</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">📅 Buổi Dịch Vụ</div>
+                            <div class="metric-value">94</div>
+                            <div class="metric-change positive">↑ 15% so với tháng trước</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">⭐ KTV Rating</div>
+                            <div class="metric-value">4.8</div>
+                            <div class="metric-change positive">↑ 0.2 điểm</div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-title">
+                                <i class="fas fa-chart-bar"></i>
+                                Doanh Thu Theo Gói
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="packageChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">
+                                <i class="fas fa-chart-pie"></i>
+                                Nguồn Khách Mới
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="sourceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-crown"></i>
+                            Top KTV Xuất Sắc
+                        </div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>👤 Tên KTV</th>
+                                        <th>📊 Buổi</th>
+                                        <th>⭐ Rating</th>
+                                        <th>Status</th>
+                                        <th>💎 Bonus</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Nguyễn Thị Lan</strong></td>
+                                        <td>28 buổi</td>
+                                        <td>4.9 ⭐</td>
+                                        <td><span class="badge badge-success">Xuất Sắc</span></td>
+                                        <td><strong style="color: #10b981;">+2,000k</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Trần Thị Hương</strong></td>
+                                        <td>25 buổi</td>
+                                        <td>4.8 ⭐</td>
+                                        <td><span class="badge badge-success">Tốt</span></td>
+                                        <td><strong style="color: #10b981;">+1,500k</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Lê Thị Mai</strong></td>
+                                        <td>22 buổi</td>
+                                        <td>4.6 ⭐</td>
+                                        <td><span class="badge badge-success">Tốt</span></td>
+                                        <td><strong style="color: #10b981;">+1,000k</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-bell"></i>
+                            Cảnh Báo Quan Trọng
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div>
+                                <strong>Dự báo doanh thu:</strong> 97 triệu / mục tiêu 110 triệu — Cần thêm 1-2 booking để vượt mục tiêu
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb"></i>
+                            <div>
+                                <strong>💡 Mẹo:</strong> Tuần cuối tháng khách hay huỷ — nên đẩy booking sớm để tăng doanh thu
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOOKINGS -->
+                <div id="bookings" class="section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+                        <h2 style="background: linear-gradient(135deg, #ec6496, #fc5c7d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 28px; font-weight: 700;">📅 Booking & Gói Dịch Vụ</h2>
+                        <button class="btn btn-primary" onclick="openBookingModal()">
+                            <i class="fas fa-plus"></i> Booking Mới
+                        </button>
+                    </div>
+
+                    <div class="grid-3">
+                        <div class="metric-card">
+                            <div class="metric-label">🎁 Tiết Kiệm</div>
+                            <div class="metric-value">12</div>
+                            <div style="font-size: 12px; color: #a0a4b8; margin-top: 8px;">Tổng: 84 triệu</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">💝 Hạnh Phúc</div>
+                            <div class="metric-value">8</div>
+                            <div style="font-size: 12px; color: #a0a4b8; margin-top: 8px;">Tổng: 100 triệu</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">👑 VIP</div>
+                            <div class="metric-value">3</div>
+                            <div style="font-size: 12px; color: #a0a4b8; margin-top: 8px;">Tổng: 66 triệu</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">📋 Danh Sách Booking</div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Mã Booking</th>
+                                        <th>Khách</th>
+                                        <th>Gói</th>
+                                        <th>Cọc</th>
+                                        <th>Tiến Độ</th>
+                                        <th>KTV</th>
+                                        <th>Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>BK-250510-001</strong></td>
+                                        <td>Chị Hoa</td>
+                                        <td>Hạnh Phúc</td>
+                                        <td>1,000k</td>
+                                        <td><div class="progress-bar"><div class="progress-fill" style="width: 50%;"></div></div></td>
+                                        <td>Lan</td>
+                                        <td><span class="badge badge-success">Đang làm</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>BK-250509-005</strong></td>
+                                        <td>Chị Thảo</td>
+                                        <td>Tiết Kiệm</td>
+                                        <td>500k</td>
+                                        <td><div class="progress-bar"><div class="progress-fill" style="width: 42%;"></div></div></td>
+                                        <td>Hương</td>
+                                        <td><span class="badge badge-success">Đang làm</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>BK-250508-003</strong></td>
+                                        <td>Chị Liên</td>
+                                        <td>VIP</td>
+                                        <td>1,500k</td>
+                                        <td><div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div></td>
+                                        <td>Mai</td>
+                                        <td><span class="badge badge-info">Hoàn thành</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCHEDULE -->
+                <div id="schedule" class="section">
+                    <div style="margin-bottom: 28px;">
+                        <h2 style="background: linear-gradient(135deg, #ec6496, #fc5c7d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 28px; font-weight: 700; margin-bottom: 16px;">📆 Lịch Làm Việc KTV</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-secondary">← Tháng Trước</button>
+                            <button class="btn btn-primary">Tháng Này</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="calendar-grid">
+                            <div class="day-header">CN</div>
+                            <div class="day-header">T2</div>
+                            <div class="day-header">T3</div>
+                            <div class="day-header">T4</div>
+                            <div class="day-header">T5</div>
+                            <div class="day-header">T6</div>
+                            <div class="day-header">T7</div>
+
+                            <div class="calendar-day free-full">4</div>
+                            <div class="calendar-day free-partial">3</div>
+                            <div class="calendar-day free-full">2</div>
+                            <div class="calendar-day full">1</div>
+                            <div class="calendar-day full">3</div>
+                            <div class="calendar-day off">Nghỉ</div>
+                            <div class="calendar-day free-partial">2</div>
+
+                            <div class="calendar-day free-full">4</div>
+                            <div class="calendar-day free-full">2</div>
+                            <div class="calendar-day free-partial">3</div>
+                            <div class="calendar-day full">1</div>
+                            <div class="calendar-day free-full">4</div>
+                            <div class="calendar-day free-full">2</div>
+                            <div class="calendar-day off">Nghỉ</div>
+
+                            <div class="calendar-day full">3</div>
+                            <div class="calendar-day free-partial">2</div>
+                            <div class="calendar-day free-full">4</div>
+                            <div class="calendar-day free-full">2</div>
+                            <div class="calendar-day off">Nghỉ</div>
+                            <div class="calendar-day full">3</div>
+                            <div class="calendar-day free-partial">1</div>
+
+                            <div class="calendar-day free-full">2</div>
+                            <div class="calendar-day free-full">3</div>
+                            <div class="calendar-day free-partial">2</div>
+                            <div class="calendar-day full">4</div>
+                            <div class="calendar-day free-full">2</div>
+                            <div class="calendar-day off">Nghỉ</div>
+                            <div class="calendar-day free-partial">1</div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin-top: 28px;">
+                        <div class="card-title">⏰ Timeline Ca Làm Việc</div>
+                        <div class="timeline-item">
+                            <div class="timeline-time">07:00-11:00</div>
+                            <div class="timeline-info">
+                                <div class="timeline-name">KTV: Nguyễn Thị Lan</div>
+                                <div class="timeline-address">📍 120 Lê Văn Lương, Q7</div>
+                            </div>
+                            <button class="btn btn-primary">Phân Ca</button>
+                        </div>
+
+                        <div class="timeline-item">
+                            <div class="timeline-time">11:30-15:30</div>
+                            <div class="timeline-info">
+                                <div class="timeline-name">KTV: Trần Thị Hương</div>
+                                <div class="timeline-address">📍 45 Trần Phú, Q5</div>
+                            </div>
+                            <button class="btn btn-primary">Phân Ca</button>
+                        </div>
+
+                        <div class="timeline-item">
+                            <div class="timeline-time">16:00-19:00</div>
+                            <div class="timeline-info">
+                                <div class="timeline-name">KTV: Lê Thị Mai</div>
+                                <div class="timeline-address">📍 88 Pasteur, Q1</div>
+                            </div>
+                            <button class="btn btn-primary">Phân Ca</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SESSIONS -->
+                <div id="sessions" class="section">
+                    <h2 style="background: linear-gradient(135deg, #ec6496, #fc5c7d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 28px; font-weight: 700; margin-bottom: 20px;">✨ Thẻ Liệu Trình</h2>
+
+                    <div class="card">
+                        <div style="margin-bottom: 24px;">
+                            <div style="font-weight: 700; color: #1a1a2e; font-size: 16px;">👩‍👧 Chị Hoa (Nguyễn Thị Hoa)</div>
+                            <div style="font-size: 13px; color: #a0a4b8; margin-top: 6px;">Gói: Hạnh Phúc (16 buổi) | 👶 Bé: Sinh 01/04/2025</div>
+                        </div>
+
+                        <div style="margin-bottom: 24px;">
+                            <h4 style="color: #ec6496; margin-bottom: 12px; font-weight: 700;">☀️ Buổi Sáng</h4>
+                            <div class="session-grid">
+                                <div class="session-box completed">1</div>
+                                <div class="session-box completed">2</div>
+                                <div class="session-box completed">3</div>
+                                <div class="session-box completed">4</div>
+                                <div class="session-box completed">5</div>
+                                <div class="session-box completed">6</div>
+                                <div class="session-box completed">7</div>
+                                <div class="session-box completed">8</div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 style="color: #ec6496; margin-bottom: 12px; font-weight: 700;">🌙 Buổi Chiều</h4>
+                            <div class="session-grid">
+                                <div class="session-box pending">9</div>
+                                <div class="session-box pending">10</div>
+                                <div class="session-box pending">11</div>
+                                <div class="session-box pending">12</div>
+                                <div class="session-box pending">13</div>
+                                <div class="session-box pending">14</div>
+                                <div class="session-box pending">15</div>
+                                <div class="session-box pending">16</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 28px;">
+                            <h4 style="color: #1a1a2e; font-weight: 700; margin-bottom: 12px;">📊 Tiến Độ</h4>
+                            <div style="display: flex; align-items: center; gap: 16px;">
+                                <div style="flex: 1;">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 50%;"></div>
+                                    </div>
+                                </div>
+                                <strong style="color: #ec6496; font-size: 16px;">8/16 (50%)</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FINANCE -->
+                <div id="finance" class="section">
+                    <div class="grid-4">
+                        <div class="metric-card">
+                            <div class="metric-label">✅ Xác Nhận</div>
+                            <div class="metric-value">63.2<span style="font-size: 24px;">tr</span></div>
+                            <div class="metric-change positive">↑ 12%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">📌 Dự Kiến</div>
+                            <div class="metric-value">41.5<span style="font-size: 24px;">tr</span></div>
+                            <div style="font-size: 12px; color: #a0a4b8; margin-top: 8px;">Đã cọc chưa làm</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">🎯 Tiềm Năng</div>
+                            <div class="metric-value">28.0<span style="font-size: 24px;">tr</span></div>
+                            <div style="font-size: 12px; color: #a0a4b8; margin-top: 8px;">Tư vấn × 50%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">💸 Chi Phí</div>
+                            <div class="metric-value">12.3<span style="font-size: 24px;">tr</span></div>
+                            <div class="metric-change negative">Văn phòng, vận tải</div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-title">
+                                <i class="fas fa-chart-bar"></i>
+                                So Sánh Doanh Thu
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">
+                                <i class="fas fa-chart-line"></i>
+                                Doanh Thu Từng Tuần
+                            </div>
+                            <div class="stats-row">
+                                <div class="stat">
+                                    <div class="stat-label">Tuần 1</div>
+                                    <div class="stat-value">18.4tr</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-label">Tuần 2</div>
+                                    <div class="stat-value">22.1tr</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-label">Tuần 3</div>
+                                    <div class="stat-value">14.2tr</div>
+                                </div>
+                                <div class="stat">
+                                    <div class="stat-label">Tuần 4</div>
+                                    <div class="stat-value">8.5tr</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SALARY -->
+                <div id="salary" class="section">
+                    <div style="display: flex; gap: 16px; margin-bottom: 28px;">
+                        <h2 style="background: linear-gradient(135deg, #ec6496, #fc5c7d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 28px; font-weight: 700; flex: 1;">💵 Tính Lương KTV</h2>
+                        <button class="btn btn-primary" onclick="calculateSalary()">
+                            <i class="fas fa-calculator"></i> Chốt Lương
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">📊 Bảng Lương</div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>KTV</th>
+                                        <th>Cơ Bản</th>
+                                        <th>% DT</th>
+                                        <th>Bonus</th>
+                                        <th>Vi Phạm</th>
+                                        <th>Tổng</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Nguyễn Thị Lan</strong></td>
+                                        <td>8,000k</td>
+                                        <td>+4,200k</td>
+                                        <td>+2,000k</td>
+                                        <td>-0k</td>
+                                        <td><strong style="color: #10b981;">14,200k</strong></td>
+                                        <td><span class="badge badge-success">Duyệt</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Trần Thị Hương</strong></td>
+                                        <td>7,500k</td>
+                                        <td>+3,800k</td>
+                                        <td>+1,500k</td>
+                                        <td>-200k</td>
+                                        <td><strong style="color: #10b981;">12,600k</strong></td>
+                                        <td><span class="badge badge-success">Duyệt</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Lê Thị Mai</strong></td>
+                                        <td>7,500k</td>
+                                        <td>+3,200k</td>
+                                        <td>+1,000k</td>
+                                        <td>-500k</td>
+                                        <td><strong style="color: #10b981;">11,200k</strong></td>
+                                        <td><span class="badge badge-warning">Chờ</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REVIEWS -->
+                <div id="reviews" class="section">
+                    <h2 style="background: linear-gradient(135deg, #ec6496, #fc5c7d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 28px; font-weight: 700; margin-bottom: 20px;">🔒 Đánh Giá KTV</h2>
+
+                    <div class="card">
+                        <div class="card-title">
+                            <i class="fas fa-lock"></i>
+                            Bảo Mật AES-256
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-shield-alt"></i>
+                            <div>
+                                <strong>🔒 Ghi chú khách được mã hoá.</strong> KTV không thể xem nội dung ghi chú, chỉ Admin/Manager xem được.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">⭐ Đánh Giá KTV</div>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>KTV</th>
+                                        <th>Sao</th>
+                                        <th>Review</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Nguyễn Thị Lan</strong></td>
+                                        <td>4.9 ⭐</td>
+                                        <td>28</td>
+                                        <td><span class="badge badge-success">Xuất Sắc</span></td>
+                                        <td><button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;" onclick="viewReviews()">Xem</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Trần Thị Hương</strong></td>
+                                        <td>4.6 ⭐</td>
+                                        <td>25</td>
+                                        <td><span class="badge badge-success">Tốt</span></td>
+                                        <td><button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;" onclick="viewReviews()">Xem</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHAT -->
+                <div id="chat" class="section">
+                    <h2 style="background: linear-gradient(135deg, #ec6496, #fc5c7d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 28px; font-weight: 700; margin-bottom: 20px;">💬 Chat Nội Bộ</h2>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button class="btn btn-primary"># Chung</button>
+                        <button class="btn btn-secondary" style="opacity: 0.6;"># Booking</button>
+                        <button class="btn btn-secondary" style="opacity: 0.6;"># Team</button>
+                    </div>
+
+                    <div class="card" style="height: 420px; display: flex; flex-direction: column;">
+                        <div style="flex: 1; overflow-y: auto; padding: 20px; background: linear-gradient(135deg, rgba(236, 100, 150, 0.02) 0%, rgba(252, 92, 125, 0.02) 100%); border-radius: 14px; margin-bottom: 16px;">
+                            <div style="display: flex; gap: 12px; margin-bottom: 14px;">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #ec6496, #fc5c7d); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; box-shadow: 0 6px 12px rgba(236, 100, 150, 0.2);">QL</div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; color: #1a1a2e; font-size: 13px;">Quản Lý</div>
+                                    <div style="background: white; padding: 10px; border-radius: 10px; margin-top: 4px; font-size: 13px; color: #1a1a2e; border-left: 4px solid #ec6496; box-shadow: 0 4px 12px rgba(236, 100, 150, 0.1);">Các bạn lưu ý: tuần này có 3 booking mới Q7, ưu tiên phân cho Lan và Hương.</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 12px; margin-bottom: 14px; flex-direction: row-reverse;">
+                                <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #ec6496, #fc5c7d); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; box-shadow: 0 6px 12px rgba(236, 100, 150, 0.2);">LN</div>
+                                <div style="flex: 1; text-align: right;">
+                                    <div style="font-weight: 600; color: #1a1a2e; font-size: 13px;">Lan</div>
+                                    <div style="background: linear-gradient(135deg, #ec6496, #fc5c7d); color: white; padding: 10px; border-radius: 10px; margin-top: 4px; font-size: 13px; border-right: 4px solid #fc5c7d; box-shadow: 0 6px 12px rgba(236, 100, 150, 0.2);">Dạ em nhận rồi, thứ 4 em còn slot buổi sáng ạ.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px;">
+                            <input type="text" placeholder="Nhập tin nhắn..." style="flex: 1;">
+                            <button class="btn btn-primary" style="width: 48px; padding: 0;">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SETTINGS -->
+                <div id="settings" class="section">
+                    <h2 style="background: linear-gradient(135deg, #ec6496, #fc5c7d); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 28px; font-weight: 700; margin-bottom: 20px;">⚙️ Cài Đặt Hệ Thống</h2>
+
+                    <div class="card">
+                        <div class="card-title">🏢 Thông Tin Công Ty</div>
+                        <div class="form-group">
+                            <label>Tên Spa</label>
+                            <input type="text" value="Bella Spa - Chăm Sóc Mẹ Bé Sau Sinh">
+                        </div>
+                        <div class="form-group">
+                            <label>Địa Chỉ</label>
+                            <input type="text" value="123 Lê Văn Lương, Quận 7, TP.HCM">
+                        </div>
+                        <div class="form-group">
+                            <label>Số Điện Thoại</label>
+                            <input type="text" value="0909 123 456">
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">💰 Cấu Hình Lương</div>
+                        <div class="form-group">
+                            <label>Lương Cơ Bản KTV</label>
+                            <input type="number" value="7500000">
+                        </div>
+                        <div class="form-group">
+                            <label>% Doanh Thu Ca Làm</label>
+                            <input type="number" value="55" style="width: 150px;"> <span style="color: #a0a4b8; font-weight: 500;">%</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                        <button class="btn btn-secondary">Huỷ</button>
+                        <button class="btn btn-primary">Lưu Cài Đặt</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📅 Tạo Booking Mới</h2>
+                <button class="close-btn" onclick="closeModal('bookingModal')">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Tên Khách Hàng</label>
+                <input type="text" placeholder="Nhập tên khách">
+            </div>
+            <div class="form-group">
+                <label>Số Điện Thoại</label>
+                <input type="text" placeholder="Nhập SĐT">
+            </div>
+            <div class="form-group">
+                <label>Chọn Gói Dịch Vụ</label>
+                <select>
+                    <option>💝 Tiết Kiệm (7 triệu / 12 buổi)</option>
+                    <option>❤️ Hạnh Phúc (12.5 triệu / 16 buổi)</option>
+                    <option>👑 VIP (22 triệu / 21 buổi)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Số Tiền Cọc</label>
+                <input type="number" placeholder="200,000 - 1,000,000">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('bookingModal')">Huỷ</button>
+                <button class="btn btn-primary" onclick="saveBooking()">Lưu Booking</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTime();
+            initCharts();
+            setInterval(updateTime, 60000);
+        });
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('vi-VN');
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function switchSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            event.target.closest('.menu-item').classList.add('active');
+            
+            const titles = {
+                dashboard: '📊 Dashboard',
+                bookings: '📅 Booking & Gói',
+                schedule: '📆 Lịch KTV',
+                sessions: '✨ Thẻ Liệu Trình',
+                finance: '💹 Tài Chính',
+                salary: '💵 Lương KTV',
+                reviews: '🔒 Đánh Giá',
+                chat: '💬 Chat',
+                settings: '⚙️ Cài Đặt'
+            };
+            document.getElementById('pageTitle').textContent = titles[sectionId];
+        }
+
+        function openBookingModal() {
+            document.getElementById('bookingModal').classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function saveBooking() {
+            alert('✅ Booking tạo thành công!');
+            closeModal('bookingModal');
+        }
+
+        function calculateSalary() {
+            alert('✅ Lương đã tính: Lan 14.2M, Hương 12.6M, Mai 11.2M');
+        }
+
+        function viewReviews() {
+            alert('🔒 Ghi chú riêng tư (chỉ Admin/Manager xem)');
+        }
+
+        function initCharts() {
+            const colors = ['#ec6496', '#fc5c7d', '#f093fb'];
+            
+            if (document.getElementById('packageChart')) {
+                new Chart(document.getElementById('packageChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Tiết Kiệm', 'Hạnh Phúc', 'VIP'],
+                        datasets: [{
+                            data: [35, 50, 15],
+                            backgroundColor: colors,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            if (document.getElementById('sourceChart')) {
+                new Chart(document.getElementById('sourceChart'), {
+                    type: 'pie',
+                    data: {
+                        labels: ['Giới Thiệu', 'Zalo', 'Google', 'Khác'],
+                        datasets: [{
+                            data: [35, 40, 20, 5],
+                            backgroundColor: ['#ec6496', '#fc5c7d', '#f093fb', '#764ba2']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            if (document.getElementById('revenueChart')) {
+                new Chart(document.getElementById('revenueChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['T1', 'T2', 'T3', 'T4'],
+                        datasets: [
+                            { label: 'Tháng Này', data: [18.4, 22.1, 14.2, 8.5], backgroundColor: '#ec6496' },
+                            { label: 'Tháng Trước', data: [16.2, 19.5, 18.3, 24.0], backgroundColor: '#f093fb' }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                });
+            }
+        }
+
+        window.onclick = function(e) {
+            const modal = document.getElementById('bookingModal');
+            if (e.target === modal) modal.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
