@@ -35,6 +35,7 @@ import { getCustomers, createCustomer } from '@/services/customer-actions';
 
 export default function CustomersPage() {
   const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
