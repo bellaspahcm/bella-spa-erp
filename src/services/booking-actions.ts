@@ -156,3 +156,50 @@ export async function getSessionsWithDetails() {
 
   return data;
 }
+
+export async function getCalendarSessions() {
+  const supabase = (await createClient()) as any;
+  
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select(`
+      *,
+      bookings (
+        *,
+        customers (
+          name_mother,
+          address
+        ),
+        assigned_ktv:users!bookings_assigned_ktv_id_fkey (
+          full_name
+        )
+      )
+    `)
+    .order('assigned_date', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching calendar sessions:', error);
+    return [];
+  }
+
+  return data;
+}
+
+export async function updateSessionLog(id: string, updates: any) {
+  const supabase = (await createClient()) as any;
+  
+  const { data, error } = await supabase
+    .from('session_logs')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating session log:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/dashboard/bookings');
+  return { data };
+}

@@ -20,9 +20,12 @@ import {
   Package,
   CalendarDays,
   History,
-  Briefcase
+  Briefcase,
+  Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
+import { getCalendarSessions, updateSessionLog } from '@/services/booking-actions';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
 
 const mockBookings = MOCK_BOOKINGS.map(b => ({
@@ -44,6 +47,19 @@ export default function BookingsPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [modalData, setModalData] = useState<any>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
+
+  const fetchSessions = async () => {
+    setIsLoading(true);
+    const data = await getCalendarSessions();
+    setSessions(data);
+    setIsLoading(false);
+  };
 
   const getMonthDays = (date: Date) => {
     const year = date.getFullYear();
@@ -94,12 +110,40 @@ export default function BookingsPage() {
   };
 
   const handleDayDoubleClick = (date: Date) => {
-    const detail = {
-      date,
-      ...mockBookings[0]
-    };
-    setModalData(detail);
-    setShowDetailModal(true);
+    const daySessions = sessions.filter(s => s.assigned_date && isSameDay(new Date(s.assigned_date), date));
+    
+    if (daySessions.length > 0) {
+      const s = daySessions[0];
+      const detail = {
+        id: s.id,
+        date,
+        customer: s.bookings?.customers?.name_mother || 'Khách hàng',
+        package: s.bookings?.package_name || 'Gói liệu trình',
+        time: s.assigned_time || '09:00 - 11:00',
+        ktv: s.bookings?.assigned_ktv?.full_name || 'Chưa phân công',
+        status: s.status,
+        location: s.bookings?.customers?.address || 'Tại Spa',
+        sessionCount: `${s.bookings?.completed_sessions || 0}/${s.bookings?.total_sessions || 21} buổi`,
+        contractId: s.bookings?.booking_number || 'N/A',
+        contractDetail: s.notes || 'Không có ghi chú'
+      };
+      setModalData(detail);
+      setShowDetailModal(true);
+    } else {
+      toast.info(`Không có lịch hẹn vào ngày ${date.toLocaleDateString('vi-VN')}`);
+    }
+  };
+
+  const handleUpdatePlan = async () => {
+    toast.promise(
+      new Promise(resolve => setTimeout(resolve, 1000)),
+      {
+        loading: 'Đang lưu kế hoạch...',
+        success: 'Đã cập nhật kế hoạch chăm sóc thành công!',
+        error: 'Lỗi khi cập nhật kế hoạch',
+      }
+    );
+    setShowDetailModal(false);
   };
 
   return (
@@ -185,11 +229,18 @@ export default function BookingsPage() {
         </div>
 
         {/* Grid Box */}
-        <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-3xl overflow-hidden">
+        <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-3xl overflow-hidden relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-20 flex items-center justify-center">
+              <Loader2 className="w-10 h-10 text-rose-500 animate-spin" />
+            </div>
+          )}
           {monthDays.map((date, i) => {
             const isToday = isSameDay(date, today);
             const isSelected = isSameDay(date, selectedDate);
             const isCurrentMonth = isSameMonth(date, currentMonth);
+            
+            const daySessions = sessions.filter(s => s.assigned_date && isSameDay(new Date(s.assigned_date), date));
             
             return (
               <div 
@@ -215,13 +266,15 @@ export default function BookingsPage() {
                   )}
                 </div>
                 
-                {/* Mock Event Dot */}
-                {i % 5 === 0 && (
+                {/* Event Indicator */}
+                {daySessions.length > 0 && (
                   <div className="flex flex-col gap-1">
                     <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-400" style={{ width: '60%' }} />
+                      <div className="h-full bg-rose-400" style={{ width: '100%' }} />
                     </div>
-                    <span className="text-[9px] font-bold text-slate-400 truncate">3 Lịch hẹn</span>
+                    <span className="text-[9px] font-bold text-slate-400 truncate">
+                      {daySessions.length} Lịch hẹn
+                    </span>
                   </div>
                 )}
               </div>
@@ -232,66 +285,82 @@ export default function BookingsPage() {
 
       {/* Bookings Timeline */}
       <div className="space-y-4">
-        {mockBookings.map((booking: any, idx: number) => (
-          <motion.div 
-            key={booking.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="relative pl-8 group"
-          >
-            {/* Timeline Line */}
-            <div className="absolute left-[11px] top-0 bottom-0 w-[2px] bg-slate-100 group-last:bottom-1/2"></div>
-            {/* Timeline Dot */}
-            <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-4 border-white shadow-md z-10 ${
-              booking.status === 'completed' ? 'bg-emerald-500' : booking.status === 'in_progress' ? 'bg-amber-500' : 'bg-slate-300'
-            }`}></div>
+        {isLoading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-10 h-10 text-slate-200 animate-spin" />
+          </div>
+        ) : sessions.filter(s => isSameDay(new Date(s.assigned_date || 0), selectedDate)).length > 0 ? (
+          sessions
+            .filter(s => isSameDay(new Date(s.assigned_date || 0), selectedDate))
+            .map((session: any, idx: number) => (
+              <motion.div 
+                key={session.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="relative pl-8 group"
+              >
+                {/* Timeline Line */}
+                <div className="absolute left-[11px] top-0 bottom-0 w-[2px] bg-slate-100 group-last:bottom-1/2"></div>
+                {/* Timeline Dot */}
+                <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-4 border-white shadow-md z-10 ${
+                  session.status === 'completed' ? 'bg-emerald-500' : session.status === 'scheduled' ? 'bg-amber-500' : 'bg-slate-300'
+                }`}></div>
 
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group-hover:shadow-xl group-hover:shadow-slate-200/40 transition-all flex flex-col md:flex-row md:items-center gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="flex items-center gap-1.5 text-slate-900 font-black">
-                    <Clock className="w-4 h-4 text-rose-500" />
-                    {booking.time}
+                <div 
+                  onDoubleClick={() => handleDayDoubleClick(selectedDate)}
+                  className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group-hover:shadow-xl group-hover:shadow-slate-200/40 transition-all flex flex-col md:flex-row md:items-center gap-6 cursor-pointer"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="flex items-center gap-1.5 text-slate-900 font-black">
+                        <Clock className="w-4 h-4 text-rose-500" />
+                        {session.assigned_time || '09:00 - 11:00'}
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        session.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
+                        session.status === 'scheduled' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600'
+                      }`}>
+                        {session.status === 'completed' ? 'Hoàn thành' : 
+                         session.status === 'scheduled' ? 'Sắp tới' : 'Khác'}
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-xl font-extrabold text-slate-900 mb-2">{session.bookings?.customers?.name_mother}</h3>
+                    <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
+                      <LayoutGrid className="w-4 h-4 text-slate-300" />
+                      {session.bookings?.package_name || 'Gói liệu trình'}
+                    </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                    booking.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 
-                    booking.status === 'in_progress' ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-600'
-                  }`}>
-                    {booking.status === 'completed' ? 'Hoàn thành' : 
-                     booking.status === 'in_progress' ? 'Đang thực hiện' : 'Sắp tới'}
-                  </span>
-                </div>
-                
-                <h3 className="text-xl font-extrabold text-slate-900 mb-2">{booking.customer}</h3>
-                <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
-                  <LayoutGrid className="w-4 h-4 text-slate-300" />
-                  {booking.package}
-                </p>
-              </div>
 
-              <div className="flex flex-col md:items-end gap-3 md:border-l md:pl-8 border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase">Kỹ thuật viên</p>
-                    <p className="font-bold text-slate-900">{booking.ktv}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold">
-                    {booking.ktv.split(' ').pop()?.[0]}
+                  <div className="flex flex-col md:items-end gap-3 md:border-l md:pl-8 border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-slate-400 uppercase">Kỹ thuật viên</p>
+                        <p className="font-bold text-slate-900">{session.bookings?.assigned_ktv?.full_name || 'Chưa phân công'}</p>
+                      </div>
+                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 font-bold">
+                        {session.bookings?.assigned_ktv?.full_name?.[0] || 'K'}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-xs text-slate-600 transition-colors">
+                        Dời lịch
+                      </button>
+                      <button className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
+                        Check-in
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-xs text-slate-600 transition-colors">
-                    Dời lịch
-                  </button>
-                  <button className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
-                    Check-in
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+              </motion.div>
+            ))
+        ) : (
+          <div className="bg-white/50 border border-dashed border-slate-200 rounded-[32px] p-12 text-center">
+            <CalendarIcon className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+            <p className="text-slate-400 font-bold">Không có lịch hẹn nào cho ngày này</p>
+          </div>
+        )}
       </div>
 
       {/* Day Detail Modal */}
@@ -409,12 +478,15 @@ export default function BookingsPage() {
                 </div>
 
                 <div className="mt-8 flex gap-3">
-                  <button className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all">
+                  <button 
+                    onClick={handleUpdatePlan}
+                    className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95"
+                  >
                     Chỉnh sửa kế hoạch
                   </button>
                   <button 
                     onClick={() => setShowDetailModal(false)}
-                    className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+                    className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
                   >
                     Đóng
                   </button>
