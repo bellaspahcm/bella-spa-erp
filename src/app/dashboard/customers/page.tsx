@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -28,18 +29,88 @@ import {
 } from 'lucide-react';
 
 import { MOCK_CUSTOMERS } from '@/constants/mock-data';
+import { getCustomers, createCustomer } from '@/services/customer-actions';
 
 const mockCustomers = MOCK_CUSTOMERS;
 
 export default function CustomersPage() {
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
+
+  // Form states
+  const [formData, setFormData] = useState({
+    name_mother: '',
+    phone: '',
+    name_baby: '',
+    dob_expected: '',
+    address: '',
+    notes: ''
+  });
+
+  useEffect(() => {
+    loadCustomers();
+  }, []);
+
+  const loadCustomers = async () => {
+    setIsLoading(true);
+    const data = await getCustomers();
+    if (data && data.length > 0) {
+      setCustomers(data);
+    } else {
+      setCustomers(MOCK_CUSTOMERS);
+    }
+    setIsLoading(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const result = await createCustomer({
+        ...formData,
+        deposit_amount: depositAmount,
+        package_name: selectedPackage
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Thêm khách hàng thành công!');
+        setIsModalOpen(false);
+        // Reset form
+        setFormData({
+          name_mother: '',
+          phone: '',
+          name_baby: '',
+          dob_expected: '',
+          address: '',
+          notes: ''
+        });
+        setDepositAmount('');
+        setSelectedPackage('');
+        loadCustomers();
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi lưu dữ liệu');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -129,7 +200,12 @@ export default function CustomersPage() {
 
       {/* Customer Grid/Table */}
       <div className="grid grid-cols-1 gap-4">
-        {mockCustomers.map((customer: any, idx: number) => (
+        {isLoading ? (
+          <div className="bg-white rounded-3xl p-20 text-center border border-slate-100 shadow-sm">
+            <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Đang tải dữ liệu...</p>
+          </div>
+        ) : customers.map((customer: any, idx: number) => (
           <motion.div 
             key={customer.id}
             initial={{ opacity: 0, y: 10 }}
@@ -288,25 +364,51 @@ export default function CustomersPage() {
                   </button>
                 </div>
 
-                <form className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Họ tên Mẹ</label>
-                      <input type="text" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" placeholder="VD: Nguyễn Thu Thủy" />
+                      <input 
+                        type="text" 
+                        name="name_mother"
+                        required
+                        value={formData.name_mother}
+                        onChange={handleInputChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" 
+                        placeholder="VD: Nguyễn Thu Thủy" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Số điện thoại</label>
-                      <input type="text" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" placeholder="VD: 0901234567" />
+                      <input 
+                        type="text" 
+                        name="phone"
+                        required
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" 
+                        placeholder="VD: 0901234567" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Họ tên Bé / Tên thân mật</label>
-                      <input type="text" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" placeholder="VD: Gia Bảo" />
+                      <input 
+                        type="text" 
+                        name="name_baby"
+                        value={formData.name_baby}
+                        onChange={handleInputChange}
+                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
+                        placeholder="VD: Gia Bảo" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Ngày sinh Bé / Dự sinh</label>
                       <input 
                         type="date" 
+                        name="dob_expected"
                         min={today}
+                        value={formData.dob_expected}
+                        onChange={handleInputChange}
                         className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
                       />
                     </div>
@@ -363,15 +465,30 @@ export default function CustomersPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 ml-1">Địa chỉ</label>
-                    <textarea className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none resize-none h-24" placeholder="Nhập địa chỉ chi tiết..."></textarea>
+                    <textarea 
+                      name="address"
+                      required
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none resize-none h-24" 
+                      placeholder="Nhập địa chỉ chi tiết..."
+                    ></textarea>
                   </div>
                   
                   <div className="pt-6 flex gap-4">
                     <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all">
                       Hủy bỏ
                     </button>
-                    <button type="submit" className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-xl shadow-slate-200 transition-all">
-                      Lưu hồ sơ
+                    <button 
+                      type="submit" 
+                      disabled={isSubmitting}
+                      className={cn(
+                        "flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2",
+                        isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-slate-900 hover:bg-slate-800 shadow-slate-200"
+                      )}
+                    >
+                      {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                      {isSubmitting ? 'Đang lưu...' : 'Lưu hồ sơ'}
                     </button>
                   </div>
                 </form>

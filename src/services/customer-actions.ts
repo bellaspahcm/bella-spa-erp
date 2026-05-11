@@ -7,7 +7,7 @@ export async function getCustomers() {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('customers')
-    .select('*')
+    .select('*, bookings(*)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -15,7 +15,17 @@ export async function getCustomers() {
     return [];
   }
 
-  return data;
+  // Flatten or map the data to match UI expectations if needed
+  return data.map((c: any) => {
+    const latestBooking = c.bookings && c.bookings.length > 0 ? c.bookings[0] : null;
+    return {
+      ...c,
+      status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
+      deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
+      package_name: latestBooking?.package_name || null, // Assuming package_name is in bookings or needs another join
+      dob_expected: c.dob_expected || (latestBooking?.start_date)
+    };
+  });
 }
 
 import { customerSchema } from '@/lib/validations';
@@ -32,7 +42,8 @@ export async function createCustomer(formData: any) {
 
   const validatedData = validatedFields.data;
 
-  const { data, error } = await supabase
+  // 1. Create Customer
+  const { data: customer, error: customerError } = await supabase
     .from('customers')
     .insert([
       {
@@ -48,11 +59,25 @@ export async function createCustomer(formData: any) {
     .select()
     .single();
 
-  if (error) {
-    console.error('Error creating customer:', error);
-    return { error: error.message };
+  if (customerError) {
+    console.error('Error creating customer:', customerError);
+    return { error: customerError.message };
+  }
+
+  // 2. If deposit or package provided, create a booking
+  if (formData.deposit_amount || formData.package_name) {
+    const deposit = parseInt(formData.deposit_amount?.replace(/,/g, '') || '0');
+    
+    await supabase.from('bookings').insert([{
+      customer_id: customer.id,
+      booking_number: `BK-${new Date().getTime()}`,
+      status: deposit > 0 ? 'deposit_pending' : 'booked',
+      deposit_amount: deposit,
+      package_name: formData.package_name,
+      total_sessions: 21, // Default
+    } as any]);
   }
 
   revalidatePath('/dashboard/customers');
-  return { data };
+  return { data: customer };
 }
