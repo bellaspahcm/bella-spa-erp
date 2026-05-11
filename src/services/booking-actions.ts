@@ -93,3 +93,66 @@ export async function getSessionLogs(bookingId: string) {
 
   return data;
 }
+
+export async function completeSession(sessionId: string, bookingId: string) {
+  const supabase = (await createClient()) as any;
+
+  // 1. Update session log status
+  const { error: sessionError } = await supabase
+    .from('session_logs')
+    .update({ 
+      status: 'completed',
+      completed_date: new Date().toISOString()
+    } as any)
+    .eq('id', sessionId);
+
+  if (sessionError) {
+    console.error('Error completing session:', sessionError);
+    return { error: sessionError.message };
+  }
+
+  // 2. Fetch current completed sessions count from booking
+  const { data: booking, error: fetchError } = await supabase
+    .from('bookings')
+    .select('completed_sessions')
+    .eq('id', bookingId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching booking:', fetchError);
+    return { error: fetchError.message };
+  }
+
+  // 3. Increment completed sessions count
+  const newCount = (booking.completed_sessions || 0) + 1;
+  const { error: updateError } = await supabase
+    .from('bookings')
+    .update({ completed_sessions: newCount } as any)
+    .eq('id', bookingId);
+
+  if (updateError) {
+    console.error('Error updating booking progress:', updateError);
+    return { error: updateError.message };
+  }
+
+  revalidatePath('/dashboard/sessions');
+  revalidatePath('/dashboard/bookings');
+  revalidatePath('/dashboard');
+  
+  return { success: true };
+}
+
+export async function getSessionsWithDetails() {
+  const supabase = (await createClient()) as any;
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*, customers(name_mother, phone)')
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching sessions with details:', error);
+    return [];
+  }
+
+  return data;
+}
