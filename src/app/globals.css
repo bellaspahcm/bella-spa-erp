@@ -33,6 +33,22 @@
   --color-pink-soft: #FFF5F7;
   --color-pink-deep: #FF4D6D;
   
+  --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 20px;
+  --text-3xl: 22px;
+  --text-4xl: 24px;
+  --text-5xl: 24px;
+  --text-6xl: 24px;
+  --text-7xl: 24px;
+  --text-8xl: 24px;
+  --text-9xl: 24px;
+  
   --radius-xl: 1.5rem;
   --radius-2xl: 2rem;
 }
@@ -40,12 +56,35 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400; /* Regular */
+  line-height: 1.5;
   background-image: 
     radial-gradient(at 0% 0%, hsla(340, 100%, 98%, 1) 0, transparent 50%),
     radial-gradient(at 50% 0%, hsla(340, 100%, 99%, 1) 0, transparent 50%),
     radial-gradient(at 100% 0%, hsla(340, 100%, 98%, 1) 0, transparent 50%);
   min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 700; /* Bold */
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+/* Typography Scale 14-24px */
+h1 { font-size: 24px; }
+h2 { font-size: 20px; }
+h3 { font-size: 18px; }
+h4 { font-size: 16px; }
+h5 { font-size: 14px; }
+h6 { font-size: 14px; }
+
+p, span, div, label, input, button {
+  font-size: 14px;
+  font-weight: 400;
 }
 
 /* Glassmorphism utility */
