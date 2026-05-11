@@ -126,7 +126,7 @@ export default function FinancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {transactions.map((tx) => (
+              {transactions.map((tx: any) => (
                 <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">

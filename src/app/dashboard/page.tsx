@@ -122,7 +122,7 @@ export default function DashboardPage() {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12"
       >
-        {stats.map((stat, idx) => (
+        {stats.map((stat: any, idx: number) => (
           <motion.div 
             key={idx}
             variants={item}
@@ -171,7 +171,7 @@ export default function DashboardPage() {
           
           <div className="space-y-6">
             {sessions.length > 0 ? (
-              sessions.map((session, i) => (
+              sessions.map((session: any, i: number) => (
                 <div key={session.id} className="flex items-center gap-6 p-6 rounded-3xl hover:bg-white/60 transition-all border border-transparent hover:border-pink-50 group shadow-sm hover:shadow-lg hover:shadow-pink-100/50">
                   <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center text-primary font-black text-lg border-2 border-white shadow-inner group-hover:scale-105 transition-transform">
                     {session.bookings?.customers?.name_mother?.substring(0, 2).toUpperCase() || 'BS'}
@@ -216,7 +216,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="h-40 flex items-end gap-3 mb-10">
-              {[40, 70, 45, 90, 65, 80, 50].map((h, i) => (
+              {[40, 70, 45, 90, 65, 80, 50].map((h: number, i: number) => (
                 <div key={i} className="flex-1 relative group/bar">
                   <div 
                     className="w-full bg-white/10 rounded-t-xl transition-all duration-700 hover:bg-primary cursor-pointer relative z-10" 
@@ -274,7 +274,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-pink-50">
-                {topKTVs.map((ktv, idx) => (
+                {topKTVs.map((ktv: any, idx: number) => (
                   <tr key={idx} className="group hover:bg-white/40 transition-colors">
                     <td className="py-6 font-black text-foreground">{ktv.name}</td>
                     <td className="py-6 font-bold text-muted-foreground">{ktv.sessions} buổi</td>
@@ -315,7 +315,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="space-y-4">
-            {alerts.map((alert, idx) => (
+            {alerts.map((alert: any, idx: number) => (
               <div 
                 key={idx} 
                 className={`p-6 rounded-3xl flex items-center gap-6 border ${

@@ -57,7 +57,7 @@ export async function createBooking(formData: any) {
 
   // 2. Automation: Generate session logs (default 21 sessions)
   const totalSessions = booking.total_sessions || 21;
-  const sessionLogs = Array.from({ length: totalSessions }, (_, i) => ({
+  const sessionLogs = Array.from({ length: totalSessions }, (_: any, i: number) => ({
     booking_id: booking.id,
     session_number: i + 1,
     status: 'scheduled',

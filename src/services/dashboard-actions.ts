@@ -89,7 +89,7 @@ export async function getTopTechnicians() {
       status: avgRating >= 4.8 ? 'Xuất Sắc' : 'Tốt',
       bonus: avgRating >= 4.8 ? '+2,000k' : '+1,500k'
     };
-  }).sort((a, b) => b.sessions - a.sessions);
+  }).sort((a: any, b: any) => b.sessions - a.sessions);
 }
 
 export async function getImportantAlerts() {

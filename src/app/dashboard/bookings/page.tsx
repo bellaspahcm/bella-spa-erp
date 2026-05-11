@@ -73,7 +73,7 @@ export default function BookingsPage() {
         </div>
 
         <div className="grid grid-cols-7 gap-2">
-          {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((day, i) => (
+          {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((day: string, i: number) => (
             <div key={i} className="text-center">
               <p className="text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">{day}</p>
               <div className={`w-10 h-14 mx-auto flex flex-col items-center justify-center rounded-2xl transition-all cursor-pointer ${
@@ -88,7 +88,7 @@ export default function BookingsPage() {
 
       {/* Bookings Timeline */}
       <div className="space-y-4">
-        {mockBookings.map((booking, idx) => (
+        {mockBookings.map((booking: any, idx: number) => (
           <motion.div 
             key={booking.id}
             initial={{ opacity: 0, x: -20 }}

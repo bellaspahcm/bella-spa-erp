@@ -68,7 +68,7 @@ export default function CustomersPage() {
 
       {/* Customer Grid/Table */}
       <div className="grid grid-cols-1 gap-4">
-        {mockCustomers.map((customer, idx) => (
+        {mockCustomers.map((customer: any, idx: number) => (
           <motion.div 
             key={customer.id}
             initial={{ opacity: 0, y: 10 }}
