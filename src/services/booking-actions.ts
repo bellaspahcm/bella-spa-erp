@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 
 export async function getBookings() {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
     .select('*, customers(name_mother, phone)')
@@ -21,7 +21,7 @@ export async function getBookings() {
 import { bookingSchema } from '@/lib/validations';
 
 export async function createBooking(formData: any) {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   
   // 0. Validate with Zod
   const validatedFields = bookingSchema.safeParse(formData);
@@ -79,7 +79,7 @@ export async function createBooking(formData: any) {
 }
 
 export async function getSessionLogs(bookingId: string) {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('session_logs')
     .select('*')

@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 
 export async function getCustomers() {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('customers')
     .select('*')
@@ -21,7 +21,7 @@ export async function getCustomers() {
 import { customerSchema } from '@/lib/validations';
 
 export async function createCustomer(formData: any) {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   
   // 0. Validate with Zod
   const validatedFields = customerSchema.safeParse(formData);

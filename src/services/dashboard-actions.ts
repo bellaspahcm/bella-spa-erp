@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 
 export async function getDashboardStats() {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
 
   // Parallel fetching for performance
   const [
@@ -32,7 +32,7 @@ export async function getDashboardStats() {
 }
 
 export async function getUpcomingSessions() {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('session_logs')
     .select(`
@@ -58,7 +58,7 @@ export async function getUpcomingSessions() {
 }
 
 export async function getTopTechnicians() {
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   
   const { data, error } = await supabase
     .from('users')
