@@ -18,9 +18,9 @@ export async function getDashboardStats() {
     supabase.from('session_reviews').select('rating')
   ]);
 
-  const totalRevenue = revenueData?.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0) || 0;
+  const totalRevenue = revenueData?.reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0) || 0;
   const avgRating = ratingsData?.length 
-    ? (ratingsData.reduce((acc, curr) => acc + curr.rating, 0) / ratingsData.length).toFixed(1) 
+    ? (ratingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / ratingsData.length).toFixed(1) 
     : '5.0';
 
   return {
@@ -76,7 +76,7 @@ export async function getTopTechnicians() {
     return [];
   }
 
-  return data.map(user => {
+  return data.map((user: any) => {
     const reviews = (user as any).session_reviews || [];
     const avgRating = reviews.length 
       ? reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviews.length 
