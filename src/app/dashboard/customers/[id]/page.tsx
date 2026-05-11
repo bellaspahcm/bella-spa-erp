@@ -29,6 +29,8 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function CustomerDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -38,6 +40,7 @@ export default function CustomerDetailPage() {
 
   useEffect(() => {
     async function loadData() {
+      if (!id) return;
       try {
         const data = await getCustomerById(id);
         if (data) {
@@ -60,7 +63,7 @@ export default function CustomerDetailPage() {
             sessions: data.sessions || []
           });
         } else {
-          toast.error('Không tìm thấy dữ liệu khách hàng');
+          toast.error(`Không tìm thấy dữ liệu cho ID: ${id}`);
         }
       } catch (error) {
         console.error('Error loading customer:', error);
