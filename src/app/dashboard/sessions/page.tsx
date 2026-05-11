@@ -251,7 +251,7 @@ export default function SessionsPage() {
             );
           })}
         </div>
-      </div>
+      )}
       
       {/* Success Toast */}
       <AnimatePresence>
