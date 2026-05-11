@@ -93,8 +93,8 @@ export async function getCustomerById(id: string) {
       .eq('id', id)
       .single();
 
-    if (error) {
-      console.error('Error fetching customer detail from DB:', error);
+    if (error || !data) {
+      if (error) console.error('Error fetching customer detail from DB:', error);
       // Fallback to mock data if not found in DB
       const mockCustomer = MOCK_CUSTOMERS.find(c => c.id === id);
       if (mockCustomer) {
