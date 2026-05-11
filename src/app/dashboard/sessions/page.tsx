@@ -12,13 +12,17 @@ import {
   CheckCircle2,
   Loader2,
   TrendingUp,
-  ChevronDown
+  ChevronDown,
+  X,
+  FileEdit,
+  Save,
+  AlertCircle
 } from 'lucide-react';
 import { getSessionsWithDetails, completeSession, getSessionLogs } from '@/services/booking-actions';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { AnimatePresence } from 'framer-motion';
-import { MOCK_BOOKINGS } from '@/constants/mock-data';
+import { MOCK_BOOKINGS, MOCK_SESSIONS } from '@/constants/mock-data';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -30,6 +34,7 @@ export default function SessionsPage() {
   const [showToast, setShowToast] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Hoàn thành'];
 
@@ -38,7 +43,6 @@ export default function SessionsPage() {
   }, []);
 
   const loadSessions = async () => {
-    // Only fetch in background, don't show full page spinner
     const data = await getSessionsWithDetails();
     if (data && data.length > 0) {
       setSessions(data);
@@ -48,7 +52,6 @@ export default function SessionsPage() {
   const handleUpdateProgress = async (bookingId: string) => {
     setUpdatingId(bookingId);
     try {
-      // 1. Try real update if in database
       const logs = await getSessionLogs(bookingId);
       const nextSession = logs.find((log: any) => log.status === 'scheduled');
       
@@ -56,7 +59,6 @@ export default function SessionsPage() {
         await completeSession(nextSession.id, bookingId);
         await loadSessions();
       } else {
-        // 2. Simulation for Mock Data
         setSessions(prev => prev.map(s => {
           if (s.id === bookingId) {
             const nextCompleted = (s.completed_sessions || 0) + 1;
@@ -68,7 +70,6 @@ export default function SessionsPage() {
         }));
       }
       
-      // Show success toast
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } catch (error) {
@@ -83,12 +84,12 @@ export default function SessionsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Thẻ liệu trình</h1>
-          <p className="text-slate-500 font-medium mt-1">Theo dõi tiến độ chăm sóc khách hàng</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Thẻ liệu trình</h1>
+          <p className="text-slate-500 font-bold mt-1 uppercase text-xs tracking-widest">Theo dõi tiến độ chăm sóc khách hàng</p>
         </div>
         <div className="flex items-center gap-3 bg-emerald-50 px-5 py-3 rounded-2xl border border-emerald-100">
           <TrendingUp className="text-emerald-500 w-5 h-5" />
-          <span className="text-emerald-700 font-bold text-sm">Hiệu suất: +12% tháng này</span>
+          <span className="text-emerald-700 font-black text-sm uppercase tracking-tighter">Hiệu suất: +12% tháng này</span>
         </div>
       </div>
 
@@ -99,26 +100,17 @@ export default function SessionsPage() {
           <input 
             type="text" 
             placeholder="Tìm tên khách hàng hoặc mã hợp đồng..." 
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-slate-700"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-700"
           />
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto relative">
-          <button className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors font-bold text-slate-600 text-sm">
-            <Filter className="w-4 h-4" />
-            Bộ lọc
-          </button>
-          
-          {/* Custom Premium Select */}
           <div className="relative min-w-[200px]">
             <button 
               onClick={(e) => { e.stopPropagation(); setIsFilterOpen(!isFilterOpen); }}
-              className="w-full flex items-center justify-between px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:border-primary/30 transition-all font-bold text-slate-600 text-sm outline-none"
+              className="w-full flex items-center justify-between px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:border-primary/30 transition-all font-black text-slate-600 text-sm outline-none uppercase tracking-widest"
             >
               <span>{statusFilter}</span>
-              <motion.div
-                animate={{ rotate: isFilterOpen ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.div animate={{ rotate: isFilterOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
                 <ChevronDown className="w-4 h-4" />
               </motion.div>
             </button>
@@ -136,10 +128,8 @@ export default function SessionsPage() {
                       key={option}
                       onClick={() => { setStatusFilter(option); setIsFilterOpen(false); }}
                       className={cn(
-                        "w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition-all",
-                        statusFilter === option 
-                          ? "bg-primary text-white shadow-lg shadow-pink-100" 
-                          : "text-slate-600 hover:bg-slate-50"
+                        "w-full text-left px-4 py-2.5 rounded-xl text-sm font-black transition-all uppercase tracking-widest",
+                        statusFilter === option ? "bg-primary text-white shadow-lg shadow-pink-100" : "text-slate-600 hover:bg-slate-50"
                       )}
                     >
                       {option}
@@ -173,9 +163,9 @@ export default function SessionsPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className="group bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-pink-100/40 transition-all flex flex-col md:flex-row md:items-center gap-8 relative overflow-hidden"
+                onClick={() => setSelectedBooking(booking)}
+                className="group bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-pink-100/40 transition-all flex flex-col md:flex-row md:items-center gap-8 relative overflow-hidden cursor-pointer"
               >
-                {/* Decorative background element */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
 
                 <div className="w-20 h-20 bg-gradient-to-br from-pink-50 to-white rounded-3xl flex items-center justify-center flex-shrink-0 border border-pink-100 shadow-inner group-hover:scale-110 transition-transform">
@@ -184,37 +174,37 @@ export default function SessionsPage() {
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-slate-900 truncate">
+                    <h3 className="text-xl font-black text-slate-900 truncate tracking-tight uppercase">
                       {booking.customers?.name_mother}
                     </h3>
-                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
                       {booking.booking_number}
                     </span>
-                    <span className={`px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest ${
-                      isFullyCompleted ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-primary/10 text-primary border border-primary/10'
-                    }`}>
+                    <span className={cn(
+                      "px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border",
+                      isFullyCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-primary/5 text-primary border-primary/10'
+                    )}>
                       {isFullyCompleted ? 'Hoàn thành' : 'Đang chăm sóc'}
                     </span>
                   </div>
                   
-                  <div className="flex flex-wrap gap-y-3 gap-x-8 text-sm font-medium text-slate-500 mb-5">
+                  <div className="flex flex-wrap gap-y-3 gap-x-8 text-sm font-bold text-slate-500 mb-5">
                     <div className="flex items-center gap-2.5">
                       <Clock className="w-4 h-4 text-primary/60" />
                       Tiến độ: <span className="text-slate-900 font-black">{booking.completed_sessions || 0}/{booking.total_sessions || 21} buổi</span>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <Calendar className="w-4 h-4 text-primary/60" />
-                      Bắt đầu: <span className="text-slate-900 font-black">{booking.start_date || '---'}</span>
+                      Bắt đầu: <span className="text-slate-900 font-black tracking-tighter">{booking.start_date || '---'}</span>
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden shadow-inner">
+                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden shadow-inner relative">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${progress}%` }}
                       transition={{ duration: 1, ease: "easeOut" }}
-                      className={`h-full relative ${isFullyCompleted ? 'bg-emerald-500' : 'bg-primary'}`}
+                      className={cn("h-full relative", isFullyCompleted ? 'bg-emerald-500' : 'bg-primary')}
                     >
                       <div className="absolute inset-0 bg-white/20 animate-pulse" />
                     </motion.div>
@@ -224,26 +214,15 @@ export default function SessionsPage() {
                 <div className="flex items-center gap-4 md:border-l md:pl-8 border-slate-100">
                   {!isFullyCompleted ? (
                     <button 
-                      onClick={() => handleUpdateProgress(booking.id)}
+                      onClick={(e) => { e.stopPropagation(); handleUpdateProgress(booking.id); }}
                       disabled={isUpdating}
-                      className="flex items-center gap-3 bg-primary hover:bg-primary-hover disabled:bg-slate-200 text-white px-8 py-4 rounded-2xl font-black transition-all text-sm uppercase tracking-widest shadow-lg shadow-pink-100 active:scale-95 min-w-[200px] justify-center"
+                      className="flex items-center gap-3 bg-primary hover:bg-primary-hover disabled:bg-slate-200 text-white px-8 py-4 rounded-2xl font-black transition-all text-[10px] uppercase tracking-widest shadow-lg shadow-pink-100 active:scale-95 min-w-[180px] justify-center"
                     >
-                      {isUpdating ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          Đang lưu...
-                        </>
-                      ) : (
-                        <>
-                          Cập nhật buổi { (booking.completed_sessions || 0) + 1 }
-                          <ChevronRight className="w-5 h-5" />
-                        </>
-                      )}
+                      {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ChevronRight className="w-4 h-4" /> Cập nhật buổi { (booking.completed_sessions || 0) + 1 }</>}
                     </button>
                   ) : (
-                    <div className="flex items-center gap-3 text-emerald-500 font-black uppercase tracking-widest text-sm bg-emerald-50 px-6 py-4 rounded-2xl border border-emerald-200">
-                      <CheckCircle2 className="w-5 h-5" />
-                      Đã hoàn tất
+                    <div className="flex items-center gap-3 text-emerald-500 font-black uppercase tracking-widest text-[10px] bg-emerald-50 px-6 py-4 rounded-2xl border border-emerald-200">
+                      <CheckCircle2 className="w-4 h-4" /> Đã hoàn tất
                     </div>
                   )}
                 </div>
@@ -253,6 +232,152 @@ export default function SessionsPage() {
         </div>
       )}
       
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {selectedBooking && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedBooking(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white w-full max-w-6xl h-full max-h-[90vh] rounded-[3.5rem] shadow-2xl relative z-10 overflow-hidden flex flex-col border border-white"
+            >
+              {/* Modal Header */}
+              <div className="p-8 pb-4 flex items-center justify-between border-b border-slate-100">
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                    <Flower2 className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Chi tiết liệu trình: {selectedBooking.customers?.name_mother}</h2>
+                    <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">{selectedBooking.package_name} • {selectedBooking.booking_number}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedBooking(null)}
+                  className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-auto p-8 bg-slate-50/50">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Left: Info & Notes */}
+                  <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
+                        <FileEdit className="w-4 h-4 text-primary" /> Ghi chú chăm sóc hôm nay
+                      </h3>
+                      <textarea 
+                        placeholder="Nhập ghi chú quan sát mẹ và bé..."
+                        className="w-full h-40 p-5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all"
+                      />
+                      <button className="w-full mt-4 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all">
+                        <Save className="w-4 h-4" /> Lưu ghi chú
+                      </button>
+                    </div>
+
+                    <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-xl text-white relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-4 relative z-10">Tóm tắt tiến độ</h3>
+                      <div className="grid grid-cols-2 gap-6 relative z-10">
+                        <div>
+                          <p className="text-xs opacity-60 font-bold uppercase">Hoàn thành</p>
+                          <p className="text-2xl font-black">{selectedBooking.completed_sessions}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs opacity-60 font-bold uppercase">Còn lại</p>
+                          <p className="text-2xl font-black">{(selectedBooking.total_sessions || 21) - (selectedBooking.completed_sessions || 0)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Calendar Grid */}
+                  <div className="lg:col-span-2">
+                    <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 h-full">
+                      <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                          <Calendar className="w-6 h-6 text-primary" /> Lịch trình buổi tập
+                        </h3>
+                        <div className="flex gap-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                            <span className="text-[10px] font-black uppercase text-slate-400">Xong</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-rose-500 rounded-full shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                            <span className="text-[10px] font-black uppercase text-slate-400">Hủy</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-amber-500 rounded-full shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                            <span className="text-[10px] font-black uppercase text-slate-400">Hôm nay</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-3">
+                        {/* Days of week */}
+                        {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map(day => (
+                          <div key={day} className="text-center py-2">
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{day}</span>
+                          </div>
+                        ))}
+                        
+                        {/* Session slots as days */}
+                        {Array.from({ length: 35 }).map((_, i) => {
+                          const dayNum = i + 1;
+                          const sessionIdx = i; // Map 1-1 for demo
+                          const status = sessionIdx < selectedBooking.completed_sessions ? 'completed' : 
+                                         sessionIdx === selectedBooking.completed_sessions ? 'current' : 
+                                         sessionIdx === 2 ? 'canceled' : 'upcoming';
+
+                          return (
+                            <div key={i} className={cn(
+                              "aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all cursor-pointer group relative overflow-hidden",
+                              status === 'completed' ? 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100 shadow-sm' :
+                              status === 'canceled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm' :
+                              status === 'current' ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
+                              'bg-slate-50/50 border-slate-100 text-slate-300 hover:bg-slate-100'
+                            )}>
+                              {status === 'current' && <div className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full m-2 animate-ping" />}
+                              <span className="text-xs font-black mb-1">{dayNum}</span>
+                              {status !== 'upcoming' && status !== 'current' && (
+                                <p className="text-[8px] font-bold uppercase opacity-60">
+                                  {status === 'completed' ? 'Xong' : 'Hủy'}
+                                </p>
+                              )}
+                              {status === 'current' && <p className="text-[8px] font-black uppercase text-amber-600">Đang làm</p>}
+                              
+                              {/* Quick Tooltip on Hover */}
+                              <div className="absolute inset-0 bg-slate-900/90 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center z-20 pointer-events-none">
+                                <p className="text-[7px] font-black uppercase mb-1">Ghi chú</p>
+                                <p className="text-[9px] font-bold leading-tight">
+                                  {status === 'completed' ? 'Mẹ & bé khỏe' : status === 'canceled' ? 'Khách bận' : 'Chưa cập nhật'}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      
       {/* Success Toast */}
       <AnimatePresence>
         {showToast && (
@@ -260,7 +385,7 @@ export default function SessionsPage() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 border border-white/10"
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 border border-white/10"
           >
             <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
               <CheckCircle2 className="w-5 h-5 text-white" />
