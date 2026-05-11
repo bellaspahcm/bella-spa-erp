@@ -86,7 +86,7 @@ export async function getCustomerById(id: string) {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('customers')
-    .select('*, bookings(*), session_logs(*)')
+    .select('*, bookings(*, session_logs(*))')
     .eq('id', id)
     .single();
 
@@ -103,6 +103,6 @@ export async function getCustomerById(id: string) {
     deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
     package_name: latestBooking?.package_name || 'Chưa đăng ký',
     dob_expected: data.dob_expected || (latestBooking?.start_date),
-    sessions: data.session_logs || []
+    sessions: latestBooking?.session_logs || []
   };
 }
