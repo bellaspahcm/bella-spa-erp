@@ -40,6 +40,8 @@ export default function SessionsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [userRole, setUserRole] = useState<'KTV' | 'ADMIN'>('KTV');
 
+  const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Hoàn thành'];
+
   useEffect(() => {
     loadSessions();
   }, []);
