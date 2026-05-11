@@ -95,22 +95,7 @@ export async function getCustomerById(id: string) {
 
     if (error || !data) {
       if (error) console.error('Error fetching customer detail from DB:', error);
-      // Fallback to mock data if not found in DB
-      const mockCustomer = MOCK_CUSTOMERS.find(c => c.id === id);
-      if (mockCustomer) {
-        const mockBooking = MOCK_BOOKINGS.find(b => b.customer_id === id);
-        const mockSessions = MOCK_SESSIONS.filter(s => s.booking_id === mockBooking?.id);
-        
-        return {
-          ...mockCustomer,
-          status: mockCustomer.status || 'active',
-          deposit_amount: mockCustomer.deposit_amount || '0đ',
-          package_name: mockCustomer.package_name || 'Gói VIP',
-          dob_expected: mockCustomer.dob_expected || 'Chưa có',
-          sessions: mockSessions || []
-        };
-      }
-      return null;
+      return getMockCustomerFallback(id);
     }
 
     // Flatten or map the data to match UI expectations
@@ -125,6 +110,24 @@ export async function getCustomerById(id: string) {
     };
   } catch (err) {
     console.error('Exception in getCustomerById:', err);
-    return null;
+    return getMockCustomerFallback(id);
   }
+}
+
+function getMockCustomerFallback(id: string) {
+  const mockCustomer = MOCK_CUSTOMERS.find(c => String(c.id) === String(id));
+  if (mockCustomer) {
+    const mockBooking = MOCK_BOOKINGS.find(b => String(b.customer_id) === String(id));
+    const mockSessions = MOCK_SESSIONS.filter(s => String(s.booking_id) === String(mockBooking?.id));
+    
+    return {
+      ...mockCustomer,
+      status: mockCustomer.status || 'active',
+      deposit_amount: mockCustomer.deposit_amount || '0đ',
+      package_name: mockCustomer.package_name || 'Gói VIP',
+      dob_expected: mockCustomer.dob_expected || 'Chưa có',
+      sessions: mockSessions || []
+    };
+  }
+  return null;
 }
