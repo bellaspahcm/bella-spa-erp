@@ -81,3 +81,28 @@ export async function createCustomer(formData: any) {
   revalidatePath('/dashboard/customers');
   return { data: customer };
 }
+
+export async function getCustomerById(id: string) {
+  const supabase = (await createClient()) as any;
+  const { data, error } = await supabase
+    .from('customers')
+    .select('*, bookings(*), session_logs(*)')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching customer detail:', error);
+    return null;
+  }
+
+  // Flatten or map the data to match UI expectations
+  const latestBooking = data.bookings && data.bookings.length > 0 ? data.bookings[0] : null;
+  return {
+    ...data,
+    status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
+    deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
+    package_name: latestBooking?.package_name || 'Chưa đăng ký',
+    dob_expected: data.dob_expected || (latestBooking?.start_date),
+    sessions: data.session_logs || []
+  };
+}

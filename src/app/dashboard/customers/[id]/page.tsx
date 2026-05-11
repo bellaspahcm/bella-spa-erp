@@ -21,47 +21,73 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+import { getCustomerById } from '@/services/customer-actions';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
-import { MOCK_CUSTOMERS, MOCK_BOOKINGS, MOCK_SESSIONS } from '@/constants/mock-data';
 
 export default function CustomerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const [customer, setCustomer] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const baseCustomer = MOCK_CUSTOMERS.find(c => c.id === id) || MOCK_CUSTOMERS[0];
-  const booking = MOCK_BOOKINGS.find(b => b.customer_id === id) || {
-    id: 'none',
-    package_name: baseCustomer.package_name || 'Chưa đăng ký',
-    total_sessions: 0,
-    completed_sessions: 0,
-    start_date: baseCustomer.status === 'deposit' ? 'Dự kiến sau sinh' : 'Chưa có',
-    deposit_amount: baseCustomer.deposit_amount || '0đ',
-    full_price: '0đ'
-  };
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await getCustomerById(id);
+        if (data) {
+          // Map database structure to UI structure
+          setCustomer({
+            ...data,
+            baby: { 
+              name: data.name_baby || 'Chưa có', 
+              dob: data.dob_baby || data.dob_expected || 'Chưa cập nhật',
+              gender: 'Chưa xác định'
+            },
+            booking: {
+              package: data.package_name,
+              total_sessions: data.bookings?.[0]?.total_sessions || 0,
+              completed_sessions: data.bookings?.[0]?.completed_sessions || 0,
+              start_date: data.bookings?.[0]?.start_date || (data.status === 'deposit' ? 'Dự kiến sau sinh' : 'Chưa có'),
+              deposit: data.deposit_amount || '0đ',
+              remaining: data.bookings?.[0]?.full_price ? `${data.bookings[0].full_price.toLocaleString()}đ` : '0đ'
+            },
+            sessions: data.sessions || []
+          });
+        } else {
+          toast.error('Không tìm thấy dữ liệu khách hàng');
+        }
+      } catch (error) {
+        console.error('Error loading customer:', error);
+        toast.error('Lỗi khi tải dữ liệu');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [id]);
 
-  const sessions = MOCK_SESSIONS.filter(s => s.booking_id === booking.id);
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-slate-50/30">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
+      </div>
+    );
+  }
 
-  const customer = {
-    ...baseCustomer,
-    baby: { 
-      name: baseCustomer.name_baby || 'Chưa có', 
-      dob: baseCustomer.dob_baby || baseCustomer.dob_expected || 'Chưa cập nhật',
-      gender: 'Chưa xác định'
-    },
-    booking: {
-      package: booking.package_name,
-      total_sessions: booking.total_sessions,
-      completed_sessions: booking.completed_sessions,
-      start_date: booking.start_date,
-      deposit: booking.deposit_amount,
-      remaining: booking.full_price
-    },
-    sessions: sessions
-  };
+  if (!customer) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/30">
+        <h2 className="text-xl font-bold text-slate-800 mb-4">Không tìm thấy khách hàng</h2>
+        <button onClick={() => router.back()} className="text-rose-500 font-bold hover:underline">Quay lại danh sách</button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
