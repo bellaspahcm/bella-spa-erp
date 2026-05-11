@@ -12,7 +12,8 @@ import {
   LogOut,
   Flower2,
   ChevronLeft,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -27,6 +28,7 @@ const menuItems = [
   { icon: Calendar, label: 'Lịch hẹn', href: '/dashboard/bookings' },
   { icon: Flower2, label: 'Thẻ liệu trình', href: '/dashboard/sessions' },
   { icon: MessageSquare, label: 'Tin nhắn', href: '/dashboard/chat' },
+  { icon: Sparkles, label: 'Dịch vụ', href: '/dashboard/services' },
   { icon: DollarSign, label: 'Tài chính', href: '/dashboard/finance' },
   { icon: Settings, label: 'Cài đặt', href: '/dashboard/settings' },
 ];

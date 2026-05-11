@@ -25,7 +25,8 @@ import {
   Edit2,
   Trash2,
   MessageCircle,
-  ClipboardList
+  ClipboardList,
+  ChevronDown
 } from 'lucide-react';
 
 const mockCustomers = [
@@ -41,6 +42,8 @@ export default function CustomersPage() {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState('');
 
   const toggleMenu = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -305,14 +308,45 @@ export default function CustomersPage() {
                       <label className="text-sm font-bold text-slate-700 ml-1">Ngày sinh Bé / Dự sinh</label>
                       <input type="date" className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative">
                       <label className="text-sm font-bold text-slate-700 ml-1">Gói dịch vụ đăng ký</label>
-                      <select className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none appearance-none font-bold text-slate-600">
-                        <option>Chọn gói...</option>
-                        <option>Mẹ Bầu Toàn Diện</option>
-                        <option>Phục Hồi Sau Sinh</option>
-                        <option>Chăm Sóc Bé Pro</option>
-                      </select>
+                      <div className="relative">
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); setIsServiceDropdownOpen(!isServiceDropdownOpen); }}
+                          className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none text-left font-bold text-slate-600"
+                        >
+                          <span>{selectedPackage || 'Chọn gói...'}</span>
+                          <motion.div animate={{ rotate: isServiceDropdownOpen ? 180 : 0 }}>
+                            <ChevronDown className="w-4 h-4" />
+                          </motion.div>
+                        </button>
+                        
+                        <AnimatePresence>
+                          {isServiceDropdownOpen && (
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 4, scale: 1 }}
+                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-slate-100 z-[60] overflow-hidden p-2"
+                            >
+                              {['Mẹ Bầu Toàn Diện', 'Phục Hồi Sau Sinh', 'Chăm Sóc Bé Pro'].map((pkg) => (
+                                <button
+                                  key={pkg}
+                                  type="button"
+                                  onClick={() => { setSelectedPackage(pkg); setIsServiceDropdownOpen(false); }}
+                                  className={cn(
+                                    "w-full text-left px-4 py-3 rounded-2xl text-sm font-bold transition-all",
+                                    selectedPackage === pkg ? "bg-rose-500 text-white shadow-lg shadow-rose-100" : "text-slate-600 hover:bg-slate-50"
+                                  )}
+                                >
+                                  {pkg}
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Số tiền đặt cọc (VNĐ)</label>
