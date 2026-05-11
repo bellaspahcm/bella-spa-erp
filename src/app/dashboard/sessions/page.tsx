@@ -26,8 +26,8 @@ function cn(...inputs: ClassValue[]) {
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
-  const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
 
@@ -48,7 +48,7 @@ export default function SessionsPage() {
   const handleUpdateProgress = async (bookingId: string) => {
     setUpdatingId(bookingId);
     try {
-      // 1. Get logs to find the next scheduled session
+      // 1. Try real update if in database
       const logs = await getSessionLogs(bookingId);
       const nextSession = logs.find((log: any) => log.status === 'scheduled');
       
@@ -56,8 +56,21 @@ export default function SessionsPage() {
         await completeSession(nextSession.id, bookingId);
         await loadSessions();
       } else {
-        alert('Tất cả buổi đã hoàn thành!');
+        // 2. Simulation for Mock Data
+        setSessions(prev => prev.map(s => {
+          if (s.id === bookingId) {
+            const nextCompleted = (s.completed_sessions || 0) + 1;
+            const total = s.total_sessions || 21;
+            if (nextCompleted > total) return s;
+            return { ...s, completed_sessions: nextCompleted };
+          }
+          return s;
+        }));
       }
+      
+      // Show success toast
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     } catch (error) {
       console.error('Update failed:', error);
     } finally {
@@ -139,12 +152,7 @@ export default function SessionsPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <Loader2 className="w-10 h-10 text-primary animate-spin" />
-          <p className="text-slate-500 font-bold animate-pulse">Đang tải dữ liệu...</p>
-        </div>
-      ) : sessions.length === 0 ? (
+      {sessions.length === 0 ? (
         <div className="bg-white rounded-[3rem] p-20 text-center border border-dashed border-slate-200">
           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <Flower2 className="w-10 h-10 text-slate-300" />
@@ -243,7 +251,24 @@ export default function SessionsPage() {
             );
           })}
         </div>
-      )}
+      </div>
+      
+      {/* Success Toast */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 border border-white/10"
+          >
+            <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+              <CheckCircle2 className="w-5 h-5 text-white" />
+            </div>
+            Cập nhật tiến độ thành công!
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
