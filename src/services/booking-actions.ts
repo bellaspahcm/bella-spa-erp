@@ -45,7 +45,7 @@ export async function createBooking(formData: any) {
         deposit_amount: validatedData.deposit_amount,
         total_sessions: validatedData.total_sessions,
         start_date: validatedData.start_date || null,
-      },
+      } as any,
     ])
     .select()
     .single();
@@ -65,7 +65,7 @@ export async function createBooking(formData: any) {
 
   const { error: sessionsError } = await supabase
     .from('session_logs')
-    .insert(sessionLogs);
+    .insert(sessionLogs as any);
 
   if (sessionsError) {
     console.error('Error creating session logs:', sessionsError);

@@ -43,7 +43,7 @@ export async function createCustomer(formData: any) {
         notes: validatedData.notes || null,
         dob_baby: validatedData.dob_baby || null,
         dob_expected: validatedData.dob_expected || null,
-      },
+      } as any,
     ])
     .select()
     .single();
