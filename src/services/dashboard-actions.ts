@@ -65,9 +65,9 @@ export async function getUpcomingSessions() {
     .order('assigned_date', { ascending: true })
     .limit(10);
 
-  if (error || !data || data.length === 0) {
-    console.error('Error fetching upcoming sessions or empty:', error);
-    return DEMO_SESSIONS;
+  if (error) {
+    console.error('Error fetching upcoming sessions:', error);
+    return DEMO_SESSIONS; // Only fallback on actual error, not empty data
   }
 
   return (data || []).map((s: any) => ({
@@ -91,12 +91,12 @@ export async function getTopTechnicians() {
     .eq('role', 'ktv')
     .limit(3);
 
-  if (error || !data || data.length === 0) {
-    console.error('Error fetching top technicians or empty:', error);
+  if (error) {
+    console.error('Error fetching top technicians:', error);
     return DEMO_TECH_TOP;
   }
 
-  return data.map((user: any) => {
+  return (data || []).map((user: any) => {
     const reviews = (user as any).session_reviews || [];
     const avgRating = reviews.length 
       ? reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviews.length 
