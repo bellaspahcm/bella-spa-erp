@@ -12,43 +12,44 @@ export async function getFinancialOverview() {
     .select('*')
     .order('created_at', { ascending: false });
 
-  if (revenueError) {
-    console.error('Error fetching finance data:', revenueError);
+  if (revenueError || !revenueData || revenueData.length === 0) {
+    console.error('Error fetching finance data or empty:', revenueError);
+    // Extended mock transactions for a fuller UI
+    const mockTransactions = [
+      { id: '1', type: 'revenue', category: 'Dịch vụ', amount: '+2,400,000', date: '12/05/2026', method: 'Chuyển khoản', status: 'confirmed' },
+      { id: '2', type: 'expense', category: 'Vật tư', amount: '-850,000', date: '12/05/2026', method: 'Tiền mặt', status: 'pending' },
+      { id: '3', type: 'revenue', category: 'Cọc gói', amount: '+5,000,000', date: '11/05/2026', method: 'ZaloPay', status: 'confirmed' },
+      { id: '4', type: 'revenue', category: 'Thanh toán đợt 2', amount: '+8,500,000', date: '11/05/2026', method: 'Chuyển khoản', status: 'confirmed' },
+      { id: '5', type: 'expense', category: 'Lương nhân viên', amount: '-15,000,000', date: '10/05/2026', method: 'Chuyển khoản', status: 'confirmed' },
+      { id: '6', type: 'revenue', category: 'Dịch vụ lẻ', amount: '+550,000', date: '10/05/2026', method: 'Tiền mặt', status: 'confirmed' },
+      { id: '7', type: 'expense', category: 'Điện nước', amount: '-2,100,000', date: '09/05/2026', method: 'Chuyển khoản', status: 'confirmed' },
+    ];
+
     return {
-      totalBalance: 0,
-      totalRevenueMonth: 0,
-      totalExpenseMonth: 0,
-      transactions: []
+      totalBalance: DEMO_REVENUE.totalBalance,
+      totalRevenueMonth: DEMO_REVENUE.totalRevenueMonth,
+      totalExpenseMonth: DEMO_REVENUE.totalExpenseMonth,
+      transactions: mockTransactions
     };
   }
 
   const totalBalance = revenueData?.reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0) || 0;
   
-  // Simple mock for demo purposes if table is empty
-  const mockTransactions = [
-    { id: '1', type: 'revenue', category: 'Dịch vụ', amount: '+2,400,000', date: '11/05/2026', method: 'Chuyển khoản', status: 'confirmed' },
-    { id: '2', type: 'expense', category: 'Vật tư', amount: '-850,000', date: '11/05/2026', method: 'Tiền mặt', status: 'pending' },
-    { id: '3', type: 'revenue', category: 'Cọc gói', amount: '+5,000,000', date: '10/05/2026', method: 'ZaloPay', status: 'confirmed' },
-  ];
-
   const dbTransactions = (revenueData || []).map((r: any) => ({
     id: r.id,
     type: Number(r.amount) >= 0 ? 'revenue' : 'expense',
-    category: r.notes || 'Dịch vụ',
+    category: r.notes || (Number(r.amount) >= 0 ? 'Dịch vụ' : 'Vật tư'),
     amount: (Number(r.amount) >= 0 ? '+' : '') + Number(r.amount).toLocaleString() + 'đ',
     date: ensure2026(new Date(r.created_at).toLocaleDateString('vi-VN')),
     method: 'Chuyển khoản',
     status: r.status || 'confirmed'
   }));
 
-  const finalRevenueMonth = totalBalance > 0 ? totalBalance : DEMO_REVENUE.totalRevenueMonth;
-  const finalExpenseMonth = DEMO_REVENUE.totalExpenseMonth;
-
   return {
     totalBalance: totalBalance > 0 ? totalBalance : DEMO_REVENUE.totalBalance,
-    totalRevenueMonth: finalRevenueMonth,
-    totalExpenseMonth: finalExpenseMonth,
-    transactions: dbTransactions.length > 0 ? dbTransactions : mockTransactions
+    totalRevenueMonth: totalBalance > 0 ? totalBalance : DEMO_REVENUE.totalRevenueMonth,
+    totalExpenseMonth: DEMO_REVENUE.totalExpenseMonth,
+    transactions: dbTransactions
   };
 }
 
