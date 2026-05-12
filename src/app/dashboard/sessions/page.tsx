@@ -31,6 +31,32 @@ export default function SessionsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('Cập nhật thành công!');
+  
+  // PERSISTENCE FOR DEMO: Track manual updates locally since DB might be restricted
+  const [localBookingUpdates, setLocalBookingUpdates] = useState<Record<string, number>>({});
+  const [localSessionLogUpdates, setLocalSessionLogUpdates] = useState<Record<string, string>>({});
+
+  // Sync with localStorage on mount
+  useEffect(() => {
+    const savedBookingUpdates = localStorage.getItem('demo_booking_updates');
+    const savedLogUpdates = localStorage.getItem('demo_log_updates');
+    if (savedBookingUpdates) setLocalBookingUpdates(JSON.parse(savedBookingUpdates));
+    if (savedLogUpdates) setLocalSessionLogUpdates(JSON.parse(savedLogUpdates));
+  }, []);
+
+  // Save to localStorage when changed
+  useEffect(() => {
+    if (Object.keys(localBookingUpdates).length > 0) {
+      localStorage.setItem('demo_booking_updates', JSON.stringify(localBookingUpdates));
+    }
+  }, [localBookingUpdates]);
+
+  useEffect(() => {
+    if (Object.keys(localSessionLogUpdates).length > 0) {
+      localStorage.setItem('demo_log_updates', JSON.stringify(localSessionLogUpdates));
+    }
+  }, [localSessionLogUpdates]);
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
@@ -77,16 +103,21 @@ export default function SessionsPage() {
   const fetchSessionLogs = async (bookingId: string) => {
     setIsLoadingLogs(true);
     try {
-      const data = await getSessionLogs(bookingId);
-      setSessionLogs(data);
+      const logs = await getSessionLogs(bookingId);
+      // Apply local updates
+      const mergedLogs = logs.map((log: any) => ({
+        ...log,
+        status: localSessionLogUpdates[log.id] ?? log.status
+      }));
+      setSessionLogs(mergedLogs);
       
       // Select the first scheduled session or the last completed one by default
-      const nextScheduled = data.find((log: any) => log.status === 'scheduled');
+      const nextScheduled = mergedLogs.find((log: any) => log.status === 'scheduled');
       if (nextScheduled) {
         setSelectedSessionLog(nextScheduled);
         setCurrentNote(nextScheduled.notes || '');
-      } else if (data.length > 0) {
-        const lastLog = data[data.length - 1];
+      } else if (mergedLogs.length > 0) {
+        const lastLog = mergedLogs[mergedLogs.length - 1];
         setSelectedSessionLog(lastLog);
         setCurrentNote(lastLog.notes || '');
       }
@@ -100,8 +131,13 @@ export default function SessionsPage() {
   const loadSessions = async () => {
     const data = await getSessionsWithDetails();
     if (data && data.length > 0) {
-      setSessions(data);
-      applyFilters(data, searchQuery, statusFilter);
+      // Apply local updates
+      const mergedData = data.map((b: any) => ({
+        ...b,
+        completed_sessions: localBookingUpdates[b.id] ?? b.completed_sessions
+      }));
+      setSessions(mergedData);
+      applyFilters(mergedData, searchQuery, statusFilter);
     }
   };
 
@@ -149,23 +185,23 @@ export default function SessionsPage() {
     setUpdatingId(bookingId);
     
     // OPTIMISTIC UPDATE for Demo
-    setSessions(prev => prev.map(s => 
-      s.id === bookingId ? { ...s, completed_sessions: (s.completed_sessions || 0) + 1, last_updated_date: new Date().toISOString().split('T')[0] } : s
-    ));
+    const newCount = (currentBooking.completed_sessions || 0) + 1;
+    
+    // PERSIST LOCALLY
+    setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: newCount }));
 
     try {
       const logs = await getSessionLogs(bookingId);
-      const nextSession = logs.find((log: any) => log.status === 'scheduled');
+      const nextSession = logs.find((log: any) => {
+        const status = localSessionLogUpdates[log.id] ?? log.status;
+        return status === 'scheduled';
+      });
       
       if (nextSession) {
-        // Update local sessionLogs if this booking is selected
-        if (selectedBooking?.id === bookingId) {
-          setSessionLogs(prev => prev.map(log => 
-            log.id === nextSession.id ? { ...log, status: 'completed', completed_date: new Date().toISOString() } : log
-          ));
-        }
-
+        setLocalSessionLogUpdates(prev => ({ ...prev, [nextSession.id]: 'completed' }));
+        
         await completeSession(nextSession.id, bookingId);
+        // loadSessions and fetchSessionLogs will now use the local updates
         await loadSessions();
         if (selectedBooking?.id === bookingId) {
           await fetchSessionLogs(bookingId);
@@ -188,32 +224,26 @@ export default function SessionsPage() {
     const newStatus = currentStatus === 'completed' ? 'scheduled' : 'completed';
     setUpdatingId(sessionId);
     
-    // OPTIMISTIC UPDATE for Demo
-    setSessionLogs(prev => prev.map(log => 
-      log.id === sessionId ? { ...log, status: newStatus, completed_date: newStatus === 'completed' ? new Date().toISOString() : null } : log
-    ));
+    // PERSIST LOCALLY
+    setLocalSessionLogUpdates(prev => ({ ...prev, [sessionId]: newStatus }));
 
-    // Update the booking session count locally too
-    setSessions(prev => prev.map(s => {
-      if (s.id === selectedBooking.id) {
+    // Update booking count locally
+    setSessions(prev => {
+      const target = prev.find(s => s.id === selectedBooking.id);
+      if (target) {
         const diff = newStatus === 'completed' ? 1 : -1;
-        return { ...s, completed_sessions: Math.max(0, (s.completed_sessions || 0) + diff) };
+        const newCount = Math.max(0, (target.completed_sessions || 0) + diff);
+        setLocalBookingUpdates(l => ({ ...l, [selectedBooking.id]: newCount }));
       }
-      return s;
-    }));
+      return prev;
+    });
 
     try {
       if (newStatus === 'completed') {
         await completeSession(sessionId, selectedBooking.id);
       } else {
         await updateSessionLog(sessionId, { status: 'scheduled', completed_date: null });
-        const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) - 1);
-        await (createClient() as any).from('bookings').update({ completed_sessions: newCount } as any).eq('id', selectedBooking.id);
       }
-      
-      setToastMessage(newStatus === 'completed' ? 'Đã xác nhận hoàn thành buổi tập!' : 'Đã hoàn tác trạng thái buổi tập!');
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 2000);
       
       await loadSessions();
       await fetchSessionLogs(selectedBooking.id);
