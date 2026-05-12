@@ -38,6 +38,8 @@ export default function SessionsPage() {
   const [selectedSessionLog, setSelectedSessionLog] = useState<any>(null);
   const [currentNote, setCurrentNote] = useState('');
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [quickNoteBookingId, setQuickNoteBookingId] = useState<string | null>(null);
+  const [quickNoteValue, setQuickNoteValue] = useState('');
 
   const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Hoàn thành'];
 
@@ -86,7 +88,7 @@ export default function SessionsPage() {
     return booking.last_updated_date === today;
   };
 
-  const handleUpdateProgress = async (bookingId: string) => {
+  const handleUpdateProgress = async (bookingId: string, note: string = '') => {
     const booking = sessions.find(s => s.id === bookingId);
     
     if (isUpdatedToday(booking) && userRole !== 'ADMIN') {
@@ -102,7 +104,14 @@ export default function SessionsPage() {
       const nextSession = logs.find((log: any) => log.status === 'scheduled');
       
       if (nextSession) {
+        // Update status to completed
         await completeSession(nextSession.id, bookingId);
+        
+        // If a note was provided, save it too
+        if (note.trim()) {
+          await saveSessionNote(nextSession.id, note);
+        }
+
         await loadSessions();
         if (selectedBooking?.id === bookingId) {
           await fetchSessionLogs(bookingId);
@@ -338,26 +347,77 @@ export default function SessionsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 md:border-l md:pl-8 border-slate-100">
+                <div className="flex items-center gap-4 md:border-l md:pl-8 border-slate-100 min-w-[200px] justify-center relative">
                   {!isFullyCompleted ? (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleUpdateProgress(booking.id); }}
-                      disabled={isUpdating || (alreadyDoneToday && userRole !== 'ADMIN')}
-                      className={cn(
-                        "flex items-center gap-3 px-8 py-4 rounded-2xl font-black transition-all text-[10px] uppercase tracking-widest min-w-[180px] justify-center shadow-lg active:scale-95",
-                        alreadyDoneToday && userRole !== 'ADMIN' 
-                          ? "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed" 
-                          : "bg-primary text-white shadow-pink-100 hover:bg-primary-hover"
-                      )}
-                    >
-                      {isUpdating ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : alreadyDoneToday && userRole !== 'ADMIN' ? (
-                        <><CheckCircle2 className="w-4 h-4" /> Đã xong hôm nay</>
-                      ) : (
-                        <><ChevronRight className="w-4 h-4" /> Cập nhật buổi { (booking.completed_sessions || 0) + 1 }</>
-                      )}
-                    </button>
+                    <div className="relative w-full">
+                      <AnimatePresence>
+                        {quickNoteBookingId === booking.id && (
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute bottom-full right-0 mb-4 w-72 bg-white rounded-[2rem] shadow-2xl border border-pink-100 p-6 z-[100]"
+                          >
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-3">Ghi chú nhanh buổi {(booking.completed_sessions || 0) + 1}</h4>
+                            <textarea 
+                              autoFocus
+                              value={quickNoteValue}
+                              onChange={(e) => setQuickNoteValue(e.target.value)}
+                              placeholder="Mẹ và bé khỏe mạnh..."
+                              className="w-full h-24 p-4 bg-slate-50 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none mb-4"
+                            />
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setQuickNoteBookingId(null); }}
+                                className="flex-1 py-3 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:bg-slate-50"
+                              >
+                                Đóng
+                              </button>
+                              <button 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  handleUpdateProgress(booking.id, quickNoteValue); 
+                                  setQuickNoteBookingId(null);
+                                  setQuickNoteValue('');
+                                }}
+                                className="flex-1 bg-primary text-white py-3 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-pink-100"
+                              >
+                                Xác nhận
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          if (alreadyDoneToday && userRole !== 'ADMIN') {
+                            setToastMessage('Bạn đã cập nhật buổi tập hôm nay rồi!');
+                            setShowToast(true);
+                            setTimeout(() => setShowToast(false), 3000);
+                            return;
+                          }
+                          setQuickNoteBookingId(booking.id); 
+                        }}
+                        disabled={isUpdating}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-8 py-4 rounded-2xl font-black transition-all text-[10px] uppercase tracking-widest justify-center shadow-lg active:scale-95",
+                          alreadyDoneToday && userRole !== 'ADMIN' 
+                            ? "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed" 
+                            : "bg-primary text-white shadow-pink-100 hover:bg-primary-hover"
+                        )}
+                      >
+                        {isUpdating ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : alreadyDoneToday && userRole !== 'ADMIN' ? (
+                          <><CheckCircle2 className="w-4 h-4" /> Đã xong hôm nay</>
+                        ) : (
+                          <><ChevronRight className="w-4 h-4" /> Cập nhật buổi {(booking.completed_sessions || 0) + 1}</>
+                        )}
+                      </button>
+                    </div>
                   ) : (
                     <div className="flex items-center gap-3 text-emerald-500 font-black uppercase tracking-widest text-[10px] bg-emerald-50 px-6 py-4 rounded-2xl border border-emerald-200">
                       <CheckCircle2 className="w-4 h-4" /> Đã hoàn tất
