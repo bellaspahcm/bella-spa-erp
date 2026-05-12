@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Option C: Deep Rose Luxury (Refined) */
-  --primary: #D81B60;
-  --primary-hover: #AD1457;
+  /* Option C: Deep Rose Luxury (Refined & Softened) */
+  --primary: #9D174D;
+  --primary-hover: #831843;
   --primary-foreground: #ffffff;
   
-  --secondary: #2D3436;
+  --secondary: #1E293B;
   --secondary-foreground: #ffffff;
   
-  --accent: #FF4081;
+  --accent: #BE185D;
   --accent-foreground: #ffffff;
   
-  --background: #FDFEFE;
-  --foreground: #1A1A1A;
+  --background: #FCF8F9;
+  --foreground: #0F172A;
   
   --card: #ffffff;
-  --card-foreground: #1A1A1A;
+  --card-foreground: #0F172A;
   
-  --muted: #F8F9FA;
-  --muted-foreground: #636E72;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
   
   --border: #FCE4EC;
   --input: #FCE4EC;
-  --ring: #D81B60;
+  --ring: #9D174D;
   
   --radius: 1.5rem;
 }
@@ -43,7 +43,7 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
-  --color-pink-deep: #FF0055;
+  --color-pink-deep: #881337;
   
   --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
   
@@ -73,8 +73,8 @@ body {
   font-weight: 400;
   line-height: 1.5;
   background-image: 
-    radial-gradient(circle at 0% 0%, rgba(216, 27, 96, 0.03) 0%, transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(255, 64, 129, 0.03) 0%, transparent 40%);
+    radial-gradient(circle at 0% 0%, rgba(157, 23, 77, 0.04) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(190, 24, 93, 0.04) 0%, transparent 40%);
   background-attachment: fixed;
   min-height: 100vh;
 }
@@ -88,15 +88,16 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Luxury Utilities */
 .luxury-card-dark {
-  background: linear-gradient(135deg, #1A1A1A 0%, #2D3436 100%);
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .luxury-card-pink {
-  background: linear-gradient(135deg, #D81B60 0%, #AD1457 100%);
+  background: linear-gradient(135deg, #9D174D 0%, #831843 50%, #701a3d 100%);
   color: white;
-  box-shadow: 0 20px 40px -15px rgba(216, 27, 96, 0.3);
+  box-shadow: 0 25px 50px -12px rgba(131, 24, 67, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .text-gradient-pink {
