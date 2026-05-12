@@ -242,7 +242,6 @@ export default function SessionsPage() {
       const updates = {
         notes: currentNote,
         assigned_date: selectedDate,
-        assigned_time: selectedTime,
         status: selectedStatus,
         completed_date: selectedStatus === 'completed' ? (selectedSessionLog.completed_date || new Date().toISOString()) : null
       };
