@@ -685,7 +685,15 @@ export default function SessionsPage() {
                             <p className="text-xs font-bold text-slate-400">Đang tải lịch trình...</p>
                           </div>
                         ) : sessionLogs.length > 0 ? (
-                          sessionLogs.map((log, i) => {
+                          <>
+                            {/* Empty placeholders to align with day of week */}
+                            {Array.from({ 
+                              length: sessionLogs[0]?.assigned_date ? new Date(sessionLogs[0].assigned_date).getDay() : 0 
+                            }).map((_, i) => (
+                              <div key={`empty-${i}`} className="aspect-square" />
+                            ))}
+                            
+                            {sessionLogs.map((log, i) => {
                             const status = localSessionLogUpdates[log.id] ?? log.status;
                             const isUpdating = updatingId === log.id;
                             const currentLogsStatus = sessionLogs.map(l => ({ ...l, status: localSessionLogUpdates[l.id] ?? l.status }));
@@ -746,7 +754,8 @@ export default function SessionsPage() {
                                 </div>
                               </div>
                             );
-                          })
+                          })}
+                        </>
                         ) : (
                           <div className="col-span-7 py-20 text-center italic text-slate-400 font-bold">
                             Chưa khởi tạo lịch trình cho hợp đồng này
