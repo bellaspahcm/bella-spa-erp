@@ -429,9 +429,17 @@ export default function DashboardPage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-4 text-sm font-semibold text-muted-foreground">
-                              <span className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-lg">
-                                <Clock className="w-3.5 h-3.5" />
-                                {session.start_time || '--:--'}
+                              <span className={cn(
+                                "flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all",
+                                session.assigned_time 
+                                  ? "bg-slate-100 text-slate-600" 
+                                  : "bg-amber-100 text-amber-700 animate-pulse border border-amber-200"
+                              )}>
+                                <Clock className={cn("w-3.5 h-3.5", !session.assigned_time && "text-amber-600")} />
+                                {session.assigned_time || 'Chưa có giờ'}
+                                {!session.assigned_time && (
+                                  <AlertTriangle className="w-3 h-3 ml-1 text-amber-600" />
+                                )}
                               </span>
                               <span className="flex items-center gap-1.5 bg-pink-50 text-primary px-3 py-1 rounded-lg">
                                 <Diamond className="w-3.5 h-3.5" />
@@ -442,6 +450,13 @@ export default function DashboardPage() {
                                 Buổi {session.session_number || (session.bookings?.completed_sessions || 0) + 1}
                               </span>
                             </div>
+
+                            {!session.assigned_time && (
+                              <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-100 rounded-xl text-[10px] font-black text-amber-700 uppercase tracking-widest shadow-sm">
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                Lưu ý: Cần xác nhận giờ đặt lịch với khách
+                              </div>
+                            )}
 
                             {/* Progress Bar */}
                             <div className="mt-4 max-w-[200px]">
