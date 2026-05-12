@@ -60,7 +60,7 @@ function BookingsContent() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [allBookings, setAllBookings] = useState<any[]>(mockBookings);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [ktvs, setKtvs] = useState<any[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -89,6 +89,7 @@ function BookingsContent() {
   useEffect(() => {
     fetchSessions();
     fetchAllBookings();
+    fetchKtvs();
 
     // REALTIME SUBSCRIPTION
     const supabase = createClient() as any;
@@ -107,6 +108,11 @@ function BookingsContent() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const fetchKtvs = async () => {
+    const data = await getUsers();
+    setKtvs(data.filter((u: any) => u.role === 'ktv'));
+  };
 
   const getMonthDays = (date: Date) => {
     const year = date.getFullYear();
@@ -174,6 +180,7 @@ function BookingsContent() {
         contractId: s.bookings?.booking_number || 'N/A',
         contractDetail: s.notes || 'Không có ghi chú',
         bookingId: s.booking_id,
+        ktvId: s.bookings?.assigned_ktv_id,
         originalStatus: s.status,
         sessionNumber: s.session_number || 1,
         totalSessions: s.bookings?.total_sessions || 21
@@ -188,7 +195,7 @@ function BookingsContent() {
   const handleUpdatePlan = async () => {
     setIsUpdating(true);
     try {
-      // If status changed to completed, use the specialized completeSession action
+      // 1. If status changed to completed, use the specialized completeSession action
       if (modalData.status === 'completed' && modalData.originalStatus !== 'completed') {
         const result = await completeSession(modalData.id, modalData.bookingId);
         if (result.error) {
@@ -198,7 +205,16 @@ function BookingsContent() {
         }
       }
 
-      // Update the rest of the fields (date, time, notes, and status if not handled above)
+      // 2. Update Booking KTV if changed
+      const supabase = createClient() as any;
+      if (modalData.ktvId) {
+        await supabase
+          .from('bookings')
+          .update({ assigned_ktv_id: modalData.ktvId })
+          .eq('id', modalData.bookingId);
+      }
+
+      // 3. Update the rest of the fields (date, time, notes, and status if not handled above)
       const result = await updateSessionLog(modalData.id, {
         assigned_date: modalData.dateString || modalData.date.toISOString().split('T')[0],
         assigned_time: modalData.time,
@@ -413,12 +429,10 @@ function BookingsContent() {
                         customer: session.bookings?.customers?.name_mother || 'Khách hàng',
                         package: session.bookings?.package_name || 'Gói liệu trình',
                         time: session.assigned_time || '09:00 - 11:00',
-                        ktv: session.bookings?.assigned_ktv?.full_name || 'Chưa phân công',
-                        status: session.status,
-                        location: session.bookings?.customers?.address || 'Tại Spa',
-                        sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
                         contractId: session.bookings?.booking_number || 'N/A',
-                        contractDetail: session.notes || 'Không có ghi chú'
+                        contractDetail: session.notes || 'Không có ghi chú',
+                        bookingId: session.booking_id,
+                        ktvId: session.bookings?.assigned_ktv_id
                       };
                       setModalData(detail);
                       setShowDetailModal(true);
@@ -526,12 +540,20 @@ function BookingsContent() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-400 font-bold mb-1">Kỹ thuật viên</p>
-                        <input 
-                          type="text" 
-                          value={modalData.ktv}
-                          onChange={(e) => setModalData({...modalData, ktv: e.target.value})}
+                        <select 
+                          value={modalData.ktvId || ''}
+                          onChange={(e) => {
+                            const ktvId = e.target.value;
+                            const ktvName = ktvs.find(k => k.id === ktvId)?.full_name || 'Chưa phân công';
+                            setModalData({...modalData, ktvId, ktv: ktvName});
+                          }}
                           className="w-full bg-white border-none rounded-xl px-4 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                        />
+                        >
+                          <option value="">Chưa phân công</option>
+                          {ktvs.map(k => (
+                            <option key={k.id} value={k.id}>{k.full_name}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </div>
