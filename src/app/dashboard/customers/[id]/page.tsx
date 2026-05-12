@@ -23,6 +23,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 import { getCustomerById } from '@/services/customer-actions';
+import { completeSession } from '@/services/booking-actions';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { BookingModal } from '@/components/features/BookingModal';
@@ -40,6 +41,47 @@ export default function CustomerDetailPage() {
   const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleCompleteSession = async (sessionId: string, bookingId: string) => {
+    if (!sessionId || !bookingId) return;
+    
+    setIsUpdating(true);
+    try {
+      const result = await completeSession(sessionId, bookingId);
+      if (result.success) {
+        toast.success('Cập nhật tiến độ thành công!');
+        // Refresh data
+        const data = await getCustomerById(id);
+        if (data) {
+          setCustomer({
+            ...data,
+            baby: { 
+              name: data.name_baby || 'Chưa có', 
+              dob: data.dob_baby || data.dob_expected || 'Chưa cập nhật',
+              gender: 'Chưa xác định'
+            },
+            booking: {
+              package: data.package_name,
+              total_sessions: data.bookings?.[0]?.total_sessions || 0,
+              completed_sessions: data.bookings?.[0]?.completed_sessions || 0,
+              start_date: data.bookings?.[0]?.start_date || (data.status === 'deposit' ? 'Dự kiến sau sinh' : 'Chưa có'),
+              deposit: data.deposit_amount || '0đ',
+              full_price: data.bookings?.[0]?.full_price || 0,
+              remaining: data.bookings?.[0]?.full_price ? `${data.bookings[0].full_price.toLocaleString()}đ` : '0đ'
+            },
+            sessions: data.sessions || []
+          });
+        }
+      } else {
+        toast.error(result.error || 'Lỗi khi cập nhật tiến độ');
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -61,6 +103,7 @@ export default function CustomerDetailPage() {
               completed_sessions: data.bookings?.[0]?.completed_sessions || 0,
               start_date: data.bookings?.[0]?.start_date || (data.status === 'deposit' ? 'Dự kiến sau sinh' : 'Chưa có'),
               deposit: data.deposit_amount || '0đ',
+              full_price: data.bookings?.[0]?.full_price || 0,
               remaining: data.bookings?.[0]?.full_price ? `${data.bookings[0].full_price.toLocaleString()}đ` : '0đ'
             },
             sessions: data.sessions || []
@@ -234,7 +277,7 @@ export default function CustomerDetailPage() {
                 <div className="flex gap-4">
                   <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
                     <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Tổng cộng</p>
-                    <p className="font-black text-lg text-white">15,500,000đ</p>
+                    <p className="font-black text-lg text-white">{(customer.booking.full_price || 15500000).toLocaleString()}đ</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
                     <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
@@ -280,6 +323,32 @@ export default function CustomerDetailPage() {
             </div>
 
             <div className="space-y-4">
+              {/* Next Session Action */}
+              {customer.sessions.find((s: any) => s.status === 'scheduled') && (
+                <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-pink-200">
+                      <Clock className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">Buổi tiếp theo</p>
+                      <h4 className="text-xl font-black text-slate-900">Buổi số {customer.sessions.find((s: any) => s.status === 'scheduled').session_number}</h4>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleCompleteSession(
+                      customer.sessions.find((s: any) => s.status === 'scheduled').id,
+                      customer.bookings?.[0]?.id || customer.sessions[0]?.booking_id
+                    )}
+                    disabled={isUpdating}
+                    className="w-full md:w-auto bg-primary hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-rose-200 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                  >
+                    {isUpdating ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <TrendingUp className="w-5 h-5" />}
+                    XÁC NHẬN HOÀN THÀNH
+                  </button>
+                </div>
+              )}
+
               {customer.sessions.filter((s: any) => s.status === 'completed').length > 0 ? (
                 customer.sessions.filter((s: any) => s.status === 'completed').map((session: any) => (
                   <div key={session.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-slate-100 transition-all group">
