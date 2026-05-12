@@ -101,14 +101,16 @@ BEGIN
 
     -- 5. Insert Revenue (Financial Data)
     FOR i IN 1..20 LOOP
-        -- Deposit for all
+        -- Deposit for all (Spread across Jan-May)
         INSERT INTO revenue (booking_id, amount, revenue_type, payment_method, received_date, status, tenant_id)
-        VALUES (booking_ids[i], 2000000, 'deposit', 'bank_transfer', ('2026-0' || (i % 3 + 1) || '-05')::DATE, 'confirmed', tid);
+        VALUES (booking_ids[i], 2000000, 'deposit', 'bank_transfer', ('2026-0' || (i % 5 + 1) || '-05')::DATE, 'confirmed', tid);
         
-        -- Full payment for completed ones
+        -- Full payment for completed ones (Some in April, some in May)
         IF i <= 5 THEN
             INSERT INTO revenue (booking_id, amount, revenue_type, payment_method, received_date, status, tenant_id)
-            VALUES (booking_ids[i], 13000000 + (i * 100000), 'session_completed', 'bank_transfer', ('2026-04-30')::DATE, 'confirmed', tid);
+            VALUES (booking_ids[i], 13000000 + (i * 100000), 'session_completed', 'bank_transfer', 
+                   CASE WHEN i <= 2 THEN '2026-04-30'::DATE ELSE '2026-05-10'::DATE END, 
+                   'confirmed', tid);
         END IF;
     END LOOP;
 

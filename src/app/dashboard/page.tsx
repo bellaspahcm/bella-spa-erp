@@ -66,10 +66,10 @@ const item = {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any[]>([
-    { label: 'Tổng khách hàng', value: '25', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Lịch hẹn hôm nay', value: '8', icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { label: 'Doanh thu tháng', value: '156M', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Đánh giá KTV', value: '4.9', icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Tổng khách hàng', value: '0', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Lịch hẹn hôm nay', value: '0', icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: 'Doanh thu tháng', value: '0M', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Đánh giá KTV', value: '0.0', icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
   ]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [topKTVs, setTopKTVs] = useState<any[]>([]);
@@ -92,8 +92,13 @@ export default function DashboardPage() {
   const [quickNoteValue, setQuickNoteValue] = useState('');
 
   const getMonthRange = (month: number, year: number) => {
-    const startDate = new Date(year, month, 1).toISOString().split('T')[0];
-    const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+    // Manually construct YYYY-MM-DD to avoid timezone shifts from .toISOString()
+    const startMonth = String(month + 1).padStart(2, '0');
+    const startDate = `${year}-${startMonth}-01`;
+    
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const endDate = `${year}-${startMonth}-${String(lastDay).padStart(2, '0')}`;
+    
     return { startDate, endDate };
   };
 

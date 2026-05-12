@@ -9,8 +9,11 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
 
   // Set default dates if not provided (current month)
   const now = new Date();
-  const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const end = endDate || new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+  const currentYear = now.getFullYear();
+  const start = startDate || `${currentYear}-${currentMonth}-01`;
+  const lastDay = new Date(currentYear, now.getMonth() + 1, 0).getDate();
+  const end = endDate || `${currentYear}-${currentMonth}-${String(lastDay).padStart(2, '0')}`;
 
   // Parallel fetching for performance
   const [
