@@ -291,9 +291,9 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="lg:col-span-2 glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden"
+          className="lg:col-span-2 glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative"
         >
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
+          <div className="absolute top-0 left-0 w-full h-1.5 rounded-t-[3rem] bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
           
           <div className="flex items-center justify-between mb-10 relative">
             <h2 className="text-2xl font-bold text-foreground flex items-center gap-3 uppercase tracking-tight">
