@@ -12,17 +12,30 @@ import {
   Download,
   Calendar,
   Filter,
-  Search
+  Search,
+  PlusCircle
 } from 'lucide-react';
-
-const transactions = [
-  { id: '1', type: 'revenue', category: 'Dịch vụ', amount: '+2,400,000', date: '11/05/2026', method: 'Chuyển khoản', status: 'confirmed' },
-  { id: '2', type: 'expense', category: 'Vật tư', amount: '-850,000', date: '11/05/2026', method: 'Tiền mặt', status: 'pending' },
-  { id: '3', type: 'revenue', category: 'Cọc gói', amount: '+5,000,000', date: '10/05/2026', method: 'ZaloPay', status: 'confirmed' },
-  { id: '4', type: 'expense', category: 'Lương KTV', amount: '-12,000,000', date: '05/05/2026', method: 'Chuyển khoản', status: 'confirmed' },
-];
+import { getFinancialOverview } from '@/services/finance-actions';
+import { useState, useEffect } from 'react';
 
 export default function FinancePage() {
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      const result = await getFinancialOverview();
+      setData(result);
+      setIsLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  if (isLoading || !data) {
+    return <div className="flex-1 p-10 flex items-center justify-center font-bold text-primary animate-pulse uppercase tracking-widest">Đang tải dữ liệu tài chính...</div>;
+  }
+
+  const { totalBalance, totalRevenueMonth, totalExpenseMonth, transactions } = data;
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
       {/* Header */}
@@ -36,8 +49,8 @@ export default function FinancePage() {
             <Download className="w-5 h-5 text-slate-400" />
             <span>Xuất báo cáo</span>
           </button>
-          <button className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-100">
-            <PlusCircleIcon className="w-5 h-5" />
+          <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs">
+            <PlusCircle className="w-5 h-5" />
             <span>Ghi nhận thu chi</span>
           </button>
         </div>
@@ -47,20 +60,20 @@ export default function FinancePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <motion.div 
           whileHover={{ y: -5 }}
-          className="bg-slate-900 p-8 rounded-[40px] text-white shadow-2xl shadow-slate-200 relative overflow-hidden"
+          className="luxury-card-pink p-8 rounded-[40px] relative overflow-hidden"
         >
           <div className="relative z-10">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/10">
+            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/20">
               <Wallet className="w-6 h-6 text-white" />
             </div>
-            <p className="text-sm font-bold text-white/60 uppercase tracking-widest mb-2">Số dư hiện tại</p>
-            <h3 className="text-4xl font-black mb-4">428,500,000đ</h3>
-            <div className="flex items-center gap-2 text-emerald-400 font-black text-sm">
+            <p className="text-sm font-black text-white/90 uppercase tracking-widest mb-2">Số dư hiện tại</p>
+            <h3 className="text-4xl font-black mb-4">{totalBalance.toLocaleString()}đ</h3>
+            <div className="flex items-center gap-2 text-white/90 font-black text-sm">
               <TrendingUp className="w-4 h-4" />
               +12.5% so với tháng trước
             </div>
           </div>
-          <div className="absolute bottom-[-20%] right-[-10%] w-48 h-48 bg-rose-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         </motion.div>
 
         <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col justify-center">
@@ -70,7 +83,7 @@ export default function FinancePage() {
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng thu tháng</p>
-              <h4 className="text-2xl font-black text-slate-900">156.2M</h4>
+              <h4 className="text-2xl font-black text-slate-900">{(totalRevenueMonth / 1000000).toFixed(1)}M</h4>
             </div>
           </div>
           <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
@@ -86,7 +99,7 @@ export default function FinancePage() {
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng chi tháng</p>
-              <h4 className="text-2xl font-black text-slate-900">42.8M</h4>
+              <h4 className="text-2xl font-black text-slate-900">{(totalExpenseMonth / 1000000).toFixed(1)}M</h4>
             </div>
           </div>
           <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">

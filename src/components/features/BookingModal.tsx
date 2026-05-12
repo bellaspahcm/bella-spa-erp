@@ -134,7 +134,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+          className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-sm"
         />
         
         <motion.div 
@@ -300,7 +300,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                 </div>
 
                 {/* Pricing Summary */}
-                <div className="p-6 bg-slate-900 rounded-[2rem] text-white">
+                <div className="p-6 luxury-card-pink rounded-[2rem]">
                   <div className="flex justify-between items-center mb-4 opacity-70">
                     <span className="font-bold">Tổng tiền gói</span>
                     <span className="font-black">{formatNumberWithSeparator(formData.full_price)}đ</span>

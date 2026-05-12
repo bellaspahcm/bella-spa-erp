@@ -276,7 +276,7 @@ export default function CustomersPage() {
               </button>
               <button 
                 onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
-                className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-3 rounded-xl font-bold transition-all text-sm shadow-lg shadow-slate-200"
+                className="flex items-center gap-2 bg-primary hover:bg-rose-600 text-white px-5 py-3 rounded-xl font-bold transition-all text-sm shadow-lg shadow-rose-200"
               >
                 Chi tiết
                 <ChevronRight className="w-4 h-4" />
@@ -345,7 +345,7 @@ export default function CustomersPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -493,7 +493,7 @@ export default function CustomersPage() {
                       disabled={isSubmitting}
                       className={cn(
                         "flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2",
-                        isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-slate-900 hover:bg-slate-800 shadow-slate-200"
+                        isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:bg-rose-600 shadow-rose-200"
                       )}
                     >
                       {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}

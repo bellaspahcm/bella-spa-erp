@@ -210,7 +210,7 @@ export default function CustomerDetailPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-2xl relative overflow-hidden"
+            className="luxury-card-pink rounded-[3rem] p-8 relative overflow-hidden shadow-2xl"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -mr-32 -mt-32" />
             

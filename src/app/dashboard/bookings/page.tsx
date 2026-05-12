@@ -158,18 +158,18 @@ export default function BookingsPage() {
           <div className="bg-white p-1 rounded-2xl border border-slate-200 flex">
             <button 
               onClick={() => setView('list')}
-              className={`p-2 rounded-xl transition-all ${view === 'list' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-2 rounded-xl transition-all ${view === 'list' ? 'bg-primary text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <List className="w-5 h-5" />
             </button>
             <button 
               onClick={() => setView('calendar')}
-              className={`p-2 rounded-xl transition-all ${view === 'calendar' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-2 rounded-xl transition-all ${view === 'calendar' ? 'bg-primary text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <LayoutGrid className="w-5 h-5" />
             </button>
           </div>
-          <button className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-slate-200">
+          <button className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200">
             <Plus className="w-5 h-5" />
             <span>Tạo lịch mới</span>
           </button>
@@ -347,7 +347,7 @@ export default function BookingsPage() {
                       <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-xs text-slate-600 transition-colors">
                         Dời lịch
                       </button>
-                      <button className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors">
+                      <button className="px-4 py-2 bg-primary hover:bg-rose-600 text-white rounded-xl font-bold text-xs transition-colors">
                         Check-in
                       </button>
                     </div>
@@ -372,7 +372,7 @@ export default function BookingsPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDetailModal(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -459,7 +459,7 @@ export default function BookingsPage() {
                   </div>
 
                   {/* Contract Detail */}
-                  <div className="col-span-2 md:col-span-1 bg-slate-900 p-6 rounded-[32px]">
+                  <div className="col-span-2 md:col-span-1 luxury-card-pink p-6 rounded-[32px]">
                     <div className="flex items-center gap-3 mb-4 text-slate-500">
                       <FileText className="w-5 h-5" />
                       <span className="text-xs font-black uppercase tracking-widest text-slate-400">Chi tiết hợp đồng</span>
@@ -480,7 +480,7 @@ export default function BookingsPage() {
                 <div className="mt-8 flex gap-3">
                   <button 
                     onClick={handleUpdatePlan}
-                    className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all active:scale-95"
+                    className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200"
                   >
                     Chỉnh sửa kế hoạch
                   </button>

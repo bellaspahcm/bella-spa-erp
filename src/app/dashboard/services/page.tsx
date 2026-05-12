@@ -111,7 +111,7 @@ export default function ServicesPage() {
         </div>
         <button 
           onClick={openAddModal}
-          className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-slate-200 active:scale-95"
+          className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-rose-200 active:scale-95"
         >
           <Plus className="w-5 h-5" />
           <span>Thêm dịch vụ mới</span>
@@ -226,7 +226,7 @@ export default function ServicesPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-md"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -330,7 +330,7 @@ export default function ServicesPage() {
                     <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-[2rem] transition-all uppercase tracking-widest text-xs">
                       Hủy bỏ
                     </button>
-                    <button type="submit" className="flex-1 py-5 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-[2rem] shadow-2xl shadow-slate-200 transition-all uppercase tracking-widest text-xs">
+                    <button type="submit" className="flex-1 py-5 bg-primary hover:bg-rose-600 text-white font-black rounded-[2rem] shadow-2xl shadow-rose-200 transition-all uppercase tracking-widest text-xs">
                       {modalMode === 'add' ? 'Lưu dịch vụ' : 'Cập nhật dịch vụ'}
                     </button>
                   </div>

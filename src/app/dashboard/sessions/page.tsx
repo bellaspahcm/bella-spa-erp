@@ -118,7 +118,7 @@ export default function SessionsPage() {
               onClick={() => setUserRole('KTV')}
               className={cn(
                 "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                userRole === 'KTV' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+                userRole === 'KTV' ? "bg-primary text-white shadow-lg shadow-rose-100" : "text-slate-400 hover:text-slate-600"
               )}
             >
               <UserCircle className="w-3.5 h-3.5" /> KTV
@@ -306,7 +306,7 @@ export default function SessionsPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedBooking(null)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -371,7 +371,7 @@ export default function SessionsPage() {
                       </div>
                     )}
 
-                    <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-xl text-white relative overflow-hidden">
+                    <div className="luxury-card-pink p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
                       <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-4 relative z-10">Tóm tắt tiến độ</h3>
                       <div className="grid grid-cols-2 gap-6 relative z-10">
@@ -458,7 +458,7 @@ export default function SessionsPage() {
                               )}
                               {status === 'current' && <p className="text-[8px] font-black uppercase text-amber-600">Làm ngay</p>}
                               
-                              <div className="absolute inset-0 bg-slate-900/90 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center z-20 pointer-events-none">
+                              <div className="absolute inset-0 bg-primary/90 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center z-20 pointer-events-none">
                                 <p className="text-[7px] font-black uppercase mb-1">{canEdit ? 'Click chỉnh sửa' : 'Bị khóa'}</p>
                                 <p className="text-[9px] font-bold leading-tight uppercase">
                                   {status === 'completed' ? 'Mẹ khỏe' : status === 'canceled' ? 'Khách bận' : 'Cập nhật'}
@@ -484,7 +484,7 @@ export default function SessionsPage() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 border border-white/10 text-center min-w-[300px]"
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] bg-[#1A0A0E] text-white px-8 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 border border-white/10 text-center min-w-[300px]"
           >
             <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
               <CheckCircle2 className="w-5 h-5 text-white" />

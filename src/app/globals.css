@@ -1,36 +1,48 @@
 @import "tailwindcss";
 
 :root {
-  /* Option C: Vibrant Magenta & Slate Grey - Bella Spa */
-  --primary: #FF0055;
-  --primary-hover: #D90048;
-  --secondary: #FFB3C6;
-  --accent: #FF0055;
-  --background: #F8F9FA;
-  --foreground: #2D3436;
+  /* Option C: Deep Rose Luxury (Refined) */
+  --primary: #D81B60;
+  --primary-hover: #AD1457;
+  --primary-foreground: #ffffff;
   
-  --card: #FFFFFF;
-  --card-foreground: #2D3436;
+  --secondary: #2D3436;
+  --secondary-foreground: #ffffff;
   
-  --muted: #FFF0F3;
+  --accent: #FF4081;
+  --accent-foreground: #ffffff;
+  
+  --background: #FDFEFE;
+  --foreground: #1A1A1A;
+  
+  --card: #ffffff;
+  --card-foreground: #1A1A1A;
+  
+  --muted: #F8F9FA;
   --muted-foreground: #636E72;
   
-  --border: #FFC1CC;
-  --input: #FFC1CC;
-  --ring: #FF0055;
+  --border: #FCE4EC;
+  --input: #FCE4EC;
+  --ring: #D81B60;
+  
+  --radius: 1.5rem;
 }
 
 @theme inline {
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
-  --color-pink-soft: #FFF5F7;
   --color-pink-deep: #FF0055;
   
   --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
@@ -58,33 +70,39 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   font-size: 14px;
-  font-weight: 400; /* Regular */
+  font-weight: 400;
   line-height: 1.5;
   background-image: 
-    radial-gradient(at 0% 0%, hsla(340, 30%, 98%, 1) 0, transparent 50%),
-    radial-gradient(at 50% 0%, hsla(340, 20%, 99%, 1) 0, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(340, 30%, 98%, 1) 0, transparent 50%);
+    radial-gradient(circle at 0% 0%, rgba(216, 27, 96, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(255, 64, 129, 0.03) 0%, transparent 40%);
+  background-attachment: fixed;
   min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
-  font-weight: 700; /* Bold */
+  font-weight: 700;
   color: var(--foreground);
   line-height: 1.2;
 }
 
-/* Typography Scale 14-24px */
-h1 { font-size: 24px; }
-h2 { font-size: 20px; }
-h3 { font-size: 18px; }
-h4 { font-size: 16px; }
-h5 { font-size: 14px; }
-h6 { font-size: 14px; }
+/* Luxury Utilities */
+.luxury-card-dark {
+  background: linear-gradient(135deg, #1A1A1A 0%, #2D3436 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
 
-p, span, div, label, input, button {
-  font-size: 14px;
-  font-weight: 400;
+.luxury-card-pink {
+  background: linear-gradient(135deg, #D81B60 0%, #AD1457 100%);
+  color: white;
+  box-shadow: 0 20px 40px -15px rgba(216, 27, 96, 0.3);
+}
+
+.text-gradient-pink {
+  background: linear-gradient(135deg, #D81B60 0%, #FF4081 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Glassmorphism utility */

@@ -249,35 +249,33 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl group"
+          className="luxury-card-pink rounded-[3rem] p-10 relative overflow-hidden shadow-2xl group"
         >
           <div className="relative z-10">
-            <h2 className="text-xl font-black mb-2 opacity-80 uppercase tracking-widest">Hiệu suất tháng</h2>
+            <h2 className="text-xl font-black mb-2 opacity-90 uppercase tracking-widest text-white">Hiệu suất tháng</h2>
             <div className="flex items-baseline gap-2 mb-8">
-              <p className="text-5xl font-black">+18.4%</p>
-              <TrendingUp className="text-emerald-400 w-6 h-6 animate-bounce" />
+              <p className="text-5xl font-black text-white">+18.4%</p>
+              <TrendingUp className="text-white/90 w-6 h-6 animate-bounce" />
             </div>
             
             <div className="h-40 flex items-end gap-3 mb-10">
               {[40, 70, 45, 90, 65, 80, 50].map((h: number, i: number) => (
                 <div key={i} className="flex-1 relative group/bar">
                   <div 
-                    className="w-full bg-white/10 rounded-t-xl transition-all duration-700 hover:bg-primary cursor-pointer relative z-10" 
+                    className="w-full bg-white/20 rounded-t-xl transition-all duration-700 hover:bg-white cursor-pointer relative z-10" 
                     style={{ height: `${h}%` }}
                   />
-                  <div className="absolute bottom-0 left-0 w-full bg-primary/20 blur-md transition-all h-0 group-hover/bar:h-full" />
+                  <div className="absolute bottom-0 left-0 w-full bg-white/10 blur-md transition-all h-0 group-hover/bar:h-full" />
                 </div>
               ))}
             </div>
             
-            <button className="w-full py-5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-black transition-all backdrop-blur-md uppercase tracking-widest text-sm active:scale-95 flex items-center justify-center gap-3">
+            <button className="w-full py-5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl font-black transition-all backdrop-blur-md uppercase tracking-widest text-sm active:scale-95 flex items-center justify-center gap-3 text-white">
               Chi tiết báo cáo
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
-          {/* Background decoration */}
-          <div className="absolute top-[-10%] right-[-10%] w-72 h-72 bg-primary/20 rounded-full blur-[100px] group-hover:bg-primary/30 transition-colors"></div>
-          <div className="absolute bottom-[-20%] left-[-20%] w-64 h-64 bg-secondary/10 rounded-full blur-[80px]"></div>
+          <div className="absolute top-[-10%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-[100px]"></div>
         </motion.div>
       </div>
 
