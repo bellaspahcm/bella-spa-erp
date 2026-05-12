@@ -402,6 +402,7 @@ export default function DashboardPage() {
                 return filteredSessions.map((session, idx) => {
                   const statusInfo = getStatusInfo(session.status);
                   const customerName = session.bookings?.customers?.name_mother || 'Khách hàng';
+                  const technicianName = session.bookings?.assigned_ktv?.full_name || 'Chưa phân công';
                   const packageName = session.bookings?.package_id || 'Gói dịch vụ';
                   
                   return (
@@ -415,7 +416,16 @@ export default function DashboardPage() {
                             {customerName.charAt(0)}
                           </div>
                           <div>
-                            <h3 className="font-bold text-xl text-foreground mb-1 group-hover:text-primary transition-colors">{customerName}</h3>
+                            <div className="flex flex-col">
+                              <h3 className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
+                                <span className="text-muted-foreground font-medium text-xs uppercase tracking-widest block mb-1">Khách hàng</span>
+                                {customerName}
+                              </h3>
+                              <div className="mt-2 flex items-center gap-2">
+                                <span className="text-[10px] font-black bg-rose-100 text-rose-600 px-2 py-0.5 rounded-md uppercase tracking-wider">KTV</span>
+                                <span className="text-sm font-bold text-muted-foreground">{technicianName}</span>
+                              </div>
+                            </div>
                             <div className="flex items-center gap-4 text-sm font-semibold text-muted-foreground">
                               <span className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-lg">
                                 <Clock className="w-3.5 h-3.5" />

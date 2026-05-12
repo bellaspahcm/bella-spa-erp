@@ -114,9 +114,13 @@ export async function getUpcomingSessions() {
         package_id,
         customers (
           name_mother
+        ),
+        assigned_ktv:users!bookings_assigned_ktv_id_fkey (
+          full_name
         )
       )
     `)
+    .eq('status', 'scheduled') // Only pending tasks as requested before
     .gte('assigned_date', today)
     .order('assigned_date', { ascending: true })
     .limit(10);
