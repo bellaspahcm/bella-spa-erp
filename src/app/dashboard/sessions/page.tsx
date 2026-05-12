@@ -529,7 +529,7 @@ export default function SessionsPage() {
                                   status === 'scheduled' && i === sessionLogs.findIndex(l => l.status === 'scheduled') ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
                                   'bg-slate-50/50 border-slate-100 text-slate-300 hover:bg-slate-100',
                                   selectedSessionLog?.id === log.id && "ring-2 ring-primary border-primary/50 shadow-inner",
-                                  (!canEdit && userRole !== 'ADMIN') && "grayscale opacity-80",
+                                  !canEdit && "grayscale opacity-80",
                                   isUpdating && "animate-pulse"
                                 )}
                               >
@@ -552,7 +552,7 @@ export default function SessionsPage() {
                                   ) : (
                                     <>
                                       <p className="text-[7px] font-black uppercase mb-1">Buổi {log.session_number}</p>
-                                      {(canEdit || userRole === 'ADMIN') && (
+                                      canEdit && (
                                         <button 
                                           onClick={(e) => {
                                             e.stopPropagation();
