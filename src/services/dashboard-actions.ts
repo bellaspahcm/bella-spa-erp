@@ -7,42 +7,98 @@ import { DEMO_SESSIONS, DEMO_TECH_TOP } from '@/constants/demo-data';
 export async function getDashboardStats(startDate?: string, endDate?: string) {
   const supabase = (await createClient()) as any;
 
-  // Use local date for "Today" (Vietnam time)
-  const today = new Date().toLocaleDateString('en-CA'); 
+  const now = new Date();
+  const today = now.toLocaleDateString('en-CA'); 
+  const currentMonthStart = startDate || today.substring(0, 7) + '-01';
+  const currentMonthEnd = endDate || today.substring(0, 7) + '-31';
+
+  // Calculate previous month range relative to currentMonthStart
+  const currentStart = new Date(currentMonthStart);
+  const prevMonthDate = new Date(currentStart);
+  prevMonthDate.setMonth(currentStart.getMonth() - 1);
+  const prevMonthStart = prevMonthDate.toISOString().substring(0, 7) + '-01';
   
-  // Default to current month if no dates provided
-  const start = startDate || today.substring(0, 7) + '-01';
-  const end = endDate || today.substring(0, 7) + '-31';
+  // Last day of previous month
+  const prevMonthEndObj = new Date(currentStart);
+  prevMonthEndObj.setDate(0); // 0th day of current month is last day of prev month
+  const prevMonthEnd = prevMonthEndObj.toISOString().substring(0, 10);
+
+  // Calculate yesterday
+  const yesterdayDate = new Date(now);
+  yesterdayDate.setDate(now.getDate() - 1);
+  const yesterday = yesterdayDate.toLocaleDateString('en-CA');
 
   // Parallel fetching for performance
   const [
     { count: totalCustomers },
+    { count: customersAtStartOfMonth },
     { count: todayBookings },
+    { count: yesterdayBookings },
     { data: revenueData },
-    { data: ratingsData }
+    { data: prevRevenueData },
+    { data: ratingsData },
+    { data: prevRatingsData }
   ] = await Promise.all([
+    // Total Customers
     supabase.from('customers').select('*', { count: 'exact', head: true }),
-    supabase.from('session_logs')
-      .select('*', { count: 'exact', head: true })
-      .eq('assigned_date', today),
-    supabase.from('revenue')
-      .select('amount')
-      // No status filter for demo - show everything
-      .gte('received_date', start)
-      .lte('received_date', end),
-    supabase.from('session_reviews').select('rating')
+    supabase.from('customers').select('*', { count: 'exact', head: true }).lt('created_at', currentMonthStart),
+    
+    // Today Bookings
+    supabase.from('session_logs').select('*', { count: 'exact', head: true }).eq('assigned_date', today),
+    supabase.from('session_logs').select('*', { count: 'exact', head: true }).eq('assigned_date', yesterday),
+    
+    // Revenue
+    supabase.from('revenue').select('amount').gte('received_date', currentMonthStart).lte('received_date', currentMonthEnd),
+    supabase.from('revenue').select('amount').gte('received_date', prevMonthStart).lte('received_date', prevMonthEnd),
+    
+    // Ratings
+    supabase.from('session_reviews').select('rating').gte('created_at', currentMonthStart).lte('created_at', currentMonthEnd),
+    supabase.from('session_reviews').select('rating').gte('created_at', prevMonthStart).lte('created_at', prevMonthEnd)
   ]);
 
+  // Calculations
+  const calcTrend = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+
+  // Customers Trend (New this month vs total before)
+  const customersTrend = calcTrend(totalCustomers || 0, customersAtStartOfMonth || 0);
+
+  // Bookings Trend
+  const bookingsTrend = calcTrend(todayBookings || 0, yesterdayBookings || 0);
+
+  // Revenue
   const totalRevenue = revenueData?.reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0) || 0;
+  const prevRevenue = prevRevenueData?.reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0) || 0;
+  const revenueTrend = calcTrend(totalRevenue, prevRevenue);
+
+  // Ratings
   const avgRating = ratingsData?.length 
     ? (ratingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / ratingsData.length).toFixed(1) 
     : '5.0';
+  const prevAvgRating = prevRatingsData?.length
+    ? (prevRatingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / prevRatingsData.length)
+    : 5.0;
+  const ratingsTrend = calcTrend(Number(avgRating), Number(prevAvgRating));
 
   return {
-    totalCustomers: totalCustomers || 0,
-    todayBookings: todayBookings || 0,
-    totalRevenue: totalRevenue > 0 ? (totalRevenue / 1000000).toFixed(0) + 'M' : '0M', 
-    avgRating
+    totalCustomers: {
+      value: (totalCustomers || 0).toLocaleString(),
+      trend: customersTrend
+    },
+    todayBookings: {
+      value: (todayBookings || 0).toString(),
+      trend: bookingsTrend
+    },
+    totalRevenue: {
+      value: totalRevenue > 0 ? (totalRevenue / 1000000).toFixed(1) + 'M' : '0M',
+      trend: revenueTrend
+    },
+    avgRating: {
+      value: avgRating,
+      trend: ratingsTrend
+    }
   };
 }
 

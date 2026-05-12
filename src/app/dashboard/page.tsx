@@ -7,6 +7,7 @@ import {
   Users, 
   Calendar, 
   TrendingUp, 
+  TrendingDown, 
   DollarSign, 
   Clock, 
   Star,
@@ -68,10 +69,10 @@ const item = {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<any[]>([
-    { label: 'Tổng khách hàng', value: '0', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Lịch hẹn hôm nay', value: '0', icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { label: 'Doanh thu tháng', value: '0M', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Đánh giá KTV', value: '0.0', icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Tổng khách hàng', value: '0', trend: 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Lịch hẹn hôm nay', value: '0', trend: 0, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: 'Doanh thu tháng', value: '0M', trend: 0, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Đánh giá KTV', value: '0.0', trend: 0, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
   ]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [topKTVs, setTopKTVs] = useState<any[]>([]);
@@ -112,10 +113,10 @@ export default function DashboardPage() {
       const { statsData, sessionsData, ktvsData, alertsData, perfData } = await getFullDashboardData(startDate, endDate);
 
       setStats([
-        { label: 'Tổng khách hàng', value: statsData.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings.toString(), icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-        { label: 'Doanh thu tháng', value: statsData.totalRevenue, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-        { label: 'Đánh giá KTV', value: statsData.avgRating, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Tổng khách hàng', value: statsData.totalCustomers.value, trend: statsData.totalCustomers.trend, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings.value, trend: statsData.todayBookings.trend, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
+        { label: 'Doanh thu tháng', value: statsData.totalRevenue.value, trend: statsData.totalRevenue.trend, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Đánh giá KTV', value: statsData.avgRating.value, trend: statsData.avgRating.trend, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
       ]);
       
       setSessions(sessionsData || []);
@@ -273,9 +274,11 @@ export default function DashboardPage() {
               <div className={`p-4 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 ${stat.bg} ${stat.color} shadow-inner`}>
                 <stat.icon className="w-7 h-7" />
               </div>
-              <div className="flex items-center gap-1 text-emerald-500 font-bold text-sm bg-emerald-50 px-3 py-1 rounded-full">
-                <TrendingUp className="w-4 h-4" />
-                12%
+              <div className={`flex items-center gap-1 font-bold text-sm px-3 py-1 rounded-full ${
+                stat.trend >= 0 ? 'text-emerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'
+              }`}>
+                {stat.trend >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                {Math.abs(stat.trend)}%
               </div>
             </div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-1">{stat.label}</p>
@@ -414,7 +417,16 @@ export default function DashboardPage() {
           <div className="relative z-10">
             <h2 className="text-xs font-semibold mb-1 text-white/70 uppercase tracking-[0.2em]">Hiệu suất tháng</h2>
             <div className="flex items-center gap-3 mb-8">
-              <p className="text-4xl font-bold text-white tracking-tighter">+18.4%</p>
+              <p className="text-4xl font-bold text-white tracking-tighter">
+                {(() => {
+                  if (performanceData.length < 2) return '+0%';
+                  const current = performanceData[performanceData.length - 1].customers;
+                  const previous = performanceData[performanceData.length - 2].customers;
+                  if (previous === 0) return current > 0 ? '+100%' : '0%';
+                  const trend = ((current - previous) / previous) * 100;
+                  return (trend >= 0 ? '+' : '') + trend.toFixed(1) + '%';
+                })()}
+              </p>
               <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-md">
                 <TrendingUp className="text-white w-4 h-4" />
               </div>
