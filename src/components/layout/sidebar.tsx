@@ -50,7 +50,7 @@ export function Sidebar() {
             className="w-20 h-20 object-contain" 
           />
           <div>
-            <h2 className="text-[4.2rem] font-handwriting text-primary leading-tight">Bella Spa</h2>
+            <h2 className="text-[3.45rem] font-handwriting text-primary leading-tight">Bella Spa</h2>
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] block -mt-1">Management System</span>
           </div>
         </Link>
