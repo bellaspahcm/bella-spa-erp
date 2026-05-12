@@ -1,5 +1,7 @@
 # 📚 BELLA SPA ERP — TÀI LIỆU TOÀN BỘ HỆ THỐNG
 
+# Ngày thực hiện dự án: 11/5/2026
+
 ## 🎯 GIỚI THIỆU
 
 Đây là **bộ tài liệu hoàn chỉnh** để triển khai hệ thống ERP cho Bella Spa (spa chăm sóc mẹ bé sau sinh).

@@ -288,5 +288,5 @@ File demo này **hoàn toàn tự đủ** — mở file, xem giao diện, giải
 
 ---
 
-**Document Created:** May 10, 2025  
-**Last Updated:** [Auto-update]
+**Document Created:** May 10, 2026  
+**Last Updated:** May 12, 2026

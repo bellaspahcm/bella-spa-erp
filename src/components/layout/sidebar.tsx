@@ -30,6 +30,7 @@ const menuItems = [
   { icon: MessageSquare, label: 'Tin nhắn', href: '/dashboard/chat' },
   { icon: Sparkles, label: 'Dịch vụ', href: '/dashboard/services' },
   { icon: DollarSign, label: 'Tài chính', href: '/dashboard/finance' },
+  { icon: Users, label: 'Lương KTV', href: '/dashboard/salary' },
   { icon: Settings, label: 'Cài đặt', href: '/dashboard/settings' },
 ];
 
