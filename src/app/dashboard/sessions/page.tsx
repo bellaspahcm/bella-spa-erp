@@ -180,8 +180,9 @@ export default function SessionsPage() {
     return booking.last_updated_date === today;
   };
 
-  const handleUpdateProgress = async (bookingId: string, note: string = '') => {
+  const handleUpdateProgress = async (bookingId: string) => {
     const booking = sessions.find(s => s.id === bookingId);
+    const note = quickNoteBookingId === bookingId ? quickNoteValue : '';
     
     if (isUpdatedToday(booking) && userRole !== 'ADMIN') {
       setToastMessage('Bạn đã cập nhật buổi tập hôm nay rồi. Chỉ Admin mới có quyền điều chỉnh thêm!');
@@ -208,7 +209,17 @@ export default function SessionsPage() {
       if (nextSession) {
         setLocalSessionLogUpdates(prev => ({ ...prev, [nextSession.id]: 'completed' }));
         
+        // Save note if provided
+        if (note) {
+          await saveSessionNote(nextSession.id, note);
+        }
+        
         await completeSession(nextSession.id, bookingId);
+        
+        // Reset quick note
+        setQuickNoteValue('');
+        setQuickNoteBookingId(null);
+        
         // loadSessions and fetchSessionLogs will now use the local updates
         await loadSessions();
         if (selectedBooking?.id === bookingId) {
@@ -464,7 +475,24 @@ export default function SessionsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 md:border-l md:pl-8 border-slate-100 min-w-[200px] justify-center relative z-10">
+                <div className="flex flex-col gap-3 md:items-end md:border-l md:pl-8 border-slate-100 min-w-[280px] justify-center relative z-10">
+                  {!isFullyCompleted && !alreadyDoneToday && (
+                    <div className="relative w-full">
+                      <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
+                      <input 
+                        type="text"
+                        placeholder="Ghi chú nhanh buổi này..."
+                        value={quickNoteBookingId === booking.id ? quickNoteValue : ''}
+                        onChange={(e) => {
+                          setQuickNoteBookingId(booking.id);
+                          setQuickNoteValue(e.target.value);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border-none rounded-xl text-[11px] font-bold outline-none focus:ring-1 focus:ring-primary/20 transition-all"
+                      />
+                    </div>
+                  )}
+                  
                   {!isFullyCompleted ? (
                       <button 
                         onClick={(e) => { 
