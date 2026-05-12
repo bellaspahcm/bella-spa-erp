@@ -77,6 +77,8 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [topKTVs, setTopKTVs] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [performanceData, setPerformanceData] = useState<any[]>([
     { name: 'T12', customers: 45 },
     { name: 'T1', customers: 52 },
@@ -238,13 +240,80 @@ export default function DashboardPage() {
             <input 
               type="text" 
               placeholder="Tìm kiếm nhanh..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 pr-6 py-4 bg-white/80 border border-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all w-60 shadow-sm font-medium"
             />
           </div>
-          <button className="p-4 bg-white/80 border border-border rounded-2xl hover:bg-white transition-all shadow-sm relative group active:scale-95">
-            <Bell className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" />
-            <span className="absolute top-4 right-4 w-2.5 h-2.5 bg-accent rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,133,162,0.5)]"></span>
-          </button>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              className={`p-4 rounded-2xl transition-all shadow-sm relative group active:scale-95 border ${
+                isNotificationsOpen ? 'bg-primary text-white border-primary shadow-lg shadow-pink-100' : 'bg-white/80 border-border text-foreground hover:bg-white'
+              }`}
+            >
+              <Bell className={`w-6 h-6 transition-colors ${isNotificationsOpen ? 'text-white' : 'group-hover:text-primary'}`} />
+              {alerts.length > 0 && !isNotificationsOpen && (
+                <span className="absolute top-4 right-4 w-2.5 h-2.5 bg-accent rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,133,162,0.5)] animate-pulse"></span>
+              )}
+            </button>
+
+            {/* Notifications Popover */}
+            <AnimatePresence>
+              {isNotificationsOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-4 w-96 bg-white rounded-[2rem] shadow-2xl shadow-pink-200/50 border border-pink-100 p-6 z-50 overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="font-black uppercase tracking-widest text-sm text-foreground">Thông báo</h3>
+                      <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black rounded-full uppercase">
+                        {alerts.length} Mới
+                      </span>
+                    </div>
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                      {alerts.length > 0 ? (
+                        alerts.map((alert: any, idx: number) => (
+                          <div 
+                            key={idx}
+                            className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${
+                              alert.type === 'warning' ? 'bg-amber-50/50 border-amber-100' : 'bg-blue-50/50 border-blue-100'
+                            }`}
+                          >
+                            <div className="flex gap-4">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                                alert.type === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
+                              }`}>
+                                {alert.icon === 'alert' ? <AlertTriangle className="w-5 h-5" /> : <Lightbulb className="w-5 h-5" />}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-sm text-foreground mb-1">{alert.title}</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed">{alert.message}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-12 text-center">
+                          <Bell className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                          <p className="text-slate-400 font-bold italic">Không có thông báo mới</p>
+                        </div>
+                      )}
+                    </div>
+                    <button className="w-full mt-6 py-3 text-xs font-black uppercase text-primary hover:bg-primary/5 rounded-xl transition-all tracking-widest">
+                      Xem tất cả thông báo
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+          
           <button 
             onClick={() => setIsBookingModalOpen(true)}
             className="flex items-center gap-3 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-pink-200 active:scale-95 uppercase tracking-wider"
@@ -303,7 +372,12 @@ export default function DashboardPage() {
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
                 <Clock className="w-6 h-6 text-primary" />
               </div>
-              Lịch làm việc sắp tới
+              Sắp tới trong hôm nay
+              {searchQuery && (
+                <span className="text-xs font-black bg-primary/10 text-primary px-3 py-1 rounded-full lowercase tracking-normal">
+                  Kết quả cho: "{searchQuery}"
+                </span>
+              )}
             </h2>
             <Link 
               href="/dashboard/bookings"
@@ -314,96 +388,112 @@ export default function DashboardPage() {
           </div>
           
           <div className="space-y-6">
-            {sessions.length > 0 ? (
-              sessions.map((session: any, i: number) => {
-                const statusInfo = getStatusInfo(session.status);
-                const dateObj = new Date(session.assigned_date);
-                const formattedDate = isNaN(dateObj.getTime()) ? session.assigned_date : dateObj.toLocaleDateString('vi-VN');
+            {(() => {
+              const filteredSessions = sessions.filter(session => {
+                const customerName = session.bookings?.customers?.name_mother || '';
+                const packageName = session.bookings?.package_id || '';
+                return customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                       packageName.toLowerCase().includes(searchQuery.toLowerCase());
+              });
 
-                return (
-                  <div key={session.id || i} className="flex items-center gap-6 p-6 rounded-3xl hover:bg-white/60 transition-all border border-transparent hover:border-pink-50 group shadow-sm hover:shadow-lg hover:shadow-pink-100/50">
-                    <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center text-primary font-bold text-lg border-2 border-white shadow-inner group-hover:scale-105 transition-transform">
-                      {session.bookings?.customers?.name_mother?.substring(0, 2).toUpperCase() || 'BS'}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-                        {session.bookings?.customers?.name_mother} - Buổi {session.session_number}
-                      </h4>
-                      <p className="text-sm text-muted-foreground font-semibold flex items-center gap-2 mt-1">
-                        <Calendar className="w-4 h-4" />
-                        Ngày: {formattedDate}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <span className={cn(
-                          "inline-flex items-center px-4 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] border",
-                          statusInfo.color
-                        )}>
-                          {statusInfo.label}
-                        </span>
-                      </div>
-                      
-                      {session.status === 'scheduled' && (
-                        <div className="relative">
-                          <AnimatePresence>
-                            {quickNoteId === session.id && (
-                              <motion.div 
-                                initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                                className="absolute bottom-full right-0 mb-4 w-64 bg-white rounded-3xl shadow-2xl border border-pink-100 p-5 z-50"
-                              >
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Ghi chú nhanh</h4>
-                                <textarea 
-                                  autoFocus
-                                  value={quickNoteValue}
-                                  onChange={(e) => setQuickNoteValue(e.target.value)}
-                                  placeholder="Mẹ và bé khỏe..."
-                                  className="w-full h-20 p-3 bg-slate-50 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none mb-3"
-                                />
-                                <div className="flex gap-2">
-                                  <button 
-                                    onClick={() => setQuickNoteId(null)}
-                                    className="flex-1 py-2 rounded-lg text-[9px] font-black uppercase text-slate-400"
-                                  >
-                                    Hủy
-                                  </button>
-                                  <button 
-                                    onClick={() => handleCompleteSession(session.id, session.booking_id, quickNoteValue)}
-                                    className="flex-1 bg-primary text-white py-2 rounded-lg text-[9px] font-black uppercase shadow-lg shadow-pink-100"
-                                  >
-                                    Xác nhận
-                                  </button>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                          
-                          <button 
-                            disabled={updatingId === session.id}
-                            onClick={() => setQuickNoteId(session.id)}
-                            className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-90 disabled:opacity-50"
-                            title="Hoàn thành buổi tập"
-                          >
-                            {updatingId === session.id ? (
-                              <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="w-5 h-5" />
-                            )}
-                          </button>
+              if (filteredSessions.length > 0) {
+                return filteredSessions.map((session, idx) => {
+                  const statusInfo = getStatusInfo(session.status);
+                  const customerName = session.bookings?.customers?.name_mother || 'Khách hàng';
+                  const packageName = session.bookings?.package_id || 'Gói dịch vụ';
+                  
+                  return (
+                    <div 
+                      key={session.id}
+                      className="group p-6 rounded-[2rem] hover:bg-white/60 transition-all border border-transparent hover:border-pink-100 relative mb-4 last:mb-0"
+                    >
+                      <div className="flex items-center justify-between gap-6">
+                        <div className="flex items-center gap-6">
+                          <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary font-black text-xl border border-pink-50">
+                            {customerName.charAt(0)}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-xl text-foreground mb-1 group-hover:text-primary transition-colors">{customerName}</h3>
+                            <div className="flex items-center gap-4 text-sm font-semibold text-muted-foreground">
+                              <span className="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-lg">
+                                <Clock className="w-3.5 h-3.5" />
+                                {session.start_time || '--:--'}
+                              </span>
+                              <span className="flex items-center gap-1.5 bg-pink-50 text-primary px-3 py-1 rounded-lg">
+                                <Diamond className="w-3.5 h-3.5" />
+                                {packageName}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                      )}
+
+                        <div className="flex items-center gap-6">
+                          <div className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest border ${statusInfo.color}`}>
+                            {statusInfo.label}
+                          </div>
+                          
+                          {session.status !== 'completed' && (
+                            <div className="flex items-center gap-2">
+                              <AnimatePresence>
+                                {quickNoteId === session.id && (
+                                  <motion.div 
+                                    initial={{ width: 0, opacity: 0 }}
+                                    animate={{ width: 200, opacity: 1 }}
+                                    exit={{ width: 0, opacity: 0 }}
+                                    className="relative flex items-center"
+                                  >
+                                    <input 
+                                      autoFocus
+                                      type="text"
+                                      placeholder="Ghi chú nhanh..."
+                                      className="w-full pl-4 pr-10 py-3 bg-white border border-emerald-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                                      value={quickNoteValue}
+                                      onChange={(e) => setQuickNoteValue(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleCompleteSession(session.id, session.booking_id, quickNoteValue);
+                                        if (e.key === 'Escape') setQuickNoteId(null);
+                                      }}
+                                    />
+                                    <button 
+                                      onClick={() => handleCompleteSession(session.id, session.booking_id, quickNoteValue)}
+                                      className="absolute right-2 p-1 text-emerald-600 hover:bg-emerald-50 rounded-lg"
+                                    >
+                                      <CheckCircle2 className="w-4 h-4" />
+                                    </button>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                              
+                              <button 
+                                disabled={updatingId === session.id}
+                                onClick={() => setQuickNoteId(session.id)}
+                                className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-90 disabled:opacity-50"
+                                title="Hoàn thành buổi tập"
+                              >
+                                {updatingId === session.id ? (
+                                  <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="w-5 h-5" />
+                                )}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="py-20 text-center">
-                <Calendar className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                <p className="text-muted-foreground font-bold italic">Không có lịch hẹn sắp tới</p>
-              </div>
-            )}
+                  );
+                });
+              }
+
+              return (
+                <div className="py-20 text-center">
+                  <Calendar className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                  <p className="text-muted-foreground font-bold italic">
+                    {searchQuery ? `Không tìm thấy kết quả cho "${searchQuery}"` : 'Không có lịch hẹn sắp tới'}
+                  </p>
+                </div>
+              );
+            })()}
           </div>
         </motion.div>
 
