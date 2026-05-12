@@ -392,8 +392,10 @@ export default function DashboardPage() {
               const filteredSessions = sessions.filter(session => {
                 const customerName = session.bookings?.customers?.name_mother || '';
                 const packageName = session.bookings?.package_id || '';
-                return customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                       packageName.toLowerCase().includes(searchQuery.toLowerCase());
+                const isNotCompleted = session.status !== 'completed';
+                const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                     packageName.toLowerCase().includes(searchQuery.toLowerCase());
+                return isNotCompleted && matchesSearch;
               });
 
               if (filteredSessions.length > 0) {
