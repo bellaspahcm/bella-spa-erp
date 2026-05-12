@@ -34,7 +34,8 @@ export async function createBooking(formData: any) {
   const validatedFields = bookingSchema.safeParse(formData);
   
   if (!validatedFields.success) {
-    return { error: 'Dữ liệu không hợp lệ', details: validatedFields.error.flatten().fieldErrors };
+    const errorMessages = Object.values(validatedFields.error.flatten().fieldErrors).flat().join(', ');
+    return { error: `Dữ liệu booking không hợp lệ: ${errorMessages}`, details: validatedFields.error.flatten().fieldErrors };
   }
 
   const validatedData = validatedFields.data;
