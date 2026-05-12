@@ -29,9 +29,12 @@ import {
   ResponsiveContainer, 
   AreaChart, 
   Area, 
+  BarChart,
+  Bar,
   Tooltip, 
   XAxis,
-  YAxis
+  YAxis,
+  CartesianGrid
 } from 'recharts';
 import { toast } from 'sonner';
 import { BookingModal } from '@/components/features/BookingModal';
@@ -82,12 +85,12 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [performanceData, setPerformanceData] = useState<any[]>([
-    { name: 'T12', customers: 45 },
-    { name: 'T1', customers: 52 },
-    { name: 'T2', customers: 48 },
-    { name: 'T3', customers: 61 },
-    { name: 'T4', customers: 55 },
-    { name: 'T5', customers: 67 },
+    { name: 'T12', customers: 45, revenue: 85, expense: 65, rating: 4.8 },
+    { name: 'T1', customers: 52, revenue: 92, expense: 70, rating: 4.9 },
+    { name: 'T2', customers: 48, revenue: 88, expense: 68, rating: 4.7 },
+    { name: 'T3', customers: 61, revenue: 105, expense: 75, rating: 4.9 },
+    { name: 'T4', customers: 55, revenue: 98, expense: 72, rating: 5.0 },
+    { name: 'T5', customers: 67, revenue: 110, expense: 78, rating: 4.9 },
   ]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -636,6 +639,144 @@ export default function DashboardPage() {
           </Link>
           
           <div className="absolute top-[-10%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-[100px]"></div>
+        </motion.div>
+      </div>
+
+      {/* Financial & Rating Analytics Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-12">
+        {/* Revenue & Expense Chart */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="lg:col-span-2 glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden"
+        >
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-emerald-400/30 via-primary/30 to-rose-400/30" />
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-emerald-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Doanh thu & Chi phí</h2>
+            </div>
+            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                <span className="text-muted-foreground">Doanh thu</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                <span className="text-muted-foreground">Chi phí</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={performanceData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#888', fontSize: 12, fontWeight: 700 }}
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#888', fontSize: 12, fontWeight: 700 }}
+                  unit="tr"
+                />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                    borderRadius: '1.5rem', 
+                    border: 'none',
+                    boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.1)',
+                    backdropBlur: '10px'
+                  }}
+                  itemStyle={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '10px' }}
+                />
+                <Bar 
+                  dataKey="revenue" 
+                  fill="#10b981" 
+                  radius={[6, 6, 0, 0]} 
+                  barSize={32}
+                  name="Doanh thu"
+                />
+                <Bar 
+                  dataKey="expense" 
+                  fill="#f43f5e" 
+                  radius={[6, 6, 0, 0]} 
+                  barSize={32}
+                  name="Chi phí"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Rating Performance Chart */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="lg:col-span-1 glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden flex flex-col"
+        >
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-400/30 to-orange-400/30" />
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+              <Star className="w-6 h-6 text-amber-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Rating Trung Bình</h2>
+          </div>
+          
+          <div className="flex-1 flex flex-col justify-between">
+            <div className="mb-6">
+              <p className="text-5xl font-black text-foreground tracking-tighter">
+                {performanceData[performanceData.length - 1]?.rating || '5.0'}
+              </p>
+              <div className="flex items-center gap-1 mt-2">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} className={`w-4 h-4 ${s <= Math.round(performanceData[performanceData.length - 1]?.rating || 5) ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
+                ))}
+                <span className="ml-2 text-xs font-bold text-muted-foreground">Chỉ số hài lòng</span>
+              </div>
+            </div>
+
+            <div className="h-32 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={performanceData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorRating" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                      borderRadius: '1rem', 
+                      border: 'none',
+                      boxShadow: '0 10px 20px -5px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <XAxis dataKey="name" hide />
+                  <YAxis hide domain={[4, 5]} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="rating" 
+                    stroke="#f59e0b" 
+                    strokeWidth={4}
+                    fillOpacity={1} 
+                    fill="url(#colorRating)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </motion.div>
       </div>
 
