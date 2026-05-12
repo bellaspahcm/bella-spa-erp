@@ -250,11 +250,15 @@ export default function SessionsPage() {
       const result = await updateSessionLog(selectedSessionLog.id, updates);
       
       if (result.data) {
-        setToastMessage('Đã cập nhật thông tin buổi tập!');
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 2000);
+        // 1. Update session logs in the grid locally
+        setSessionLogs(prev => prev.map(log => 
+          log.id === selectedSessionLog.id ? { ...log, ...updates } : log
+        ));
         
-        // Update local state for booking count if status changed
+        // 2. Update the currently selected session state
+        setSelectedSessionLog((prev: any) => ({ ...prev, ...updates }));
+
+        // 3. Update local state for booking count if status changed (for demo consistency)
         if (selectedSessionLog.status !== selectedStatus) {
           const diff = selectedStatus === 'completed' ? 1 : (selectedSessionLog.status === 'completed' ? -1 : 0);
           if (diff !== 0) {
@@ -262,17 +266,21 @@ export default function SessionsPage() {
             setLocalBookingUpdates(prev => ({ ...prev, [selectedBooking.id]: newCount }));
           }
         }
-
-        // Update session logs locally
-        setSessionLogs(prev => prev.map(log => 
-          log.id === selectedSessionLog.id ? { ...log, ...updates } : log
-        ));
         
+        // 4. Sync with main sessions list from DB
         await loadSessions();
+
+        setToastMessage('Đã cập nhật thông tin buổi tập thành công!');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
+      } else if (result.error) {
+        setToastMessage('Lỗi: ' + result.error);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
       }
     } catch (error) {
       console.error('Update failed:', error);
-      setToastMessage('Lỗi khi cập nhật');
+      setToastMessage('Có lỗi xảy ra khi kết nối máy chủ');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } finally {
