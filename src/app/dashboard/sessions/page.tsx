@@ -23,6 +23,7 @@ import {
 import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote } from '@/services/booking-actions';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
+import { MOCK_BOOKINGS } from '@/constants/mock-data';
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
