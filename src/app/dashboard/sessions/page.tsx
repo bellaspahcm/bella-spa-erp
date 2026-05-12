@@ -624,9 +624,12 @@ export default function SessionsPage() {
                           </div>
                         ) : sessionLogs.length > 0 ? (
                           sessionLogs.map((log, i) => {
-                            const status = log.status;
+                            const status = localSessionLogUpdates[log.id] ?? log.status;
                             const isUpdating = updatingId === log.id;
-                            const canEdit = userRole === 'ADMIN' || (status === 'scheduled' && i === sessionLogs.findIndex(l => l.status === 'scheduled'));
+                            const currentLogsStatus = sessionLogs.map(l => ({ ...l, status: localSessionLogUpdates[l.id] ?? l.status }));
+                            const nextScheduledIndex = currentLogsStatus.findIndex(l => l.status === 'scheduled');
+                            const isNextToRun = status === 'scheduled' && i === nextScheduledIndex;
+                            const canEdit = userRole === 'ADMIN' || isNextToRun;
 
                             return (
                               <div 
@@ -642,25 +645,27 @@ export default function SessionsPage() {
                                 }}
                                 className={cn(
                                   "aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all cursor-pointer group relative overflow-hidden",
-                                  status === 'completed' ? 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100 shadow-sm' :
+                                  status === 'completed' ? 'bg-emerald-500 border-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' :
                                   status === 'canceled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm' :
-                                  status === 'scheduled' && i === sessionLogs.findIndex(l => l.status === 'scheduled') ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
+                                  isNextToRun ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
                                   'bg-slate-50/50 border-slate-100 text-slate-300 hover:bg-slate-100',
                                   selectedSessionLog?.id === log.id && "ring-2 ring-primary border-primary/50 shadow-inner",
-                                  !canEdit && "grayscale opacity-80",
+                                  !canEdit && status === 'scheduled' && "grayscale opacity-50",
                                   isUpdating && "animate-pulse"
                                 )}
                               >
-                                {status === 'scheduled' && i === sessionLogs.findIndex(l => l.status === 'scheduled') && (
+                                {isNextToRun && (
                                   <div className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full m-2 animate-ping" />
                                 )}
-                                <span className="text-xs font-black mb-1">{log.session_number}</span>
+                                <span className={cn("text-xs font-black mb-1", status === 'completed' ? "text-white" : "text-slate-900")}>
+                                  {log.session_number}
+                                </span>
                                 {status !== 'scheduled' && (
-                                  <p className="text-[8px] font-bold uppercase opacity-60">
+                                  <p className={cn("text-[8px] font-black uppercase", status === 'completed' ? "text-white/90" : "opacity-60")}>
                                     {status === 'completed' ? 'Xong' : 'Hủy'}
                                   </p>
                                 )}
-                                {status === 'scheduled' && i === sessionLogs.findIndex(l => l.status === 'scheduled') && (
+                                {isNextToRun && (
                                   <p className="text-[8px] font-black uppercase text-amber-600">Làm ngay</p>
                                 )}
                                 
