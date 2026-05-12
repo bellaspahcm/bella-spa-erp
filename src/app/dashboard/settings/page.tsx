@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getUsers, updateUserStatus } from '@/services/user-actions';
+import { useEffect } from 'react';
 
 const container = {
   hidden: { opacity: 0 },
@@ -47,6 +49,37 @@ const TABS = [
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('general');
   const [isSaving, setIsSaving] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'staff') {
+      fetchUsers();
+    }
+  }, [activeTab]);
+
+  async function fetchUsers() {
+    setIsLoadingUsers(true);
+    try {
+      const data = await getUsers();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  }
+
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const result = await updateUserStatus(id, newStatus);
+    if (result.success) {
+      toast.success('Đã cập nhật trạng thái nhân sự');
+      fetchUsers();
+    } else {
+      toast.error('Lỗi khi cập nhật: ' + result.error);
+    }
+  };
 
   const handleSave = () => {
     setIsSaving(true);
@@ -186,12 +219,97 @@ export default function SettingsPage() {
           )}
 
           {activeTab === 'staff' && (
-            <div className="space-y-8 py-10 text-center">
-              <Shield className="w-20 h-20 text-muted-foreground/20 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-foreground uppercase tracking-tight">Cấu hình nhân sự</h3>
-              <p className="text-muted-foreground font-semibold max-w-md mx-auto">
-                Tính năng phân quyền nâng cao đang được cập nhật cho phiên bản Enterprise.
-              </p>
+            <div className="space-y-8">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                    <Shield className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">Nhân sự & Quyền</h2>
+                    <p className="text-sm text-muted-foreground font-semibold">Quản lý danh sách nhân viên và phân quyền hệ thống</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => toast.info('Tính năng thêm nhân sự mới đang được khởi tạo...')}
+                  className="px-6 py-3 bg-primary/10 text-primary rounded-xl font-black text-sm uppercase tracking-widest hover:bg-primary hover:text-white transition-all flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" /> Thêm nhân sự
+                </button>
+              </div>
+
+              <div className="overflow-hidden rounded-[2rem] border border-white bg-white/40 shadow-sm">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-white/50">
+                      <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Họ và tên</th>
+                      <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Vai trò</th>
+                      <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Email</th>
+                      <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-center">Trạng thái</th>
+                      <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/20">
+                    {isLoadingUsers ? (
+                      <tr>
+                        <td colSpan={5} className="py-20 text-center">
+                          <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+                          <p className="text-muted-foreground font-bold">Đang tải dữ liệu...</p>
+                        </td>
+                      </tr>
+                    ) : users.length > 0 ? (
+                      users.map((user) => (
+                        <tr key={user.id} className="group hover:bg-white/60 transition-colors">
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl flex items-center justify-center text-primary font-black text-sm border-2 border-white">
+                                {user.full_name?.substring(0, 2).toUpperCase()}
+                              </div>
+                              <p className="font-black text-slate-900">{user.full_name}</p>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <span className={cn(
+                              "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                              user.role === 'admin' ? "bg-rose-50 text-rose-600 border-rose-100" :
+                              user.role === 'ktv' ? "bg-blue-50 text-blue-600 border-blue-100" :
+                              "bg-slate-50 text-slate-600 border-slate-100"
+                            )}>
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6 font-bold text-slate-500 text-sm italic">{user.email}</td>
+                          <td className="px-8 py-6 text-center">
+                            <div 
+                              onClick={() => handleToggleStatus(user.id, user.status)}
+                              className={cn(
+                                "w-12 h-6 rounded-full p-1 transition-all cursor-pointer mx-auto",
+                                user.status === 'active' ? "bg-emerald-500" : "bg-slate-200"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-4 h-4 bg-white rounded-full shadow-sm transition-all",
+                                user.status === 'active' ? "ml-6" : "ml-0"
+                              )} />
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                            <button className="text-primary hover:text-accent font-black text-[10px] uppercase tracking-[0.2em] transition-colors">
+                              Chi tiết
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="py-20 text-center text-muted-foreground font-bold italic">
+                          Chưa có dữ liệu nhân sự
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
