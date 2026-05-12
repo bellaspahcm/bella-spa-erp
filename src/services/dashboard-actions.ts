@@ -16,6 +16,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
   const end = endDate || `${currentYear}-${currentMonth}-${String(lastDay).padStart(2, '0')}`;
 
   // Parallel fetching for performance
+  const today = new Date().toLocaleDateString('en-CA'); // Get local YYYY-MM-DD
   const [
     { count: totalCustomers },
     { count: todayBookings },
@@ -25,7 +26,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
     supabase.from('customers').select('*', { count: 'exact', head: true }),
     supabase.from('session_logs')
       .select('*', { count: 'exact', head: true })
-      .eq('assigned_date', now.toISOString().split('T')[0]),
+      .eq('assigned_date', today),
     supabase.from('revenue')
       .select('amount')
       .eq('status', 'confirmed')
