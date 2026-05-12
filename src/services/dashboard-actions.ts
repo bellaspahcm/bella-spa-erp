@@ -112,6 +112,8 @@ export async function getUpcomingSessions() {
       *,
       bookings (
         package_id,
+        completed_sessions,
+        total_sessions,
         customers (
           name_mother
         ),
