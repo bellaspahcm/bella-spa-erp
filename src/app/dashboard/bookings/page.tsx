@@ -28,6 +28,7 @@ import {
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog, completeSession } from '@/services/booking-actions';
 import { getUsers } from '@/services/user-actions';
@@ -57,6 +58,7 @@ function BookingsContent() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [modalData, setModalData] = useState<any>(null);
+  const [selectedBookingIdForCreate, setSelectedBookingIdForCreate] = useState('');
   const [sessions, setSessions] = useState<any[]>([]);
   const [allBookings, setAllBookings] = useState<any[]>(mockBookings);
   const [isLoading, setIsLoading] = useState(false);
@@ -540,21 +542,19 @@ function BookingsContent() {
                         <p className="font-bold text-slate-900">{modalData.customer}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 font-bold mb-1">Kỹ thuật viên</p>
-                        <select 
+                        <p className="text-xs text-slate-400 font-bold mb-2 ml-1">Kỹ thuật viên</p>
+                        <PremiumSelect 
                           value={modalData.ktvId || ''}
-                          onChange={(e) => {
-                            const ktvId = e.target.value;
-                            const ktvName = ktvs.find(k => k.id === ktvId)?.full_name || 'Chưa phân công';
-                            setModalData({...modalData, ktvId, ktv: ktvName});
+                          options={[
+                            { value: '', label: 'Chưa phân công' },
+                            ...ktvs.map(k => ({ value: k.id, label: k.full_name }))
+                          ]}
+                          onChange={(value) => {
+                            const ktvName = ktvs.find(k => k.id === value)?.full_name || 'Chưa phân công';
+                            setModalData({...modalData, ktvId: value, ktv: ktvName});
                           }}
-                          className="w-full bg-white border-none rounded-xl px-4 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                        >
-                          <option value="">Chưa phân công</option>
-                          {ktvs.map(k => (
-                            <option key={k.id} value={k.id}>{k.full_name}</option>
-                          ))}
-                        </select>
+                          placeholder="Chọn kỹ thuật viên..."
+                        />
                       </div>
                     </div>
                   </div>
@@ -625,15 +625,15 @@ function BookingsContent() {
                     <div className="space-y-4">
                       <div>
                         <p className="text-xs text-slate-500 font-bold mb-1">Trạng thái</p>
-                        <select 
+                        <PremiumSelect 
                           value={modalData.status}
-                          onChange={(e) => setModalData({...modalData, status: e.target.value})}
-                          className="w-full bg-white/20 border-none rounded-xl px-4 py-2 font-bold text-white shadow-sm focus:ring-2 focus:ring-white/20 transition-all outline-none"
-                        >
-                          <option value="scheduled" className="text-slate-900">Sắp tới</option>
-                          <option value="completed" className="text-slate-900">Đã xong</option>
-                          <option value="canceled" className="text-slate-900">Đã hủy</option>
-                        </select>
+                          options={[
+                            { value: 'scheduled', label: 'Sắp tới', icon: <Clock className="w-4 h-4" /> },
+                            { value: 'completed', label: 'Đã xong', icon: <CheckCircle2 className="w-4 h-4" /> },
+                            { value: 'canceled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
+                          ]}
+                          onChange={(value) => setModalData({...modalData, status: value})}
+                        />
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 font-bold mb-1">Ghi chú nhanh</p>
@@ -724,15 +724,17 @@ function BookingsContent() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Chọn Hợp đồng / Khách hàng</label>
-                    <select name="booking_id" className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1">
-                      {allBookings.length > 0 ? (
-                        allBookings.map(b => (
-                          <option key={b.id} value={b.id}>{b.customers?.name_mother} - {b.booking_number}</option>
-                        ))
-                      ) : (
-                        <option disabled>Không có hợp đồng nào</option>
-                      )}
-                    </select>
+                    <input type="hidden" name="booking_id" value={selectedBookingIdForCreate} />
+                    <PremiumSelect 
+                      value={selectedBookingIdForCreate}
+                      options={allBookings.map(b => ({
+                        value: b.id,
+                        label: `${b.customers?.name_mother} - ${b.booking_number}`
+                      }))}
+                      onChange={(val) => setSelectedBookingIdForCreate(val)}
+                      placeholder="Chọn hợp đồng..."
+                      className="mt-1"
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
