@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  /* Pink Pastel Theme - Bella Spa */
-  --primary: #FF85A2;
-  --primary-hover: #FF6B8E;
+  /* Option C: Vibrant Magenta & Slate Grey - Bella Spa */
+  --primary: #FF0055;
+  --primary-hover: #D90048;
   --secondary: #FFB3C6;
-  --accent: #FF4D6D;
-  --background: #FFFFFF;
+  --accent: #FF0055;
+  --background: #F8F9FA;
   --foreground: #2D3436;
   
   --card: #FFFFFF;
@@ -15,9 +15,9 @@
   --muted: #FFF0F3;
   --muted-foreground: #636E72;
   
-  --border: #FFE5EC;
-  --input: #FFE5EC;
-  --ring: #FF85A2;
+  --border: #FFC1CC;
+  --input: #FFC1CC;
+  --ring: #FF0055;
 }
 
 @theme inline {
@@ -31,7 +31,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-pink-soft: #FFF5F7;
-  --color-pink-deep: #FF4D6D;
+  --color-pink-deep: #FF0055;
   
   --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
   
@@ -61,9 +61,9 @@ body {
   font-weight: 400; /* Regular */
   line-height: 1.5;
   background-image: 
-    radial-gradient(at 0% 0%, hsla(340, 100%, 98%, 1) 0, transparent 50%),
-    radial-gradient(at 50% 0%, hsla(340, 100%, 99%, 1) 0, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(340, 100%, 98%, 1) 0, transparent 50%);
+    radial-gradient(at 0% 0%, hsla(340, 30%, 98%, 1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(340, 20%, 99%, 1) 0, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(340, 30%, 98%, 1) 0, transparent 50%);
   min-height: 100vh;
 }
 
