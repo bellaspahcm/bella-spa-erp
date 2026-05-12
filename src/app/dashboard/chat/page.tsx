@@ -244,22 +244,32 @@ export default function ChatPage() {
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar bg-gradient-to-b from-pink-50/20 to-transparent">
+          <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar bg-gradient-to-b from-pink-50/20 to-transparent">
             {messages.map((msg, i) => (
               <motion.div
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 key={msg.id}
-                className={`flex ${msg.sender === 'spa' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.sender === 'spa' ? 'justify-end' : 'justify-start'} group`}
               >
-                <div className={`max-w-[70%] space-y-1 ${msg.sender === 'spa' ? 'items-end' : 'items-start'} flex flex-col`}>
-                  <div className={`px-6 py-4 rounded-[1.8rem] text-sm font-bold shadow-sm ${
+                <div className={`max-w-[70%] space-y-1 ${msg.sender === 'spa' ? 'items-end' : 'items-start'} flex flex-col relative`}>
+                  {/* Reaction Bar on Hover */}
+                  <div className={`absolute -top-10 ${msg.sender === 'spa' ? 'right-0' : 'left-0'} opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center gap-1 bg-white shadow-xl border border-pink-50 px-2 py-1.5 rounded-full z-10 scale-90 group-hover:scale-100`}>
+                    {['😊', '❤️', '👍', '😮', '😂'].map(emoji => (
+                      <button key={emoji} className="hover:scale-125 transition-transform p-1 leading-none text-base">
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className={`px-6 py-4 rounded-[1.8rem] text-[15px] font-semibold shadow-sm transition-all group-hover:shadow-md ${
                     msg.sender === 'spa' 
                       ? 'bg-primary text-white rounded-tr-none shadow-pink-100' 
                       : 'bg-white text-foreground border border-pink-50 rounded-tl-none'
                   }`}>
                     {msg.text}
                   </div>
+                  
                   <div className="flex items-center gap-1.5 px-1">
                     <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{format(msg.time, 'HH:mm')}</span>
                     {msg.sender === 'spa' && <CheckCheck className="w-3.5 h-3.5 text-emerald-500" />}
@@ -285,26 +295,36 @@ export default function ChatPage() {
 
           {/* Input Area */}
           <div className="p-6 bg-white/50 backdrop-blur-md border-t border-pink-50">
-            <form onSubmit={handleSendMessage} className="flex items-center gap-4 bg-pink-50/50 p-2 rounded-[2rem] border border-pink-100/50 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
-              <div className="flex items-center gap-1 pl-2">
-                <button type="button" className="p-3 hover:bg-white rounded-full text-muted-foreground hover:text-primary transition-all">
+            <form onSubmit={handleSendMessage} className="flex items-end gap-4 bg-pink-50/50 p-3 rounded-[2rem] border border-pink-100/50 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
+              <div className="flex items-center gap-1 pb-1">
+                <button type="button" className="p-3 hover:bg-white rounded-full text-muted-foreground hover:text-primary transition-all active:scale-90">
                   <Paperclip className="w-5 h-5" />
                 </button>
-                <button type="button" className="p-3 hover:bg-white rounded-full text-muted-foreground hover:text-primary transition-all">
+                <button type="button" className="p-3 hover:bg-white rounded-full text-muted-foreground hover:text-primary transition-all active:scale-90">
                   <ImageIcon className="w-5 h-5" />
                 </button>
               </div>
               
-              <input 
-                type="text" 
+              <textarea 
+                rows={1}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  e.target.style.height = 'auto';
+                  e.target.style.height = e.target.scrollHeight + 'px';
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage(e as any);
+                  }
+                }}
                 placeholder="Nhập tin nhắn của bạn..."
-                className="flex-1 bg-transparent border-none focus:ring-0 text-sm font-bold placeholder:text-muted-foreground/60"
+                className="flex-1 bg-transparent border-none focus:ring-0 text-[15px] font-semibold placeholder:text-muted-foreground/60 py-3 resize-none min-h-[44px] max-h-32 custom-scrollbar"
               />
               
-              <div className="flex items-center gap-2 pr-1">
-                <button type="button" className="p-3 hover:bg-white rounded-full text-muted-foreground hover:text-primary transition-all">
+              <div className="flex items-center gap-2 pb-1">
+                <button type="button" className="p-3 hover:bg-white rounded-full text-muted-foreground hover:text-primary transition-all active:scale-90">
                   <Smile className="w-5 h-5" />
                 </button>
                 <button 
@@ -316,6 +336,7 @@ export default function ChatPage() {
                 </button>
               </div>
             </form>
+            <p className="text-[10px] text-muted-foreground font-bold mt-3 text-center uppercase tracking-widest opacity-60">Nhấn Enter để gửi, Shift + Enter để xuống dòng</p>
           </div>
         </div>
 
