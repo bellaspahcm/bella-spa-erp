@@ -60,6 +60,7 @@ function BookingsContent() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [allBookings, setAllBookings] = useState<any[]>(mockBookings);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [ktvs, setKtvs] = useState<any[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
