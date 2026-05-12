@@ -122,8 +122,8 @@ export async function getUpcomingSessions() {
         )
       )
     `)
-    .eq('status', 'scheduled') // Only pending tasks as requested before
-    .gte('assigned_date', today)
+    .eq('status', 'scheduled')
+    .eq('assigned_date', today)
     .order('assigned_date', { ascending: true })
     .limit(10);
 
