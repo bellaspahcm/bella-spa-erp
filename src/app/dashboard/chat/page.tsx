@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
@@ -383,15 +384,35 @@ export default function ChatPage() {
             </h4>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Đặt lịch', icon: Calendar },
-                { label: 'Thanh toán', icon: CreditCard },
-                { label: 'Ghi chú', icon: Clock },
-                { label: 'Hồ sơ', icon: User }
+                { label: 'Đặt lịch', icon: Calendar, href: `/dashboard/bookings?name=${encodeURIComponent(selectedChat.name)}` },
+                { label: 'Thanh toán', icon: CreditCard, href: '/dashboard/finance' },
+                { label: 'Ghi chú', icon: Clock, action: 'note' },
+                { label: 'Hồ sơ', icon: User, href: `/dashboard/customers/${selectedChat.id}` }
               ].map((btn, i) => (
-                <button key={i} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-pink-50/50 hover:bg-primary hover:text-white transition-all group border border-transparent hover:shadow-lg hover:shadow-pink-100">
-                  <btn.icon className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
-                  <span className="text-[10px] font-black uppercase tracking-wider">{btn.label}</span>
-                </button>
+                btn.href ? (
+                  <Link 
+                    key={i} 
+                    href={btn.href}
+                    className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-pink-50/50 hover:bg-primary hover:text-white transition-all group border border-transparent hover:shadow-lg hover:shadow-pink-100"
+                  >
+                    <btn.icon className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-wider">{btn.label}</span>
+                  </Link>
+                ) : (
+                  <button 
+                    key={i} 
+                    onClick={() => {
+                      if (btn.action === 'note') {
+                        const note = prompt(`Nhập ghi chú cho khách hàng ${selectedChat.name}:`);
+                        if (note) alert(`Đã lưu ghi chú: ${note}`);
+                      }
+                    }}
+                    className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-pink-50/50 hover:bg-primary hover:text-white transition-all group border border-transparent hover:shadow-lg hover:shadow-pink-100"
+                  >
+                    <btn.icon className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-wider">{btn.label}</span>
+                  </button>
+                )
               ))}
             </div>
           </div>

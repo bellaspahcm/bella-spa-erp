@@ -41,7 +41,10 @@ const mockBookings = MOCK_BOOKINGS.map(b => ({
   contractDetail: 'Gói chăm sóc Mẹ & Bé chuyên sâu - 12 buổi'
 }));
 
-export default function BookingsPage() {
+function BookingsContent() {
+  const searchParams = useSearchParams();
+  const customerName = searchParams.get('name');
+
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -49,6 +52,12 @@ export default function BookingsPage() {
   const [modalData, setModalData] = useState<any>(null);
   const [sessions, setSessions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (customerName) {
+      toast.info(`Đang mở biểu mẫu đặt lịch cho khách hàng: ${customerName}`);
+    }
+  }, [customerName]);
 
   useEffect(() => {
     fetchSessions();
@@ -497,5 +506,13 @@ export default function BookingsPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function BookingsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+      <BookingsContent />
+    </Suspense>
   );
 }
