@@ -2,9 +2,9 @@
 
 **Tên Dự Án:** Bella Spa Management System  
 **Loại Doanh Vụ:** Spa chăm sóc mẹ và bé sau sinh  
-**Phiên Bản:** 1.2  
-**Ngày Cập Nhật:** 12/05/2026  
-**Status:** Triển khai Production (Đã tích hợp module Tính lương KTV & Luxury Branding)
+**Phiên Bản:** 1.3  
+**Ngày Cập Nhật:** 12/05/2026 (08:15)  
+**Status:** Triển khai Production (Đã tinh chỉnh Branding Handwriting & Kích hoạt Luxury Charts)
 
 ---
 
