@@ -319,8 +319,13 @@ function BookingsContent() {
             return (
               <div 
                 key={i} 
-                onClick={() => setSelectedDate(date)}
-                onDoubleClick={() => handleDayDoubleClick(date)}
+                onClick={() => {
+                  setSelectedDate(date);
+                  // Smooth scroll to timeline
+                  setTimeout(() => {
+                    document.getElementById('bookings-timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
                 className={`min-h-[100px] p-3 bg-white transition-all cursor-pointer group hover:bg-slate-50/80 relative select-none ${
                   !isCurrentMonth ? 'opacity-40' : ''
                 }`}
@@ -358,7 +363,7 @@ function BookingsContent() {
       </div>
 
       {/* Bookings Timeline */}
-      <div className="space-y-4">
+      <div id="bookings-timeline" className="space-y-4 scroll-mt-8">
         {isLoading && sessions.length === 0 ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-10 h-10 text-slate-200 animate-spin" />
