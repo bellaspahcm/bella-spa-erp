@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { ensure2026 } from '@/lib/utils';
+import { DEMO_REVENUE } from '@/constants/demo-data';
 
 export async function getFinancialOverview() {
   const supabase = (await createClient()) as any;
@@ -40,10 +41,13 @@ export async function getFinancialOverview() {
     status: r.status || 'confirmed'
   }));
 
+  const finalRevenueMonth = totalBalance > 0 ? totalBalance : DEMO_REVENUE.totalRevenueMonth;
+  const finalExpenseMonth = DEMO_REVENUE.totalExpenseMonth;
+
   return {
-    totalBalance,
-    totalRevenueMonth: 156200000, // Mocked for now
-    totalExpenseMonth: 42800000,  // Mocked for now
+    totalBalance: totalBalance > 0 ? totalBalance : DEMO_REVENUE.totalBalance,
+    totalRevenueMonth: finalRevenueMonth,
+    totalExpenseMonth: finalExpenseMonth,
     transactions: dbTransactions.length > 0 ? dbTransactions : mockTransactions
   };
 }

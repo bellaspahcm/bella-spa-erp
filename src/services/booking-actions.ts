@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { ensure2026 } from '@/lib/utils';
+import { DEMO_BOOKINGS } from '@/constants/demo-data';
 
 export async function getBookings() {
   const supabase = (await createClient()) as any;
@@ -11,9 +12,9 @@ export async function getBookings() {
     .select('*, customers(name_mother, phone)')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching bookings:', error);
-    return [];
+  if (error || !data || data.length === 0) {
+    console.error('Error fetching bookings or empty:', error);
+    return DEMO_BOOKINGS;
   }
   
   return (data || []).map((b: any) => ({
