@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, FileText, Table, FileJson, ChevronDown, Check } from 'lucide-react';
+import { Download, FileText, Table, FileJson, ChevronDown, Check, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PremiumExportButtonProps {
