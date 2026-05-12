@@ -7,16 +7,14 @@ import { DEMO_SESSIONS, DEMO_TECH_TOP } from '@/constants/demo-data';
 export async function getDashboardStats(startDate?: string, endDate?: string) {
   const supabase = (await createClient()) as any;
 
-  // Set default dates if not provided (current month)
-  const now = new Date();
-  const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-  const currentYear = now.getFullYear();
-  const start = startDate || `${currentYear}-${currentMonth}-01`;
-  const lastDay = new Date(currentYear, now.getMonth() + 1, 0).getDate();
-  const end = endDate || `${currentYear}-${currentMonth}-${String(lastDay).padStart(2, '0')}`;
+  // Use local date for "Today" (Vietnam time)
+  const today = new Date().toLocaleDateString('en-CA'); 
+  
+  // Default to current month if no dates provided
+  const start = startDate || today.substring(0, 7) + '-01';
+  const end = endDate || today.substring(0, 7) + '-31';
 
   // Parallel fetching for performance
-  const today = new Date().toLocaleDateString('en-CA'); // Get local YYYY-MM-DD
   const [
     { count: totalCustomers },
     { count: todayBookings },
@@ -29,7 +27,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
       .eq('assigned_date', today),
     supabase.from('revenue')
       .select('amount')
-      .eq('status', 'confirmed')
+      // No status filter for demo - show everything
       .gte('received_date', start)
       .lte('received_date', end),
     supabase.from('session_reviews').select('rating')
@@ -50,6 +48,8 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
 
 export async function getUpcomingSessions() {
   const supabase = (await createClient()) as any;
+  const today = new Date().toLocaleDateString('en-CA');
+
   const { data, error } = await supabase
     .from('session_logs')
     .select(`
@@ -61,10 +61,9 @@ export async function getUpcomingSessions() {
         )
       )
     `)
-    .eq('status', 'scheduled')
-    .gte('assigned_date', new Date().toISOString().split('T')[0])
+    .gte('assigned_date', today)
     .order('assigned_date', { ascending: true })
-    .limit(5);
+    .limit(10);
 
   if (error || !data || data.length === 0) {
     console.error('Error fetching upcoming sessions or empty:', error);
@@ -122,12 +121,12 @@ export async function getMonthlyPerformance() {
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
   sixMonthsAgo.setDate(1);
   
+  const todayStr = new Date().toLocaleDateString('en-CA');
   const { data, error } = await supabase
     .from('session_logs')
     .select('assigned_date')
-    .gte('assigned_date', sixMonthsAgo.toISOString().split('T')[0])
-    .lte('assigned_date', now.toISOString().split('T')[0])
-    .eq('status', 'completed');
+    .gte('assigned_date', sixMonthsAgo.toLocaleDateString('en-CA'))
+    .lte('assigned_date', todayStr);
 
   const monthNames = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
   const monthMap: Record<string, number> = {};
