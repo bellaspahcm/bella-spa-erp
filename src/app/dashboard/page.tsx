@@ -695,7 +695,8 @@ export default function DashboardPage() {
                     borderRadius: '1.5rem', 
                     border: 'none',
                     boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.1)',
-                    backdropBlur: '10px'
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)'
                   }}
                   itemStyle={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '10px' }}
                 />
