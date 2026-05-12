@@ -26,6 +26,8 @@ import { createClient } from '@/lib/supabase-client';
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<any[]>([]);
+  const [filteredSessions, setFilteredSessions] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('Cập nhật thành công!');
@@ -99,8 +101,35 @@ export default function SessionsPage() {
     const data = await getSessionsWithDetails();
     if (data && data.length > 0) {
       setSessions(data);
+      applyFilters(data, searchQuery, statusFilter);
     }
   };
+
+  const applyFilters = (data: any[], query: string, status: string) => {
+    let result = [...data];
+    
+    if (query) {
+      const q = query.toLowerCase();
+      result = result.filter(s => 
+        s.customers?.name_mother?.toLowerCase().includes(q) || 
+        s.booking_number?.toLowerCase().includes(q)
+      );
+    }
+    
+    if (status !== 'Tất cả trạng thái') {
+      if (status === 'Đang chăm sóc') {
+        result = result.filter(s => (s.completed_sessions || 0) < (s.total_sessions || 21));
+      } else if (status === 'Hoàn thành') {
+        result = result.filter(s => (s.completed_sessions || 0) >= (s.total_sessions || 21));
+      }
+    }
+    
+    setFilteredSessions(result);
+  };
+
+  useEffect(() => {
+    applyFilters(sessions, searchQuery, statusFilter);
+  }, [searchQuery, statusFilter]);
 
   const isUpdatedToday = (booking: any) => {
     const today = new Date().toISOString().split('T')[0];
@@ -248,6 +277,8 @@ export default function SessionsPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
           <input 
             type="text" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm tên khách hàng hoặc mã hợp đồng..." 
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-700"
           />
@@ -291,17 +322,17 @@ export default function SessionsPage() {
         </div>
       </div>
 
-      {sessions.length === 0 ? (
+      {filteredSessions.length === 0 ? (
         <div className="bg-white rounded-[3rem] p-20 text-center border border-dashed border-slate-200">
           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Flower2 className="w-10 h-10 text-slate-300" />
+            <Search className="w-10 h-10 text-slate-300" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">Chưa có thẻ liệu trình nào</h3>
-          <p className="text-slate-500">Hãy tạo hợp đồng mới để bắt đầu theo dõi tiến độ</p>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">Không tìm thấy kết quả</h3>
+          <p className="text-slate-500">Thử thay đổi từ khóa hoặc bộ lọc</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {sessions.map((booking: any, idx: number) => {
+          {filteredSessions.map((booking: any, idx: number) => {
             const progress = ((booking.completed_sessions || 0) / (booking.total_sessions || 21)) * 100;
             const isUpdating = updatingId === booking.id;
             const isFullyCompleted = (booking.completed_sessions || 0) >= (booking.total_sessions || 21);
@@ -372,24 +403,29 @@ export default function SessionsPage() {
                       <AnimatePresence>
                         {quickNoteBookingId === booking.id && (
                           <motion.div 
-                            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                            initial={{ opacity: 0, scale: 0.9, y: -10 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                            exit={{ opacity: 0, scale: 0.9, y: -10 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="absolute bottom-full right-0 mb-4 w-72 bg-white rounded-[2rem] shadow-2xl border border-pink-100 p-6 z-[100]"
+                            className="absolute top-full right-0 mt-4 w-72 bg-[#1A0A0E] text-white rounded-[2.5rem] shadow-2xl border border-white/10 p-6 z-[100]"
                           >
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary mb-3">Ghi chú nhanh buổi {(booking.completed_sessions || 0) + 1}</h4>
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                                <FileEdit className="w-3 h-3 text-white" />
+                              </div>
+                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em]">Ghi chú buổi {(booking.completed_sessions || 0) + 1}</h4>
+                            </div>
                             <textarea 
                               autoFocus
                               value={quickNoteValue}
                               onChange={(e) => setQuickNoteValue(e.target.value)}
                               placeholder="Mẹ và bé khỏe mạnh..."
-                              className="w-full h-24 p-4 bg-slate-50 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none mb-4"
+                              className="w-full h-24 p-4 bg-white/10 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none mb-4 text-white placeholder:text-white/30"
                             />
                             <div className="flex gap-2">
                               <button 
                                 onClick={(e) => { e.stopPropagation(); setQuickNoteBookingId(null); }}
-                                className="flex-1 py-3 rounded-xl text-[9px] font-black uppercase text-slate-400 hover:bg-slate-50"
+                                className="flex-1 py-3 rounded-xl text-[9px] font-black uppercase text-white/50 hover:bg-white/5 hover:text-white transition-colors"
                               >
                                 Đóng
                               </button>
@@ -400,7 +436,7 @@ export default function SessionsPage() {
                                   setQuickNoteBookingId(null);
                                   setQuickNoteValue('');
                                 }}
-                                className="flex-1 bg-primary text-white py-3 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-pink-100"
+                                className="flex-1 bg-primary text-white py-3 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-pink-900/20 hover:bg-primary-hover"
                               >
                                 Xác nhận
                               </button>
