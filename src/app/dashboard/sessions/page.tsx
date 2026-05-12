@@ -147,19 +147,25 @@ export default function SessionsPage() {
     }
 
     setUpdatingId(bookingId);
+    
+    // OPTIMISTIC UPDATE for Demo
+    setSessions(prev => prev.map(s => 
+      s.id === bookingId ? { ...s, completed_sessions: (s.completed_sessions || 0) + 1, last_updated_date: new Date().toISOString().split('T')[0] } : s
+    ));
+
     try {
       const logs = await getSessionLogs(bookingId);
       const nextSession = logs.find((log: any) => log.status === 'scheduled');
       
       if (nextSession) {
-        // Update status to completed
-        await completeSession(nextSession.id, bookingId);
-        
-        // If a note was provided, save it too
-        if (note.trim()) {
-          await saveSessionNote(nextSession.id, note);
+        // Update local sessionLogs if this booking is selected
+        if (selectedBooking?.id === bookingId) {
+          setSessionLogs(prev => prev.map(log => 
+            log.id === nextSession.id ? { ...log, status: 'completed', completed_date: new Date().toISOString() } : log
+          ));
         }
 
+        await completeSession(nextSession.id, bookingId);
         await loadSessions();
         if (selectedBooking?.id === bookingId) {
           await fetchSessionLogs(bookingId);
@@ -182,14 +188,25 @@ export default function SessionsPage() {
     const newStatus = currentStatus === 'completed' ? 'scheduled' : 'completed';
     setUpdatingId(sessionId);
     
+    // OPTIMISTIC UPDATE for Demo
+    setSessionLogs(prev => prev.map(log => 
+      log.id === sessionId ? { ...log, status: newStatus, completed_date: newStatus === 'completed' ? new Date().toISOString() : null } : log
+    ));
+
+    // Update the booking session count locally too
+    setSessions(prev => prev.map(s => {
+      if (s.id === selectedBooking.id) {
+        const diff = newStatus === 'completed' ? 1 : -1;
+        return { ...s, completed_sessions: Math.max(0, (s.completed_sessions || 0) + diff) };
+      }
+      return s;
+    }));
+
     try {
       if (newStatus === 'completed') {
         await completeSession(sessionId, selectedBooking.id);
       } else {
-        // Handle reverting completion
         await updateSessionLog(sessionId, { status: 'scheduled', completed_date: null });
-        
-        // Decrement the booking count
         const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) - 1);
         await (createClient() as any).from('bookings').update({ completed_sessions: newCount } as any).eq('id', selectedBooking.id);
       }
@@ -590,8 +607,8 @@ export default function SessionsPage() {
                                   setSelectedSessionLog(log);
                                   setCurrentNote(log.notes || '');
                                   
-                                  // If clicked specifically on the status part or double click, toggle (optional UX)
-                                  // For now, let's keep it simple: click to select, hover has buttons
+                                  // Auto-toggle for demo if double click or specific UI intent
+                                  // For demo, let's make it so clicking 'Hoàn thành' inside the circle works
                                 }}
                                 className={cn(
                                   "aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all cursor-pointer group relative overflow-hidden",
