@@ -323,9 +323,30 @@ export default function SessionsPage() {
             </button>
           </div>
 
-          <div className="flex items-center gap-3 bg-emerald-50 px-5 py-3 rounded-2xl border border-emerald-100">
-            <TrendingUp className="text-emerald-500 w-5 h-5" />
-            <span className="text-emerald-700 font-black text-sm uppercase tracking-tighter">Hiệu suất: +12%</span>
+          <div className={cn(
+            "flex items-center gap-3 px-5 py-3 rounded-2xl border transition-all",
+            sessions.reduce((acc, s) => acc + (s.completed_sessions || 0), 0) / 
+            Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 21), 0)) > 0.5 
+              ? "bg-emerald-50 border-emerald-100" 
+              : "bg-amber-50 border-amber-100"
+          )}>
+            <TrendingUp className={cn(
+              "w-5 h-5",
+              sessions.reduce((acc, s) => acc + (s.completed_sessions || 0), 0) / 
+              Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 21), 0)) > 0.5 
+                ? "text-emerald-500" 
+                : "text-amber-500"
+            )} />
+            <span className={cn(
+              "font-black text-sm uppercase tracking-tighter",
+              sessions.reduce((acc, s) => acc + (s.completed_sessions || 0), 0) / 
+              Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 21), 0)) > 0.5 
+                ? "text-emerald-700" 
+                : "text-amber-700"
+            )}>
+              Hiệu suất: {Math.round((sessions.reduce((acc, s) => acc + (s.completed_sessions || 0), 0) / 
+                Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 21), 0))) * 100)}%
+            </span>
           </div>
         </div>
       </div>
