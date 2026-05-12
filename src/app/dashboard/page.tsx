@@ -17,8 +17,10 @@ import {
   AlertTriangle,
   Lightbulb,
   Trophy,
-  Diamond
+  Diamond 
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { BookingModal } from '@/components/features/BookingModal';
 import { 
   getDashboardStats, 
   getUpcomingSessions, 
@@ -72,6 +74,7 @@ export default function DashboardPage() {
   const [topKTVs, setTopKTVs] = useState<any[]>(MOCK_TOP_KTVS);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -136,7 +139,10 @@ export default function DashboardPage() {
             <Bell className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" />
             <span className="absolute top-4 right-4 w-2.5 h-2.5 bg-accent rounded-full border-2 border-white shadow-[0_0_8px_rgba(255,133,162,0.5)]"></span>
           </button>
-          <button className="flex items-center gap-3 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-pink-200 active:scale-95 uppercase tracking-wider">
+          <button 
+            onClick={() => setIsBookingModalOpen(true)}
+            className="flex items-center gap-3 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-pink-200 active:scale-95 uppercase tracking-wider"
+          >
             <PlusCircle className="w-5 h-5" />
             <span>Tạo Booking</span>
           </button>
@@ -379,6 +385,12 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Modals */}
+      <BookingModal 
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+      />
     </div>
   );
 }
