@@ -274,6 +274,7 @@ export async function createSessionLog(data: any) {
         booking_id: data.booking_id,
         session_number: (count || 0) + 1,
         assigned_date: data.assigned_date,
+        assigned_time: data.assigned_time,
         notes: data.notes,
         status: data.status || 'scheduled'
       } as any,
