@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 
 import { MOCK_CUSTOMERS } from '@/constants/mock-data';
-import { getCustomers, createCustomer } from '@/services/customer-actions';
+import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/customer-actions';
 
 
 
@@ -48,6 +48,10 @@ export default function CustomersPage() {
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState('');
   const [depositAmount, setDepositAmount] = useState('');
+
+  // Edit states
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -89,28 +93,24 @@ export default function CustomersPage() {
     setIsSubmitting(true);
     
     try {
-      const result = await createCustomer({
-        ...formData,
-        deposit_amount: depositAmount,
-        package_name: selectedPackage
-      });
+      let result;
+      if (isEditMode && editingCustomerId) {
+        result = await updateCustomer(editingCustomerId, formData);
+      } else {
+        result = await createCustomer({
+          ...formData,
+          deposit_amount: depositAmount,
+          package_name: selectedPackage
+        });
+      }
 
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success('Thêm khách hàng thành công!');
+        toast.success(isEditMode ? 'Cập nhật thành công!' : 'Thêm khách hàng thành công!');
         setIsModalOpen(false);
         // Reset form
-        setFormData({
-          name_mother: '',
-          phone: '',
-          name_baby: '',
-          dob_expected: '',
-          address: '',
-          notes: ''
-        });
-        setDepositAmount('');
-        setSelectedPackage('');
+        resetForm();
         loadCustomers();
       }
     } catch (error) {
@@ -118,6 +118,67 @@ export default function CustomersPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name_mother: '',
+      phone: '',
+      name_baby: '',
+      dob_expected: '',
+      address: '',
+      notes: ''
+    });
+    setDepositAmount('');
+    setSelectedPackage('');
+    setIsEditMode(false);
+    setEditingCustomerId(null);
+  };
+
+  const handleEdit = (customer: any) => {
+    setFormData({
+      name_mother: customer.name_mother || '',
+      phone: customer.phone || '',
+      name_baby: customer.name_baby || '',
+      dob_expected: customer.dob_expected || '',
+      address: customer.address || '',
+      notes: customer.notes || ''
+    });
+    setDepositAmount(customer.deposit_amount?.replace(/[^\d]/g, '') || '');
+    setSelectedPackage(customer.package_name || '');
+    setIsEditMode(true);
+    setEditingCustomerId(customer.id);
+    setIsModalOpen(true);
+    setActiveMenuId(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa hồ sơ này? Hành động này không thể hoàn tác.')) return;
+    
+    try {
+      const result = await deleteCustomer(id);
+      if (result.success) {
+        toast.success('Xóa hồ sơ thành công');
+        loadCustomers();
+      } else {
+        toast.error('Lỗi khi xóa hồ sơ');
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra');
+    }
+    setActiveMenuId(null);
+  };
+
+  const handleZalo = (phone: string) => {
+    const cleanPhone = phone.replace(/[^\d]/g, '');
+    const zaloUrl = `https://zalo.me/${cleanPhone}`;
+    window.open(zaloUrl, '_blank');
+    setActiveMenuId(null);
+  };
+
+  const handleAddNew = () => {
+    resetForm();
+    setIsModalOpen(true);
   };
 
   const today = new Date().toISOString().split('T')[0];
@@ -152,7 +213,7 @@ export default function CustomersPage() {
         <div className="flex items-center gap-3">
           <PremiumExportButton />
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleAddNew}
             className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 active:scale-95"
           >
             <UserPlus className="w-5 h-5" />
@@ -321,26 +382,38 @@ export default function CustomersPage() {
                       className="absolute right-0 top-full mt-4 w-64 bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_70px_rgba(0,0,0,0.15)] border border-white/20 z-50 overflow-hidden p-2.5"
                     >
                       <div className="space-y-1">
-                        <button className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item">
+                        <button 
+                          onClick={() => handleEdit(customer)}
+                          className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item"
+                        >
                           <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center group-hover/item:bg-blue-100 transition-colors">
                             <Edit2 className="w-4 h-4 text-blue-500" />
                           </div>
                           Chỉnh sửa
                         </button>
-                        <button className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item">
+                        <button 
+                          onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
+                          className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item"
+                        >
                           <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center group-hover/item:bg-pink-100 transition-colors">
                             <ClipboardList className="w-4 h-4 text-rose-500" />
                           </div>
                           Thẻ liệu trình
                         </button>
-                        <button className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item">
+                        <button 
+                          onClick={() => handleZalo(customer.phone)}
+                          className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-rose-500 rounded-2xl transition-all group/item"
+                        >
                           <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center group-hover/item:bg-emerald-100 transition-colors">
                             <MessageCircle className="w-4 h-4 text-emerald-500" />
                           </div>
                           Gửi Zalo
                         </button>
                         <div className="h-px bg-slate-100/50 mx-4 my-2" />
-                        <button className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-rose-500 hover:bg-rose-50 rounded-2xl transition-all group/item">
+                        <button 
+                          onClick={() => handleDelete(customer.id)}
+                          className="flex items-center gap-3 w-full px-5 py-3.5 text-sm font-bold text-rose-500 hover:bg-rose-50 rounded-2xl transition-all group/item"
+                        >
                           <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center group-hover/item:bg-rose-200 transition-colors">
                             <Trash2 className="w-4 h-4" />
                           </div>
@@ -380,8 +453,8 @@ export default function CustomersPage() {
                       <UserPlus className="w-6 h-6" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-slate-900">Thêm khách hàng mới</h2>
-                      <p className="text-slate-500 font-medium">Nhập thông tin cơ bản của mẹ và bé</p>
+                      <h2 className="text-2xl font-bold text-slate-900">{isEditMode ? 'Cập nhật thông tin' : 'Thêm khách hàng mới'}</h2>
+                      <p className="text-slate-500 font-medium">{isEditMode ? 'Chỉnh sửa hồ sơ mẹ và bé' : 'Nhập thông tin cơ bản của mẹ và bé'}</p>
                     </div>
                   </div>
                   <button 
@@ -517,7 +590,7 @@ export default function CustomersPage() {
                       )}
                     >
                       {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                      {isSubmitting ? 'Đang lưu...' : 'Lưu hồ sơ'}
+                      {isSubmitting ? (isEditMode ? 'Đang cập nhật...' : 'Đang lưu...') : (isEditMode ? 'Cập nhật hồ sơ' : 'Lưu hồ sơ')}
                     </button>
                   </div>
                 </form>

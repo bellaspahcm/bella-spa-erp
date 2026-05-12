@@ -156,3 +156,59 @@ function getMockCustomerFallback(id: string) {
   }
   return null;
 }
+
+export async function updateCustomer(id: string, formData: any) {
+  const supabase = (await createClient()) as any;
+  
+  // 1. Validate with Zod
+  const validatedFields = customerSchema.partial().safeParse(formData);
+  
+  if (!validatedFields.success) {
+    const errorMessages = Object.values(validatedFields.error.flatten().fieldErrors).flat().join(', ');
+    return { error: `Dữ liệu không hợp lệ: ${errorMessages}`, details: validatedFields.error.flatten().fieldErrors };
+  }
+
+  const validatedData = validatedFields.data;
+
+  // 2. Update Customer
+  const { data, error } = await supabase
+    .from('customers')
+    .update({
+      phone: validatedData.phone,
+      name_mother: validatedData.name_mother,
+      name_baby: validatedData.name_baby,
+      address: validatedData.address,
+      notes: validatedData.notes,
+      dob_baby: validatedData.dob_baby,
+      dob_expected: validatedData.dob_expected,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating customer:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/dashboard/customers');
+  revalidatePath(`/dashboard/customers/${id}`);
+  return { data };
+}
+
+export async function deleteCustomer(id: string) {
+  const supabase = (await createClient()) as any;
+  
+  const { error } = await supabase
+    .from('customers')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting customer:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/dashboard/customers');
+  return { success: true };
+}
