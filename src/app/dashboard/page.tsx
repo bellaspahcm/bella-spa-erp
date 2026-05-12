@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -102,7 +102,8 @@ export default function DashboardPage() {
     return { startDate, endDate };
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    setIsRefreshing(true);
     try {
       const { startDate, endDate } = getMonthRange(selectedMonth, selectedYear);
       
@@ -127,16 +128,16 @@ export default function DashboardPage() {
       setAlerts(alertsData || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      toast.error('Lỗi cập nhật dữ liệu');
     } finally {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  };
+  }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
-    setIsRefreshing(true);
     fetchData();
-  }, [selectedMonth, selectedYear]);
+  }, [fetchData]);
 
   useEffect(() => {
     // REALTIME SUBSCRIPTION
@@ -149,12 +150,15 @@ export default function DashboardPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
         fetchData();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue' }, () => {
+        fetchData();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchData]);
 
   const handleCompleteSession = async (sessionId: string, bookingId: string, note: string) => {
     setUpdatingId(sessionId);
