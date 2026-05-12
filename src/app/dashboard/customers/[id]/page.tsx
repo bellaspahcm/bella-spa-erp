@@ -260,16 +260,16 @@ export default function CustomerDetailPage() {
             </div>
 
             <div className="space-y-4">
-              {customer.sessions.length > 0 ? (
-                customer.sessions.map((session: any) => (
+              {customer.sessions.filter((s: any) => s.status === 'completed').length > 0 ? (
+                customer.sessions.filter((s: any) => s.status === 'completed').map((session: any) => (
                   <div key={session.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-slate-100 transition-all group">
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
                         <ClipboardList className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-black text-slate-800">{session.type}</p>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">KTV: {session.ktv} • {session.date}</p>
+                        <p className="font-black text-slate-800">{session.type || 'Chăm sóc liệu trình'}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">KTV: {session.ktv || 'Chưa cập nhật'} • {session.completed_date || session.date || 'Chưa cập nhật'}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -281,8 +281,8 @@ export default function CustomerDetailPage() {
               ) : (
                 <div className="text-center py-12 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
                   <Clock className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <p className="text-slate-400 font-bold italic">Chưa có dữ liệu liệu trình</p>
-                  <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-black">Khách hàng đang trong trạng thái chờ sinh</p>
+                  <p className="text-slate-400 font-bold italic">Chưa có dữ liệu liệu trình hoàn thành</p>
+                  <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-black">Khách hàng chưa thực hiện buổi nào</p>
                 </div>
               )}
             </div>
