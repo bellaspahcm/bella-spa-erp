@@ -606,13 +606,13 @@ export default function SessionsPage() {
                         </div>
 
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Ghi chú chăm sóc</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Nội dung & Tiến độ buổi tập</label>
                           <textarea 
-                            placeholder="Nhập ghi chú quan sát mẹ và bé..."
+                            placeholder="Hôm nay mẹ và bé thế nào? Các bước kỹ thuật đã thực hiện, lưu ý cho buổi sau..."
                             value={currentNote}
                             onChange={(e) => setCurrentNote(e.target.value)}
                             disabled={!selectedSessionLog}
-                            className="w-full h-24 p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50 text-xs"
+                            className="w-full h-32 p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50 text-xs shadow-inner"
                           />
                         </div>
 

@@ -23,12 +23,19 @@ import {
   History,
   Briefcase,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  MessageSquare
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+
+declare global {
+  interface Window {
+    fetchSessionHistory?: (bookingId: string) => Promise<void>;
+  }
+}
 
 import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog, completeSession } from '@/services/booking-actions';
 import { getUsers } from '@/services/user-actions';
@@ -65,6 +72,7 @@ function BookingsContent() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [ktvs, setKtvs] = useState<any[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [sessionHistory, setSessionHistory] = useState<any[]>([]);
 
   useEffect(() => {
     if (customerName) {
@@ -93,6 +101,17 @@ function BookingsContent() {
     fetchSessions();
     fetchAllBookings();
     fetchKtvs();
+
+    const fetchSessionHistory = async (bookingId: string) => {
+      const supabase = createClient() as any;
+      const { data } = await supabase
+        .from('session_logs')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .order('session_number', { ascending: false });
+      setSessionHistory(data || []);
+    };
+    window.fetchSessionHistory = fetchSessionHistory;
 
     // REALTIME SUBSCRIPTION
     const supabase = createClient() as any;
@@ -435,10 +454,17 @@ function BookingsContent() {
                         contractId: session.bookings?.booking_number || 'N/A',
                         contractDetail: session.notes || 'Không có ghi chú',
                         bookingId: session.booking_id,
-                        ktvId: session.bookings?.assigned_ktv_id
+                        ktvId: session.bookings?.assigned_ktv_id,
+                        location: session.bookings?.customers?.address || 'Tại Spa',
+                        sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
+                        originalStatus: session.status,
+                        status: session.status,
+                        sessionNumber: session.session_number || 1,
+                        totalSessions: session.bookings?.total_sessions || 21
                       };
                       setModalData(detail);
                       setShowDetailModal(true);
+                      if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
                     }}
                     className="luxury-card-white p-6 rounded-3xl transition-all flex flex-col md:flex-row md:items-center gap-6 cursor-pointer hover:shadow-xl hover:border-primary/20"
                   >
@@ -475,10 +501,67 @@ function BookingsContent() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <button className="px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-xs text-slate-600 transition-colors">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const detail = {
+                            id: session.id,
+                            date: new Date(session.assigned_date),
+                            dateString: session.assigned_date,
+                            customer: session.bookings?.customers?.name_mother || 'Khách hàng',
+                            package: session.bookings?.package_name || 'Gói liệu trình',
+                            time: session.assigned_time || '09:00 - 11:00',
+                            contractId: session.bookings?.booking_number || 'N/A',
+                            contractDetail: session.notes || 'Không có ghi chú',
+                            bookingId: session.booking_id,
+                            ktvId: session.bookings?.assigned_ktv_id,
+                            location: session.bookings?.customers?.address || 'Tại Spa',
+                            sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
+                            originalStatus: session.status,
+                            sessionNumber: session.session_number || 1,
+                            totalSessions: session.bookings?.total_sessions || 21
+                          };
+                          setModalData(detail);
+                          setShowDetailModal(true);
+                          if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
+                        }}
+                        className="px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-xl font-bold text-xs text-slate-600 transition-colors"
+                      >
                         Dời lịch
                       </button>
-                      <button className="px-4 py-2 bg-primary hover:bg-rose-600 text-white rounded-xl font-bold text-xs transition-colors">
+                      <button 
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (session.status === 'completed') {
+                            toast.info('Buổi tập này đã hoàn thành');
+                            return;
+                          }
+                          
+                          // Prefill modal for check-in
+                          const detail = {
+                            id: session.id,
+                            date: new Date(session.assigned_date),
+                            dateString: session.assigned_date,
+                            customer: session.bookings?.customers?.name_mother || 'Khách hàng',
+                            package: session.bookings?.package_name || 'Gói liệu trình',
+                            time: session.assigned_time || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                            contractId: session.bookings?.booking_number || 'N/A',
+                            contractDetail: session.notes || '',
+                            bookingId: session.booking_id,
+                            ktvId: session.bookings?.assigned_ktv_id,
+                            location: session.bookings?.customers?.address || 'Tại Spa',
+                            sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
+                            status: 'completed', // Auto-set to completed for check-in
+                            originalStatus: session.status,
+                            sessionNumber: session.session_number || 1,
+                            totalSessions: session.bookings?.total_sessions || 21
+                          };
+                          setModalData(detail);
+                          setShowDetailModal(true);
+                          if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
+                        }}
+                        className="px-4 py-2 bg-primary hover:bg-rose-600 text-white rounded-xl font-bold text-xs transition-colors disabled:opacity-50 flex items-center gap-1 shadow-lg shadow-rose-100"
+                      >
                         Check-in
                       </button>
                     </div>
@@ -615,16 +698,15 @@ function BookingsContent() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Contract Detail */}
-                  <div className="col-span-2 md:col-span-1 luxury-card-pink p-6 rounded-[32px]">
+                  {/* Status Selection */}
+                  <div className="col-span-2 md:col-span-1 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
                     <div className="flex items-center gap-3 mb-4 text-slate-500">
                       <FileText className="w-5 h-5" />
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Ghi chú & Trạng thái</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Trạng thái hiện tại</span>
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <p className="text-xs text-slate-500 font-bold mb-1">Trạng thái</p>
+                        <p className="text-xs text-slate-500 font-bold mb-2">Cập nhật trạng thái</p>
                         <PremiumSelect 
                           value={modalData.status}
                           options={[
@@ -635,14 +717,53 @@ function BookingsContent() {
                           onChange={(value) => setModalData({...modalData, status: value})}
                         />
                       </div>
-                      <div>
-                        <p className="text-xs text-slate-500 font-bold mb-1">Ghi chú nhanh</p>
-                        <textarea 
-                          value={modalData.contractDetail}
-                          onChange={(e) => setModalData({...modalData, contractDetail: e.target.value})}
-                          className="w-full bg-white/20 border-none rounded-xl px-4 py-2 font-bold text-white shadow-sm focus:ring-2 focus:ring-white/20 transition-all outline-none text-sm h-20 resize-none"
-                        />
+                    </div>
+                  </div>
+
+                  {/* Session History & Notes */}
+                  <div className="col-span-2 space-y-6">
+                    <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                      <div className="flex items-center gap-3 mb-4 text-slate-400">
+                        <History className="w-5 h-5" />
+                        <span className="text-xs font-black uppercase tracking-widest">Lịch sử buổi tập trước</span>
                       </div>
+                      <div className="space-y-3 max-h-[150px] overflow-auto pr-2 custom-scrollbar">
+                        {sessionHistory.filter(s => s.status === 'completed' && s.id !== modalData.id).length > 0 ? (
+                          sessionHistory
+                            .filter(s => s.status === 'completed' && s.id !== modalData.id)
+                            .map((s) => (
+                              <div key={s.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-[10px] font-black text-primary uppercase tracking-tighter">Buổi {s.session_number}</span>
+                                  <span className="text-[10px] font-bold text-slate-400">{new Date(s.completed_date || s.assigned_date).toLocaleDateString('vi-VN')}</span>
+                                </div>
+                                <p className="text-xs text-slate-600 font-bold italic leading-relaxed">"{s.notes || 'Không có ghi chú'}"</p>
+                              </div>
+                            ))
+                        ) : (
+                          <div className="text-center py-6">
+                            <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest italic">Chưa có lịch sử hoàn thành</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-8 rounded-[40px] border-2 border-primary/10 shadow-2xl shadow-primary/5">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3 text-primary">
+                          <MessageSquare className="w-5 h-5" />
+                          <span className="text-xs font-black uppercase tracking-widest">Nội dung chăm sóc hôm nay</span>
+                        </div>
+                        {modalData.status === 'completed' && (
+                          <span className="bg-emerald-100 text-emerald-600 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider animate-pulse">Đang check-in</span>
+                        )}
+                      </div>
+                      <textarea 
+                        className="w-full h-32 p-5 bg-slate-50 rounded-[24px] border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all text-sm shadow-inner"
+                        placeholder="Mẹ và bé hôm nay thế nào? Ghi chú các kỹ thuật đã thực hiện để lần sau nắm thông tin..."
+                        value={modalData.contractDetail}
+                        onChange={(e) => setModalData({...modalData, contractDetail: e.target.value})}
+                      />
                     </div>
                   </div>
                 </div>
