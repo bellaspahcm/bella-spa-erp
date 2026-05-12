@@ -296,8 +296,14 @@ export default function DashboardPage() {
                     }}
                     itemStyle={{ color: '#9D174D' }}
                   />
-                  <XAxis dataKey="name" hide />
-                  <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={{ stroke: '#7d123e', strokeWidth: 2 }}
+                    tickLine={false}
+                    tick={{ fill: 'rgba(255, 255, 255, 0.6)', fontSize: 10, fontWeight: 800 }}
+                    dy={10}
+                  />
+                  <YAxis hide domain={['dataMin - 10', 'dataMax + 10']} />
                   <Area 
                     type="monotone" 
                     dataKey="customers" 
