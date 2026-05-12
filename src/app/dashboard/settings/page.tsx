@@ -448,7 +448,6 @@ export default function SettingsPage() {
           )}
         </motion.div>
       </div>
-      </div>
 
       {/* Add Staff Modal */}
       <AnimatePresence>
