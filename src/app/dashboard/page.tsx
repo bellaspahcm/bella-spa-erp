@@ -120,8 +120,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
-          <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">Dashboard</h1>
-          <p className="text-muted-foreground font-bold mt-1 flex items-center gap-2">
+          <h1 className="text-4xl font-bold text-foreground tracking-tight uppercase">Dashboard</h1>
+          <p className="text-muted-foreground font-semibold mt-1 flex items-center gap-2">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
             Chào buổi sáng, Bella Spa Admin!
           </p>
@@ -169,13 +169,13 @@ export default function DashboardPage() {
               <div className={`p-4 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 ${stat.bg} ${stat.color} shadow-inner`}>
                 <stat.icon className="w-7 h-7" />
               </div>
-              <div className="flex items-center gap-1 text-emerald-500 font-black text-sm bg-emerald-50 px-3 py-1 rounded-full">
+              <div className="flex items-center gap-1 text-emerald-500 font-bold text-sm bg-emerald-50 px-3 py-1 rounded-full">
                 <TrendingUp className="w-4 h-4" />
                 12%
               </div>
             </div>
-            <p className="text-xs font-black text-muted-foreground uppercase tracking-[0.15em] mb-1">{stat.label}</p>
-            <h3 className="text-4xl font-black text-foreground tracking-tight">{stat.value}</h3>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-1">{stat.label}</p>
+            <h3 className="text-4xl font-bold text-foreground tracking-tight">{stat.value}</h3>
           </motion.div>
         ))}
       </motion.div>
@@ -192,13 +192,16 @@ export default function DashboardPage() {
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
           
           <div className="flex items-center justify-between mb-10 relative">
-            <h2 className="text-2xl font-black text-foreground flex items-center gap-3 uppercase tracking-tight">
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-3 uppercase tracking-tight">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
                 <Clock className="w-6 h-6 text-primary" />
               </div>
               Lịch làm việc sắp tới
             </h2>
-            <button className="text-sm font-black text-primary hover:text-accent flex items-center gap-2 transition-all group uppercase tracking-widest">
+            <button 
+              onClick={() => window.location.href = '/dashboard/calendar'}
+              className="text-sm font-semibold text-primary hover:text-accent flex items-center gap-2 transition-all group uppercase tracking-widest"
+            >
               Xem tất cả <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
@@ -212,21 +215,21 @@ export default function DashboardPage() {
 
                 return (
                   <div key={session.id || i} className="flex items-center gap-6 p-6 rounded-3xl hover:bg-white/60 transition-all border border-transparent hover:border-pink-50 group shadow-sm hover:shadow-lg hover:shadow-pink-100/50">
-                    <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center text-primary font-black text-lg border-2 border-white shadow-inner group-hover:scale-105 transition-transform">
+                    <div className="w-14 h-14 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center text-primary font-bold text-lg border-2 border-white shadow-inner group-hover:scale-105 transition-transform">
                       {session.bookings?.customers?.name_mother?.substring(0, 2).toUpperCase() || 'BS'}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-black text-lg text-foreground group-hover:text-primary transition-colors">
+                      <h4 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
                         {session.bookings?.customers?.name_mother} - Buổi {session.session_number}
                       </h4>
-                      <p className="text-sm text-muted-foreground font-bold flex items-center gap-2 mt-1">
+                      <p className="text-sm text-muted-foreground font-semibold flex items-center gap-2 mt-1">
                         <Calendar className="w-4 h-4" />
                         Ngày: {formattedDate}
                       </p>
                     </div>
                     <div className="text-right">
                       <span className={cn(
-                        "inline-flex items-center px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border",
+                        "inline-flex items-center px-4 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] border",
                         statusInfo.color
                       )}>
                         {statusInfo.label}
@@ -252,9 +255,9 @@ export default function DashboardPage() {
           className="luxury-card-pink rounded-[3rem] p-10 relative overflow-hidden shadow-2xl group flex flex-col justify-between"
         >
           <div className="relative z-10">
-            <h2 className="text-xs font-black mb-1 text-white/70 uppercase tracking-[0.2em]">Hiệu suất tháng</h2>
+            <h2 className="text-xs font-semibold mb-1 text-white/70 uppercase tracking-[0.2em]">Hiệu suất tháng</h2>
             <div className="flex items-center gap-3 mb-8">
-              <p className="text-4xl font-black text-white tracking-tighter">+18.4%</p>
+              <p className="text-4xl font-bold text-white tracking-tighter">+18.4%</p>
               <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-md">
                 <TrendingUp className="text-white w-4 h-4" />
               </div>
@@ -315,24 +318,24 @@ export default function DashboardPage() {
             <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
               <Trophy className="w-6 h-6 text-primary" />
             </div>
-            <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Top KTV Xuất Sắc</h2>
+            <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Top KTV Xuất Sắc</h2>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="text-left border-b border-pink-100">
-                  <th className="pb-4 font-black text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <Users className="w-4 h-4" /> Tên KTV
                   </th>
-                  <th className="pb-4 font-black text-xs uppercase tracking-widest text-muted-foreground">
+                  <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground">
                     <Clock className="w-4 h-4 inline mr-2" /> Buổi
                   </th>
-                  <th className="pb-4 font-black text-xs uppercase tracking-widest text-muted-foreground">
+                  <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground">
                     <Star className="w-4 h-4 inline mr-2" /> Rating
                   </th>
-                  <th className="pb-4 font-black text-xs uppercase tracking-widest text-muted-foreground text-center">Status</th>
-                  <th className="pb-4 font-black text-xs uppercase tracking-widest text-muted-foreground text-right">
+                  <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground text-center">Status</th>
+                  <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground text-right">
                     <Diamond className="w-4 h-4 inline mr-2" /> Bonus
                   </th>
                 </tr>
@@ -340,7 +343,7 @@ export default function DashboardPage() {
               <tbody className="divide-y divide-pink-50">
                 {topKTVs.map((ktv: any, idx: number) => (
                   <tr key={idx} className="group hover:bg-white/40 transition-colors">
-                    <td className="py-6 font-black text-foreground">{ktv.name}</td>
+                    <td className="py-6 font-bold text-foreground">{ktv.name}</td>
                     <td className="py-6 font-bold text-muted-foreground">{ktv.sessions} buổi</td>
                     <td className="py-6 font-bold text-muted-foreground">
                       <div className="flex items-center gap-1">
@@ -348,7 +351,7 @@ export default function DashboardPage() {
                       </div>
                     </td>
                     <td className="py-6 text-center">
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
                         ktv.status === 'Xuất Sắc' 
                           ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' 
                           : 'bg-blue-100 text-blue-600 border border-blue-200'
@@ -356,7 +359,7 @@ export default function DashboardPage() {
                         {ktv.status}
                       </span>
                     </td>
-                    <td className="py-6 text-right font-black text-primary">{ktv.bonus}</td>
+                    <td className="py-6 text-right font-bold text-primary">{ktv.bonus}</td>
                   </tr>
                 ))}
               </tbody>
@@ -375,7 +378,7 @@ export default function DashboardPage() {
             <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">
               <Bell className="w-6 h-6 text-rose-500" />
             </div>
-            <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Cảnh báo quan trọng</h2>
+            <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Cảnh báo quan trọng</h2>
           </div>
           
           <div className="space-y-4">
@@ -394,10 +397,10 @@ export default function DashboardPage() {
                   {alert.icon === 'alert' ? <AlertTriangle className="w-6 h-6" /> : <Lightbulb className="w-6 h-6" />}
                 </div>
                 <div className="flex-1">
-                  <h3 className={`font-black text-lg ${alert.type === 'warning' ? 'text-amber-900' : 'text-blue-900'}`}>
+                  <h3 className={`font-bold text-lg ${alert.type === 'warning' ? 'text-amber-900' : 'text-blue-900'}`}>
                     {alert.title}
                   </h3>
-                  <p className={`font-bold opacity-80 ${alert.type === 'warning' ? 'text-amber-800' : 'text-blue-800'}`}>
+                  <p className={`font-semibold opacity-80 ${alert.type === 'warning' ? 'text-amber-800' : 'text-blue-800'}`}>
                     {alert.message}
                   </p>
                 </div>
