@@ -37,7 +37,8 @@ import {
   getUpcomingSessions, 
   getTopTechnicians, 
   getImportantAlerts,
-  getMonthlyPerformance
+  getMonthlyPerformance,
+  getFullDashboardData
 } from '@/services/dashboard-actions';
 import { completeSession, saveSessionNote } from '@/services/booking-actions';
 import { createClient } from '@/lib/supabase-client';
@@ -107,13 +108,7 @@ export default function DashboardPage() {
     try {
       const { startDate, endDate } = getMonthRange(selectedMonth, selectedYear);
       
-      const [statsData, sessionsData, ktvsData, alertsData, perfData] = await Promise.all([
-        getDashboardStats(startDate, endDate),
-        getUpcomingSessions(),
-        getTopTechnicians(),
-        getImportantAlerts(),
-        getMonthlyPerformance()
-      ]);
+      const { statsData, sessionsData, ktvsData, alertsData, perfData } = await getFullDashboardData(startDate, endDate);
 
       setStats([
         { label: 'Tổng khách hàng', value: statsData.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
