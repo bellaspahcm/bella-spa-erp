@@ -62,9 +62,24 @@ async function simulate() {
       if (step % 2 === 0) {
         // Sim: Complete a session
         console.log(`[SIM] Completing session for booking ${booking.booking_number}...`);
-        await patch('bookings', booking.id, { completed_sessions: booking.completed_sessions + 1 });
         
-        // Add a revenue record for the session
+        // 1. Update Booking Progress
+        const newCompletedCount = (booking.completed_sessions || 0) + 1;
+        await patch('bookings', booking.id, { completed_sessions: newCompletedCount });
+        
+        // 2. Update the next scheduled session log
+        const logs = await get(`session_logs?booking_id=eq.${booking.id}&status=eq.scheduled&limit=1&order=session_number.asc`);
+        if (logs && logs.length > 0) {
+          const nextSession = logs[0];
+          await patch('session_logs', nextSession.id, { 
+            status: 'completed', 
+            completed_date: new Date().toISOString(),
+            notes: 'Mẹ và bé khỏe mạnh. Chăm sóc sau sinh tiêu chuẩn.'
+          });
+          console.log(`[SIM] Updated session log #${nextSession.session_number} to completed.`);
+        }
+
+        // 3. Add a revenue record for the session
         await post('revenue', {
           booking_id: booking.id,
           amount: 500000,

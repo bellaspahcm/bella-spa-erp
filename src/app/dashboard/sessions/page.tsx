@@ -402,52 +402,6 @@ export default function SessionsPage() {
 
                 <div className="flex items-center gap-4 md:border-l md:pl-8 border-slate-100 min-w-[200px] justify-center relative z-10">
                   {!isFullyCompleted ? (
-                    <div className="relative w-full">
-                      <AnimatePresence>
-                        {quickNoteBookingId === booking.id && (
-                          <motion.div 
-                            initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute top-full right-0 mt-4 w-72 bg-[#1A0A0E] text-white rounded-[2.5rem] shadow-2xl border border-white/10 p-6 z-[100]"
-                          >
-                            <div className="flex items-center gap-2 mb-4">
-                              <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                                <FileEdit className="w-3 h-3 text-white" />
-                              </div>
-                              <h4 className="text-[10px] font-black uppercase tracking-[0.2em]">Ghi chú buổi {(booking.completed_sessions || 0) + 1}</h4>
-                            </div>
-                            <textarea 
-                              autoFocus
-                              value={quickNoteValue}
-                              onChange={(e) => setQuickNoteValue(e.target.value)}
-                              placeholder="Mẹ và bé khỏe mạnh..."
-                              className="w-full h-24 p-4 bg-white/10 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none mb-4 text-white placeholder:text-white/30"
-                            />
-                            <div className="flex gap-2">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setQuickNoteBookingId(null); }}
-                                className="flex-1 py-3 rounded-xl text-[9px] font-black uppercase text-white/50 hover:bg-white/5 hover:text-white transition-colors"
-                              >
-                                Đóng
-                              </button>
-                              <button 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  handleUpdateProgress(booking.id, quickNoteValue); 
-                                  setQuickNoteBookingId(null);
-                                  setQuickNoteValue('');
-                                }}
-                                className="flex-1 bg-primary text-white py-3 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-pink-900/20 hover:bg-primary-hover"
-                              >
-                                Xác nhận
-                              </button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
                       <button 
                         onClick={(e) => { 
                           e.stopPropagation(); 
@@ -457,7 +411,7 @@ export default function SessionsPage() {
                             setTimeout(() => setShowToast(false), 3000);
                             return;
                           }
-                          setQuickNoteBookingId(booking.id); 
+                          handleUpdateProgress(booking.id); 
                         }}
                         disabled={isUpdating}
                         className={cn(
@@ -475,7 +429,6 @@ export default function SessionsPage() {
                           <><ChevronRight className="w-4 h-4" /> Cập nhật buổi {(booking.completed_sessions || 0) + 1}</>
                         )}
                       </button>
-                    </div>
                   ) : (
                     <div className="flex items-center gap-3 text-emerald-500 font-black uppercase tracking-widest text-[10px] bg-emerald-50 px-6 py-4 rounded-2xl border border-emerald-200">
                       <CheckCircle2 className="w-4 h-4" /> Đã hoàn tất
