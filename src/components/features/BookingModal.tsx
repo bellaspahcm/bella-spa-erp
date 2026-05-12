@@ -405,11 +405,11 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                 <div className="p-6 luxury-card-pink rounded-[2rem]">
                   <div className="flex justify-between items-center mb-4 opacity-70">
                     <span className="font-bold">Tổng tiền gói</span>
-                    <span className="font-black">{formatNumberWithSeparator(formData.full_price)}đ</span>
+                    <span className="font-bold">{formatNumberWithSeparator(formData.full_price)}đ</span>
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-white/10">
                     <span className="font-bold">Cần thanh toán thêm</span>
-                    <span className="text-2xl font-black text-primary">
+                    <span className="text-2xl font-bold text-primary">
                       {formatNumberWithSeparator(formData.full_price - formData.deposit_amount)}đ
                     </span>
                   </div>

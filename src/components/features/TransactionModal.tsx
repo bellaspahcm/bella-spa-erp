@@ -29,7 +29,8 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || isNaN(Number(amount.replace(/,/g, '')))) {
+    const cleanAmount = amount.replace(/\D/g, '');
+    if (!cleanAmount || isNaN(Number(cleanAmount))) {
       toast.error('Vui lòng nhập số tiền hợp lệ');
       return;
     }
@@ -37,7 +38,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
     setIsSubmitting(true);
     try {
       await recordTransaction({
-        amount: Number(amount.replace(/,/g, '')),
+        amount: Number(cleanAmount),
         type,
         notes: notes || (type === 'revenue' ? 'Thu nhập khác' : 'Chi phí khác')
       });
@@ -130,7 +131,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
                     const val = e.target.value.replace(/\D/g, '');
                     setAmount(val ? Number(val).toLocaleString() : '');
                   }}
-                  className="w-full pl-16 pr-8 py-5 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-3xl outline-none transition-all text-2xl font-black text-slate-900"
+                  className="w-full pl-16 pr-8 py-5 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-3xl outline-none transition-all text-2xl font-bold text-slate-900"
                 />
                 <span className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-slate-400">VNĐ</span>
               </div>
@@ -152,7 +153,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
             </div>
 
             {/* Warning if Large Amount */}
-            {amount && Number(amount.replace(/,/g, '')) > 10000000 && (
+            {amount && Number(amount.replace(/\D/g, '')) > 10000000 && (
               <div className="flex items-center gap-3 p-4 bg-amber-50 text-amber-600 rounded-2xl border border-amber-100">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <p className="text-xs font-bold">Giao dịch lớn (trên 10M), vui lòng kiểm tra kỹ chứng từ!</p>

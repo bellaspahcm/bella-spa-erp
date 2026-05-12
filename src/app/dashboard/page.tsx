@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
   Calendar, 
@@ -18,7 +18,9 @@ import {
   AlertTriangle,
   Lightbulb,
   Trophy,
-  Diamond 
+  Diamond,
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -37,6 +39,7 @@ import {
   getImportantAlerts,
   getMonthlyPerformance
 } from '@/services/dashboard-actions';
+import { completeSession, saveSessionNote } from '@/services/booking-actions';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 
@@ -69,6 +72,9 @@ export default function DashboardPage() {
   const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
+  const [quickNoteValue, setQuickNoteValue] = useState('');
 
   const fetchData = async () => {
     try {
@@ -117,6 +123,27 @@ export default function DashboardPage() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const handleCompleteSession = async (sessionId: string, bookingId: string, note: string) => {
+    setUpdatingId(sessionId);
+    try {
+      if (note.trim()) {
+        await saveSessionNote(sessionId, note);
+      }
+      const result = await completeSession(sessionId, bookingId);
+      if (result.success) {
+        toast.success('Đã cập nhật tiến độ buổi tập!');
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Update failed:', error);
+      toast.error('Cập nhật thất bại');
+    } finally {
+      setUpdatingId(null);
+      setQuickNoteId(null);
+      setQuickNoteValue('');
+    }
+  };
 
   const getStatusInfo = (status: string) => {
     switch (status.toLowerCase()) {
@@ -247,13 +274,66 @@ export default function DashboardPage() {
                         Ngày: {formattedDate}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className={cn(
-                        "inline-flex items-center px-4 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] border",
-                        statusInfo.color
-                      )}>
-                        {statusInfo.label}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className={cn(
+                          "inline-flex items-center px-4 py-2 rounded-2xl text-[10px] font-bold uppercase tracking-[0.2em] border",
+                          statusInfo.color
+                        )}>
+                          {statusInfo.label}
+                        </span>
+                      </div>
+                      
+                      {session.status === 'scheduled' && (
+                        <div className="relative">
+                          <AnimatePresence>
+                            {quickNoteId === session.id && (
+                              <motion.div 
+                                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                                className="absolute bottom-full right-0 mb-4 w-64 bg-white rounded-3xl shadow-2xl border border-pink-100 p-5 z-50"
+                              >
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">Ghi chú nhanh</h4>
+                                <textarea 
+                                  autoFocus
+                                  value={quickNoteValue}
+                                  onChange={(e) => setQuickNoteValue(e.target.value)}
+                                  placeholder="Mẹ và bé khỏe..."
+                                  className="w-full h-20 p-3 bg-slate-50 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none mb-3"
+                                />
+                                <div className="flex gap-2">
+                                  <button 
+                                    onClick={() => setQuickNoteId(null)}
+                                    className="flex-1 py-2 rounded-lg text-[9px] font-black uppercase text-slate-400"
+                                  >
+                                    Hủy
+                                  </button>
+                                  <button 
+                                    onClick={() => handleCompleteSession(session.id, session.booking_id, quickNoteValue)}
+                                    className="flex-1 bg-primary text-white py-2 rounded-lg text-[9px] font-black uppercase shadow-lg shadow-pink-100"
+                                  >
+                                    Xác nhận
+                                  </button>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                          
+                          <button 
+                            disabled={updatingId === session.id}
+                            onClick={() => setQuickNoteId(session.id)}
+                            className="p-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-90 disabled:opacity-50"
+                            title="Hoàn thành buổi tập"
+                          >
+                            {updatingId === session.id ? (
+                              <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
