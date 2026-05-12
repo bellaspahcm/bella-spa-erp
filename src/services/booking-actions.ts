@@ -240,3 +240,42 @@ export async function saveSessionNote(sessionId: string, note: string) {
   revalidatePath('/dashboard/sessions');
   return { success: true };
 }
+
+export async function createSessionLog(data: any) {
+  const supabase = (await createClient()) as any;
+  
+  // 1. Get current session number for this booking
+  const { count, error: countError } = await supabase
+    .from('session_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('booking_id', data.booking_id);
+
+  if (countError) {
+    console.error('Error counting sessions:', countError);
+    return { error: countError.message };
+  }
+
+  // 2. Insert new session log
+  const { data: session, error } = await supabase
+    .from('session_logs')
+    .insert([
+      {
+        booking_id: data.booking_id,
+        session_number: (count || 0) + 1,
+        assigned_date: data.assigned_date,
+        assigned_time: data.assigned_time,
+        notes: data.notes,
+        status: data.status || 'scheduled'
+      } as any,
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating session log:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/dashboard/bookings');
+  return { data: session };
+}
