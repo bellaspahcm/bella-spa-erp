@@ -183,8 +183,8 @@ function BookingsContent() {
   const handleUpdatePlan = async () => {
     setIsUpdating(true);
     try {
-      // Logic to update the session log in Supabase
       const result = await updateSessionLog(modalData.id, {
+        assigned_date: modalData.dateString,
         assigned_time: modalData.time,
         notes: modalData.contractDetail,
         status: modalData.status
@@ -391,6 +391,7 @@ function BookingsContent() {
                       const detail = {
                         id: session.id,
                         date: new Date(session.assigned_date),
+                        dateString: session.assigned_date,
                         customer: session.bookings?.customers?.name_mother || 'Khách hàng',
                         package: session.bookings?.package_name || 'Gói liệu trình',
                         time: session.assigned_time || '09:00 - 11:00',
@@ -524,14 +525,25 @@ function BookingsContent() {
                       <span className="text-xs font-black uppercase tracking-widest">Thời gian & Địa điểm</span>
                     </div>
                     <div className="space-y-4">
-                      <div>
-                        <p className="text-xs text-slate-400 font-bold mb-1">Giờ chăm sóc</p>
-                        <input 
-                          type="text" 
-                          value={modalData.time}
-                          onChange={(e) => setModalData({...modalData, time: e.target.value})}
-                          className="w-full bg-white border-none rounded-xl px-4 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
-                        />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <p className="text-xs text-slate-400 font-bold mb-1">Ngày (Dời lịch)</p>
+                          <input 
+                            type="date" 
+                            value={modalData.dateString || ''}
+                            onChange={(e) => setModalData({...modalData, dateString: e.target.value})}
+                            className="w-full bg-white border-none rounded-xl px-3 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400 font-bold mb-1">Giờ chăm sóc</p>
+                          <input 
+                            type="text" 
+                            value={modalData.time || ''}
+                            onChange={(e) => setModalData({...modalData, time: e.target.value})}
+                            className="w-full bg-white border-none rounded-xl px-3 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                          />
+                        </div>
                       </div>
                       <div>
                         <p className="text-xs text-slate-400 font-bold mb-1">Địa chỉ</p>
