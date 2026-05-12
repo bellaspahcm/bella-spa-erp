@@ -177,42 +177,72 @@ export async function getTopTechnicians() {
 export async function getMonthlyPerformance() {
   const supabase = (await createClient()) as any;
   
-  // Fetch data for the last 6 months
   const now = new Date();
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
   sixMonthsAgo.setDate(1);
+  const sixMonthsAgoStr = sixMonthsAgo.toISOString().substring(0, 10);
   
-  const todayStr = new Date().toLocaleDateString('en-CA');
-  const { data, error } = await supabase
-    .from('session_logs')
-    .select('assigned_date')
-    .gte('assigned_date', sixMonthsAgo.toLocaleDateString('en-CA'))
-    .lte('assigned_date', todayStr);
+  const [
+    { data: sessionData },
+    { data: revenueData },
+    { data: reviewData }
+  ] = await Promise.all([
+    supabase.from('session_logs').select('assigned_date').gte('assigned_date', sixMonthsAgoStr),
+    supabase.from('revenue').select('amount, created_at').gte('created_at', sixMonthsAgoStr),
+    supabase.from('session_reviews').select('rating, created_at').gte('created_at', sixMonthsAgoStr)
+  ]);
 
   const monthNames = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-  const monthMap: Record<string, number> = {};
+  const results = [];
   
-  // Initialize months in order
   for (let i = 5; i >= 0; i--) {
     const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const label = monthNames[d.getMonth()];
-    monthMap[label] = 0;
+    d.setMonth(now.getMonth() - i);
+    const monthIndex = d.getMonth();
+    const year = d.getFullYear();
+    const label = monthNames[monthIndex];
+    
+    // Filter sessions
+    const sessionCount = sessionData?.filter((s: any) => {
+      const sDate = new Date(s.assigned_date);
+      return sDate.getMonth() === monthIndex && sDate.getFullYear() === year;
+    }).length || 0;
+
+    // Filter revenue & expenses
+    const monthRevenueData = revenueData?.filter((r: any) => {
+      const rDate = new Date(r.created_at);
+      return rDate.getMonth() === monthIndex && rDate.getFullYear() === year;
+    }) || [];
+    
+    const revenue = monthRevenueData
+      .filter((r: any) => Number(r.amount) > 0)
+      .reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
+      
+    const expense = Math.abs(monthRevenueData
+      .filter((r: any) => Number(r.amount) < 0)
+      .reduce((acc: number, curr: any) => acc + Number(curr.amount), 0));
+
+    // Filter ratings
+    const monthReviews = reviewData?.filter((r: any) => {
+      const rDate = new Date(r.created_at);
+      return rDate.getMonth() === monthIndex && rDate.getFullYear() === year;
+    }) || [];
+    
+    const avgRating = monthReviews.length 
+      ? monthReviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / monthReviews.length 
+      : 5.0;
+
+    results.push({
+      name: label,
+      customers: sessionCount,
+      revenue: Math.round(revenue / 1000000), // In millions
+      expense: Math.round(expense / 1000000), // In millions
+      rating: Number(avgRating.toFixed(1))
+    });
   }
 
-  data?.forEach((s: any) => {
-    const date = new Date(s.assigned_date);
-    const label = monthNames[date.getMonth()];
-    if (monthMap[label] !== undefined) {
-      monthMap[label]++;
-    }
-  });
-
-  return Object.entries(monthMap).map(([name, count]) => ({
-    name,
-    customers: count
-  }));
+  return results;
 }
 
 export async function getImportantAlerts() {
