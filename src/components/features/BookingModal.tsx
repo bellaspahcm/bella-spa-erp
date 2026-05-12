@@ -50,7 +50,7 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
     full_price: 0,
     deposit_amount: 0,
     total_sessions: 21,
-    start_date: new Date().toISOString().split('T')[0].replace('2024', '2026').replace('2025', '2026'),
+    start_date: new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => {
@@ -389,6 +389,7 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
                     <input 
                       type="date" 
                       value={formData.start_date}
+                      min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setFormData({...formData, start_date: e.target.value})}
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
                     />
