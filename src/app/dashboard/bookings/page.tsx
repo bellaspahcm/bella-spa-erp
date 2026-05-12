@@ -55,6 +55,7 @@ function BookingsContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [modalData, setModalData] = useState<any>(null);
   const [sessions, setSessions] = useState<any[]>([]);
+  const [allBookings, setAllBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -66,7 +67,13 @@ function BookingsContent() {
 
   useEffect(() => {
     fetchSessions();
+    fetchAllBookings();
   }, []);
+
+  const fetchAllBookings = async () => {
+    const data = await getBookings();
+    setAllBookings(data);
+  };
 
   const fetchSessions = async () => {
     setIsLoading(true);
@@ -623,9 +630,15 @@ function BookingsContent() {
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Chọn Hợp đồng / Khách hàng</label>
                     <select name="booking_id" className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1">
-                      {MOCK_BOOKINGS.map(b => (
-                        <option key={b.id} value={b.id}>{b.customers?.name_mother} - {b.booking_number}</option>
-                      ))}
+                      {allBookings.length > 0 ? (
+                        allBookings.map(b => (
+                          <option key={b.id} value={b.id}>{b.customers?.name_mother} - {b.booking_number}</option>
+                        ))
+                      ) : (
+                        MOCK_BOOKINGS.map(b => (
+                          <option key={b.id} value={b.id}>{b.customers?.name_mother} - {b.booking_number}</option>
+                        ))
+                      )}
                     </select>
                   </div>
 
