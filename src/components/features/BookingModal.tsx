@@ -17,7 +17,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCustomers } from '@/services/customer-actions';
+import { getCustomers, createCustomer } from '@/services/customer-actions';
 import { createBooking } from '@/services/booking-actions';
 import { MOCK_SERVICES } from '@/constants/mock-data';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
@@ -29,12 +29,19 @@ interface BookingModalProps {
 
 export function BookingModal({ isOpen, onClose }: BookingModalProps) {
   const [step, setStep] = useState(1);
+  const [mode, setMode] = useState<'search' | 'new'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [customers, setCustomers] = useState<any[]>([]);
   const [filteredCustomers, setFilteredCustomers] = useState<any[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [newCustomer, setNewCustomer] = useState({
+    name_mother: '',
+    phone: '',
+    address: '',
+  });
 
   const [formData, setFormData] = useState({
     package_id: '',
@@ -48,8 +55,10 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
   useEffect(() => {
     if (isOpen) {
       setStep(1);
+      setMode('search');
       setSearchQuery('');
       setSelectedCustomer(null);
+      setNewCustomer({ name_mother: '', phone: '', address: '' });
       fetchCustomers();
     }
   }, [isOpen]);
@@ -105,9 +114,27 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
 
     setIsSubmitting(true);
     try {
+      let customerId = selectedCustomer.id;
+
+      // 1. If new customer, create them first
+      if (mode === 'new') {
+        const customerResult = await createCustomer({
+          ...newCustomer,
+          address: newCustomer.address || 'Chưa cập nhật'
+        });
+
+        if (customerResult.error) {
+          toast.error('Lỗi khi tạo khách hàng: ' + customerResult.error);
+          setIsSubmitting(false);
+          return;
+        }
+        customerId = customerResult.data.id;
+      }
+
+      // 2. Create the booking
       const result = await createBooking({
         ...formData,
-        customer_id: selectedCustomer.id
+        customer_id: customerId
       });
 
       if (result.error) {
@@ -172,59 +199,127 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
           <div className="p-8 max-h-[70vh] overflow-y-auto">
             {step === 1 ? (
               <div className="space-y-6">
-                {/* Search */}
-                <div className="relative group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-                  <input 
-                    type="text" 
-                    placeholder="Tìm theo tên mẹ hoặc số điện thoại..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
-                    autoFocus
-                  />
+                {/* Mode Toggle */}
+                <div className="flex p-1.5 bg-slate-100 rounded-2xl">
+                  <button 
+                    onClick={() => setMode('search')}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2",
+                      mode === 'search' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    <Search className="w-4 h-4" /> Khách cũ
+                  </button>
+                  <button 
+                    onClick={() => setMode('new')}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2",
+                      mode === 'new' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    <Plus className="w-4 h-4" /> Khách mới
+                  </button>
                 </div>
 
-                {/* Customer List */}
-                <div className="space-y-3">
-                  {isLoading ? (
-                    <div className="py-20 text-center">
-                      <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-4" />
-                      <p className="text-slate-500 font-bold">Đang tải danh sách...</p>
+                {mode === 'search' ? (
+                  <>
+                    {/* Search */}
+                    <div className="relative group">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
+                      <input 
+                        type="text" 
+                        placeholder="Tìm theo tên mẹ hoặc số điện thoại..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
+                        autoFocus
+                      />
                     </div>
-                  ) : filteredCustomers.length > 0 ? (
-                    filteredCustomers.map((customer) => (
-                      <button
-                        key={customer.id}
-                        onClick={() => {
-                          setSelectedCustomer(customer);
-                          setStep(2);
-                        }}
-                        className="w-full flex items-center justify-between p-5 rounded-[1.5rem] border border-slate-100 hover:border-primary hover:bg-primary/5 transition-all group text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 group-hover:bg-primary/20 group-hover:text-primary transition-colors">
-                            <User className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <h4 className="font-black text-slate-900 group-hover:text-primary transition-colors">{customer.name_mother}</h4>
-                            <p className="text-sm text-slate-500 font-bold flex items-center gap-2">
-                              <Phone className="w-4 h-4" /> {customer.phone}
-                            </p>
-                          </div>
+
+                    {/* Customer List */}
+                    <div className="space-y-3">
+                      {isLoading ? (
+                        <div className="py-20 text-center">
+                          <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-4" />
+                          <p className="text-slate-500 font-bold">Đang tải danh sách...</p>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                      </button>
-                    ))
-                  ) : (
-                    <div className="py-12 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                      <p className="text-slate-400 font-bold italic mb-4">Không tìm thấy khách hàng</p>
-                      <button className="px-6 py-3 bg-white border border-primary text-primary rounded-xl font-black hover:bg-primary hover:text-white transition-all flex items-center gap-2 mx-auto">
-                        <Plus className="w-5 h-5" /> Thêm khách hàng mới
-                      </button>
+                      ) : filteredCustomers.length > 0 ? (
+                        filteredCustomers.map((customer) => (
+                          <button
+                            key={customer.id}
+                            onClick={() => {
+                              setSelectedCustomer(customer);
+                              setStep(2);
+                            }}
+                            className="w-full flex items-center justify-between p-5 rounded-[1.5rem] border border-slate-100 hover:border-primary hover:bg-primary/5 transition-all group text-left"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                                <User className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <h4 className="font-black text-slate-900 group-hover:text-primary transition-colors">{customer.name_mother}</h4>
+                                <p className="text-sm text-slate-500 font-bold flex items-center gap-2">
+                                  <Phone className="w-4 h-4" /> {customer.phone}
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                          </button>
+                        ))
+                      ) : (
+                        <div className="py-12 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                          <p className="text-slate-400 font-bold italic mb-4">Không tìm thấy khách hàng</p>
+                          <button 
+                            onClick={() => setMode('new')}
+                            className="px-6 py-3 bg-white border border-primary text-primary rounded-xl font-black hover:bg-primary hover:text-white transition-all flex items-center gap-2 mx-auto"
+                          >
+                            <Plus className="w-5 h-5" /> Thêm khách hàng mới
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                ) : (
+                  <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <User className="w-4 h-4" /> Tên mẹ
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="Nhập tên mẹ..." 
+                        value={newCustomer.name_mother}
+                        onChange={(e) => setNewCustomer({...newCustomer, name_mother: e.target.value})}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <Phone className="w-4 h-4" /> Số điện thoại
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="Nhập số điện thoại..." 
+                        value={newCustomer.phone}
+                        onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <Search className="w-4 h-4" /> Địa chỉ
+                      </label>
+                      <input 
+                        type="text" 
+                        placeholder="Nhập địa chỉ..." 
+                        value={newCustomer.address}
+                        onChange={(e) => setNewCustomer({...newCustomer, address: e.target.value})}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-8">
@@ -234,9 +329,16 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                     <User className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-black text-slate-900">{selectedCustomer?.name_mother}</h4>
-                    <p className="text-sm text-slate-500 font-bold">{selectedCustomer?.phone}</p>
+                    <h4 className="font-black text-slate-900">
+                      {mode === 'new' ? newCustomer.name_mother : selectedCustomer?.name_mother}
+                    </h4>
+                    <p className="text-sm text-slate-500 font-bold">
+                      {mode === 'new' ? newCustomer.phone : selectedCustomer?.phone}
+                    </p>
                   </div>
+                  {mode === 'new' && (
+                    <span className="ml-auto bg-primary/10 text-primary text-[10px] px-2 py-1 rounded-full font-black uppercase">Mới</span>
+                  )}
                 </div>
 
                 {/* Service Selection */}
@@ -325,19 +427,30 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
               Hủy
             </button>
             <button 
-              disabled={step === 1 || !formData.package_name || isSubmitting}
-              onClick={handleSubmit}
+              disabled={
+                (step === 1 && mode === 'search') || 
+                (step === 1 && mode === 'new' && (!newCustomer.name_mother || !newCustomer.phone)) ||
+                (step === 2 && (!formData.package_name || isSubmitting))
+              }
+              onClick={() => {
+                if (step === 1) setStep(2);
+                else handleSubmit();
+              }}
               className={cn(
                 "flex-1 px-8 py-4 bg-primary text-white rounded-2xl font-black transition-all shadow-xl shadow-primary/20 uppercase tracking-widest active:scale-95 flex items-center justify-center gap-3",
-                (step === 1 || !formData.package_name || isSubmitting) && "opacity-50 cursor-not-allowed grayscale"
+                ((step === 1 && mode === 'search') || 
+                 (step === 1 && mode === 'new' && (!newCustomer.name_mother || !newCustomer.phone)) ||
+                 (step === 2 && (!formData.package_name || isSubmitting))) && "opacity-50 cursor-not-allowed grayscale"
               )}
             >
               {isSubmitting ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
+              ) : step === 1 ? (
+                <ChevronRight className="w-5 h-5" />
               ) : (
                 <CheckCircle2 className="w-5 h-5" />
               )}
-              {isSubmitting ? 'Đang lưu...' : 'Xác nhận tạo'}
+              {isSubmitting ? 'Đang lưu...' : step === 1 ? 'Tiếp tục' : 'Xác nhận tạo'}
             </button>
           </div>
         </motion.div>
