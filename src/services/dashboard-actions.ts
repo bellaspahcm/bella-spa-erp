@@ -169,3 +169,22 @@ export async function getImportantAlerts() {
     }
   ];
 }
+
+// Bundle everything into a single request for faster page loading
+export async function getFullDashboardData(startDate?: string, endDate?: string) {
+  const [statsData, sessionsData, ktvsData, alertsData, perfData] = await Promise.all([
+    getDashboardStats(startDate, endDate),
+    getUpcomingSessions(),
+    getTopTechnicians(),
+    getImportantAlerts(),
+    getMonthlyPerformance()
+  ]);
+
+  return {
+    statsData,
+    sessionsData,
+    ktvsData,
+    alertsData,
+    perfData
+  };
+}
