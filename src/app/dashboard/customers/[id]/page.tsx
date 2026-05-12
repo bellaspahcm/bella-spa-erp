@@ -228,26 +228,35 @@ export default function CustomerDetailPage() {
             <div className="relative z-10 flex flex-col md:flex-row justify-between gap-8">
               <div className="space-y-6">
                 <div>
-                  <p className="text-primary text-[10px] font-black uppercase tracking-[0.3em] mb-2">Gói dịch vụ hiện tại</p>
-                  <h2 className="text-3xl font-black">{customer.booking.package}</h2>
+                  <p className="text-rose-200 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Gói dịch vụ hiện tại</p>
+                  <h2 className="text-3xl font-black text-white">{customer.booking.package}</h2>
                 </div>
                 <div className="flex gap-4">
                   <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                    <p className="text-[10px] opacity-60 font-bold uppercase mb-1">Tổng cộng</p>
-                    <p className="font-black text-lg">15,500,000đ</p>
+                    <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Tổng cộng</p>
+                    <p className="font-black text-lg text-white">15,500,000đ</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                    <p className="text-[10px] opacity-60 font-bold uppercase mb-1">Còn lại</p>
-                    <p className="font-black text-lg text-primary">{customer.booking.remaining}</p>
+                    <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
+                    <p className="font-black text-lg text-rose-200">{customer.booking.remaining}</p>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col justify-end gap-3">
-                <button className="flex items-center justify-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-2xl font-black transition-all hover:bg-primary hover:text-white uppercase tracking-widest text-xs">
+                <button 
+                  onClick={() => {
+                    const cleanPhone = customer.phone.replace(/[^\d]/g, '');
+                    window.open(`https://zalo.me/${cleanPhone}`, '_blank');
+                  }}
+                  className="flex items-center justify-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-2xl font-black transition-all hover:bg-rose-50 uppercase tracking-widest text-xs"
+                >
                   <MessageCircle className="w-4 h-4" />
                   Gửi báo cáo Zalo
                 </button>
-                <button className="flex items-center justify-center gap-3 bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-2xl font-black transition-all hover:bg-white/20 uppercase tracking-widest text-xs">
+                <button 
+                  onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
+                  className="flex items-center justify-center gap-3 bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-2xl font-black transition-all hover:bg-white/20 uppercase tracking-widest text-xs"
+                >
                   <FileText className="w-4 h-4" />
                   Xuất hợp đồng
                 </button>
