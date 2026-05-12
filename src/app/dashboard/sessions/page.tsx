@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote } from '@/services/booking-actions';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabase-client';
+import { createClient } from '@/lib/supabase-client';
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<any[]>([]);
@@ -45,7 +45,26 @@ export default function SessionsPage() {
 
   useEffect(() => {
     loadSessions();
-  }, []);
+
+    // REALTIME SUBSCRIPTION
+    const supabase = createClient() as any;
+    const channel = supabase
+      .channel('sessions-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
+        loadSessions();
+        if (selectedBooking) {
+          fetchSessionLogs(selectedBooking.id);
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+        loadSessions();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedBooking]);
 
   useEffect(() => {
     if (selectedBooking) {
@@ -143,7 +162,7 @@ export default function SessionsPage() {
         
         // Decrement the booking count
         const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) - 1);
-        await (supabase as any).from('bookings').update({ completed_sessions: newCount } as any).eq('id', selectedBooking.id);
+        await (createClient() as any).from('bookings').update({ completed_sessions: newCount } as any).eq('id', selectedBooking.id);
       }
       
       setToastMessage(newStatus === 'completed' ? 'Đã xác nhận hoàn thành buổi tập!' : 'Đã hoàn tác trạng thái buổi tập!');

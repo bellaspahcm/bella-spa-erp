@@ -22,8 +22,10 @@ import {
   CalendarDays,
   History,
   Briefcase,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 
 import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog } from '@/services/booking-actions';
@@ -65,11 +67,6 @@ function BookingsContent() {
     }
   }, [customerName]);
 
-  useEffect(() => {
-    fetchSessions();
-    fetchAllBookings();
-  }, []);
-
   const fetchAllBookings = async () => {
     const data = await getBookings();
     setAllBookings(data);
@@ -77,10 +74,37 @@ function BookingsContent() {
 
   const fetchSessions = async () => {
     setIsLoading(true);
-    const data = await getCalendarSessions();
-    setSessions(data);
-    setIsLoading(false);
+    try {
+      const data = await getCalendarSessions();
+      setSessions(data);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchSessions();
+    fetchAllBookings();
+
+    // REALTIME SUBSCRIPTION
+    const supabase = createClient() as any;
+    const channel = supabase
+      .channel('bookings-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
+        fetchSessions();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+        fetchAllBookings();
+        fetchSessions();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const getMonthDays = (date: Date) => {
     const year = date.getFullYear();
@@ -635,9 +659,7 @@ function BookingsContent() {
                           <option key={b.id} value={b.id}>{b.customers?.name_mother} - {b.booking_number}</option>
                         ))
                       ) : (
-                        MOCK_BOOKINGS.map(b => (
-                          <option key={b.id} value={b.id}>{b.customers?.name_mother} - {b.booking_number}</option>
-                        ))
+                        <option disabled>Không có hợp đồng nào</option>
                       )}
                     </select>
                   </div>

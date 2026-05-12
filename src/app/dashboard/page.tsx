@@ -36,9 +36,7 @@ import {
   getImportantAlerts,
   getMonthlyPerformance
 } from '@/services/dashboard-actions';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
+import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 
 import { 
@@ -63,58 +61,60 @@ const item = {
 };
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any[]>([
-    { label: 'Tổng khách hàng', value: MOCK_DASHBOARD_STATS.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Lịch hẹn hôm nay', value: MOCK_DASHBOARD_STATS.todayBookings.toString(), icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { label: 'Doanh thu tháng', value: MOCK_DASHBOARD_STATS.totalRevenue, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Đánh giá KTV', value: MOCK_DASHBOARD_STATS.avgRating, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
-  ]);
-  const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS.map(b => ({
-    id: b.id,
-    session_number: b.completed_sessions + 1,
-    assigned_date: b.start_date,
-    status: b.status,
-    bookings: {
-      customers: {
-        name_mother: b.customers?.name_mother
-      }
-    }
-  })));
-  const [topKTVs, setTopKTVs] = useState<any[]>(MOCK_TOP_KTVS);
+  const [stats, setStats] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [topKTVs, setTopKTVs] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [performanceData, setPerformanceData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [statsData, sessionsData, ktvsData, alertsData, perfData] = await Promise.all([
-          getDashboardStats(),
-          getUpcomingSessions(),
-          getTopTechnicians(),
-          getImportantAlerts(),
-          getMonthlyPerformance()
-        ]);
+  const fetchData = async () => {
+    try {
+      const [statsData, sessionsData, ktvsData, alertsData, perfData] = await Promise.all([
+        getDashboardStats(),
+        getUpcomingSessions(),
+        getTopTechnicians(),
+        getImportantAlerts(),
+        getMonthlyPerformance()
+      ]);
 
-        if (statsData.totalCustomers > 0) {
-          setStats([
-            { label: 'Tổng khách hàng', value: statsData.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-            { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings.toString(), icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-            { label: 'Doanh thu tháng', value: statsData.totalRevenue, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-            { label: 'Đánh giá KTV', value: statsData.avgRating, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
-          ]);
-        }
-        
-        if (sessionsData && sessionsData.length > 0) setSessions(sessionsData);
-        if (ktvsData && ktvsData.length > 0) setTopKTVs(ktvsData);
-        if (perfData && perfData.length > 0) setPerformanceData(perfData);
-        setAlerts(alertsData || []);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      }
+      setStats([
+        { label: 'Tổng khách hàng', value: statsData.totalCustomers.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings.toString(), icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
+        { label: 'Doanh thu tháng', value: statsData.totalRevenue, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Đánh giá KTV', value: statsData.avgRating, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+      ]);
+      
+      setSessions(sessionsData || []);
+      setTopKTVs(ktvsData || []);
+      setPerformanceData(perfData || []);
+      setAlerts(alertsData || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchData();
+
+    // REALTIME SUBSCRIPTION
+    const supabase = createClient() as any;
+    const channel = supabase
+      .channel('dashboard-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
+        fetchData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const getStatusInfo = (status: string) => {
@@ -129,6 +129,14 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-6 md:p-10">
+      {isLoading && (
+        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-md flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <p className="text-primary font-black uppercase tracking-widest text-[10px]">Đang tải dữ liệu realtime...</p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>
