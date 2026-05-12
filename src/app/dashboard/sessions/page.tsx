@@ -61,13 +61,17 @@ export default function SessionsPage() {
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
-  const [selectedBooking, setSelectedBooking] = useState<any>(null);
-  const [sessionLogs, setSessionLogs] = useState<any[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [userRole, setUserRole] = useState<'KTV' | 'ADMIN'>('KTV');
   const [selectedSessionLog, setSelectedSessionLog] = useState<any>(null);
   const [currentNote, setCurrentNote] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
   const [isSavingNote, setIsSavingNote] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sessionLogs, setSessionLogs] = useState<any[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [quickNoteBookingId, setQuickNoteBookingId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');
 
@@ -222,61 +226,54 @@ export default function SessionsPage() {
     }
   };
 
-  const handleToggleStatus = async (sessionId: string, currentStatus: string) => {
-    if (!selectedBooking) return;
-    
-    const newStatus = currentStatus === 'completed' ? 'scheduled' : 'completed';
-    setUpdatingId(sessionId);
-    
-    // PERSIST LOCALLY
-    setLocalSessionLogUpdates(prev => ({ ...prev, [sessionId]: newStatus }));
-
-    // Update booking count locally
-    setSessions(prev => {
-      const target = prev.find(s => s.id === selectedBooking.id);
-      if (target) {
-        const diff = newStatus === 'completed' ? 1 : -1;
-        const newCount = Math.max(0, (target.completed_sessions || 0) + diff);
-        setLocalBookingUpdates(l => ({ ...l, [selectedBooking.id]: newCount }));
-      }
-      return prev;
-    });
-
-    try {
-      if (newStatus === 'completed') {
-        await completeSession(sessionId, selectedBooking.id);
-      } else {
-        await updateSessionLog(sessionId, { status: 'scheduled', completed_date: null });
-      }
-      
-      await loadSessions();
-      await fetchSessionLogs(selectedBooking.id);
-    } catch (error) {
-      console.error('Toggle failed:', error);
-    } finally {
-      setUpdatingId(null);
+  useEffect(() => {
+    if (selectedSessionLog) {
+      setCurrentNote(selectedSessionLog.notes || '');
+      setSelectedDate(selectedSessionLog.assigned_date || '');
+      setSelectedTime(selectedSessionLog.assigned_time || '');
+      setSelectedStatus(selectedSessionLog.status || 'scheduled');
     }
-  };
+  }, [selectedSessionLog]);
 
-  const handleSaveNote = async () => {
-    if (!selectedSessionLog) return;
+  const handleSaveFullUpdate = async () => {
+    if (!selectedSessionLog || !selectedBooking) return;
     
     setIsSavingNote(true);
     try {
-      const result = await saveSessionNote(selectedSessionLog.id, currentNote);
-      if (result.success) {
-        setToastMessage('Đã lưu ghi chú chăm sóc!');
+      const updates = {
+        notes: currentNote,
+        assigned_date: selectedDate,
+        assigned_time: selectedTime,
+        status: selectedStatus,
+        completed_date: selectedStatus === 'completed' ? (selectedSessionLog.completed_date || new Date().toISOString()) : null
+      };
+
+      const result = await updateSessionLog(selectedSessionLog.id, updates);
+      
+      if (result.data) {
+        setToastMessage('Đã cập nhật thông tin buổi tập!');
         setShowToast(true);
         setTimeout(() => setShowToast(false), 2000);
         
-        // Update local state
+        // Update local state for booking count if status changed
+        if (selectedSessionLog.status !== selectedStatus) {
+          const diff = selectedStatus === 'completed' ? 1 : (selectedSessionLog.status === 'completed' ? -1 : 0);
+          if (diff !== 0) {
+            const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) + diff);
+            setLocalBookingUpdates(prev => ({ ...prev, [selectedBooking.id]: newCount }));
+          }
+        }
+
+        // Update session logs locally
         setSessionLogs(prev => prev.map(log => 
-          log.id === selectedSessionLog.id ? { ...log, notes: currentNote } : log
+          log.id === selectedSessionLog.id ? { ...log, ...updates } : log
         ));
+        
+        await loadSessions();
       }
     } catch (error) {
-      console.error('Save note failed:', error);
-      setToastMessage('Không thể lưu ghi chú');
+      console.error('Update failed:', error);
+      setToastMessage('Lỗi khi cập nhật');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
     } finally {
@@ -557,23 +554,73 @@ export default function SessionsPage() {
                     <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
                         <FileEdit className="w-4 h-4 text-primary" /> 
-                        {selectedSessionLog ? `Ghi chú buổi ${selectedSessionLog.session_number}` : 'Ghi chú chăm sóc'}
+                        {selectedSessionLog ? `Cập nhật buổi ${selectedSessionLog.session_number}` : 'Chọn một buổi để cập nhật'}
                       </h3>
-                      <textarea 
-                        placeholder="Nhập ghi chú quan sát mẹ và bé..."
-                        value={currentNote}
-                        onChange={(e) => setCurrentNote(e.target.value)}
-                        disabled={!selectedSessionLog}
-                        className="w-full h-40 p-5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50"
-                      />
-                      <button 
-                        onClick={handleSaveNote}
-                        disabled={isSavingNote || !selectedSessionLog}
-                        className="w-full mt-4 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
-                      >
-                        {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
-                        Lưu ghi chú
-                      </button>
+                      
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Ngày dự kiến</label>
+                            <div className="relative">
+                              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                              <input 
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                                disabled={!selectedSessionLog}
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Giờ hẹn</label>
+                            <div className="relative">
+                              <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                              <input 
+                                type="time"
+                                value={selectedTime}
+                                onChange={(e) => setSelectedTime(e.target.value)}
+                                disabled={!selectedSessionLog}
+                                className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Trạng thái</label>
+                          <select
+                            value={selectedStatus}
+                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            disabled={!selectedSessionLog}
+                            className="w-full px-4 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50 appearance-none"
+                          >
+                            <option value="scheduled">Đã lên lịch</option>
+                            <option value="completed">Đã hoàn thành</option>
+                            <option value="canceled">Đã hủy</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Ghi chú chăm sóc</label>
+                          <textarea 
+                            placeholder="Nhập ghi chú quan sát mẹ và bé..."
+                            value={currentNote}
+                            onChange={(e) => setCurrentNote(e.target.value)}
+                            disabled={!selectedSessionLog}
+                            className="w-full h-24 p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50 text-xs"
+                          />
+                        </div>
+
+                        <button 
+                          onClick={handleSaveFullUpdate}
+                          disabled={isSavingNote || !selectedSessionLog}
+                          className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                        >
+                          {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
+                          Cập nhật thông tin
+                        </button>
+                      </div>
                     </div>
 
                     {userRole === 'ADMIN' && (
@@ -686,24 +733,17 @@ export default function SessionsPage() {
                                 )}
                                 
                                 <div className="absolute inset-0 bg-primary/90 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center z-20">
-                                  {isUpdating ? (
-                                    <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                                  ) : (
-                                    <>
-                                      <p className="text-[7px] font-black uppercase mb-1">Buổi {log.session_number}</p>
-                                      {canEdit && (
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleToggleStatus(log.id, status);
-                                          }}
-                                          className="bg-white text-primary px-2 py-1 rounded-lg text-[8px] font-black uppercase mt-1 hover:bg-pink-50 transition-colors"
-                                        >
-                                          {status === 'completed' ? 'Hoàn tác' : 'Hoàn thành'}
-                                        </button>
-                                      )}
-                                    </>
-                                  )}
+                                  <p className="text-[7px] font-black uppercase mb-1">Buổi {log.session_number}</p>
+                                  <p className="text-[6px] font-bold opacity-80 mb-1">{log.assigned_date || 'Chưa hẹn'}</p>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedSessionLog(log);
+                                    }}
+                                    className="bg-white text-primary px-2 py-1 rounded-lg text-[8px] font-black uppercase mt-1 hover:bg-pink-50 transition-colors"
+                                  >
+                                    Cập nhật
+                                  </button>
                                 </div>
                               </div>
                             );
