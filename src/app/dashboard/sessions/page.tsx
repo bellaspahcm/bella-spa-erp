@@ -185,7 +185,7 @@ export default function SessionsPage() {
     setUpdatingId(bookingId);
     
     // OPTIMISTIC UPDATE for Demo
-    const newCount = (currentBooking.completed_sessions || 0) + 1;
+    const newCount = (booking.completed_sessions || 0) + 1;
     
     // PERSIST LOCALLY
     setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: newCount }));
