@@ -15,8 +15,9 @@ export function parseCurrency(value: string) {
   return value.replace(/\D/g, '');
 }
 
-export function formatNumberWithSeparator(value: string) {
-  const digits = value.replace(/\D/g, '');
+export function formatNumberWithSeparator(value: number | string) {
+  const str = typeof value === 'number' ? value.toString() : value;
+  const digits = str.replace(/\D/g, '');
   if (!digits) return '';
   return new Intl.NumberFormat('vi-VN').format(parseInt(digits));
 }
