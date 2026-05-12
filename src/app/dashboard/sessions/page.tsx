@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   Filter, 
@@ -20,29 +20,59 @@ import {
   ShieldCheck,
   UserCircle
 } from 'lucide-react';
-import { getSessionsWithDetails, completeSession, getSessionLogs } from '@/services/booking-actions';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import { AnimatePresence } from 'framer-motion';
-import { MOCK_BOOKINGS, MOCK_SESSIONS } from '@/constants/mock-data';
-
+import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote } from '@/services/booking-actions';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase-client';
 
 export default function SessionsPage() {
-  const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
+  const [sessions, setSessions] = useState<any[]>([]);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('Cập nhật thành công!');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [sessionLogs, setSessionLogs] = useState<any[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [userRole, setUserRole] = useState<'KTV' | 'ADMIN'>('KTV');
+  const [selectedSessionLog, setSelectedSessionLog] = useState<any>(null);
+  const [currentNote, setCurrentNote] = useState('');
+  const [isSavingNote, setIsSavingNote] = useState(false);
 
   const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Hoàn thành'];
 
   useEffect(() => {
     loadSessions();
   }, []);
+
+  useEffect(() => {
+    if (selectedBooking) {
+      fetchSessionLogs(selectedBooking.id);
+    }
+  }, [selectedBooking]);
+
+  const fetchSessionLogs = async (bookingId: string) => {
+    setIsLoadingLogs(true);
+    try {
+      const data = await getSessionLogs(bookingId);
+      setSessionLogs(data);
+      
+      // Select the first scheduled session or the last completed one by default
+      const nextScheduled = data.find((log: any) => log.status === 'scheduled');
+      if (nextScheduled) {
+        setSelectedSessionLog(nextScheduled);
+        setCurrentNote(nextScheduled.notes || '');
+      } else if (data.length > 0) {
+        const lastLog = data[data.length - 1];
+        setSelectedSessionLog(lastLog);
+        setCurrentNote(lastLog.notes || '');
+      }
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
 
   const loadSessions = async () => {
     const data = await getSessionsWithDetails();
@@ -59,7 +89,6 @@ export default function SessionsPage() {
   const handleUpdateProgress = async (bookingId: string) => {
     const booking = sessions.find(s => s.id === bookingId);
     
-    // Logic: Only update once per day
     if (isUpdatedToday(booking) && userRole !== 'ADMIN') {
       setToastMessage('Bạn đã cập nhật buổi tập hôm nay rồi. Chỉ Admin mới có quyền điều chỉnh thêm!');
       setShowToast(true);
@@ -71,25 +100,13 @@ export default function SessionsPage() {
     try {
       const logs = await getSessionLogs(bookingId);
       const nextSession = logs.find((log: any) => log.status === 'scheduled');
-      const today = new Date().toISOString().split('T')[0];
       
       if (nextSession) {
         await completeSession(nextSession.id, bookingId);
         await loadSessions();
-      } else {
-        setSessions(prev => prev.map(s => {
-          if (s.id === bookingId) {
-            const nextCompleted = (s.completed_sessions || 0) + 1;
-            const total = s.total_sessions || 21;
-            if (nextCompleted > total) return s;
-            return { 
-              ...s, 
-              completed_sessions: nextCompleted,
-              last_updated_date: today 
-            };
-          }
-          return s;
-        }));
+        if (selectedBooking?.id === bookingId) {
+          await fetchSessionLogs(bookingId);
+        }
       }
       
       setToastMessage('Cập nhật tiến độ thành công!');
@@ -99,6 +116,61 @@ export default function SessionsPage() {
       console.error('Update failed:', error);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleToggleStatus = async (sessionId: string, currentStatus: string) => {
+    if (!selectedBooking) return;
+    
+    const newStatus = currentStatus === 'completed' ? 'scheduled' : 'completed';
+    setUpdatingId(sessionId);
+    
+    try {
+      if (newStatus === 'completed') {
+        await completeSession(sessionId, selectedBooking.id);
+      } else {
+        // Handle reverting completion
+        await updateSessionLog(sessionId, { status: 'scheduled', completed_date: null });
+        
+        // Decrement the booking count
+        const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) - 1);
+        await (supabase as any).from('bookings').update({ completed_sessions: newCount } as any).eq('id', selectedBooking.id);
+      }
+      
+      setToastMessage(newStatus === 'completed' ? 'Đã xác nhận hoàn thành buổi tập!' : 'Đã hoàn tác trạng thái buổi tập!');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+      
+      await loadSessions();
+      await fetchSessionLogs(selectedBooking.id);
+    } catch (error) {
+      console.error('Toggle failed:', error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleSaveNote = async () => {
+    if (!selectedSessionLog) return;
+    
+    setIsSavingNote(true);
+    try {
+      const result = await saveSessionNote(selectedSessionLog.id, currentNote);
+      if (result.success) {
+        setToastMessage('Đã lưu ghi chú chăm sóc!');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
+        
+        // Update local state
+        setSessionLogs(prev => prev.map(log => 
+          log.id === selectedSessionLog.id ? { ...log, notes: currentNote } : log
+        ));
+      }
+    } catch (error) {
+      console.error('Save note failed:', error);
+      toast.error('Không thể lưu ghi chú');
+    } finally {
+      setIsSavingNote(false);
     }
   };
 
@@ -112,7 +184,6 @@ export default function SessionsPage() {
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Role Switcher for Demo */}
           <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
             <button 
               onClick={() => setUserRole('KTV')}
@@ -349,14 +420,23 @@ export default function SessionsPage() {
                   <div className="lg:col-span-1 space-y-6">
                     <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <FileEdit className="w-4 h-4 text-primary" /> Ghi chú chăm sóc hôm nay
+                        <FileEdit className="w-4 h-4 text-primary" /> 
+                        {selectedSessionLog ? `Ghi chú buổi ${selectedSessionLog.session_number}` : 'Ghi chú chăm sóc'}
                       </h3>
                       <textarea 
                         placeholder="Nhập ghi chú quan sát mẹ và bé..."
-                        className="w-full h-40 p-5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all"
+                        value={currentNote}
+                        onChange={(e) => setCurrentNote(e.target.value)}
+                        disabled={!selectedSessionLog}
+                        className="w-full h-40 p-5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50"
                       />
-                      <button className="w-full mt-4 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all">
-                        <Save className="w-4 h-4" /> Lưu ghi chú
+                      <button 
+                        onClick={handleSaveNote}
+                        disabled={isSavingNote || !selectedSessionLog}
+                        className="w-full mt-4 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
+                        Lưu ghi chú
                       </button>
                     </div>
 
@@ -417,56 +497,81 @@ export default function SessionsPage() {
                           </div>
                         ))}
                         
-                        {Array.from({ length: 35 }).map((_, i) => {
-                          const dayNum = i + 1;
-                          const sessionIdx = i; 
-                          const status = sessionIdx < selectedBooking.completed_sessions ? 'completed' : 
-                                         sessionIdx === selectedBooking.completed_sessions ? 'current' : 
-                                         sessionIdx === 2 ? 'canceled' : 'upcoming';
+                        {isLoadingLogs ? (
+                          <div className="col-span-7 py-20 text-center">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+                            <p className="text-xs font-bold text-slate-400">Đang tải lịch trình...</p>
+                          </div>
+                        ) : sessionLogs.length > 0 ? (
+                          sessionLogs.map((log, i) => {
+                            const status = log.status;
+                            const isUpdating = updatingId === log.id;
+                            const canEdit = userRole === 'ADMIN' || (status === 'scheduled' && i === sessionLogs.findIndex(l => l.status === 'scheduled'));
 
-                          const canEdit = userRole === 'ADMIN' || status === 'current';
-
-                          return (
-                            <div 
-                              key={i} 
-                              onClick={() => {
-                                if (canEdit) {
-                                  setToastMessage(`Bạn đang chỉnh sửa buổi ${dayNum}`);
-                                  setShowToast(true);
-                                  setTimeout(() => setShowToast(false), 2000);
-                                } else {
-                                  setToastMessage('Bạn không có quyền chỉnh sửa dữ liệu cũ. Hãy liên hệ Admin!');
-                                  setShowToast(true);
-                                  setTimeout(() => setShowToast(false), 3000);
-                                }
-                              }}
-                              className={cn(
-                                "aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all cursor-pointer group relative overflow-hidden",
-                                status === 'completed' ? 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100 shadow-sm' :
-                                status === 'canceled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm' :
-                                status === 'current' ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
-                                'bg-slate-50/50 border-slate-100 text-slate-300 hover:bg-slate-100',
-                                !canEdit && "grayscale opacity-80 cursor-not-allowed"
-                              )}
-                            >
-                              {status === 'current' && <div className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full m-2 animate-ping" />}
-                              <span className="text-xs font-black mb-1">{dayNum}</span>
-                              {status !== 'upcoming' && status !== 'current' && (
-                                <p className="text-[8px] font-bold uppercase opacity-60">
-                                  {status === 'completed' ? 'Xong' : 'Hủy'}
-                                </p>
-                              )}
-                              {status === 'current' && <p className="text-[8px] font-black uppercase text-amber-600">Làm ngay</p>}
-                              
-                              <div className="absolute inset-0 bg-primary/90 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center z-20 pointer-events-none">
-                                <p className="text-[7px] font-black uppercase mb-1">{canEdit ? 'Click chỉnh sửa' : 'Bị khóa'}</p>
-                                <p className="text-[9px] font-bold leading-tight uppercase">
-                                  {status === 'completed' ? 'Mẹ khỏe' : status === 'canceled' ? 'Khách bận' : 'Cập nhật'}
-                                </p>
+                            return (
+                              <div 
+                                key={log.id} 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Always select to show notes
+                                  setSelectedSessionLog(log);
+                                  setCurrentNote(log.notes || '');
+                                  
+                                  // If clicked specifically on the status part or double click, toggle (optional UX)
+                                  // For now, let's keep it simple: click to select, hover has buttons
+                                }}
+                                className={cn(
+                                  "aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all cursor-pointer group relative overflow-hidden",
+                                  status === 'completed' ? 'bg-emerald-50 border-emerald-100 text-emerald-600 hover:bg-emerald-100 shadow-sm' :
+                                  status === 'canceled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm' :
+                                  status === 'scheduled' && i === sessionLogs.findIndex(l => l.status === 'scheduled') ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
+                                  'bg-slate-50/50 border-slate-100 text-slate-300 hover:bg-slate-100',
+                                  selectedSessionLog?.id === log.id && "ring-2 ring-primary border-primary/50 shadow-inner",
+                                  (!canEdit && userRole !== 'ADMIN') && "grayscale opacity-80",
+                                  isUpdating && "animate-pulse"
+                                )}
+                              >
+                                {status === 'scheduled' && i === sessionLogs.findIndex(l => l.status === 'scheduled') && (
+                                  <div className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full m-2 animate-ping" />
+                                )}
+                                <span className="text-xs font-black mb-1">{log.session_number}</span>
+                                {status !== 'scheduled' && (
+                                  <p className="text-[8px] font-bold uppercase opacity-60">
+                                    {status === 'completed' ? 'Xong' : 'Hủy'}
+                                  </p>
+                                )}
+                                {status === 'scheduled' && i === sessionLogs.findIndex(l => l.status === 'scheduled') && (
+                                  <p className="text-[8px] font-black uppercase text-amber-600">Làm ngay</p>
+                                )}
+                                
+                                <div className="absolute inset-0 bg-primary/90 text-white p-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-center z-20">
+                                  {isUpdating ? (
+                                    <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                                  ) : (
+                                    <>
+                                      <p className="text-[7px] font-black uppercase mb-1">Buổi {log.session_number}</p>
+                                      {(canEdit || userRole === 'ADMIN') && (
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleToggleStatus(log.id, status);
+                                          }}
+                                          className="bg-white text-primary px-2 py-1 rounded-lg text-[8px] font-black uppercase mt-1 hover:bg-pink-50 transition-colors"
+                                        >
+                                          {status === 'completed' ? 'Hoàn tác' : 'Hoàn thành'}
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })
+                        ) : (
+                          <div className="col-span-7 py-20 text-center italic text-slate-400 font-bold">
+                            Chưa khởi tạo lịch trình cho hợp đồng này
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

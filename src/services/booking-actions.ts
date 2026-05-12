@@ -223,3 +223,20 @@ export async function updateSessionLog(id: string, updates: any) {
   revalidatePath('/dashboard/bookings');
   return { data };
 }
+
+export async function saveSessionNote(sessionId: string, note: string) {
+  const supabase = (await createClient()) as any;
+  
+  const { error } = await supabase
+    .from('session_logs')
+    .update({ notes: note } as any)
+    .eq('id', sessionId);
+
+  if (error) {
+    console.error('Error saving session note:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/dashboard/sessions');
+  return { success: true };
+}

@@ -20,11 +20,9 @@ import {
   Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { getUsers, updateUserStatus } from '@/services/user-actions';
-import { useEffect } from 'react';
-import { supabase } from '@/lib/supabase-client';
-import { Star, Zap } from 'lucide-react';
+import { Star, Zap, UserPlus, X, ShieldAlert, BadgeCheck } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { createUser } from '@/services/user-actions';
 
 const container = {
   hidden: { opacity: 0 },
@@ -53,6 +51,13 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [newStaff, setNewStaff] = useState({
+    full_name: '',
+    email: '',
+    role: 'ktv'
+  });
 
   useEffect(() => {
     if (activeTab === 'staff') {
@@ -105,6 +110,31 @@ export default function SettingsPage() {
       setIsSaving(false);
       toast.success('Đã lưu thay đổi thành công!');
     }, 1500);
+  };
+
+  const handleAddStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaff.full_name || !newStaff.email) {
+      toast.error('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+    
+    setIsAdding(true);
+    try {
+      const result = await createUser(newStaff);
+      if (result.error) {
+        toast.error('Lỗi: ' + result.error);
+      } else {
+        toast.success('Đã thêm nhân viên ' + newStaff.full_name);
+        setIsAddModalOpen(false);
+        setNewStaff({ full_name: '', email: '', role: 'ktv' });
+        fetchUsers();
+      }
+    } catch (error) {
+      toast.error('Đã xảy ra lỗi khi thêm nhân sự');
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
@@ -249,10 +279,10 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <button 
-                  onClick={() => toast.info('Tính năng thêm nhân sự mới đang được khởi tạo...')}
+                  onClick={() => setIsAddModalOpen(true)}
                   className="px-6 py-3 bg-primary/10 text-primary rounded-xl font-black text-sm uppercase tracking-widest hover:bg-primary hover:text-white transition-all flex items-center gap-2"
                 >
-                  <Sparkles className="w-4 h-4" /> Thêm nhân sự
+                  <UserPlus className="w-4 h-4" /> Thêm nhân sự
                 </button>
               </div>
 
@@ -418,6 +448,138 @@ export default function SettingsPage() {
           )}
         </motion.div>
       </div>
+      </div>
+
+      {/* Add Staff Modal */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col border border-white"
+            >
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                    <UserPlus className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Thêm nhân sự mới</h2>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Thiết lập tài khoản & vai trò</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddStaff} className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Họ và tên
+                  </label>
+                  <input 
+                    type="text" 
+                    required
+                    value={newStaff.full_name}
+                    onChange={(e) => setNewStaff({...newStaff, full_name: e.target.value})}
+                    placeholder="VD: Nguyễn Thị Lan"
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-bold text-slate-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" /> Địa chỉ Email
+                  </label>
+                  <input 
+                    type="email" 
+                    required
+                    value={newStaff.email}
+                    onChange={(e) => setNewStaff({...newStaff, email: e.target.value})}
+                    placeholder="lan.nt@bellaspa.vn"
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-bold text-slate-700"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <ShieldAlert className="w-3.5 h-3.5" /> Vai trò & Quyền hạn
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { id: 'ktv', label: 'Kỹ thuật viên', icon: BadgeCheck, desc: 'Thực hiện liệu trình' },
+                      { id: 'admin', label: 'Quản trị viên', icon: Shield, desc: 'Toàn quyền hệ thống' }
+                    ].map((role) => (
+                      <div 
+                        key={role.id}
+                        onClick={() => setNewStaff({...newStaff, role: role.id})}
+                        className={cn(
+                          "p-4 rounded-2xl border-2 cursor-pointer transition-all relative group",
+                          newStaff.role === role.id 
+                            ? "bg-primary/5 border-primary shadow-sm" 
+                            : "border-slate-100 hover:border-primary/30"
+                        )}
+                      >
+                        <div className="flex items-center gap-3 mb-1">
+                          <role.icon className={cn(
+                            "w-4 h-4",
+                            newStaff.role === role.id ? "text-primary" : "text-slate-400"
+                          )} />
+                          <span className={cn(
+                            "text-xs font-black uppercase tracking-tighter",
+                            newStaff.role === role.id ? "text-primary" : "text-slate-600"
+                          )}>
+                            {role.label}
+                          </span>
+                        </div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">{role.desc}</p>
+                        {newStaff.role === role.id && (
+                          <motion.div layoutId="role-check" className="absolute top-2 right-2">
+                            <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                              <BadgeCheck className="w-3 h-3 text-white" />
+                            </div>
+                          </motion.div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button 
+                    type="submit"
+                    disabled={isAdding}
+                    className="w-full bg-primary text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-pink-100 flex items-center justify-center gap-3 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {isAdding ? (
+                      <Sparkles className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <UserPlus className="w-5 h-5" />
+                    )}
+                    {isAdding ? 'Đang khởi tạo...' : 'Xác nhận thêm nhân sự'}
+                  </button>
+                  <p className="text-center text-[10px] text-slate-400 font-bold uppercase mt-4">
+                    Nhân viên mới sẽ nhận được email hướng dẫn kích hoạt tài khoản
+                  </p>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

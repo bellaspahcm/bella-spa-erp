@@ -57,8 +57,8 @@ export async function createUser(formData: any) {
       role: formData.role || 'ktv',
       status: 'active',
       // In a real multi-tenant app, we'd get the tenant_id from the session
-      // For now, we'll use a fixed tenant_id or allow it to be passed
-      tenant_id: formData.tenant_id
+      // For now, we'll use 't01' as fallback for the demo
+      tenant_id: formData.tenant_id || 't01'
     } as any])
     .select()
     .single();
