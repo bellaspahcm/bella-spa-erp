@@ -19,6 +19,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+import { toast } from 'sonner';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
 import { MOCK_SERVICES } from '@/constants/mock-data';
@@ -26,9 +27,79 @@ import { MOCK_SERVICES } from '@/constants/mock-data';
 const mockServices = MOCK_SERVICES;
 
 export default function ServicesPage() {
+  const [services, setServices] = useState(MOCK_SERVICES);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+  const [selectedService, setSelectedService] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Form states
+  const [name, setName] = useState('');
   const [price, setPrice] = useState('');
+  const [duration, setDuration] = useState('');
+  const [sessions, setSessions] = useState('');
+  const [offer, setOffer] = useState('');
+  const [details, setDetails] = useState('');
+
+  const openAddModal = () => {
+    setModalMode('add');
+    setSelectedService(null);
+    setName('');
+    setPrice('');
+    setDuration('');
+    setSessions('');
+    setOffer('');
+    setDetails('');
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (service: any) => {
+    setModalMode('edit');
+    setSelectedService(service);
+    setName(service.name);
+    setPrice(service.price.replace(/[^\d]/g, ''));
+    setDuration(service.duration.replace(/[^\d]/g, ''));
+    setSessions(service.sessions.toString());
+    setOffer(service.offer);
+    setDetails(service.details.join(', '));
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) {
+      setServices(services.filter(s => s.id !== id));
+      toast.success('Đã xóa dịch vụ');
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const serviceData = {
+      id: modalMode === 'add' ? `s${Date.now()}` : selectedService.id,
+      name,
+      price: formatNumberWithSeparator(price) + 'đ',
+      duration: `${duration} phút/buổi`,
+      sessions: parseInt(sessions),
+      details: details.split(',').map(d => d.trim()).filter(d => d),
+      offer,
+      status: 'active'
+    };
+
+    if (modalMode === 'add') {
+      setServices([serviceData, ...services]);
+      toast.success('Đã thêm dịch vụ mới');
+    } else {
+      setServices(services.map(s => s.id === selectedService.id ? serviceData : s));
+      toast.success('Đã cập nhật dịch vụ');
+    }
+    
+    setIsModalOpen(false);
+  };
+
+  const filteredServices = services.filter(s => 
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
@@ -39,7 +110,7 @@ export default function ServicesPage() {
           <p className="text-slate-500 font-medium mt-1">Thiết lập bảng giá và các chương trình ưu đãi</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={openAddModal}
           className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-slate-200 active:scale-95"
         >
           <Plus className="w-5 h-5" />
@@ -67,13 +138,13 @@ export default function ServicesPage() {
 
       {/* Services Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {mockServices.map((service, idx) => (
+        {filteredServices.map((service, idx) => (
           <motion.div 
             key={service.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="group bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all overflow-hidden flex flex-col sm:flex-row h-full"
+            className="group bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all overflow-hidden flex flex-col sm:flex-row h-full relative"
           >
             {/* Visual Section */}
             <div className="sm:w-48 bg-gradient-to-br from-rose-50 to-pink-100 flex flex-col items-center justify-center p-8 relative overflow-hidden">
@@ -98,9 +169,20 @@ export default function ServicesPage() {
                     {service.price}
                   </div>
                 </div>
-                <button className="p-2 text-slate-300 hover:text-slate-600 transition-colors">
-                  <MoreVertical className="w-5 h-5" />
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => openEditModal(service)}
+                    className="p-2 text-slate-400 hover:text-primary hover:bg-rose-50 rounded-xl transition-all"
+                  >
+                    <Zap className="w-5 h-5" />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(service.id)}
+                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4 mb-6 flex-1">
@@ -135,7 +217,7 @@ export default function ServicesPage() {
         ))}
       </div>
 
-      {/* Add Service Modal */}
+      {/* Add/Edit Service Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -159,8 +241,12 @@ export default function ServicesPage() {
                       <Zap className="w-7 h-7" />
                     </div>
                     <div>
-                      <h2 className="text-3xl font-black text-slate-900 tracking-tight">Thêm dịch vụ</h2>
-                      <p className="text-slate-500 font-bold">Tạo gói liệu trình mới cho khách hàng</p>
+                      <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                        {modalMode === 'add' ? 'Thêm dịch vụ' : 'Chỉnh sửa dịch vụ'}
+                      </h2>
+                      <p className="text-slate-500 font-bold">
+                        {modalMode === 'add' ? 'Tạo gói liệu trình mới cho khách hàng' : 'Cập nhật thông tin gói dịch vụ'}
+                      </p>
                     </div>
                   </div>
                   <button 
@@ -171,16 +257,24 @@ export default function ServicesPage() {
                   </button>
                 </div>
 
-                <form className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 ml-1">Tên dịch vụ / Gói</label>
-                      <input type="text" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" placeholder="VD: Mẹ Bầu Toàn Diện" />
+                      <input 
+                        type="text" 
+                        required
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        placeholder="VD: Mẹ Bầu Toàn Diện" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 ml-1">Giá trọn gói (VNĐ)</label>
                       <input 
                         type="text" 
+                        required
                         value={price}
                         onChange={(e) => setPrice(formatNumberWithSeparator(e.target.value))}
                         className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
@@ -189,17 +283,47 @@ export default function ServicesPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 ml-1">Thời lượng (phút)</label>
-                      <input type="text" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" placeholder="VD: 90" />
+                      <input 
+                        type="text" 
+                        required
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value)}
+                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        placeholder="VD: 90" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 ml-1">Số buổi trong liệu trình</label>
-                      <input type="number" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" placeholder="VD: 15" />
+                      <input 
+                        type="number" 
+                        required
+                        value={sessions}
+                        onChange={(e) => setSessions(e.target.value)}
+                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        placeholder="VD: 15" 
+                      />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
+                    <label className="text-sm font-black text-slate-700 ml-1">Chi tiết dịch vụ (Phân cách bằng dấu phẩy)</label>
+                    <input 
+                      type="text" 
+                      value={details}
+                      onChange={(e) => setDetails(e.target.value)}
+                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                      placeholder="VD: Massage body, Chăm sóc da mặt, Xông hơi" 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <label className="text-sm font-black text-slate-700 ml-1">Chương trình ưu đãi (nếu có)</label>
-                    <textarea className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 resize-none h-24" placeholder="Nhập các khuyến mãi đi kèm..."></textarea>
+                    <textarea 
+                      value={offer}
+                      onChange={(e) => setOffer(e.target.value)}
+                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 resize-none h-24" 
+                      placeholder="Nhập các khuyến mãi đi kèm..."
+                    ></textarea>
                   </div>
                   
                   <div className="pt-6 flex gap-4">
@@ -207,7 +331,7 @@ export default function ServicesPage() {
                       Hủy bỏ
                     </button>
                     <button type="submit" className="flex-1 py-5 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-[2rem] shadow-2xl shadow-slate-200 transition-all uppercase tracking-widest text-xs">
-                      Lưu dịch vụ
+                      {modalMode === 'add' ? 'Lưu dịch vụ' : 'Cập nhật dịch vụ'}
                     </button>
                   </div>
                 </form>
