@@ -26,8 +26,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { getCalendarSessions, updateSessionLog } from '@/services/booking-actions';
+import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog } from '@/services/booking-actions';
+import { getUsers } from '@/services/user-actions';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
+import { MOCK_SERVICES } from '@/constants/mock-data';
 
 const mockBookings = MOCK_BOOKINGS.map(b => ({
   id: b.id,
@@ -50,9 +52,11 @@ function BookingsContent() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [modalData, setModalData] = useState<any>(null);
   const [sessions, setSessions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (customerName) {
@@ -145,15 +149,28 @@ function BookingsContent() {
   };
 
   const handleUpdatePlan = async () => {
-    toast.promise(
-      new Promise(resolve => setTimeout(resolve, 1000)),
-      {
-        loading: 'Đang lưu kế hoạch...',
-        success: 'Đã cập nhật kế hoạch chăm sóc thành công!',
-        error: 'Lỗi khi cập nhật kế hoạch',
+    setIsUpdating(true);
+    try {
+      // Logic to update the session log in Supabase
+      const result = await updateSessionLog(modalData.id, {
+        assigned_time: modalData.time,
+        notes: modalData.contractDetail,
+        status: modalData.status
+      });
+
+      if (result.error) {
+        toast.error('Lỗi: ' + result.error);
+      } else {
+        toast.success('Đã cập nhật kế hoạch chăm sóc thành công!');
+        fetchSessions();
+        setShowDetailModal(false);
       }
-    );
-    setShowDetailModal(false);
+    } catch (error) {
+      console.error('Update failed:', error);
+      toast.error('Có lỗi xảy ra khi lưu dữ liệu');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -179,7 +196,10 @@ function BookingsContent() {
               <LayoutGrid className="w-5 h-5" />
             </button>
           </div>
-          <button className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200">
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 active:scale-95"
+          >
             <Plus className="w-5 h-5" />
             <span>Tạo lịch mới</span>
           </button>
@@ -317,10 +337,26 @@ function BookingsContent() {
                   session.status === 'completed' ? 'bg-emerald-500' : session.status === 'scheduled' ? 'bg-amber-500' : 'bg-slate-300'
                 }`}></div>
 
-                <div 
-                  onDoubleClick={() => handleDayDoubleClick(selectedDate)}
-                  className="luxury-card-white p-6 rounded-3xl transition-all flex flex-col md:flex-row md:items-center gap-6 cursor-pointer"
-                >
+                  <div 
+                    onClick={() => {
+                      const detail = {
+                        id: session.id,
+                        date: new Date(session.assigned_date),
+                        customer: session.bookings?.customers?.name_mother || 'Khách hàng',
+                        package: session.bookings?.package_name || 'Gói liệu trình',
+                        time: session.assigned_time || '09:00 - 11:00',
+                        ktv: session.bookings?.assigned_ktv?.full_name || 'Chưa phân công',
+                        status: session.status,
+                        location: session.bookings?.customers?.address || 'Tại Spa',
+                        sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
+                        contractId: session.bookings?.booking_number || 'N/A',
+                        contractDetail: session.notes || 'Không có ghi chú'
+                      };
+                      setModalData(detail);
+                      setShowDetailModal(true);
+                    }}
+                    className="luxury-card-white p-6 rounded-3xl transition-all flex flex-col md:flex-row md:items-center gap-6 cursor-pointer hover:shadow-xl hover:border-primary/20"
+                  >
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-3">
                       <div className="flex items-center gap-1.5 text-slate-900 font-black">
@@ -390,11 +426,11 @@ function BookingsContent() {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden"
             >
-              <div className="p-8">
+              <div className="p-8 max-h-[90vh] overflow-y-auto">
                 {/* Modal Header */}
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900">Chi tiết kế hoạch chăm sóc</h3>
+                    <h3 className="text-2xl font-black text-slate-900">Chi tiết lịch hẹn</h3>
                     <p className="text-rose-500 font-bold mt-1">
                       {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full' }).format(modalData.date)}
                     </p>
@@ -422,7 +458,12 @@ function BookingsContent() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-400 font-bold mb-1">Kỹ thuật viên</p>
-                        <p className="font-bold text-slate-900">{modalData.ktv}</p>
+                        <input 
+                          type="text" 
+                          value={modalData.ktv}
+                          onChange={(e) => setModalData({...modalData, ktv: e.target.value})}
+                          className="w-full bg-white border-none rounded-xl px-4 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                        />
                       </div>
                     </div>
                   </div>
@@ -436,7 +477,12 @@ function BookingsContent() {
                     <div className="space-y-4">
                       <div>
                         <p className="text-xs text-slate-400 font-bold mb-1">Giờ chăm sóc</p>
-                        <p className="font-bold text-slate-900">{modalData.time}</p>
+                        <input 
+                          type="text" 
+                          value={modalData.time}
+                          onChange={(e) => setModalData({...modalData, time: e.target.value})}
+                          className="w-full bg-white border-none rounded-xl px-4 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                        />
                       </div>
                       <div>
                         <p className="text-xs text-slate-400 font-bold mb-1">Địa chỉ</p>
@@ -472,16 +518,28 @@ function BookingsContent() {
                   <div className="col-span-2 md:col-span-1 luxury-card-pink p-6 rounded-[32px]">
                     <div className="flex items-center gap-3 mb-4 text-slate-500">
                       <FileText className="w-5 h-5" />
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Chi tiết hợp đồng</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Ghi chú & Trạng thái</span>
                     </div>
                     <div className="space-y-4">
                       <div>
-                        <p className="text-xs text-slate-500 font-bold mb-1">Mã hợp đồng</p>
-                        <p className="font-bold text-white">{modalData.contractId}</p>
+                        <p className="text-xs text-slate-500 font-bold mb-1">Trạng thái</p>
+                        <select 
+                          value={modalData.status}
+                          onChange={(e) => setModalData({...modalData, status: e.target.value})}
+                          className="w-full bg-white/20 border-none rounded-xl px-4 py-2 font-bold text-white shadow-sm focus:ring-2 focus:ring-white/20 transition-all outline-none"
+                        >
+                          <option value="scheduled" className="text-slate-900">Sắp tới</option>
+                          <option value="completed" className="text-slate-900">Đã xong</option>
+                          <option value="canceled" className="text-slate-900">Đã hủy</option>
+                        </select>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-500 font-bold mb-1">Ghi chú hợp đồng</p>
-                        <p className="text-sm text-slate-300 leading-relaxed">{modalData.contractDetail}</p>
+                        <p className="text-xs text-slate-500 font-bold mb-1">Ghi chú nhanh</p>
+                        <textarea 
+                          value={modalData.contractDetail}
+                          onChange={(e) => setModalData({...modalData, contractDetail: e.target.value})}
+                          className="w-full bg-white/20 border-none rounded-xl px-4 py-2 font-bold text-white shadow-sm focus:ring-2 focus:ring-white/20 transition-all outline-none text-sm h-20 resize-none"
+                        />
                       </div>
                     </div>
                   </div>
@@ -490,9 +548,10 @@ function BookingsContent() {
                 <div className="mt-8 flex gap-3">
                   <button 
                     onClick={handleUpdatePlan}
-                    className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200"
+                    disabled={isUpdating}
+                    className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 disabled:opacity-50"
                   >
-                    Chỉnh sửa kế hoạch
+                    {isUpdating ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Lưu thay đổi'}
                   </button>
                   <button 
                     onClick={() => setShowDetailModal(false)}
@@ -502,6 +561,108 @@ function BookingsContent() {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Create New Schedule Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCreateModal(false)}
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-xl bg-white rounded-[40px] shadow-2xl overflow-hidden p-8"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-black text-slate-900">Tạo lịch chăm sóc mới</h3>
+                <button 
+                  onClick={() => setShowCreateModal(false)}
+                  className="p-3 hover:bg-slate-100 rounded-2xl transition-colors"
+                >
+                  <X className="w-6 h-6 text-slate-400" />
+                </button>
+              </div>
+
+              <form className="space-y-6" onSubmit={async (e) => {
+                e.preventDefault();
+                setIsUpdating(true);
+                const formData = new FormData(e.currentTarget);
+                try {
+                  const result = await createSessionLog({
+                    booking_id: formData.get('booking_id'),
+                    assigned_date: formData.get('date'),
+                    assigned_time: formData.get('time'),
+                    notes: formData.get('notes'),
+                    status: 'scheduled'
+                  });
+
+                  if (result.error) {
+                    toast.error(result.error);
+                  } else {
+                    toast.success('Đã tạo lịch hẹn mới thành công!');
+                    fetchSessions();
+                    setShowCreateModal(false);
+                  }
+                } catch (error) {
+                  toast.error('Có lỗi xảy ra');
+                } finally {
+                  setIsUpdating(false);
+                }
+              }}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Chọn Hợp đồng / Khách hàng</label>
+                    <select name="booking_id" className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1">
+                      {MOCK_BOOKINGS.map(b => (
+                        <option key={b.id} value={b.id}>{b.customers?.name_mother} - {b.booking_number}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Ngày thực hiện</label>
+                      <input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Giờ thực hiện</label>
+                      <input name="time" type="text" placeholder="09:00 - 11:00" className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Ghi chú</label>
+                    <textarea name="notes" placeholder="Nhập yêu cầu đặc biệt..." className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1 h-24 resize-none" />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button 
+                    type="submit"
+                    disabled={isUpdating}
+                    className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 disabled:opacity-50"
+                  >
+                    {isUpdating ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Xác nhận lịch hẹn'}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
+                  >
+                    Hủy bỏ
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
