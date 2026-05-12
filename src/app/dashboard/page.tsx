@@ -249,32 +249,55 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="luxury-card-pink rounded-[3rem] p-10 relative overflow-hidden shadow-2xl group"
+          className="luxury-card-pink rounded-[3rem] p-10 relative overflow-hidden shadow-2xl group flex flex-col justify-between"
         >
           <div className="relative z-10">
-            <h2 className="text-xl font-black mb-2 opacity-90 uppercase tracking-widest text-white">Hiệu suất tháng</h2>
-            <div className="flex items-baseline gap-2 mb-8">
-              <p className="text-5xl font-black text-white">+18.4%</p>
-              <TrendingUp className="text-white/90 w-6 h-6 animate-bounce" />
+            <h2 className="text-xs font-black mb-1 text-white/70 uppercase tracking-[0.2em]">Hiệu suất tháng</h2>
+            <div className="flex items-center gap-3 mb-8">
+              <p className="text-4xl font-black text-white tracking-tighter">+18.4%</p>
+              <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-md">
+                <TrendingUp className="text-white w-4 h-4" />
+              </div>
             </div>
             
-            <div className="h-40 flex items-end gap-3 mb-10">
-              {[40, 70, 45, 90, 65, 80, 50].map((h: number, i: number) => (
-                <div key={i} className="flex-1 relative group/bar">
-                  <div 
-                    className="w-full bg-white/20 rounded-t-xl transition-all duration-700 hover:bg-white cursor-pointer relative z-10" 
-                    style={{ height: `${h}%` }}
-                  />
-                  <div className="absolute bottom-0 left-0 w-full bg-white/10 blur-md transition-all h-0 group-hover/bar:h-full" />
-                </div>
-              ))}
+            {/* Luxury Sparkline Chart */}
+            <div className="h-32 w-full relative mb-10">
+              <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="white" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="white" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <motion.path
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 2, ease: "easeInOut" }}
+                  d="M0,30 Q15,5 30,25 T60,15 T100,5"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+                <motion.path
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1, duration: 1 }}
+                  d="M0,30 Q15,5 30,25 T60,15 T100,5 L100,40 L0,40 Z"
+                  fill="url(#chartGradient)"
+                />
+              </svg>
             </div>
-            
-            <button className="w-full py-5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl font-black transition-all backdrop-blur-md uppercase tracking-widest text-sm active:scale-95 flex items-center justify-center gap-3 text-white">
-              Chi tiết báo cáo
-              <ChevronRight className="w-5 h-5" />
-            </button>
           </div>
+          
+          <button 
+            onClick={() => window.location.href = '/dashboard/finance'}
+            className="w-full py-4 bg-white/10 hover:bg-white text-white hover:text-primary border border-white/20 hover:border-white rounded-2xl font-black transition-all duration-300 backdrop-blur-md uppercase tracking-widest text-[10px] active:scale-95 flex items-center justify-center gap-3 shadow-lg group/btn"
+          >
+            <span>Chi tiết báo cáo</span>
+            <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+          </button>
+          
           <div className="absolute top-[-10%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-[100px]"></div>
         </motion.div>
       </div>
