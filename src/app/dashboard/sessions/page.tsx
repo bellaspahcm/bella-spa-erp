@@ -213,7 +213,7 @@ export default function SessionsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 onClick={() => setSelectedBooking(booking)}
-                className="group bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-pink-100/40 transition-all flex flex-col md:flex-row md:items-center gap-8 relative overflow-hidden cursor-pointer"
+                className="group luxury-card-white p-6 rounded-[2.5rem] transition-all flex flex-col md:flex-row md:items-center gap-8 relative overflow-hidden cursor-pointer"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
 

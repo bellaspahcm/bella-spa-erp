@@ -168,12 +168,10 @@ export default function DashboardPage() {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12"
       >
-        {stats.map((stat: any, idx: number) => (
           <motion.div 
             key={idx}
             variants={item}
-            whileHover={{ y: -5 }}
-            className="bg-white/80 backdrop-blur p-8 rounded-[2.5rem] border border-white shadow-sm hover:shadow-2xl hover:shadow-pink-200/50 transition-all group relative overflow-hidden"
+            className="luxury-card-white p-8 rounded-[2.5rem] group relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -mr-12 -mt-12 group-hover:bg-primary/10 transition-colors" />
             
@@ -199,7 +197,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="lg:col-span-2 glass-pink rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden"
+          className="lg:col-span-2 glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden"
         >
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
           
@@ -337,7 +335,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="glass-pink rounded-[3rem] p-10 shadow-sm border border-white"
+          className="glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white"
         >
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
@@ -397,7 +395,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="glass-pink rounded-[3rem] p-10 shadow-sm border border-white"
+          className="glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white"
         >
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">

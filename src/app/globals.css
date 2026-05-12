@@ -1,8 +1,7 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&display=swap');
 
 .font-handwriting {
-  font-family: 'Corinthia', cursive;
+  font-family: var(--font-handwriting), cursive;
 }
 
 :root {
@@ -96,13 +95,38 @@ h1, h2, h3, h4, h5, h6 {
   background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-card-dark:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.3);
 }
 
 .luxury-card-pink {
   background: linear-gradient(135deg, #9D174D 0%, #831843 50%, #701a3d 100%);
   color: white;
-  box-shadow: 0 25px 50px -12px rgba(131, 24, 67, 0.4);
+  box-shadow: 0 10px 20px -5px rgba(131, 24, 67, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-card-pink:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 50px -12px rgba(131, 24, 67, 0.4);
+}
+
+.luxury-card-white {
+  background: #ffffff;
+  border: 1px solid #F3F4F6;
+  box-shadow: 0 4px 15px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-card-white:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 30px -10px rgba(157, 23, 77, 0.08);
+  border-color: rgba(157, 23, 77, 0.1);
 }
 
 .text-gradient-pink {
@@ -122,4 +146,11 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255, 240, 243, 0.6);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 133, 162, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-box-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 30px -10px rgba(157, 23, 77, 0.08);
+  border-color: rgba(157, 23, 77, 0.2);
 }

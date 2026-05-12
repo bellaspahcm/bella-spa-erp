@@ -76,7 +76,11 @@ export default function FinancePage() {
           <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         </motion.div>
 
-        <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col justify-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+        >
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
               <ArrowUpRight className="w-6 h-6 text-emerald-600" />
@@ -90,9 +94,13 @@ export default function FinancePage() {
             <div className="bg-emerald-500 h-full w-[70%] rounded-full"></div>
           </div>
           <p className="text-xs font-bold text-slate-500 mt-3">Đạt 70% mục tiêu tháng</p>
-        </div>
+        </motion.div>
 
-        <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col justify-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+        >
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center">
               <ArrowDownRight className="w-6 h-6 text-rose-600" />
@@ -106,7 +114,7 @@ export default function FinancePage() {
             <div className="bg-rose-500 h-full w-[35%] rounded-full"></div>
           </div>
           <p className="text-xs font-bold text-slate-500 mt-3">Giảm 5% so với tháng trước</p>
-        </div>
+        </motion.div>
       </div>
 
       {/* Recent Transactions */}

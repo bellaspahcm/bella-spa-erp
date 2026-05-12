@@ -177,7 +177,7 @@ export default function BookingsPage() {
       </div>
 
       {/* Date Selector (Google Calendar Style Box) */}
-      <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl mb-8 overflow-hidden relative">
+      <div className="luxury-card-white p-8 rounded-[40px] mb-8 overflow-hidden relative">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-6">
             <div className="flex items-center bg-slate-50 rounded-2xl p-1 border border-slate-100">
@@ -309,7 +309,7 @@ export default function BookingsPage() {
 
                 <div 
                   onDoubleClick={() => handleDayDoubleClick(selectedDate)}
-                  className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm group-hover:shadow-xl group-hover:shadow-slate-200/40 transition-all flex flex-col md:flex-row md:items-center gap-6 cursor-pointer"
+                  className="luxury-card-white p-6 rounded-3xl transition-all flex flex-col md:flex-row md:items-center gap-6 cursor-pointer"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-3">

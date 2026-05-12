@@ -105,7 +105,11 @@ export default function SalaryPage() {
           <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
         </motion.div>
 
-        <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col justify-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+        >
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
               <CheckCircle2 className="w-6 h-6 text-emerald-600" />
@@ -116,9 +120,13 @@ export default function SalaryPage() {
             </div>
           </div>
           <p className="text-xs font-bold text-slate-500">Hiệu suất trung bình 1.2 buổi/ngày/KTV</p>
-        </div>
+        </motion.div>
 
-        <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm flex flex-col justify-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+        >
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-amber-600" />
@@ -129,7 +137,7 @@ export default function SalaryPage() {
             </div>
           </div>
           <p className="text-xs font-bold text-slate-500">KTV Nguyễn Thị Hoa (Top 1)</p>
-        </div>
+        </motion.div>
       </div>
 
       {/* Salary Table */}

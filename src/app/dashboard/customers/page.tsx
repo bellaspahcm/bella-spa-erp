@@ -219,7 +219,7 @@ export default function CustomersPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="group bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all flex flex-col md:flex-row md:items-center gap-6 relative"
+            className="group luxury-card-white p-6 rounded-3xl transition-all flex flex-col md:flex-row md:items-center gap-6 relative"
           >
             <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
               <UserPlus className="text-rose-500 w-7 h-7" />

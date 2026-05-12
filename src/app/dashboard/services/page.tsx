@@ -144,7 +144,7 @@ export default function ServicesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="group bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-200/50 transition-all overflow-hidden flex flex-col sm:flex-row h-full relative"
+            className="group luxury-card-white rounded-[2.5rem] transition-all overflow-hidden flex flex-col sm:flex-row h-full relative"
           >
             {/* Visual Section */}
             <div className="sm:w-48 bg-gradient-to-br from-rose-50 to-pink-100 flex flex-col items-center justify-center p-8 relative overflow-hidden">
