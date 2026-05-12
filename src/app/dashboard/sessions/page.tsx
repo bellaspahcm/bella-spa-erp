@@ -18,7 +18,8 @@ import {
   Save,
   AlertCircle,
   ShieldCheck,
-  UserCircle
+  UserCircle,
+  MessageSquare
 } from 'lucide-react';
 import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote } from '@/services/booking-actions';
 import { cn } from '@/lib/utils';
