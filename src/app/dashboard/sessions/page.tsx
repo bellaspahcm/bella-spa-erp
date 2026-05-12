@@ -552,7 +552,7 @@ export default function SessionsPage() {
                                   ) : (
                                     <>
                                       <p className="text-[7px] font-black uppercase mb-1">Buổi {log.session_number}</p>
-                                      canEdit && (
+                                      {canEdit && (
                                         <button 
                                           onClick={(e) => {
                                             e.stopPropagation();
