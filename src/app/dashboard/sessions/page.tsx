@@ -345,15 +345,18 @@ export default function SessionsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 onClick={() => setSelectedBooking(booking)}
-                className="group luxury-card-white p-6 rounded-[2.5rem] transition-all flex flex-col md:flex-row md:items-center gap-8 relative overflow-hidden cursor-pointer"
+                className="group luxury-card-white p-6 rounded-[2.5rem] transition-all flex flex-col md:flex-row md:items-center gap-8 relative cursor-pointer"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Background blur container with overflow-hidden */}
+                <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
 
-                <div className="w-20 h-20 bg-gradient-to-br from-pink-50 to-white rounded-3xl flex items-center justify-center flex-shrink-0 border border-pink-100 shadow-inner group-hover:scale-110 transition-transform">
+                <div className="w-20 h-20 bg-gradient-to-br from-pink-50 to-white rounded-3xl flex items-center justify-center flex-shrink-0 border border-pink-100 shadow-inner group-hover:scale-110 transition-transform relative z-10">
                   <Flower2 className="text-primary w-10 h-10" />
                 </div>
                 
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 relative z-10">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h3 className="text-xl font-black text-slate-900 truncate tracking-tight uppercase">
                       {booking.customers?.name_mother}
@@ -397,7 +400,7 @@ export default function SessionsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 md:border-l md:pl-8 border-slate-100 min-w-[200px] justify-center relative">
+                <div className="flex items-center gap-4 md:border-l md:pl-8 border-slate-100 min-w-[200px] justify-center relative z-10">
                   {!isFullyCompleted ? (
                     <div className="relative w-full">
                       <AnimatePresence>
