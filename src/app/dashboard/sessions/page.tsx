@@ -655,7 +655,7 @@ export default function SessionsPage() {
                     <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 h-full">
                       <div className="flex items-center justify-between mb-8">
                         <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                          <Calendar className="w-6 h-6 text-primary" /> Lịch trình buổi tập
+                          <Calendar className="w-6 h-6 text-primary" /> Lịch trình
                         </h3>
                         <div className="flex gap-4">
                           <div className="flex items-center gap-2">
