@@ -95,7 +95,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
     const price = parseInt(service.price.replace(/[^\d]/g, ''));
     setFormData({
       ...formData,
-      package_id: service.id,
+      package_id: '', // Leave empty to send null and avoid UUID type errors with mock ids
       package_name: service.name,
       full_price: price,
       total_sessions: service.sessions
@@ -358,12 +358,12 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                         onClick={() => handleSelectService(service)}
                         className={cn(
                           "p-4 rounded-2xl border text-left transition-all relative group",
-                          formData.package_id === service.id 
+                          formData.package_name === service.name 
                             ? "border-primary bg-primary/5 shadow-lg shadow-primary/5" 
                             : "border-slate-100 hover:border-primary/50"
                         )}
                       >
-                        {formData.package_id === service.id && (
+                        {formData.package_name === service.name && (
                           <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-primary" />
                         )}
                         <h5 className="font-black text-slate-900 group-hover:text-primary transition-colors">{service.name}</h5>
