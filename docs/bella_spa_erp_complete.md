@@ -2,9 +2,9 @@
 
 **Tên Dự Án:** Bella Spa Management System  
 **Loại Doanh Vụ:** Spa chăm sóc mẹ và bé sau sinh  
-**Phiên Bản:** 1.3  
-**Ngày Cập Nhật:** 12/05/2026 (08:15)  
-**Status:** Triển khai Production (Đã tinh chỉnh Branding Handwriting & Kích hoạt Luxury Charts)
+**Phiên Bản:** 1.4  
+**Ngày Cập Nhật:** 12/05/2026 (08:38)  
+**Status:** Triển khai Production (Hoàn tất Branding Corinthia & Kích hoạt Recharts Real-time)
 
 ---
 

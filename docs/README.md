@@ -243,6 +243,7 @@ Bella Spa ERP Documentation/
 | 1.1 | May 11, 2026 | Antigravity | Luxury Deep Rose Rebranding |
 | 1.2 | May 12, 2026 | Antigravity | Implement Salary Module & Git Push |
 | 1.3 | May 12, 2026 | Antigravity | Refine Branding (Handwriting Font) & Luxury Charts |
+| 1.4 | May 12, 2026 | Antigravity | Finalize Corinthia Branding & Real-time Recharts |
 
 ---
 
@@ -264,4 +265,4 @@ Bất kỳ câu hỏi nào → Liên hệ PM hoặc Antigravity team.
 ---
 
 **Document Generated:** May 10, 2026  
-**Last Updated:** May 12, 2026 (08:15)
+**Last Updated:** May 12, 2026 (08:37)
