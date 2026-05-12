@@ -32,6 +32,7 @@ import {
 } from 'recharts';
 import { toast } from 'sonner';
 import { BookingModal } from '@/components/features/BookingModal';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { 
   getDashboardStats, 
   getUpcomingSessions, 
@@ -43,7 +44,6 @@ import {
 import { completeSession, saveSessionNote } from '@/services/booking-actions';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 import { 
   MOCK_DASHBOARD_STATS, 

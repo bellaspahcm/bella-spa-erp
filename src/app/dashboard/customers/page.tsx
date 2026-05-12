@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
