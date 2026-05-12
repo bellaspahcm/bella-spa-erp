@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
   Users, 
@@ -217,12 +218,12 @@ export default function DashboardPage() {
               </div>
               Lịch làm việc sắp tới
             </h2>
-            <button 
-              onClick={() => window.location.href = '/dashboard/calendar'}
+            <Link 
+              href="/dashboard/bookings"
               className="text-sm font-semibold text-primary hover:text-accent flex items-center gap-2 transition-all group uppercase tracking-widest"
             >
               Xem tất cả <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </Link>
           </div>
           
           <div className="space-y-6">
@@ -325,13 +326,13 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <button 
-            onClick={() => window.location.href = '/dashboard/finance'}
+          <Link 
+            href="/dashboard/finance"
             className="w-full py-4 bg-white/10 hover:bg-white text-white hover:text-primary border border-white/20 hover:border-white rounded-2xl font-black transition-all duration-300 backdrop-blur-md uppercase tracking-widest text-[10px] active:scale-95 flex items-center justify-center gap-3 shadow-lg group/btn"
           >
             <span>Chi tiết báo cáo</span>
             <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-          </button>
+          </Link>
           
           <div className="absolute top-[-10%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-[100px]"></div>
         </motion.div>

@@ -47,3 +47,33 @@ export async function getFinancialOverview() {
     transactions: dbTransactions.length > 0 ? dbTransactions : mockTransactions
   };
 }
+
+export async function recordTransaction(data: {
+  amount: number;
+  type: 'revenue' | 'expense';
+  notes: string;
+  booking_id?: string;
+}) {
+  const supabase = (await createClient()) as any;
+
+  const actualAmount = data.type === 'expense' ? -Math.abs(data.amount) : Math.abs(data.amount);
+
+  const { data: result, error } = await supabase
+    .from('revenue')
+    .insert({
+      amount: actualAmount,
+      notes: data.notes,
+      booking_id: data.booking_id,
+      status: 'confirmed',
+      created_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error recording transaction:', error);
+    throw new Error('Failed to record transaction');
+  }
+
+  return result;
+}

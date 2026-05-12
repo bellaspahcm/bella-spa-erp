@@ -13,22 +13,41 @@ import {
   Calendar,
   Filter,
   Search,
-  PlusCircle
+  PlusCircle,
+  RefreshCw
 } from 'lucide-react';
 import { getFinancialOverview } from '@/services/finance-actions';
 import { useState, useEffect } from 'react';
+import { TransactionModal } from '@/components/features/TransactionModal';
+import { createClient } from '@/lib/supabase-client';
 
 export default function FinancePage() {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchData = async () => {
+    const result = await getFinancialOverview();
+    setData(result);
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    async function fetchData() {
-      const result = await getFinancialOverview();
-      setData(result);
-      setIsLoading(false);
-    }
     fetchData();
+
+    // REALTIME SUBSCRIPTION
+    const supabase = createClient() as any;
+    const channel = supabase
+      .channel('finance-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue' }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (isLoading || !data) {
@@ -49,7 +68,10 @@ export default function FinancePage() {
             <Download className="w-5 h-5 text-slate-400" />
             <span>Xuất báo cáo</span>
           </button>
-          <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs active:scale-95"
+          >
             <PlusCircle className="w-5 h-5" />
             <span>Ghi nhận thu chi</span>
           </button>
@@ -180,6 +202,11 @@ export default function FinancePage() {
           </button>
         </div>
       </div>
+      <TransactionModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchData}
+      />
     </div>
   );
 }
