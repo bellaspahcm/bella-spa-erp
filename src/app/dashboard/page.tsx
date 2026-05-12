@@ -596,8 +596,9 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white"
+          className="glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden"
         >
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
               <Trophy className="w-6 h-6 text-primary" />
@@ -656,8 +657,9 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white"
+          className="glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden"
         >
+          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">
               <Bell className="w-6 h-6 text-rose-500" />
