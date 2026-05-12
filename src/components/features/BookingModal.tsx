@@ -25,9 +25,10 @@ import { cn, formatNumberWithSeparator } from '@/lib/utils';
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  preselectedCustomer?: any;
 }
 
-export function BookingModal({ isOpen, onClose }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingModalProps) {
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<'search' | 'new'>('search');
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,14 +55,20 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      setStep(1);
-      setMode('search');
+      if (preselectedCustomer) {
+        setSelectedCustomer(preselectedCustomer);
+        setStep(2);
+        setMode('search');
+      } else {
+        setStep(1);
+        setMode('search');
+        setSelectedCustomer(null);
+      }
       setSearchQuery('');
-      setSelectedCustomer(null);
       setNewCustomer({ name_mother: '', phone: '', address: '' });
       fetchCustomers();
     }
-  }, [isOpen]);
+  }, [isOpen, preselectedCustomer]);
 
   async function fetchCustomers() {
     setIsLoading(true);

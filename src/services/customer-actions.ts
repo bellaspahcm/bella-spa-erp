@@ -69,18 +69,19 @@ export async function createCustomer(formData: any) {
     return { error: customerError.message };
   }
 
-  // 2. If deposit or package provided, create a booking
+  // 2. If deposit or package provided, create a booking via the unified createBooking action
   if (formData.deposit_amount || formData.package_name) {
-    const deposit = parseInt(formData.deposit_amount?.replace(/,/g, '') || '0');
+    const deposit = parseInt(formData.deposit_amount?.toString().replace(/,/g, '') || '0');
+    const { createBooking } = await import('./booking-actions');
     
-    await supabase.from('bookings').insert([{
+    await createBooking({
       customer_id: customer.id,
-      booking_number: `BK-${new Date().getTime()}`,
-      status: deposit > 0 ? 'deposit_pending' : 'booked',
+      package_name: formData.package_name || 'Gói liệu trình',
+      full_price: 0, // Should probably be passed from UI, but using 0 for now
       deposit_amount: deposit,
-      package_name: formData.package_name,
-      total_sessions: 21, // Default
-    } as any]);
+      total_sessions: 21,
+      start_date: validatedData.dob_expected || new Date().toISOString().split('T')[0],
+    });
   }
 
   revalidatePath('/dashboard/customers');

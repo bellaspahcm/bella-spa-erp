@@ -16,7 +16,8 @@ import {
   Heart,
   History,
   TrendingUp,
-  FileText
+  FileText,
+  PlusCircle
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -24,6 +25,7 @@ import { twMerge } from 'tailwind-merge';
 import { getCustomerById } from '@/services/customer-actions';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { BookingModal } from '@/components/features/BookingModal';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -37,6 +39,7 @@ export default function CustomerDetailPage() {
   const id = params.id as string;
   const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -148,6 +151,14 @@ export default function CustomerDetailPage() {
                   </div>
                 </div>
               </div>
+
+              <button 
+                onClick={() => setIsBookingModalOpen(true)}
+                className="w-full mt-8 flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-rose-200 active:scale-95"
+              >
+                <PlusCircle className="w-5 h-5" />
+                <span>ĐẶT LỊCH NGAY</span>
+              </button>
             </div>
           </motion.div>
 
@@ -289,6 +300,12 @@ export default function CustomerDetailPage() {
           </motion.div>
         </div>
       </div>
+
+      <BookingModal 
+        isOpen={isBookingModalOpen} 
+        onClose={() => setIsBookingModalOpen(false)}
+        preselectedCustomer={customer}
+      />
     </div>
   );
 }
