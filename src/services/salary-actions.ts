@@ -5,14 +5,14 @@ import { ensure2026 } from '@/lib/utils';
 
 export async function getSalaryData() {
   const mockData = [
-    { id: 'ktv1', name: 'Nguyễn Thị Hoa', sessions: 52, baseSalary: 7000000, sessionBonus: 7800000, kpiBonus: 2500000, deductions: 0, totalSalary: 17300000, status: 'approved' },
-    { id: 'ktv2', name: 'Lê Thu Hà', sessions: 45, baseSalary: 6500000, sessionBonus: 6750000, kpiBonus: 1800000, deductions: 200000, totalSalary: 14850000, status: 'pending' },
-    { id: 'ktv3', name: 'Phạm Minh Tuyết', sessions: 38, baseSalary: 6000000, sessionBonus: 5700000, kpiBonus: 1500000, deductions: 0, totalSalary: 13200000, status: 'pending' },
-    { id: 'ktv4', name: 'Trần Thị Thanh', sessions: 42, baseSalary: 6000000, sessionBonus: 6300000, kpiBonus: 1600000, deductions: 100000, totalSalary: 13800000, status: 'draft' },
-    { id: 'ktv5', name: 'Hoàng Ngọc Mai', sessions: 31, baseSalary: 6000000, sessionBonus: 4650000, kpiBonus: 1000000, deductions: 0, totalSalary: 11650000, status: 'draft' },
-    { id: 'ktv6', name: 'Đặng Thùy Chi', sessions: 48, baseSalary: 6500000, sessionBonus: 7200000, kpiBonus: 2000000, deductions: 0, totalSalary: 15700000, status: 'approved' },
-    { id: 'ktv7', name: 'Võ Thị Bích', sessions: 35, baseSalary: 6000000, sessionBonus: 5250000, kpiBonus: 1200000, deductions: 0, totalSalary: 12450000, status: 'draft' },
-    { id: 'ktv8', name: 'Ngô Diễm My', sessions: 29, baseSalary: 6000000, sessionBonus: 4350000, kpiBonus: 800000, deductions: 50000, totalSalary: 11100000, status: 'draft' },
+    { id: 'ktv1', name: 'Nguyễn Thị Hoa', sessions: 52, baseSalary: 7000000, sessionBonus: 7800000, kpiBonus: 2500000, deductions: 0, advances: 0, totalSalary: 17300000, status: 'approved' },
+    { id: 'ktv2', name: 'Lê Thu Hà', sessions: 45, baseSalary: 6500000, sessionBonus: 6750000, kpiBonus: 1800000, deductions: 200000, advances: 500000, totalSalary: 14350000, status: 'pending' },
+    { id: 'ktv3', name: 'Phạm Minh Tuyết', sessions: 38, baseSalary: 6000000, sessionBonus: 5700000, kpiBonus: 1500000, deductions: 0, advances: 0, totalSalary: 13200000, status: 'pending' },
+    { id: 'ktv4', name: 'Trần Thị Thanh', sessions: 42, baseSalary: 6000000, sessionBonus: 6300000, kpiBonus: 1600000, deductions: 100000, advances: 1000000, totalSalary: 12800000, status: 'draft' },
+    { id: 'ktv5', name: 'Hoàng Ngọc Mai', sessions: 31, baseSalary: 6000000, sessionBonus: 4650000, kpiBonus: 1000000, deductions: 0, advances: 0, totalSalary: 11650000, status: 'draft' },
+    { id: 'ktv6', name: 'Đặng Thùy Chi', sessions: 48, baseSalary: 6500000, sessionBonus: 7200000, kpiBonus: 2000000, deductions: 0, advances: 0, totalSalary: 15700000, status: 'approved' },
+    { id: 'ktv7', name: 'Võ Thị Bích', sessions: 35, baseSalary: 6000000, sessionBonus: 5250000, kpiBonus: 1200000, deductions: 0, advances: 0, totalSalary: 12450000, status: 'draft' },
+    { id: 'ktv8', name: 'Ngô Diễm My', sessions: 29, baseSalary: 6000000, sessionBonus: 4350000, kpiBonus: 800000, deductions: 50000, advances: 200000, totalSalary: 10900000, status: 'draft' },
   ];
 
   try {
@@ -49,7 +49,8 @@ export async function getSalaryData() {
       const sessionBonus = ktvSessions * 150000; // 150k per session
       const kpiBonus = record?.kpi_bonus || (ktvSessions > 30 ? 1000000 : 0);
       const deductions = record?.violations_deduction || 0;
-      const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions;
+      const advances = record?.advances || 0; // fallback logic since field may not exist in db schema yet
+      const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
 
       return {
         id: ktv.id,
@@ -59,6 +60,7 @@ export async function getSalaryData() {
         sessionBonus,
         kpiBonus,
         deductions,
+        advances,
         totalSalary,
         status: record?.status || 'draft'
       };

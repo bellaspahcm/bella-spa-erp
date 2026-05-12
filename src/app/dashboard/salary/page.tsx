@@ -173,6 +173,8 @@ export default function SalaryPage() {
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Lương cứng</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Hoa hồng ca</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Thưởng KPI</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Phạt</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tạm ứng</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tổng nhận</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trạng thái</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Thao tác</th>
@@ -199,6 +201,8 @@ export default function SalaryPage() {
                   <td className="px-8 py-6 font-bold text-slate-600">{s.baseSalary.toLocaleString()}đ</td>
                   <td className="px-8 py-6 font-bold text-emerald-600">+{s.sessionBonus.toLocaleString()}đ</td>
                   <td className="px-8 py-6 font-bold text-primary">+{s.kpiBonus.toLocaleString()}đ</td>
+                  <td className="px-8 py-6 font-bold text-rose-500">-{s.deductions.toLocaleString()}đ</td>
+                  <td className="px-8 py-6 font-bold text-rose-500">-{s.advances.toLocaleString()}đ</td>
                   <td className="px-8 py-6">
                     <span className="text-lg font-black text-slate-900">{s.totalSalary.toLocaleString()}đ</span>
                   </td>
