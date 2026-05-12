@@ -69,7 +69,6 @@ export default function SessionsPage() {
   const [selectedTime, setSelectedTime] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [isSavingNote, setIsSavingNote] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sessionLogs, setSessionLogs] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [quickNoteBookingId, setQuickNoteBookingId] = useState<string | null>(null);

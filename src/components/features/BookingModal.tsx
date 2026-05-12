@@ -103,10 +103,15 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
   };
 
   const handleSubmit = async () => {
-    if (!selectedCustomer) {
+    const isCustomerSelected = mode === 'new' 
+      ? (newCustomer.name_mother && newCustomer.phone)
+      : selectedCustomer;
+
+    if (!isCustomerSelected) {
       toast.error('Vui lòng chọn khách hàng');
       return;
     }
+
     if (!formData.package_name) {
       toast.error('Vui lòng chọn gói dịch vụ');
       return;
@@ -114,7 +119,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
 
     setIsSubmitting(true);
     try {
-      let customerId = selectedCustomer.id;
+      let customerId = selectedCustomer?.id;
 
       // 1. If new customer, create them first
       if (mode === 'new') {
