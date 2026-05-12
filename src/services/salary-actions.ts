@@ -49,7 +49,8 @@ export async function getSalaryData() {
       const sessionBonus = ktvSessions * 150000; // 150k per session
       const kpiBonus = record?.kpi_bonus || (ktvSessions > 30 ? 1000000 : 0);
       const deductions = record?.violations_deduction || 0;
-      const advances = record?.advances || 0; // fallback logic since field may not exist in db schema yet
+      // Using service_percentage_bonus to store advances since the column doesn't exist natively
+      const advances = record?.service_percentage_bonus || 0; 
       const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
 
       return {
@@ -85,6 +86,50 @@ export async function approveSalary(ktvId: string) {
   if (error) {
     // If update fails (e.g. record doesn't exist), try to insert
     return { success: false, error };
+  }
+
+  return { success: true };
+}
+
+export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: number, kpiBonus: number, deductions: number, advances: number }) {
+  const supabase = (await createClient()) as any;
+  const monthYear = '2026-05-01'; // Default demo month
+
+  // Check if record exists
+  const { data: existing } = await supabase
+    .from('salary_records')
+    .select('id')
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear)
+    .single();
+
+  if (existing) {
+    const { error } = await supabase
+      .from('salary_records')
+      .update({
+        base_salary: payload.baseSalary,
+        kpi_bonus: payload.kpiBonus,
+        violations_deduction: payload.deductions,
+        service_percentage_bonus: payload.advances // Mapping advances to this column
+      })
+      .eq('id', existing.id);
+
+    if (error) return { success: false, error: error.message };
+  } else {
+    // Insert new
+    const { error } = await supabase
+      .from('salary_records')
+      .insert([{
+        ktv_id: ktvId,
+        month_year: monthYear,
+        base_salary: payload.baseSalary,
+        kpi_bonus: payload.kpiBonus,
+        violations_deduction: payload.deductions,
+        service_percentage_bonus: payload.advances,
+        status: 'draft'
+      }]);
+
+    if (error) return { success: false, error: error.message };
   }
 
   return { success: true };
