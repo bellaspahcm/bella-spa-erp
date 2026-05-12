@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
+.font-handwriting {
+  font-family: 'Great Vibes', cursive;
+}
 
 :root {
   /* Option C: Deep Rose Luxury (Refined & Softened) */

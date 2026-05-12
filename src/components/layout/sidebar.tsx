@@ -43,13 +43,13 @@ export function Sidebar() {
       <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-3xl -mr-12 -mt-12" />
       
       <div className="p-8">
-        <Link href="/dashboard" className="flex items-center gap-4">
-          <div className="p-1.5 bg-white rounded-2xl shadow-sm border border-pink-50">
-            <img src="/logo.png" alt="Bella Spa" className="w-10 h-10 object-contain" />
+        <Link href="/dashboard" className="flex flex-col items-center gap-3 text-center py-4">
+          <div className="p-3 bg-white rounded-full shadow-md border border-pink-50 hover:scale-105 transition-transform duration-300">
+            <img src="/logo.png" alt="Bella Spa" className="w-14 h-14 object-contain" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-foreground tracking-tighter uppercase leading-none">Bella Spa</h2>
-            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Management</span>
+            <h2 className="text-4xl font-handwriting text-primary leading-tight">Bella Spa</h2>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] block -mt-1">Management System</span>
           </div>
         </Link>
       </div>
