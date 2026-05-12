@@ -191,6 +191,25 @@ export default function CustomersPage() {
 
   const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Chờ sinh', 'Tiềm năng', 'Đã kết thúc'];
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredCustomers = customers.filter(customer => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = 
+      (customer.name_mother || '').toLowerCase().includes(q) || 
+      (customer.phone || '').toLowerCase().includes(q);
+    
+    let matchesStatus = true;
+    if (statusFilter !== 'Tất cả trạng thái') {
+      if (statusFilter === 'Đang chăm sóc') matchesStatus = customer.status === 'active';
+      else if (statusFilter === 'Chờ sinh') matchesStatus = customer.status === 'deposit';
+      else if (statusFilter === 'Tiềm năng') matchesStatus = customer.status === 'potential';
+      else if (statusFilter === 'Đã kết thúc') matchesStatus = customer.status === 'completed';
+    }
+    
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
       {/* Non-intrusive loading bar */}
@@ -230,6 +249,8 @@ export default function CustomersPage() {
           <input 
             type="text" 
             placeholder="Tìm theo tên, số điện thoại..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all font-medium text-slate-700"
           />
         </div>
@@ -254,12 +275,12 @@ export default function CustomersPage() {
             <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Đang tải dữ liệu...</p>
           </div>
-        ) : customers.length === 0 ? (
+        ) : filteredCustomers.length === 0 ? (
           <div className="bg-white rounded-3xl p-20 text-center border border-dashed border-slate-200">
             <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-bold">Không tìm thấy khách hàng nào</p>
+            <p className="text-slate-400 font-bold">Không tìm thấy khách hàng nào khớp với bộ lọc</p>
           </div>
-        ) : customers.map((customer: any, idx: number) => (
+        ) : filteredCustomers.map((customer: any, idx: number) => (
           <motion.div 
             key={customer.id}
             initial={{ opacity: 0, y: 10 }}
