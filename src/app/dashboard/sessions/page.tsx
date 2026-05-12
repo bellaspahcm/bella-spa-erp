@@ -240,9 +240,9 @@ export default function SessionsPage() {
     setIsSavingNote(true);
     try {
       const updates = {
-        notes: currentNote,
-        assigned_date: selectedDate,
-        assigned_time: selectedTime,
+        notes: currentNote || null,
+        assigned_date: selectedDate || null,
+        assigned_time: selectedTime || null,
         status: selectedStatus,
         completed_date: selectedStatus === 'completed' ? (selectedSessionLog.completed_date || new Date().toISOString()) : null
       };
