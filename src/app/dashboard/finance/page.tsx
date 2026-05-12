@@ -22,14 +22,22 @@ import { TransactionModal } from '@/components/features/TransactionModal';
 import { createClient } from '@/lib/supabase-client';
 
 export default function FinancePage() {
-  const [data, setData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [data, setData] = useState<any>({
+    totalBalance: 113400000,
+    totalRevenueMonth: 156200000,
+    totalExpenseMonth: 42800000,
+    transactions: []
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchData = async () => {
+    setIsRefreshing(true);
     const result = await getFinancialOverview();
     setData(result);
+    setIsRefreshing(false);
     setIsLoading(false);
   };
 
@@ -50,13 +58,27 @@ export default function FinancePage() {
     };
   }, []);
 
-  if (isLoading || !data) {
-    return <div className="flex-1 p-10 flex items-center justify-center font-bold text-primary animate-pulse uppercase tracking-widest">Đang tải dữ liệu tài chính...</div>;
+  if (isLoading && !data) {
+    return (
+      <div className="flex-1 p-10 flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
   }
 
   const { totalBalance, totalRevenueMonth, totalExpenseMonth, transactions } = data;
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
+    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative">
+      {isRefreshing && (
+        <div className="fixed top-0 left-0 right-0 h-1 bg-primary/20 z-[100]">
+          <motion.div 
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="h-full bg-primary"
+          />
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>

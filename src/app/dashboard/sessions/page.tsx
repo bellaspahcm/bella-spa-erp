@@ -25,8 +25,9 @@ import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
 
 export default function SessionsPage() {
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [filteredSessions, setFilteredSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
+  const [filteredSessions, setFilteredSessions] = useState<any[]>(MOCK_BOOKINGS);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -129,6 +130,7 @@ export default function SessionsPage() {
   };
 
   const loadSessions = async () => {
+    setIsSyncing(true);
     const data = await getSessionsWithDetails();
     if (data && data.length > 0) {
       // Apply local updates
@@ -139,6 +141,7 @@ export default function SessionsPage() {
       setSessions(mergedData);
       applyFilters(mergedData, searchQuery, statusFilter);
     }
+    setIsSyncing(false);
   };
 
   const applyFilters = (data: any[], query: string, status: string) => {
@@ -281,7 +284,19 @@ export default function SessionsPage() {
   };
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto" onClick={() => setIsFilterOpen(false)}>
+    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative" onClick={() => setIsFilterOpen(false)}>
+      {/* Non-intrusive loading bar */}
+      <AnimatePresence>
+        {isSyncing && (
+          <motion.div 
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-rose-400 to-primary origin-left z-50"
+            transition={{ duration: 0.5 }}
+          />
+        )}
+      </AnimatePresence>
       {/* Header & Role Switcher */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>

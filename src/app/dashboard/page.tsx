@@ -65,12 +65,25 @@ const item = {
 };
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any[]>([]);
+  const [stats, setStats] = useState<any[]>([
+    { label: 'Tổng khách hàng', value: '25', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Lịch hẹn hôm nay', value: '8', icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: 'Doanh thu tháng', value: '156M', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Đánh giá KTV', value: '4.9', icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+  ]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [topKTVs, setTopKTVs] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
-  const [performanceData, setPerformanceData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [performanceData, setPerformanceData] = useState<any[]>([
+    { name: 'T12', customers: 45 },
+    { name: 'T1', customers: 52 },
+    { name: 'T2', customers: 48 },
+    { name: 'T3', customers: 61 },
+    { name: 'T4', customers: 55 },
+    { name: 'T5', customers: 67 },
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
@@ -100,11 +113,13 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
+      setIsRefreshing(false);
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    setIsRefreshing(true);
     fetchData();
 
     // REALTIME SUBSCRIPTION
@@ -157,14 +172,17 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-6 md:p-10">
-      {isLoading && (
-        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-md flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-            <p className="text-primary font-black uppercase tracking-widest text-[10px]">Đang tải dữ liệu realtime...</p>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isRefreshing && (
+          <motion.div 
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-rose-400 to-primary origin-left z-[100]"
+            transition={{ duration: 0.5 }}
+          />
+        )}
+      </AnimatePresence>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
         <div>

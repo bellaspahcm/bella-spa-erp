@@ -36,8 +36,9 @@ import { getCustomers, createCustomer } from '@/services/customer-actions';
 export default function CustomersPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [customers, setCustomers] = useState<any[]>(MOCK_CUSTOMERS);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -62,14 +63,12 @@ export default function CustomersPage() {
   }, []);
 
   const loadCustomers = async () => {
-    setIsLoading(true);
+    setIsSyncing(true);
     const data = await getCustomers();
     if (data && data.length > 0) {
       setCustomers(data);
-    } else {
-      setCustomers(MOCK_CUSTOMERS);
     }
-    setIsLoading(false);
+    setIsSyncing(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -130,7 +129,19 @@ export default function CustomersPage() {
   const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Chờ sinh', 'Tiềm năng', 'Đã kết thúc'];
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
+    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
+      {/* Non-intrusive loading bar */}
+      <AnimatePresence>
+        {isSyncing && (
+          <motion.div 
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-rose-400 to-primary origin-left z-50"
+            transition={{ duration: 0.5 }}
+          />
+        )}
+      </AnimatePresence>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
@@ -208,10 +219,15 @@ export default function CustomersPage() {
 
       {/* Customer Grid/Table */}
       <div className="grid grid-cols-1 gap-4">
-        {isLoading ? (
+        {isLoading && customers.length === 0 ? (
           <div className="bg-white rounded-3xl p-20 text-center border border-slate-100 shadow-sm">
             <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Đang tải dữ liệu...</p>
+          </div>
+        ) : customers.length === 0 ? (
+          <div className="bg-white rounded-3xl p-20 text-center border border-dashed border-slate-200">
+            <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+            <p className="text-slate-400 font-bold">Không tìm thấy khách hàng nào</p>
           </div>
         ) : customers.map((customer: any, idx: number) => (
           <motion.div 
