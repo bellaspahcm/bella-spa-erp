@@ -19,13 +19,22 @@ import {
   Trophy,
   Diamond 
 } from 'lucide-react';
+import { 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  Tooltip, 
+  XAxis,
+  YAxis
+} from 'recharts';
 import { toast } from 'sonner';
 import { BookingModal } from '@/components/features/BookingModal';
 import { 
   getDashboardStats, 
   getUpcomingSessions, 
   getTopTechnicians, 
-  getImportantAlerts 
+  getImportantAlerts,
+  getMonthlyPerformance
 } from '@/services/dashboard-actions';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -73,17 +82,19 @@ export default function DashboardPage() {
   })));
   const [topKTVs, setTopKTVs] = useState<any[]>(MOCK_TOP_KTVS);
   const [alerts, setAlerts] = useState<any[]>([]);
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [statsData, sessionsData, ktvsData, alertsData] = await Promise.all([
+        const [statsData, sessionsData, ktvsData, alertsData, perfData] = await Promise.all([
           getDashboardStats(),
           getUpcomingSessions(),
           getTopTechnicians(),
-          getImportantAlerts()
+          getImportantAlerts(),
+          getMonthlyPerformance()
         ]);
 
         if (statsData.totalCustomers > 0) {
@@ -97,6 +108,7 @@ export default function DashboardPage() {
         
         if (sessionsData && sessionsData.length > 0) setSessions(sessionsData);
         if (ktvsData && ktvsData.length > 0) setTopKTVs(ktvsData);
+        if (perfData && perfData.length > 0) setPerformanceData(perfData);
         setAlerts(alertsData || []);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -263,33 +275,40 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            {/* Luxury Sparkline Chart */}
-            <div className="h-32 w-full relative mb-10">
-              <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="white" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="white" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <motion.path
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 2, ease: "easeInOut" }}
-                  d="M0,30 Q15,5 30,25 T60,15 T100,5"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-                <motion.path
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1, duration: 1 }}
-                  d="M0,30 Q15,5 30,25 T60,15 T100,5 L100,40 L0,40 Z"
-                  fill="url(#chartGradient)"
-                />
-              </svg>
+            {/* Luxury Line Chart with Recharts */}
+            <div className="h-40 w-full relative mb-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={performanceData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorPerf" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ffffff" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#ffffff" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+                      borderRadius: '1rem', 
+                      border: 'none',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                      color: '#9D174D',
+                      fontWeight: '800'
+                    }}
+                    itemStyle={{ color: '#9D174D' }}
+                  />
+                  <XAxis dataKey="name" hide />
+                  <YAxis hide domain={['dataMin - 5', 'dataMax + 5']} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="customers" 
+                    stroke="#ffffff" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorPerf)" 
+                    animationDuration={2000}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
           
