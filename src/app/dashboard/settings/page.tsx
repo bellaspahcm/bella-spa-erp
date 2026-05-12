@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Settings, 
   User, 
@@ -17,12 +17,18 @@ import {
   Camera,
   Save,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Star, 
+  Zap, 
+  UserPlus, 
+  X, 
+  ShieldAlert, 
+  BadgeCheck 
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Star, Zap, UserPlus, X, ShieldAlert, BadgeCheck } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
-import { createUser } from '@/services/user-actions';
+import { createUser, getUsers, updateUserStatus } from '@/services/user-actions';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase-client';
 
 const container = {
   hidden: { opacity: 0 },
