@@ -23,6 +23,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { getUsers, updateUserStatus } from '@/services/user-actions';
 import { useEffect } from 'react';
+import { supabase } from '@/lib/supabase-client';
+import { Star, Zap } from 'lucide-react';
 
 const container = {
   hidden: { opacity: 0 },
@@ -55,6 +57,22 @@ export default function SettingsPage() {
   useEffect(() => {
     if (activeTab === 'staff') {
       fetchUsers();
+
+      // Realtime subscription
+      const channel = supabase
+        .channel('users-changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'users' },
+          () => {
+            fetchUsers();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [activeTab]);
 
@@ -244,9 +262,9 @@ export default function SettingsPage() {
                     <tr className="border-b border-white/50">
                       <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Họ và tên</th>
                       <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Vai trò</th>
+                      <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Hiệu suất</th>
                       <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Email</th>
                       <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-center">Trạng thái</th>
-                      <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/20">
@@ -262,10 +280,18 @@ export default function SettingsPage() {
                         <tr key={user.id} className="group hover:bg-white/60 transition-colors">
                           <td className="px-8 py-6">
                             <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl flex items-center justify-center text-primary font-black text-sm border-2 border-white">
+                              <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl flex items-center justify-center text-primary font-black text-sm border-2 border-white relative">
                                 {user.full_name?.substring(0, 2).toUpperCase()}
+                                {parseFloat(user.avg_rating) >= 4.9 && (
+                                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center border border-white">
+                                    <Star className="w-2 h-2 text-white fill-white" />
+                                  </div>
+                                )}
                               </div>
-                              <p className="font-black text-slate-900">{user.full_name}</p>
+                              <div>
+                                <p className="font-black text-slate-900">{user.full_name}</p>
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Mã NV: {user.id.substring(0, 5).toUpperCase()}</p>
+                              </div>
                             </div>
                           </td>
                           <td className="px-8 py-6">
@@ -277,6 +303,18 @@ export default function SettingsPage() {
                             )}>
                               {user.role}
                             </span>
+                          </td>
+                          <td className="px-8 py-6">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                <span className="text-xs font-black text-slate-700">{user.sessions_count} buổi</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Star className="w-3 h-3 text-rose-400 fill-rose-400" />
+                                <span className="text-xs font-black text-slate-700">{user.avg_rating}</span>
+                              </div>
+                            </div>
                           </td>
                           <td className="px-8 py-6 font-bold text-slate-500 text-sm italic">{user.email}</td>
                           <td className="px-8 py-6 text-center">
@@ -292,11 +330,6 @@ export default function SettingsPage() {
                                 user.status === 'active' ? "ml-6" : "ml-0"
                               )} />
                             </div>
-                          </td>
-                          <td className="px-8 py-6 text-right">
-                            <button className="text-primary hover:text-accent font-black text-[10px] uppercase tracking-[0.2em] transition-colors">
-                              Chi tiết
-                            </button>
                           </td>
                         </tr>
                       ))
