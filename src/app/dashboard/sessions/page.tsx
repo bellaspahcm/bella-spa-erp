@@ -168,7 +168,9 @@ export default function SessionsPage() {
       }
     } catch (error) {
       console.error('Save note failed:', error);
-      toast.error('Không thể lưu ghi chú');
+      setToastMessage('Không thể lưu ghi chú');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     } finally {
       setIsSavingNote(false);
     }
