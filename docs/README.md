@@ -247,6 +247,7 @@ Bella Spa ERP Documentation/
 | 1.5 | May 12, 2026 | Antigravity | Global Luxury UI Standardization & Interactive Boxes |
 | 1.6 | May 12, 2026 | Antigravity | Activate Message Center & Luxury Chat Interface |
 | 1.7 | May 12, 2026 | Antigravity | Refine Chat UI: Multi-line Input & Interactive Reactions |
+| 1.8 | May 12, 2026 | Antigravity | Activate Quick Actions & System-wide Data Connectivity (Fixed Build) |
 
 ---
 
@@ -268,4 +269,4 @@ Bất kỳ câu hỏi nào → Liên hệ PM hoặc Antigravity team.
 ---
 
 **Document Generated:** May 10, 2026
-**Last Updated:** May 12, 2026 (09:24)
+**Last Updated:** May 12, 2026 (09:32)

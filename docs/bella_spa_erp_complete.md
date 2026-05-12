@@ -2,9 +2,9 @@
 
 **Tên Dự Án:** Bella Spa Management System  
 **Loại Doanh Vụ:** Spa chăm sóc mẹ và bé sau sinh  
-**Phiên Bản:** 1.7  
-**Ngày Cập Nhật:** 12/05/2026 (09:24)  
-**Status:** Triển khai Production (Nâng cấp Chat UI: Multi-line Input & Quick Reactions)
+**Phiên Bản:** 1.8  
+**Ngày Cập Nhật:** 12/05/2026 (09:32)  
+**Status:** Triển khai Production (Kích hoạt Quick Actions & Liên kết dữ liệu - Fixed Build)
 
 ---
 
