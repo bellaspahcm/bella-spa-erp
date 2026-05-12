@@ -232,54 +232,18 @@ export default function CustomersPage() {
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all font-medium text-slate-700"
           />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto relative">
-          <button className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors font-bold text-slate-600 text-sm">
-            <Filter className="w-4 h-4" />
-            Bộ lọc
-          </button>
-          
-          {/* Custom Premium Select */}
-          <div className="relative min-w-[200px]">
-            <button 
-              onClick={(e) => { e.stopPropagation(); setIsFilterOpen(!isFilterOpen); }}
-              className="w-full flex items-center justify-between px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:border-rose-300 transition-all font-bold text-slate-600 text-sm outline-none"
-            >
-              <span>{statusFilter}</span>
-              <motion.div
-                animate={{ rotate: isFilterOpen ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronRight className="w-4 h-4 rotate-90" />
-              </motion.div>
-            </button>
-
-            <AnimatePresence>
-              {isFilterOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 4, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden p-1.5"
-                >
-                  {statusOptions.map((option) => (
-                    <button
-                      key={option}
-                      onClick={() => { setStatusFilter(option); setIsFilterOpen(false); }}
-                      className={cn(
-                        "w-full text-left px-4 py-2.5 rounded-xl text-sm font-bold transition-all",
-                        statusFilter === option 
-                          ? "bg-rose-500 text-white" 
-                          : "text-slate-600 hover:bg-slate-50"
-                      )}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="w-full md:w-64">
+            <PremiumSelect 
+              value={statusFilter}
+              options={statusOptions.map(opt => ({
+                value: opt,
+                label: opt,
+                icon: <Filter className="w-4 h-4" />
+              }))}
+              onChange={(val) => setStatusFilter(val)}
+              placeholder="Trạng thái..."
+            />
           </div>
-        </div>
       </div>
 
       {/* Customer Grid/Table */}

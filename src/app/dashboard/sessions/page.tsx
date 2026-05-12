@@ -24,6 +24,7 @@ import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionL
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
@@ -371,43 +372,18 @@ export default function SessionsPage() {
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-700"
           />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto relative">
-          <div className="relative min-w-[200px]">
-            <button 
-              onClick={(e) => { e.stopPropagation(); setIsFilterOpen(!isFilterOpen); }}
-              className="w-full flex items-center justify-between px-5 py-3 bg-white border border-slate-200 rounded-2xl hover:border-primary/30 transition-all font-black text-slate-600 text-sm outline-none uppercase tracking-widest"
-            >
-              <span>{statusFilter}</span>
-              <motion.div animate={{ rotate: isFilterOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                <ChevronDown className="w-4 h-4" />
-              </motion.div>
-            </button>
-
-            <AnimatePresence>
-              {isFilterOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 4, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden p-1.5"
-                >
-                  {statusOptions.map((option) => (
-                    <button
-                      key={option}
-                      onClick={() => { setStatusFilter(option); setIsFilterOpen(false); }}
-                      className={cn(
-                        "w-full text-left px-4 py-2.5 rounded-xl text-sm font-black transition-all uppercase tracking-widest",
-                        statusFilter === option ? "bg-primary text-white shadow-lg shadow-pink-100" : "text-slate-600 hover:bg-slate-50"
-                      )}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="w-full md:w-64">
+            <PremiumSelect 
+              value={statusFilter}
+              options={statusOptions.map(opt => ({
+                value: opt,
+                label: opt,
+                icon: <Filter className="w-4 h-4" />
+              }))}
+              onChange={(val) => setStatusFilter(val)}
+              placeholder="Lọc trạng thái..."
+            />
           </div>
-        </div>
       </div>
 
       {filteredSessions.length === 0 ? (
@@ -617,16 +593,16 @@ export default function SessionsPage() {
 
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Trạng thái</label>
-                          <select
+                          <PremiumSelect
                             value={selectedStatus}
-                            onChange={(e) => setSelectedStatus(e.target.value)}
+                            options={[
+                              { value: 'scheduled', label: 'Đã lên lịch', icon: <Clock className="w-4 h-4" /> },
+                              { value: 'completed', label: 'Đã hoàn thành', icon: <CheckCircle2 className="w-4 h-4" /> },
+                              { value: 'canceled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
+                            ]}
+                            onChange={(value) => setSelectedStatus(value)}
                             disabled={!selectedSessionLog}
-                            className="w-full px-4 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50 appearance-none"
-                          >
-                            <option value="scheduled">Đã lên lịch</option>
-                            <option value="completed">Đã hoàn thành</option>
-                            <option value="canceled">Đã hủy</option>
-                          </select>
+                          />
                         </div>
 
                         <div>

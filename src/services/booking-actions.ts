@@ -216,9 +216,15 @@ export async function getCalendarSessions() {
   }));
 }
 
-export async function updateSessionLog(id: string, updates: any) {
+export async function updateSessionLog(id: string, payload: any) {
   const supabase = (await createClient()) as any;
   
+  const updates: any = { ...payload };
+  
+  // Robust null-handling for TIME and TEXT columns
+  if (updates.assigned_time === "") updates.assigned_time = null;
+  if (updates.notes === "") updates.notes = null;
+
   const { data, error } = await supabase
     .from('session_logs')
     .update(updates)

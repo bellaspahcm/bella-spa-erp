@@ -43,6 +43,7 @@ import {
 import { completeSession, saveSessionNote } from '@/services/booking-actions';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 import { 
   MOCK_DASHBOARD_STATS, 
@@ -210,26 +211,25 @@ export default function DashboardPage() {
         </div>
         <div className="flex flex-wrap items-center gap-4">
           {/* Month Selector */}
-          <div className="flex items-center bg-white/80 border border-border p-1.5 rounded-2xl shadow-sm">
-            <select 
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="bg-transparent border-none outline-none font-bold text-sm px-4 py-2 cursor-pointer text-foreground"
-            >
-              {['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'].map((m, i) => (
-                <option key={i} value={i}>{m}</option>
-              ))}
-            </select>
-            <div className="w-px h-4 bg-border mx-1" />
-            <select 
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="bg-transparent border-none outline-none font-bold text-sm px-4 py-2 cursor-pointer text-foreground"
-            >
-              {[2024, 2025, 2026].map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+          <div className="flex items-center bg-white/80 border border-border p-1 rounded-2xl shadow-sm gap-2">
+            <PremiumSelect 
+              value={selectedMonth.toString()}
+              options={['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'].map((m, i) => ({
+                value: i.toString(),
+                label: m
+              }))}
+              onChange={(val) => setSelectedMonth(parseInt(val))}
+              className="w-40"
+            />
+            <PremiumSelect 
+              value={selectedYear.toString()}
+              options={[2024, 2025, 2026].map(y => ({
+                value: y.toString(),
+                label: y.toString()
+              }))}
+              onChange={(val) => setSelectedYear(parseInt(val))}
+              className="w-32"
+            />
           </div>
 
           <div className="relative group hidden md:block">
