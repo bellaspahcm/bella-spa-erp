@@ -168,6 +168,7 @@ export default function DashboardPage() {
         animate="show"
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12"
       >
+        {stats.map((stat, idx) => (
           <motion.div 
             key={idx}
             variants={item}
