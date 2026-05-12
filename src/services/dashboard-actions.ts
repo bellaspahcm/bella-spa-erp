@@ -4,8 +4,13 @@ import { createClient } from '@/lib/supabase-server';
 import { ensure2026 } from '@/lib/utils';
 import { DEMO_SESSIONS, DEMO_TECH_TOP } from '@/constants/demo-data';
 
-export async function getDashboardStats() {
+export async function getDashboardStats(startDate?: string, endDate?: string) {
   const supabase = (await createClient()) as any;
+
+  // Set default dates if not provided (current month)
+  const now = new Date();
+  const start = startDate || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const end = endDate || new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
   // Parallel fetching for performance
   const [
@@ -15,8 +20,14 @@ export async function getDashboardStats() {
     { data: ratingsData }
   ] = await Promise.all([
     supabase.from('customers').select('*', { count: 'exact', head: true }),
-    supabase.from('session_logs').select('*', { count: 'exact', head: true }).eq('assigned_date', new Date().toISOString().split('T')[0]),
-    supabase.from('revenue').select('amount').eq('status', 'confirmed'),
+    supabase.from('session_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('assigned_date', now.toISOString().split('T')[0]),
+    supabase.from('revenue')
+      .select('amount')
+      .eq('status', 'confirmed')
+      .gte('received_date', start)
+      .lte('received_date', end),
     supabase.from('session_reviews').select('rating')
   ]);
 
@@ -25,15 +36,10 @@ export async function getDashboardStats() {
     ? (ratingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / ratingsData.length).toFixed(1) 
     : '5.0';
 
-  // Fallback for demo if DB returns zero or empty (permission issues)
-  const finalTotalCustomers = totalCustomers || 25;
-  const finalTodayBookings = todayBookings || 8;
-  const finalTotalRevenue = totalRevenue > 0 ? (totalRevenue / 1000000).toFixed(0) : '156';
-
   return {
-    totalCustomers: finalTotalCustomers,
-    todayBookings: finalTodayBookings,
-    totalRevenue: finalTotalRevenue + 'M', 
+    totalCustomers: totalCustomers || 0,
+    todayBookings: todayBookings || 0,
+    totalRevenue: totalRevenue > 0 ? (totalRevenue / 1000000).toFixed(0) + 'M' : '0M', 
     avgRating
   };
 }
@@ -106,6 +112,8 @@ export async function getTopTechnicians() {
 export async function getMonthlyPerformance() {
   const supabase = (await createClient()) as any;
   
+  // Fetch data for the last 6 months
+  const now = new Date();
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
   sixMonthsAgo.setDate(1);
@@ -114,44 +122,32 @@ export async function getMonthlyPerformance() {
     .from('session_logs')
     .select('assigned_date')
     .gte('assigned_date', sixMonthsAgo.toISOString().split('T')[0])
+    .lte('assigned_date', now.toISOString().split('T')[0])
     .eq('status', 'completed');
 
+  const monthNames = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
   const monthMap: Record<string, number> = {};
   
-  // Initialize months
+  // Initialize months in order
   for (let i = 5; i >= 0; i--) {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
-    const monthYear = `T${d.getMonth() + 1}`;
-    monthMap[monthYear] = 0;
+    const label = monthNames[d.getMonth()];
+    monthMap[label] = 0;
   }
 
   data?.forEach((s: any) => {
     const date = new Date(s.assigned_date);
-    const monthYear = `T${date.getMonth() + 1}`;
-    if (monthMap[monthYear] !== undefined) {
-      monthMap[monthYear]++;
+    const label = monthNames[date.getMonth()];
+    if (monthMap[label] !== undefined) {
+      monthMap[label]++;
     }
   });
 
-  const result = Object.entries(monthMap).map(([name, count]) => ({
+  return Object.entries(monthMap).map(([name, count]) => ({
     name,
     customers: count
   }));
-
-  // Fallback for demo if DB is empty
-  if (result.every(r => r.customers === 0)) {
-    return [
-      { name: 'T12', customers: 45 },
-      { name: 'T1', customers: 52 },
-      { name: 'T2', customers: 48 },
-      { name: 'T3', customers: 61 },
-      { name: 'T4', customers: 55 },
-      { name: 'T5', customers: 67 },
-    ];
-  }
-
-  return result;
 }
 
 export async function getImportantAlerts() {

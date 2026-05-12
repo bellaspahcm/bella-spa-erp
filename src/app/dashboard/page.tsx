@@ -82,6 +82,8 @@ export default function DashboardPage() {
     { name: 'T4', customers: 55 },
     { name: 'T5', customers: 67 },
   ]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -89,10 +91,18 @@ export default function DashboardPage() {
   const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');
 
+  const getMonthRange = (month: number, year: number) => {
+    const startDate = new Date(year, month, 1).toISOString().split('T')[0];
+    const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0];
+    return { startDate, endDate };
+  };
+
   const fetchData = async () => {
     try {
+      const { startDate, endDate } = getMonthRange(selectedMonth, selectedYear);
+      
       const [statsData, sessionsData, ktvsData, alertsData, perfData] = await Promise.all([
-        getDashboardStats(),
+        getDashboardStats(startDate, endDate),
         getUpcomingSessions(),
         getTopTechnicians(),
         getImportantAlerts(),
@@ -121,7 +131,9 @@ export default function DashboardPage() {
   useEffect(() => {
     setIsRefreshing(true);
     fetchData();
+  }, [selectedMonth, selectedYear]);
 
+  useEffect(() => {
     // REALTIME SUBSCRIPTION
     const supabase = createClient() as any;
     const channel = supabase
@@ -192,13 +204,36 @@ export default function DashboardPage() {
             Chào buổi sáng, Bella Spa Admin!
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Month Selector */}
+          <div className="flex items-center bg-white/80 border border-border p-1.5 rounded-2xl shadow-sm">
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+              className="bg-transparent border-none outline-none font-bold text-sm px-4 py-2 cursor-pointer text-foreground"
+            >
+              {['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'].map((m, i) => (
+                <option key={i} value={i}>{m}</option>
+              ))}
+            </select>
+            <div className="w-px h-4 bg-border mx-1" />
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="bg-transparent border-none outline-none font-bold text-sm px-4 py-2 cursor-pointer text-foreground"
+            >
+              {[2024, 2025, 2026].map(y => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="relative group hidden md:block">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors w-5 h-5" />
             <input 
               type="text" 
               placeholder="Tìm kiếm nhanh..." 
-              className="pl-12 pr-6 py-4 bg-white/80 border border-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all w-80 shadow-sm font-medium"
+              className="pl-12 pr-6 py-4 bg-white/80 border border-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all w-60 shadow-sm font-medium"
             />
           </div>
           <button className="p-4 bg-white/80 border border-border rounded-2xl hover:bg-white transition-all shadow-sm relative group active:scale-95">
