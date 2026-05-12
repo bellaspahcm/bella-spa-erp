@@ -1,19 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { 
-  Users, 
-  DollarSign, 
-  TrendingUp, 
-  CheckCircle2, 
-  Calendar, 
-  Download, 
-  Search,
-  Filter,
-  ArrowRight,
-  ShieldCheck,
-  AlertCircle
-} from 'lucide-react';
+import { DollarSign, Download, TrendingUp, Search, Filter, Edit2, CheckCircle2, ChevronRight, User, Calendar as CalendarIcon, Briefcase, Award, AlertCircle } from 'lucide-react';
+import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { useState, useEffect } from 'react';
 import { getSalaryData, approveSalary, updateSalaryConfig } from '@/services/salary-actions';
 import { toast } from 'sonner';
@@ -112,10 +101,7 @@ export default function SalaryPage() {
           <p className="text-slate-500 font-medium mt-1">Quản lý thu nhập và hiệu suất làm việc của kỹ thuật viên</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-6 py-4 rounded-2xl font-bold transition-all shadow-sm">
-            <Download className="w-5 h-5 text-slate-400" />
-            <span>Xuất file Excel</span>
-          </button>
+          <PremiumExportButton />
           <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs">
             <CheckCircle2 className="w-5 h-5" />
             <span>Chốt lương toàn bộ</span>

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import PremiumExportButton from '@/components/ui/PremiumExportButton';
 
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
@@ -148,13 +149,16 @@ export default function CustomersPage() {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Khách hàng</h1>
           <p className="text-slate-500 font-medium mt-1">Quản lý hồ sơ mẹ và bé</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 active:scale-95"
-        >
-          <UserPlus className="w-5 h-5" />
-          <span>Thêm khách hàng</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <PremiumExportButton />
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 active:scale-95"
+          >
+            <UserPlus className="w-5 h-5" />
+            <span>Thêm khách hàng</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters & Search */}

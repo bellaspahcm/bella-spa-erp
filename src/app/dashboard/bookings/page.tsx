@@ -27,8 +27,9 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
+import PremiumExportButton from '@/components/ui/PremiumExportButton';
 
-import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog } from '@/services/booking-actions';
+import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog, completeSession } from '@/services/booking-actions';
 import { getUsers } from '@/services/user-actions';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
 import { MOCK_SERVICES } from '@/constants/mock-data';
@@ -171,7 +172,11 @@ function BookingsContent() {
         location: s.bookings?.customers?.address || 'Tại Spa',
         sessionCount: `${s.bookings?.completed_sessions || 0}/${s.bookings?.total_sessions || 21} buổi`,
         contractId: s.bookings?.booking_number || 'N/A',
-        contractDetail: s.notes || 'Không có ghi chú'
+        contractDetail: s.notes || 'Không có ghi chú',
+        bookingId: s.booking_id,
+        originalStatus: s.status,
+        sessionNumber: s.session_number || 1,
+        totalSessions: s.bookings?.total_sessions || 21
       };
       setModalData(detail);
       setShowDetailModal(true);
@@ -183,8 +188,19 @@ function BookingsContent() {
   const handleUpdatePlan = async () => {
     setIsUpdating(true);
     try {
+      // If status changed to completed, use the specialized completeSession action
+      if (modalData.status === 'completed' && modalData.originalStatus !== 'completed') {
+        const result = await completeSession(modalData.id, modalData.bookingId);
+        if (result.error) {
+          toast.error('Lỗi khi cập nhật tiến độ: ' + result.error);
+          setIsUpdating(false);
+          return;
+        }
+      }
+
+      // Update the rest of the fields (date, time, notes, and status if not handled above)
       const result = await updateSessionLog(modalData.id, {
-        assigned_date: modalData.dateString,
+        assigned_date: modalData.dateString || modalData.date.toISOString().split('T')[0],
         assigned_time: modalData.time,
         notes: modalData.contractDetail,
         status: modalData.status
@@ -193,8 +209,9 @@ function BookingsContent() {
       if (result.error) {
         toast.error('Lỗi: ' + result.error);
       } else {
-        toast.success('Đã cập nhật kế hoạch chăm sóc thành công!');
+        toast.success('Đã cập nhật tiến độ và kế hoạch thành công!');
         fetchSessions();
+        fetchAllBookings();
         setShowDetailModal(false);
       }
     } catch (error) {
@@ -226,6 +243,7 @@ function BookingsContent() {
           <p className="text-slate-500 font-medium mt-1">Điều phối và theo dõi lịch chăm sóc</p>
         </div>
         <div className="flex items-center gap-3">
+          <PremiumExportButton />
           <div className="bg-white p-1 rounded-2xl border border-slate-200 flex">
             <button 
               onClick={() => setView('list')}
@@ -561,7 +579,7 @@ function BookingsContent() {
                     <div className="space-y-4">
                       <div>
                         <p className="text-xs text-rose-400 font-bold mb-1">Liệu trình</p>
-                        <p className="font-bold text-slate-900">{modalData.package}</p>
+                        <p className="font-bold text-slate-900">{modalData.package} (Buổi {modalData.sessionNumber})</p>
                       </div>
                       <div>
                         <p className="text-xs text-rose-400 font-bold mb-1">Số lượng buổi</p>
