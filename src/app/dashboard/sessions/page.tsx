@@ -308,13 +308,18 @@ export default function SessionsPage() {
     }
   };
 
-  const [isReusing, setIsReusing] = useState(false);
-  const handleReusePackage = async (bookingId: string) => {
-    setIsReusing(true);
+  const [isReusingId, setIsReusingId] = useState<string | null>(null);
+  const handleReusePackage = async (bookingId: string, customerName: string) => {
+    if (!bookingId) return;
+
+    const confirm = window.confirm(`Bạn có chắc chắn muốn tái sử dụng gói dịch vụ nhanh cho khách hàng ${customerName}?`);
+    if (!confirm) return;
+    
+    setIsReusingId(bookingId);
     try {
       const result = await reusePackage(bookingId);
       if (result.data) {
-        setToastMessage('Đã khởi tạo lại gói dịch vụ nhanh chóng!');
+        setToastMessage(`Đã tái sử dụng gói cho ${customerName} thành công!`);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
         setSelectedBooking(null);
@@ -326,8 +331,11 @@ export default function SessionsPage() {
       }
     } catch (error) {
       console.error('Reuse failed:', error);
+      setToastMessage('Có lỗi xảy ra khi xử lý');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
     } finally {
-      setIsReusing(false);
+      setIsReusingId(null);
     }
   };
 
@@ -560,12 +568,12 @@ export default function SessionsPage() {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleReusePackage(booking.id);
+                          handleReusePackage(booking.id, booking.customers?.name_mother || 'Khách hàng');
                         }}
-                        disabled={isReusing}
+                        disabled={isReusingId === booking.id}
                         className="w-full flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-900 text-white font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95 justify-center"
                       >
-                        {isReusing ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
+                        {isReusingId === booking.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
                         Tái sử dụng gói nhanh
                       </button>
                     </div>
@@ -742,11 +750,11 @@ export default function SessionsPage() {
 
                       {selectedBooking.completed_sessions >= (selectedBooking.total_sessions || 21) && (
                          <button 
-                         onClick={() => handleReusePackage(selectedBooking.id)}
-                         disabled={isReusing}
+                         onClick={() => handleReusePackage(selectedBooking.id, selectedBooking.customers?.name_mother || 'Khách hàng')}
+                         disabled={isReusingId === selectedBooking.id}
                          className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[9px] shadow-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all relative z-10"
                        >
-                         {isReusing ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />} 
+                         {isReusingId === selectedBooking.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />} 
                          Tái sử dụng gói nhanh
                        </button>
                       )}

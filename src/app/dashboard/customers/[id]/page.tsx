@@ -65,17 +65,23 @@ export default function CustomerDetailPage() {
 
   const [isReusing, setIsReusing] = useState(false);
   const handleReusePackage = async (bookingId: string) => {
+    if (!bookingId) return;
+
+    const confirm = window.confirm(`Bạn có chắc chắn muốn tái sử dụng gói dịch vụ nhanh cho khách hàng ${customer.name_mother}?`);
+    if (!confirm) return;
+    
     setIsReusing(true);
     try {
       const result = await reusePackage(bookingId);
       if (result.data) {
-        toast.success('Đã tái sử dụng gói dịch vụ nhanh chóng!');
+        toast.success('Đã tái sử dụng gói dịch vụ thành công!');
         await loadData();
       } else {
         toast.error(result.error || 'Lỗi khi tái sử dụng gói');
       }
     } catch (error) {
       console.error('Reuse failed:', error);
+      toast.error('Có lỗi xảy ra khi xử lý');
     } finally {
       setIsReusing(false);
     }
