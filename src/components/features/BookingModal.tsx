@@ -391,7 +391,7 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
                       value={formData.start_date}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setFormData({...formData, start_date: e.target.value})}
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
+                      className="w-full px-3 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
                     />
                   </div>
                   <div className="space-y-2">

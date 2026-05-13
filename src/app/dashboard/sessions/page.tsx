@@ -647,26 +647,26 @@ export default function SessionsPage() {
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Ngày dự kiến</label>
                             <div className="relative">
                               <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                              <input 
-                                type="date"
-                                value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
-                              />
+                                <input 
+                                  type="date"
+                                  value={selectedDate}
+                                  onChange={(e) => setSelectedDate(e.target.value)}
+                                  disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                                  className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                                />
                             </div>
                           </div>
                           <div>
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Giờ hẹn</label>
                             <div className="relative">
                               <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                              <input 
-                                type="time"
-                                value={selectedTime}
-                                onChange={(e) => setSelectedTime(e.target.value)}
-                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
-                                className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
-                              />
+                                <input 
+                                  type="time"
+                                  value={selectedTime}
+                                  onChange={(e) => setSelectedTime(e.target.value)}
+                                  disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                                  className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                                />
                             </div>
                           </div>
                         </div>

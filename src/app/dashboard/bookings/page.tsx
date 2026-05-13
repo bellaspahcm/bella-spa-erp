@@ -656,7 +656,7 @@ function BookingsContent() {
                             type="date" 
                             value={modalData.dateString || ''}
                             onChange={(e) => setModalData({...modalData, dateString: e.target.value})}
-                            className="w-full bg-white border-none rounded-xl px-3 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                            className="w-full bg-white border-none rounded-xl px-2 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none text-xs"
                           />
                         </div>
                         <div>
@@ -665,7 +665,7 @@ function BookingsContent() {
                             type="text" 
                             value={modalData.time || ''}
                             onChange={(e) => setModalData({...modalData, time: e.target.value})}
-                            className="w-full bg-white border-none rounded-xl px-3 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                            className="w-full bg-white border-none rounded-xl px-2 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none text-xs"
                           />
                         </div>
                       </div>
