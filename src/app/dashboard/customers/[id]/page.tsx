@@ -340,7 +340,7 @@ export default function CustomerDetailPage() {
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
                 <History className="text-primary w-6 h-6" />
-                Lịch sử chăm sóc
+                Lịch sử chăm sóc ({customer.bookings?.[0]?.completed_sessions || 0}/{customer.bookings?.[0]?.total_sessions || 21})
               </h3>
               <button className="text-sm font-bold text-primary hover:underline">Xem tất cả</button>
             </div>
@@ -400,7 +400,7 @@ export default function CustomerDetailPage() {
                         <ClipboardList className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-black text-slate-800">{session.type || 'Chăm sóc liệu trình'}</p>
+                        <p className="font-black text-slate-800">{session.type || 'Chăm sóc liệu trình'} - Buổi {session.session_number}/{customer.bookings?.[0]?.total_sessions || 21}</p>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">KTV: {session.ktv || 'Chưa cập nhật'} • {session.completed_date || session.date || 'Chưa cập nhật'}</p>
                       </div>
                     </div>
