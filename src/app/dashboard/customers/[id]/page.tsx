@@ -51,6 +51,7 @@ export default function CustomerDetailPage() {
   const [isUpdatingKTV, setIsUpdatingKTV] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isRecordingPayment, setIsRecordingPayment] = useState(false);
+  const [paymentFile, setPaymentFile] = useState<File | null>(null);
   const [paymentData, setPaymentData] = useState({
     amount: 0,
     method: 'bank_transfer',
@@ -189,19 +190,47 @@ export default function CustomerDetailPage() {
 
     setIsRecordingPayment(true);
     try {
+      let finalReceiptUrl = paymentData.receipt_url;
+
+      // Upload file if selected
+      if (paymentFile) {
+        const supabase = createClient();
+        const fileExt = paymentFile.name.split('.').pop();
+        const fileName = `${activeBooking.id}-${Date.now()}.${fileExt}`;
+        const filePath = `receipts/${fileName}`;
+
+        const { error: uploadError, data } = await supabase.storage
+          .from('receipts')
+          .upload(filePath, paymentFile);
+
+        if (uploadError) {
+          // If bucket doesn't exist, try to inform but proceed if possible
+          console.error('Upload error:', uploadError);
+          if (uploadError.message.includes('bucket not found')) {
+            toast.error('Hệ thống Storage chưa được cấu hình. Vui lòng tạo bucket "receipts".');
+          }
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('receipts')
+            .getPublicUrl(filePath);
+          finalReceiptUrl = publicUrl;
+        }
+      }
+
       const result = await recordRemainingPayment({
         booking_id: activeBooking.id,
         customer_id: id,
         amount: paymentData.amount,
         payment_method: paymentData.method,
         notes: paymentData.notes,
-        receipt_url: paymentData.receipt_url
+        receipt_url: finalReceiptUrl
       });
 
       if (result.error) throw new Error(result.error);
       
       toast.success('Đã ghi nhận thanh toán thành công!');
       setIsPaymentModalOpen(false);
+      setPaymentFile(null);
       loadData();
     } catch (error: any) {
       toast.error('Lỗi: ' + error.message);
@@ -570,12 +599,14 @@ export default function CustomerDetailPage() {
         isSubmitting={isRecordingPayment}
         data={paymentData}
         setData={setPaymentData}
+        file={paymentFile}
+        setFile={setPaymentFile}
       />
     </div>
   );
 }
 
-function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData }: any) {
+function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData, file, setFile }: any) {
   if (!isOpen) return null;
 
   return (
@@ -603,7 +634,7 @@ function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, s
           </button>
         </div>
 
-        <div className="p-8 space-y-6">
+        <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
               <DollarIcon className="w-3.5 h-3.5" /> Số tiền thanh toán
@@ -649,19 +680,53 @@ function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, s
 
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <Camera className="w-3.5 h-3.5" /> Minh chứng thanh toán (Link hình ảnh)
+              <Camera className="w-3.5 h-3.5" /> Minh chứng thanh toán (Bill)
             </label>
+            
             <div className="relative group">
-              <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 group-focus-within:text-primary transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Dán link ảnh bill hoặc chọn tệp..."
-                value={data.receipt_url}
-                onChange={(e) => setData({ ...data, receipt_url: e.target.value })}
-                className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
-              />
+              {file ? (
+                <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-slate-200 group">
+                  <img 
+                    src={URL.createObjectURL(file)} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button 
+                      onClick={() => setFile(null)}
+                      className="bg-white text-rose-500 p-2 rounded-xl font-black text-xs uppercase"
+                    >
+                      Thay đổi ảnh
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <label className="w-full h-32 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-50 hover:border-primary/30 transition-all">
+                  <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-primary">
+                    <ImageIcon className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Tải lên ảnh Bill</span>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
-            <p className="text-[10px] text-slate-400 italic font-medium px-2">* Tính năng tải ảnh trực tiếp đang được đồng bộ với Storage</p>
+            {!file && (
+              <div className="relative group mt-3">
+                <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5" />
+                <input 
+                  type="text" 
+                  placeholder="Hoặc dán link ảnh trực tiếp..."
+                  value={data.receipt_url}
+                  onChange={(e) => setData({ ...data, receipt_url: e.target.value })}
+                  className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-xs"
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
