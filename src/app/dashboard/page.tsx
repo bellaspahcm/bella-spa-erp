@@ -12,6 +12,7 @@ import {
   Clock, 
   Star,
   ChevronRight,
+  ArrowRight,
   PlusCircle,
   Search,
   Bell,
@@ -23,7 +24,9 @@ import {
   CheckCircle2,
   Loader2,
   Activity,
-  MessageSquare
+  MessageSquare,
+  Sparkles,
+  Wallet
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
