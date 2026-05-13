@@ -99,7 +99,7 @@ export default function CustomersPage() {
     setIsSubmitting(true);
     
     try {
-      let result;
+      let result: any;
       if (isEditMode && editingCustomerId) {
         result = await updateCustomer(editingCustomerId, {
           ...formData,
@@ -117,7 +117,12 @@ export default function CustomersPage() {
       if (result.error) {
         toast.error(result.error);
       } else {
-        toast.success(isEditMode ? 'Cập nhật thành công!' : 'Thêm khách hàng thành công!');
+        if (result.warning) {
+          toast.success('Lưu thành công các thông tin khác!');
+          toast.warning(result.warning, { duration: 10000 });
+        } else {
+          toast.success(isEditMode ? 'Cập nhật thành công!' : 'Thêm khách hàng thành công!');
+        }
         setIsModalOpen(false);
         // Reset form
         resetForm();
