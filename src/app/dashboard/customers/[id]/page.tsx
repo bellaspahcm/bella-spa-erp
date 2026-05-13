@@ -370,7 +370,7 @@ export default function CustomerDetailPage() {
                 </div>
                 );
               })()
-              ) : customer.booking.completed_sessions >= (customer.booking.total_sessions || 21) && customer.booking.total_sessions > 0 ? (
+              : customer.booking.completed_sessions >= (customer.booking.total_sessions || 21) && customer.booking.total_sessions > 0 ? (
                 <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-100">
