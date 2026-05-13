@@ -357,7 +357,7 @@ export default function SessionsPage() {
         // Also reload current logs if modal is open
         if (selectedBooking && selectedBooking.id === bookingId) {
           const logs = await getSessionLogs(bookingId);
-          setCurrentSessionLogs(logs);
+          setSessionLogs(logs);
         }
       } else {
         setToastMessage('Lỗi: ' + result.error);
