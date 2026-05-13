@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { supabase } from '@/lib/supabase-client';
+import { getSupabase } from '@/lib/supabase-client';
 import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -16,6 +16,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
+    const supabase = getSupabase();
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
