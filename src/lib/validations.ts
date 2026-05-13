@@ -20,4 +20,5 @@ export const bookingSchema = z.object({
   deposit_amount: z.number().min(0),
   total_sessions: z.number().int().min(1).default(21),
   start_date: z.string().optional(),
+  assigned_ktv_id: z.string().optional(),
 });
