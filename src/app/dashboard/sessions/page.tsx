@@ -329,6 +329,72 @@ export default function SessionsPage() {
     }
   };
 
+  // Dedicated handler for Restore/Cancel - ONLY changes status & completed_date
+  const handleStatusChange = async (newStatus: 'scheduled' | 'cancelled') => {
+    if (!selectedSessionLog || !selectedBooking) return;
+    if (userRole !== 'ADMIN') return;
+
+    setIsSavingNote(true);
+    try {
+      const updates: any = {
+        status: newStatus,
+        completed_date: null, // always clear completed_date when restoring/cancelling
+      };
+
+      const result = await updateSessionLog(selectedSessionLog.id, updates);
+
+      if (result.data) {
+        const updatedLog = { ...selectedSessionLog, ...updates };
+
+        // Update grid immediately
+        setSessionLogs(prev => prev.map(log =>
+          log.id === selectedSessionLog.id ? updatedLog : log
+        ));
+
+        // Update selected log & dropdown
+        setSelectedSessionLog(updatedLog);
+        setSelectedStatus(newStatus);
+
+        // Clear any stale local cache for this log
+        setLocalSessionLogUpdates(prev => {
+          const next = { ...prev };
+          delete next[selectedSessionLog.id];
+          return next;
+        });
+
+        // Adjust booking count
+        if (selectedSessionLog.status === 'completed') {
+          const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) - 1);
+          setLocalBookingUpdates(prev => ({ ...prev, [selectedBooking.id]: newCount }));
+          setSessions(prev => prev.map(b =>
+            b.id === selectedBooking.id ? { ...b, completed_sessions: newCount } : b
+          ));
+        }
+
+        setToastMessage(newStatus === 'scheduled' ? 'Đã khôi phục buổi tập thành công!' : 'Đã hủy buổi tập thành công!');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
+
+        // Refresh from server
+        await loadSessions();
+        if (selectedBooking?.id) {
+          await fetchSessionLogs(selectedBooking.id);
+        }
+      } else if (result.error) {
+        setToastMessage('Lỗi: ' + result.error);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 4000);
+      }
+    } catch (error: any) {
+      console.error('Status change failed:', error);
+      setToastMessage('Lỗi: ' + (error.message || 'Không rõ'));
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    } finally {
+      setIsSavingNote(false);
+    }
+  };
+
   const [isReusingId, setIsReusingId] = useState<string | null>(null);
   
   const handleReusePackage = async (bookingId: string, customerName: string) => {
@@ -771,20 +837,22 @@ export default function SessionsPage() {
                           {userRole === 'ADMIN' && selectedSessionLog && selectedSessionLog.status !== 'scheduled' && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
                               <button 
-                                onClick={() => handleSaveFullUpdate('scheduled')}
-                                className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                                onClick={() => handleStatusChange('scheduled')}
+                                disabled={isSavingNote}
+                                className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                               >
-                                <RotateCcw className="w-3.5 h-3.5" /> Khôi phục buổi
+                                {isSavingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />} Khôi phục buổi
                               </button>
                               <button 
                                 onClick={() => {
                                   if (window.confirm('Bạn có chắc muốn hủy buổi tập này?')) {
-                                    handleSaveFullUpdate('cancelled');
+                                    handleStatusChange('cancelled');
                                   }
                                 }}
-                                className="flex-1 bg-rose-50 text-rose-600 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
+                                disabled={isSavingNote}
+                                className="flex-1 bg-rose-50 text-rose-600 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                               >
-                                <XCircle className="w-3.5 h-3.5" /> Hủy buổi này
+                                {isSavingNote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />} Hủy buổi này
                               </button>
                             </div>
                           )}

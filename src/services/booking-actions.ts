@@ -280,6 +280,15 @@ export async function updateSessionLog(id: string, payload: any) {
   if (updates.assigned_time === "" || updates.assigned_time === "--:-- --") updates.assigned_time = null;
   if (updates.notes === "") updates.notes = null;
 
+  // Only send columns that exist in session_logs table
+  const allowedColumns = ['assigned_date', 'completed_date', 'completed_by_ktv_id', 'address', 'status', 'notes', 'assigned_time'];
+  const safeUpdates: any = {};
+  for (const key of allowedColumns) {
+    if (key in updates) {
+      safeUpdates[key] = updates[key];
+    }
+  }
+
   // 1. Fetch the log to get booking_id if not provided
   const { data: logData, error: logError } = await supabase
     .from('session_logs')
@@ -293,7 +302,7 @@ export async function updateSessionLog(id: string, payload: any) {
   // 2. Update the log
   const { data, error } = await supabase
     .from('session_logs')
-    .update(updates)
+    .update(safeUpdates)
     .eq('id', id)
     .select()
     .single();
