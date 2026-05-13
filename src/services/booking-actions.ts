@@ -210,7 +210,7 @@ export async function getSessionsWithDetails() {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, customers(name_mother, phone), session_logs(session_number, assigned_date, status, notes, type)')
+    .select('*, customers(id, name_mother, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes, type)')
     .order('updated_at', { ascending: false });
 
   if (error || !data || data.length === 0) {
@@ -223,7 +223,6 @@ export async function getSessionsWithDetails() {
     const nextSession = sortedLogs.find((s: any) => s.status === 'scheduled');
     return {
       ...b,
-      package_name: resolvePackageName(b),
       next_session_date: nextSession?.assigned_date || null,
       start_date: ensure2026(b.start_date),
       end_date: ensure2026(b.end_date),
