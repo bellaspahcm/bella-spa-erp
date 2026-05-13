@@ -333,29 +333,51 @@ export async function reusePackage(bookingId: string) {
   }
 
   // 2. Create new booking based on original
+  const bookingData: any = {
+    customer_id: original.customer_id,
+    booking_number: `BK-${new Date().getTime()}`,
+    package_id: original.package_id,
+    status: 'deposit_pending',
+    full_price: original.full_price,
+    deposit_amount: 0, // Reset deposit for new cycle
+    total_sessions: original.total_sessions,
+    completed_sessions: 0,
+    start_date: new Date().toISOString().split('T')[0],
+  };
+
+  // Only include package_name if it exists in the original record
+  if (original.package_name) {
+    bookingData.package_name = original.package_name;
+  }
+
   const { data: newBooking, error: createError } = await supabase
     .from('bookings')
-    .insert([{
-      customer_id: original.customer_id,
-      booking_number: `BK-${new Date().getTime()}`,
-      package_id: original.package_id,
-      package_name: original.package_name,
-      status: 'deposit_pending',
-      full_price: original.full_price,
-      deposit_amount: 0, // Reset deposit for new cycle
-      total_sessions: original.total_sessions,
-      completed_sessions: 0,
-      start_date: new Date().toISOString().split('T')[0],
-    } as any])
+    .insert([bookingData])
     .select()
     .single();
 
   if (createError) {
+    // Fallback: If it's a "column not found" error for package_name, try without it
+    if (createError.message?.includes('package_name')) {
+      delete bookingData.package_name;
+      const { data: retryBooking, error: retryError } = await supabase
+        .from('bookings')
+        .insert([bookingData])
+        .select()
+        .single();
+      
+      if (retryError) return { error: 'Lỗi tạo gói mới: ' + retryError.message };
+      return finalizeReuse(retryBooking, original.total_sessions, supabase);
+    }
     return { error: 'Lỗi tạo gói mới: ' + createError.message };
   }
 
+  return finalizeReuse(newBooking, original.total_sessions, supabase);
+}
+
+async function finalizeReuse(newBooking: any, total: number, supabase: any) {
   // 3. Generate new session logs
-  const totalSessions = original.total_sessions || 21;
+  const totalSessions = total || 21;
   const sessionLogs = Array.from({ length: totalSessions }, (_, i) => ({
     booking_id: newBooking.id,
     session_number: i + 1,
