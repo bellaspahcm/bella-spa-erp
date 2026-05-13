@@ -601,12 +601,13 @@ export default function CustomerDetailPage() {
         setData={setPaymentData}
         file={paymentFile}
         setFile={setPaymentFile}
+        customerName={customer?.name_mother}
       />
     </div>
   );
 }
 
-function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData, file, setFile }: any) {
+function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData, file, setFile, customerName }: any) {
   if (!isOpen) return null;
 
   return (
@@ -624,10 +625,13 @@ function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, s
         animate={{ scale: 1, opacity: 1, y: 0 }}
         className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
       >
-        <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div>
             <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Xác nhận thanh toán</h2>
-            <p className="text-sm text-slate-500 font-bold italic">Ghi nhận minh chứng tài chính</p>
+            <p className="text-sm font-bold text-primary flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Khách hàng: {customerName}
+            </p>
           </div>
           <button onClick={onClose} className="p-3 hover:bg-rose-50 rounded-2xl text-slate-400 hover:text-rose-500 transition-all">
             <PlusCircle className="w-6 h-6 rotate-45" />
