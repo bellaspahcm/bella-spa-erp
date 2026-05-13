@@ -209,7 +209,7 @@ export async function getSessionsWithDetails() {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, customers(name_mother, phone)')
+    .select('*, customers(name_mother, phone), session_logs(assigned_date, status)')
     .order('updated_at', { ascending: false });
 
   if (error || !data || data.length === 0) {
@@ -217,12 +217,16 @@ export async function getSessionsWithDetails() {
     return DEMO_BOOKINGS;
   }
   
-  return (data || []).map((b: any) => ({
-    ...b,
-    start_date: ensure2026(b.start_date),
-    end_date: ensure2026(b.end_date),
-    expected_birth_date: ensure2026(b.expected_birth_date)
-  }));
+  return (data || []).map((b: any) => {
+    const nextSession = (b.session_logs || []).find((s: any) => s.status === 'scheduled');
+    return {
+      ...b,
+      next_session_date: nextSession?.assigned_date || null,
+      start_date: ensure2026(b.start_date),
+      end_date: ensure2026(b.end_date),
+      expected_birth_date: ensure2026(b.expected_birth_date)
+    };
+  });
 }
 
 export async function getCalendarSessions() {
