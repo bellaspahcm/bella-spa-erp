@@ -157,11 +157,12 @@ export async function getCustomerById(id: string) {
       return getMockCustomerFallback(id);
     }
 
-    // 2. Fetch Bookings separately to avoid join errors
+    // 2. Fetch Bookings separately to avoid join errors - sort by created_at to get latest
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
       .select('*, session_logs(*), assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name)')
-      .eq('customer_id', id);
+      .eq('customer_id', id)
+      .order('created_at', { ascending: false });
 
     if (bookingsError) {
       console.error('Error fetching bookings from DB:', bookingsError);
@@ -174,7 +175,7 @@ export async function getCustomerById(id: string) {
       ...customer,
       dob_baby: ensure2026(customer.dob_baby),
       dob_expected: ensure2026(customer.dob_expected),
-      status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
+      status: latestBooking?.status || 'lead',
       deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
       package_name: resolvePackageName(latestBooking),
       start_date: ensure2026(latestBooking?.start_date || customer.dob_expected),

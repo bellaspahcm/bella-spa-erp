@@ -174,6 +174,7 @@ export async function createBooking(formData: any) {
 
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath('/dashboard/customers');
+  await safeRevalidatePath(`/dashboard/customers/${validatedData.customer_id}`);
   await safeRevalidatePath('/dashboard');
   return { data: booking };
 }
@@ -271,10 +272,22 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: countError.message };
   }
 
-  // 4. Update booking with actual count
+  // 4. Update booking with actual count and status transition
+  const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status').eq('id', bookingId).single();
+  
+  const updates: any = { completed_sessions: count || 0 };
+  
+  if (count > 0 && currentBooking?.status === 'deposit_pending') {
+    updates.status = 'active';
+  }
+  
+  if (currentBooking?.total_sessions && count >= currentBooking.total_sessions) {
+    updates.status = 'completed';
+  }
+
   const { error: updateError } = await supabase
     .from('bookings')
-    .update({ completed_sessions: count || 0 } as any)
+    .update(updates)
     .eq('id', bookingId);
 
   if (updateError) {
@@ -282,9 +295,21 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: updateError.message };
   }
 
+  // 5. Fetch customer_id for specific revalidation
+  const { data: customerData } = await supabase
+    .from('bookings')
+    .select('customer_id')
+    .eq('id', bookingId)
+    .single();
+
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath('/dashboard/customers');
+  await safeRevalidatePath('/dashboard/sessions');
   await safeRevalidatePath('/dashboard');
+  
+  if (customerData?.customer_id) {
+    await safeRevalidatePath(`/dashboard/customers/${customerData.customer_id}`);
+  }
   
   return { success: true };
 }
@@ -425,15 +450,38 @@ export async function updateSessionLog(id: string, payload: any) {
     .eq('status', 'completed');
 
   if (!countError) {
+    const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status').eq('id', bookingId).single();
+    const bUpdates: any = { completed_sessions: count || 0 };
+    
+    if (count > 0 && currentBooking?.status === 'deposit_pending') {
+      bUpdates.status = 'active';
+    }
+    
+    if (currentBooking?.total_sessions && count >= currentBooking.total_sessions) {
+      bUpdates.status = 'completed';
+    }
+
     await supabase
       .from('bookings')
-      .update({ completed_sessions: count || 0 } as any)
+      .update(bUpdates)
       .eq('id', bookingId);
   }
+
+  // 4. Fetch customer_id for specific revalidation
+  const { data: customerData } = await supabase
+    .from('bookings')
+    .select('customer_id')
+    .eq('id', bookingId)
+    .single();
 
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath('/dashboard/sessions');
   await safeRevalidatePath('/dashboard/customers');
+  
+  if (customerData?.customer_id) {
+    await safeRevalidatePath(`/dashboard/customers/${customerData.customer_id}`);
+  }
+
   return { data };
 }
 
@@ -451,7 +499,27 @@ export async function saveSessionNote(sessionId: string, note: string) {
     return { error: error.message };
   }
 
+  // Get booking_id to find customer_id for revalidation
+  const { data: logData } = await supabase
+    .from('session_logs')
+    .select('booking_id')
+    .eq('id', sessionId)
+    .single();
+
+  if (logData?.booking_id) {
+    const { data: bookingData } = await supabase
+      .from('bookings')
+      .select('customer_id')
+      .eq('id', logData.booking_id)
+      .single();
+
+    if (bookingData?.customer_id) {
+      await safeRevalidatePath(`/dashboard/customers/${bookingData.customer_id}`);
+    }
+  }
+
   await safeRevalidatePath('/dashboard/sessions');
+  await safeRevalidatePath('/dashboard/customers');
   return { success: true };
 }
 
@@ -480,7 +548,18 @@ export async function addExtraSession(bookingId: string) {
     status: 'scheduled'
   } as any);
   
+  // Get customer_id for revalidation
+  const { data: bookingData } = await supabase
+    .from('bookings')
+    .select('customer_id')
+    .eq('id', bookingId)
+    .single();
+
   await safeRevalidatePath('/dashboard/sessions');
+  if (bookingData?.customer_id) {
+    await safeRevalidatePath(`/dashboard/customers/${bookingData.customer_id}`);
+  }
+  
   return { success: true };
 }
 
@@ -559,6 +638,13 @@ export async function updateBooking(id: string, payload: any) {
 
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath('/dashboard/customers');
+  
+  // Also revalidate the specific customer page to ensure the treatment card updates
+  const { data: bookingData } = await supabase.from('bookings').select('customer_id').eq('id', id).single();
+  if (bookingData?.customer_id) {
+    await safeRevalidatePath(`/dashboard/customers/${bookingData.customer_id}`);
+  }
+
   return { data };
 }
 
@@ -640,5 +726,6 @@ async function finalizeReuse(newBooking: any, total: number, supabase: any) {
 
   await safeRevalidatePath('/dashboard/sessions');
   await safeRevalidatePath('/dashboard/bookings');
+  await safeRevalidatePath(`/dashboard/customers/${newBooking.customer_id}`);
   return { data: newBooking };
 }
