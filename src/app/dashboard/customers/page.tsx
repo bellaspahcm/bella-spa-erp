@@ -230,7 +230,7 @@ export default function CustomersPage() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    const container = document.querySelector('.overflow-auto');
+    const container = document.getElementById('customers-list-container');
     if (container) {
       container.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
@@ -239,7 +239,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
+    <div id="customers-list-container" className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (
