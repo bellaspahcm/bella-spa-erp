@@ -157,6 +157,9 @@ export default function DashboardPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue' }, () => {
         fetchData();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_reviews' }, () => {
+        fetchData();
+      })
       .subscribe();
 
     return () => {

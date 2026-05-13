@@ -197,19 +197,18 @@ export async function getMonthlyPerformance() {
   const results = [];
   
   for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(now.getMonth() - i);
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const monthIndex = d.getMonth();
     const year = d.getFullYear();
     const label = monthNames[monthIndex];
     
-    // Filter sessions
+    // Filter sessions (assigned_date is YYYY-MM-DD)
     const sessionCount = sessionData?.filter((s: any) => {
       const sDate = new Date(s.assigned_date);
       return sDate.getMonth() === monthIndex && sDate.getFullYear() === year;
     }).length || 0;
 
-    // Filter revenue & expenses
+    // Filter revenue & expenses (created_at is timestamp)
     const monthRevenueData = revenueData?.filter((r: any) => {
       const rDate = new Date(r.created_at);
       return rDate.getMonth() === monthIndex && rDate.getFullYear() === year;
@@ -236,8 +235,8 @@ export async function getMonthlyPerformance() {
     results.push({
       name: label,
       customers: sessionCount,
-      revenue: Math.round(revenue / 1000000), // In millions
-      expense: Math.round(expense / 1000000), // In millions
+      revenue: Number((revenue / 1000000).toFixed(1)), // In millions with 1 decimal
+      expense: Number((expense / 1000000).toFixed(1)), // In millions with 1 decimal
       rating: Number(avgRating.toFixed(1))
     });
   }
