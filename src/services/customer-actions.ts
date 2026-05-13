@@ -160,7 +160,7 @@ export async function getCustomerById(id: string) {
     // 2. Fetch Bookings separately to avoid join errors
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
-      .select('*, session_logs(*)')
+      .select('*, session_logs(*), assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name)')
       .eq('customer_id', id);
 
     if (bookingsError) {

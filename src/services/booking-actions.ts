@@ -199,6 +199,7 @@ export async function completeSession(sessionId: string, bookingId: string) {
 
   await safeRevalidatePath('/dashboard/sessions');
   await safeRevalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard/customers');
   await safeRevalidatePath('/dashboard');
   
   return { success: true };
@@ -209,7 +210,7 @@ export async function getSessionsWithDetails() {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, customers(name_mother, phone), session_logs(assigned_date, status)')
+    .select('*, customers(name_mother, phone), session_logs(session_number, assigned_date, status)')
     .order('updated_at', { ascending: false });
 
   if (error || !data || data.length === 0) {
@@ -218,7 +219,8 @@ export async function getSessionsWithDetails() {
   }
   
   return (data || []).map((b: any) => {
-    const nextSession = (b.session_logs || []).find((s: any) => s.status === 'scheduled');
+    const sortedLogs = (b.session_logs || []).sort((a: any, b2: any) => (a.session_number || 0) - (b2.session_number || 0));
+    const nextSession = sortedLogs.find((s: any) => s.status === 'scheduled');
     return {
       ...b,
       next_session_date: nextSession?.assigned_date || null,
@@ -328,6 +330,7 @@ export async function updateSessionLog(id: string, payload: any) {
 
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath('/dashboard/sessions');
+  await safeRevalidatePath('/dashboard/customers');
   return { data };
 }
 
