@@ -581,7 +581,7 @@ export default function CustomersPage() {
                           max="9999-12-31"
                           value={formData.dob_expected}
                           onChange={handleInputChange}
-                          className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
+                          className="w-full px-3 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all text-sm font-bold" 
                         />
                     </div>
                     <div className="space-y-2 relative">
