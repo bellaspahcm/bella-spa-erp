@@ -27,10 +27,11 @@ import { getUsers } from '@/services/user-actions';
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   preselectedCustomer?: any;
 }
 
-export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }: BookingModalProps) {
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<'search' | 'new'>('search');
   const [searchQuery, setSearchQuery] = useState('');
@@ -212,7 +213,11 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
         toast.error(result.error);
       } else {
         toast.success('Tạo lịch hẹn thành công!');
-        onClose();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          onClose();
+        }
       }
     } catch (error) {
       console.error('Error creating booking:', error);
