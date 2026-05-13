@@ -21,7 +21,7 @@ import {
   UserCircle,
   MessageSquare
 } from 'lucide-react';
-import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote } from '@/services/booking-actions';
+import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage } from '@/services/booking-actions';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
@@ -250,6 +250,13 @@ export default function SessionsPage() {
   const handleSaveFullUpdate = async () => {
     if (!selectedSessionLog || !selectedBooking) return;
     
+    if (userRole !== 'ADMIN') {
+      setToastMessage('Chỉ Admin mới có quyền sửa dữ liệu này!');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+
     setIsSavingNote(true);
     try {
       const updates = {
@@ -298,6 +305,29 @@ export default function SessionsPage() {
       setTimeout(() => setShowToast(false), 3000);
     } finally {
       setIsSavingNote(false);
+    }
+  };
+
+  const [isReusing, setIsReusing] = useState(false);
+  const handleReusePackage = async (bookingId: string) => {
+    setIsReusing(true);
+    try {
+      const result = await reusePackage(bookingId);
+      if (result.data) {
+        setToastMessage('Đã khởi tạo lại gói dịch vụ nhanh chóng!');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        setSelectedBooking(null);
+        await loadSessions();
+      } else {
+        setToastMessage('Lỗi: ' + result.error);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      }
+    } catch (error) {
+      console.error('Reuse failed:', error);
+    } finally {
+      setIsReusing(false);
     }
   };
 
@@ -523,8 +553,21 @@ export default function SessionsPage() {
                         )}
                       </button>
                   ) : (
-                    <div className="flex items-center gap-3 text-emerald-500 font-black uppercase tracking-widest text-[10px] bg-emerald-50 px-6 py-4 rounded-2xl border border-emerald-200">
-                      <CheckCircle2 className="w-4 h-4" /> Đã hoàn tất
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="flex items-center gap-3 text-emerald-500 font-black uppercase tracking-widest text-[10px] bg-emerald-50 px-6 py-4 rounded-2xl border border-emerald-200 justify-center">
+                        <CheckCircle2 className="w-4 h-4" /> Đã hoàn tất
+                      </div>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReusePackage(booking.id);
+                        }}
+                        disabled={isReusing}
+                        className="w-full flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-900 text-white font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95 justify-center"
+                      >
+                        {isReusing ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
+                        Tái sử dụng gói nhanh
+                      </button>
                     </div>
                   )}
                 </div>
@@ -600,7 +643,7 @@ export default function SessionsPage() {
                                 type="date"
                                 value={selectedDate}
                                 onChange={(e) => setSelectedDate(e.target.value)}
-                                disabled={!selectedSessionLog}
+                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                               />
                             </div>
@@ -613,7 +656,7 @@ export default function SessionsPage() {
                                 type="time"
                                 value={selectedTime}
                                 onChange={(e) => setSelectedTime(e.target.value)}
-                                disabled={!selectedSessionLog}
+                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
                                 className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                               />
                             </div>
@@ -630,7 +673,7 @@ export default function SessionsPage() {
                               { value: 'canceled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
                             ]}
                             onChange={(value) => setSelectedStatus(value)}
-                            disabled={!selectedSessionLog}
+                            disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
                           />
                         </div>
 
@@ -640,14 +683,14 @@ export default function SessionsPage() {
                             placeholder="Hôm nay mẹ và bé thế nào? Các bước kỹ thuật đã thực hiện, lưu ý cho buổi sau..."
                             value={currentNote}
                             onChange={(e) => setCurrentNote(e.target.value)}
-                            disabled={!selectedSessionLog}
+                            disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
                             className="w-full h-32 p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50 text-xs shadow-inner"
                           />
                         </div>
 
                         <button 
                           onClick={handleSaveFullUpdate}
-                          disabled={isSavingNote || !selectedSessionLog}
+                          disabled={isSavingNote || !selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
                           className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
                         >
                           {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
@@ -669,17 +712,44 @@ export default function SessionsPage() {
 
                     <div className="luxury-card-pink p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-4 relative z-10">Tóm tắt tiến độ</h3>
+                      <div className="flex items-center justify-between mb-4 relative z-10">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Tóm tắt tiến độ</h3>
+                        {selectedBooking.completed_sessions >= (selectedBooking.total_sessions || 21) && (
+                          <span className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Done</span>
+                        )}
+                      </div>
+                      
                       <div className="grid grid-cols-2 gap-6 relative z-10">
-                        <div>
-                          <p className="text-xs opacity-60 font-bold uppercase">Hoàn thành</p>
-                          <p className="text-2xl font-black">{selectedBooking.completed_sessions}</p>
+                        <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm">
+                          <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Hoàn thành</p>
+                          <p className="text-3xl font-black text-slate-900">{selectedBooking.completed_sessions}</p>
                         </div>
-                        <div>
-                          <p className="text-xs opacity-60 font-bold uppercase">Còn lại</p>
-                          <p className="text-2xl font-black">{(selectedBooking.total_sessions || 21) - (selectedBooking.completed_sessions || 0)}</p>
+                        <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm">
+                          <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Còn lại</p>
+                          <p className="text-3xl font-black text-slate-900">{Math.max(0, (selectedBooking.total_sessions || 21) - (selectedBooking.completed_sessions || 0))}</p>
                         </div>
                       </div>
+
+                      {/* Add progress bar inside summary too for visual impact */}
+                      <div className="mt-6 relative z-10">
+                        <div className="w-full bg-white/30 h-1.5 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary" 
+                            style={{ width: `${(selectedBooking.completed_sessions / (selectedBooking.total_sessions || 21)) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {selectedBooking.completed_sessions >= (selectedBooking.total_sessions || 21) && (
+                         <button 
+                         onClick={() => handleReusePackage(selectedBooking.id)}
+                         disabled={isReusing}
+                         className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[9px] shadow-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all relative z-10"
+                       >
+                         {isReusing ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />} 
+                         Tái sử dụng gói nhanh
+                       </button>
+                      )}
                     </div>
                   </div>
 

@@ -23,7 +23,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 import { getCustomerById } from '@/services/customer-actions';
-import { completeSession } from '@/services/booking-actions';
+import { completeSession, reusePackage } from '@/services/booking-actions';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { BookingModal } from '@/components/features/BookingModal';
@@ -52,28 +52,7 @@ export default function CustomerDetailPage() {
       const result = await completeSession(sessionId, bookingId);
       if (result.success) {
         toast.success('Cập nhật tiến độ thành công!');
-        // Refresh data
-        const data = await getCustomerById(id);
-        if (data) {
-          setCustomer({
-            ...data,
-            baby: { 
-              name: data.name_baby || 'Chưa có', 
-              dob: data.dob_baby || data.dob_expected || 'Chưa cập nhật',
-              gender: 'Chưa xác định'
-            },
-            booking: {
-              package: data.package_name,
-              total_sessions: data.bookings?.[0]?.total_sessions || 0,
-              completed_sessions: data.bookings?.[0]?.completed_sessions || 0,
-              start_date: data.bookings?.[0]?.start_date || (data.status === 'deposit' ? 'Dự kiến sau sinh' : 'Chưa có'),
-              deposit: data.deposit_amount || '0đ',
-              full_price: data.bookings?.[0]?.full_price || 0,
-              remaining: data.bookings?.[0]?.full_price ? `${data.bookings[0].full_price.toLocaleString()}đ` : '0đ'
-            },
-            sessions: data.sessions || []
-          });
-        }
+        await loadData();
       } else {
         toast.error(result.error || 'Lỗi khi cập nhật tiến độ');
       }
@@ -81,6 +60,24 @@ export default function CustomerDetailPage() {
       toast.error('Có lỗi xảy ra');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const [isReusing, setIsReusing] = useState(false);
+  const handleReusePackage = async (bookingId: string) => {
+    setIsReusing(true);
+    try {
+      const result = await reusePackage(bookingId);
+      if (result.data) {
+        toast.success('Đã tái sử dụng gói dịch vụ nhanh chóng!');
+        await loadData();
+      } else {
+        toast.error(result.error || 'Lỗi khi tái sử dụng gói');
+      }
+    } catch (error) {
+      console.error('Reuse failed:', error);
+    } finally {
+      setIsReusing(false);
     }
   };
 
@@ -344,7 +341,7 @@ export default function CustomerDetailPage() {
 
             <div className="space-y-4">
               {/* Next Session Action */}
-              {customer.sessions.find((s: any) => s.status === 'scheduled') && (
+              {customer.sessions.find((s: any) => s.status === 'scheduled') ? (
                 <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-pink-200">
@@ -367,7 +364,27 @@ export default function CustomerDetailPage() {
                     XÁC NHẬN HOÀN THÀNH
                   </button>
                 </div>
-              )}
+              ) : customer.booking.completed_sessions >= (customer.booking.total_sessions || 21) && customer.booking.total_sessions > 0 ? (
+                <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-100">
+                      <Heart className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Liệu trình đã hoàn tất</p>
+                      <h4 className="text-xl font-black text-slate-900">Mẹ đã xong gói liệu trình</h4>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleReusePackage(customer.bookings?.[0]?.id)}
+                    disabled={isReusing}
+                    className="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                  >
+                    {isReusing ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <TrendingUp className="w-5 h-5" />}
+                    TÁI SỬ DỤNG GÓI NHANH
+                  </button>
+                </div>
+              ) : null}
 
               {customer.sessions.filter((s: any) => s.status === 'completed').length > 0 ? (
                 customer.sessions.filter((s: any) => s.status === 'completed').map((session: any) => (
