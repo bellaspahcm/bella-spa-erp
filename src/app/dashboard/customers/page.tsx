@@ -65,7 +65,8 @@ export default function CustomersPage() {
     name_baby: '',
     dob_expected: '',
     address: '',
-    notes: ''
+    notes: '',
+    gender_baby: 'unknown'
   });
 
   useEffect(() => {
@@ -136,7 +137,8 @@ export default function CustomersPage() {
       name_baby: '',
       dob_expected: '',
       address: '',
-      notes: ''
+      notes: '',
+      gender_baby: 'unknown'
     });
     setDepositAmount('');
     setSelectedPackage('');
@@ -151,7 +153,8 @@ export default function CustomersPage() {
       name_baby: customer.name_baby || '',
       dob_expected: customer.dob_expected || '',
       address: customer.address || '',
-      notes: customer.notes || ''
+      notes: customer.notes || '',
+      gender_baby: customer.gender_baby || 'unknown'
     });
     setDepositAmount(customer.deposit_amount?.replace(/[^\d]/g, '') || '');
     setSelectedPackage(customer.package_name || '');
@@ -583,6 +586,30 @@ export default function CustomersPage() {
                           onChange={handleInputChange}
                           className="w-full px-3 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all text-sm font-bold" 
                         />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Giới tính của Bé</label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { id: 'boy', label: 'Bé Trai', color: 'bg-blue-50 text-blue-600 border-blue-100' },
+                          { id: 'girl', label: 'Bé Gái', color: 'bg-rose-50 text-rose-600 border-rose-100' },
+                          { id: 'unknown', label: 'Chưa biết', color: 'bg-slate-50 text-slate-500 border-slate-100' }
+                        ].map(g => (
+                          <button
+                            key={g.id}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, gender_baby: g.id })}
+                            className={cn(
+                              "py-3 rounded-xl font-bold text-xs transition-all border",
+                              formData.gender_baby === g.id 
+                                ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-100" 
+                                : "bg-slate-50 text-slate-400 border-slate-100 hover:border-rose-200"
+                            )}
+                          >
+                            {g.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div className="space-y-2 relative">
                       <label className="text-sm font-bold text-slate-700 ml-1">Gói dịch vụ đăng ký</label>

@@ -100,6 +100,7 @@ export async function createCustomer(formData: any) {
         notes: validatedData.notes || null,
         dob_baby: validatedData.dob_baby || null,
         dob_expected: validatedData.dob_expected || null,
+        gender_baby: validatedData.gender_baby || 'unknown',
       } as any,
     ])
     .select()
@@ -239,6 +240,7 @@ export async function updateCustomer(id: string, formData: any) {
       notes: validatedData.notes,
       dob_baby: validatedData.dob_baby,
       dob_expected: validatedData.dob_expected,
+      gender_baby: validatedData.gender_baby,
     })
     .eq('id', id)
     .select()

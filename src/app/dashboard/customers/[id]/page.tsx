@@ -59,6 +59,19 @@ export default function CustomerDetailPage() {
     receipt_url: ''
   });
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
+  const [editData, setEditData] = useState({
+    name_mother: '',
+    phone: '',
+    name_baby: '',
+    dob_expected: '',
+    dob_baby: '',
+    address: '',
+    notes: '',
+    gender_baby: 'unknown'
+  });
+
   const loadData = useCallback(async () => {
     if (!id) return;
     try {
@@ -71,7 +84,9 @@ export default function CustomerDetailPage() {
           baby: { 
             name: data.name_baby || 'Chưa có', 
             dob: data.dob_baby || data.dob_expected || 'Chưa cập nhật',
-            gender: 'Chưa xác định'
+            gender: data.gender_baby === 'boy' ? 'Bé Trai' : 
+                    data.gender_baby === 'girl' ? 'Bé Gái' : 
+                    'Chưa xác định'
           },
           sessions: data.sessions || []
         });
@@ -155,6 +170,21 @@ export default function CustomerDetailPage() {
       toast.error('Có lỗi xảy ra');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateCustomer = async () => {
+    setIsUpdatingCustomer(true);
+    try {
+      const result = await updateCustomer(id as string, editData);
+      if (result.error) throw new Error(result.error);
+      toast.success('Cập nhật hồ sơ thành công!');
+      setIsEditModalOpen(false);
+      loadData();
+    } catch (error: any) {
+      toast.error('Lỗi: ' + error.message);
+    } finally {
+      setIsUpdatingCustomer(false);
     }
   };
 
@@ -309,10 +339,30 @@ export default function CustomerDetailPage() {
               </div>
 
               <button 
-                onClick={() => setIsBookingModalOpen(true)}
-                className="w-full mt-8 flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-rose-200 active:scale-95"
+                onClick={() => {
+                  setEditData({
+                    name_mother: customer.name_mother,
+                    phone: customer.phone,
+                    name_baby: customer.name_baby || '',
+                    dob_expected: customer.dob_expected || '',
+                    dob_baby: customer.dob_baby || '',
+                    address: customer.address || '',
+                    notes: customer.notes || '',
+                    gender_baby: customer.gender_baby || 'unknown'
+                  });
+                  setIsEditModalOpen(true);
+                }}
+                className="w-full mt-8 flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-black transition-all shadow-lg active:scale-95"
               >
                 <PlusCircle className="w-5 h-5" />
+                <span>CẬP NHẬT THÔNG TIN</span>
+              </button>
+
+              <button 
+                onClick={() => setIsBookingModalOpen(true)}
+                className="w-full mt-4 flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-rose-200 active:scale-95"
+              >
+                <TrendingUp className="w-5 h-5" />
                 <span>ĐẶT LỊCH NGAY</span>
               </button>
             </div>
@@ -597,7 +647,15 @@ export default function CustomerDetailPage() {
         preselectedCustomer={customer}
       />
 
-      {/* Payment Modal */}
+      <EditCustomerModal 
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onConfirm={handleUpdateCustomer}
+        isSubmitting={isUpdatingCustomer}
+        data={editData}
+        setData={setEditData}
+      />
+
       <BookingPaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
@@ -609,6 +667,130 @@ export default function CustomerDetailPage() {
         setFile={setPaymentFile}
         customerName={customer?.name_mother}
       />
+    </div>
+  );
+}
+
+function EditCustomerModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData }: any) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-[#1A0A0E]/80 backdrop-blur-md"
+      />
+      
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+      >
+        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200">
+              <User className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Cập nhật thông tin</h2>
+              <p className="text-xs text-slate-500 font-bold italic">Chỉnh sửa hồ sơ mẹ và bé</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-3 hover:bg-rose-50 rounded-2xl text-slate-400 hover:text-rose-500 transition-all">
+            <PlusCircle className="w-6 h-6 rotate-45" />
+          </button>
+        </div>
+
+        <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Họ tên Mẹ</label>
+              <input 
+                type="text" 
+                value={data.name_mother}
+                onChange={(e) => setData({ ...data, name_mother: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Số điện thoại</label>
+              <input 
+                type="text" 
+                value={data.phone}
+                onChange={(e) => setData({ ...data, phone: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Họ tên Bé</label>
+              <input 
+                type="text" 
+                value={data.name_baby}
+                onChange={(e) => setData({ ...data, name_baby: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ngày sinh Bé / Dự sinh</label>
+              <input 
+                type="date" 
+                value={data.dob_baby || data.dob_expected || ''}
+                onChange={(e) => setData({ ...data, dob_baby: e.target.value, dob_expected: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Giới tính của Bé</label>
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { id: 'boy', label: 'Bé Trai', color: 'blue' },
+                { id: 'girl', label: 'Bé Gái', color: 'rose' },
+                { id: 'unknown', label: 'Chưa biết', color: 'slate' }
+              ].map(g => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setData({ ...data, gender_baby: g.id })}
+                  className={cn(
+                    "py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border",
+                    data.gender_baby === g.id 
+                      ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-[1.02]" 
+                      : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/30"
+                  )}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Địa chỉ</label>
+            <textarea 
+              value={data.address}
+              onChange={(e) => setData({ ...data, address: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700 h-24 resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex gap-4">
+          <button onClick={onClose} className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition-all">Hủy</button>
+          <button 
+            disabled={isSubmitting}
+            onClick={onConfirm}
+            className="flex-1 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            Lưu thay đổi
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
