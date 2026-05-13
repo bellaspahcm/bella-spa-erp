@@ -337,29 +337,29 @@ export default function DashboardPage() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
       >
         {stats.map((stat, idx) => (
           <motion.div 
             key={idx}
             variants={item}
-            className="luxury-card-white p-8 rounded-[2.5rem] group relative overflow-hidden"
+            className="glass-pink p-8 rounded-[2.5rem] group relative overflow-hidden border border-white/50 shadow-lg hover:shadow-2xl transition-all duration-500"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -mr-12 -mt-12 group-hover:bg-primary/10 transition-colors" />
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -mr-12 -mt-12 group-hover:bg-primary/5 transition-colors" />
             
             <div className="flex items-center justify-between mb-6 relative">
-              <div className={`p-4 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 ${stat.bg} ${stat.color} shadow-inner`}>
+              <div className={`p-4 rounded-2xl transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 ${stat.bg} ${stat.color} shadow-sm border border-white/50`}>
                 <stat.icon className="w-7 h-7" />
               </div>
-              <div className={`flex items-center gap-1 font-bold text-sm px-3 py-1 rounded-full ${
-                stat.trend >= 0 ? 'text-emerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'
+              <div className={`flex items-center gap-1 font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-widest ${
+                stat.trend >= 0 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'
               }`}>
-                {stat.trend >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                {stat.trend >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                 {Math.abs(stat.trend)}%
               </div>
             </div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-1">{stat.label}</p>
-            <h3 className="text-4xl font-bold text-foreground tracking-tight">{stat.value}</h3>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-1">{stat.label}</p>
+            <h3 className="text-4xl font-black text-foreground tracking-tighter">{stat.value}</h3>
           </motion.div>
         ))}
       </motion.div>
@@ -371,27 +371,28 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="lg:col-span-2 glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden"
+          className="lg:col-span-2 glass-pink luxury-box-hover rounded-[3.5rem] p-8 md:p-12 shadow-2xl border border-white/50 relative overflow-hidden"
         >
-          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
+          <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-primary/20 via-rose-300/30 to-primary/20" />
           
-          <div className="flex items-center justify-between mb-10 relative">
-            <h2 className="text-2xl font-bold text-foreground flex items-center gap-3 uppercase tracking-tight">
-              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-primary" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 relative gap-6">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center text-white shadow-xl shadow-pink-200/50 transform -rotate-3 hover:rotate-0 transition-transform">
+                <Sparkles className="w-8 h-8" />
               </div>
-              Sắp tới trong hôm nay
-              {searchQuery && (
-                <span className="text-xs font-black bg-primary/10 text-primary px-3 py-1 rounded-full lowercase tracking-normal">
-                  Kết quả cho: "{searchQuery}"
-                </span>
-              )}
-            </h2>
+              <div>
+                <h2 className="text-3xl md:text-4xl font-black text-foreground uppercase tracking-tighter">Sắp tới trong hôm nay</h2>
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Lịch trình liệu trình trực tuyến
+                </p>
+              </div>
+            </div>
             <Link 
               href="/dashboard/bookings"
-              className="text-sm font-semibold text-primary hover:text-accent flex items-center gap-2 transition-all group uppercase tracking-widest"
+              className="px-8 py-4 bg-white/80 backdrop-blur-md text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-lg shadow-pink-100/50 flex items-center gap-3 group/link"
             >
-              Xem tất cả <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              Xem tất cả <ChevronRight className="w-5 h-5 group-hover/link:translate-x-1.5 transition-transform" />
             </Link>
           </div>
           
@@ -416,136 +417,159 @@ export default function DashboardPage() {
                   return (
                     <div 
                       key={session.id}
-                      className="group p-6 rounded-[2rem] hover:bg-white/60 transition-all border border-transparent hover:border-pink-100 relative mb-4 last:mb-0"
+                      className="group bg-white/30 hover:bg-white/60 p-6 md:p-7 rounded-[2.5rem] transition-all border border-white/40 hover:border-primary/10 shadow-sm hover:shadow-2xl hover:shadow-pink-100/30 relative mb-5 last:mb-0 backdrop-blur-md"
                     >
-                      <div className="flex items-center justify-between gap-6">
-                        <div className="flex items-center gap-6">
-                          <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary font-black text-xl border border-pink-50">
-                            {customerName.charAt(0)}
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
+                        <div className="flex flex-1 items-start gap-5 md:gap-7">
+                          {/* Avatar Section */}
+                          <div className="relative shrink-0">
+                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white shadow-inner flex items-center justify-center text-primary font-black text-xl md:text-2xl border-2 border-pink-50 relative group-hover:scale-105 transition-transform duration-500">
+                              {customerName.charAt(0)}
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                              <CheckCircle2 className="w-3 h-3 text-white" />
+                            </div>
                           </div>
-                          <div>
-                            <div className="flex flex-col">
-                              <h3 className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
-                                <span className="text-muted-foreground font-medium text-xs uppercase tracking-widest block mb-1">Khách hàng</span>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col mb-4">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Khách hàng</span>
+                              <h3 className="font-bold text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
                                 {customerName}
                               </h3>
-                              <div className="mt-2 flex items-center gap-2">
-                                <span className="text-[10px] font-black bg-rose-100 text-rose-600 px-2 py-0.5 rounded-md uppercase tracking-wider">KTV</span>
-                                <span className="text-sm font-bold text-muted-foreground">{technicianName}</span>
+                              <div className="mt-1.5 flex items-center gap-3">
+                                <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider">
+                                  KTV
+                                </span>
+                                <span className={cn(
+                                  "text-sm font-bold truncate",
+                                  session.bookings?.assigned_ktv?.full_name ? "text-slate-500" : "text-amber-600 italic"
+                                )}>
+                                  {technicianName}
+                                </span>
                               </div>
                             </div>
-                            <div className="flex items-center gap-4 text-sm font-semibold text-muted-foreground">
-                              <span className={cn(
-                                "flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all",
+
+                            {/* Badge Row - More compact but luxury */}
+                            <div className="flex flex-wrap items-center gap-2 mb-4">
+                              <div className={cn(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border shadow-sm",
                                 session.assigned_time 
-                                  ? "bg-slate-100 text-slate-600" 
-                                  : "bg-amber-100 text-amber-700 animate-pulse border border-amber-200"
+                                  ? "bg-slate-50/50 text-slate-600 border-slate-100" 
+                                  : "bg-amber-50/80 text-amber-700 border-amber-100/50 animate-pulse"
                               )}>
-                                <Clock className={cn("w-3.5 h-3.5", !session.assigned_time && "text-amber-600")} />
+                                <Clock className="w-3.5 h-3.5 text-amber-500" />
                                 {session.assigned_time || 'Chưa có giờ'}
-                                {!session.assigned_time && (
-                                  <AlertTriangle className="w-3 h-3 ml-1 text-amber-600" />
-                                )}
-                              </span>
-                              <span className="flex items-center gap-1.5 bg-pink-50 text-primary px-3 py-1 rounded-lg">
+                              </div>
+
+                              <div className="flex items-center gap-2 bg-pink-50/50 text-primary border border-pink-100/50 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-sm">
                                 <Diamond className="w-3.5 h-3.5" />
                                 {packageName}
-                              </span>
-                              <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg">
+                              </div>
+
+                              <div className="flex items-center gap-2 bg-emerald-50/50 text-emerald-600 border border-emerald-100/50 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-sm">
                                 <Activity className="w-3.5 h-3.5" />
                                 Buổi {session.session_number || (session.bookings?.completed_sessions || 0) + 1}
-                              </span>
+                              </div>
                             </div>
 
                             {!session.assigned_time && (
-                              <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-100 rounded-xl text-[10px] font-black text-amber-700 uppercase tracking-widest shadow-sm">
-                                <AlertTriangle className="w-3.5 h-3.5" />
-                                Lưu ý: Cần xác nhận giờ đặt lịch với khách
+                              <div className="mb-4 inline-flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-amber-50/80 to-orange-50/80 backdrop-blur-sm border border-amber-100/50 rounded-2xl text-[10px] font-bold text-amber-800 uppercase tracking-widest shadow-sm">
+                                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                                <span>Xác nhận giờ đặt lịch</span>
                               </div>
                             )}
 
-                            {/* Progress Bar */}
-                            <div className="mt-4 max-w-[200px]">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tiến độ</span>
-                                <span className="text-[10px] font-black text-primary">{session.bookings?.completed_sessions || 0}/{session.bookings?.total_sessions || 21}</span>
+                            {/* Progress Section - Refined labels */}
+                            <div className="max-w-[320px]">
+                              <div className="flex items-center justify-between mb-2 px-1">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tiến độ liệu trình</span>
+                                <span className="text-[10px] font-black text-primary bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
+                                  {session.bookings?.completed_sessions || 0} / {session.bookings?.total_sessions || 21} Buổi
+                                </span>
                               </div>
-                              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-2.5 w-full bg-slate-100/40 rounded-full overflow-hidden p-0.5 border border-white shadow-inner">
                                 <motion.div 
                                   initial={{ width: 0 }}
                                   animate={{ width: `${((session.bookings?.completed_sessions || 0) / (session.bookings?.total_sessions || 21)) * 100}%` }}
-                                  className="h-full bg-gradient-to-r from-primary to-accent"
+                                  className="h-full bg-gradient-to-r from-primary via-rose-400 to-accent rounded-full shadow-[0_0_10px_rgba(219,39,119,0.3)]"
                                 />
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-6">
-                          <div className={`px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest border ${statusInfo.color}`}>
+                        {/* Status & Actions - Side Layout */}
+                        <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-center gap-6 lg:gap-8 shrink-0">
+                          {/* Circular Status Badge */}
+                          <div className={cn(
+                            "w-20 h-20 md:w-24 md:h-24 rounded-full flex flex-col items-center justify-center text-center p-3 text-[10px] font-black uppercase tracking-tighter border-4 shadow-xl transition-all duration-500 group-hover:rotate-6",
+                            statusInfo.color.replace('bg-', 'bg-opacity-40 bg-').replace('text-', 'text-opacity-100 text-'),
+                            "border-white/60 shadow-pink-100/20"
+                          )}>
+                            <div className="mb-1">●</div>
                             {statusInfo.label}
                           </div>
-                          
-                          {session.status !== 'completed' && (
-                            <div className="flex flex-col items-end gap-3">
-                              <div className="flex items-center gap-2">
-                                <AnimatePresence>
-                                  {quickNoteId === session.id ? (
-                                    <motion.div 
-                                      initial={{ width: 0, opacity: 0 }}
-                                      animate={{ width: 240, opacity: 1 }}
-                                      exit={{ width: 0, opacity: 0 }}
-                                      className="relative flex items-center"
-                                    >
-                                      <input 
-                                        autoFocus
-                                        type="text"
-                                        placeholder="Ghi chú nhanh buổi này..."
-                                        className="w-full pl-4 pr-10 py-3 bg-white border border-pink-200 rounded-xl text-sm focus:ring-2 focus:ring-primary/20 outline-none shadow-sm font-bold text-slate-700"
-                                        value={quickNoteValue}
-                                        onChange={(e) => setQuickNoteValue(e.target.value)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') handleCompleteSession(session.id, session.booking_id, quickNoteValue);
-                                          if (e.key === 'Escape') setQuickNoteId(null);
-                                        }}
-                                      />
-                                      <button 
-                                        onClick={() => handleCompleteSession(session.id, session.booking_id, quickNoteValue)}
-                                        className="absolute right-2 p-1 text-primary hover:bg-pink-50 rounded-lg transition-colors"
-                                      >
-                                        <CheckCircle2 className="w-5 h-5" />
-                                      </button>
-                                    </motion.div>
-                                  ) : (
-                                    <button 
-                                      onClick={() => {
-                                        setQuickNoteId(session.id);
-                                        setQuickNoteValue('');
-                                      }}
-                                      className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-400 hover:text-primary hover:bg-pink-50 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest border border-dashed border-slate-200 hover:border-primary/30"
-                                    >
-                                      <MessageSquare className="w-3.5 h-3.5" /> Thêm ghi chú
-                                    </button>
-                                  )}
-                                </AnimatePresence>
-                              </div>
-                              
-                              <button 
-                                onClick={() => handleCompleteSession(session.id, session.booking_id, quickNoteValue)}
-                                disabled={updatingId === session.id}
-                                className="px-6 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-hover transition-all shadow-lg shadow-pink-100 flex items-center gap-2 active:scale-95 disabled:opacity-50"
-                              >
-                                {updatingId === session.id ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <>
+
+                          <div className="flex flex-col gap-3 min-w-[200px] w-full sm:w-auto">
+                            <AnimatePresence mode="wait">
+                              {quickNoteId === session.id ? (
+                                <motion.div 
+                                  key="note-input"
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.95 }}
+                                  className="relative"
+                                >
+                                  <input 
+                                    autoFocus
+                                    type="text"
+                                    placeholder="Thêm ghi chú buổi..."
+                                    className="w-full pl-4 pr-12 py-4 bg-white border-2 border-primary/20 rounded-[1.25rem] text-sm font-bold focus:border-primary outline-none shadow-xl shadow-pink-100/20"
+                                    value={quickNoteValue}
+                                    onChange={(e) => setQuickNoteValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleCompleteSession(session.id, session.booking_id, quickNoteValue);
+                                      if (e.key === 'Escape') setQuickNoteId(null);
+                                    }}
+                                  />
+                                  <button 
+                                    onClick={() => handleCompleteSession(session.id, session.booking_id, quickNoteValue)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 bg-primary text-white rounded-xl shadow-lg hover:scale-105 transition-transform"
+                                  >
                                     <CheckCircle2 className="w-4 h-4" />
-                                    Hoàn thành buổi {(session.bookings?.completed_sessions || 0) + 1}
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          )}
+                                  </button>
+                                </motion.div>
+                              ) : (
+                                <button 
+                                  onClick={() => {
+                                    setQuickNoteId(session.id);
+                                    setQuickNoteValue('');
+                                  }}
+                                  className="flex items-center justify-center gap-3 px-6 py-4 bg-white/50 hover:bg-white text-slate-500 hover:text-primary border-2 border-dashed border-slate-200 hover:border-primary/40 rounded-[1.25rem] transition-all text-xs font-black uppercase tracking-widest group/note shadow-sm hover:shadow-lg"
+                                >
+                                  <MessageSquare className="w-4 h-4 group-hover/note:scale-125 transition-transform duration-300" />
+                                  Thêm ghi chú
+                                </button>
+                              )}
+                            </AnimatePresence>
+
+                            <button 
+                              onClick={() => handleCompleteSession(session.id, session.booking_id, quickNoteValue)}
+                              disabled={updatingId === session.id}
+                              className="w-full px-8 py-5 bg-gradient-to-br from-primary to-[#831843] text-white rounded-[1.25rem] text-[11px] font-black uppercase tracking-[0.15em] hover:shadow-2xl hover:shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 relative overflow-hidden group/btn"
+                            >
+                              <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover/btn:translate-x-0 transition-transform duration-500" />
+                              {updatingId === session.id ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                                  <span>Hoàn thành buổi {(session.bookings?.completed_sessions || 0) + 1}</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
