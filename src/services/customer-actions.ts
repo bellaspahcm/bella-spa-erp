@@ -44,13 +44,20 @@ export async function getCustomers() {
 
     return data.map((c: any) => {
       const latestBooking = c.bookings && c.bookings.length > 0 ? c.bookings[0] : null;
+      const isFullyPaid = latestBooking && latestBooking.deposit_amount >= latestBooking.full_price;
+      
       return {
         ...c,
         id: c.id.toString(),
         dob_baby: ensure2026(c.dob_baby),
         dob_expected: ensure2026(c.dob_expected),
-        status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
+        status: latestBooking ? (
+          latestBooking.status === 'deposit_pending' ? 'deposit' : 
+          isFullyPaid ? 'paid' : 'active'
+        ) : 'lead',
         deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
+        full_price: latestBooking?.full_price || 0,
+        is_fully_paid: isFullyPaid,
         package_name: resolvePackageName(latestBooking),
         start_date: ensure2026(latestBooking?.start_date || c.dob_expected)
       };
@@ -101,6 +108,7 @@ export async function createCustomer(formData: any) {
         dob_baby: validatedData.dob_baby || null,
         dob_expected: validatedData.dob_expected || null,
         gender_baby: validatedData.gender_baby || 'unknown',
+        tenant_id: null,
       } as any,
     ])
     .select()
@@ -241,6 +249,7 @@ export async function updateCustomer(id: string, formData: any) {
       dob_baby: validatedData.dob_baby,
       dob_expected: validatedData.dob_expected,
       gender_baby: validatedData.gender_baby,
+      updated_at: new Date().toISOString()
     })
     .eq('id', id)
     .select()
