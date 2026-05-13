@@ -105,6 +105,8 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   const supabase = (await createClient()) as any;
   const table = type === 'revenue' ? 'revenue' : 'expenses';
 
+  console.log(`Confirming ${type} with ID: ${id} in table: ${table}`);
+
   const { error } = await supabase
     .from(table)
     .update({ status: 'confirmed' })
@@ -112,7 +114,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
 
   if (error) {
     console.error(`Error confirming ${type}:`, error);
-    throw new Error(`Failed to confirm ${type}`);
+    throw new Error(`Failed to confirm ${type}: ${error.message}`);
   }
 
   return { success: true };

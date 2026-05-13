@@ -151,6 +151,23 @@ export async function createBooking(formData: any) {
     }
   }
 
+  // Record revenue for the deposit if any
+  if (validatedData.deposit_amount > 0 && booking?.id) {
+    const { error: revError } = await supabase
+      .from('revenue')
+      .insert([{
+        booking_id: booking.id,
+        amount: validatedData.deposit_amount,
+        revenue_type: 'deposit',
+        payment_method: 'bank_transfer',
+        received_date: new Date().toISOString().split('T')[0],
+        status: 'pending',
+        notes: `Cọc gói ${resolvePackageName(booking)}`
+      }]);
+    
+    if (revError) console.error('Error recording initial deposit revenue:', revError);
+  }
+
   // 2. Automation: Generate session logs (only if they don't exist yet for this booking)
   const { count: existingLogsCount } = await supabase
     .from('session_logs')
