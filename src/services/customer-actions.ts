@@ -64,6 +64,17 @@ export async function createCustomer(formData: any) {
 
   const validatedData = validatedFields.data;
 
+  // 0.5 Check for duplicate phone
+  const { data: existingCustomer } = await supabase
+    .from('customers')
+    .select('id')
+    .eq('phone', validatedData.phone)
+    .single();
+
+  if (existingCustomer) {
+    return { error: 'Số điện thoại này đã tồn tại trong hệ thống. Vui lòng kiểm tra lại hoặc tìm kiếm trong danh sách khách cũ.' };
+  }
+
   // 1. Create Customer
   const { data: customer, error: customerError } = await supabase
     .from('customers')
