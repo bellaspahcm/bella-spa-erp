@@ -228,6 +228,16 @@ export default function CustomersPage() {
   const startIndex = (currentPage - 1) * pageSize + 1;
   const endIndex = Math.min(currentPage * pageSize, filteredCustomers.length);
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    const container = document.querySelector('.overflow-auto');
+    if (container) {
+      container.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
       {/* Non-intrusive loading bar */}
@@ -442,16 +452,15 @@ export default function CustomersPage() {
           
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
-              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90"
+              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
             </button>
             
             <div className="flex items-center gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                // Show only a few pages if too many
                 if (totalPages > 7) {
                   if (page > 1 && page < totalPages && (page < currentPage - 1 || page > currentPage + 1)) {
                     if (page === currentPage - 2 || page === currentPage + 2) return <span key={page} className="px-1 text-slate-300">...</span>;
@@ -462,7 +471,7 @@ export default function CustomersPage() {
                 return (
                   <button 
                     key={page}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => handlePageChange(page)}
                     className={cn(
                       "w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-90",
                       currentPage === page 
@@ -477,15 +486,18 @@ export default function CustomersPage() {
             </div>
             
             <button 
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
               disabled={currentPage === totalPages}
-              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90"
+              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
         </div>
       )}
+      
+      {/* Spacer for bottom navigation room */}
+      <div className="h-20" />
 
       {/* Add Customer Modal Placeholder */}
       <AnimatePresence>
