@@ -1,3 +1,5 @@
+'use server';
+
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { MOCK_CUSTOMERS, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_SERVICES } from '@/constants/mock-data';
