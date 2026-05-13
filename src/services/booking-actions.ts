@@ -191,7 +191,8 @@ export async function getCalendarSessions() {
         *,
         customers (
           name_mother,
-          address
+          address,
+          package_name
         ),
         assigned_ktv:users!bookings_assigned_ktv_id_fkey (
           full_name
