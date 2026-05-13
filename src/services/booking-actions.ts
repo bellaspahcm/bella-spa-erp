@@ -317,3 +317,61 @@ export async function updateBooking(id: string, payload: any) {
   revalidatePath('/dashboard/customers');
   return { data };
 }
+
+export async function reusePackage(bookingId: string) {
+  const supabase = (await createClient()) as any;
+
+  // 1. Fetch original booking
+  const { data: original, error: fetchError } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('id', bookingId)
+    .single();
+
+  if (fetchError || !original) {
+    return { error: 'Không tìm thấy gói cũ: ' + fetchError?.message };
+  }
+
+  // 2. Create new booking based on original
+  const { data: newBooking, error: createError } = await supabase
+    .from('bookings')
+    .insert([{
+      customer_id: original.customer_id,
+      booking_number: `BK-${new Date().getTime()}`,
+      package_id: original.package_id,
+      package_name: original.package_name,
+      status: 'deposit_pending',
+      full_price: original.full_price,
+      deposit_amount: 0, // Reset deposit for new cycle
+      total_sessions: original.total_sessions,
+      completed_sessions: 0,
+      start_date: new Date().toISOString().split('T')[0],
+    } as any])
+    .select()
+    .single();
+
+  if (createError) {
+    return { error: 'Lỗi tạo gói mới: ' + createError.message };
+  }
+
+  // 3. Generate new session logs
+  const totalSessions = original.total_sessions || 21;
+  const sessionLogs = Array.from({ length: totalSessions }, (_, i) => ({
+    booking_id: newBooking.id,
+    session_number: i + 1,
+    status: 'scheduled',
+    assigned_date: i === 0 ? newBooking.start_date : null,
+  }));
+
+  const { error: sessionsError } = await supabase
+    .from('session_logs')
+    .insert(sessionLogs as any);
+
+  if (sessionsError) {
+    return { error: 'Đã tạo gói mới nhưng lỗi khởi tạo lịch trình: ' + sessionsError.message };
+  }
+
+  revalidatePath('/dashboard/sessions');
+  revalidatePath('/dashboard/bookings');
+  return { data: newBooking };
+}
