@@ -275,8 +275,9 @@ export async function updateSessionLog(id: string, payload: any) {
   
   const updates: any = { ...payload };
   
-  // Robust null-handling for TIME and TEXT columns
-  if (updates.assigned_time === "") updates.assigned_time = null;
+  // Robust null-handling for DATE, TIME and TEXT columns
+  if (updates.assigned_date === "" || updates.assigned_date === "dd/mm/yyyy") updates.assigned_date = null;
+  if (updates.assigned_time === "" || updates.assigned_time === "--:-- --") updates.assigned_time = null;
   if (updates.notes === "") updates.notes = null;
 
   // 1. Fetch the log to get booking_id if not provided
