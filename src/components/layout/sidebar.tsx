@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -13,10 +14,12 @@ import {
   Flower2,
   ChevronLeft,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  UserPlus
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { QuickAddCustomerModal } from '@/components/features/QuickAddCustomerModal';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -36,28 +39,37 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
   return (
-    <aside className="w-72 glass-pink border-r border-pink-100 flex flex-col h-screen sticky top-0 shadow-xl relative overflow-hidden">
-      {/* Decorative gradient overlay */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-3xl -mr-12 -mt-12" />
-      
-      <div className="p-8">
-        <Link href="/dashboard" className="flex flex-col items-center gap-3 text-center py-4">
-          <img 
-            src="/FullLogo_Transparent_NoBuffer.png" 
-            alt="Bella Spa" 
-            className="w-20 h-20 object-contain" 
-          />
-          <div>
-            <h2 className="text-[3.45rem] font-handwriting text-primary leading-tight">Bella Spa</h2>
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] block -mt-1">Management System</span>
-          </div>
-        </Link>
-      </div>
+    <>
+      <aside className="w-72 glass-pink border-r border-pink-100 flex flex-col h-screen sticky top-0 shadow-xl relative overflow-hidden">
+        {/* Decorative gradient overlay */}
+        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-3xl -mr-12 -mt-12" />
+        
+        <div className="p-8">
+          <Link href="/dashboard" className="flex flex-col items-center gap-3 text-center py-4">
+            <img 
+              src="/FullLogo_Transparent_NoBuffer.png" 
+              alt="Bella Spa" 
+              className="w-20 h-20 object-contain" 
+            />
+            <div>
+              <h2 className="text-[3.45rem] font-handwriting text-primary leading-tight">Bella Spa</h2>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] block -mt-1">Management System</span>
+            </div>
+          </Link>
+        </div>
 
-      <nav className="flex-1 px-4 space-y-1.5">
-        {menuItems.map((item: any) => {
+        <nav className="flex-1 px-4 space-y-1.5">
+          <button 
+            onClick={() => setIsQuickAddOpen(true)}
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-5 py-4 rounded-2xl transition-all shadow-lg shadow-rose-200 mb-6 font-bold tracking-tight active:scale-95"
+          >
+            <UserPlus className="w-5 h-5" />
+            <span>Thêm khách nhanh</span>
+          </button>
+          {menuItems.map((item: any) => {
           const isActive = pathname === item.href;
           return (
             <Link key={item.href} href={item.href}>
@@ -106,5 +118,10 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+    <QuickAddCustomerModal 
+      isOpen={isQuickAddOpen} 
+      onClose={() => setIsQuickAddOpen(false)} 
+    />
+  </>
   );
 }
