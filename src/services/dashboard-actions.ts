@@ -1,10 +1,11 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+
 import { ensure2026 } from '@/lib/utils';
 import { DEMO_SESSIONS, DEMO_TECH_TOP } from '@/constants/demo-data';
 
 export async function getDashboardStats(startDate?: string, endDate?: string) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
 
   const now = new Date();
@@ -103,6 +104,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
 }
 
 export async function getUpcomingSessions() {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const today = new Date().toLocaleDateString('en-CA');
 
@@ -144,6 +146,7 @@ export async function getUpcomingSessions() {
 }
 
 export async function getTopTechnicians() {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { data, error } = await supabase
@@ -179,6 +182,7 @@ export async function getTopTechnicians() {
 }
 
 export async function getMonthlyPerformance() {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const now = new Date();

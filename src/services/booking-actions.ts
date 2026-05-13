@@ -81,13 +81,7 @@ export async function createBooking(formData: any) {
     return { error: bookingError.message };
   }
 
-  // 1.1 Sync package_name to customer table for data integrity
-  if (validatedData.package_name) {
-    await supabase
-      .from('customers')
-      .update({ package_name: validatedData.package_name } as any)
-      .eq('id', validatedData.customer_id);
-  }
+
 
   // 2. Automation: Generate session logs
   const totalSessions = validatedData.total_sessions || 21;
@@ -156,23 +150,22 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: sessionError.message };
   }
 
-  // 2. Fetch current completed sessions count from booking
-  const { data: booking, error: fetchError } = await supabase
-    .from('bookings')
-    .select('completed_sessions')
-    .eq('id', bookingId)
-    .single();
+  // 2. Re-calculate actual completed sessions to avoid race conditions
+  const { count, error: countError } = await supabase
+    .from('session_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('booking_id', bookingId)
+    .eq('status', 'completed');
 
-  if (fetchError) {
-    console.error('Error fetching booking:', fetchError);
-    return { error: fetchError.message };
+  if (countError) {
+    console.error('Error counting completed sessions:', countError);
+    return { error: countError.message };
   }
 
-  // 3. Increment completed sessions count
-  const newCount = (booking.completed_sessions || 0) + 1;
+  // 3. Update booking with actual count
   const { error: updateError } = await supabase
     .from('bookings')
-    .update({ completed_sessions: newCount } as any)
+    .update({ completed_sessions: count || 0 } as any)
     .eq('id', bookingId);
 
   if (updateError) {
@@ -348,13 +341,7 @@ export async function updateBooking(id: string, payload: any) {
     return { error: error.message };
   }
 
-  // Sync package_name to customer if updated
-  if (payload.package_name && data.customer_id) {
-    await supabase
-      .from('customers')
-      .update({ package_name: payload.package_name } as any)
-      .eq('id', data.customer_id);
-  }
+
 
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath('/dashboard/customers');
