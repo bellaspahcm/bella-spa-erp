@@ -77,11 +77,35 @@ export async function createBooking(formData: any) {
     .single();
 
   if (bookingError) {
-    console.error('Error creating booking:', bookingError);
-    return { error: bookingError.message };
+    // Fallback: If it's a "column not found" error for package_name or "type mismatch" for package_id
+    if (bookingError.message?.includes('package_name') || bookingError.message?.includes('package_id') || bookingError.message?.includes('uuid')) {
+      console.warn('Booking creation failed due to package columns, retrying without them...');
+      const { data: retryBooking, error: retryError } = await supabase
+        .from('bookings')
+        .insert([
+          {
+            customer_id: validatedData.customer_id,
+            booking_number: `BK-${new Date().getTime()}`,
+            status: 'deposit_pending',
+            full_price: validatedData.full_price,
+            deposit_amount: validatedData.deposit_amount,
+            total_sessions: validatedData.total_sessions,
+            start_date: validatedData.start_date || null,
+          } as any,
+        ])
+        .select()
+        .single();
+      
+      if (retryError) {
+        console.error('Error creating booking (retry):', retryError);
+        return { error: retryError.message };
+      }
+      booking = retryBooking;
+    } else {
+      console.error('Error creating booking:', bookingError);
+      return { error: bookingError.message };
+    }
   }
-
-
 
   // 2. Automation: Generate session logs
   const totalSessions = validatedData.total_sessions || 21;
@@ -337,9 +361,9 @@ export async function updateBooking(id: string, payload: any) {
     .single();
 
   if (error) {
-    // Fallback: If it's a "column not found" error for package_name, try without it
-    if (error.message?.includes('package_name')) {
-      const { package_name, ...retryPayload } = payload;
+    // Fallback: If it's a "column not found" error for package_name or "type mismatch" for package_id
+    if (error.message?.includes('package_name') || error.message?.includes('package_id') || error.message?.includes('uuid')) {
+      const { package_name, package_id, ...retryPayload } = payload;
       const { data: retryData, error: retryError } = await supabase
         .from('bookings')
         .update(retryPayload)
