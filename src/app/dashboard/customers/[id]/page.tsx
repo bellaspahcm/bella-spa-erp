@@ -158,6 +158,28 @@ export default function CustomerDetailPage() {
   };
 
   const [isReusing, setIsReusing] = useState(false);
+  const handleReusePackage = async (bookingId: string) => {
+    if (!bookingId) return;
+    const confirm = window.confirm(`Bạn có chắc chắn muốn tái sử dụng gói dịch vụ nhanh cho khách hàng ${customer.name_mother}?`);
+    if (!confirm) return;
+    
+    setIsReusing(true);
+    try {
+      const result = await reusePackage(bookingId);
+      if ('error' in result && result.error) {
+        toast.error(result.error);
+      } else if ('data' in result && result.data) {
+        toast.success('Đã tái sử dụng gói dịch vụ thành công!');
+        await loadData();
+      }
+    } catch (error) {
+      console.error('Reuse failed:', error);
+      toast.error('Có lỗi xảy ra khi xử lý');
+    } finally {
+      setIsReusing(false);
+    }
+  };
+
   const handleRecordPayment = async () => {
     if (!activeBooking) return;
     if (paymentData.amount <= 0) {
