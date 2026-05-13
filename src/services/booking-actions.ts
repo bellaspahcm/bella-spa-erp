@@ -30,17 +30,36 @@ export async function getBookings() {
 
   if (error) {
     console.error('Error fetching bookings:', error);
-    return []; // Return empty array on error
+    return [];
   }
   
-  if (!data || data.length === 0) {
-    return []; // Return empty array if no bookings exist
-  }
+  if (!data || data.length === 0) return [];
   
   return (data || []).map((b: any) => ({
     ...b,
     start_date: ensure2026(b.start_date),
     end_date: ensure2026(b.end_date),
+    expected_birth_date: ensure2026(b.expected_birth_date)
+  }));
+}
+
+export async function getBookingsByCustomerId(customerId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*, assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name)')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching bookings by customer ID:', error);
+    return [];
+  }
+  
+  return (data || []).map((b: any) => ({
+    ...b,
+    start_date: ensure2026(b.start_date),
     expected_birth_date: ensure2026(b.expected_birth_date)
   }));
 }
