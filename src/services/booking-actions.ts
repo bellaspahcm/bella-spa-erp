@@ -58,7 +58,7 @@ export async function createBooking(formData: any) {
   const validatedData = validatedFields.data;
 
   // 1. Create the booking
-  const { data: booking, error: bookingError } = await supabase
+  let { data: booking, error: bookingError } = await supabase
     .from('bookings')
     .insert([
       {
