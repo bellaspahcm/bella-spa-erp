@@ -30,7 +30,7 @@ interface BookingModalProps {
   preselectedCustomer?: any;
 }
 
-export default function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingModalProps) {
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<'search' | 'new'>('search');
   const [searchQuery, setSearchQuery] = useState('');

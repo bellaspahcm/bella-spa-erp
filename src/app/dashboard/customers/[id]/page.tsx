@@ -28,7 +28,7 @@ import { getUsers } from '@/services/user-actions';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import BookingModal from '@/components/features/BookingModal';
+import { BookingModal } from '@/components/features/BookingModal';
 import { createClient } from '@/lib/supabase-client';
 
 export const dynamic = 'force-dynamic';
