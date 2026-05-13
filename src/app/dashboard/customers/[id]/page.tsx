@@ -161,6 +161,9 @@ export default function CustomerDetailPage() {
     );
   }
 
+  const nextSession = customer.sessions.find((s: any) => s.status === 'scheduled');
+  const isCompleted = customer.booking.completed_sessions >= (customer.booking.total_sessions || 21) && customer.booking.total_sessions > 0;
+
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
       {/* Back Button */}
@@ -347,9 +350,7 @@ export default function CustomerDetailPage() {
 
             <div className="space-y-4">
               {/* Next Session Action */}
-              {customer.sessions.find((s: any) => s.status === 'scheduled') ? (() => {
-                const nextSession = customer.sessions.find((s: any) => s.status === 'scheduled');
-                return (
+              {nextSession ? (
                 <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-pink-200">
@@ -368,9 +369,7 @@ export default function CustomerDetailPage() {
                     XEM THẺ LIỆU TRÌNH
                   </button>
                 </div>
-                );
-              })()
-              : customer.booking.completed_sessions >= (customer.booking.total_sessions || 21) && customer.booking.total_sessions > 0 ? (
+              ) : isCompleted ? (
                 <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-100">
