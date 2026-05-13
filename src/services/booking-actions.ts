@@ -61,44 +61,61 @@ export async function createBooking(formData: any) {
 
   const validatedData = validatedFields.data;
 
-  // 1. Create the booking
-  let { data: booking, error: bookingError } = await supabase
+  // 1. Check for existing "pending" or "deposit" booking for this customer to avoid duplicates
+  const { data: existingBooking } = await supabase
     .from('bookings')
-    .insert([
-      {
-        customer_id: validatedData.customer_id,
-        booking_number: `BK-${new Date().getTime()}`,
-        package_id: validatedData.package_id || null,
-        package_name: validatedData.package_name || null,
-        status: 'deposit_pending',
-        full_price: validatedData.full_price,
-        deposit_amount: validatedData.deposit_amount,
-        total_sessions: validatedData.total_sessions,
-        start_date: validatedData.start_date || null,
-      } as any,
-    ])
-    .select()
+    .select('*')
+    .eq('customer_id', validatedData.customer_id)
+    .in('status', ['deposit_pending', 'lead'])
+    .order('created_at', { ascending: false })
+    .limit(1)
     .single();
+
+  let booking;
+  let bookingError;
+
+  const bookingPayload: any = {
+    customer_id: validatedData.customer_id,
+    booking_number: existingBooking?.booking_number || `BK-${new Date().getTime()}`,
+    package_id: validatedData.package_id || null,
+    package_name: validatedData.package_name || null,
+    status: 'deposit_pending',
+    full_price: validatedData.full_price,
+    deposit_amount: validatedData.deposit_amount,
+    total_sessions: validatedData.total_sessions,
+    start_date: validatedData.start_date || null,
+    assigned_ktv_id: formData.assigned_ktv_id || null,
+  };
+
+  if (existingBooking) {
+    // Update existing
+    const { data: updated, error } = await supabase
+      .from('bookings')
+      .update(bookingPayload)
+      .eq('id', existingBooking.id)
+      .select()
+      .single();
+    booking = updated;
+    bookingError = error;
+  } else {
+    // Insert new
+    const { data: inserted, error } = await supabase
+      .from('bookings')
+      .insert([bookingPayload])
+      .select()
+      .single();
+    booking = inserted;
+    bookingError = error;
+  }
 
   if (bookingError) {
     // Fallback: If it's a "column not found" error for package_name or "type mismatch" for package_id
     if (bookingError.message?.includes('package_name') || bookingError.message?.includes('package_id') || bookingError.message?.includes('uuid')) {
-      console.warn('Booking creation failed due to package columns, retrying without them...');
-      const { data: retryBooking, error: retryError } = await supabase
-        .from('bookings')
-        .insert([
-          {
-            customer_id: validatedData.customer_id,
-            booking_number: `BK-${new Date().getTime()}`,
-            status: 'deposit_pending',
-            full_price: validatedData.full_price,
-            deposit_amount: validatedData.deposit_amount,
-            total_sessions: validatedData.total_sessions,
-            start_date: validatedData.start_date || null,
-          } as any,
-        ])
-        .select()
-        .single();
+      const { package_name, package_id, ...retryPayload } = bookingPayload;
+      
+      const { data: retryBooking, error: retryError } = existingBooking 
+        ? await supabase.from('bookings').update(retryPayload).eq('id', existingBooking.id).select().single()
+        : await supabase.from('bookings').insert([retryPayload]).select().single();
       
       if (retryError) {
         console.error('Error creating booking (retry):', retryError);
@@ -111,28 +128,57 @@ export async function createBooking(formData: any) {
     }
   }
 
-  // 2. Automation: Generate session logs
-  const totalSessions = validatedData.total_sessions || 21;
-  const sessionLogs = Array.from({ length: totalSessions }, (_: any, i: number) => ({
-    booking_id: booking.id,
-    session_number: i + 1,
-    status: 'scheduled',
-    assigned_date: i === 0 ? (validatedData.start_date || null) : null,
-  }));
-
-  const { error: sessionsError } = await supabase
+  // 2. Automation: Generate session logs (only if they don't exist yet for this booking)
+  const { count: existingLogsCount } = await supabase
     .from('session_logs')
-    .insert(sessionLogs as any);
+    .select('*', { count: 'exact', head: true })
+    .eq('booking_id', booking.id);
 
-  if (sessionsError) {
-    console.error('Error creating session logs:', sessionsError);
-    // Note: In production, you might want to rollback the booking creation here if this fails
-    return { error: 'Booking created but session logs failed: ' + sessionsError.message };
+  if (!existingLogsCount || existingLogsCount === 0) {
+    const totalSessions = validatedData.total_sessions || 21;
+    const sessionLogs = Array.from({ length: totalSessions }, (_: any, i: number) => ({
+      booking_id: booking.id,
+      session_number: i + 1,
+      status: 'scheduled',
+      assigned_date: i === 0 ? (validatedData.start_date || null) : null,
+    }));
+
+    const { error: sessionsError } = await supabase
+      .from('session_logs')
+      .insert(sessionLogs as any);
+
+    if (sessionsError) {
+      console.error('Error creating session logs:', sessionsError);
+      return { error: 'Booking created but session logs failed: ' + sessionsError.message };
+    }
   }
 
   await safeRevalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard/customers');
   await safeRevalidatePath('/dashboard');
   return { data: booking };
+}
+
+export async function getDraftBooking(customerId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  
+  const { data, error } = await supabase
+    .from('bookings')
+    .select('*, customers(name_mother, phone, address)')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error || !data || data.length === 0) return null;
+  
+  // A "draft" is either deposit_pending or has 0 completed sessions
+  const b = data[0];
+  if (b.status === 'deposit_pending' || b.completed_sessions === 0) {
+    return b;
+  }
+  
+  return null;
 }
 
 export async function getSessionLogs(bookingId: string) {
