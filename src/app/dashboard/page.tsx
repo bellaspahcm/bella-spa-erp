@@ -25,7 +25,7 @@ import {
   Loader2,
   Activity,
   MessageSquare,
-  Sparkles,
+  Sparkles as SparklesIcon,
   Wallet
 } from 'lucide-react';
 import { 
@@ -381,7 +381,7 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 relative gap-6">
             <div className="flex items-center gap-6">
               <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center text-white shadow-xl shadow-pink-200/50 transform -rotate-3 hover:rotate-0 transition-transform">
-                <Sparkles className="w-8 h-8" />
+                <SparklesIcon className="w-8 h-8" />
               </div>
               <div>
                 <h2 className="text-3xl md:text-4xl font-black text-foreground uppercase tracking-tighter">Sắp tới trong hôm nay</h2>
