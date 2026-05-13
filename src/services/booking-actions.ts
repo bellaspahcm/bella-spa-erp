@@ -28,9 +28,13 @@ export async function getBookings() {
     .select('*, customers(name_mother, phone)')
     .order('created_at', { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    console.error('Error fetching bookings or empty:', error);
-    return DEMO_BOOKINGS;
+  if (error) {
+    console.error('Error fetching bookings:', error);
+    return []; // Return empty array on error
+  }
+  
+  if (!data || data.length === 0) {
+    return []; // Return empty array if no bookings exist
   }
   
   return (data || []).map((b: any) => ({
@@ -219,8 +223,7 @@ export async function getSessionsWithDetails() {
   }
   
   if (!data || data.length === 0) {
-    // If truly empty, then we can return demo data for first-time users or empty state
-    return DEMO_BOOKINGS;
+    return [];
   }
   
   const { MOCK_CUSTOMERS } = await import('@/constants/mock-data');
@@ -260,12 +263,11 @@ export async function getCalendarSessions() {
     .from('session_logs')
     .select(`
       *,
-      bookings (
+      bookings!inner (
         *,
         customers (
           name_mother,
-          address,
-          package_name
+          address
         ),
         assigned_ktv:users!bookings_assigned_ktv_id_fkey (
           full_name
