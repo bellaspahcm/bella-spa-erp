@@ -264,6 +264,8 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: sessionError.message };
   }
 
+  const today = new Date().toISOString().split('T')[0];
+
   // 3. Re-calculate actual completed sessions to avoid race conditions
   const { count, error: countError } = await supabase
     .from('session_logs')
@@ -279,9 +281,13 @@ export async function completeSession(sessionId: string, bookingId: string) {
   // 4. Update booking with actual count and status transition
   const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status').eq('id', bookingId).single();
   
-  const updates: any = { completed_sessions: count || 0 };
+  const updates: any = { 
+    completed_sessions: count || 0,
+    last_updated_date: today,
+    updated_at: new Date().toISOString()
+  };
   
-  if (count > 0 && currentBooking?.status === 'deposit_pending') {
+  if (count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
     updates.status = 'active';
   }
   
@@ -455,9 +461,14 @@ export async function updateSessionLog(id: string, payload: any) {
 
   if (!countError) {
     const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status').eq('id', bookingId).single();
-    const bUpdates: any = { completed_sessions: count || 0 };
+    const today = new Date().toISOString().split('T')[0];
+    const bUpdates: any = { 
+      completed_sessions: count || 0,
+      last_updated_date: today,
+      updated_at: new Date().toISOString()
+    };
     
-    if (count > 0 && currentBooking?.status === 'deposit_pending') {
+    if (count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
       bUpdates.status = 'active';
     }
     
