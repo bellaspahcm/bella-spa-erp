@@ -401,7 +401,10 @@ export default function CustomerDetailPage() {
                       </div>
                       <div>
                         <p className="font-black text-slate-800">{session.type || 'Chăm sóc liệu trình'} - Buổi {session.session_number}/{customer.bookings?.[0]?.total_sessions || 21}</p>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">KTV: {session.ktv || 'Chưa cập nhật'} • {session.completed_date || session.date || 'Chưa cập nhật'}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">KTV: {customer.bookings?.[0]?.assigned_ktv?.full_name || 'Chưa phân công'} • {session.completed_date || session.assigned_date || 'Chưa cập nhật'}</p>
+                        {session.notes && (
+                          <p className="text-[11px] font-medium text-slate-500 mt-1 line-clamp-1">{session.notes}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
