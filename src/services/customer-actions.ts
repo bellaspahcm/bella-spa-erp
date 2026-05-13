@@ -96,7 +96,12 @@ export async function createCustomer(formData: any) {
   }
 
   // 1. Create Customer
-  const { data: customer, error: customerError } = await supabase
+  let customerData: any = null;
+  let customerError: any = null;
+  let columnWarning = '';
+
+  // Try to create with gender_baby
+  const firstAttempt = await supabase
     .from('customers')
     .insert([
       {
@@ -114,10 +119,41 @@ export async function createCustomer(formData: any) {
     .select()
     .single();
 
-  if (customerError) {
-    console.error('Error creating customer:', customerError);
-    return { error: customerError.message };
+  customerData = firstAttempt.data;
+  customerError = firstAttempt.error;
+
+  // Fallback: if gender_baby column is missing, try creating without it
+  if (customerError && (customerError.message?.includes('column "gender_baby"') || customerError.code === '42703')) {
+    console.warn('gender_baby column missing, retrying without it...');
+    const fallbackResult = await supabase
+      .from('customers')
+      .insert([
+        {
+          phone: validatedData.phone,
+          name_mother: validatedData.name_mother,
+          name_baby: validatedData.name_baby || null,
+          address: validatedData.address,
+          notes: validatedData.notes || null,
+          dob_baby: validatedData.dob_baby || null,
+          dob_expected: validatedData.dob_expected || null,
+          tenant_id: null,
+        } as any,
+      ])
+      .select()
+      .single();
+    
+    customerData = fallbackResult.data;
+    customerError = fallbackResult.error;
+    
+    if (!customerError) {
+      columnWarning = 'Lưu thành công hồ sơ mẹ nhưng KHÔNG THỂ LƯU Giới tính bé vì Database thiếu cột này. Vui lòng chạy SQL Migration.';
+    }
   }
+
+    if (customerError) {
+      console.error('Error creating customer:', customerError);
+      return { error: customerError.message };
+    }
 
   // 2. If deposit or package provided, create a booking via the unified createBooking action
   if (formData.deposit_amount || formData.package_name) {
@@ -131,7 +167,7 @@ export async function createCustomer(formData: any) {
     const { createBooking } = await import('./booking-actions');
     
     const bookingResult = await createBooking({
-      customer_id: customer.id,
+      customer_id: customerData.id,
       package_id: packageId,
       package_name: formData.package_name || 'Gói liệu trình',
       full_price: fullPrice,
@@ -141,12 +177,12 @@ export async function createCustomer(formData: any) {
     });
     
     if (bookingResult && bookingResult.error) {
-      return { error: `Đã lưu khách hàng nhưng lỗi lưu gói: ${bookingResult.error}` };
+      return { error: `Đã lưu khách hàng nhưng lỗi lưu gói: ${bookingResult.error}`, warning: columnWarning };
     }
   }
 
   await safeRevalidatePath('/dashboard/customers');
-  return { data: customer };
+  return { data: customerData, warning: columnWarning };
 }
 
 export async function getCustomerById(id: string) {
@@ -240,7 +276,12 @@ export async function updateCustomer(id: string, formData: any) {
   const validatedData = validatedFields.data;
 
   // 2. Update Customer
-  const { data, error } = await supabase
+  let customerData: any = null;
+  let customerError: any = null;
+  let columnWarning = '';
+
+  // Try to update with gender_baby
+  const updateAttempt = await supabase
     .from('customers')
     .update({
       phone: validatedData.phone,
@@ -257,9 +298,39 @@ export async function updateCustomer(id: string, formData: any) {
     .select()
     .single();
 
-  if (error) {
-    console.error('Error updating customer:', error);
-    return { error: error.message };
+  customerData = updateAttempt.data;
+  customerError = updateAttempt.error;
+
+  // Fallback: if gender_baby column is missing, try updating without it
+  if (customerError && (customerError.message?.includes('column "gender_baby"') || customerError.code === '42703')) {
+    console.warn('gender_baby column missing, retrying without it...');
+    const fallbackUpdate = await supabase
+      .from('customers')
+      .update({
+        phone: validatedData.phone,
+        name_mother: validatedData.name_mother,
+        name_baby: validatedData.name_baby,
+        address: validatedData.address,
+        notes: validatedData.notes,
+        dob_baby: validatedData.dob_baby,
+        dob_expected: validatedData.dob_expected,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    customerData = fallbackUpdate.data;
+    customerError = fallbackUpdate.error;
+
+    if (!customerError) {
+      columnWarning = 'Cập nhật thành công nhưng KHÔNG THỂ LƯU Giới tính bé vì Database thiếu cột này. Vui lòng chạy SQL Migration.';
+    }
+  }
+
+  if (customerError) {
+    console.error('Error updating customer:', customerError);
+    return { error: customerError.message };
   }
 
   // 3. Update related booking if deposit or package provided
@@ -291,7 +362,7 @@ export async function updateCustomer(id: string, formData: any) {
       });
       if (bookingResult && bookingResult.error) {
         console.error('Failed to update booking:', bookingResult.error);
-        return { error: `Cập nhật gói thất bại: ${bookingResult.error}` };
+        return { error: `Cập nhật gói thất bại: ${bookingResult.error}`, warning: columnWarning };
       }
     } else {
       // Create new booking if none exists
@@ -306,14 +377,14 @@ export async function updateCustomer(id: string, formData: any) {
       });
       if (bookingResult && bookingResult.error) {
         console.error('Failed to create booking:', bookingResult.error);
-        return { error: `Tạo gói mới thất bại: ${bookingResult.error}` };
+        return { error: `Tạo gói mới thất bại: ${bookingResult.error}`, warning: columnWarning };
       }
     }
   }
 
   await safeRevalidatePath('/dashboard/customers');
   await safeRevalidatePath(`/dashboard/customers/${id}`);
-  return { data };
+  return { data: customerData, warning: columnWarning };
 }
 
 export async function deleteCustomer(id: string) {
