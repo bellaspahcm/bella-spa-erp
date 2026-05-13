@@ -347,7 +347,9 @@ export default function CustomerDetailPage() {
 
             <div className="space-y-4">
               {/* Next Session Action */}
-              {customer.sessions.find((s: any) => s.status === 'scheduled') ? (
+              {customer.sessions.find((s: any) => s.status === 'scheduled') ? (() => {
+                const nextSession = customer.sessions.find((s: any) => s.status === 'scheduled');
+                return (
                 <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-pink-200">
@@ -355,21 +357,19 @@ export default function CustomerDetailPage() {
                     </div>
                     <div>
                       <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">Buổi tiếp theo</p>
-                      <h4 className="text-xl font-black text-slate-900">Buổi số {customer.sessions.find((s: any) => s.status === 'scheduled').session_number}</h4>
+                      <h4 className="text-xl font-black text-slate-900">Buổi số {nextSession.session_number}</h4>
                     </div>
                   </div>
                   <button 
-                    onClick={() => handleCompleteSession(
-                      customer.sessions.find((s: any) => s.status === 'scheduled').id,
-                      customer.bookings?.[0]?.id || customer.sessions[0]?.booking_id
-                    )}
-                    disabled={isUpdating}
-                    className="w-full md:w-auto bg-primary hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-rose-200 flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                    onClick={() => router.push('/dashboard/sessions')}
+                    className="w-full md:w-auto bg-primary hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-rose-200 flex items-center justify-center gap-3 active:scale-95"
                   >
-                    {isUpdating ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <TrendingUp className="w-5 h-5" />}
-                    XÁC NHẬN HOÀN THÀNH
+                    <ClipboardList className="w-5 h-5" />
+                    XEM THẺ LIỆU TRÌNH
                   </button>
                 </div>
+                );
+              })()
               ) : customer.booking.completed_sessions >= (customer.booking.total_sessions || 21) && customer.booking.total_sessions > 0 ? (
                 <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
                   <div className="flex items-center gap-5">
