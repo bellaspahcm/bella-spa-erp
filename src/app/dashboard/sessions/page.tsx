@@ -274,42 +274,51 @@ export default function SessionsPage() {
       const result = await updateSessionLog(selectedSessionLog.id, updates);
       
       if (result.data) {
-        // 1. Update session logs in the grid locally
+        // 1. Prepare updated log object
+        const updatedLog = { ...selectedSessionLog, ...updates };
+
+        // 2. Update the grid state immediately for UI response
         setSessionLogs(prev => prev.map(log => 
-          log.id === selectedSessionLog.id ? { ...log, ...updates } : log
+          log.id === selectedSessionLog.id ? updatedLog : log
         ));
         
-        // 2. Update the currently selected session state
-        setSelectedSessionLog((prev: any) => ({ ...prev, ...updates }));
-
-        // Update selectedStatus state to keep UI in sync
+        // 3. Update selection and status state
+        setSelectedSessionLog(updatedLog);
         setSelectedStatus(finalStatus);
         
-        // 3. Update local state for booking count if status changed (for demo consistency)
+        // 4. Update local state for booking count if status changed
         if (selectedSessionLog.status !== finalStatus) {
           const diff = finalStatus === 'completed' ? 1 : (selectedSessionLog.status === 'completed' ? -1 : 0);
           if (diff !== 0) {
-            const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) + diff);
+            const currentBookingCount = selectedBooking.completed_sessions || 0;
+            const newCount = Math.max(0, currentBookingCount + diff);
+            
+            // Sync local updates map
             setLocalBookingUpdates(prev => ({ ...prev, [selectedBooking.id]: newCount }));
+            
+            // Update the main sessions list locally to trigger immediate isNextToRun update
+            setSessions(prev => prev.map(b => 
+              b.id === selectedBooking.id ? { ...b, completed_sessions: newCount } : b
+            ));
           }
         }
         
-        // 4. Sync with main sessions list from DB
-        await loadSessions();
-
-        setToastMessage('Đã cập nhật thông tin buổi tập thành công!');
+        setToastMessage('Đã cập nhật trạng thái buổi tập thành công!');
         setShowToast(true);
         setTimeout(() => setShowToast(false), 2000);
+
+        // 5. Finally, refresh from server to ensure everything is in sync
+        await loadSessions();
       } else if (result.error) {
-        setToastMessage('Lỗi: ' + result.error);
+        setToastMessage('Lỗi DB: ' + result.error);
         setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
+        setTimeout(() => setShowToast(false), 4000);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update failed:', error);
-      setToastMessage('Có lỗi xảy ra khi kết nối máy chủ');
+      setToastMessage('Lỗi hệ thống: ' + (error.message || 'Không rõ nguyên nhân'));
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      setTimeout(() => setShowToast(false), 4000);
     } finally {
       setIsSavingNote(false);
     }
