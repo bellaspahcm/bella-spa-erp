@@ -184,6 +184,7 @@ export default function FinancePage() {
             <thead>
               <tr className="text-left bg-slate-50/50">
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Danh mục</th>
+                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi tiết nghiệp vụ</th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ngày</th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Phương thức</th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Số tiền</th>
@@ -193,7 +194,7 @@ export default function FinancePage() {
             <tbody className="divide-y divide-slate-50">
               {transactions.map((tx: any) => (
                 <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-8 py-5">
+                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                         tx.type === 'revenue' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
@@ -202,6 +203,9 @@ export default function FinancePage() {
                       </div>
                       <span className="font-bold text-slate-900">{tx.category}</span>
                     </div>
+                  </td>
+                  <td className="px-8 py-5">
+                    <p className="text-sm font-bold text-slate-700">{tx.details || 'N/A'}</p>
                   </td>
                   <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.date}</td>
                   <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.method}</td>
