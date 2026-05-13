@@ -37,6 +37,7 @@ export async function getBookings() {
   
   return (data || []).map((b: any) => ({
     ...b,
+    package_name: resolvePackageName(b),
     start_date: ensure2026(b.start_date),
     end_date: ensure2026(b.end_date),
     expected_birth_date: ensure2026(b.expected_birth_date)
@@ -59,6 +60,7 @@ export async function getBookingsByCustomerId(customerId: string) {
   
   return (data || []).map((b: any) => ({
     ...b,
+    package_name: resolvePackageName(b),
     start_date: ensure2026(b.start_date),
     expected_birth_date: ensure2026(b.expected_birth_date)
   }));
@@ -93,17 +95,19 @@ export async function createBooking(formData: any) {
   let booking;
   let bookingError;
 
+  const isFullBooking = validatedData.full_price > 0 || !!validatedData.package_name;
+  
   const bookingPayload: any = {
     customer_id: validatedData.customer_id,
     booking_number: existingBooking?.booking_number || `BK-${new Date().getTime()}`,
     package_id: validatedData.package_id || null,
     package_name: validatedData.package_name || null,
-    status: 'deposit_pending',
+    status: isFullBooking ? 'booked' : 'deposit_pending',
     full_price: validatedData.full_price,
-    deposit_amount: validatedData.deposit_amount,
+    deposit_amount: (existingBooking?.deposit_amount || 0) + (validatedData.deposit_amount || 0),
     total_sessions: validatedData.total_sessions,
     start_date: validatedData.start_date || null,
-    assigned_ktv_id: formData.assigned_ktv_id || null,
+    assigned_ktv_id: validatedData.assigned_ktv_id || null,
   };
 
   if (existingBooking) {

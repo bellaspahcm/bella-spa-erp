@@ -506,13 +506,13 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     <span className="font-bold">{formatNumberWithSeparator(formData.full_price)}đ</span>
                   </div>
                   <div className="flex justify-between items-center mb-4 opacity-70">
-                    <span className="font-bold">Tiền đã đặt cọc</span>
-                    <span className="font-bold">-{formatNumberWithSeparator(formData.deposit_amount)}đ</span>
+                    <span className="font-bold">Tiền đã đặt cọc (Tổng)</span>
+                    <span className="font-bold">-{formatNumberWithSeparator((draftBooking?.deposit_amount || 0) + formData.deposit_amount)}đ</span>
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-white/10">
                     <span className="font-bold">Cần thanh toán thêm</span>
                     <span className="text-2xl font-bold text-primary">
-                      {formatNumberWithSeparator(Math.max(0, formData.full_price - formData.deposit_amount))}đ
+                      {formatNumberWithSeparator(Math.max(0, formData.full_price - (draftBooking?.deposit_amount || 0) - formData.deposit_amount))}đ
                     </span>
                   </div>
                 </div>
