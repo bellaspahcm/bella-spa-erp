@@ -48,6 +48,7 @@ export async function createBooking(formData: any) {
         customer_id: validatedData.customer_id,
         booking_number: `BK-${new Date().getTime()}`,
         package_id: validatedData.package_id || null,
+        package_name: validatedData.package_name || null,
         status: 'deposit_pending',
         full_price: validatedData.full_price,
         deposit_amount: validatedData.deposit_amount,
