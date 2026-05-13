@@ -449,7 +449,7 @@ function BookingsContent() {
                         date: new Date(session.assigned_date),
                         dateString: session.assigned_date,
                         customer: session.bookings?.customers?.name_mother || 'Khách hàng',
-                        package: session.bookings?.package_name || 'Gói liệu trình',
+                        package: session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình',
                         time: session.assigned_time || '09:00 - 11:00',
                         contractId: session.bookings?.booking_number || 'N/A',
                         contractDetail: session.notes || 'Không có ghi chú',
@@ -486,7 +486,7 @@ function BookingsContent() {
                     <h3 className="text-xl font-extrabold text-slate-900 mb-2">{session.bookings?.customers?.name_mother}</h3>
                     <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
                       <LayoutGrid className="w-4 h-4 text-slate-300" />
-                      {session.bookings?.package_name || 'Gói liệu trình'}
+                      {session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình'}
                     </p>
                   </div>
 
@@ -509,7 +509,7 @@ function BookingsContent() {
                             date: new Date(session.assigned_date),
                             dateString: session.assigned_date,
                             customer: session.bookings?.customers?.name_mother || 'Khách hàng',
-                            package: session.bookings?.package_name || 'Gói liệu trình',
+                            package: session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình',
                             time: session.assigned_time || '09:00 - 11:00',
                             contractId: session.bookings?.booking_number || 'N/A',
                             contractDetail: session.notes || 'Không có ghi chú',
@@ -543,7 +543,7 @@ function BookingsContent() {
                             date: new Date(session.assigned_date),
                             dateString: session.assigned_date,
                             customer: session.bookings?.customers?.name_mother || 'Khách hàng',
-                            package: session.bookings?.package_name || 'Gói liệu trình',
+                            package: session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình',
                             time: session.assigned_time || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
                             contractId: session.bookings?.booking_number || 'N/A',
                             contractDetail: session.notes || '',
