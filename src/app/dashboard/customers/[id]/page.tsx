@@ -73,11 +73,11 @@ export default function CustomerDetailPage() {
     setIsReusing(true);
     try {
       const result = await reusePackage(bookingId);
-      if (result.data) {
+      if ('error' in result && result.error) {
+        toast.error(result.error);
+      } else if ('data' in result && result.data) {
         toast.success('Đã tái sử dụng gói dịch vụ thành công!');
         await loadData();
-      } else {
-        toast.error(result.error || 'Lỗi khi tái sử dụng gói');
       }
     } catch (error) {
       console.error('Reuse failed:', error);

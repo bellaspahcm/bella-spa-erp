@@ -318,16 +318,16 @@ export default function SessionsPage() {
     setIsReusingId(bookingId);
     try {
       const result = await reusePackage(bookingId);
-      if (result.data) {
+      if ('error' in result && result.error) {
+        setToastMessage('Lỗi: ' + result.error);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      } else if ('data' in result && result.data) {
         setToastMessage(`Đã tái sử dụng gói cho ${customerName} thành công!`);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
         setSelectedBooking(null);
         await loadSessions();
-      } else {
-        setToastMessage('Lỗi: ' + result.error);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
       }
     } catch (error) {
       console.error('Reuse failed:', error);
