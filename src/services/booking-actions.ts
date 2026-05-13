@@ -770,7 +770,7 @@ export async function recordRemainingPayment(params: {
         revenue_type: 'remaining_payment',
         payment_method: params.payment_method,
         received_date: new Date().toISOString().split('T')[0],
-        status: 'confirmed',
+        status: 'pending',
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
         receipt_url: params.receipt_url || null
       }]);

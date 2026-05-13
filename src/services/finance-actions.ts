@@ -18,14 +18,14 @@ export async function getFinancialOverview() {
           name_baby
         )
       )
-    `),
-    supabase.from('expenses').select('*')
+    `).order('created_at', { ascending: false }),
+    supabase.from('expenses').select('*').order('created_at', { ascending: false })
   ]);
 
   const revenueData = revenueResponse.data || [];
   const expensesData = expensesResponse.data || [];
 
-  // Always include mock transactions as baseline
+  // Mock transactions as baseline
   const mockTransactions = [
     { id: 'm1', type: 'revenue', category: 'Dịch vụ', amount: '+2,400,000', date: '12/05/2026', method: 'Chuyển khoản', status: 'confirmed', details: 'Gói chăm sóc cơ bản - Mẹ Lan' },
     { id: 'm2', type: 'expense', category: 'Vật tư', amount: '-850,000', date: '12/05/2026', method: 'Tiền mặt', status: 'pending', details: 'Mua khăn và tinh dầu' },
@@ -36,8 +36,14 @@ export async function getFinancialOverview() {
     { id: 'm7', type: 'expense', category: 'Điện nước', amount: '-2,100,000', date: '09/05/2026', method: 'Chuyển khoản', status: 'confirmed', details: 'Thanh toán tiền điện tháng 4' },
   ];
 
-  const dbRevenue = revenueData.reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
-  const dbExpense = expensesData.reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
+  // ONLY sum if status is 'confirmed'
+  const dbRevenue = revenueData
+    .filter((r: any) => r.status === 'confirmed')
+    .reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
+    
+  const dbExpense = expensesData
+    .filter((e: any) => e.status === 'confirmed')
+    .reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
   
   // Cumulative balance
   const totalBalance = DEMO_REVENUE.totalBalance + (dbRevenue - dbExpense);
@@ -51,8 +57,10 @@ export async function getFinancialOverview() {
     
     return {
       id: `rev-${r.id}`,
+      dbId: r.id,
       type: 'revenue',
       category: r.notes || 'Dịch vụ',
+      amountNum: Number(r.amount) || 0,
       amount: '+' + Number(r.amount).toLocaleString() + 'đ',
       date: ensure2026(new Date(r.received_date || r.created_at || new Date()).toLocaleDateString('vi-VN')),
       method: r.payment_method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản',
@@ -64,12 +72,14 @@ export async function getFinancialOverview() {
 
   const mappedExpenses = expensesData.map((e: any) => ({
     id: `exp-${e.id}`,
+    dbId: e.id,
     type: 'expense',
     category: e.category || e.description || 'Chi phí',
+    amountNum: Number(e.amount) || 0,
     amount: '-' + Number(e.amount).toLocaleString() + 'đ',
     date: ensure2026(new Date(e.expense_date || e.created_at || new Date()).toLocaleDateString('vi-VN')),
     method: 'Tiền mặt', 
-    status: e.status || 'submitted',
+    status: e.status === 'submitted' ? 'pending' : e.status || 'pending',
     details: e.description || 'Chi phí vận hành',
     timestamp: new Date(e.expense_date || e.created_at || new Date()).getTime()
   }));
@@ -88,6 +98,24 @@ export async function getFinancialOverview() {
     totalExpenseMonth,
     transactions: allTransactions
   };
+}
+
+export async function confirmTransaction(id: string, type: 'revenue' | 'expense') {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  const table = type === 'revenue' ? 'revenue' : 'expenses';
+
+  const { error } = await supabase
+    .from(table)
+    .update({ status: 'confirmed' })
+    .eq('id', id);
+
+  if (error) {
+    console.error(`Error confirming ${type}:`, error);
+    throw new Error(`Failed to confirm ${type}`);
+  }
+
+  return { success: true };
 }
 
 export async function recordTransaction(data: {
@@ -126,7 +154,7 @@ export async function recordTransaction(data: {
         booking_id: data.booking_id,
         revenue_type: 'additional',
         payment_method: 'bank_transfer',
-        status: 'confirmed',
+        status: 'pending', // Default to pending as requested
         received_date: new Date().toISOString()
       })
       .select()

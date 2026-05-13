@@ -14,9 +14,13 @@ import {
   Filter,
   Search,
   PlusCircle,
-  RefreshCw
+  RefreshCw,
+  ChevronUp,
+  ChevronDown,
+  Check
 } from 'lucide-react';
-import { getFinancialOverview } from '@/services/finance-actions';
+import { getFinancialOverview, confirmTransaction } from '@/services/finance-actions';
+import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { TransactionModal } from '@/components/features/TransactionModal';
 import { createClient } from '@/lib/supabase-client';
@@ -33,12 +37,52 @@ export default function FinancePage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'timestamp', direction: 'desc' });
+  const [isConfirmingId, setIsConfirmingId] = useState<string | null>(null);
+
   const fetchData = async () => {
     setIsRefreshing(true);
     const result = await getFinancialOverview();
     setData(result);
     setIsRefreshing(false);
     setIsLoading(false);
+  };
+
+  const handleConfirm = async (tx: any) => {
+    setIsConfirmingId(tx.id);
+    try {
+      await confirmTransaction(tx.dbId, tx.type);
+      toast.success('Giao dịch đã được xác nhận và cộng dồn vào số dư');
+      fetchData();
+    } catch (error) {
+      toast.error('Lỗi khi xác nhận giao dịch');
+    } finally {
+      setIsConfirmingId(null);
+    }
+  };
+
+  const sortData = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+
+    const sortedTransactions = [...data.transactions].sort((a: any, b: any) => {
+      let valA = a[key];
+      let valB = b[key];
+      
+      if (key === 'amount') {
+        valA = a.amountNum || 0;
+        valB = b.amountNum || 0;
+      }
+
+      if (valA < valB) return direction === 'asc' ? -1 : 1;
+      if (valA > valB) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    setData({ ...data, transactions: sortedTransactions });
   };
 
   useEffect(() => {
@@ -183,11 +227,43 @@ export default function FinancePage() {
           <table className="w-full">
             <thead>
               <tr className="text-left bg-slate-50/50">
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Danh mục</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi tiết nghiệp vụ</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ngày</th>
+                <th 
+                  onClick={() => sortData('category')}
+                  className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    Danh mục
+                    {sortConfig?.key === 'category' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => sortData('details')}
+                  className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    Chi tiết nghiệp vụ
+                    {sortConfig?.key === 'details' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => sortData('timestamp')}
+                  className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    Ngày
+                    {sortConfig?.key === 'timestamp' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                  </div>
+                </th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Phương thức</th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Số tiền</th>
+                <th 
+                  onClick={() => sortData('amount')}
+                  className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    Số tiền
+                    {sortConfig?.key === 'amount' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                  </div>
+                </th>
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
               </tr>
             </thead>
@@ -211,11 +287,31 @@ export default function FinancePage() {
                   <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.method}</td>
                   <td className="px-8 py-5 font-black text-slate-900">{tx.amount}</td>
                   <td className="px-8 py-5">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                      tx.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                    }`}>
-                      {tx.status === 'confirmed' ? 'Đã xác nhận' : 'Đang chờ'}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        tx.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                      }`}>
+                        {tx.status === 'confirmed' ? 'Đã xác nhận' : 'Đang chờ'}
+                      </span>
+                      {tx.status !== 'confirmed' && (
+                        <motion.button 
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleConfirm(tx)}
+                          disabled={isConfirmingId === tx.id}
+                          className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-sm shadow-slate-200 disabled:opacity-50"
+                        >
+                          {isConfirmingId === tx.id ? (
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Check className="w-3 h-3" />
+                              Duyệt thu chi
+                            </>
+                          )}
+                        </motion.button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
