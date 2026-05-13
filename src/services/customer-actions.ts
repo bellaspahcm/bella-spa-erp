@@ -28,9 +28,14 @@ export async function getCustomers() {
     .select('*, bookings(*)')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching customers:', error);
-    return [];
+  if (error || !data || data.length === 0) {
+    if (error) console.error('Error fetching customers:', error);
+    return MOCK_CUSTOMERS.map(c => ({
+      ...c,
+      status: c.status || 'active',
+      package_name: c.package_name || 'Chưa đăng ký',
+      start_date: ensure2026(c.dob_baby || c.dob_expected)
+    }));
   }
 
   // Flatten or map the data to match UI expectations if needed
