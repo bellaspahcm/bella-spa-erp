@@ -573,4 +573,39 @@ A: Yes, IF:
 - [ ] **Middleware Security**: Finalize session protection and RLS policy audit for production hardening.
 
 ---
-**Last Updated:** May 12, 2026 (07:40)
+**Last Updated:** May 13, 2026 (18:15)
+
+## 🛠️ TROUBLESHOOTING & BEST PRACTICES (LESSONS LEARNED)
+
+Để đảm bảo hệ thống vận hành ổn định và không lặp lại các lỗi phổ biến, toàn bộ đội ngũ phát triển (bao gồm AI Agents) phải tuân thủ các quy tắc sau:
+
+### 1. JSX Rendering Strategy
+*   **Vấn đề**: Việc viết logic phức tạp (IIFE, lồng ghép ternary nhiều lớp) trực tiếp trong JSX gây ra lỗi cú pháp `Expected '</', got ')'` và làm mã nguồn khó đọc.
+*   **Quy tắc**: 
+    - Luôn tính toán giá trị/trạng thái (pre-calculate) ở phần đầu của component hoặc hàm xử lý.
+    - JSX chỉ nên chứa các biến đơn giản hoặc các component con.
+    - *Ví dụ*: Thay vì `<div>{(() => { ... })()}</div>`, hãy sử dụng `const content = renderContent();` và `<div>{content}</div>`.
+
+### 2. Supabase Query Integrity (Join Logic)
+*   **Vấn đề**: Khi sử dụng `.select('*, table(*)')`, nếu thiếu trường `id` của bảng được join, các logic phía Client (như Modal, Update) sẽ không thể định danh bản ghi để xử lý.
+*   **Quy tắc**:
+    - Luôn liệt kê tường minh các trường cần thiết trong chuỗi `select`.
+    - **Bắt buộc** phải bao gồm trường `id` cho mọi bảng tham gia vào câu truy vấn.
+    - *Mẫu chuẩn*: `.select('*, customers(id, name_mother), session_logs(id, session_number, status)')`.
+
+### 3. Data Fallback & Resilience
+*   **Vấn đề**: Khi database trả về rỗng hoặc join thất bại, giao diện thường bị trống hoặc crash do truy cập `undefined.property`.
+*   **Quy tắc**:
+    - Sử dụng cơ chế Fallback ngay tại Server Action. Nếu dữ liệu thật trống, hãy tra cứu trong `MOCK_DATA` hoặc trả về một object mặc định có cấu trúc chuẩn.
+    - Luôn sử dụng Optional Chaining (`?.`) khi truy cập dữ liệu từ các bảng join (ví dụ: `booking.customers?.name_mother`).
+
+### 4. Demo Data Persistence
+*   **Vấn đề**: Các thay đổi trong chế độ Demo thường bị mất khi tải lại trang.
+*   **Quy tắc**:
+    - Sử dụng `localStorage` để đồng bộ các thay đổi thủ công của người dùng trong quá trình Demo.
+    - Các Server Actions nên tích hợp sẵn logic kiểm tra: Nếu DB lỗi/rỗng -> Trả về Demo Data + Merge với Local Storage.
+
+---
+**Document Version:** 1.1  
+**Last Updated:** May 13, 2026  
+**Status:** Active Guidelines
