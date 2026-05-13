@@ -395,7 +395,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           
-          <div className="max-h-[920px] overflow-y-auto pr-4 custom-scrollbar space-y-6">
+          <div className="max-h-[1150px] overflow-y-auto pr-4 custom-scrollbar space-y-6">
             {(() => {
               const filteredSessions = sessions.filter(session => {
                 const customerName = session.bookings?.customers?.name_mother || '';
