@@ -1,10 +1,9 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
-import { revalidatePath } from 'next/cache';
 import { ensure2026 } from '@/lib/utils';
 import { DEMO_BOOKINGS, DEMO_SESSIONS } from '@/constants/demo-data';
 import { MOCK_SERVICES } from '@/constants/mock-data';
+import { safeRevalidatePath } from '@/lib/revalidate';
 
 /**
  * Helper to resolve package name from booking data
@@ -22,6 +21,7 @@ function resolvePackageName(booking: any): string {
 }
 
 export async function getBookings() {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
@@ -44,6 +44,7 @@ export async function getBookings() {
 import { bookingSchema } from '@/lib/validations';
 
 export async function createBooking(formData: any) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   // 0. Validate with Zod
@@ -107,12 +108,13 @@ export async function createBooking(formData: any) {
     return { error: 'Booking created but session logs failed: ' + sessionsError.message };
   }
 
-  revalidatePath('/dashboard/bookings');
-  revalidatePath('/dashboard');
+  await safeRevalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard');
   return { data: booking };
 }
 
 export async function getSessionLogs(bookingId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('session_logs')
@@ -137,6 +139,7 @@ export async function getSessionLogs(bookingId: string) {
 }
 
 export async function completeSession(sessionId: string, bookingId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
 
   // 1. Update session log status
@@ -177,14 +180,15 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: updateError.message };
   }
 
-  revalidatePath('/dashboard/sessions');
-  revalidatePath('/dashboard/bookings');
-  revalidatePath('/dashboard');
+  await safeRevalidatePath('/dashboard/sessions');
+  await safeRevalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard');
   
   return { success: true };
 }
 
 export async function getSessionsWithDetails() {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
@@ -205,6 +209,7 @@ export async function getSessionsWithDetails() {
 }
 
 export async function getCalendarSessions() {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { data, error } = await supabase
@@ -244,6 +249,7 @@ export async function getCalendarSessions() {
 }
 
 export async function updateSessionLog(id: string, payload: any) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const updates: any = { ...payload };
@@ -264,11 +270,12 @@ export async function updateSessionLog(id: string, payload: any) {
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard/bookings');
   return { data };
 }
 
 export async function saveSessionNote(sessionId: string, note: string) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { error } = await supabase
@@ -281,11 +288,12 @@ export async function saveSessionNote(sessionId: string, note: string) {
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard/sessions');
+  await safeRevalidatePath('/dashboard/sessions');
   return { success: true };
 }
 
 export async function createSessionLog(data: any) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   // 1. Get current session number for this booking
@@ -320,11 +328,12 @@ export async function createSessionLog(data: any) {
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard/bookings');
   return { data: session };
 }
 
 export async function updateBooking(id: string, payload: any) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { data, error } = await supabase
@@ -347,12 +356,13 @@ export async function updateBooking(id: string, payload: any) {
       .eq('id', data.customer_id);
   }
 
-  revalidatePath('/dashboard/bookings');
-  revalidatePath('/dashboard/customers');
+  await safeRevalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard/customers');
   return { data };
 }
 
 export async function reusePackage(bookingId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
 
   // 1. Fetch original booking
@@ -427,7 +437,7 @@ async function finalizeReuse(newBooking: any, total: number, supabase: any) {
     return { error: 'Đã tạo gói mới nhưng lỗi khởi tạo lịch trình: ' + sessionsError.message };
   }
 
-  revalidatePath('/dashboard/sessions');
-  revalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard/sessions');
+  await safeRevalidatePath('/dashboard/bookings');
   return { data: newBooking };
 }
