@@ -13,7 +13,9 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { recordTransaction } from '@/services/finance-actions';
+import { getBookings } from '@/services/booking-actions';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -25,7 +27,19 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
   const [type, setType] = useState<'revenue' | 'expense'>('revenue');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const [bookingId, setBookingId] = useState('');
+  const [bookings, setBookings] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && type === 'revenue') {
+      const fetchBookings = async () => {
+        const data = await getBookings();
+        setBookings(data || []);
+      };
+      fetchBookings();
+    }
+  }, [isOpen, type]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +54,8 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
       await recordTransaction({
         amount: Number(cleanAmount),
         type,
-        notes: notes || (type === 'revenue' ? 'Thu nhập khác' : 'Chi phí khác')
+        notes: notes || (type === 'revenue' ? 'Thu nhập khác' : 'Chi phí khác'),
+        booking_id: type === 'revenue' ? bookingId : undefined
       });
       toast.success('Ghi nhận giao dịch thành công');
       if (onSuccess) onSuccess();
@@ -48,6 +63,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
       // Reset form
       setAmount('');
       setNotes('');
+      setBookingId('');
     } catch (error) {
       toast.error('Lỗi khi ghi nhận giao dịch');
     } finally {
@@ -136,6 +152,25 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
                 <span className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-slate-400">VNĐ</span>
               </div>
             </div>
+
+            {/* Booking Selector for Revenue */}
+            {type === 'revenue' && (
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Liên kết khách hàng/booking (Tùy chọn)</label>
+                <select
+                  value={bookingId}
+                  onChange={(e) => setBookingId(e.target.value)}
+                  className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-3xl outline-none transition-all font-bold text-slate-700 appearance-none cursor-pointer"
+                >
+                  <option value="">Chọn khách hàng...</option>
+                  {bookings.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      Mẹ {b.customers?.name_mother} - {b.package_name || 'Gói dịch vụ'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Notes Input */}
             <div className="space-y-3">
