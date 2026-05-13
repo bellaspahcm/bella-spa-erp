@@ -96,7 +96,11 @@ export default function CustomersPage() {
     try {
       let result;
       if (isEditMode && editingCustomerId) {
-        result = await updateCustomer(editingCustomerId, formData);
+        result = await updateCustomer(editingCustomerId, {
+          ...formData,
+          deposit_amount: depositAmount,
+          package_name: selectedPackage
+        });
       } else {
         result = await createCustomer({
           ...formData,
