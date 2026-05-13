@@ -49,13 +49,25 @@ export default function FinancePage() {
   };
 
   const handleConfirm = async (tx: any) => {
+    if (!tx.dbId) {
+      toast.info('Đây là giao dịch mẫu (Demo), không thể xác nhận vào Database thật.');
+      return;
+    }
+
+    if (!window.confirm(`Bạn có chắc chắn muốn xác nhận giao dịch "${tx.category}" trị giá ${tx.amount} không?\nSau khi xác nhận, số tiền này sẽ được tính vào tổng doanh thu/chi phí.`)) {
+      return;
+    }
+
     setIsConfirmingId(tx.id);
     try {
-      await confirmTransaction(tx.dbId, tx.type);
-      toast.success('Giao dịch đã được xác nhận và cộng dồn vào số dư');
-      fetchData();
+      const result = await confirmTransaction(tx.dbId, tx.type);
+      if (result.success) {
+        toast.success('Giao dịch đã được xác nhận thành công');
+        fetchData();
+      }
     } catch (error) {
-      toast.error('Lỗi khi xác nhận giao dịch');
+      console.error('Confirm error:', error);
+      toast.error('Lỗi khi xác nhận giao dịch. Vui lòng kiểm tra lại quyền truy cập hoặc kết nối mạng.');
     } finally {
       setIsConfirmingId(null);
     }
