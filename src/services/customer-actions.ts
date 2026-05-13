@@ -179,12 +179,14 @@ export async function getCustomerById(id: string) {
       package_name: resolvePackageName(latestBooking),
       start_date: ensure2026(latestBooking?.start_date || customer.dob_expected),
       bookings: bookings || [], // Include bookings array for UI access
-      sessions: (latestBooking?.session_logs || []).map((s: any) => ({
-        ...s,
-        assigned_date: ensure2026(s.assigned_date),
-        completed_date: ensure2026(s.completed_date),
-        date: ensure2026(s.date) // Some components use .date
-      }))
+      sessions: (latestBooking?.session_logs || [])
+        .sort((a: any, b: any) => (a.session_number || 0) - (b.session_number || 0))
+        .map((s: any) => ({
+          ...s,
+          assigned_date: ensure2026(s.assigned_date),
+          completed_date: ensure2026(s.completed_date),
+          date: ensure2026(s.date) // Some components use .date
+        }))
     };
   } catch (err) {
     console.error('Exception in getCustomerById:', err);
