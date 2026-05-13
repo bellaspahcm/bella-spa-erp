@@ -192,6 +192,39 @@ export async function updateCustomer(id: string, formData: any) {
     return { error: error.message };
   }
 
+  // 3. Update related booking if deposit or package provided
+  if (formData.deposit_amount || formData.package_name) {
+    const deposit = parseInt(formData.deposit_amount?.toString().replace(/,/g, '') || '0');
+    
+    // Find the latest booking to update
+    const { data: latestBookings } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('customer_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    const { createBooking, updateBooking } = await import('./booking-actions');
+    
+    if (latestBookings && latestBookings.length > 0) {
+      // Update existing booking
+      await updateBooking(latestBookings[0].id, {
+        package_name: formData.package_name,
+        deposit_amount: deposit,
+      });
+    } else {
+      // Create new booking if none exists
+      await createBooking({
+        customer_id: id,
+        package_name: formData.package_name || 'Gói liệu trình',
+        full_price: 0,
+        deposit_amount: deposit,
+        total_sessions: 21,
+        start_date: validatedData.dob_expected || new Date().toISOString().split('T')[0],
+      });
+    }
+  }
+
   revalidatePath('/dashboard/customers');
   revalidatePath(`/dashboard/customers/${id}`);
   return { data };
