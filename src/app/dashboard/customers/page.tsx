@@ -54,6 +54,10 @@ export default function CustomersPage() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
   // Form states
   const [formData, setFormData] = useState({
     name_mother: '',
@@ -197,6 +201,11 @@ export default function CustomersPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Reset pagination when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
   const filteredCustomers = customers.filter(customer => {
     const q = searchQuery.toLowerCase();
     const matchesSearch = 
@@ -213,6 +222,11 @@ export default function CustomersPage() {
     
     return matchesSearch && matchesStatus;
   });
+
+  const totalPages = Math.ceil(filteredCustomers.length / pageSize);
+  const paginatedCustomers = filteredCustomers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, filteredCustomers.length);
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
@@ -284,7 +298,7 @@ export default function CustomersPage() {
             <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
             <p className="text-slate-400 font-bold">Không tìm thấy khách hàng nào khớp với bộ lọc</p>
           </div>
-        ) : filteredCustomers.map((customer: any, idx: number) => (
+        ) : paginatedCustomers.map((customer: any, idx: number) => (
           <motion.div 
             key={customer.id}
             initial={{ opacity: 0, y: 10 }}
@@ -418,6 +432,60 @@ export default function CustomersPage() {
           </motion.div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+            Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{filteredCustomers.length}</span> khách hàng
+          </p>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                // Show only a few pages if too many
+                if (totalPages > 7) {
+                  if (page > 1 && page < totalPages && (page < currentPage - 1 || page > currentPage + 1)) {
+                    if (page === currentPage - 2 || page === currentPage + 2) return <span key={page} className="px-1 text-slate-300">...</span>;
+                    return null;
+                  }
+                }
+                
+                return (
+                  <button 
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={cn(
+                      "w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-90",
+                      currentPage === page 
+                        ? "bg-primary text-white shadow-lg shadow-rose-200" 
+                        : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-300"
+                    )}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add Customer Modal Placeholder */}
       <AnimatePresence>
