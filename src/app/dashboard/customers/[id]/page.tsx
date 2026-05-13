@@ -20,10 +20,15 @@ import {
   PlusCircle,
   Sparkles,
   User,
-  CheckCircle2
+  CheckCircle2,
+  Image as ImageIcon,
+  CreditCard as CreditCardIcon,
+  DollarSign as DollarIcon,
+  Camera,
+  Loader2
 } from 'lucide-react';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
-import { getBookingsByCustomerId, updateBooking, completeSession, reusePackage } from '@/services/booking-actions';
+import { getBookingsByCustomerId, updateBooking, completeSession, reusePackage, recordRemainingPayment } from '@/services/booking-actions';
 import { getUsers } from '@/services/user-actions';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { useState, useEffect, useCallback } from 'react';
@@ -44,6 +49,14 @@ export default function CustomerDetailPage() {
   const [activeBooking, setActiveBooking] = useState<any>(null);
   const [ktvs, setKtvs] = useState<any[]>([]);
   const [isUpdatingKTV, setIsUpdatingKTV] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isRecordingPayment, setIsRecordingPayment] = useState(false);
+  const [paymentData, setPaymentData] = useState({
+    amount: 0,
+    method: 'bank_transfer',
+    notes: '',
+    receipt_url: ''
+  });
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -145,25 +158,33 @@ export default function CustomerDetailPage() {
   };
 
   const [isReusing, setIsReusing] = useState(false);
-  const handleReusePackage = async (bookingId: string) => {
-    if (!bookingId) return;
-    const confirm = window.confirm(`Bạn có chắc chắn muốn tái sử dụng gói dịch vụ nhanh cho khách hàng ${customer.name_mother}?`);
-    if (!confirm) return;
-    
-    setIsReusing(true);
+  const handleRecordPayment = async () => {
+    if (!activeBooking) return;
+    if (paymentData.amount <= 0) {
+      toast.error('Vui lòng nhập số tiền hợp lệ');
+      return;
+    }
+
+    setIsRecordingPayment(true);
     try {
-      const result = await reusePackage(bookingId);
-      if ('error' in result && result.error) {
-        toast.error(result.error);
-      } else if ('data' in result && result.data) {
-        toast.success('Đã tái sử dụng gói dịch vụ thành công!');
-        await loadData();
-      }
-    } catch (error) {
-      console.error('Reuse failed:', error);
-      toast.error('Có lỗi xảy ra khi xử lý');
+      const result = await recordRemainingPayment({
+        booking_id: activeBooking.id,
+        customer_id: id,
+        amount: paymentData.amount,
+        payment_method: paymentData.method,
+        notes: paymentData.notes,
+        receipt_url: paymentData.receipt_url
+      });
+
+      if (result.error) throw new Error(result.error);
+      
+      toast.success('Đã ghi nhận thanh toán thành công!');
+      setIsPaymentModalOpen(false);
+      loadData();
+    } catch (error: any) {
+      toast.error('Lỗi: ' + error.message);
     } finally {
-      setIsReusing(false);
+      setIsRecordingPayment(false);
     }
   };
 
@@ -317,11 +338,28 @@ export default function CustomerDetailPage() {
                         {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
                       </p>
                     </div>
-                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
+                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 relative group/pay">
                       <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
-                      <p className="font-black text-lg text-rose-200">
-                        {isDepositOnly ? '---' : formatNumberWithSeparator((activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0)) + 'đ'}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-black text-lg text-rose-200">
+                          {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0))) + 'đ'}
+                        </p>
+                        {!isDepositOnly && (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0) > 0 && (
+                          <button 
+                            onClick={() => {
+                              setPaymentData({
+                                ...paymentData,
+                                amount: (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0)
+                              });
+                              setIsPaymentModalOpen(true);
+                            }}
+                            className="p-1.5 bg-white text-rose-500 rounded-lg hover:scale-110 transition-transform shadow-lg"
+                            title="Thanh toán nốt"
+                          >
+                            <DollarIcon className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -347,8 +385,14 @@ export default function CustomerDetailPage() {
                         Gửi báo cáo Zalo
                       </button>
                       <button 
+                        disabled={activeBooking?.deposit_amount < activeBooking?.full_price}
                         onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
-                        className="flex items-center justify-center gap-3 bg-white/10 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-2xl font-black transition-all hover:bg-white/20 uppercase tracking-widest text-xs"
+                        className={cn(
+                          "flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black transition-all uppercase tracking-widest text-xs",
+                          activeBooking?.deposit_amount >= activeBooking?.full_price
+                            ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20"
+                            : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
+                        )}
                       >
                         <FileText className="w-4 h-4" />
                         Xuất hợp đồng
@@ -495,6 +539,134 @@ export default function CustomerDetailPage() {
         onSuccess={() => { setIsBookingModalOpen(false); loadData(); }}
         preselectedCustomer={customer}
       />
+
+      {/* Payment Modal */}
+      <BookingPaymentModal 
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onConfirm={handleRecordPayment}
+        isSubmitting={isRecordingPayment}
+        data={paymentData}
+        setData={setPaymentData}
+      />
+    </div>
+  );
+}
+
+function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData }: any) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-[#1A0A0E]/80 backdrop-blur-md"
+      />
+      
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="relative w-full max-w-lg bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+      >
+        <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Xác nhận thanh toán</h2>
+            <p className="text-sm text-slate-500 font-bold italic">Ghi nhận minh chứng tài chính</p>
+          </div>
+          <button onClick={onClose} className="p-3 hover:bg-rose-50 rounded-2xl text-slate-400 hover:text-rose-500 transition-all">
+            <PlusCircle className="w-6 h-6 rotate-45" />
+          </button>
+        </div>
+
+        <div className="p-8 space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <DollarIcon className="w-3.5 h-3.5" /> Số tiền thanh toán
+            </label>
+            <div className="relative">
+              <input 
+                type="text" 
+                value={formatNumberWithSeparator(data.amount)}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^\d]/g, '');
+                  setData({ ...data, amount: val ? parseInt(val) : 0 });
+                }}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-black text-lg text-primary"
+              />
+              <span className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-slate-300">VNĐ</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <CreditCardIcon className="w-3.5 h-3.5" /> Phương thức
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { id: 'bank_transfer', label: 'Chuyển khoản' },
+                { id: 'cash', label: 'Tiền mặt' }
+              ].map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => setData({ ...data, method: m.id })}
+                  className={cn(
+                    "py-3 px-4 rounded-xl font-bold text-sm transition-all border",
+                    data.method === m.id 
+                      ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
+                      : "bg-slate-50 text-slate-500 border-slate-100 hover:border-primary/30"
+                  )}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <Camera className="w-3.5 h-3.5" /> Minh chứng thanh toán (Link hình ảnh)
+            </label>
+            <div className="relative group">
+              <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 w-5 h-5 group-focus-within:text-primary transition-colors" />
+              <input 
+                type="text" 
+                placeholder="Dán link ảnh bill hoặc chọn tệp..."
+                value={data.receipt_url}
+                onChange={(e) => setData({ ...data, receipt_url: e.target.value })}
+                className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
+              />
+            </div>
+            <p className="text-[10px] text-slate-400 italic font-medium px-2">* Tính năng tải ảnh trực tiếp đang được đồng bộ với Storage</p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              <FileText className="w-3.5 h-3.5" /> Ghi chú
+            </label>
+            <textarea 
+              placeholder="Nhập ghi chú thanh toán..."
+              value={data.notes}
+              onChange={(e) => setData({ ...data, notes: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm h-24 resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex gap-4">
+          <button onClick={onClose} className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition-all">Hủy</button>
+          <button 
+            disabled={isSubmitting || data.amount <= 0}
+            onClick={onConfirm}
+            className="flex-1 py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            Xác nhận thu tiền
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
