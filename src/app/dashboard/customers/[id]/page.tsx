@@ -178,7 +178,14 @@ export default function CustomerDetailPage() {
     try {
       const result = await updateCustomer(id as string, editData);
       if (result.error) throw new Error(result.error);
-      toast.success('Cập nhật hồ sơ thành công!');
+      
+      if (result.warning) {
+        toast.success('Cập nhật thành công các thông tin khác!');
+        toast.warning(result.warning, { duration: 10000 });
+      } else {
+        toast.success('Cập nhật hồ sơ thành công!');
+      }
+      
       setIsEditModalOpen(false);
       loadData();
     } catch (error: any) {
