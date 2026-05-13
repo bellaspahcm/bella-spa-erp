@@ -745,6 +745,9 @@ export async function recordRemainingPayment(params: {
   notes?: string;
   receipt_url?: string;
 }) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+
   try {
     // 1. Record the revenue
     const { error: revError } = await supabase
