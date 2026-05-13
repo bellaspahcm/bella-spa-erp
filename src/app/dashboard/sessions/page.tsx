@@ -19,9 +19,12 @@ import {
   AlertCircle,
   ShieldCheck,
   UserCircle,
-  MessageSquare
+  MessageSquare,
+  RotateCcw,
+  XCircle,
+  PlusCircle
 } from 'lucide-react';
-import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage } from '@/services/booking-actions';
+import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession } from '@/services/booking-actions';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
@@ -309,6 +312,7 @@ export default function SessionsPage() {
   };
 
   const [isReusingId, setIsReusingId] = useState<string | null>(null);
+  
   const handleReusePackage = async (bookingId: string, customerName: string) => {
     if (!bookingId) return;
 
@@ -336,6 +340,35 @@ export default function SessionsPage() {
       setTimeout(() => setShowToast(false), 3000);
     } finally {
       setIsReusingId(null);
+    }
+  };
+  
+  const handleAddExtraSession = async (bookingId: string) => {
+    if (!window.confirm('Bạn có muốn thêm một buổi tập bổ sung vào gói này không?')) return;
+    
+    setIsSyncing(true);
+    try {
+      const result = await addExtraSession(bookingId);
+      if (result.success) {
+        setToastMessage('Đã thêm buổi tập bổ sung thành công!');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        await loadSessions();
+        // Also reload current logs if modal is open
+        if (selectedBooking && selectedBooking.id === bookingId) {
+          const logs = await getSessionLogs(bookingId);
+          setCurrentSessionLogs(logs);
+        }
+      } else {
+        setToastMessage('Lỗi: ' + result.error);
+        setShowToast(true);
+      }
+    } catch (error) {
+      console.error('Add extra session failed:', error);
+      setToastMessage('Có lỗi xảy ra');
+      setShowToast(true);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -707,14 +740,42 @@ export default function SessionsPage() {
                           />
                         </div>
 
-                        <button 
-                          onClick={handleSaveFullUpdate}
-                          disabled={isSavingNote || !selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
-                          className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
-                        >
-                          {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
-                          Cập nhật thông tin
-                        </button>
+                        <div className="flex flex-col gap-2">
+                          <button 
+                            onClick={handleSaveFullUpdate}
+                            disabled={isSavingNote || !selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                            className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                          >
+                            {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
+                            Cập nhật thông tin
+                          </button>
+
+                          {userRole === 'ADMIN' && selectedSessionLog && selectedSessionLog.status !== 'scheduled' && (
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              <button 
+                                onClick={() => {
+                                  setSelectedStatus('scheduled');
+                                  // We'll trigger the save immediately for better UX
+                                  setTimeout(handleSaveFullUpdate, 100);
+                                }}
+                                className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" /> Khôi phục buổi
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if (window.confirm('Bạn có chắc muốn hủy buổi tập này?')) {
+                                    setSelectedStatus('canceled');
+                                    setTimeout(handleSaveFullUpdate, 100);
+                                  }
+                                }}
+                                className="flex-1 bg-rose-50 text-rose-600 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
+                              >
+                                <XCircle className="w-3.5 h-3.5" /> Hủy buổi này
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -743,9 +804,18 @@ export default function SessionsPage() {
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Hoàn thành</p>
                           <p className="text-3xl font-black text-slate-900">{selectedBooking.completed_sessions}</p>
                         </div>
-                        <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm">
-                          <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Còn lại</p>
-                          <p className="text-3xl font-black text-slate-900">{Math.max(0, (selectedBooking.total_sessions || 21) - (selectedBooking.completed_sessions || 0))}</p>
+                        <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm relative group">
+                          <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Tổng cộng</p>
+                          <p className="text-3xl font-black text-slate-900">{selectedBooking.total_sessions || 21}</p>
+                          {userRole === 'ADMIN' && (
+                            <button 
+                              onClick={() => handleAddExtraSession(selectedBooking.id)}
+                              className="absolute top-1 right-1 p-1 bg-white/80 rounded-lg text-primary hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
+                              title="Thêm buổi bổ sung"
+                            >
+                              <PlusCircle className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
 

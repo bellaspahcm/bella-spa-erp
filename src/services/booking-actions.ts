@@ -313,6 +313,35 @@ export async function saveSessionNote(sessionId: string, note: string) {
   return { success: true };
 }
 
+export async function addExtraSession(bookingId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  
+  // 1. Get current sessions count
+  const { data, error: fetchError } = await supabase
+    .from('bookings')
+    .select('total_sessions')
+    .eq('id', bookingId)
+    .single();
+
+  if (fetchError) return { error: fetchError.message };
+  
+  const newTotal = (data.total_sessions || 0) + 1;
+  
+  // 2. Update booking total
+  await supabase.from('bookings').update({ total_sessions: newTotal } as any).eq('id', bookingId);
+  
+  // 3. Insert new log
+  await supabase.from('session_logs').insert({
+    booking_id: bookingId,
+    session_number: newTotal,
+    status: 'scheduled'
+  } as any);
+  
+  await safeRevalidatePath('/dashboard/sessions');
+  return { success: true };
+}
+
 export async function createSessionLog(data: any) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
