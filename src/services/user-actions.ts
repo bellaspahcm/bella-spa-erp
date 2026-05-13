@@ -1,9 +1,9 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
-import { revalidatePath } from 'next/cache';
+import { safeRevalidatePath } from '@/lib/revalidate';
 
 export async function getUsers() {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('users')
@@ -47,6 +47,7 @@ export async function getUsers() {
 }
 
 export async function createUser(formData: any) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { data, error } = await supabase
@@ -68,11 +69,12 @@ export async function createUser(formData: any) {
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard/settings');
+  await safeRevalidatePath('/dashboard/settings');
   return { data };
 }
 
 export async function updateUserStatus(id: string, status: 'active' | 'inactive') {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { error } = await supabase
@@ -85,6 +87,6 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard/settings');
+  await safeRevalidatePath('/dashboard/settings');
   return { success: true };
 }

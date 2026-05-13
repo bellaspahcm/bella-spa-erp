@@ -1,9 +1,8 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
-import { revalidatePath } from 'next/cache';
 import { MOCK_CUSTOMERS, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_SERVICES } from '@/constants/mock-data';
 import { ensure2026 } from '@/lib/utils';
+import { safeRevalidatePath } from '@/lib/revalidate';
 
 /**
  * Helper to resolve package name from booking data
@@ -22,6 +21,7 @@ function resolvePackageName(booking: any): string {
 }
 
 export async function getCustomers() {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('customers')
@@ -51,6 +51,7 @@ export async function getCustomers() {
 import { customerSchema } from '@/lib/validations';
 
 export async function createCustomer(formData: any) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   // 0. Validate with Zod
@@ -100,11 +101,12 @@ export async function createCustomer(formData: any) {
     });
   }
 
-  revalidatePath('/dashboard/customers');
+  await safeRevalidatePath('/dashboard/customers');
   return { data: customer };
 }
 
 export async function getCustomerById(id: string) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   try {
@@ -175,6 +177,7 @@ function getMockCustomerFallback(id: string) {
 }
 
 export async function updateCustomer(id: string, formData: any) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   // 1. Validate with Zod
@@ -241,12 +244,13 @@ export async function updateCustomer(id: string, formData: any) {
     }
   }
 
-  revalidatePath('/dashboard/customers');
-  revalidatePath(`/dashboard/customers/${id}`);
+  await safeRevalidatePath('/dashboard/customers');
+  await safeRevalidatePath(`/dashboard/customers/${id}`);
   return { data };
 }
 
 export async function deleteCustomer(id: string) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { error } = await supabase
@@ -259,6 +263,6 @@ export async function deleteCustomer(id: string) {
     return { error: error.message };
   }
 
-  revalidatePath('/dashboard/customers');
+  await safeRevalidatePath('/dashboard/customers');
   return { success: true };
 }
