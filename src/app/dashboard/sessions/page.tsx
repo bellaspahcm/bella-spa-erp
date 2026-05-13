@@ -295,6 +295,11 @@ export default function SessionsPage() {
             
             // Sync local updates map
             setLocalBookingUpdates(prev => ({ ...prev, [selectedBooking.id]: newCount }));
+            setLocalSessionLogUpdates(prev => {
+              const next = { ...prev };
+              delete next[selectedSessionLog.id];
+              return next;
+            });
             
             // Update the main sessions list locally to trigger immediate isNextToRun update
             setSessions(prev => prev.map(b => 
