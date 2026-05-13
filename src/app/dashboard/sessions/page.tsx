@@ -737,8 +737,8 @@ export default function SessionsPage() {
                     <Flower2 className="w-8 h-8" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Chi tiết liệu trình: {selectedBooking.customers?.name_mother}</h2>
-                    <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">{selectedBooking.package_name} • {selectedBooking.booking_number}</p>
+                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Thẻ liệu trình: {selectedBooking.customers?.name_mother}</h2>
+                    <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">{selectedBooking.package_name} • Tiến độ: {selectedBooking.completed_sessions}/{selectedBooking.total_sessions || 21}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -766,7 +766,7 @@ export default function SessionsPage() {
                     <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
                         <FileEdit className="w-4 h-4 text-primary" /> 
-                        {selectedSessionLog ? `Cập nhật buổi ${selectedSessionLog.session_number}` : 'Chọn một buổi để cập nhật'}
+                        {selectedSessionLog ? `Cập nhật buổi ${selectedSessionLog.session_number}/${selectedBooking.total_sessions || 21}` : 'Chọn một buổi để cập nhật'}
                       </h3>
                       
                       <div className="space-y-4">
