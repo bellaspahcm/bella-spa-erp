@@ -22,7 +22,8 @@ import {
   MessageSquare,
   RotateCcw,
   XCircle,
-  PlusCircle
+  PlusCircle,
+  History
 } from 'lucide-react';
 import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession } from '@/services/booking-actions';
 import { cn } from '@/lib/utils';
@@ -604,11 +605,6 @@ export default function SessionsPage() {
                     )}>
                       {isFullyCompleted ? 'Hoàn thành' : 'Đang chăm sóc'}
                     </span>
-                    {alreadyDoneToday && !isFullyCompleted && (
-                      <span className="bg-amber-50 text-amber-600 border border-amber-100 px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter">
-                        Đã cập nhật hôm nay
-                      </span>
-                    )}
                   </div>
                   
                   <div className="flex flex-wrap gap-y-3 gap-x-8 text-sm font-bold text-slate-500 mb-5">
@@ -635,6 +631,26 @@ export default function SessionsPage() {
                 </div>
 
                 <div className="flex flex-col gap-3 md:items-end md:border-l md:pl-8 border-slate-100 min-w-[280px] justify-center relative z-10">
+                  {/* Continuity Context: Show last session's note before the new update */}
+                  {(() => {
+                    const completedLogs = (booking.session_logs || [])
+                      .filter((l: any) => l.status === 'completed')
+                      .sort((a: any, b2: any) => (b2.session_number || 0) - (a.session_number || 0));
+                    const lastLog = completedLogs[0];
+                    if (lastLog && lastLog.notes && !isFullyCompleted && !alreadyDoneToday) {
+                      return (
+                        <div className="w-full mb-1 p-3 bg-amber-50/50 rounded-xl border border-amber-100/50 flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <History className="w-3 h-3 text-amber-500" />
+                            <span className="text-[9px] font-black text-amber-700 uppercase tracking-tighter">Ghi chú buổi {lastLog.session_number}</span>
+                          </div>
+                          <p className="text-[10px] font-medium text-slate-600 line-clamp-2 leading-tight italic">"{lastLog.notes}"</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
                   {!isFullyCompleted && !alreadyDoneToday && (
                     <div className="relative w-full">
                       <MessageSquare className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300" />
@@ -766,63 +782,92 @@ export default function SessionsPage() {
                     <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
                         <FileEdit className="w-4 h-4 text-primary" /> 
-                        {selectedSessionLog ? `Cập nhật buổi ${selectedSessionLog.session_number}/${selectedBooking.total_sessions || 21}` : 'Chọn một buổi để cập nhật'}
+                        {selectedSessionLog ? `Cập nhật buổi ${selectedSessionLog.session_number}/${selectedBooking.total_sessions || 21}` : 'Hành trình chăm sóc'}
                       </h3>
                       
                       <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Ngày dự kiến</label>
-                            <div className="relative">
-                              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <input 
-                                  type="date"
-                                  value={selectedDate}
-                                  onChange={(e) => setSelectedDate(e.target.value)}
-                                  disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
-                                  className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
-                                />
+                        {!selectedSessionLog ? (
+                          <div className="bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-200">
+                            <div className="flex flex-col items-center text-center py-4">
+                              <History className="w-10 h-10 text-amber-400 mb-4 opacity-50" />
+                              <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-2">Thông tin buổi trước</h4>
+                              {(() => {
+                                const completedLogs = (selectedBooking.session_logs || [])
+                                  .filter((l: any) => l.status === 'completed')
+                                  .sort((a: any, b2: any) => (b2.session_number || 0) - (a.session_number || 0));
+                                const lastLog = completedLogs[0];
+                                if (lastLog) {
+                                  return (
+                                    <>
+                                      <p className="text-[10px] font-bold text-slate-500 italic mb-4">"{lastLog.notes || 'Không có ghi chú'}"</p>
+                                      <div className="bg-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest text-primary shadow-sm border border-pink-50">
+                                        Đã làm buổi {lastLog.session_number} vào {lastLog.completed_date || lastLog.assigned_date || 'N/A'}
+                                      </div>
+                                    </>
+                                  );
+                                }
+                                return <p className="text-[10px] font-bold text-slate-400 italic">Chưa có lịch sử chăm sóc</p>;
+                              })()}
+                              <p className="mt-8 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse">Chọn một buổi trong lịch trình để cập nhật tiếp</p>
                             </div>
                           </div>
-                          <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Giờ hẹn</label>
-                            <div className="relative">
-                              <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <input 
-                                  type="time"
-                                  value={selectedTime}
-                                  onChange={(e) => setSelectedTime(e.target.value)}
-                                  disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
-                                  className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
-                                />
+                        ) : (
+                          <>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Ngày dự kiến</label>
+                                <div className="relative">
+                                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <input 
+                                      type="date"
+                                      value={selectedDate}
+                                      onChange={(e) => setSelectedDate(e.target.value)}
+                                      disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                                      className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                                    />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Giờ hẹn</label>
+                                <div className="relative">
+                                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <input 
+                                      type="time"
+                                      value={selectedTime}
+                                      onChange={(e) => setSelectedTime(e.target.value)}
+                                      disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                                      className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                                    />
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
 
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Trạng thái</label>
-                          <PremiumSelect
-                            value={selectedStatus}
-                            options={[
-                              { value: 'scheduled', label: 'Đã lên lịch', icon: <Clock className="w-4 h-4" /> },
-                              { value: 'completed', label: 'Đã hoàn thành', icon: <CheckCircle2 className="w-4 h-4" /> },
-                              { value: 'cancelled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
-                            ]}
-                            onChange={(value) => setSelectedStatus(value)}
-                            disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
-                          />
-                        </div>
+                            <div>
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Trạng thái</label>
+                              <PremiumSelect
+                                value={selectedStatus}
+                                options={[
+                                  { value: 'scheduled', label: 'Đã lên lịch', icon: <Clock className="w-4 h-4" /> },
+                                  { value: 'completed', label: 'Đã hoàn thành', icon: <CheckCircle2 className="w-4 h-4" /> },
+                                  { value: 'cancelled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
+                                ]}
+                                onChange={(value) => setSelectedStatus(value)}
+                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                              />
+                            </div>
 
-                        <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Nội dung & Tiến độ buổi tập</label>
-                          <textarea 
-                            placeholder="Hôm nay mẹ và bé thế nào? Các bước kỹ thuật đã thực hiện, lưu ý cho buổi sau..."
-                            value={currentNote}
-                            onChange={(e) => setCurrentNote(e.target.value)}
-                            disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
-                            className="w-full h-32 p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50 text-xs shadow-inner"
-                          />
-                        </div>
+                            <div>
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Nội dung & Tiến độ buổi tập</label>
+                              <textarea 
+                                placeholder="Hôm nay mẹ và bé thế nào? Các bước kỹ thuật đã thực hiện, lưu ý cho buổi sau..."
+                                value={currentNote}
+                                onChange={(e) => setCurrentNote(e.target.value)}
+                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                                className="w-full h-32 p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50 text-xs shadow-inner"
+                              />
+                            </div>
+                          </>
+                        )}
 
                         <div className="flex flex-col gap-2">
                           <button 
