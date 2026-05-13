@@ -297,3 +297,23 @@ export async function createSessionLog(data: any) {
   revalidatePath('/dashboard/bookings');
   return { data: session };
 }
+
+export async function updateBooking(id: string, payload: any) {
+  const supabase = (await createClient()) as any;
+  
+  const { data, error } = await supabase
+    .from('bookings')
+    .update(payload)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating booking:', error);
+    return { error: error.message };
+  }
+
+  revalidatePath('/dashboard/bookings');
+  revalidatePath('/dashboard/customers');
+  return { data };
+}
