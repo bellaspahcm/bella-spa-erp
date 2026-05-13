@@ -229,12 +229,28 @@ export async function completeSession(sessionId: string, bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
 
-  // 1. Update session log status
+  // 1. Get current booking to check assigned KTV
+  const { data: bookingData, error: bookingError } = await supabase
+    .from('bookings')
+    .select('assigned_ktv_id')
+    .eq('id', bookingId)
+    .single();
+
+  if (bookingError || !bookingData) {
+    return { error: 'Không tìm thấy thông tin booking liên quan.' };
+  }
+
+  if (!bookingData.assigned_ktv_id) {
+    return { error: 'Chưa phân công KTV chính. Vui lòng phân công KTV trước khi xác nhận hoàn thành buổi.' };
+  }
+
+  // 2. Update session log status with KTV snapshot
   const { error: sessionError } = await supabase
     .from('session_logs')
     .update({ 
       status: 'completed',
-      completed_date: new Date().toISOString()
+      completed_date: new Date().toISOString(),
+      completed_by_ktv_id: bookingData.assigned_ktv_id // Snapshot the main KTV at the time of completion
     } as any)
     .eq('id', sessionId);
 
@@ -243,7 +259,7 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: sessionError.message };
   }
 
-  // 2. Re-calculate actual completed sessions to avoid race conditions
+  // 3. Re-calculate actual completed sessions to avoid race conditions
   const { count, error: countError } = await supabase
     .from('session_logs')
     .select('*', { count: 'exact', head: true })
@@ -255,7 +271,7 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: countError.message };
   }
 
-  // 3. Update booking with actual count
+  // 4. Update booking with actual count
   const { error: updateError } = await supabase
     .from('bookings')
     .update({ completed_sessions: count || 0 } as any)
@@ -266,7 +282,6 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: updateError.message };
   }
 
-  await safeRevalidatePath('/dashboard/sessions');
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath('/dashboard/customers');
   await safeRevalidatePath('/dashboard');
