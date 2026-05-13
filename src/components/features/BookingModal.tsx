@@ -21,6 +21,8 @@ import { getCustomers, createCustomer } from '@/services/customer-actions';
 import { createBooking } from '@/services/booking-actions';
 import { MOCK_SERVICES } from '@/constants/mock-data';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
+import { getDraftBooking } from '@/services/booking-actions';
+import { getUsers } from '@/services/user-actions';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -28,7 +30,7 @@ interface BookingModalProps {
   preselectedCustomer?: any;
 }
 
-export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingModalProps) {
+export default function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingModalProps) {
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<'search' | 'new'>('search');
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +46,9 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
     address: '',
   });
 
+  const [ktvs, setKtvs] = useState<any[]>([]);
+  const [draftBooking, setDraftBooking] = useState<any>(null);
+
   const [formData, setFormData] = useState({
     package_id: '',
     package_name: '',
@@ -51,6 +56,7 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
     deposit_amount: 0,
     total_sessions: 21,
     start_date: new Date().toISOString().split('T')[0],
+    assigned_ktv_id: '',
   });
 
   useEffect(() => {
@@ -67,8 +73,61 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
       setSearchQuery('');
       setNewCustomer({ name_mother: '', phone: '', address: '' });
       fetchCustomers();
+      fetchKtvs();
     }
   }, [isOpen, preselectedCustomer]);
+
+  async function fetchKtvs() {
+    try {
+      const data = await getUsers();
+      setKtvs(data.filter((u: any) => u.role === 'ktv'));
+    } catch (error) {
+      console.error('Error fetching KTVs:', error);
+    }
+  }
+
+  // Load draft booking when customer is selected
+  useEffect(() => {
+    if (selectedCustomer?.id) {
+      const loadDraft = async () => {
+        const draft = await getDraftBooking(selectedCustomer.id);
+        if (draft) {
+          setDraftBooking(draft);
+          // Pre-fill form data if draft exists
+          setFormData(prev => ({
+            ...prev,
+            package_name: draft.package_name || '',
+            full_price: draft.full_price || 0,
+            deposit_amount: draft.deposit_amount || 0,
+            total_sessions: draft.total_sessions || 21,
+            start_date: draft.start_date || prev.start_date,
+            assigned_ktv_id: draft.assigned_ktv_id || '',
+          }));
+          
+          if (draft.package_name) {
+            toast.success(`Đã tự động nạp thông tin gói "${draft.package_name}" và số tiền cọc cũ.`);
+          } else if (draft.deposit_amount > 0) {
+            toast.info(`Khách hàng có số tiền cọc chờ: ${formatNumberWithSeparator(draft.deposit_amount)}đ. Vui lòng chọn gói dịch vụ.`);
+          }
+        } else {
+          setDraftBooking(null);
+          // Clear if no draft (unless it was already set by user selection)
+          if (step === 1) {
+            setFormData({
+              package_id: '',
+              package_name: '',
+              full_price: 0,
+              deposit_amount: 0,
+              total_sessions: 21,
+              start_date: new Date().toISOString().split('T')[0],
+              assigned_ktv_id: '',
+            });
+          }
+        }
+      };
+      loadDraft();
+    }
+  }, [selectedCustomer, step]);
 
   async function fetchCustomers() {
     setIsLoading(true);
@@ -380,8 +439,28 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
                   </div>
                 </div>
 
-                {/* Details Form */}
+                {/* KTV & Date Form */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <User className="w-4 h-4" /> Kỹ thuật viên phụ trách
+                    </label>
+                    <div className="relative">
+                      <select 
+                        value={formData.assigned_ktv_id}
+                        onChange={(e) => setFormData({...formData, assigned_ktv_id: e.target.value})}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm appearance-none"
+                      >
+                        <option value="">Chưa phân công</option>
+                        {ktvs.map(k => (
+                          <option key={k.id} value={k.id}>{k.full_name}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                      </div>
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                       <Calendar className="w-4 h-4" /> Ngày bắt đầu
@@ -391,26 +470,27 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
                       value={formData.start_date}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setFormData({...formData, start_date: e.target.value})}
-                      className="w-full px-3 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" /> Tiền đặt cọc (VNĐ)
-                    </label>
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        placeholder="0"
-                        value={formData.deposit_amount ? formatNumberWithSeparator(formData.deposit_amount) : ''}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^\d]/g, '');
-                          setFormData({...formData, deposit_amount: val ? parseInt(val) : 0});
-                        }}
-                        className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
-                      />
-                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>
-                    </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" /> Tiền đặt cọc bổ sung (VNĐ) {draftBooking?.deposit_amount > 0 && <span className="text-primary normal-case">(Đã cọc trước: {formatNumberWithSeparator(draftBooking.deposit_amount)}đ)</span>}
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      placeholder="0"
+                      value={formData.deposit_amount ? formatNumberWithSeparator(formData.deposit_amount) : ''}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^\d]/g, '');
+                        setFormData({...formData, deposit_amount: val ? parseInt(val) : 0});
+                      }}
+                      className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
+                    />
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>
                   </div>
                 </div>
 
@@ -420,10 +500,14 @@ export function BookingModal({ isOpen, onClose, preselectedCustomer }: BookingMo
                     <span className="font-bold">Tổng tiền gói</span>
                     <span className="font-bold">{formatNumberWithSeparator(formData.full_price)}đ</span>
                   </div>
+                  <div className="flex justify-between items-center mb-4 opacity-70">
+                    <span className="font-bold">Tiền đã đặt cọc</span>
+                    <span className="font-bold">-{formatNumberWithSeparator(formData.deposit_amount)}đ</span>
+                  </div>
                   <div className="flex justify-between items-center pt-4 border-t border-white/10">
                     <span className="font-bold">Cần thanh toán thêm</span>
                     <span className="text-2xl font-bold text-primary">
-                      {formatNumberWithSeparator(formData.full_price - formData.deposit_amount)}đ
+                      {formatNumberWithSeparator(Math.max(0, formData.full_price - formData.deposit_amount))}đ
                     </span>
                   </div>
                 </div>
