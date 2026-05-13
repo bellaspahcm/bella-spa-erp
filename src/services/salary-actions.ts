@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+
 import { ensure2026 } from '@/lib/utils';
 
 export async function getSalaryData() {
@@ -16,6 +16,7 @@ export async function getSalaryData() {
   ];
 
   try {
+    const { createClient } = await import('@/lib/supabase-server');
     const supabase = (await createClient()) as any;
 
     // Fetch KTVs
@@ -75,6 +76,7 @@ export async function getSalaryData() {
 }
 
 export async function approveSalary(ktvId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { error } = await supabase
@@ -92,6 +94,7 @@ export async function approveSalary(ktvId: string) {
 }
 
 export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: number, kpiBonus: number, deductions: number, advances: number }) {
+  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const monthYear = '2026-05-01'; // Default demo month
 
