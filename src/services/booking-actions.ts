@@ -329,7 +329,7 @@ export async function getSessionsWithDetails() {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, customers(id, name_mother, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes)')
+    .select('*, customers(id, name_mother, name_baby, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -382,6 +382,7 @@ export async function getCalendarSessions() {
         *,
         customers (
           name_mother,
+          name_baby,
           address
         ),
         assigned_ktv:users!bookings_assigned_ktv_id_fkey (

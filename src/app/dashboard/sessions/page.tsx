@@ -271,7 +271,8 @@ export default function SessionsPage() {
   useEffect(() => {
     if (selectedSessionLog) {
       setCurrentNote(selectedSessionLog.notes || '');
-      setSelectedDate(selectedSessionLog.assigned_date || '');
+      // DEFAULT TO TODAY IF NO ASSIGNED DATE
+      setSelectedDate(selectedSessionLog.assigned_date || new Date().toISOString().split('T')[0]);
       setSelectedTime(selectedSessionLog.assigned_time || '');
       setSelectedStatus(selectedSessionLog.status || 'scheduled');
     }
@@ -621,7 +622,7 @@ export default function SessionsPage() {
                 <div className="flex-1 min-w-0 relative z-10">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h3 className="text-xl font-black text-slate-900 truncate tracking-tight uppercase">
-                      {booking.customers?.name_mother}
+                      {booking.customers?.name_mother} {booking.customers?.name_baby ? `& ${booking.customers.name_baby}` : ''}
                     </h3>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
                       {booking.booking_number}
@@ -759,7 +760,7 @@ export default function SessionsPage() {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleReusePackage(booking.id, booking.customers?.name_mother || 'Khách hàng');
+                          handleReusePackage(booking.id, `${booking.customers?.name_mother || ''}${booking.customers?.name_baby ? ` & ${booking.customers.name_baby}` : ''}` || 'Khách hàng');
                         }}
                         disabled={isReusingId === booking.id}
                         className="w-full flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-900 text-white font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95 justify-center"
@@ -800,7 +801,9 @@ export default function SessionsPage() {
                     <Flower2 className="w-8 h-8" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Thẻ liệu trình: {selectedBooking.customers?.name_mother}</h2>
+                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                      Thẻ liệu trình: {selectedBooking.customers?.name_mother} {selectedBooking.customers?.name_baby ? `& ${selectedBooking.customers.name_baby}` : ''}
+                    </h2>
                     <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">{selectedBooking.package_name} • Tiến độ: {selectedBooking.completed_sessions}/{selectedBooking.total_sessions || 21}</p>
                   </div>
                 </div>
@@ -1004,7 +1007,7 @@ export default function SessionsPage() {
 
                       {selectedBooking.completed_sessions >= (selectedBooking.total_sessions || 21) && (
                          <button 
-                         onClick={() => handleReusePackage(selectedBooking.id, selectedBooking.customers?.name_mother || 'Khách hàng')}
+                         onClick={() => handleReusePackage(selectedBooking.id, `${selectedBooking.customers?.name_mother || ''}${selectedBooking.customers?.name_baby ? ` & ${selectedBooking.customers.name_baby}` : ''}` || 'Khách hàng')}
                          disabled={isReusingId === selectedBooking.id}
                          className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[9px] shadow-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all relative z-10"
                        >
