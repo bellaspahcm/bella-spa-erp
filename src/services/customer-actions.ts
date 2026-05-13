@@ -121,7 +121,7 @@ export async function createCustomer(formData: any) {
 
     const { createBooking } = await import('./booking-actions');
     
-    await createBooking({
+    const bookingResult = await createBooking({
       customer_id: customer.id,
       package_id: packageId,
       package_name: formData.package_name || 'Gói liệu trình',
@@ -130,6 +130,10 @@ export async function createCustomer(formData: any) {
       total_sessions: serviceDetails?.sessions || 21,
       start_date: validatedData.dob_expected || new Date().toISOString().split('T')[0],
     });
+    
+    if (bookingResult && bookingResult.error) {
+      return { error: `Đã lưu khách hàng nhưng lỗi lưu gói: ${bookingResult.error}` };
+    }
   }
 
   await safeRevalidatePath('/dashboard/customers');
@@ -263,15 +267,19 @@ export async function updateCustomer(id: string, formData: any) {
     
     if (latestBookings && latestBookings.length > 0) {
       // Update existing booking
-      await updateBooking(latestBookings[0].id, {
+      const bookingResult = await updateBooking(latestBookings[0].id, {
         package_id: packageId,
         package_name: formData.package_name,
         full_price: fullPrice,
         deposit_amount: deposit,
       });
+      if (bookingResult && bookingResult.error) {
+        console.error('Failed to update booking:', bookingResult.error);
+        return { error: `Cập nhật gói thất bại: ${bookingResult.error}` };
+      }
     } else {
       // Create new booking if none exists
-      await createBooking({
+      const bookingResult = await createBooking({
         customer_id: id,
         package_id: packageId,
         package_name: formData.package_name || 'Gói liệu trình',
@@ -280,6 +288,10 @@ export async function updateCustomer(id: string, formData: any) {
         total_sessions: serviceDetails?.sessions || 21,
         start_date: validatedData.dob_expected || new Date().toISOString().split('T')[0],
       });
+      if (bookingResult && bookingResult.error) {
+        console.error('Failed to create booking:', bookingResult.error);
+        return { error: `Tạo gói mới thất bại: ${bookingResult.error}` };
+      }
     }
   }
 
