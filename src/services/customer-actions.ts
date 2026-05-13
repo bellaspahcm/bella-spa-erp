@@ -179,12 +179,14 @@ export async function getCustomerById(id: string) {
 
     // Map database structure to UI structure
     const latestBooking = bookings && bookings.length > 0 ? bookings[0] : null;
+    const isFullyPaid = latestBooking && (latestBooking.deposit_amount || 0) >= (latestBooking.full_price || 0);
     
     return {
       ...customer,
       dob_baby: ensure2026(customer.dob_baby),
       dob_expected: ensure2026(customer.dob_expected),
       status: latestBooking?.status || 'lead',
+      is_fully_paid: isFullyPaid,
       deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
       package_name: resolvePackageName(latestBooking),
       start_date: ensure2026(latestBooking?.start_date || customer.dob_expected),
