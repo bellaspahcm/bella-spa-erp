@@ -486,6 +486,7 @@ export default function CustomerDetailPage() {
       <BookingModal 
         isOpen={isBookingModalOpen} 
         onClose={() => setIsBookingModalOpen(false)}
+        onSuccess={() => { setIsBookingModalOpen(false); loadData(); }}
         preselectedCustomer={customer}
       />
     </div>
