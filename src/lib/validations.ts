@@ -8,6 +8,8 @@ export const customerSchema = z.object({
   notes: z.string().optional(),
   dob_baby: z.string().optional(),
   dob_expected: z.string().optional(),
+  package_name: z.string().optional(),
+  deposit_amount: z.string().or(z.number()).optional(),
 });
 
 export const bookingSchema = z.object({

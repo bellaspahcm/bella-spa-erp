@@ -337,11 +337,26 @@ export async function updateBooking(id: string, payload: any) {
     .single();
 
   if (error) {
+    // Fallback: If it's a "column not found" error for package_name, try without it
+    if (error.message?.includes('package_name')) {
+      const { package_name, ...retryPayload } = payload;
+      const { data: retryData, error: retryError } = await supabase
+        .from('bookings')
+        .update(retryPayload)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (retryError) {
+        console.error('Error updating booking (retry):', retryError);
+        return { error: retryError.message };
+      }
+      return { data: retryData };
+    }
+
     console.error('Error updating booking:', error);
     return { error: error.message };
   }
-
-
 
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath('/dashboard/customers');

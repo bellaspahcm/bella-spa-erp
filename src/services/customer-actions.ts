@@ -112,15 +112,22 @@ export async function createCustomer(formData: any) {
 
   // 2. If deposit or package provided, create a booking via the unified createBooking action
   if (formData.deposit_amount || formData.package_name) {
-    const deposit = parseInt(formData.deposit_amount?.toString().replace(/,/g, '') || '0');
+    const deposit = parseInt(formData.deposit_amount?.toString().replace(/[^\d]/g, '') || '0');
+    
+    // Find service details from MOCK_SERVICES for data integrity
+    const serviceDetails = MOCK_SERVICES.find(s => s.name === formData.package_name);
+    const fullPrice = serviceDetails ? parseInt(serviceDetails.price.replace(/[^\d]/g, '')) : 0;
+    const packageId = serviceDetails?.id || null;
+
     const { createBooking } = await import('./booking-actions');
     
     await createBooking({
       customer_id: customer.id,
+      package_id: packageId,
       package_name: formData.package_name || 'Gói liệu trình',
-      full_price: 0, // Should probably be passed from UI, but using 0 for now
+      full_price: fullPrice,
       deposit_amount: deposit,
-      total_sessions: 21,
+      total_sessions: serviceDetails?.sessions || 21,
       start_date: validatedData.dob_expected || new Date().toISOString().split('T')[0],
     });
   }
@@ -237,8 +244,13 @@ export async function updateCustomer(id: string, formData: any) {
 
   // 3. Update related booking if deposit or package provided
   if (formData.deposit_amount || formData.package_name) {
-    const deposit = parseInt(formData.deposit_amount?.toString().replace(/,/g, '') || '0');
+    const deposit = parseInt(formData.deposit_amount?.toString().replace(/[^\d]/g, '') || '0');
     
+    // Find service details from MOCK_SERVICES for data integrity
+    const serviceDetails = MOCK_SERVICES.find(s => s.name === formData.package_name);
+    const fullPrice = serviceDetails ? parseInt(serviceDetails.price.replace(/[^\d]/g, '')) : 0;
+    const packageId = serviceDetails?.id || null;
+
     // Find the latest booking to update
     const { data: latestBookings } = await supabase
       .from('bookings')
@@ -252,17 +264,20 @@ export async function updateCustomer(id: string, formData: any) {
     if (latestBookings && latestBookings.length > 0) {
       // Update existing booking
       await updateBooking(latestBookings[0].id, {
+        package_id: packageId,
         package_name: formData.package_name,
+        full_price: fullPrice,
         deposit_amount: deposit,
       });
     } else {
       // Create new booking if none exists
       await createBooking({
         customer_id: id,
+        package_id: packageId,
         package_name: formData.package_name || 'Gói liệu trình',
-        full_price: 0,
+        full_price: fullPrice,
         deposit_amount: deposit,
-        total_sessions: 21,
+        total_sessions: serviceDetails?.sessions || 21,
         start_date: validatedData.dob_expected || new Date().toISOString().split('T')[0],
       });
     }
