@@ -204,9 +204,15 @@ export default function CustomerDetailPage() {
               <h1 className="text-2xl font-black text-slate-900 mb-2">{customer.name_mother}</h1>
               <span className={cn(
                 "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8",
-                customer.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                customer.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 
+                customer.status === 'completed' ? 'bg-blue-50 text-blue-600' :
+                customer.status === 'deposit_pending' ? 'bg-amber-50 text-amber-600' : 
+                'bg-slate-50 text-slate-500'
               )}>
-                {customer.status === 'active' ? 'Đang chăm sóc' : 'Chờ sinh (Đã cọc)'}
+                {customer.status === 'active' ? 'Đang chăm sóc' : 
+                 customer.status === 'completed' ? 'Đã hoàn tất' :
+                 customer.status === 'deposit_pending' ? 'Chờ sinh (Đã cọc)' : 
+                 'Khách mới (Lead)'}
               </span>
 
               <div className="w-full space-y-4">
