@@ -279,6 +279,17 @@ export async function updateSessionLog(id: string, payload: any) {
   if (updates.assigned_time === "") updates.assigned_time = null;
   if (updates.notes === "") updates.notes = null;
 
+  // 1. Fetch the log to get booking_id if not provided
+  const { data: logData, error: logError } = await supabase
+    .from('session_logs')
+    .select('booking_id')
+    .eq('id', id)
+    .single();
+
+  if (logError) return { error: logError.message };
+  const bookingId = logData.booking_id;
+
+  // 2. Update the log
   const { data, error } = await supabase
     .from('session_logs')
     .update(updates)
@@ -291,7 +302,22 @@ export async function updateSessionLog(id: string, payload: any) {
     return { error: error.message };
   }
 
+  // 3. Recalculate and sync completed_sessions for the booking
+  const { count, error: countError } = await supabase
+    .from('session_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('booking_id', bookingId)
+    .eq('status', 'completed');
+
+  if (!countError) {
+    await supabase
+      .from('bookings')
+      .update({ completed_sessions: count || 0 } as any)
+      .eq('id', bookingId);
+  }
+
   await safeRevalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard/sessions');
   return { data };
 }
 

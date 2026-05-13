@@ -250,13 +250,14 @@ export default function SessionsPage() {
     }
   }, [selectedSessionLog]);
 
-  const handleSaveFullUpdate = async () => {
+  const handleSaveFullUpdate = async (forcedStatus?: string) => {
     if (!selectedSessionLog || !selectedBooking) return;
+    
+    const finalStatus = forcedStatus || selectedStatus;
     
     if (userRole !== 'ADMIN') {
       setToastMessage('Chỉ Admin mới có quyền sửa dữ liệu này!');
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
       return;
     }
 
@@ -266,8 +267,8 @@ export default function SessionsPage() {
         notes: currentNote || null,
         assigned_date: selectedDate || null,
         assigned_time: selectedTime || null,
-        status: selectedStatus,
-        completed_date: selectedStatus === 'completed' ? (selectedSessionLog.completed_date || new Date().toISOString()) : null
+        status: finalStatus,
+        completed_date: finalStatus === 'completed' ? (selectedSessionLog.completed_date || new Date().toISOString()) : null
       };
 
       const result = await updateSessionLog(selectedSessionLog.id, updates);
@@ -281,9 +282,12 @@ export default function SessionsPage() {
         // 2. Update the currently selected session state
         setSelectedSessionLog((prev: any) => ({ ...prev, ...updates }));
 
+        // Update selectedStatus state to keep UI in sync
+        setSelectedStatus(finalStatus);
+        
         // 3. Update local state for booking count if status changed (for demo consistency)
-        if (selectedSessionLog.status !== selectedStatus) {
-          const diff = selectedStatus === 'completed' ? 1 : (selectedSessionLog.status === 'completed' ? -1 : 0);
+        if (selectedSessionLog.status !== finalStatus) {
+          const diff = finalStatus === 'completed' ? 1 : (selectedSessionLog.status === 'completed' ? -1 : 0);
           if (diff !== 0) {
             const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) + diff);
             setLocalBookingUpdates(prev => ({ ...prev, [selectedBooking.id]: newCount }));
@@ -753,11 +757,7 @@ export default function SessionsPage() {
                           {userRole === 'ADMIN' && selectedSessionLog && selectedSessionLog.status !== 'scheduled' && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
                               <button 
-                                onClick={() => {
-                                  setSelectedStatus('scheduled');
-                                  // We'll trigger the save immediately for better UX
-                                  setTimeout(handleSaveFullUpdate, 100);
-                                }}
+                                onClick={() => handleSaveFullUpdate('scheduled')}
                                 className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
                               >
                                 <RotateCcw className="w-3.5 h-3.5" /> Khôi phục buổi
@@ -765,8 +765,7 @@ export default function SessionsPage() {
                               <button 
                                 onClick={() => {
                                   if (window.confirm('Bạn có chắc muốn hủy buổi tập này?')) {
-                                    setSelectedStatus('canceled');
-                                    setTimeout(handleSaveFullUpdate, 100);
+                                    handleSaveFullUpdate('canceled');
                                   }
                                 }}
                                 className="flex-1 bg-rose-50 text-rose-600 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
