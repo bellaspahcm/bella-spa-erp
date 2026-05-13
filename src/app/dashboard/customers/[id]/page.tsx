@@ -24,9 +24,10 @@ import { twMerge } from 'tailwind-merge';
 
 import { getCustomerById } from '@/services/customer-actions';
 import { completeSession } from '@/services/booking-actions';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { BookingModal } from '@/components/features/BookingModal';
+import { createClient } from '@/lib/supabase-client';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -83,43 +84,62 @@ export default function CustomerDetailPage() {
     }
   };
 
-  useEffect(() => {
-    async function loadData() {
-      if (!id) return;
-      try {
-        const data = await getCustomerById(id);
-        if (data) {
-          // Map database structure to UI structure
-          setCustomer({
-            ...data,
-            baby: { 
-              name: data.name_baby || 'Chưa có', 
-              dob: data.dob_baby || data.dob_expected || 'Chưa cập nhật',
-              gender: 'Chưa xác định'
-            },
-            booking: {
-              package: data.package_name,
-              total_sessions: data.bookings?.[0]?.total_sessions || 0,
-              completed_sessions: data.bookings?.[0]?.completed_sessions || 0,
-              start_date: data.bookings?.[0]?.start_date || (data.status === 'deposit' ? 'Dự kiến sau sinh' : 'Chưa có'),
-              deposit: data.deposit_amount || '0đ',
-              full_price: data.bookings?.[0]?.full_price || 0,
-              remaining: data.bookings?.[0]?.full_price ? `${data.bookings[0].full_price.toLocaleString()}đ` : '0đ'
-            },
-            sessions: data.sessions || []
-          });
-        } else {
-          toast.error(`Không tìm thấy dữ liệu cho ID: ${id}`);
-        }
-      } catch (error) {
-        console.error('Error loading customer:', error);
-        toast.error('Lỗi khi tải dữ liệu');
-      } finally {
-        setLoading(false);
+  const loadData = useCallback(async () => {
+    if (!id) return;
+    try {
+      const data = await getCustomerById(id);
+      if (data) {
+        // Map database structure to UI structure
+        setCustomer({
+          ...data,
+          baby: { 
+            name: data.name_baby || 'Chưa có', 
+            dob: data.dob_baby || data.dob_expected || 'Chưa cập nhật',
+            gender: 'Chưa xác định'
+          },
+          booking: {
+            package: data.package_name,
+            total_sessions: data.bookings?.[0]?.total_sessions || 0,
+            completed_sessions: data.bookings?.[0]?.completed_sessions || 0,
+            start_date: data.bookings?.[0]?.start_date || (data.status === 'deposit' ? 'Dự kiến sau sinh' : 'Chưa có'),
+            deposit: data.deposit_amount || '0đ',
+            full_price: data.bookings?.[0]?.full_price || 0,
+            remaining: data.bookings?.[0]?.full_price ? `${(data.bookings[0].full_price - (data.bookings[0].deposit_amount || 0)).toLocaleString()}đ` : '0đ'
+          },
+          sessions: data.sessions || []
+        });
+      } else {
+        toast.error(`Không tìm thấy dữ liệu cho ID: ${id}`);
       }
+    } catch (error) {
+      console.error('Error loading customer:', error);
+      toast.error('Lỗi khi tải dữ liệu');
+    } finally {
+      setLoading(false);
     }
-    loadData();
   }, [id]);
+
+  useEffect(() => {
+    loadData();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`customer-detail-${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `customer_id=eq.${id}` }, () => {
+        loadData();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
+        // We can't easily filter session_logs by customer_id directly in the subscription without joins, 
+        // but we can refresh when anything changes or use booking_id if we want to be more specific.
+        // For simplicity and correctness, we refresh the whole customer state.
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, loadData]);
 
   if (loading) {
     return (
@@ -277,7 +297,7 @@ export default function CustomerDetailPage() {
                 <div className="flex gap-4">
                   <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
                     <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Tổng cộng</p>
-                    <p className="font-black text-lg text-white">{(customer.booking.full_price || 15500000).toLocaleString()}đ</p>
+                    <p className="font-black text-lg text-white">{(customer.booking.full_price || 0).toLocaleString()}đ</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
                     <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
