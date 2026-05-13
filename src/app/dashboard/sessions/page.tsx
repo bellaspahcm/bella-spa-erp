@@ -160,9 +160,8 @@ export default function SessionsPage() {
     if (query) {
       const q = query.toLowerCase();
       result = result.filter(s => 
-        (s.customers?.name_mother?.toLowerCase() || '').includes(q) || 
-        (s.customer_name?.toLowerCase() || '').includes(q) ||
-        (s.booking_number?.toLowerCase() || '').includes(q)
+        s.customers?.name_mother?.toLowerCase().includes(q) || 
+        s.booking_number?.toLowerCase().includes(q)
       );
     }
     
@@ -595,7 +594,7 @@ export default function SessionsPage() {
                 <div className="flex-1 min-w-0 relative z-10">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h3 className="text-xl font-black text-slate-900 truncate tracking-tight uppercase">
-                      {booking.customers?.name_mother || booking.customer_name || 'Khách hàng ẩn danh'}
+                      {booking.customers?.name_mother}
                     </h3>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
                       {booking.booking_number}
@@ -612,10 +611,6 @@ export default function SessionsPage() {
                     <div className="flex items-center gap-2.5">
                       <Clock className="w-4 h-4 text-primary/60" />
                       Tiến độ: <span className="text-slate-900 font-black">{booking.completed_sessions || 0}/{booking.total_sessions || 21} buổi</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Flower2 className="w-4 h-4 text-primary/60" />
-                      Gói: <span className="text-slate-900 font-black">{booking.package_name || 'Đang cập nhật'}</span>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <Calendar className="w-4 h-4 text-primary/60" />
@@ -758,7 +753,7 @@ export default function SessionsPage() {
                     <Flower2 className="w-8 h-8" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Thẻ liệu trình: {selectedBooking.customers?.name_mother || selectedBooking.customer_name || 'Khách hàng'}</h2>
+                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Thẻ liệu trình: {selectedBooking.customers?.name_mother}</h2>
                     <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">{selectedBooking.package_name} • Tiến độ: {selectedBooking.completed_sessions}/{selectedBooking.total_sessions || 21}</p>
                   </div>
                 </div>

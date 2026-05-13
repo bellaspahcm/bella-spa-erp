@@ -218,11 +218,27 @@ export async function getSessionsWithDetails() {
     return DEMO_BOOKINGS;
   }
   
+  const { MOCK_CUSTOMERS } = await import('@/constants/mock-data');
+  
   return (data || []).map((b: any) => {
     const sortedLogs = (b.session_logs || []).sort((a: any, b2: any) => (a.session_number || 0) - (b2.session_number || 0));
     const nextSession = sortedLogs.find((s: any) => s.status === 'scheduled');
+    
+    // Fallback for customer data if join fails
+    let customerData = b.customers;
+    if (!customerData && b.customer_id) {
+      const mockCustomer = MOCK_CUSTOMERS.find(c => c.id === b.customer_id);
+      if (mockCustomer) {
+        customerData = {
+          name_mother: mockCustomer.name_mother,
+          phone: mockCustomer.phone
+        };
+      }
+    }
+
     return {
       ...b,
+      customers: customerData || { name_mother: 'Khách hàng Bella Spa', phone: '---' },
       next_session_date: nextSession?.assigned_date || null,
       start_date: ensure2026(b.start_date),
       end_date: ensure2026(b.end_date),
