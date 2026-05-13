@@ -350,6 +350,17 @@ export default function CustomersPage() {
                 <div className="flex items-center gap-2">
                   <Baby className="w-4 h-4 text-slate-400" />
                   {customer.status === 'deposit' ? `Dự sinh: ${customer.dob_expected}` : `Bé: ${customer.name_baby}`}
+                  {customer.gender_baby && (
+                    <span className={cn(
+                      "ml-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase",
+                      customer.gender_baby === 'boy' ? "bg-blue-50 text-blue-500" : 
+                      customer.gender_baby === 'girl' ? "bg-rose-50 text-rose-500" : 
+                      "bg-slate-50 text-slate-500"
+                    )}>
+                      {customer.gender_baby === 'boy' ? "Bé Trai" : 
+                       customer.gender_baby === 'girl' ? "Bé Gái" : "N/A"}
+                    </span>
+                  )}
                 </div>
                 {customer.package_name && (
                   <div className="flex items-center gap-2 text-rose-500/80">

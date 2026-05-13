@@ -395,7 +395,7 @@ export default function CustomerDetailPage() {
             {[
               { label: 'Tiến độ', value: activeBooking ? `${activeBooking.completed_sessions || 0}/${activeBooking.total_sessions || 0}` : '0/0', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
               { 
-                label: activeBooking && activeBooking.deposit_amount >= activeBooking.full_price ? 'Đã thanh toán' : 'Đã cọc', 
+                label: activeBooking && activeBooking.deposit_amount >= activeBooking.full_price ? 'Đã thanh toán thành công' : 'Đã cọc', 
                 value: activeBooking ? formatNumberWithSeparator(activeBooking.deposit_amount || 0) + 'đ' : '0đ', 
                 icon: DollarSign, 
                 color: 'text-primary', 
@@ -443,30 +443,28 @@ export default function CustomerDetailPage() {
                       <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Tổng cộng</p>
                       <p className="font-black text-lg text-white">
                         {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
-                      </p>
                     </div>
-                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 relative group/pay">
-                      <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
-                      <div className="flex items-center gap-2">
-                        <p className="font-black text-lg text-rose-200">
+                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 flex items-center gap-4">
+                      <div>
+                        <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
+                        <p className="font-black text-xl text-white">
                           {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0))) + 'đ'}
                         </p>
-                        {!isDepositOnly && (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0) > 0 && (
-                          <button 
-                            onClick={() => {
-                              setPaymentData({
-                                ...paymentData,
-                                amount: (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0)
-                              });
-                              setIsPaymentModalOpen(true);
-                            }}
-                            className="p-1.5 bg-white text-rose-500 rounded-lg hover:scale-110 transition-transform shadow-lg"
-                            title="Thanh toán nốt"
-                          >
-                            <DollarIcon className="w-3.5 h-3.5" />
-                          </button>
-                        )}
                       </div>
+                      {!isDepositOnly && (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0) > 0 && (
+                        <button 
+                          onClick={() => {
+                            setPaymentData({
+                              ...paymentData,
+                              amount: (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0)
+                            });
+                            setIsPaymentModalOpen(true);
+                          }}
+                          className="bg-white text-rose-500 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-lg active:scale-95"
+                        >
+                          Thanh toán nốt
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

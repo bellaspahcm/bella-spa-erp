@@ -778,9 +778,9 @@ export async function recordRemainingPayment(params: {
 
     const newTotalPaid = (booking.deposit_amount || 0) + params.amount;
     
-    // Determine new status
+    // Determine new status - If paid in full, change from deposit_pending to booked/active
     let newStatus = booking.status;
-    if (newTotalPaid >= booking.full_price && booking.status === 'deposit_pending') {
+    if (newTotalPaid >= booking.full_price && (booking.status === 'deposit_pending' || booking.status === 'deposit')) {
       newStatus = 'booked';
     }
 
