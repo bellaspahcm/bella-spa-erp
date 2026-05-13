@@ -746,7 +746,7 @@ export default function SessionsPage() {
 
                         <div className="flex flex-col gap-2">
                           <button 
-                            onClick={handleSaveFullUpdate}
+                            onClick={() => handleSaveFullUpdate()}
                             disabled={isSavingNote || !selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
                             className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
                           >
