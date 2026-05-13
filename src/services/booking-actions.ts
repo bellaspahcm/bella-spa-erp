@@ -223,6 +223,7 @@ export async function getSessionsWithDetails() {
     const nextSession = sortedLogs.find((s: any) => s.status === 'scheduled');
     return {
       ...b,
+      package_name: resolvePackageName(b),
       next_session_date: nextSession?.assigned_date || null,
       start_date: ensure2026(b.start_date),
       end_date: ensure2026(b.end_date),
