@@ -344,7 +344,13 @@ export default function CustomerDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { label: 'Tiến độ', value: activeBooking ? `${activeBooking.completed_sessions || 0}/${activeBooking.total_sessions || 0}` : '0/0', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-              { label: 'Đã cọc', value: activeBooking ? formatNumberWithSeparator(activeBooking.deposit_amount || 0) + 'đ' : '0đ', icon: DollarSign, color: 'text-primary', bg: 'bg-rose-50' },
+              { 
+                label: activeBooking && activeBooking.deposit_amount >= activeBooking.full_price ? 'Đã thanh toán' : 'Đã cọc', 
+                value: activeBooking ? formatNumberWithSeparator(activeBooking.deposit_amount || 0) + 'đ' : '0đ', 
+                icon: DollarSign, 
+                color: 'text-primary', 
+                bg: 'bg-rose-50' 
+              },
               { label: 'Ngày bắt đầu', value: activeBooking?.start_date || 'Chưa có', icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
             ].map((stat, i) => (
               <div 
