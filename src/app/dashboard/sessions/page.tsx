@@ -726,7 +726,7 @@ export default function SessionsPage() {
                             options={[
                               { value: 'scheduled', label: 'Đã lên lịch', icon: <Clock className="w-4 h-4" /> },
                               { value: 'completed', label: 'Đã hoàn thành', icon: <CheckCircle2 className="w-4 h-4" /> },
-                              { value: 'canceled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
+                              { value: 'cancelled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
                             ]}
                             onChange={(value) => setSelectedStatus(value)}
                             disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
@@ -765,7 +765,7 @@ export default function SessionsPage() {
                               <button 
                                 onClick={() => {
                                   if (window.confirm('Bạn có chắc muốn hủy buổi tập này?')) {
-                                    handleSaveFullUpdate('canceled');
+                                    handleSaveFullUpdate('cancelled');
                                   }
                                 }}
                                 className="flex-1 bg-rose-50 text-rose-600 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
@@ -908,7 +908,7 @@ export default function SessionsPage() {
                                 className={cn(
                                   "aspect-square rounded-2xl flex flex-col items-center justify-center border transition-all cursor-pointer group relative overflow-hidden",
                                   status === 'completed' ? 'bg-emerald-500 border-emerald-600 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]' :
-                                  status === 'canceled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm' :
+                                  status === 'cancelled' ? 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100 shadow-sm' :
                                   isNextToRun ? 'bg-amber-50 border-amber-300 text-amber-600 ring-4 ring-amber-50 shadow-lg' :
                                   'bg-slate-50/50 border-slate-100 text-slate-300 hover:bg-slate-100',
                                   selectedSessionLog?.id === log.id && "ring-2 ring-primary border-primary/50 shadow-inner",
