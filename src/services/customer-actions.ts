@@ -125,6 +125,7 @@ export async function getCustomerById(id: string) {
       deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
       package_name: latestBooking?.package_name || 'Chưa đăng ký',
       start_date: ensure2026(latestBooking?.start_date || customer.dob_expected),
+      bookings: bookings || [], // Include bookings array for UI access
       sessions: (latestBooking?.session_logs || []).map((s: any) => ({
         ...s,
         assigned_date: ensure2026(s.assigned_date),
