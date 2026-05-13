@@ -210,11 +210,16 @@ export async function getSessionsWithDetails() {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, customers(id, name_mother, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes, type)')
-    .order('updated_at', { ascending: false });
+    .select('*, customers(id, name_mother, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes)')
+    .order('created_at', { ascending: false });
 
-  if (error || !data || data.length === 0) {
+  if (error) {
     console.error('Error fetching sessions with details:', error);
+    return []; // Return empty array on error instead of demo data to avoid confusion
+  }
+  
+  if (!data || data.length === 0) {
+    // If truly empty, then we can return demo data for first-time users or empty state
     return DEMO_BOOKINGS;
   }
   
