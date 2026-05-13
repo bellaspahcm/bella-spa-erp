@@ -154,3 +154,23 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 20px 30px -10px rgba(157, 23, 77, 0.08);
   border-color: rgba(157, 23, 77, 0.2);
 }
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(157, 23, 77, 0.02);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(157, 23, 77, 0.1);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 23, 77, 0.2);
+}
