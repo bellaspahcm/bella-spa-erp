@@ -564,8 +564,6 @@ export default function DashboardPage() {
             })()}
           </div>
         </motion.div>
-
-        </motion.div>
         
         {/* Sidebar Analytics Stack */}
         <div className="lg:col-span-1 space-y-8">
