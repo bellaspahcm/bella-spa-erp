@@ -451,6 +451,9 @@ export default function SessionsPage() {
             const isUpdating = updatingId === booking.id;
             const isFullyCompleted = (booking.completed_sessions || 0) >= (booking.total_sessions || 21);
             const alreadyDoneToday = isUpdatedToday(booking);
+            const today = new Date().toISOString().split('T')[0];
+            const isScheduledForToday = booking.next_session_date === today;
+            const canUpdate = isScheduledForToday || userRole === 'ADMIN';
 
             return (
               <motion.div 
@@ -542,12 +545,18 @@ export default function SessionsPage() {
                             setTimeout(() => setShowToast(false), 3000);
                             return;
                           }
+                          if (!isScheduledForToday && userRole !== 'ADMIN') {
+                            setToastMessage(`Buổi này được hẹn vào ngày ${booking.next_session_date || 'chưa xác định'}. Chỉ có thể cập nhật vào đúng ngày hẹn!`);
+                            setShowToast(true);
+                            setTimeout(() => setShowToast(false), 3000);
+                            return;
+                          }
                           handleUpdateProgress(booking.id); 
                         }}
                         disabled={isUpdating}
                         className={cn(
                           "w-full flex items-center gap-3 px-8 py-4 rounded-2xl font-black transition-all text-[10px] uppercase tracking-widest justify-center shadow-lg active:scale-95",
-                          alreadyDoneToday && userRole !== 'ADMIN' 
+                          (alreadyDoneToday || (!isScheduledForToday && userRole !== 'ADMIN')) 
                             ? "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed" 
                             : "bg-primary text-white shadow-pink-100 hover:bg-primary-hover"
                         )}
@@ -556,6 +565,8 @@ export default function SessionsPage() {
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : alreadyDoneToday && userRole !== 'ADMIN' ? (
                           <><CheckCircle2 className="w-4 h-4" /> Đã xong hôm nay</>
+                        ) : !isScheduledForToday && userRole !== 'ADMIN' ? (
+                          <><Clock className="w-4 h-4" /> Chưa đến ngày ({booking.next_session_date || '---'})</>
                         ) : (
                           <><ChevronRight className="w-4 h-4" /> Cập nhật buổi {(booking.completed_sessions || 0) + 1}</>
                         )}
