@@ -286,12 +286,12 @@ export async function updateCustomer(id: string, formData: any) {
     .update({
       phone: validatedData.phone,
       name_mother: validatedData.name_mother,
-      name_baby: validatedData.name_baby,
-      address: validatedData.address,
-      notes: validatedData.notes,
-      dob_baby: validatedData.dob_baby,
-      dob_expected: validatedData.dob_expected,
-      gender_baby: validatedData.gender_baby,
+      name_baby: validatedData.name_baby || null,
+      address: validatedData.address || null,
+      notes: validatedData.notes || null,
+      dob_baby: validatedData.dob_baby || null,
+      dob_expected: validatedData.dob_expected || null,
+      gender_baby: validatedData.gender_baby || 'unknown',
       updated_at: new Date().toISOString()
     })
     .eq('id', id)
@@ -309,11 +309,11 @@ export async function updateCustomer(id: string, formData: any) {
       .update({
         phone: validatedData.phone,
         name_mother: validatedData.name_mother,
-        name_baby: validatedData.name_baby,
-        address: validatedData.address,
-        notes: validatedData.notes,
-        dob_baby: validatedData.dob_baby,
-        dob_expected: validatedData.dob_expected,
+        name_baby: validatedData.name_baby || null,
+        address: validatedData.address || null,
+        notes: validatedData.notes || null,
+        dob_baby: validatedData.dob_baby || null,
+        dob_expected: validatedData.dob_expected || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
