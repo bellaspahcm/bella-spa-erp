@@ -733,3 +733,71 @@ async function finalizeReuse(newBooking: any, total: number, supabase: any) {
   await safeRevalidatePath(`/dashboard/customers/${newBooking.customer_id}`);
   return { data: newBooking };
 }
+
+/**
+ * Records a remaining payment for a booking
+ */
+export async function recordRemainingPayment(params: {
+  booking_id: string;
+  customer_id: string;
+  amount: number;
+  payment_method: string;
+  notes?: string;
+  receipt_url?: string;
+}) {
+  try {
+    // 1. Record the revenue
+    const { error: revError } = await supabase
+      .from('revenue')
+      .insert([{
+        booking_id: params.booking_id,
+        amount: params.amount,
+        revenue_type: 'remaining_payment',
+        payment_method: params.payment_method,
+        received_date: new Date().toISOString().split('T')[0],
+        status: 'confirmed',
+        notes: params.notes || `Thanh toán nốt phần còn lại.`,
+        receipt_url: params.receipt_url || null
+      }]);
+
+    if (revError) {
+      console.error('Error recording revenue:', revError);
+    }
+
+    // 2. Update the booking's deposit_amount (summing it up)
+    const { data: booking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('deposit_amount, full_price, status')
+      .eq('id', params.booking_id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const newTotalPaid = (booking.deposit_amount || 0) + params.amount;
+    
+    // Determine new status
+    let newStatus = booking.status;
+    if (newTotalPaid >= booking.full_price && booking.status === 'deposit_pending') {
+      newStatus = 'booked';
+    }
+
+    const { error: updateError } = await supabase
+      .from('bookings')
+      .update({ 
+        deposit_amount: newTotalPaid,
+        status: newStatus
+      })
+      .eq('id', params.booking_id);
+
+    if (updateError) throw updateError;
+
+    // 3. Revalidate the customer page
+    await safeRevalidatePath(`/dashboard/customers/${params.customer_id}`);
+    await safeRevalidatePath('/dashboard/finance');
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error recording remaining payment:', error);
+    return { error: error.message };
+  }
+}
