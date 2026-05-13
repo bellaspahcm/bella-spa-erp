@@ -186,6 +186,14 @@ export default function SessionsPage() {
   const handleUpdateProgress = async (bookingId: string) => {
     const booking = sessions.find(s => s.id === bookingId);
     const note = quickNoteBookingId === bookingId ? quickNoteValue : '';
+
+    // Hard Lock: Chặn ngay tại UI nếu chưa phân KTV
+    if (!booking?.assigned_ktv_id) {
+      setToastMessage('⚠️ Chưa phân công KTV. Vui lòng vào trang Chi tiết khách hàng để phân KTV trước!');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 5000);
+      return;
+    }
     
     if (isUpdatedToday(booking) && userRole !== 'ADMIN') {
       setToastMessage('Bạn đã cập nhật buổi tập hôm nay rồi. Chỉ Admin mới có quyền điều chỉnh thêm!');
@@ -196,10 +204,9 @@ export default function SessionsPage() {
 
     setUpdatingId(bookingId);
     
-    // OPTIMISTIC UPDATE for Demo
-    const newCount = (booking.completed_sessions || 0) + 1;
-    
-    // PERSIST LOCALLY
+    // OPTIMISTIC UPDATE for Demo - chỉ làm khi đã có KTV
+    const prevCount = booking.completed_sessions || 0;
+    const newCount = prevCount + 1;
     setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: newCount }));
 
     try {
@@ -210,31 +217,52 @@ export default function SessionsPage() {
       });
       
       if (nextSession) {
-        setLocalSessionLogUpdates(prev => ({ ...prev, [nextSession.id]: 'completed' }));
-        
         // Save note if provided
         if (note) {
           await saveSessionNote(nextSession.id, note);
         }
         
-        await completeSession(nextSession.id, bookingId);
+        const result = await completeSession(nextSession.id, bookingId);
+        
+        // Kiểm tra lỗi từ server action
+        if (result && 'error' in result && result.error) {
+          // Rollback optimistic update
+          setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: prevCount }));
+          setToastMessage('❌ ' + result.error);
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 6000);
+          return;
+        }
+
+        // Server xác nhận thành công
+        setLocalSessionLogUpdates(prev => ({ ...prev, [nextSession.id]: 'completed' }));
         
         // Reset quick note
         setQuickNoteValue('');
         setQuickNoteBookingId(null);
         
-        // loadSessions and fetchSessionLogs will now use the local updates
         await loadSessions();
         if (selectedBooking?.id === bookingId) {
           await fetchSessionLogs(bookingId);
         }
+
+        setToastMessage('✅ Cập nhật tiến độ thành công!');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      } else {
+        // Không có session nào để cập nhật, rollback
+        setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: prevCount }));
+        setToastMessage('Không tìm thấy buổi tập nào để cập nhật.');
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
       }
-      
-      setToastMessage('Cập nhật tiến độ thành công!');
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    } catch (error) {
+    } catch (error: any) {
+      // Rollback optimistic update khi có lỗi bất ngờ
+      setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: prevCount }));
       console.error('Update failed:', error);
+      setToastMessage('Lỗi hệ thống: ' + (error.message || 'Không rõ nguyên nhân'));
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
     } finally {
       setUpdatingId(null);
     }
@@ -570,6 +598,7 @@ export default function SessionsPage() {
             const today = new Date().toISOString().split('T')[0];
             const isScheduledForToday = booking.next_session_date === today;
             const canUpdate = isScheduledForToday || userRole === 'ADMIN';
+            const hasKtv = !!booking.assigned_ktv_id;
 
             return (
               <motion.div 
@@ -603,6 +632,13 @@ export default function SessionsPage() {
                     )}>
                       {isFullyCompleted ? 'Hoàn thành' : 'Đang chăm sóc'}
                     </span>
+                    {/* Badge cảnh báo chưa phân KTV */}
+                    {!hasKtv && !isFullyCompleted && (
+                      <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border bg-amber-50 text-amber-600 border-amber-200">
+                        <AlertCircle className="w-3 h-3" />
+                        Chưa phân KTV
+                      </span>
+                    )}
                   </div>
                   
                   <div className="flex flex-wrap gap-y-3 gap-x-8 text-sm font-bold text-slate-500 mb-5">
@@ -667,6 +703,18 @@ export default function SessionsPage() {
                   )}
                   
                   {!isFullyCompleted ? (
+                    !hasKtv ? (
+                      // Hard Lock UI: Chưa phân KTV
+                      <div className="w-full flex flex-col gap-2">
+                        <div className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 font-black text-[10px] uppercase tracking-widest justify-center">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                          <span>Chưa phân công KTV</span>
+                        </div>
+                        <p className="text-center text-[9px] font-bold text-slate-400 leading-snug">
+                          Vào <span className="text-primary">Chi tiết khách hàng</span> để phân KTV trước khi cập nhật buổi
+                        </p>
+                      </div>
+                    ) : (
                       <button 
                         onClick={(e) => { 
                           e.stopPropagation(); 
@@ -702,6 +750,7 @@ export default function SessionsPage() {
                           <><ChevronRight className="w-4 h-4" /> Cập nhật buổi {(booking.completed_sessions || 0) + 1}</>
                         )}
                       </button>
+                    )
                   ) : (
                     <div className="flex flex-col gap-2 w-full">
                       <div className="flex items-center gap-3 text-emerald-500 font-black uppercase tracking-widest text-[10px] bg-emerald-50 px-6 py-4 rounded-2xl border border-emerald-200 justify-center">
