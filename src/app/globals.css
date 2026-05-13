@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  zoom: 0.9;
+}
+
 .font-handwriting {
   font-family: var(--font-handwriting), cursive;
 }
