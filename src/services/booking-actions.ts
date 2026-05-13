@@ -3,7 +3,23 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { ensure2026 } from '@/lib/utils';
-import { DEMO_BOOKINGS } from '@/constants/demo-data';
+import { DEMO_BOOKINGS, DEMO_SESSIONS } from '@/constants/demo-data';
+import { MOCK_SERVICES } from '@/constants/mock-data';
+
+/**
+ * Helper to resolve package name from booking data
+ */
+function resolvePackageName(booking: any): string {
+  if (booking?.package_name) return booking.package_name;
+  
+  const price = Number(booking?.full_price);
+  const matchedService = MOCK_SERVICES.find(s => {
+    const sPrice = parseInt(s.price.replace(/[^\d]/g, ''));
+    return sPrice === price;
+  });
+
+  return matchedService?.name || 'Chưa đăng ký';
+}
 
 export async function getBookings() {
   const supabase = (await createClient()) as any;
@@ -62,6 +78,14 @@ export async function createBooking(formData: any) {
   if (bookingError) {
     console.error('Error creating booking:', bookingError);
     return { error: bookingError.message };
+  }
+
+  // 1.1 Sync package_name to customer table for data integrity
+  if (validatedData.package_name) {
+    await supabase
+      .from('customers')
+      .update({ package_name: validatedData.package_name } as any)
+      .eq('id', validatedData.customer_id);
   }
 
   // 2. Automation: Generate session logs
@@ -212,6 +236,7 @@ export async function getCalendarSessions() {
     completed_date: ensure2026(s.completed_date),
     bookings: s.bookings ? {
       ...s.bookings,
+      package_name: resolvePackageName(s.bookings),
       start_date: ensure2026(s.bookings.start_date),
       expected_birth_date: ensure2026(s.bookings.expected_birth_date)
     } : null
@@ -312,6 +337,14 @@ export async function updateBooking(id: string, payload: any) {
   if (error) {
     console.error('Error updating booking:', error);
     return { error: error.message };
+  }
+
+  // Sync package_name to customer if updated
+  if (payload.package_name && data.customer_id) {
+    await supabase
+      .from('customers')
+      .update({ package_name: payload.package_name } as any)
+      .eq('id', data.customer_id);
   }
 
   revalidatePath('/dashboard/bookings');

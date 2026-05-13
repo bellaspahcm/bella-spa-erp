@@ -1,9 +1,23 @@
-'use server';
-
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
-import { MOCK_CUSTOMERS, MOCK_BOOKINGS, MOCK_SESSIONS } from '@/constants/mock-data';
+import { MOCK_CUSTOMERS, MOCK_BOOKINGS, MOCK_SESSIONS, MOCK_SERVICES } from '@/constants/mock-data';
 import { ensure2026 } from '@/lib/utils';
+
+/**
+ * Helper to resolve package name from booking data
+ * This maintains data integrity even if explicit package_name is missing
+ */
+function resolvePackageName(booking: any): string {
+  if (booking?.package_name) return booking.package_name;
+  
+  const price = Number(booking?.full_price);
+  const matchedService = MOCK_SERVICES.find(s => {
+    const sPrice = parseInt(s.price.replace(/[^\d]/g, ''));
+    return sPrice === price;
+  });
+
+  return matchedService?.name || 'Chưa đăng ký';
+}
 
 export async function getCustomers() {
   const supabase = (await createClient()) as any;
@@ -26,7 +40,7 @@ export async function getCustomers() {
       dob_expected: ensure2026(c.dob_expected),
       status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
       deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
-      package_name: latestBooking?.package_name || null,
+      package_name: resolvePackageName(latestBooking),
       start_date: ensure2026(latestBooking?.start_date || c.dob_expected)
     };
   });
@@ -123,7 +137,7 @@ export async function getCustomerById(id: string) {
       dob_expected: ensure2026(customer.dob_expected),
       status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
       deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
-      package_name: latestBooking?.package_name || 'Chưa đăng ký',
+      package_name: resolvePackageName(latestBooking),
       start_date: ensure2026(latestBooking?.start_date || customer.dob_expected),
       bookings: bookings || [], // Include bookings array for UI access
       sessions: (latestBooking?.session_logs || []).map((s: any) => ({
