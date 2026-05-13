@@ -67,7 +67,7 @@ function BookingsContent() {
   const [modalData, setModalData] = useState<any>(null);
   const [selectedBookingIdForCreate, setSelectedBookingIdForCreate] = useState('');
   const [sessions, setSessions] = useState<any[]>([]);
-  const [allBookings, setAllBookings] = useState<any[]>(mockBookings);
+  const [allBookings, setAllBookings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [ktvs, setKtvs] = useState<any[]>([]);

@@ -32,8 +32,8 @@ import { MOCK_BOOKINGS } from '@/constants/mock-data';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 export default function SessionsPage() {
-  const [sessions, setSessions] = useState<any[]>(MOCK_BOOKINGS);
-  const [filteredSessions, setFilteredSessions] = useState<any[]>(MOCK_BOOKINGS);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [filteredSessions, setFilteredSessions] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -142,15 +142,13 @@ export default function SessionsPage() {
   const loadSessions = async () => {
     setIsSyncing(true);
     const data = await getSessionsWithDetails();
-    if (data && data.length > 0) {
-      // Apply local updates
-      const mergedData = data.map((b: any) => ({
-        ...b,
-        completed_sessions: localBookingUpdates[b.id] ?? b.completed_sessions
-      }));
-      setSessions(mergedData);
-      applyFilters(mergedData, searchQuery, statusFilter);
-    }
+    // Apply local updates
+    const mergedData = (data || []).map((b: any) => ({
+      ...b,
+      completed_sessions: localBookingUpdates[b.id] ?? b.completed_sessions
+    }));
+    setSessions(mergedData);
+    applyFilters(mergedData, searchQuery, statusFilter);
     setIsSyncing(false);
   };
 
