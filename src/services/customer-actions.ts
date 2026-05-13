@@ -23,34 +23,42 @@ function resolvePackageName(booking: any): string {
 export async function getCustomers() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
-  const { data, error } = await supabase
-    .from('customers')
-    .select('*, bookings(*)')
-    .order('created_at', { ascending: false });
+  
+  try {
+    const { data, error } = await supabase
+      .from('customers')
+      .select('*, bookings(*)')
+      .order('created_at', { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching customers:', error);
-    return MOCK_CUSTOMERS.map(c => ({
-      ...c,
-      status: c.status || 'active',
-      package_name: c.package_name || 'Chưa đăng ký',
-      start_date: ensure2026(c.dob_baby || c.dob_expected)
-    }));
+    if (error || !data || data.length === 0) {
+      if (error) console.error('Error fetching customers:', error);
+      // Return stable mock data with consistent structure
+      return MOCK_CUSTOMERS.map(c => ({
+        ...c,
+        id: c.id.toString(), // Ensure ID is string
+        status: c.status || 'active',
+        package_name: c.package_name || 'Chưa đăng ký',
+        start_date: ensure2026(c.dob_baby || c.dob_expected || '2026-01-01')
+      }));
+    }
+
+    return data.map((c: any) => {
+      const latestBooking = c.bookings && c.bookings.length > 0 ? c.bookings[0] : null;
+      return {
+        ...c,
+        id: c.id.toString(),
+        dob_baby: ensure2026(c.dob_baby),
+        dob_expected: ensure2026(c.dob_expected),
+        status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
+        deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
+        package_name: resolvePackageName(latestBooking),
+        start_date: ensure2026(latestBooking?.start_date || c.dob_expected)
+      };
+    });
+  } catch (err) {
+    console.error('Critical error in getCustomers:', err);
+    return MOCK_CUSTOMERS; // Absolute fallback
   }
-
-  // Flatten or map the data to match UI expectations if needed
-  return data.map((c: any) => {
-    const latestBooking = c.bookings && c.bookings.length > 0 ? c.bookings[0] : null;
-    return {
-      ...c,
-      dob_baby: ensure2026(c.dob_baby),
-      dob_expected: ensure2026(c.dob_expected),
-      status: latestBooking ? (latestBooking.status === 'deposit_pending' ? 'deposit' : 'active') : 'lead',
-      deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
-      package_name: resolvePackageName(latestBooking),
-      start_date: ensure2026(latestBooking?.start_date || c.dob_expected)
-    };
-  });
 }
 
 import { customerSchema } from '@/lib/validations';

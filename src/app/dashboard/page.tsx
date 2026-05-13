@@ -402,8 +402,9 @@ export default function DashboardPage() {
           <div className="max-h-[1150px] overflow-y-auto pr-4 custom-scrollbar space-y-6">
             {(() => {
               const filteredSessions = sessions.filter(session => {
-                const customerName = session.bookings?.customers?.name_mother || '';
-                const packageName = session.bookings?.package_id || '';
+                const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+                const customerName = booking?.customers?.name_mother || '';
+                const packageName = booking?.package_id || '';
                 const isNotCompleted = session.status !== 'completed';
                 const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                      packageName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -413,9 +414,10 @@ export default function DashboardPage() {
               if (filteredSessions.length > 0) {
                 return filteredSessions.map((session, idx) => {
                   const statusInfo = getStatusInfo(session.status);
-                  const customerName = session.bookings?.customers?.name_mother || 'Khách hàng';
-                  const technicianName = session.bookings?.assigned_ktv?.full_name || 'Chưa phân công';
-                  const packageName = session.bookings?.package_id || 'Gói dịch vụ';
+                  const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+                  const customerName = booking?.customers?.name_mother || 'Khách hàng';
+                  const technicianName = booking?.assigned_ktv?.full_name || 'Chưa phân công';
+                  const packageName = booking?.package_id || 'Gói dịch vụ';
                   
                   return (
                     <div 
