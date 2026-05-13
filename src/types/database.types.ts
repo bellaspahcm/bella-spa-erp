@@ -104,6 +104,7 @@ export type Database = {
           zalo_oa_id: string | null
           status: string | null
           notes: string | null
+          gender_baby: string | null
           tenant_id: string | null
           created_at: string
           updated_at: string
@@ -120,6 +121,7 @@ export type Database = {
           zalo_oa_id?: string | null
           status?: string | null
           notes?: string | null
+          gender_baby?: string | null
           tenant_id?: string | null
           created_at?: string
           updated_at?: string
@@ -136,6 +138,7 @@ export type Database = {
           zalo_oa_id?: string | null
           status?: string | null
           notes?: string | null
+          gender_baby?: string | null
           tenant_id?: string | null
           created_at?: string | null
           updated_at?: string

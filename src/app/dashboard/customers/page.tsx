@@ -328,17 +328,21 @@ export default function CustomersPage() {
                 <h3 className="text-lg font-bold text-slate-900 truncate">{customer.name_mother}</h3>
                 <span className={cn(
                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                  customer.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 
+                  customer.status === 'active' || customer.status === 'paid' ? 'bg-emerald-50 text-emerald-600' : 
                   customer.status === 'deposit' ? 'bg-amber-50 text-amber-600' :
                   'bg-blue-50 text-blue-600'
                 )}>
                   {customer.status === 'active' ? 'Đang chăm sóc' : 
+                   customer.status === 'paid' ? 'Đã thanh toán' :
                    customer.status === 'deposit' ? 'Chờ sinh (Đã cọc)' : 
                    'Tiềm năng'}
                 </span>
                 {customer.deposit_amount && (
-                  <span className="px-3 py-1 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-wider">
-                    Cọc: {customer.deposit_amount}
+                  <span className={cn(
+                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
+                    customer.is_fully_paid ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
+                  )}>
+                    {customer.is_fully_paid ? `Đã thanh toán: ${customer.deposit_amount}` : `Cọc: ${customer.deposit_amount}`}
                   </span>
                 )}
               </div>
