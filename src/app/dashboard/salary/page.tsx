@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { DollarSign, Download, TrendingUp, Search, Filter, Edit2, CheckCircle2, ChevronRight, User, Calendar as CalendarIcon, Briefcase, Award, AlertCircle, ShieldCheck, Star } from 'lucide-react';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { useState, useEffect } from 'react';
-import { getSalaryData, approveSalary, updateSalaryConfig, getKtvSessionMatrix } from '@/services/salary-actions';
+import { getSalaryData, approveSalary, updateSalaryConfig, getKtvSessionMatrix, confirmKtvSessions } from '@/services/salary-actions';
 import { exportSalaryToExcel, exportSessionMatrixToExcel } from '@/services/export-actions';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
@@ -326,7 +326,17 @@ export default function SalaryPage() {
                       <span className="font-bold text-slate-900">{s.name}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-6 font-bold text-slate-600 whitespace-nowrap">{s.sessions}</td>
+                  <td className="px-8 py-6 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-600">{s.sessions}</span>
+                      {s.isConfirmed && (
+                        <div className="flex items-center gap-1 bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-tighter animate-in fade-in zoom-in duration-300">
+                          <ShieldCheck className="w-3 h-3" />
+                          Đã Chốt
+                        </div>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-8 py-6 whitespace-nowrap">
                     <div className="flex items-center gap-1.5 text-amber-500 font-black">
                       <Star className="w-4 h-4 fill-current" />
@@ -439,6 +449,7 @@ export default function SalaryPage() {
                   <th key={pkg} className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px] text-center">{pkg}</th>
                 ))}
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[120px] text-center bg-slate-100/50">Tổng buổi</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px] text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -469,6 +480,47 @@ export default function SalaryPage() {
                     <span className="font-black text-slate-900 text-lg">
                       {matrixData.packageNames.reduce((acc: number, pkg: string) => acc + (ktv[pkg] || 0), 0)}
                     </span>
+                  </td>
+                  <td className="px-8 py-6 text-center whitespace-nowrap">
+                    <button 
+                      onClick={async () => {
+                        const total = matrixData.packageNames.reduce((acc: number, pkg: string) => acc + (ktv[pkg] || 0), 0);
+                        if (confirm(`Xác nhận đối soát ${total} buổi làm cho KTV ${ktv.name}?`)) {
+                          const res = await confirmKtvSessions(ktv.id);
+                          if (res.success) {
+                            toast.success(`Đã duyệt dữ liệu cho ${ktv.name}`);
+                            // Refresh both datasets to sync UI
+                            const [matrix, salary] = await Promise.all([
+                              getKtvSessionMatrix(),
+                              getSalaryData()
+                            ]);
+                            setMatrixData(matrix);
+                            setKtvSalaries(salary);
+                          } else {
+                            toast.error('Lỗi khi duyệt dữ liệu: ' + res.error);
+                          }
+                        }
+                      }}
+                      disabled={ktv.isConfirmed}
+                      className={cn(
+                        "group/btn flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest mx-auto shadow-sm active:scale-95",
+                        ktv.isConfirmed 
+                          ? "bg-emerald-50 text-emerald-600 cursor-default shadow-none border border-emerald-100" 
+                          : "bg-rose-50 text-primary hover:bg-primary hover:text-white border border-rose-100"
+                      )}
+                    >
+                      {ktv.isConfirmed ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          Đã Duyệt
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                          Duyệt Số Buổi
+                        </>
+                      )}
+                    </button>
                   </td>
                 </motion.tr>
               ))}
