@@ -432,7 +432,7 @@ export async function getKtvSessionMatrix() {
       .eq('month_year', '2026-05-01');
 
     // 3. Fetch completed sessions with booking details
-    const { data: sessions, error } = await supabase
+    const { data: sessions, error: sessionsError } = await supabase
       .from('session_logs')
       .select(`
         id, 
@@ -441,51 +441,34 @@ export async function getKtvSessionMatrix() {
         is_confirmed,
         bookings (
           id,
-          package_name
+          package_name,
+          full_price
         )
       `)
       .eq('status', 'completed');
 
-    if (error) {
-      console.error('Supabase error in getKtvSessionMatrix:', error);
-    }
+    if (sessionsError) console.error('Error fetching sessions:', sessionsError);
 
-    // 3. Define base package names
-    const basePackages = MOCK_SERVICES.map(s => s.name);
-    const packageNamesSet = new Set<string>(basePackages);
+    // 4. Group sessions by KTV and package
     const matrix: Record<string, Record<string, number>> = {};
-    let hasAnyRealData = false;
-
-    // 4. Process real data
+    const packageNames = [...MOCK_SERVICES.map(s => s.name), 'Dịch vụ lẻ'];
+    
     if (sessions && sessions.length > 0) {
       sessions.forEach((s: any) => {
         const ktvId = s.completed_by_ktv_id;
         if (!ktvId) return;
 
-        // Handle both object and array response from Supabase joins
-        const booking = Array.isArray(s.bookings) ? s.bookings[0] : s.bookings;
-        const pkgName = booking?.package_name || 'Dịch vụ lẻ';
-        
-        packageNamesSet.add(pkgName);
+        const pkgName = s.bookings ? resolvePackageName(s.bookings) : 'Dịch vụ lẻ';
         
         if (!matrix[ktvId]) matrix[ktvId] = {};
         matrix[ktvId][pkgName] = (matrix[ktvId][pkgName] || 0) + 1;
-        hasAnyRealData = true;
       });
     }
 
-    // 5. Finalize package list
-    let packageNames = Array.from(packageNamesSet).filter(p => p !== 'Dịch vụ lẻ').sort();
-    if (packageNamesSet.has('Dịch vụ lẻ')) {
-      packageNames.push('Dịch vụ lẻ');
-    }
+    const hasAnyRealData = sessions && sessions.length > 0;
     
-    // 6. Use real KTVs if available
-    const displayKtvs = (ktvs && ktvs.length > 0) ? ktvs : mockData.map(m => ({ id: m.id, full_name: m.name }));
-
-    // 7. If absolutely no sessions found in DB, use smart mock data for the current KTVs
-    const result = displayKtvs.map((ktv: any) => {
-      const row: any = { id: ktv.id, name: ktv.full_name };
+    const rows = (ktvs || []).map((ktv: any) => {
+      const row: any = { id: ktv.id, name: ktv.full_name, isConfirmed: false };
       
       // Determine if this KTV's sessions are confirmed
       const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
@@ -496,11 +479,11 @@ export async function getKtvSessionMatrix() {
                         (salaryRecord !== undefined && salaryRecord.total_sessions !== null);
       
       packageNames.forEach((pkg: string) => {
-        if (hasAnyRealData) {
-          row[pkg] = matrix[ktv.id]?.[pkg] || 0;
+        if (hasAnyRealData && matrix[ktv.id]) {
+          row[pkg] = matrix[ktv.id][pkg] || 0;
         } else {
-          // Better deterministic mock: unique values per KTV and package
-          const charSum = ktv.name.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+          // Robust deterministic mock: unique values per KTV and package using full_name
+          const charSum = (ktv.full_name || 'KTV').split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
           const pkgSum = pkg.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
           row[pkg] = (charSum + pkgSum * 7) % 12;
         }
@@ -508,10 +491,7 @@ export async function getKtvSessionMatrix() {
       return row;
     });
 
-    return {
-      ktvs: result,
-      packageNames
-    };
+    return { packageNames, ktvs: rows };
   } catch (error) {
     console.error('Critical error in getKtvSessionMatrix:', error);
     const fallbackPackages = MOCK_SERVICES.map(s => s.name);
