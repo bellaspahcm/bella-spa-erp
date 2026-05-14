@@ -99,6 +99,10 @@ export async function createCustomer(formData: any) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+
   // 0. Validate with Zod
   const validatedFields = customerSchema.safeParse(formData);
   
@@ -138,7 +142,7 @@ export async function createCustomer(formData: any) {
         dob_baby: validatedData.dob_baby || null,
         dob_expected: validatedData.dob_expected || null,
         gender_baby: validatedData.gender_baby || 'unknown',
-        tenant_id: null,
+        tenant_id: tenantId,
       } as any,
     ])
     .select()
@@ -161,7 +165,7 @@ export async function createCustomer(formData: any) {
           notes: validatedData.notes || null,
           dob_baby: validatedData.dob_baby || null,
           dob_expected: validatedData.dob_expected || null,
-          tenant_id: null,
+          tenant_id: tenantId,
         } as any,
       ])
       .select()

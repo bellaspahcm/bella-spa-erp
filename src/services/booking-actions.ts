@@ -95,6 +95,10 @@ export async function createBooking(formData: any) {
   let booking;
   let bookingError;
 
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+
   const isFullBooking = validatedData.full_price > 0 || !!validatedData.package_name;
   
   const bookingPayload: any = {
@@ -108,6 +112,7 @@ export async function createBooking(formData: any) {
     total_sessions: validatedData.total_sessions,
     start_date: validatedData.start_date || null,
     assigned_ktv_id: validatedData.assigned_ktv_id || null,
+    tenant_id: tenantId
   };
 
   if (existingBooking) {
@@ -162,7 +167,8 @@ export async function createBooking(formData: any) {
         payment_method: 'bank_transfer',
         received_date: new Date().toISOString().split('T')[0],
         status: 'pending',
-        notes: `Cọc gói ${resolvePackageName(booking)}`
+        notes: `Cọc gói ${resolvePackageName(booking)}`,
+        tenant_id: tenantId
       }]);
     
     if (revError) console.error('Error recording initial deposit revenue:', revError);
@@ -199,6 +205,7 @@ export async function createBooking(formData: any) {
         session_number: i + 1,
         status: 'scheduled',
         assigned_date: assignedDate,
+        tenant_id: tenantId
       };
     });
 

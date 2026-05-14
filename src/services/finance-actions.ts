@@ -142,8 +142,9 @@ export async function recordTransaction(data: {
   notes: string;
   booking_id?: string;
 }) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
 
   if (data.type === 'expense') {
     const { data: result, error } = await supabase
@@ -153,7 +154,8 @@ export async function recordTransaction(data: {
         category: 'Chi phí khác',
         description: data.notes,
         status: 'submitted',
-        expense_date: new Date().toISOString()
+        expense_date: new Date().toISOString(),
+        tenant_id: tenantId
       })
       .select()
       .single();
@@ -173,7 +175,8 @@ export async function recordTransaction(data: {
         revenue_type: 'additional',
         payment_method: 'bank_transfer',
         status: 'pending', // Default to pending as requested
-        received_date: new Date().toISOString()
+        received_date: new Date().toISOString(),
+        tenant_id: tenantId
       })
       .select()
       .single();
