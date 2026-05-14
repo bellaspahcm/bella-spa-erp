@@ -246,8 +246,8 @@ export default function SessionsPage() {
     
     const finalStatus = forcedStatus || selectedStatus;
     
-    if (userRole !== 'ADMIN') {
-      setToastMessage('Chỉ Admin mới có quyền sửa dữ liệu này!');
+    if (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled') {
+      setToastMessage('Buổi tập này đã hoàn thành hoặc bị hủy. Chỉ Quản trị viên mới có quyền điều chỉnh lịch sử!');
       setShowToast(true);
       return;
     }

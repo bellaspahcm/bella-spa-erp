@@ -624,7 +624,20 @@ export async function getCalendarSessions() {
 export async function updateSessionLog(id: string, payload: any) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
   
+  // 0. Security & Role Check
+  const { data: existingLog } = await supabase
+    .from('session_logs')
+    .select('status')
+    .eq('id', id)
+    .single();
+
+  if (currentUser?.role !== 'admin' && existingLog?.status !== 'scheduled') {
+    return { error: 'Buổi tập đã hoàn thành hoặc bị hủy. Chỉ Quản trị viên mới có quyền điều chỉnh thông tin này.' };
+  }
+
   const updates: any = { ...payload };
   
   // Robust null-handling for DATE, TIME and TEXT columns
@@ -715,6 +728,19 @@ export async function updateSessionLog(id: string, payload: any) {
 export async function saveSessionNote(sessionId: string, note: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
+
+  // 0. Security Check
+  const { data: existingLog } = await supabase
+    .from('session_logs')
+    .select('status')
+    .eq('id', sessionId)
+    .single();
+
+  if (currentUser?.role !== 'admin' && existingLog?.status !== 'scheduled') {
+    return { error: 'Không thể cập nhật ghi chú cho buổi tập đã hoàn thành.' };
+  }
   
   const { error } = await supabase
     .from('session_logs')
