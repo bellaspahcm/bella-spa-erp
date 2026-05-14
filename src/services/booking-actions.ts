@@ -137,6 +137,7 @@ export async function createBooking(formData: any) {
     ktv_commission: lockedCommission, // Locked rate
     start_date: validatedData.start_date || null,
     assigned_ktv_id: validatedData.assigned_ktv_id || null,
+    preferred_time: validatedData.preferred_time || null,
     tenant_id: tenantId
   };
 
@@ -237,6 +238,7 @@ export async function createBooking(formData: any) {
         session_number: i + 1,
         status: 'scheduled',
         assigned_date: assignedDate,
+        assigned_time: validatedData.preferred_time || null,
         tenant_id: tenantId
       };
     });
@@ -419,6 +421,7 @@ export async function getSessionsWithDetails() {
     .from('bookings')
     .select(`
       *, 
+      preferred_time,
       customers(id, name_mother, name_baby, phone), 
       assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name),
       session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes, ktv:users!session_logs_completed_by_ktv_id_fkey(full_name))
@@ -527,6 +530,7 @@ export async function getCalendarSessions() {
       *,
       bookings (
         *,
+        preferred_time,
         customers (
           id,
           name_mother,

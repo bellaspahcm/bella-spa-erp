@@ -440,20 +440,12 @@ export default function DashboardPage() {
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-start mb-4">
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Khách hàng</span>
-                                <h3 className="font-bold text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
-                                  Mẹ: {customerName}
-                                  {babyName && <span className="text-rose-400 font-medium ml-2">- Bé: {babyName}</span>}
-                                </h3>
-                              </div>
-                              <Link 
-                                href={`/dashboard/customers/${booking?.customers?.id}?bookingId=${booking?.id}`}
-                                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 flex items-center gap-2 shrink-0 group/link"
-                              >
-                                Chi tiết <ChevronRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 transition-transform" />
-                              </Link>
+                            <div className="flex flex-col mb-4">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Khách hàng</span>
+                              <h3 className="font-bold text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
+                                Mẹ: {customerName}
+                                {babyName && <span className="text-rose-400 font-medium ml-2">- Bé: {babyName}</span>}
+                              </h3>
                             </div>
                               <div className="mt-1.5 flex items-center gap-3">
                                 <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider">
@@ -471,16 +463,16 @@ export default function DashboardPage() {
                             <div className="flex flex-wrap items-center gap-2 mb-6">
                               <div className={cn(
                                 "flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border shadow-sm",
-                                session.assigned_time 
+                                (session.assigned_time || booking?.preferred_time)
                                   ? "bg-slate-50/50 text-slate-600 border-slate-100" 
                                   : "bg-amber-50/80 text-amber-700 border-amber-100/50 animate-pulse"
                               )}>
                                 <Clock className="w-3.5 h-3.5 text-amber-500" />
-                                {session.assigned_time || 'Chưa có giờ'}
+                                {session.assigned_time || booking?.preferred_time || 'Chưa có giờ'}
                               </div>
                             </div>
 
-                            {!session.assigned_time && (
+                            {!session.assigned_time && !booking?.preferred_time && (
                               <div className="mb-4 inline-flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-amber-50/80 to-orange-50/80 backdrop-blur-sm border border-amber-100/50 rounded-2xl text-[10px] font-bold text-amber-800 uppercase tracking-widest shadow-sm">
                                 <AlertTriangle className="w-4 h-4 text-amber-500" />
                                 <span>Xác nhận giờ đặt lịch</span>
@@ -507,16 +499,24 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Status & Actions - Side Layout */}
-                        <div className="flex flex-col gap-6 lg:gap-8 shrink-0 min-w-[240px]">
+                        <div className="flex flex-col gap-6 lg:gap-8 shrink-0 min-w-[200px]">
                           <div className="flex flex-col gap-3 w-full">
-                            {/* Circular Status Badge - Moved above buttons */}
-                            <div className="flex justify-center mb-2">
+                            {/* Action Buttons - Detail moved here */}
+                            <div className="flex flex-col gap-2 mb-2">
+                              <Link 
+                                href={`/dashboard/customers/${booking?.customers?.id}?bookingId=${booking?.id}`}
+                                className="w-full py-3.5 bg-white border-2 border-slate-100 hover:border-primary/20 text-slate-600 hover:text-primary rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-3 group/detail"
+                              >
+                                <User className="w-4 h-4 text-slate-400 group-hover/detail:text-primary transition-colors" />
+                                Xem chi tiết
+                                <ChevronRight className="w-4 h-4 group-hover/detail:translate-x-1 transition-transform" />
+                              </Link>
+                              
                               <div className={cn(
-                                "w-16 h-16 md:w-20 md:h-20 rounded-full flex flex-col items-center justify-center text-center p-3 text-[9px] font-black uppercase tracking-tighter border-4 shadow-xl transition-all duration-500 group-hover:rotate-6",
-                                statusInfo.color.replace('bg-', 'bg-opacity-40 bg-').replace('text-', 'text-opacity-100 text-'),
-                                "border-white/60 shadow-pink-100/20"
+                                "w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-center border shadow-sm",
+                                statusInfo.color,
+                                "bg-opacity-10"
                               )}>
-                                <div className="mb-0.5">●</div>
                                 {statusInfo.label}
                               </div>
                             </div>

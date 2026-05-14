@@ -23,4 +23,5 @@ export const bookingSchema = z.object({
   start_date: z.string().optional(),
   assigned_ktv_id: z.string().optional(),
   ktv_commission: z.number().optional(),
+  preferred_time: z.string().optional(),
 });

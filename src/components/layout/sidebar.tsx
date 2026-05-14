@@ -94,15 +94,15 @@ export function Sidebar() {
             </div>
             <div className="text-center">
               <h2 className="text-[3.2rem] font-handwriting text-slate-800 leading-[0.8] mb-2 drop-shadow-sm">Bella Spa</h2>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] block">Management System</span>
+              <span className="text-[12px] font-black text-slate-400 uppercase tracking-[0.4em] block">Management System</span>
             </div>
           </Link>
         </div>
 
         {/* Nav Section - Scrollable */}
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar relative z-10 pb-6">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto sidebar-scrollbar relative z-10 pb-6">
           <div className="px-4 mb-3 mt-2">
-            <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Menu chính</span>
+            <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.2em]">Menu chính</span>
           </div>
           {filteredMenuItems.map((item: any) => {
             const isActive = pathname === item.href;
@@ -122,7 +122,7 @@ export function Sidebar() {
                     isActive ? "text-primary scale-110" : "group-hover:text-primary"
                   )} />
                   <span className={cn(
-                    "text-[12px] tracking-tight transition-all duration-300",
+                    "text-[14px] tracking-tight transition-all duration-300",
                     isActive ? "font-black" : "font-bold"
                   )}>{item.label}</span>
                   
@@ -149,15 +149,15 @@ export function Sidebar() {
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'Admin'}</p>
-                <p className="text-[8px] text-rose-500 font-black uppercase tracking-widest mt-0.5">
+                <p className="text-[12px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'Admin'}</p>
+                <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest mt-0.5">
                   {user?.role === 'ktv' ? 'Kỹ thuật viên' : user?.role === 'customer' ? 'Khách hàng' : 'Quản trị viên'}
                 </p>
               </div>
             </div>
           </div>
           
-          <button className="flex items-center gap-2.5 w-full px-3 py-1.5 text-slate-400 hover:text-rose-600 transition-all font-black text-[9px] uppercase tracking-[0.2em] group">
+          <button className="flex items-center gap-2.5 w-full px-3 py-1.5 text-slate-400 hover:text-rose-600 transition-all font-black text-[11px] uppercase tracking-[0.2em] group">
             <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
               <LogOut className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
             </div>
