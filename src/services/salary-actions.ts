@@ -36,22 +36,31 @@ export async function getSalaryData() {
 
     // Fetch expenses to check for already approved mock salaries
     // We filter by tenant_id to ensure accurate persistence
-    const { data: expenses } = await supabase
+    const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
       .select('description, tenant_id')
-      .eq('category', 'Lương nhân viên')
+      .eq('category', 'salary')
       .eq('tenant_id', currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805');
+
+    if (expensesError) {
+      console.error('Error fetching expenses for salary status:', expensesError);
+    }
 
     if (ktvError || !ktvs || ktvs.length < 3) {
       let filteredMock = mockData;
       // In demo mode, if the user is a KTV, only show one record (simulating their own)
       if (currentUser?.role === 'ktv') {
-        filteredMock = mockData.filter(m => m.id === 'ktv1');
+        filteredMock = mockData.filter(m => m.id === 'ktv1' || m.name.includes('Hoa'));
       }
 
       // Map mock data and check if any already have an expense record
       return filteredMock.map(item => {
-        const hasExpense = expenses?.some((e: any) => e.description?.includes(item.name));
+        // Search in expenses for this month's salary record for this KTV
+        const hasExpense = expenses?.some((e: any) => 
+          e.description?.includes(item.name) && 
+          e.description?.includes('T5/2026')
+        );
+        
         return {
           ...item,
           status: hasExpense ? 'approved' : item.status
@@ -115,7 +124,18 @@ export async function approveSalary(ktvId: string) {
     // 0. Fallback logic for mock data IDs (ktv1, ktv2...) - MUST BE FIRST to avoid UUID errors
     if (ktvId.startsWith('ktv') || ktvId.length < 10) {
       console.log('Using mock salary approval logic for ID:', ktvId);
-      const ktvName = ktvId === 'ktv1' ? 'Nguyễn Thị Hoa' : (ktvId === 'ktv2' ? 'Lê Thu Hà' : 'Phạm Minh Tuyết');
+      
+      const ktvNames: Record<string, string> = {
+        'ktv1': 'Nguyễn Thị Hoa',
+        'ktv2': 'Lê Thu Hà',
+        'ktv3': 'Phạm Minh Tuyết',
+        'ktv4': 'Trần Thị Thanh',
+        'ktv5': 'Hoàng Ngọc Mai',
+        'ktv6': 'Đặng Thùy Chi',
+        'ktv7': 'Võ Thị Bích',
+        'ktv8': 'Ngô Diễm My',
+      };
+      const ktvName = ktvNames[ktvId] || 'Nhân viên';
       
       const { getCurrentUser } = await import('./user-actions');
       const currentUser = await getCurrentUser();
@@ -123,7 +143,7 @@ export async function approveSalary(ktvId: string) {
 
       const { error: mockExpenseError } = await supabase.from('expenses').insert({
         amount: 8000000, 
-        category: 'Lương nhân viên',
+        category: 'salary',
         description: `Thanh toán lương T5/2026 - KTV ${ktvName}`,
         status: 'submitted',
         expense_date: new Date().toISOString(),
@@ -132,6 +152,7 @@ export async function approveSalary(ktvId: string) {
 
       if (mockExpenseError) {
         console.error('Mock expense insert failed:', mockExpenseError);
+        return { success: false, error: mockExpenseError.message };
       }
 
       const { revalidatePath } = await import('next/cache');
@@ -206,7 +227,7 @@ export async function approveSalary(ktvId: string) {
       .from('expenses')
       .insert({
         amount: totalSalary,
-        category: 'Lương nhân viên',
+        category: 'salary',
         description: `Thanh toán lương T5/2026 - KTV ${ktv?.full_name || 'Nhân viên'}`,
         status: 'submitted', // Will appear as "Chờ duyệt" in Finance
         expense_date: new Date().toISOString(),
