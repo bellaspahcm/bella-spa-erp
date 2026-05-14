@@ -4,6 +4,7 @@ import { ensure2026 } from '@/lib/utils';
 import { DEMO_BOOKINGS, DEMO_SESSIONS } from '@/constants/demo-data';
 import { MOCK_SERVICES } from '@/constants/mock-data';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { bookingSchema } from '@/lib/validations';
 
 /**
  * Helper to resolve package name from booking data
@@ -88,7 +89,6 @@ export async function getBookingsByCustomerId(customerId: string) {
   return enrichedData;
 }
 
-import { bookingSchema } from '@/lib/validations';
 
 export async function createBooking(formData: any) {
   const { createClient } = await import('@/lib/supabase-server');
@@ -392,24 +392,24 @@ export async function completeSession(sessionId: string, bookingId: string) {
 export async function getSessionsWithDetails() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
-    const { getCurrentUser } = await import('./user-actions');
-    const currentUser = await getCurrentUser();
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
 
-    let query = supabase
-      .from('bookings')
-      .select('*, customers(id, name_mother, name_baby, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes)')
-      .order('created_at', { ascending: false });
+  let query = supabase
+    .from('bookings')
+    .select('*, customers(id, name_mother, name_baby, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes)')
+    .order('created_at', { ascending: false });
 
-    // If KTV, only show bookings where they are assigned
-    if (currentUser?.role === 'ktv') {
-      query = query.eq('assigned_ktv_id', currentUser.id);
-    }
+  // If KTV, only show bookings where they are assigned
+  if (currentUser?.role === 'ktv') {
+    query = query.eq('assigned_ktv_id', currentUser.id);
+  }
 
-    const { data, error } = await query;
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching sessions with details:', error);
-    return []; // Return empty array on error instead of demo data to avoid confusion
+    return []; 
   }
   
   if (!data || data.length === 0) {
@@ -417,18 +417,6 @@ export async function getSessionsWithDetails() {
   }
   
   const { MOCK_CUSTOMERS } = await import('@/constants/mock-data');
-  
-  // Group by booking to calculate missing dates
-  const sessionsByBooking: Record<string, any[]> = {};
-  (data || []).forEach((b: any) => {
-    const logs = b.session_logs || [];
-    logs.forEach((s: any) => {
-      if (!sessionsByBooking[b.id]) sessionsByBooking[b.id] = [];
-      sessionsByBooking[b.id].push({ ...s, _parent_booking: b });
-    });
-  });
-
-  const result: any[] = [];
   
   const enrichedData = await Promise.all((data || []).map(async (b: any) => {
     // Hardening: Verify session counts match session_logs truth
@@ -485,7 +473,7 @@ export async function getSessionsWithDetails() {
       }
     }
 
-    result.push({
+    return {
       ...b,
       session_logs: mappedLogs,
       customers: customerData || { name_mother: 'Khách hàng Bella Spa', phone: '---' },
@@ -493,10 +481,10 @@ export async function getSessionsWithDetails() {
       start_date: ensure2026(b.start_date),
       end_date: ensure2026(b.end_date),
       expected_birth_date: ensure2026(b.expected_birth_date)
-    });
-  });
+    };
+  }));
 
-  return result;
+  return enrichedData;
 }
 
 export async function getCalendarSessions() {
@@ -546,30 +534,30 @@ export async function getCalendarSessions() {
     sessionsByBooking[s.booking_id].push(s);
   });
 
-  const processedSessions: any[] = [];
-
-  const processedSessionsList = await Promise.all(Object.values(sessionsByBooking).map(async (bookingSessions) => {
+  const processedSessionsList = await Promise.all(Object.entries(sessionsByBooking).map(async ([bookingId, bookingSessions]) => {
     bookingSessions.sort((a, b) => a.session_number - b.session_number);
     
+    // Hardening: Verify session counts match session_logs truth (ONCE PER BOOKING)
+    const firstSession = bookingSessions[0];
+    if (firstSession?.bookings) {
+      const { count, error: countError } = await supabase
+        .from('session_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('booking_id', bookingId)
+        .eq('status', 'completed');
+
+      if (!countError && count !== null && count !== firstSession.bookings.completed_sessions) {
+        await supabase.from('bookings').update({ completed_sessions: count }).eq('id', bookingId);
+        // Update all local references for this booking
+        bookingSessions.forEach(s => { if (s.bookings) s.bookings.completed_sessions = count; });
+      }
+    }
+
     let lastKnownDate: string | null = null;
     let lastKnownSessionNum = 0;
     const bookingResult: any[] = [];
 
     for (const s of bookingSessions) {
-      // Hardening: Verify session counts match session_logs truth
-      if (s.bookings && s.booking_id) {
-        const { count, error: countError } = await supabase
-          .from('session_logs')
-          .select('*', { count: 'exact', head: true })
-          .eq('booking_id', s.booking_id)
-          .eq('status', 'completed');
-
-        if (!countError && count !== null && count !== s.bookings.completed_sessions) {
-          await supabase.from('bookings').update({ completed_sessions: count }).eq('id', s.booking_id);
-          s.bookings.completed_sessions = count;
-        }
-      }
-
       let finalDate = s.assigned_date;
       
       if (!finalDate) {
