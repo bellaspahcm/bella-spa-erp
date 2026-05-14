@@ -106,7 +106,10 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
 export async function getUpcomingSessions() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
-  const today = new Date().toLocaleDateString('en-CA');
+  
+  // Get today's date in local time YYYY-MM-DD
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   const { data, error } = await supabase
     .from('session_logs')
@@ -117,25 +120,21 @@ export async function getUpcomingSessions() {
         completed_sessions,
         total_sessions,
         customers (
-          name_mother
+          name_mother,
+          name_baby
         ),
         assigned_ktv:users!bookings_assigned_ktv_id_fkey (
           full_name
         )
       )
     `)
-    .eq('status', 'scheduled')
     .eq('assigned_date', today)
-    .order('assigned_date', { ascending: true })
-    .limit(10);
+    .neq('status', 'completed')
+    .order('assigned_time', { ascending: true });
 
-  if (error || !data || data.length === 0) {
-    if (error) console.error('Error fetching upcoming sessions:', error);
-    // Fallback to demo data if DB is empty for today (to keep dashboard looking full for demo)
-    return (DEMO_SESSIONS || []).map(s => ({
-      ...s,
-      assigned_date: today // Force to today for visibility
-    }));
+  if (error) {
+    console.error('Error fetching upcoming sessions:', error);
+    return [];
   }
 
   return (data || []).map((s: any) => ({

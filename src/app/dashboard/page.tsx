@@ -457,8 +457,8 @@ export default function DashboardPage() {
                               </div>
                             </div>
 
-                            {/* Badge Row - More compact but luxury */}
-                            <div className="flex flex-wrap items-center gap-2 mb-4">
+                            {/* Badge Row - Cleaned up */}
+                            <div className="flex flex-wrap items-center gap-2 mb-6">
                               <div className={cn(
                                 "flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border shadow-sm",
                                 session.assigned_time 
@@ -467,16 +467,6 @@ export default function DashboardPage() {
                               )}>
                                 <Clock className="w-3.5 h-3.5 text-amber-500" />
                                 {session.assigned_time || 'Chưa có giờ'}
-                              </div>
-
-                              <div className="flex items-center gap-2 bg-pink-50/50 text-primary border border-pink-100/50 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-sm">
-                                <Diamond className="w-3.5 h-3.5" />
-                                {packageName}
-                              </div>
-
-                              <div className="flex items-center gap-2 bg-emerald-50/50 text-emerald-600 border border-emerald-100/50 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-sm">
-                                <Activity className="w-3.5 h-3.5" />
-                                Buổi {session.session_number || (session.bookings?.completed_sessions || 0) + 1}
                               </div>
                             </div>
 
@@ -507,18 +497,20 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Status & Actions - Side Layout */}
-                        <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-center gap-6 lg:gap-8 shrink-0">
-                          {/* Circular Status Badge */}
-                          <div className={cn(
-                            "w-20 h-20 md:w-24 md:h-24 rounded-full flex flex-col items-center justify-center text-center p-3 text-[10px] font-black uppercase tracking-tighter border-4 shadow-xl transition-all duration-500 group-hover:rotate-6",
-                            statusInfo.color.replace('bg-', 'bg-opacity-40 bg-').replace('text-', 'text-opacity-100 text-'),
-                            "border-white/60 shadow-pink-100/20"
-                          )}>
-                            <div className="mb-1">●</div>
-                            {statusInfo.label}
-                          </div>
+                        <div className="flex flex-col gap-6 lg:gap-8 shrink-0 min-w-[240px]">
+                          <div className="flex flex-col gap-3 w-full">
+                            {/* Circular Status Badge - Moved above buttons */}
+                            <div className="flex justify-center mb-2">
+                              <div className={cn(
+                                "w-16 h-16 md:w-20 md:h-20 rounded-full flex flex-col items-center justify-center text-center p-3 text-[9px] font-black uppercase tracking-tighter border-4 shadow-xl transition-all duration-500 group-hover:rotate-6",
+                                statusInfo.color.replace('bg-', 'bg-opacity-40 bg-').replace('text-', 'text-opacity-100 text-'),
+                                "border-white/60 shadow-pink-100/20"
+                              )}>
+                                <div className="mb-0.5">●</div>
+                                {statusInfo.label}
+                              </div>
+                            </div>
 
-                          <div className="flex flex-col gap-3 min-w-[200px] w-full sm:w-auto">
                             <AnimatePresence mode="wait">
                               {quickNoteId === session.id ? (
                                 <motion.div 
@@ -560,7 +552,7 @@ export default function DashboardPage() {
                                 </button>
                               )}
                             </AnimatePresence>
-
+ 
                             <button 
                               onClick={() => handleCompleteSession(session.id, session.booking_id, quickNoteValue)}
                               disabled={updatingId === session.id}
