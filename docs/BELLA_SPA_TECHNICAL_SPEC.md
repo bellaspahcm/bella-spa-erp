@@ -566,6 +566,12 @@ A: Yes, IF:
 - [x] **Precision Progress Tracking**: Resolved visual inaccuracies in progress bars (e.g., 2/15 ratio) and standardized 15-session defaults across all views.
 - [x] **Flexible Booking**: Enabled custom session counts per booking to handle individual services alongside full packages.
 
+#### ✅ Phase 11: UI Refinement & Table Ergonomics (May 14, 2026)
+- [x] **Sticky Headers**: Implemented persistent header rows for salary and management tables to ensure context during vertical scrolling.
+- [x] **Column Optimization**: Set ergonomic minimum widths for critical data columns (KTV Name, Status, Financials) to prevent text wrapping.
+- [x] **Horizontal Scalability**: Enhanced table wrappers to support smooth horizontal scrolling while maintaining data readability.
+- [x] **Type Safety Hardening**: Synchronized service management state with the new database schema to prevent build-time regressions.
+
 #### ⏭ Next Steps
 - [ ] **Advanced Database Triggers**: Move financial balance calculations to Postgres triggers.
 - [ ] **Staff Analytics**: Add productivity dashboards and dynamic KPI tracking.
@@ -611,7 +617,14 @@ A: Yes, IF:
     - **Floating Menus**: Đối với các thẻ (Cards) chứa dropdown, tuyệt đối không sử dụng `overflow-hidden` trực tiếp trên container chính. Hãy tách phần trang trí (Background elements) vào một lớp riêng có overflow-hidden để đảm bảo menu dropdown có thể hiển thị tràn ra ngoài Card.
     - **Pastel Palette**: Luôn tuân thủ mã màu `#FF85A2` cho Primary và các sắc độ Pastel tương ứng để duy trì nhận diện thương hiệu Bella Spa.
 
+### 6. Ergonomic Data Tables
+*   **Vấn đề**: Khi số lượng dữ liệu lớn (nhiều nhân viên, nhiều phiên làm việc), bảng dữ liệu thường bị co hẹp hoặc mất dấu tiêu đề khi cuộn, làm giảm hiệu suất quản lý.
+*   **Quy tắc**:
+    - **Sticky Header**: Bắt buộc sử dụng `sticky top-0 z-10` kèm `backdrop-blur` cho hàng tiêu đề (`thead`) của các bảng danh sách lớn.
+    - **Column Constraints**: Sử dụng `min-w-[...]` cho các cột chứa text dài (như Tên KTV, Tên khách hàng) và `whitespace-nowrap` cho các cột chứa số liệu tài chính để đảm bảo tính dễ đọc.
+    - **Horizontal Scroll**: Luôn bao bọc bảng trong một container `overflow-x-auto` để hỗ trợ hiển thị tốt trên mọi kích thước màn hình.
+
 ---
-**Document Version:** 1.3  
-**Last Updated:** May 14, 2026 (16:55)  
+**Document Version:** 1.4  
+**Last Updated:** May 14, 2026 (17:10)  
 **Status:** Active Guidelines & Tracking
