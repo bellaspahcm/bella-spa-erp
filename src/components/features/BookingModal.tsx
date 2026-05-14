@@ -477,6 +477,23 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Package className="w-4 h-4" /> Số buổi liệu trình
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        min="1"
+                        max="100"
+                        value={formData.total_sessions}
+                        onChange={(e) => setFormData({...formData, total_sessions: parseInt(e.target.value) || 1})}
+                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
+                      />
+                    </div>
+                  </div>
+
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <CreditCard className="w-4 h-4" /> Tiền đặt cọc bổ sung (VNĐ) {draftBooking?.deposit_amount > 0 && <span className="text-primary normal-case">(Đã cọc trước: {formatNumberWithSeparator(draftBooking.deposit_amount)}đ)</span>}

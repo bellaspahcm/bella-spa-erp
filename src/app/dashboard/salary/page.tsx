@@ -5,6 +5,7 @@ import { DollarSign, Download, TrendingUp, Search, Filter, Edit2, CheckCircle2, 
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { useState, useEffect } from 'react';
 import { getSalaryData, approveSalary, updateSalaryConfig } from '@/services/salary-actions';
+import { exportSalaryToExcel } from '@/services/export-actions';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
 
@@ -102,6 +103,29 @@ export default function SalaryPage() {
       toast.info('Không có bản ghi nào cần chốt lương hoặc đã xảy ra lỗi.');
     }
     setIsLoading(false);
+  };
+
+  const handleExport = async (s: any) => {
+    try {
+      const toastId = toast.loading(`Đang tạo báo cáo cho ${s.name}...`);
+      const base64 = await exportSalaryToExcel(s.id, s.name);
+      
+      // Download the file
+      const blob = await (await fetch(`data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`)).blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Bao_cao_luong_${s.name.replace(/\s+/g, '_')}_05_2026.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success(`Đã xuất báo cáo thành công cho ${s.name}`, { id: toastId });
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Lỗi khi xuất báo cáo Excel');
+    }
   };
 
   if (isLoading) {
@@ -301,7 +325,23 @@ export default function SalaryPage() {
                         >
                           <CheckCircle2 className="w-5 h-5" />
                         </button>
+                        <button 
+                          onClick={() => handleExport(s)}
+                          className="p-3 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm"
+                          title="Xuất báo cáo chi tiết"
+                        >
+                          <Download className="w-5 h-5" />
+                        </button>
                       </div>
+                    )}
+                    {currentUser?.role === 'ktv' && (
+                      <button 
+                        onClick={() => handleExport(s)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all font-bold text-xs"
+                      >
+                        <Download className="w-4 h-4" />
+                        Xuất báo cáo
+                      </button>
                     )}
                   </td>
                 </motion.tr>
@@ -319,8 +359,8 @@ export default function SalaryPage() {
         <div>
           <h4 className="font-black text-amber-900 uppercase tracking-widest text-xs mb-1">Quy định tính lương</h4>
           <p className="text-amber-800/80 text-sm font-medium">
-            Lương KTV được tính dựa trên số buổi thực tế hoàn thành (150k/buổi) + Lương cứng + Thưởng hiệu suất KPI. 
-            Dữ liệu được đồng bộ realtime từ Thẻ liệu trình. Hạn chốt lương cuối cùng là ngày 05 hàng tháng.
+            Lương KTV được tính dựa trên số buổi thực tế hoàn thành (Hoa hồng theo từng loại dịch vụ) + Lương cứng + Thưởng hiệu suất KPI. 
+            Giá tiền công được khóa tại thời điểm tạo hợp đồng để đảm bảo quyền lợi KTV. Hạn chốt lương cuối cùng là ngày 05 hàng tháng.
           </p>
         </div>
       </div>

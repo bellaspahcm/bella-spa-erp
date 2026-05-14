@@ -204,14 +204,15 @@ function BookingsContent() {
         status: s.status,
         location: s.bookings?.customers?.address || 'Tại Spa',
         sessionCount: `${s.bookings?.completed_sessions || 0}/${s.bookings?.total_sessions || 15} buổi`,
+        completedSessions: s.bookings?.completed_sessions || 0,
+        totalSessions: s.bookings?.total_sessions || 15,
         contractId: s.bookings?.booking_number || 'N/A',
         contractDetail: s.notes || 'Không có ghi chú',
         bookingId: s.booking_id,
         ktvId: s.bookings?.assigned_ktv_id,
         originalStatus: s.status,
         originalDateString: s.assigned_date,
-        sessionNumber: s.session_number || 1,
-        totalSessions: s.bookings?.total_sessions || 15
+        sessionNumber: s.session_number || 1
       };
       setModalData(detail);
       setShowDetailModal(true);
@@ -479,11 +480,12 @@ function BookingsContent() {
                         ktvId: session.bookings?.assigned_ktv_id,
                         location: session.bookings?.customers?.address || 'Tại Spa',
                         sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
+                        completedSessions: session.bookings?.completed_sessions || 0,
+                        totalSessions: session.bookings?.total_sessions || 15,
                         originalStatus: session.status,
                         originalDateString: session.assigned_date,
                         status: session.status,
-                        sessionNumber: session.session_number || 1,
-                        totalSessions: session.bookings?.total_sessions || 15
+                        sessionNumber: session.session_number || 1
                       };
                       setModalData(detail);
                       setShowDetailModal(true);
@@ -579,10 +581,11 @@ function BookingsContent() {
                             ktvId: session.bookings?.assigned_ktv_id,
                             location: session.bookings?.customers?.address || 'Tại Spa',
                             sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
+                            completedSessions: session.bookings?.completed_sessions || 0,
+                            totalSessions: session.bookings?.total_sessions || 15,
                             status: 'completed', // Auto-set to completed for check-in
                             originalStatus: session.status,
-                            sessionNumber: session.session_number || 1,
-                            totalSessions: session.bookings?.total_sessions || 15
+                            sessionNumber: session.session_number || 1
                           };
                           setModalData(detail);
                           setShowDetailModal(true);
@@ -718,11 +721,11 @@ function BookingsContent() {
                       <div>
                         <p className="text-xs text-rose-400 font-bold mb-1">Số lượng buổi</p>
                         <div className="flex items-center gap-3">
-                          <p className="font-bold text-slate-900">{modalData.sessionCount}</p>
+                          <p className="font-bold text-slate-900">{modalData.completedSessions}/{modalData.totalSessions} buổi</p>
                           <div className="h-2 flex-1 bg-slate-200 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-rose-500 transition-all duration-500" 
-                              style={{ width: `${Math.min(100, (Number(modalData.sessionCount.split('/')[0]) / Number(modalData.sessionCount.split('/')[1].split(' ')[0])) * 100)}%` }} 
+                              style={{ width: `${Math.min(100, ((modalData.completedSessions || 0) / (modalData.totalSessions || 15)) * 100)}%` }} 
                             />
                           </div>
                         </div>

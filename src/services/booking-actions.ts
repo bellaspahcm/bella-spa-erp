@@ -18,7 +18,19 @@ function resolvePackageName(booking: any): string {
     return sPrice === price;
   });
 
-  return matchedService?.name || 'Chưa đăng ký';
+  return matchedService?.name || 'Dịch vụ lẻ';
+}
+
+function resolveKtvCommission(booking: any): number {
+  if (booking?.ktv_commission) return Number(booking.ktv_commission);
+  
+  const price = Number(booking?.full_price);
+  const matchedService = MOCK_SERVICES.find(s => {
+    const sPrice = parseInt(s.price.replace(/[^\d]/g, ''));
+    return sPrice === price;
+  });
+
+  return matchedService?.ktv_commission || 150000; // Default fallback
 }
 
 export async function getBookings() {
@@ -123,6 +135,9 @@ export async function createBooking(formData: any) {
 
   const isFullBooking = validatedData.full_price > 0 || !!validatedData.package_name;
   
+  // Resolve commission at time of booking to "lock" it
+  const lockedCommission = validatedData.ktv_commission || resolveKtvCommission(validatedData);
+  
   const bookingPayload: any = {
     customer_id: validatedData.customer_id,
     booking_number: existingBooking?.booking_number || `BK-${new Date().getTime()}`,
@@ -132,6 +147,7 @@ export async function createBooking(formData: any) {
     full_price: validatedData.full_price,
     deposit_amount: (existingBooking?.deposit_amount || 0) + (validatedData.deposit_amount || 0),
     total_sessions: validatedData.total_sessions,
+    ktv_commission: lockedCommission, // Locked rate
     start_date: validatedData.start_date || null,
     assigned_ktv_id: validatedData.assigned_ktv_id || null,
     tenant_id: tenantId
@@ -159,9 +175,12 @@ export async function createBooking(formData: any) {
   }
 
   if (bookingError) {
-    // Fallback: If it's a "column not found" error for package_name or "type mismatch" for package_id
-    if (bookingError.message?.includes('package_name') || bookingError.message?.includes('package_id') || bookingError.message?.includes('uuid')) {
-      const { package_name, package_id, ...retryPayload } = bookingPayload;
+    // Fallback: If it's a "column not found" error for package_name or "type mismatch" for package_id or ktv_commission
+    if (bookingError.message?.includes('package_name') || 
+        bookingError.message?.includes('package_id') || 
+        bookingError.message?.includes('uuid') ||
+        bookingError.message?.includes('ktv_commission')) {
+      const { package_name, package_id, ktv_commission, ...retryPayload } = bookingPayload;
       
       const { data: retryBooking, error: retryError } = existingBooking 
         ? await supabase.from('bookings').update(retryPayload).eq('id', existingBooking.id).select().single()
@@ -203,7 +222,7 @@ export async function createBooking(formData: any) {
     .eq('booking_id', booking.id);
 
   if (!existingLogsCount || existingLogsCount === 0) {
-    const totalSessions = validatedData.total_sessions || 21;
+    const totalSessions = validatedData.total_sessions || 15;
     let startDateStr = validatedData.start_date;
     
     if (!startDateStr) {

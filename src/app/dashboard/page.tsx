@@ -492,13 +492,13 @@ export default function DashboardPage() {
                               <div className="flex items-center justify-between mb-2 px-1">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tiến độ liệu trình</span>
                                 <span className="text-[10px] font-black text-primary bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
-                                  {session.bookings?.completed_sessions || 0} / {session.bookings?.total_sessions || 15} Buổi
+                                  {booking?.completed_sessions || 0} / {booking?.total_sessions || 15} Buổi
                                 </span>
                               </div>
                               <div className="h-2.5 w-full bg-slate-100/40 rounded-full overflow-hidden p-0.5 border border-white shadow-inner">
                                 <motion.div 
                                   initial={{ width: 0 }}
-                                  animate={{ width: `${((session.bookings?.completed_sessions || 0) / (session.bookings?.total_sessions || 15)) * 100}%` }}
+                                  animate={{ width: `${((booking?.completed_sessions || 0) / (booking?.total_sessions || 15)) * 100}%` }}
                                   className="h-full bg-gradient-to-r from-primary via-rose-400 to-accent rounded-full shadow-[0_0_10px_rgba(219,39,119,0.3)]"
                                 />
                               </div>
