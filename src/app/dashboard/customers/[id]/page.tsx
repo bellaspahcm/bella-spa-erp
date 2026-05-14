@@ -292,7 +292,7 @@ export default function CustomerDetailPage() {
 
   const isDepositOnly = activeBooking && activeBooking.status === 'deposit_pending' && !activeBooking.package_name;
   const nextSession = customer.sessions?.find((s: any) => s.status === 'scheduled');
-  const isCompleted = activeBooking && activeBooking.completed_sessions >= (activeBooking.total_sessions || 21);
+  const isCompleted = activeBooking && activeBooking.completed_sessions >= (activeBooking.total_sessions || 15);
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
@@ -563,7 +563,7 @@ export default function CustomerDetailPage() {
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
                 <History className="text-primary w-6 h-6" />
-                Lịch sử chăm sóc ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 21})
+                Lịch sử chăm sóc ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 15})
               </h3>
               <button className="text-sm font-bold text-primary hover:underline">Xem tất cả</button>
             </div>
@@ -621,7 +621,7 @@ export default function CustomerDetailPage() {
                         <ClipboardList className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-black text-slate-800">{session.type || 'Chăm sóc liệu trình'} - Buổi {session.session_number}/{activeBooking?.total_sessions || 21}</p>
+                        <p className="font-black text-slate-800">{session.type || 'Chăm sóc liệu trình'} - Buổi {session.session_number}/{activeBooking?.total_sessions || 15}</p>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                           KTV: {activeBooking?.assigned_ktv?.full_name || 'Chưa phân công'} • {session.completed_date || session.assigned_date || 'Chưa cập nhật'}
                         </p>
