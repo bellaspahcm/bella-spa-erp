@@ -149,7 +149,9 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
 export async function recordTransaction(data: {
   amount: number;
   type: 'revenue' | 'expense';
+  category: string;
   notes: string;
+  status?: string;
   booking_id?: string;
 }) {
   const supabase = (await createClient()) as any;
@@ -161,9 +163,9 @@ export async function recordTransaction(data: {
       .from('expenses')
       .insert({
         amount: Math.abs(data.amount),
-        category: 'other_admin',
+        category: data.category || 'other_admin',
         description: data.notes,
-        status: 'submitted',
+        status: data.status === 'confirmed' ? 'approved' : 'submitted',
         expense_date: new Date().toISOString(),
         tenant_id: tenantId
       })
@@ -181,10 +183,10 @@ export async function recordTransaction(data: {
       .insert({
         amount: Math.abs(data.amount),
         notes: data.notes,
-        booking_id: data.booking_id,
-        revenue_type: 'additional',
+        booking_id: data.booking_id || null,
+        revenue_type: data.category === 'additional' ? 'additional' : 'package_payment',
         payment_method: 'bank_transfer',
-        status: 'pending', // Default to pending as requested
+        status: data.status || 'pending',
         received_date: new Date().toISOString(),
         tenant_id: tenantId
       })

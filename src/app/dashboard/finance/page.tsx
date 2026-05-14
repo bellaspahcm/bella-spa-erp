@@ -39,6 +39,10 @@ export default function FinancePage() {
 
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'timestamp', direction: 'desc' });
   const [isConfirmingId, setIsConfirmingId] = useState<string | null>(null);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   const fetchData = async () => {
     setIsRefreshing(true);
@@ -123,6 +127,13 @@ export default function FinancePage() {
   }
 
   const { totalBalance, totalRevenueMonth, totalExpenseMonth, transactions } = data;
+  
+  // Calculate Pagination
+  const totalPages = Math.ceil(transactions.length / itemsPerPage);
+  const currentTransactions = transactions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative">
       {isRefreshing && (
@@ -280,7 +291,7 @@ export default function FinancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {transactions.map((tx: any) => (
+              {currentTransactions.map((tx: any) => (
                 <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
                    <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
@@ -330,10 +341,44 @@ export default function FinancePage() {
             </tbody>
           </table>
         </div>
-        <div className="p-6 text-center border-t border-slate-50">
-          <button className="text-sm font-bold text-slate-500 hover:text-rose-500 transition-colors">
-            Xem thêm lịch sử giao dịch
-          </button>
+        <div className="p-8 border-t border-slate-50 flex items-center justify-between bg-slate-50/30">
+          <p className="text-xs font-bold text-slate-500">
+            Hiển thị <span className="text-slate-900">{currentTransactions.length}</span> trên <span className="text-slate-900">{transactions.length}</span> giao dịch
+          </p>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all"
+            >
+              Trải về
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
+                    currentPage === i + 1 
+                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' 
+                      : 'text-slate-400 hover:bg-white hover:text-slate-600'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-all"
+            >
+              Tiếp theo
+            </button>
+          </div>
         </div>
       </div>
       <TransactionModal 
