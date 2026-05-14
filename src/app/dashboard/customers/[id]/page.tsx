@@ -509,13 +509,22 @@ export default function CustomerDetailPage() {
                     <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
                       <Sparkles className="w-5 h-5 text-white" />
                     </div>
-                    <div>
-                      <p className="text-rose-200 text-[10px] font-black uppercase tracking-[0.3em] mb-1">
-                        {isDepositOnly ? 'Trạng thái: Chờ chọn gói' : 'Gói dịch vụ hiện tại'}
-                      </p>
-                      <h2 className="text-3xl font-black text-white">
-                        {isDepositOnly ? 'Đã đặt cọc (Chưa chọn gói)' : (activeBooking?.package_name || 'Chưa có gói liệu trình')}
-                      </h2>
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                      <div>
+                        <p className="text-rose-200 text-[10px] font-black uppercase tracking-[0.3em] mb-1">
+                          {isDepositOnly ? 'Trạng thái: Chờ chọn gói' : 'Gói dịch vụ hiện tại'}
+                        </p>
+                        <h2 className="text-3xl font-black text-white">
+                          {isDepositOnly ? 'Đã đặt cọc (Chưa chọn gói)' : (activeBooking?.package_name || 'Chưa có gói liệu trình')}
+                        </h2>
+                      </div>
+                      
+                      {!isDepositOnly && activeBooking?.preferred_time && (
+                        <div className="bg-white px-5 py-2.5 rounded-2xl shadow-xl shadow-rose-900/20 border border-white flex flex-col items-center justify-center min-w-[120px] self-start md:self-center mt-2 md:mt-0">
+                          <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest leading-none mb-1">GIỜ MẶC ĐỊNH</span>
+                          <span className="text-2xl font-black text-slate-900 leading-none">{activeBooking.preferred_time}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
@@ -528,12 +537,7 @@ export default function CustomerDetailPage() {
                         </p>
                       </div>
                     )}
-                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                      <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Giờ mặc định</p>
-                      <p className="font-black text-lg text-white">
-                        {activeBooking?.preferred_time || '08:00'}
-                      </p>
-                    </div>
+
                     {userRole === 'admin' && (
                       <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 flex items-center gap-4">
                         <div>

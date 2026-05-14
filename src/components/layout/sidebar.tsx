@@ -100,7 +100,7 @@ export function Sidebar() {
         </div>
 
         {/* Nav Section - Scrollable */}
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto sidebar-scrollbar relative z-10 pb-6">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-hidden relative z-10 pb-6">
           <div className="px-4 mb-3 mt-2">
             <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.2em]">Menu chính</span>
           </div>
