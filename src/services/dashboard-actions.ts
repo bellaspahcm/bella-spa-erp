@@ -104,106 +104,31 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
 }
 
 export async function getUpcomingSessions(date?: string) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
-  
-  // Get today's date in local time YYYY-MM-DD if not provided
-  let todayStr = date;
-  if (!todayStr) {
-    const now = new Date();
-    todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  }
+  try {
+    const { getCalendarSessions } = await import('./booking-actions');
+    const allSessions = await getCalendarSessions();
+    
+    // Get today's date in local time YYYY-MM-DD if not provided
+    let todayStr = date;
+    if (!todayStr) {
+      const now = new Date();
+      todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
 
-  // MIRROR getCalendarSessions logic exactly
-  const { data, error } = await supabase
-    .from('session_logs')
-    .select(`
-      *,
-      bookings (
-        *,
-        customers (
-          name_mother,
-          name_baby,
-          address
-        ),
-        assigned_ktv:users!bookings_assigned_ktv_id_fkey (
-          id,
-          full_name
-        )
-      )
-    `)
-    .order('booking_id', { ascending: true })
-    .order('session_number', { ascending: true });
+    // Filter the already processed sessions for Today and Not Completed
+    const todaySessions = allSessions.filter((s: any) => {
+      // getCalendarSessions already handles predictive logic and returns assigned_date
+      const isToday = s.assigned_date === todayStr;
+      const isNotCompleted = s.status !== 'completed';
+      return isToday && isNotCompleted;
+    });
 
-  if (error) {
-    console.error('Error fetching dashboard sessions:', error);
+    // Return the filtered results
+    return todaySessions.sort((a, b) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
+  } catch (error) {
+    console.error('Error in getUpcomingSessions:', error);
     return [];
   }
-
-  const { MOCK_SERVICES } = await import('@/constants/mock-data');
-  function resolvePackageName(booking: any): string {
-    if (booking?.package_name) return booking.package_name;
-    const price = Number(booking?.full_price);
-    const matchedService = MOCK_SERVICES.find(s => {
-      const sPrice = parseInt(s.price.replace(/[^\d]/g, ''));
-      return sPrice === price;
-    });
-    return matchedService?.name || 'Chưa đăng ký';
-  }
-
-  const sessionsByBooking: Record<string, any[]> = {};
-  (data || []).forEach((s: any) => {
-    if (!s.booking_id) return;
-    if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = [];
-    sessionsByBooking[s.booking_id].push(s);
-  });
-
-  const upcomingSessions: any[] = [];
-
-  Object.values(sessionsByBooking).forEach(bookingSessions => {
-    bookingSessions.sort((a, b) => a.session_number - b.session_number);
-    
-    let lastKnownDate: string | null = null;
-    let lastKnownSessionNum = 0;
-
-    bookingSessions.forEach((s) => {
-      let finalDate = s.assigned_date;
-      
-      if (!finalDate) {
-        if (lastKnownDate) {
-          const [y, m, d] = lastKnownDate.split('-').map(Number);
-          const date = new Date(y, m - 1, d);
-          date.setDate(date.getDate() + (s.session_number - lastKnownSessionNum));
-          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        } else if (s.bookings?.start_date) {
-          const [y, m, d] = s.bookings.start_date.split('-').map(Number);
-          const date = new Date(y, m - 1, d);
-          date.setDate(date.getDate() + (s.session_number - 1));
-          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        }
-      }
-
-      if (finalDate) {
-        lastKnownDate = finalDate;
-        lastKnownSessionNum = s.session_number;
-      }
-
-      // Final Filter for Dashboard: matches today AND not completed
-      if (finalDate === todayStr && s.status !== 'completed') {
-        upcomingSessions.push({
-          ...s,
-          assigned_date: ensure2026(finalDate),
-          bookings: s.bookings ? {
-            ...s.bookings,
-            package_name: resolvePackageName(s.bookings),
-            start_date: ensure2026(s.bookings.start_date)
-          } : null
-        });
-      }
-    });
-  });
-
-  return upcomingSessions.sort((a, b) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
 }
 
 export async function getTopTechnicians() {
