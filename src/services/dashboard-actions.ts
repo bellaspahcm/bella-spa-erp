@@ -4,12 +4,12 @@
 import { ensure2026 } from '@/lib/utils';
 import { DEMO_SESSIONS, DEMO_TECH_TOP } from '@/constants/demo-data';
 
-export async function getDashboardStats(startDate?: string, endDate?: string) {
+export async function getDashboardStats(startDate?: string, endDate?: string, todayDate?: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
 
   const now = new Date();
-  const today = now.toLocaleDateString('en-CA'); 
+  const today = todayDate || now.toLocaleDateString('en-CA'); 
   const currentMonthStart = startDate || today.substring(0, 7) + '-01';
   const currentMonthEnd = endDate || today.substring(0, 7) + '-31';
 
@@ -103,13 +103,16 @@ export async function getDashboardStats(startDate?: string, endDate?: string) {
   };
 }
 
-export async function getUpcomingSessions() {
+export async function getUpcomingSessions(date?: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
-  // Get today's date in local time YYYY-MM-DD
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  // Get today's date in local time YYYY-MM-DD if not provided
+  let today = date;
+  if (!today) {
+    const now = new Date();
+    today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
 
   const { data, error } = await supabase
     .from('session_logs')
@@ -281,10 +284,10 @@ export async function getImportantAlerts() {
 }
 
 // Bundle everything into a single request for faster page loading
-export async function getFullDashboardData(startDate?: string, endDate?: string) {
+export async function getFullDashboardData(startDate?: string, endDate?: string, today?: string) {
   const [statsData, sessionsData, ktvsData, alertsData, perfData] = await Promise.all([
-    getDashboardStats(startDate, endDate),
-    getUpcomingSessions(),
+    getDashboardStats(startDate, endDate, today),
+    getUpcomingSessions(today),
     getTopTechnicians(),
     getImportantAlerts(),
     getMonthlyPerformance()

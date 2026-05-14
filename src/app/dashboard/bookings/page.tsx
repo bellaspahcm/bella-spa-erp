@@ -174,10 +174,15 @@ function BookingsContent() {
     }).format(date);
   };
 
-  const isSameDay = (d1: Date, d2: Date) => {
-    return d1.getDate() === d2.getDate() &&
-      d1.getMonth() === d2.getMonth() &&
-      d1.getFullYear() === d2.getFullYear();
+  const isSameDay = (d1: Date | string, d2: Date | string) => {
+    const getLocalDateString = (d: Date | string) => {
+      if (typeof d === 'string') return d.split('T')[0];
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    return getLocalDateString(d1) === getLocalDateString(d2);
   };
 
   const isSameMonth = (d1: Date, d2: Date) => {
