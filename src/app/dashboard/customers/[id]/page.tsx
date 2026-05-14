@@ -512,6 +512,12 @@ export default function CustomerDetailPage() {
                         {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
                       </p>
                     </div>
+                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
+                      <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Giờ mặc định</p>
+                      <p className="font-black text-lg text-white">
+                        {activeBooking?.preferred_time || '08:00'}
+                      </p>
+                    </div>
                     <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 flex items-center gap-4">
                       <div>
                         <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
