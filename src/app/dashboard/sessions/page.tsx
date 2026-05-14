@@ -931,7 +931,7 @@ export default function SessionsPage() {
                       <div className="grid grid-cols-2 gap-6 relative z-10">
                         <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm">
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Hoàn thành</p>
-                          <p className="text-3xl font-black text-slate-900">{sessionLogs.filter(l => (localSessionLogUpdates[l.id] ?? l.status) === 'completed').length}</p>
+                          <p className="text-3xl font-black text-slate-900">{sessionLogs.filter(l => l.status === 'completed').length}</p>
                         </div>
                         <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm relative group">
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Tổng cộng</p>
@@ -953,7 +953,7 @@ export default function SessionsPage() {
                         <div className="w-full bg-white/30 h-1.5 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-primary" 
-                            style={{ width: `${(sessionLogs.filter(l => (localSessionLogUpdates[l.id] ?? l.status) === 'completed').length / (selectedBooking.total_sessions || 21)) * 100}%` }}
+                            style={{ width: `${(sessionLogs.filter(l => l.status === 'completed').length / (selectedBooking.total_sessions || 21)) * 100}%` }}
                           />
                         </div>
                       </div>
@@ -1016,10 +1016,9 @@ export default function SessionsPage() {
                             ))}
                             
                             {sessionLogs.map((log, i) => {
-                            const status = localSessionLogUpdates[log.id] ?? log.status;
+                            const status = log.status;
                             const isUpdating = updatingId === log.id;
-                            const currentLogsStatus = sessionLogs.map(l => ({ ...l, status: localSessionLogUpdates[l.id] ?? l.status }));
-                            const nextScheduledIndex = currentLogsStatus.findIndex(l => l.status === 'scheduled');
+                            const nextScheduledIndex = sessionLogs.findIndex(l => l.status === 'scheduled');
                             const isNextToRun = status === 'scheduled' && i === nextScheduledIndex;
                             const canEdit = userRole === 'ADMIN' || isNextToRun;
 
