@@ -186,6 +186,7 @@ export async function createBooking(formData: any) {
 
   // Record revenue for the deposit if any
   if (validatedData.deposit_amount > 0 && booking?.id) {
+    const isBooked = booking.status === 'booked';
     const { error: revError } = await supabase
       .from('revenue')
       .insert([{
@@ -194,7 +195,7 @@ export async function createBooking(formData: any) {
         revenue_type: 'deposit',
         payment_method: 'bank_transfer',
         received_date: new Date().toISOString().split('T')[0],
-        status: 'pending',
+        status: isBooked ? 'confirmed' : 'pending',
         notes: `Cọc gói ${resolvePackageName(booking)}`,
         tenant_id: tenantId
       }]);
@@ -1050,6 +1051,8 @@ export async function recordRemainingPayment(params: {
 
   try {
     // 1. Record the revenue
+    // If this payment will make the booking 'booked', we can confirm it immediately
+    // However, we'll confirm it after the booking status update for consistency
     const { error: revError } = await supabase
       .from('revenue')
       .insert([{
@@ -1058,7 +1061,7 @@ export async function recordRemainingPayment(params: {
         revenue_type: 'remaining_payment',
         payment_method: params.payment_method,
         received_date: new Date().toISOString().split('T')[0],
-        status: 'pending',
+        status: 'pending', // Default to pending, will be synced below
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
         receipt_url: params.receipt_url || null
       }]);
@@ -1093,6 +1096,20 @@ export async function recordRemainingPayment(params: {
       .eq('id', params.booking_id);
 
     if (updateError) throw updateError;
+
+    // 2.5 Logic: Sync Revenue Status
+    // If booking is now 'booked', confirm all pending revenue for this booking
+    if (newStatus === 'booked') {
+      const { error: syncError } = await supabase
+        .from('revenue')
+        .update({ status: 'confirmed' })
+        .eq('booking_id', params.booking_id)
+        .eq('status', 'pending');
+      
+      if (syncError) {
+        console.error('Error syncing revenue status:', syncError);
+      }
+    }
 
     // 3. Revalidate the customer page
     await safeRevalidatePath(`/dashboard/customers/${params.customer_id}`);
