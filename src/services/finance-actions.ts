@@ -59,13 +59,13 @@ export async function getFinancialOverview() {
       id: `rev-${r.id}`,
       dbId: r.id,
       type: 'revenue',
-      category: r.notes || 'Dịch vụ',
+      category: r.revenue_type === 'additional' ? 'Phát sinh' : (r.notes || 'Dịch vụ'),
       amountNum: Number(r.amount) || 0,
       amount: '+' + Number(r.amount).toLocaleString() + 'đ',
       date: ensure2026(new Date(r.received_date || r.created_at || new Date()).toLocaleDateString('vi-VN')),
       method: r.payment_method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản',
-      status: r.status || 'confirmed',
-      details: `${packageName} - ${customerName}`,
+      status: r.status === 'pending' ? 'pending' : (r.status || 'confirmed'),
+      details: r.revenue_type === 'additional' ? (r.notes || customerName) : `${packageName} - ${customerName}`,
       timestamp: new Date(r.received_date || r.created_at || new Date()).getTime()
     };
   });
@@ -74,12 +74,12 @@ export async function getFinancialOverview() {
     id: `exp-${e.id}`,
     dbId: e.id,
     type: 'expense',
-    category: e.category || e.description || 'Chi phí',
+    category: e.category || 'Chi phí',
     amountNum: Number(e.amount) || 0,
     amount: '-' + Number(e.amount).toLocaleString() + 'đ',
     date: ensure2026(new Date(e.expense_date || e.created_at || new Date()).toLocaleDateString('vi-VN')),
-    method: 'Tiền mặt', 
-    status: e.status === 'submitted' ? 'pending' : e.status || 'pending',
+    method: 'Chuyển khoản', // Default for formal expenses like salary
+    status: (e.status === 'submitted' || e.status === 'pending') ? 'pending' : (e.status || 'pending'),
     details: e.description || 'Chi phí vận hành',
     timestamp: new Date(e.expense_date || e.created_at || new Date()).getTime()
   }));
