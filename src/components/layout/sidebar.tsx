@@ -12,7 +12,8 @@ import {
   Settings, 
   LogOut,
   Flower2,
-  Sparkles
+  Sparkles,
+  MessageSquare
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
