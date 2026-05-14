@@ -116,6 +116,12 @@ export async function approveSalary(ktvId: string) {
         status: 'submitted',
         expense_date: new Date().toISOString()
       });
+
+      // Force revalidation
+      const { revalidatePath } = await import('next/cache');
+      revalidatePath('/dashboard/finance');
+      revalidatePath('/dashboard/salary');
+      
       return { success: true };
     }
 
@@ -164,6 +170,11 @@ export async function approveSalary(ktvId: string) {
     if (expenseError) {
       console.error('Error creating expense record:', expenseError);
     }
+
+    // Force revalidation of related pages
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath('/dashboard/finance');
+    revalidatePath('/dashboard/salary');
 
     return { success: true };
   } catch (error: any) {
