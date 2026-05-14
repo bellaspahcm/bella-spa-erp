@@ -28,18 +28,25 @@ interface TransactionModalProps {
 export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModalProps) {
   const [type, setType] = useState<'revenue' | 'expense'>('revenue');
   const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');
   const [bookingId, setBookingId] = useState('');
+  const [autoConfirm, setAutoConfirm] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isOpen && type === 'revenue') {
-      const fetchBookings = async () => {
-        const data = await getBookings();
-        setBookings(data || []);
-      };
-      fetchBookings();
+    if (isOpen) {
+      if (type === 'revenue') {
+        const fetchBookings = async () => {
+          const data = await getBookings();
+          setBookings(data || []);
+        };
+        fetchBookings();
+        setCategory('package_payment');
+      } else {
+        setCategory('other_admin');
+      }
     }
   }, [isOpen, type]);
 
@@ -56,8 +63,10 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
       await recordTransaction({
         amount: Number(cleanAmount),
         type,
-        notes: notes || (type === 'revenue' ? 'Thu nhập khác' : 'Chi phí khác'),
-        booking_id: type === 'revenue' ? bookingId : undefined
+        category,
+        notes: notes || (type === 'revenue' ? 'Thu nhập' : 'Chi phí'),
+        status: autoConfirm ? 'confirmed' : 'pending',
+        booking_id: (type === 'revenue' && bookingId) ? bookingId : undefined
       });
       toast.success('Ghi nhận giao dịch thành công');
       if (onSuccess) onSuccess();
@@ -66,7 +75,9 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
       setAmount('');
       setNotes('');
       setBookingId('');
+      setCategory('');
     } catch (error) {
+      console.error('Submit error:', error);
       toast.error('Lỗi khi ghi nhận giao dịch');
     } finally {
       setIsSubmitting(false);
@@ -155,8 +166,54 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
               </div>
             </div>
 
+            {/* Category and Confirmation Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Category Selector */}
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Danh mục {type === 'revenue' ? 'thu' : 'chi'}</label>
+                <PremiumSelect
+                  value={category}
+                  options={type === 'revenue' ? [
+                    { value: 'package_deposit', label: 'Cọc gói dịch vụ' },
+                    { value: 'package_payment', label: 'Thanh toán gói' },
+                    { value: 'retail', label: 'Dịch vụ lẻ' },
+                    { value: 'additional', label: 'Phát sinh khác' },
+                  ] : [
+                    { value: 'salary', label: 'Lương nhân viên' },
+                    { value: 'marketing', label: 'Marketing' },
+                    { value: 'office_rent', label: 'Mặt bằng' },
+                    { value: 'utilities', label: 'Điện nước' },
+                    { value: 'other_admin', label: 'Chi phí khác' },
+                  ]}
+                  onChange={(val) => setCategory(val)}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Status Toggle */}
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Trạng thái ghi nhận</label>
+                <div 
+                  onClick={() => setAutoConfirm(!autoConfirm)}
+                  className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                    autoConfirm 
+                      ? (type === 'revenue' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-rose-50 border-rose-200 text-rose-700')
+                      : 'bg-slate-50 border-transparent text-slate-500'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {autoConfirm ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                    <span className="text-xs font-black uppercase tracking-wider">{autoConfirm ? 'Xác nhận ngay' : 'Chờ phê duyệt'}</span>
+                  </div>
+                  <div className={`w-10 h-5 rounded-full relative transition-all ${autoConfirm ? (type === 'revenue' ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-slate-300'}`}>
+                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${autoConfirm ? 'left-6' : 'left-1'}`} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Booking Selector for Revenue */}
-            {type === 'revenue' && (
+            {type === 'revenue' && category !== 'retail' && category !== 'additional' && (
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Liên kết khách hàng/booking (Tùy chọn)</label>
                 <PremiumSelect
@@ -181,7 +238,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
               <div className="relative">
                 <Tag className="absolute left-6 top-5 w-5 h-5 text-slate-400" />
                 <textarea
-                  rows={3}
+                  rows={2}
                   placeholder="Ví dụ: Thu tiền cọc khách hàng, Chi tiền mua mỹ phẩm..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -191,10 +248,10 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
             </div>
 
             {/* Warning if Large Amount */}
-            {amount && Number(amount.replace(/\D/g, '')) > 10000000 && (
+            {amount && Number(amount.replace(/\D/g, '')) > 20000000 && (
               <div className="flex items-center gap-3 p-4 bg-amber-50 text-amber-600 rounded-2xl border border-amber-100">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <p className="text-xs font-bold">Giao dịch lớn (trên 10M), vui lòng kiểm tra kỹ chứng từ!</p>
+                <p className="text-xs font-bold">Giao dịch rất lớn (trên 20M), vui lòng kiểm tra kỹ chứng từ trước khi lưu!</p>
               </div>
             )}
 
