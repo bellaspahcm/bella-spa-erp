@@ -41,7 +41,7 @@ export async function getSalaryData() {
       .from('expenses')
       .select('description, tenant_id')
       .eq('category', 'salary')
-      .eq('tenant_id', currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805');
+      .eq('tenant_id', currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e');
 
     if (expensesError) {
       console.error('Error fetching expenses for salary status:', expensesError);
@@ -74,7 +74,7 @@ export async function getSalaryData() {
       .from('salary_records')
       .select('*')
       .eq('month_year', '2026-05-01')
-      .eq('tenant_id', currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805');
+      .eq('tenant_id', currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e');
 
     // Fetch completed sessions to calculate real-time stats
     const { data: sessions, error: sessionsError } = await supabase
@@ -138,7 +138,7 @@ export async function approveSalary(ktvId: string) {
       const ktvName = ktvNames[ktvId] || 'Nhân viên';
       
       const currentUser = await getCurrentUser();
-      const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+      const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
 
       const { data: inserted, error: mockExpenseError } = await supabase.from('expenses').insert({
         amount: 8000000, 
@@ -192,7 +192,7 @@ export async function approveSalary(ktvId: string) {
     const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
 
     const currentUser = await getCurrentUser();
-    const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+    const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
 
     // 4. Update or Insert salary record
     if (existing) {
@@ -260,7 +260,7 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
     .single();
 
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
 
   if (existing) {
     const { error } = await supabase

@@ -101,7 +101,7 @@ export async function createCustomer(formData: any) {
   
   const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
 
   // 0. Validate with Zod
   const validatedFields = customerSchema.safeParse(formData);
