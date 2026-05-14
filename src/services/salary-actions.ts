@@ -2,23 +2,24 @@
 
 
 import { ensure2026 } from '@/lib/utils';
+import { revalidatePath } from 'next/cache';
+import { createClient } from '@/lib/supabase-server';
+import { getCurrentUser } from './user-actions';
+
+const mockData = [
+  { id: 'ktv1', name: 'Nguyễn Thị Hoa', sessions: 52, baseSalary: 7000000, sessionBonus: 7800000, kpiBonus: 2500000, deductions: 0, advances: 0, totalSalary: 17300000, status: 'draft' },
+  { id: 'ktv2', name: 'Lê Thu Hà', sessions: 45, baseSalary: 6500000, sessionBonus: 6750000, kpiBonus: 1800000, deductions: 200000, advances: 500000, totalSalary: 14350000, status: 'draft' },
+  { id: 'ktv3', name: 'Phạm Minh Tuyết', sessions: 38, baseSalary: 6000000, sessionBonus: 5700000, kpiBonus: 1500000, deductions: 0, advances: 0, totalSalary: 13200000, status: 'draft' },
+  { id: 'ktv4', name: 'Trần Thị Thanh', sessions: 42, baseSalary: 6000000, sessionBonus: 6300000, kpiBonus: 1600000, deductions: 100000, advances: 1000000, totalSalary: 12800000, status: 'draft' },
+  { id: 'ktv5', name: 'Hoàng Ngọc Mai', sessions: 31, baseSalary: 6000000, sessionBonus: 4650000, kpiBonus: 1000000, deductions: 0, advances: 0, totalSalary: 11650000, status: 'draft' },
+  { id: 'ktv6', name: 'Đặng Thùy Chi', sessions: 48, baseSalary: 6500000, sessionBonus: 7200000, kpiBonus: 2000000, deductions: 0, advances: 0, totalSalary: 15700000, status: 'draft' },
+  { id: 'ktv7', name: 'Võ Thị Bích', sessions: 35, baseSalary: 6000000, sessionBonus: 5250000, kpiBonus: 1200000, deductions: 0, advances: 0, totalSalary: 12450000, status: 'draft' },
+  { id: 'ktv8', name: 'Ngô Diễm My', sessions: 29, baseSalary: 6000000, sessionBonus: 4350000, kpiBonus: 800000, deductions: 50000, advances: 200000, totalSalary: 10900000, status: 'draft' },
+];
 
 export async function getSalaryData() {
-  const mockData = [
-    { id: 'ktv1', name: 'Nguyễn Thị Hoa', sessions: 52, baseSalary: 7000000, sessionBonus: 7800000, kpiBonus: 2500000, deductions: 0, advances: 0, totalSalary: 17300000, status: 'draft' },
-    { id: 'ktv2', name: 'Lê Thu Hà', sessions: 45, baseSalary: 6500000, sessionBonus: 6750000, kpiBonus: 1800000, deductions: 200000, advances: 500000, totalSalary: 14350000, status: 'draft' },
-    { id: 'ktv3', name: 'Phạm Minh Tuyết', sessions: 38, baseSalary: 6000000, sessionBonus: 5700000, kpiBonus: 1500000, deductions: 0, advances: 0, totalSalary: 13200000, status: 'draft' },
-    { id: 'ktv4', name: 'Trần Thị Thanh', sessions: 42, baseSalary: 6000000, sessionBonus: 6300000, kpiBonus: 1600000, deductions: 100000, advances: 1000000, totalSalary: 12800000, status: 'draft' },
-    { id: 'ktv5', name: 'Hoàng Ngọc Mai', sessions: 31, baseSalary: 6000000, sessionBonus: 4650000, kpiBonus: 1000000, deductions: 0, advances: 0, totalSalary: 11650000, status: 'draft' },
-    { id: 'ktv6', name: 'Đặng Thùy Chi', sessions: 48, baseSalary: 6500000, sessionBonus: 7200000, kpiBonus: 2000000, deductions: 0, advances: 0, totalSalary: 15700000, status: 'draft' },
-    { id: 'ktv7', name: 'Võ Thị Bích', sessions: 35, baseSalary: 6000000, sessionBonus: 5250000, kpiBonus: 1200000, deductions: 0, advances: 0, totalSalary: 12450000, status: 'draft' },
-    { id: 'ktv8', name: 'Ngô Diễm My', sessions: 29, baseSalary: 6000000, sessionBonus: 4350000, kpiBonus: 800000, deductions: 50000, advances: 200000, totalSalary: 10900000, status: 'draft' },
-  ];
-
   try {
-    const { createClient } = await import('@/lib/supabase-server');
     const supabase = (await createClient()) as any;
-    const { getCurrentUser } = await import('./user-actions');
     const currentUser = await getCurrentUser();
 
     // Fetch KTVs
@@ -116,7 +117,6 @@ export async function getSalaryData() {
 }
 
 export async function approveSalary(ktvId: string) {
-  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const monthYear = '2026-05-01'; // Default demo month
 
@@ -137,26 +137,24 @@ export async function approveSalary(ktvId: string) {
       };
       const ktvName = ktvNames[ktvId] || 'Nhân viên';
       
-      const { getCurrentUser } = await import('./user-actions');
       const currentUser = await getCurrentUser();
       const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
 
-      const { error: mockExpenseError } = await supabase.from('expenses').insert({
-        expense_number: `SAL-KTV-${Date.now()}`,
+      const { data: inserted, error: mockExpenseError } = await supabase.from('expenses').insert({
         amount: 8000000, 
         category: 'salary',
         description: `Thanh toán lương T5/2026 - KTV ${ktvName}`,
-        payment_status: 'submitted',
+        status: 'approved',
         expense_date: new Date().toISOString(),
         tenant_id: tenantId
-      });
+      }).select();
 
       if (mockExpenseError) {
         console.error('Mock expense insert failed:', mockExpenseError);
         return { success: false, error: mockExpenseError.message };
       }
 
-      const { revalidatePath } = await import('next/cache');
+      console.log('Successfully inserted mock salary expense:', inserted);
       revalidatePath('/dashboard/salary');
       revalidatePath('/dashboard/finance');
       return { success: true };
@@ -227,11 +225,10 @@ export async function approveSalary(ktvId: string) {
     const { error: expenseError } = await supabase
       .from('expenses')
       .insert({
-        expense_number: `SAL-REAL-${Date.now()}`,
         amount: totalSalary,
         category: 'salary',
         description: `Thanh toán lương T5/2026 - KTV ${ktv?.full_name || 'Nhân viên'}`,
-        payment_status: 'submitted', // Will appear as "Chờ duyệt" in Finance
+        status: 'submitted', // Will appear as "Chờ duyệt" in Finance
         expense_date: new Date().toISOString(),
         tenant_id: tenantId
       });
