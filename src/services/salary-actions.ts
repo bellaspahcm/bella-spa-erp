@@ -489,9 +489,9 @@ export async function getKtvSessionMatrix() {
         if (hasAnyRealData) {
           row[pkg] = matrix[ktv.id]?.[pkg] || 0;
         } else {
-          // Smart mock: distribute some numbers if DB is empty so UI looks alive
-          const mockVal = Math.floor(Math.random() * 8) + (pkg === 'Dịch vụ lẻ' ? 1 : 0);
-          row[pkg] = mockVal;
+          // Deterministic mock: Use a hash to ensure the number is stable across refreshes
+          const hash = (ktv.id.length * 7 + pkg.length * 3) % 10;
+          row[pkg] = hash;
         }
       });
       return row;
@@ -510,7 +510,8 @@ export async function getKtvSessionMatrix() {
       ktvs: mockData.map(m => {
         const row: any = { id: m.id, name: m.name };
         fallbackPackages.forEach(pkg => {
-          row[pkg] = Math.floor(Math.random() * 10);
+          // Deterministic fallback
+          row[pkg] = (m.id.length + pkg.length) % 8;
         });
         return row;
       }), 
