@@ -23,12 +23,17 @@ import {
   UserPlus, 
   X, 
   ShieldAlert, 
-  BadgeCheck 
+  BadgeCheck,
+  History,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { createUser, getUsers, updateUserStatus } from '@/services/user-actions';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase-client';
+import { getAuditLogs } from '@/services/audit-actions';
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 const container = {
   hidden: { opacity: 0 },
@@ -50,6 +55,7 @@ const TABS = [
   { id: 'staff', label: 'Nhân sự & Quyền', icon: Shield },
   { id: 'notifications', label: 'Thông báo', icon: Bell },
   { id: 'appearance', label: 'Giao diện', icon: Palette },
+  { id: 'audit', label: 'Nhật ký thay đổi', icon: History },
 ];
 
 export default function SettingsPage() {
@@ -64,6 +70,8 @@ export default function SettingsPage() {
     email: '',
     role: 'ktv'
   });
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'staff') {
@@ -85,7 +93,22 @@ export default function SettingsPage() {
         supabase.removeChannel(channel);
       };
     }
+    if (activeTab === 'audit') {
+      fetchLogs();
+    }
   }, [activeTab]);
+
+  async function fetchLogs() {
+    setIsLoadingLogs(true);
+    try {
+      const data = await getAuditLogs();
+      setAuditLogs(data);
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  }
 
   async function fetchUsers() {
     setIsLoadingUsers(true);
@@ -449,6 +472,118 @@ export default function SettingsPage() {
                     <div className="px-4 py-1.5 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest">Sắp ra mắt</div>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'audit' && (
+            <div className="space-y-8">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-600">
+                  <History className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Nhật ký thay đổi</h2>
+                  <p className="text-sm text-muted-foreground font-semibold">Theo dõi lịch sử thay đổi dữ liệu trong hệ thống</p>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-[2rem] border border-white bg-white/40 shadow-sm">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-white/50">
+                      <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Thời gian</th>
+                      <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Người thực hiện</th>
+                      <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Hành động</th>
+                      <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Nội dung thay đổi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/20">
+                    {isLoadingLogs ? (
+                      <tr>
+                        <td colSpan={4} className="py-20 text-center">
+                          <div className="w-10 h-10 border-4 border-slate-200 border-t-slate-500 rounded-full animate-spin mx-auto mb-4" />
+                          <p className="text-muted-foreground font-bold">Đang tải dữ liệu...</p>
+                        </td>
+                      </tr>
+                    ) : auditLogs.length > 0 ? (
+                      auditLogs.map((log) => (
+                        <tr key={log.id} className="group hover:bg-white/60 transition-colors">
+                          <td className="px-6 py-6 whitespace-nowrap">
+                            <p className="text-sm font-black text-slate-900">
+                              {format(new Date(log.created_at), 'HH:mm:ss')}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                              {format(new Date(log.created_at), 'dd/MM/yyyy')}
+                            </p>
+                          </td>
+                          <td className="px-6 py-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-500 font-bold text-xs uppercase">
+                                {log.user_name?.substring(0, 2)}
+                              </div>
+                              <span className="text-sm font-bold text-slate-700">{log.user_name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-6">
+                            <div className="flex flex-col gap-1">
+                              <span className={cn(
+                                "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest inline-block w-fit",
+                                log.action === 'CREATE' ? "bg-emerald-50 text-emerald-600" :
+                                log.action === 'UPDATE' ? "bg-blue-50 text-blue-600" :
+                                "bg-rose-50 text-rose-600"
+                              )}>
+                                {log.action}
+                              </span>
+                              <span className="text-[10px] font-black text-slate-400 uppercase">{log.module}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-6">
+                            {log.old_data || log.new_data ? (
+                              <div className="flex items-center gap-4 bg-white/30 p-4 rounded-2xl border border-white/50 max-w-md">
+                                {log.old_data ? (
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] font-black text-rose-400 uppercase mb-1">Cũ</p>
+                                    <p className="text-[11px] font-bold text-slate-500 truncate">
+                                      {typeof log.old_data === 'object' ? JSON.stringify(log.old_data).substring(0, 40) + '...' : log.old_data}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="flex-1">
+                                    <p className="text-[9px] font-black text-emerald-500 uppercase italic">Mới khởi tạo</p>
+                                  </div>
+                                )}
+                                
+                                <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
+                                
+                                {log.new_data ? (
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] font-black text-blue-500 uppercase mb-1">Mới</p>
+                                    <p className="text-[11px] font-bold text-slate-900 truncate">
+                                      {typeof log.new_data === 'object' ? JSON.stringify(log.new_data).substring(0, 40) + '...' : log.new_data}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="flex-1">
+                                    <p className="text-[9px] font-black text-rose-500 uppercase italic">Đã xóa</p>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs font-bold text-slate-400 italic">Không có chi tiết</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="py-20 text-center text-muted-foreground font-bold italic">
+                          Chưa có nhật ký thay đổi
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

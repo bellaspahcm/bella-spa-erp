@@ -1,18 +1,15 @@
 'use server';
 
+import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { recordAuditLog } from './audit-actions';
 
 export async function getCurrentUser() {
-  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { data: { user } } = await supabase.auth.getUser();
   
-  // For the demo/mock environment, if no authenticated user is found, 
-  // we check for a search param or return a default (admin for now)
   if (!user) {
-    // In a real app, we'd return null or redirect to login
-    // For this demo, let's return the main admin profile from the spec
     return { 
       id: 'c294c8b0-25d2-4c7e-bed9-21246d957254', 
       full_name: 'Quản trị viên', 
@@ -31,7 +28,6 @@ export async function getCurrentUser() {
 }
 
 export async function getUsers() {
-  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('users')
@@ -59,7 +55,6 @@ export async function getUsers() {
     };
   });
 
-  // If DB is empty or has only the initial admin, add mock data for demo
   if (processedData.length <= 1) {
     const mockUsers = [
       { id: 'm1', full_name: 'Nguyễn Thị Hoa', role: 'ktv', email: 'hoa.nt@bellaspa.vn', status: 'active', sessions_count: 45, avg_rating: '5.0', created_at: new Date().toISOString() },
@@ -75,10 +70,7 @@ export async function getUsers() {
 }
 
 export async function createUser(formData: any) {
-  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
-  
-  const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
   
   const { data, error } = await supabase
@@ -88,7 +80,6 @@ export async function createUser(formData: any) {
       full_name: formData.full_name,
       role: formData.role || 'ktv',
       status: 'active',
-      // Fetch tenant_id from current user or use system fallback
       tenant_id: currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e'
     } as any])
     .select()
@@ -99,12 +90,23 @@ export async function createUser(formData: any) {
     return { error: error.message };
   }
 
+  // Record Audit Log
+  await recordAuditLog({
+    action: 'CREATE',
+    module: 'STAFF',
+    target_id: data.id,
+    new_data: { 
+      full_name: formData.full_name, 
+      email: formData.email, 
+      role: formData.role || 'ktv' 
+    }
+  });
+
   await safeRevalidatePath('/dashboard/settings');
   return { data };
 }
 
 export async function updateUserStatus(id: string, status: 'active' | 'inactive') {
-  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
   const { error } = await supabase
@@ -116,6 +118,14 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
     console.error('Error updating user status:', error);
     return { error: error.message };
   }
+
+  // Record Audit Log
+  await recordAuditLog({
+    action: 'UPDATE',
+    module: 'STAFF',
+    target_id: id,
+    new_data: { status }
+  });
 
   await safeRevalidatePath('/dashboard/settings');
   return { success: true };

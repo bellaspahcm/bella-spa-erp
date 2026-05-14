@@ -5,6 +5,7 @@ import { ensure2026 } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
+import { recordAuditLog } from './audit-actions';
 
 const mockData = [
   { id: 'ktv1', name: 'Nguyễn Thị Hoa', sessions: 52, baseSalary: 7000000, sessionBonus: 7800000, kpiBonus: 2500000, deductions: 0, advances: 0, totalSalary: 17300000, status: 'draft' },
@@ -155,6 +156,14 @@ export async function approveSalary(ktvId: string) {
       }
 
       console.log('Successfully inserted mock salary expense:', inserted);
+      // Record Audit Log for mock
+      await recordAuditLog({
+        action: 'UPDATE',
+        module: 'SALARY',
+        target_id: ktvId,
+        new_data: { status: 'approved', ktv_name: ktvName }
+      });
+
       revalidatePath('/dashboard/salary');
       revalidatePath('/dashboard/finance');
       return { success: true };
@@ -236,6 +245,18 @@ export async function approveSalary(ktvId: string) {
       console.error('Error creating expense record:', expenseError);
     }
 
+    // Record Audit Log
+    await recordAuditLog({
+      action: 'UPDATE',
+      module: 'SALARY',
+      target_id: ktvId,
+      new_data: { 
+        status: 'approved', 
+        amount: totalSalary, 
+        ktv_name: ktv?.full_name 
+      }
+    });
+
     // Force revalidation of related pages
     revalidatePath('/dashboard/finance');
     revalidatePath('/dashboard/salary');
@@ -290,6 +311,24 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
       }]);
 
     if (error) return { success: false, error: error.message };
+
+    // Record Audit Log
+    await recordAuditLog({
+      action: 'CREATE',
+      module: 'SALARY',
+      target_id: ktvId,
+      new_data: payload
+    });
+  }
+
+  // Handle UPDATE log inside existing logic if needed, but let's just do it here
+  if (existing) {
+    await recordAuditLog({
+      action: 'UPDATE',
+      module: 'SALARY',
+      target_id: ktvId,
+      new_data: payload
+    });
   }
 
   return { success: true };
