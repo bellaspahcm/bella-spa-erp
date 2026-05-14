@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 1.7  
-**Last Updated:** 2026-05-14 (18:40)  
-**Status:** Implementation Phase (Phase 14: Advanced Search & Automated Integrity)
+**Version:** 1.8  
+**Last Updated:** 2026-05-14 (18:50)  
+**Status:** Implementation Phase (Phase 15: Zalo OA & Performance Analytics)
 
 ---
 
@@ -589,6 +589,7 @@ t:** [Your contact info]
 - [x] **Self-Healing Sync Utility**: Implemented `syncBookingProgress` to reconcile `completed_sessions` counts with actual `session_logs` records.
 - [x] **Automated Integrity Checks**: Integrated background sync triggers whenever a session card is opened to ensure zero data drift.
 - [x] **RLS Policy Deployment**: Hardened multi-tenant security by enabling RLS across all core tables (`customers`, `bookings`, `session_logs`, etc.).
+- [x] **Role-based Immutability**: Hardened session logs to be immutable for KTVs once completed, with Admin-only override capability.
 
 #### ⏭ Next Steps
 - [ ] **Zalo OA Integration**: Automate evaluation reminder notifications via Zalo khi hoàn thành buổi (Phase 2).
@@ -643,6 +644,14 @@ t:** [Your contact info]
     - **Sticky Header**: Bắt buộc sử dụng `sticky top-0 z-10` kèm `backdrop-blur` cho hàng tiêu đề (`thead`) của các bảng danh sách lớn.
     - **Column Constraints**: Sử dụng `min-w-[...]` cho các cột chứa text dài (như Tên KTV, Tên khách hàng) và `whitespace-nowrap` cho các cột chứa số liệu tài chính để đảm bảo tính dễ đọc.
     - **Horizontal Scroll**: Luôn bao bọc bảng trong một container `overflow-x-auto` để hỗ trợ hiển thị tốt trên mọi kích thước màn hình.
+    
+### 7. "Dịch vụ lẻ" Operational Logic
+*   **Vấn đề**: Các dịch vụ không thuộc gói (ví dụ: làm 1 buổi phát sinh) cần được quản lý mà không làm hỏng cấu trúc 15/21 buổi của hệ thống.
+*   **Quy tắc**:
+    - **Resolution**: Hệ thống tự động nhận diện "Dịch vụ lẻ" dựa trên `package_name` rỗng và đối chiếu `full_price` với danh sách dịch vụ mẫu.
+    - **Multiplicity**: Mỗi lần khách làm dịch vụ lẻ được coi là 1 bản ghi `booking` riêng biệt. Sử dụng `Booking Switcher` để chuyển đổi giữa các lần làm dịch vụ lẻ khác nhau.
+    - **Status Mapping**: Dịch vụ lẻ vẫn tuân thủ logic `scheduled` -> `completed`. Khi hoàn thành, thẻ sẽ được đóng lại và lưu vào lịch sử (Completed).
+
 ### 14.3 Quy tắc tính toàn vẹn và Bảo mật (Hardened)
 
 1.  **Tính bất biến của dữ liệu (Data Immutability):**
@@ -695,7 +704,7 @@ t:** [Your contact info]
 
 ---
 
-**Document Version:** 1.7  
-**Last Updated:** 2026-05-14 (18:40)  
-**Status:** Implementation Phase (Phase 14)  
+**Document Version:** 1.8  
+**Last Updated:** 2026-05-14 (18:50)  
+**Status:** Implementation Phase (Phase 15)  
 **Contact:** Bella Spa ERP Dev Team
