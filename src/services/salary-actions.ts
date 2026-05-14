@@ -454,9 +454,9 @@ export async function getKtvSessionMatrix() {
     const packageNames = Array.from(packageNamesSet).sort();
     const sortedKtvs = (ktvs || []).sort((a: any, b: any) => a.full_name.localeCompare(b.full_name));
 
-    const result = sortedKtvs.map(ktv => {
+    const result = sortedKtvs.map((ktv: any) => {
       const row: any = { id: ktv.id, name: ktv.full_name };
-      packageNames.forEach(pkg => {
+      packageNames.forEach((pkg: string) => {
         row[pkg] = matrix[ktv.id]?.[pkg] || 0;
       });
       return row;

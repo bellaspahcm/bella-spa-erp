@@ -175,12 +175,12 @@ export default function SalaryPage() {
     );
   }
 
-  const filteredSalaries = ktvSalaries.filter(s => 
+  const filteredSalaries = ktvSalaries.filter((s: any) => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const totalPayout = ktvSalaries.reduce((acc, curr) => acc + curr.totalSalary, 0);
-  const totalSessions = ktvSalaries.reduce((acc, curr) => acc + curr.sessions, 0);
+  const totalPayout = ktvSalaries.reduce((acc: number, curr: any) => acc + curr.totalSalary, 0);
+  const totalSessions = ktvSalaries.reduce((acc: number, curr: any) => acc + curr.sessions, 0);
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
@@ -258,7 +258,7 @@ export default function SalaryPage() {
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Thu nhập cao nhất</p>
-              <h4 className="text-2xl font-black text-slate-900">{(Math.max(...ktvSalaries.map(s => s.totalSalary)) / 1000000).toFixed(1)}M</h4>
+              <h4 className="text-2xl font-black text-slate-900">{(Math.max(...ktvSalaries.map((s: any) => s.totalSalary)) / 1000000).toFixed(1)}M</h4>
             </div>
           </div>
           <p className="text-xs font-bold text-slate-500">KTV Nguyễn Thị Hoa (Top 1)</p>
@@ -435,14 +435,14 @@ export default function SalaryPage() {
             <thead>
               <tr className="bg-slate-50/80 backdrop-blur-md">
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px] sticky left-0 z-20 bg-slate-50">Kỹ thuật viên</th>
-                {matrixData?.packageNames.map(pkg => (
+                {matrixData?.packageNames.map((pkg: string) => (
                   <th key={pkg} className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px] text-center">{pkg}</th>
                 ))}
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[120px] text-center bg-slate-100/50">Tổng buổi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {matrixData?.ktvs.filter(ktv => ktv.name.toLowerCase().includes(searchQuery.toLowerCase())).map((ktv, index) => (
+              {matrixData?.ktvs.filter((ktv: any) => ktv.name.toLowerCase().includes(searchQuery.toLowerCase())).map((ktv: any, index: number) => (
                 <motion.tr 
                   key={ktv.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -458,7 +458,7 @@ export default function SalaryPage() {
                       <span className="font-bold text-slate-900">{ktv.name}</span>
                     </div>
                   </td>
-                  {matrixData?.packageNames.map(pkg => (
+                  {matrixData?.packageNames.map((pkg: string) => (
                     <td key={pkg} className="px-8 py-6 text-center whitespace-nowrap">
                       <span className={`font-black text-sm ${ktv[pkg] > 0 ? 'text-primary' : 'text-slate-300'}`}>
                         {ktv[pkg] || 0}
@@ -467,7 +467,7 @@ export default function SalaryPage() {
                   ))}
                   <td className="px-8 py-6 text-center whitespace-nowrap bg-slate-50/30">
                     <span className="font-black text-slate-900 text-lg">
-                      {matrixData.packageNames.reduce((acc, pkg) => acc + (ktv[pkg] || 0), 0)}
+                      {matrixData.packageNames.reduce((acc: number, pkg: string) => acc + (ktv[pkg] || 0), 0)}
                     </span>
                   </td>
                 </motion.tr>

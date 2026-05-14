@@ -131,10 +131,10 @@ export async function exportSessionMatrixToExcel(data: any[], packageNames: stri
       ['Kỹ thuật viên', ...packageNames, 'Tổng cộng']
     ];
 
-    data.forEach(row => {
+    data.forEach((row: any) => {
       const rowData = [row.name];
       let total = 0;
-      packageNames.forEach(pkg => {
+      packageNames.forEach((pkg: string) => {
         const count = row[pkg] || 0;
         rowData.push(count);
         total += count;
