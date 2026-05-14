@@ -1,12 +1,13 @@
 'use server';
 
+import { createClient } from '@/lib/supabase-server';
+import { getCurrentUser } from './user-actions';
+import { revalidatePath } from 'next/cache';
 import { ensure2026 } from '@/lib/utils';
 import { DEMO_REVENUE } from '@/constants/demo-data';
 
 export async function getFinancialOverview() {
-  const { createClient } = await import('@/lib/supabase-server');
-  const { getCurrentUser } = await import('./user-actions');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient() as any;
   const currentUser = await getCurrentUser();
 
   // Security: KTVs cannot see financial overview
@@ -124,7 +125,6 @@ export async function getFinancialOverview() {
 }
 
 export async function confirmTransaction(id: string, type: 'revenue' | 'expense') {
-  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const table = type === 'revenue' ? 'revenue' : 'expenses';
 
@@ -141,7 +141,6 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   }
 
   // Force revalidation of the finance page
-  const { revalidatePath } = await import('next/cache');
   revalidatePath('/dashboard/finance');
 
   return { success: true };
@@ -153,9 +152,7 @@ export async function recordTransaction(data: {
   notes: string;
   booking_id?: string;
 }) {
-  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
-  const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
 
@@ -200,10 +197,8 @@ export async function recordTransaction(data: {
     }
     
     // Force revalidation
-    const { revalidatePath } = await import('next/cache');
     revalidatePath('/dashboard/finance');
     
     return result;
   }
 }
-
