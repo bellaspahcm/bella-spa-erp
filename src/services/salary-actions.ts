@@ -82,12 +82,6 @@ export async function getSalaryData() {
     .select('id, completed_by_ktv_id, status')
     .eq('status', 'completed');
 
-  // Fetch expenses to check for already approved salaries (including mock descriptions)
-  const { data: expenses } = await supabase
-    .from('expenses')
-    .select('description')
-    .eq('category', 'salary');
-
   const ktvSalaries = ktvs.map((ktv: any) => {
     const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
     const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id).length || 0;
