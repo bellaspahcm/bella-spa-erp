@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 1.6  
-**Last Updated:** 2026-05-14 (18:15)  
-**Status:** Implementation Phase (Phase 13: Data Integrity & Multi-Booking Context)
+**Version:** 1.7  
+**Last Updated:** 2026-05-14 (18:40)  
+**Status:** Implementation Phase (Phase 14: Advanced Search & Automated Integrity)
 
 ---
 
@@ -578,12 +578,17 @@ t:** [Your contact info]
 - [x] **Automated Evaluation Trigger**: Implemented auto-creation of `pending_review` records upon session completion in `booking-actions.ts`.
 - [x] **Performance-Based Bonus Engine**: Updated salary management to calculate monthly bonuses based on average customer ratings (e.g., 5.0⭐ = +50k).
 - [x] **Transparent Compensation UI**: Added rating and bonus columns to the KTV salary table for full visibility.
-+ 
-+ #### ✅ Phase 13: Data Integrity & Multi-Booking Context (May 14, 2026)
-+ - [x] **"Single Active Booking" Logic**: Enforced selection of primary active records in the UI to prevent data divergence when multiple bookings exist.
-+ - [x] **Booking Context Navigation**: Updated dashboard and session links to pass `bookingId`, ensuring consistency when a customer has multiple packages.
-+ - [x] **Booking Switcher UI**: Added a dedicated selection interface in the Customer Detail view to allow manual switching between historical or concurrent packages.
-+ - [x] **Refined Status Sorting**: Prioritized `active`, `in_progress`, and `booked` statuses in data fetching to suppress ambiguity from legacy or deposit records.
+#### ✅ Phase 13: Data Integrity & Multi-Booking Context (May 14, 2026)
+- [x] **"Single Active Booking" Logic**: Enforced selection of primary active records in the UI to prevent data divergence when multiple bookings exist.
+- [x] **Booking Context Navigation**: Updated dashboard and session links to pass `bookingId`, ensuring consistency when a customer has multiple packages.
+- [x] **Booking Switcher UI**: Added a dedicated selection interface in the Customer Detail view to allow manual switching between historical or concurrent packages.
+- [x] **Refined Status Sorting**: Prioritized `active`, `in_progress`, and `booked` statuses in data fetching to suppress ambiguity from legacy or deposit records.
+
+#### ✅ Phase 14: Advanced Search & Automated Integrity (May 14, 2026)
+- [x] **Full-Text Multi-Filter**: Expanded session search to include Package Name, KTV Name, Booking Number, and Phone Number.
+- [x] **Self-Healing Sync Utility**: Implemented `syncBookingProgress` to reconcile `completed_sessions` counts with actual `session_logs` records.
+- [x] **Automated Integrity Checks**: Integrated background sync triggers whenever a session card is opened to ensure zero data drift.
+- [x] **RLS Policy Deployment**: Hardened multi-tenant security by enabling RLS across all core tables (`customers`, `bookings`, `session_logs`, etc.).
 
 #### ⏭ Next Steps
 - [ ] **Zalo OA Integration**: Automate evaluation reminder notifications via Zalo khi hoàn thành buổi (Phase 2).
@@ -592,7 +597,7 @@ t:** [Your contact info]
 - [ ] **Archived Records Logic**: Tự động chuyển các booking cũ sang trạng thái archived khi phát hiện trùng lặp.
 
 ---
-**Last Updated:** May 14, 2026 (18:15)
+**Last Updated:** May 14, 2026 (18:40)
 
 
 ## 🛠️ TROUBLESHOOTING & BEST PRACTICES (LESSONS LEARNED)
@@ -638,13 +643,19 @@ t:** [Your contact info]
     - **Sticky Header**: Bắt buộc sử dụng `sticky top-0 z-10` kèm `backdrop-blur` cho hàng tiêu đề (`thead`) của các bảng danh sách lớn.
     - **Column Constraints**: Sử dụng `min-w-[...]` cho các cột chứa text dài (như Tên KTV, Tên khách hàng) và `whitespace-nowrap` cho các cột chứa số liệu tài chính để đảm bảo tính dễ đọc.
     - **Horizontal Scroll**: Luôn bao bọc bảng trong một container `overflow-x-auto` để hỗ trợ hiển thị tốt trên mọi kích thước màn hình.
-+ 
-+ ### 7. Cross-Page Data Consistency
-+ *   **Vấn đề**: Khi một khách hàng có nhiều booking (ví dụ: 1 gói cũ hoàn thành và 1 gói mới), việc chuyển hướng chung đến `/dashboard/customers/[id]` gây ra sự mơ hồ về gói dữ liệu đang xem.
-+ *   **Quy tắc**:
-+     - **Booking Context**: Luôn đính kèm `bookingId` vào query params khi điều hướng đến hồ sơ khách hàng từ các thành phần liên quan đến session (`/dashboard/customers/[id]?bookingId=[ID]`).
-+     - **Explicit Switcher**: Trong trang chi tiết, nếu phát hiện nhiều hơn 1 bản ghi booking, phải hiển thị UI Switcher để người dùng tự do chuyển đổi giữa các gói, tránh hiển thị thông tin sai lệch.
-+     - **Sorting Priority**: Khi không có `bookingId` cụ thể, logic mặc định phải ưu tiên `active` > `in_progress` > `booked` > `deposit_pending` > `completed`.
+### 7. Cross-Page Data Consistency
+*   **Vấn đề**: Khi một khách hàng có nhiều booking (ví dụ: 1 gói cũ hoàn thành và 1 gói mới), việc chuyển hướng chung đến `/dashboard/customers/[id]` gây ra sự mơ hồ về gói dữ liệu đang xem.
+*   **Quy tắc**:
+    - **Booking Context**: Luôn đính kèm `bookingId` vào query params khi điều hướng đến hồ sơ khách hàng từ các thành phần liên quan đến session (`/dashboard/customers/[id]?bookingId=[ID]`).
+    - **Explicit Switcher**: Trong trang chi tiết, nếu phát hiện nhiều hơn 1 bản ghi booking, phải hiển thị UI Switcher để người dùng tự do chuyển đổi giữa các gói, tránh hiển thị thông tin sai lệch.
+    - **Sorting Priority**: Khi không có `bookingId` cụ thể, logic mặc định phải ưu tiên `active` > `in_progress` > `booked` > `deposit_pending` > `completed`.
+
+### 8. Session Dashboard Integrity
+*   **Vấn đề**: Các dashboard quản lý buổi tập thường gặp tình trạng "lệch số buổi" (ví dụ: thực tế làm 5 buổi nhưng trên thẻ hiện 4) do lỗi mạng khi cập nhật hoặc sai lệch logic cũ.
+*   **Quy tắc**:
+    - **Self-Healing Sync**: Bắt buộc triển khai hàm `syncBookingProgress` để đếm lại thực tế từ bảng `session_logs` và ghi đè (overwrite) vào bảng `bookings`.
+    - **Background Trigger**: Kích hoạt lệnh đồng bộ này ngay khi người dùng mở chi tiết thẻ liệu trình để đảm bảo giao diện luôn hiển thị dữ liệu mới nhất.
+    - **Multi-Field Filter**: Thanh tìm kiếm tại Dashboard phải hỗ trợ tìm kiếm mờ (fuzzy) qua tên gói, tên KTV, số điện thoại và mã booking thay vì chỉ tìm theo tên khách hàng.
 
 ---
 
@@ -660,15 +671,19 @@ t:** [Your contact info]
 - **Rating System**: 5-star evaluation for each completed session.
 - **KTV Bonus Logic**: Automated monthly bonus calculation based on average rating.
 - **Notifications**: Evaluation reminders on completion.
-+ 
-+ ### PHASE 13: Data Integrity & Multi-Booking Context
-+ - **Booking Context**: Pass bookingId through navigation links.
-+ - **Booking Switcher**: UI for switching between concurrent treatment packages.
-+ - **Status Hardening**: Refined sorting and filtering for active records.
+### PHASE 13: Data Integrity & Multi-Booking Context
+- **Booking Context**: Pass bookingId through navigation links.
+- **Booking Switcher**: UI for switching between concurrent treatment packages.
+- **Status Hardening**: Refined sorting and filtering for active records.
+
+### PHASE 14: Advanced Search & Automated Integrity
+- **Full-Text Filter**: Multi-field search capability in session dashboard.
+- **Auto-Sync Logic**: Automated reconciliation of session logs and booking progress.
+- **Security Audit**: Deployment of RLS policies for multi-tenant isolation.
 
 ---
 
-**Document Version:** 1.6  
-**Last Updated:** 2026-05-14 (18:15)  
-**Status:** Implementation Phase (Phase 13)  
+**Document Version:** 1.7  
+**Last Updated:** 2026-05-14 (18:40)  
+**Status:** Implementation Phase (Phase 14)  
 **Contact:** Bella Spa ERP Dev Team

@@ -26,7 +26,7 @@ import {
   PlusCircle,
   History
 } from 'lucide-react';
-import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession, rescheduleSession } from '@/services/booking-actions';
+import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession, rescheduleSession, syncBookingProgress, resolvePackageName } from '@/services/booking-actions';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
@@ -90,6 +90,13 @@ export default function SessionsPage() {
   const fetchSessionLogs = async (bookingId: string) => {
     setIsLoadingLogs(true);
     try {
+      // Auto-sync progress count whenever modal opens
+      syncBookingProgress(bookingId).then(res => {
+        if (res?.synced) {
+          loadSessions(); // Reload list to reflect synced count
+        }
+      });
+
       const logs = await getSessionLogs(bookingId);
       setSessionLogs(logs);
       
@@ -123,10 +130,15 @@ export default function SessionsPage() {
     
     if (query) {
       const q = query.toLowerCase();
-      result = result.filter(s => 
-        s.customers?.name_mother?.toLowerCase().includes(q) || 
-        s.booking_number?.toLowerCase().includes(q)
-      );
+      result = result.filter(s => {
+        const pkgName = resolvePackageName(s).toLowerCase();
+        const ktvName = s.assigned_ktv?.full_name?.toLowerCase() || '';
+        const motherName = s.customers?.name_mother?.toLowerCase() || '';
+        const bNumber = s.booking_number?.toLowerCase() || '';
+        const phone = s.customers?.phone || '';
+        
+        return motherName.includes(q) || bNumber.includes(q) || pkgName.includes(q) || ktvName.includes(q) || phone.includes(q);
+      });
     }
     
     if (status !== 'Tất cả trạng thái') {
@@ -577,9 +589,14 @@ export default function SessionsPage() {
                     <h3 className="text-xl font-black text-slate-900 truncate tracking-tight uppercase">
                       Mẹ {booking.customers?.name_mother} {booking.customers?.name_baby ? `& Bé ${booking.customers.name_baby}` : ''}
                     </h3>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
-                      {booking.booking_number}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 bg-rose-50 text-primary rounded-lg text-[9px] font-black uppercase tracking-[0.05em] border border-primary/10">
+                        {booking.package_name}
+                      </span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
+                        {booking.booking_number}
+                      </span>
+                    </div>
                     <span className={cn(
                       "px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border",
                       isFullyCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-primary/5 text-primary border-primary/10'
@@ -603,6 +620,12 @@ export default function SessionsPage() {
                     <div className="flex items-center gap-2.5">
                       <Calendar className="w-4 h-4 text-primary/60" />
                       Bắt đầu: <span className="text-slate-900 font-black tracking-tighter">{booking.start_date || '---'}</span>
+                    </div>
+                    <div className="flex items-center gap-2.5">
+                      <UserCircle className="w-4 h-4 text-primary/60" />
+                      KTV: <span className={cn("font-black", hasKtv ? "text-slate-900" : "text-amber-500")}>
+                        {booking.assigned_ktv_name || 'Chưa phân công'}
+                      </span>
                     </div>
                   </div>
 
@@ -757,8 +780,12 @@ export default function SessionsPage() {
                     <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
                       Thẻ liệu trình: Mẹ {selectedBooking.customers?.name_mother} {selectedBooking.customers?.name_baby ? `& Bé ${selectedBooking.customers.name_baby}` : ''}
                     </h2>
-                    <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">
-                      {selectedBooking.package_name} • Tiến độ: {selectedBooking.completed_sessions || 0}/{selectedBooking.total_sessions || 15}
+                    <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] flex items-center gap-3">
+                      <span className="text-primary">{selectedBooking.package_name}</span>
+                      <span className="text-slate-300">•</span>
+                      <span>KTV: {selectedBooking.assigned_ktv_name}</span>
+                      <span className="text-slate-300">•</span>
+                      <span>Tiến độ: {selectedBooking.completed_sessions || 0}/{selectedBooking.total_sessions || 15}</span>
                     </p>
                   </div>
                 </div>
@@ -877,6 +904,16 @@ export default function SessionsPage() {
                                 className="w-full h-32 p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50 text-xs shadow-inner"
                               />
                             </div>
+                            
+                            {selectedSessionLog.status === 'completed' && (
+                              <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 flex items-center gap-3 mb-2">
+                                <UserCircle className="w-5 h-5 text-emerald-500" />
+                                <div>
+                                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Kỹ thuật viên thực hiện</p>
+                                  <p className="text-xs font-bold text-emerald-900">{selectedSessionLog.ktv?.full_name || 'KTV hệ thống'}</p>
+                                </div>
+                              </div>
+                            )}
                           </>
                         )}
 
