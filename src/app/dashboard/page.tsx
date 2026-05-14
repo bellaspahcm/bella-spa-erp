@@ -525,13 +525,7 @@ export default function DashboardPage() {
                                 <ChevronRight className="w-4 h-4 group-hover/detail:translate-x-1 transition-transform" />
                               </Link>
                               
-                              <div className={cn(
-                                "w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-center border shadow-sm",
-                                statusInfo.color,
-                                "bg-opacity-10"
-                              )}>
-                                {statusInfo.label}
-                              </div>
+
                             </div>
 
                             <AnimatePresence mode="wait">
