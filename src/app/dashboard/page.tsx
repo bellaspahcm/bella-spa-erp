@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
+  User, 
   Calendar, 
   TrendingUp, 
   TrendingDown, 
