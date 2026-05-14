@@ -540,12 +540,12 @@ A: Yes, IF:
   - [x] Cấp quyền Admin cho các tài khoản production.
   - [x] Liên kết Auth UUID với bảng `public.users` kèm vai trò Admin.
 
-#### ✅ Phase 15: Salary Reconciliation & Security Hardening (May 15, 2026)
-- [x] **Deterministic KTV Session Matrix**: Linked salary detail view directly to `session_logs` and `bookings` for 100% data accuracy instead of mock counts.
-- [x] **Session Approval Workflow**: Implemented `confirmKtvSessions` server action to lock and persist confirmed counts into `salary_records`.
-- [x] **Database Schema Hardening**: Added `total_sessions` (INT) to `salary_records` and `is_confirmed` (BOOL) to `session_logs` for auditability.
-- [x] **Enterprise-Grade RLS**: Enabled Row Level Security and deployed authenticated access policies for 11 core tables to prevent anonymous leaks.
-- [x] **UI Reconciliation Feedback**: Added visual status indicators and real-time toast feedback for approval actions in the salary dashboard.
+#### ✅ Phase 15: Salary Reconciliation & Security Hardening (May 15, 2026) - Verified Stable
+- [x] **Deterministic KTV Session Matrix**: Linked salary detail view directly to `session_logs` and `bookings` for 100% data accuracy. (Verified)
+- [x] **Session Approval Workflow**: Implemented `confirmKtvSessions` server action to lock confirmed counts into `salary_records`. (Verified)
+- [x] **Database Schema Hardening**: Manually applied `total_sessions` and `is_confirmed` columns via SQL Editor. (Verified)
+- [x] **Enterprise-Grade RLS**: Deployed authenticated access policies for 11 core tables to prevent anonymous leaks. (Verified)
+- [x] **UI Reconciliation Feedback**: Finalized visual status indicators and real-time toast feedback for all approval actions. (Verified)
 
 #### ⏭ Next Steps
 - [ ] **Zalo OA Integration**: Automate evaluation reminder notifications via Zalo khi hoàn thành buổi (Phase 2).
