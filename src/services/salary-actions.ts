@@ -474,9 +474,13 @@ export async function getKtvSessionMatrix() {
       const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
       const salaryRecord = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
       
-      // Confirmed if sessions are confirmed OR if a salary record exists with pushed total
+      // Confirmed if sessions are explicitly marked confirmed OR if a salary record exists with confirmed status
+      const isRecordConfirmed = !!(salaryRecord && 
+                                salaryRecord.status !== 'draft' && 
+                                salaryRecord.status !== null);
+                                
       row.isConfirmed = (ktvSessions.length > 0 && ktvSessions.every((s: any) => s.is_confirmed)) || 
-                        (salaryRecord !== undefined && salaryRecord.total_sessions !== null);
+                        isRecordConfirmed;
       
       packageNames.forEach((pkg: string) => {
         if (hasAnyRealData && matrix[ktv.id]) {
