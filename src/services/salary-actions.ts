@@ -452,7 +452,7 @@ export async function getKtvSessionMatrix() {
     });
 
     const packageNames = Array.from(packageNamesSet).sort();
-    const sortedKtvs = (ktvs || []).sort((a, b) => a.full_name.localeCompare(b.full_name));
+    const sortedKtvs = (ktvs || []).sort((a: any, b: any) => a.full_name.localeCompare(b.full_name));
 
     const result = sortedKtvs.map(ktv => {
       const row: any = { id: ktv.id, name: ktv.full_name };
