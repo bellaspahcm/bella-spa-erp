@@ -131,9 +131,9 @@ export default function SessionsPage() {
     
     if (status !== 'Tất cả trạng thái') {
       if (status === 'Đang chăm sóc') {
-        result = result.filter(s => (s.completed_sessions || 0) < (s.total_sessions || 21));
+        result = result.filter(s => (s.completed_sessions || 0) < (s.total_sessions || 15));
       } else if (status === 'Hoàn thành') {
-        result = result.filter(s => (s.completed_sessions || 0) >= (s.total_sessions || 21));
+        result = result.filter(s => (s.completed_sessions || 0) >= (s.total_sessions || 15));
       }
     }
     
@@ -481,26 +481,26 @@ export default function SessionsPage() {
           <div className={cn(
             "flex items-center gap-3 px-5 py-3 rounded-2xl border transition-all",
             sessions.reduce((acc, s) => acc + (s.completed_sessions || 0), 0) / 
-            Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 21), 0)) > 0.5 
+            Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 15), 0)) > 0.5 
               ? "bg-emerald-50 border-emerald-100" 
               : "bg-amber-50 border-amber-100"
           )}>
             <TrendingUp className={cn(
               "w-5 h-5",
               sessions.reduce((acc, s) => acc + (s.completed_sessions || 0), 0) / 
-              Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 21), 0)) > 0.5 
+              Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 15), 0)) > 0.5 
                 ? "text-emerald-500" 
                 : "text-amber-500"
             )} />
             <span className={cn(
               "font-black text-sm uppercase tracking-tighter",
               sessions.reduce((acc, s) => acc + (s.completed_sessions || 0), 0) / 
-              Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 21), 0)) > 0.5 
+              Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 15), 0)) > 0.5 
                 ? "text-emerald-700" 
                 : "text-amber-700"
             )}>
               Hiệu suất: {Math.round((sessions.reduce((acc, s) => acc + (s.completed_sessions || 0), 0) / 
-                Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 21), 0))) * 100)}%
+                Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 15), 0))) * 100)}%
             </span>
           </div>
         </div>
@@ -547,7 +547,7 @@ export default function SessionsPage() {
             const totalCount = Number(booking.total_sessions) || 15;
             const progress = (completedCount / Math.max(1, totalCount)) * 100;
             const isUpdating = updatingId === booking.id;
-            const isFullyCompleted = (booking.completed_sessions || 0) >= (booking.total_sessions || 21);
+            const isFullyCompleted = (booking.completed_sessions || 0) >= (booking.total_sessions || 15);
             const alreadyDoneToday = isUpdatedToday(booking);
             const today = new Date().toLocaleDateString('sv-SE');
             const isScheduledForToday = booking.next_session_date === today;

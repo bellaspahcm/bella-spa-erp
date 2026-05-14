@@ -95,32 +95,34 @@ export async function getSalaryData() {
     .select('*')
     .eq('month_year', '2026-05-01');
 
-  // Fetch completed sessions to calculate real-time stats
+  // Fetch completed sessions with booking details to get the locked commission rate
   const { data: sessions, error: sessionsError } = await supabase
     .from('session_logs')
-    .select('id, completed_by_ktv_id, status')
+    .select('id, completed_by_ktv_id, status, bookings(ktv_commission)')
     .eq('status', 'completed');
+
   const ktvSalaries = displayKtvs.map((ktv: any) => {
       const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
       const hasExpense = (expenses || []).some((e: any) => e.description?.toLowerCase().includes(ktv.full_name.toLowerCase()));
       
-      const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id).length || 0;
+      const ktvCompletedSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
+      const ktvSessionsCount = ktvCompletedSessions.length;
 
-      // STATUS MAPPING (Must match SalaryPage.tsx expectations: 'approved' | 'pending' | 'draft')
-      let status = 'pending'; // Default: "Chờ duyệt"
-      
+      // STATUS MAPPING
+      let status = 'pending'; 
       if (hasExpense || record?.status === 'approved' || record?.status === 'pending_approval') {
-        status = 'approved'; // Becomes "Đã duyệt" (Green)
+        status = 'approved';
       } else if (record?.status === 'rejected') {
         status = 'draft';
       }
 
-      console.log(`[SalaryData] KTV: ${ktv.full_name}, DB Status: ${record?.status}, HasExpense: ${hasExpense}, Final Status: ${status}`);
+      // Calculate session bonus by summing up locked commissions from bookings
+      const sessionBonus = ktvCompletedSessions.reduce((acc: number, s: any) => {
+        return acc + (s.bookings?.ktv_commission || 150000);
+      }, 0);
 
-      // Logic for calculating salary
       const baseSalary = record?.base_salary || 6000000;
-      const sessionBonus = ktvSessions * 150000; 
-      const kpiBonus = record?.kpi_bonus || (ktvSessions > 30 ? 1000000 : 0);
+      const kpiBonus = record?.kpi_bonus || (ktvSessionsCount > 30 ? 1000000 : 0);
       const deductions = record?.violations_deduction || 0;
       const advances = record?.service_percentage_bonus || 0; 
       const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
@@ -128,7 +130,7 @@ export async function getSalaryData() {
       return {
         id: ktv.id,
         name: ktv.full_name,
-        sessions: ktvSessions,
+        sessions: ktvSessionsCount,
         baseSalary,
         sessionBonus,
         kpiBonus,
@@ -207,14 +209,18 @@ export async function approveSalary(ktvId: string) {
       .eq('id', ktvId)
       .single();
 
-    // 2. Fetch completed sessions to calculate final amount
+    // 2. Fetch completed sessions with booking details to get the locked commission rate
     const { data: sessions } = await supabase
       .from('session_logs')
-      .select('id')
+      .select('id, bookings(ktv_commission)')
       .eq('completed_by_ktv_id', ktvId)
       .eq('status', 'completed');
     
-    const ktvSessions = sessions?.length || 0;
+    const ktvSessionsCount = sessions?.length || 0;
+    
+    const sessionBonus = (sessions || []).reduce((acc: number, s: any) => {
+      return acc + (s.bookings?.ktv_commission || 150000);
+    }, 0);
 
     // 3. Get/Calculate salary details
     const { data: existing } = await supabase
@@ -225,8 +231,7 @@ export async function approveSalary(ktvId: string) {
       .single();
 
     const baseSalary = existing?.base_salary || 6000000;
-    const sessionBonus = ktvSessions * 150000;
-    const kpiBonus = existing?.kpi_bonus || (ktvSessions > 30 ? 1000000 : 0);
+    const kpiBonus = existing?.kpi_bonus || (ktvSessionsCount > 30 ? 1000000 : 0);
     const deductions = existing?.violations_deduction || 0;
     const advances = existing?.service_percentage_bonus || 0;
     const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;

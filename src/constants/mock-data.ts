@@ -12,6 +12,7 @@ export const MOCK_SERVICES = [
     price: '15,500,000đ', 
     duration: '90 phút/buổi', 
     sessions: 15,
+    ktv_commission: 200000,
     details: ['Massage body đá nóng', 'Chăm sóc da mặt thảo dược', 'Gội đầu dưỡng sinh'],
     offer: 'Tặng 01 buổi massage Foot',
     status: 'active'
@@ -22,6 +23,7 @@ export const MOCK_SERVICES = [
     price: '18,200,000đ', 
     duration: '120 phút/buổi', 
     sessions: 20,
+    ktv_commission: 180000,
     details: ['Xông hơ toàn thân', 'Massage bụng giảm eo', 'Chăm sóc vết mổ/vết khâu'],
     offer: 'Giảm 10% khi đăng ký nhóm 2 người',
     status: 'active'
@@ -32,6 +34,7 @@ export const MOCK_SERVICES = [
     price: '12,000,000đ', 
     duration: '60 phút/buổi', 
     sessions: 10,
+    ktv_commission: 150000,
     details: ['Tắm bé chuẩn y khoa', 'Massage bé giúp ngủ ngon', 'Vệ sinh rốn/mắt/mũi'],
     offer: 'Tặng bộ set quà tặng sơ sinh',
     status: 'active'

@@ -69,8 +69,7 @@ id | phone (UNIQUE) | name_mother | name_baby | dob_baby | dob_expected
 id | booking_number (UNIQUE: BK-YYMMDD-NNN) | customer_id (FK) | package_id (FK)
 | status (inquiry|deposit_pending|booked|in_progress|completed|cancelled)
 | deposit_amount | full_price | start_date | end_date | expected_birth_date
-| total_sessions (21|16|12) | completed_sessions | contract_signed | contract_url
-| assigned_ktv_id (FK) | tenant_id
+| assigned_ktv_id (FK) | ktv_commission (Locked rate) | tenant_id
 ```
 
 ### 4. SESSION_LOGS (Immutable — only INSERT, never UPDATE/DELETE)
@@ -133,11 +132,12 @@ INDEX: category, expense_date
 
 ### 10. SALARY_RECORDS
 ```sql
-id | ktv_id (FK) | month_year (DATE) | base_salary | service_percentage_bonus
+id | ktv_id (FK) | month_year (DATE) | base_salary | session_commission_total
 | kpi_bonus | violations_deduction | total_salary
 | status (draft|pending_approval|approved|paid) | paid_date | paid_method | tenant_id
 
 INDEX: (ktv_id, month_year)
+NOTE: session_commission_total is sum of ktv_commission from completed sessions.
 ```
 
 ### 11. ATTENDANCE
@@ -559,12 +559,19 @@ A: Yes, IF:
 - [x] **Treatment Card Accuracy**: Fixed synchronization issues in "Thẻ liệu trình" to correctly reflect the number of performed sessions versus the total package.
 - [x] **Real-time Reliability**: Optimized Supabase subscription listeners to trigger immediate UI updates when sessions or bookings change.
 
+#### ✅ Phase 10: Dynamic KTV Salary & Session Precision (May 14, 2026)
+- [x] **Dynamic Salary Model**: Replaced flat-rate payments with a service-based commission structure (`ktv_commission` per service).
+- [x] **Commission Locking**: Implemented logic to lock commission rates at the time of booking to protect earnings from future price changes.
+- [x] **Automated Excel Reporting**: Integrated `xlsx` for granular salary reports including session counts, package details, and final compensation.
+- [x] **Precision Progress Tracking**: Resolved visual inaccuracies in progress bars (e.g., 2/15 ratio) and standardized 15-session defaults across all views.
+- [x] **Flexible Booking**: Enabled custom session counts per booking to handle individual services alongside full packages.
+
 #### ⏭ Next Steps
 - [ ] **Advanced Database Triggers**: Move financial balance calculations to Postgres triggers.
 - [ ] **Staff Analytics**: Add productivity dashboards and dynamic KPI tracking.
 
 ---
-**Last Updated:** May 14, 2026 (12:05)
+**Last Updated:** May 14, 2026 (16:55)
 
 
 ## 🛠️ TROUBLESHOOTING & BEST PRACTICES (LESSONS LEARNED)
@@ -606,5 +613,5 @@ A: Yes, IF:
 
 ---
 **Document Version:** 1.3  
-**Last Updated:** May 14, 2026 (13:15)  
+**Last Updated:** May 14, 2026 (16:55)  
 **Status:** Active Guidelines & Tracking

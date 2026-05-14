@@ -550,7 +550,7 @@ export default function CustomerDetailPage() {
                     <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-white rounded-full transition-all duration-1000"
-                        style={{ width: `${((activeBooking.completed_sessions || 0) / (activeBooking.total_sessions || 1)) * 100}%` }}
+                        style={{ width: `${((activeBooking.completed_sessions || 0) / Math.max(1, activeBooking.total_sessions || 15)) * 100}%` }}
                       />
                     </div>
                   </div>
