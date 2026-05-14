@@ -103,50 +103,37 @@ export function Sidebar() {
           </Link>
         </div>
 
-        {/* Action Section */}
-        <div className="px-6 mb-8 shrink-0 relative z-10">
-          {user?.role !== 'ktv' && (
-            <button 
-              onClick={() => setIsQuickAddOpen(true)}
-              className="w-full flex items-center justify-center gap-3 bg-[#9D174D] hover:bg-[#831440] text-white px-6 py-4.5 rounded-[1.5rem] transition-all shadow-[0_10px_25px_-5px_rgba(157,23,77,0.4)] font-black uppercase text-[11px] tracking-wider active:scale-95 group"
-            >
-              <UserPlus className="w-5 h-5 transition-transform group-hover:scale-110" />
-              <span>Thêm khách nhanh</span>
-            </button>
-          )}
-        </div>
-
         {/* Nav Section - Scrollable */}
-        <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar relative z-10 pb-6">
-          <div className="px-4 mb-4 mt-2">
-            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Menu chính</span>
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar relative z-10 pb-6">
+          <div className="px-4 mb-3 mt-2">
+            <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">Menu chính</span>
           </div>
           {filteredMenuItems.map((item: any) => {
             const isActive = pathname === item.href;
             return (
               <Link key={item.href} href={item.href}>
                 <motion.div
-                  whileHover={{ x: 8 }}
+                  whileHover={{ x: 6 }}
                   className={cn(
-                    "flex items-center gap-5 px-6 py-4.5 rounded-[2rem] transition-all duration-300 relative group",
+                    "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group",
                     isActive 
-                      ? "bg-white text-primary shadow-[0_15px_35px_-10px_rgba(225,29,72,0.15)] border border-rose-50" 
+                      ? "bg-white text-primary shadow-[0_10px_25px_-10px_rgba(225,29,72,0.12)] border border-rose-50" 
                       : "text-slate-400 hover:bg-white/60 hover:text-slate-700"
                   )}
                 >
                   <item.icon className={cn(
-                    "w-5 h-5 transition-all duration-300",
-                    isActive ? "text-primary scale-110" : "group-hover:text-primary group-hover:scale-110"
+                    "w-4.5 h-4.5 transition-all duration-300",
+                    isActive ? "text-primary scale-110" : "group-hover:text-primary"
                   )} />
                   <span className={cn(
-                    "text-[13px] tracking-tight transition-all duration-300",
+                    "text-[12px] tracking-tight transition-all duration-300",
                     isActive ? "font-black" : "font-bold"
                   )}>{item.label}</span>
                   
                   {isActive && (
                     <motion.div 
                       layoutId="active-indicator"
-                      className="absolute right-6 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_10px_#e11d48]"
+                      className="absolute right-5 w-1 h-1 bg-primary rounded-full shadow-[0_0_8px_#e11d48]"
                     />
                   )}
                 </motion.div>
@@ -155,28 +142,28 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* User Profile & Logout - Pinned to bottom */}
-        <div className="p-6 mt-auto bg-gradient-to-t from-rose-50/50 to-transparent pt-10 shrink-0 relative z-10">
-          <div className="bg-white p-4.5 rounded-[2.2rem] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] border border-slate-50 mb-6 group cursor-pointer hover:border-rose-100 transition-colors">
-            <div className="flex items-center gap-4">
+        {/* User Profile & Logout - Pinned to bottom, Slimmer */}
+        <div className="px-5 pb-5 mt-auto bg-gradient-to-t from-rose-50/30 to-transparent pt-4 shrink-0 relative z-10">
+          <div className="bg-white p-3.5 rounded-[1.8rem] shadow-[0_8px_20px_-10px_rgba(0,0,0,0.05)] border border-slate-50 mb-3 group cursor-pointer hover:border-rose-100 transition-colors">
+            <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-lg shadow-lg group-hover:scale-105 transition-transform">
+                <div className="w-9 h-9 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-sm shadow-md group-hover:scale-105 transition-transform">
                   {user?.full_name?.charAt(0) || 'B'}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
               </div>
               <div className="min-w-0">
-                <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'Admin'}</p>
-                <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest mt-0.5">
+                <p className="text-[11px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'Admin'}</p>
+                <p className="text-[8.5px] text-rose-500 font-black uppercase tracking-widest mt-0.5">
                   {user?.role === 'ktv' ? 'Kỹ thuật viên' : user?.role === 'customer' ? 'Khách hàng' : 'Quản trị viên'}
                 </p>
               </div>
             </div>
           </div>
           
-          <button className="flex items-center gap-4 w-full px-6 py-3 text-slate-400 hover:text-rose-600 transition-all font-black text-xs uppercase tracking-[0.2em] group">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
-              <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <button className="flex items-center gap-3 w-full px-4 py-2 text-slate-400 hover:text-rose-600 transition-all font-black text-[10px] uppercase tracking-[0.2em] group">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
+              <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
             </div>
             Đăng xuất
           </button>
