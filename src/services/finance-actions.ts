@@ -82,19 +82,30 @@ export async function getFinancialOverview() {
     };
   });
 
-  const mappedExpenses = expensesData.map((e: any) => ({
-    id: `exp-${e.id}`,
-    dbId: e.id,
-    type: 'expense',
-    category: e.category || 'Chi phí',
-    amountNum: Number(e.amount) || 0,
-    amount: '-' + Number(e.amount).toLocaleString() + 'đ',
-    date: ensure2026(new Date(e.expense_date || e.created_at || new Date()).toLocaleDateString('vi-VN')),
-    method: 'Chuyển khoản', // Default for formal expenses like salary
-    status: (e.status === 'submitted' || e.status === 'pending') ? 'pending' : (e.status || 'pending'),
-    details: e.description || 'Chi phí vận hành',
-    timestamp: new Date(e.expense_date || e.created_at || new Date()).getTime()
-  }));
+  const mappedExpenses = expensesData.map((e: any) => {
+    // Map database enum values back to user-friendly Vietnamese labels
+    const categoryMap: Record<string, string> = {
+      'salary': 'Lương nhân viên',
+      'other_admin': 'Chi phí khác',
+      'marketing': 'Marketing',
+      'office_rent': 'Tiền thuê văn phòng',
+      'utilities': 'Điện nước'
+    };
+    
+    return {
+      id: `exp-${e.id}`,
+      dbId: e.id,
+      type: 'expense',
+      category: categoryMap[e.category] || e.category || 'Chi phí',
+      amountNum: Number(e.amount) || 0,
+      amount: '-' + Number(e.amount).toLocaleString() + 'đ',
+      date: ensure2026(new Date(e.expense_date || e.created_at || new Date()).toLocaleDateString('vi-VN')),
+      method: 'Chuyển khoản', // Default for formal expenses like salary
+      status: (e.status === 'submitted' || e.status === 'pending') ? 'pending' : (e.status || 'pending'),
+      details: e.description || 'Chi phí vận hành',
+      timestamp: new Date(e.expense_date || e.created_at || new Date()).getTime()
+    };
+  });
 
   // Combine mock and real transactions
   const dbTransactions = [...mappedRevenues, ...mappedExpenses];
@@ -153,7 +164,7 @@ export async function recordTransaction(data: {
       .from('expenses')
       .insert({
         amount: Math.abs(data.amount),
-        category: 'Chi phí khác',
+        category: 'other_admin',
         description: data.notes,
         status: 'submitted',
         expense_date: new Date().toISOString(),
