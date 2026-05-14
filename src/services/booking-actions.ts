@@ -9,7 +9,7 @@ import { bookingSchema } from '@/lib/validations';
 /**
  * Helper to resolve package name from booking data
  */
-function resolvePackageName(booking: any): string {
+export function resolvePackageName(booking: any): string {
   if (booking?.package_name) return booking.package_name;
   
   const price = Number(booking?.full_price);
@@ -425,7 +425,12 @@ export async function getSessionsWithDetails() {
 
   let query = supabase
     .from('bookings')
-    .select('*, customers(id, name_mother, name_baby, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes)')
+    .select(`
+      *, 
+      customers(id, name_mother, name_baby, phone), 
+      assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name),
+      session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes, ktv:users!session_logs_completed_by_ktv_id_fkey(full_name))
+    `)
     .order('created_at', { ascending: false });
 
   // If KTV, only show bookings where they are assigned
@@ -503,8 +508,10 @@ export async function getSessionsWithDetails() {
 
     return {
       ...b,
+      package_name: resolvePackageName(b),
       session_logs: mappedLogs,
       customers: customerData || { name_mother: 'Khách hàng Bella Spa', phone: '---' },
+      assigned_ktv_name: b.assigned_ktv?.full_name || 'Chưa phân công',
       next_session_date: nextSession?.assigned_date || null,
       start_date: ensure2026(b.start_date),
       end_date: ensure2026(b.end_date),
@@ -879,6 +886,45 @@ export async function updateBooking(id: string, payload: any) {
   }
 
   return { data };
+}
+
+/**
+ * Ensures the completed_sessions count in the bookings table matches the actual count of completed logs.
+ */
+export async function syncBookingProgress(bookingId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = await createClient();
+  
+  // 1. Get current count from logs
+  const { count, error: countError } = await supabase
+    .from('session_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('booking_id', bookingId)
+    .eq('status', 'completed');
+
+  if (countError) return { error: countError.message };
+
+  // 2. Get current header value
+  const { data: booking, error: fetchError } = await supabase
+    .from('bookings')
+    .select('completed_sessions')
+    .eq('id', bookingId)
+    .single();
+
+  if (fetchError) return { error: fetchError.message };
+
+  // 3. Update if discrepancy found
+  if (booking.completed_sessions !== count) {
+    const { error: updateError } = await supabase
+      .from('bookings')
+      .update({ completed_sessions: count })
+      .eq('id', bookingId);
+    
+    if (updateError) return { error: updateError.message };
+    return { synced: true, newCount: count };
+  }
+
+  return { synced: false, count };
 }
 
 export async function reusePackage(bookingId: string) {
