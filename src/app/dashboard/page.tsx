@@ -416,6 +416,7 @@ export default function DashboardPage() {
                   const statusInfo = getStatusInfo(session.status);
                   const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
                   const customerName = booking?.customers?.name_mother || 'Khách hàng';
+                  const babyName = booking?.customers?.name_baby;
                   const technicianName = booking?.assigned_ktv?.full_name || 'Chưa phân công';
                   const packageName = booking?.package_id || 'Gói dịch vụ';
                   
@@ -440,7 +441,8 @@ export default function DashboardPage() {
                             <div className="flex flex-col mb-4">
                               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Khách hàng</span>
                               <h3 className="font-bold text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
-                                {customerName}
+                                Mẹ: {customerName}
+                                {babyName && <span className="text-rose-400 font-medium ml-2">- Bé: {babyName}</span>}
                               </h3>
                               <div className="mt-1.5 flex items-center gap-3">
                                 <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider">

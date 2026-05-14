@@ -192,7 +192,7 @@ function BookingsContent() {
       const detail = {
         id: s.id,
         date,
-        customer: s.bookings?.customers?.name_mother || 'Khách hàng',
+        customer: `Mẹ: ${s.bookings?.customers?.name_mother || 'Khách hàng'}${s.bookings?.customers?.name_baby ? ` - Bé: ${s.bookings?.customers?.name_baby}` : ''}`,
         package: s.bookings?.package_name || 'Gói liệu trình',
         time: s.assigned_time || '09:00 - 11:00',
         ktv: s.bookings?.assigned_ktv?.full_name || 'Chưa phân công',
@@ -448,7 +448,7 @@ function BookingsContent() {
                         id: session.id,
                         date: new Date(session.assigned_date),
                         dateString: session.assigned_date,
-                        customer: session.bookings?.customers?.name_mother || 'Khách hàng',
+                        customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
                         package: session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình',
                         time: session.assigned_time || '09:00 - 11:00',
                         contractId: session.bookings?.booking_number || 'N/A',
@@ -483,7 +483,12 @@ function BookingsContent() {
                       </span>
                     </div>
                     
-                    <h3 className="text-xl font-extrabold text-slate-900 mb-2">{session.bookings?.customers?.name_mother}</h3>
+                    <h3 className="text-xl font-extrabold text-slate-900 mb-2">
+                      Mẹ: {session.bookings?.customers?.name_mother}
+                      {session.bookings?.customers?.name_baby && (
+                        <span className="text-rose-400 ml-2 font-medium"> - Bé: {session.bookings?.customers?.name_baby}</span>
+                      )}
+                    </h3>
                     <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
                       <LayoutGrid className="w-4 h-4 text-slate-300" />
                       {session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình'}
@@ -508,7 +513,7 @@ function BookingsContent() {
                             id: session.id,
                             date: new Date(session.assigned_date),
                             dateString: session.assigned_date,
-                            customer: session.bookings?.customers?.name_mother || 'Khách hàng',
+                            customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
                             package: session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình',
                             time: session.assigned_time || '09:00 - 11:00',
                             contractId: session.bookings?.booking_number || 'N/A',
