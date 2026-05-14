@@ -203,7 +203,7 @@ function BookingsContent() {
         ktv: s.bookings?.assigned_ktv?.full_name || 'Chưa phân công',
         status: s.status,
         location: s.bookings?.customers?.address || 'Tại Spa',
-        sessionCount: `${s.bookings?.completed_sessions || 0}/${s.bookings?.total_sessions || 21} buổi`,
+        sessionCount: `${s.bookings?.completed_sessions || 0}/${s.bookings?.total_sessions || 15} buổi`,
         contractId: s.bookings?.booking_number || 'N/A',
         contractDetail: s.notes || 'Không có ghi chú',
         bookingId: s.booking_id,
@@ -211,7 +211,7 @@ function BookingsContent() {
         originalStatus: s.status,
         originalDateString: s.assigned_date,
         sessionNumber: s.session_number || 1,
-        totalSessions: s.bookings?.total_sessions || 21
+        totalSessions: s.bookings?.total_sessions || 15
       };
       setModalData(detail);
       setShowDetailModal(true);
@@ -478,12 +478,12 @@ function BookingsContent() {
                         bookingId: session.booking_id,
                         ktvId: session.bookings?.assigned_ktv_id,
                         location: session.bookings?.customers?.address || 'Tại Spa',
-                        sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
+                        sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
                         originalStatus: session.status,
                         originalDateString: session.assigned_date,
                         status: session.status,
                         sessionNumber: session.session_number || 1,
-                        totalSessions: session.bookings?.total_sessions || 21
+                        totalSessions: session.bookings?.total_sessions || 15
                       };
                       setModalData(detail);
                       setShowDetailModal(true);
@@ -544,10 +544,10 @@ function BookingsContent() {
                             bookingId: session.booking_id,
                             ktvId: session.bookings?.assigned_ktv_id,
                             location: session.bookings?.customers?.address || 'Tại Spa',
-                            sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
+                            sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
                             originalStatus: session.status,
                             sessionNumber: session.session_number || 1,
-                            totalSessions: session.bookings?.total_sessions || 21
+                            totalSessions: session.bookings?.total_sessions || 15
                           };
                           setModalData(detail);
                           setShowDetailModal(true);
@@ -578,11 +578,11 @@ function BookingsContent() {
                             bookingId: session.booking_id,
                             ktvId: session.bookings?.assigned_ktv_id,
                             location: session.bookings?.customers?.address || 'Tại Spa',
-                            sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
+                            sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
                             status: 'completed', // Auto-set to completed for check-in
                             originalStatus: session.status,
                             sessionNumber: session.session_number || 1,
-                            totalSessions: session.bookings?.total_sessions || 21
+                            totalSessions: session.bookings?.total_sessions || 15
                           };
                           setModalData(detail);
                           setShowDetailModal(true);
@@ -720,7 +720,10 @@ function BookingsContent() {
                         <div className="flex items-center gap-3">
                           <p className="font-bold text-slate-900">{modalData.sessionCount}</p>
                           <div className="h-2 flex-1 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-rose-500" style={{ width: '83%' }} />
+                            <div 
+                              className="h-full bg-rose-500 transition-all duration-500" 
+                              style={{ width: `${Math.min(100, (Number(modalData.sessionCount.split('/')[0]) / Number(modalData.sessionCount.split('/')[1].split(' ')[0])) * 100)}%` }} 
+                            />
                           </div>
                         </div>
                       </div>
