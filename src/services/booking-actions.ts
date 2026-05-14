@@ -570,7 +570,7 @@ export async function getCalendarSessions() {
         .eq('status', 'completed');
 
       if (!countError && count !== null && count !== firstSession.bookings.completed_sessions) {
-        await supabase.from('bookings').update({ completed_sessions: count }).eq('id', bookingId);
+        await supabase.from('bookings').update({ completed_sessions: count } as any).eq('id', bookingId);
         // Update all local references for this booking
         bookingSessions.forEach(s => { if (s.bookings) s.bookings.completed_sessions = count; });
       }
@@ -928,9 +928,8 @@ export async function syncBookingProgress(bookingId: string) {
 
   // 3. Update if discrepancy found
   if ((booking as any).completed_sessions !== count) {
-    const { error: updateError } = await supabase
-      .from('bookings')
-      .update({ completed_sessions: count } as any)
+    const { error: updateError } = await (supabase.from('bookings') as any)
+      .update({ completed_sessions: count })
       .eq('id', bookingId);
     
     if (updateError) return { error: updateError.message };
