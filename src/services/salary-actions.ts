@@ -78,19 +78,85 @@ export async function getSalaryData() {
 export async function approveSalary(ktvId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
-  
-  const { error } = await supabase
-    .from('salary_records')
-    .update({ status: 'approved' })
-    .eq('ktv_id', ktvId)
-    .eq('month_year', '2026-05-01');
+  const monthYear = '2026-05-01'; // Default demo month
 
-  if (error) {
-    // If update fails (e.g. record doesn't exist), try to insert
-    return { success: false, error };
+  try {
+    // 1. Get KTV info for description
+    const { data: ktv } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', ktvId)
+      .single();
+
+    // 2. Fetch completed sessions to calculate final amount
+    const { data: sessions } = await supabase
+      .from('session_logs')
+      .select('id')
+      .eq('completed_by_ktv_id', ktvId)
+      .eq('status', 'completed');
+    
+    const ktvSessions = sessions?.length || 0;
+
+    // 3. Get/Calculate salary details
+    const { data: existing } = await supabase
+      .from('salary_records')
+      .select('*')
+      .eq('ktv_id', ktvId)
+      .eq('month_year', monthYear)
+      .single();
+
+    const baseSalary = existing?.base_salary || 6000000;
+    const sessionBonus = ktvSessions * 150000;
+    const kpiBonus = existing?.kpi_bonus || (ktvSessions > 30 ? 1000000 : 0);
+    const deductions = existing?.violations_deduction || 0;
+    const advances = existing?.service_percentage_bonus || 0;
+    const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
+
+    // 4. Update or Insert salary record
+    if (existing) {
+      const { error: updateError } = await supabase
+        .from('salary_records')
+        .update({ status: 'approved' })
+        .eq('id', existing.id);
+      
+      if (updateError) throw updateError;
+    } else {
+      const { error: insertError } = await supabase
+        .from('salary_records')
+        .insert([{
+          ktv_id: ktvId,
+          month_year: monthYear,
+          base_salary: baseSalary,
+          kpi_bonus: kpiBonus,
+          violations_deduction: deductions,
+          service_percentage_bonus: advances,
+          status: 'approved'
+        }]);
+      
+      if (insertError) throw insertError;
+    }
+
+    // 5. Create expense record in Finance dashboard
+    const { error: expenseError } = await supabase
+      .from('expenses')
+      .insert({
+        amount: totalSalary,
+        category: 'Lương nhân viên',
+        description: `Thanh toán lương T5/2026 - KTV ${ktv?.full_name || 'Nhân viên'}`,
+        status: 'submitted', // Will appear as "Chờ duyệt" in Finance
+        expense_date: new Date().toISOString()
+      });
+
+    if (expenseError) {
+      console.error('Error creating expense record:', expenseError);
+      // We don't throw here to avoid failing the whole process if only finance logging fails
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error in approveSalary:', error);
+    return { success: false, error: error.message || error };
   }
-
-  return { success: true };
 }
 
 export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: number, kpiBonus: number, deductions: number, advances: number }) {
