@@ -408,3 +408,66 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
     return { success: false, error: err.message || err };
   }
 }
+
+export async function getKtvSessionMatrix() {
+  const supabase = (await createClient()) as any;
+  const monthStart = '2026-05-01';
+  
+  try {
+    // 1. Fetch all KTVs
+    const { data: ktvs } = await supabase
+      .from('users')
+      .select('id, full_name')
+      .eq('role', 'ktv');
+
+    // 2. Fetch completed sessions for the month
+    // We join with bookings to get the package_name
+    const { data: sessions, error } = await supabase
+      .from('session_logs')
+      .select(`
+        completed_by_ktv_id,
+        bookings (
+          package_name
+        )
+      `)
+      .eq('status', 'completed');
+
+    if (error) throw error;
+
+    // 3. Process data into matrix
+    // rows: ktv, cols: package_name
+    const matrix: Record<string, Record<string, number>> = {};
+    const packageNamesSet = new Set<string>();
+
+    (sessions || []).forEach((s: any) => {
+      const ktvId = s.completed_by_ktv_id;
+      const pkgName = s.bookings?.package_name || 'Dịch vụ lẻ';
+      
+      if (!ktvId) return;
+      
+      packageNamesSet.add(pkgName);
+      
+      if (!matrix[ktvId]) matrix[ktvId] = {};
+      matrix[ktvId][pkgName] = (matrix[ktvId][pkgName] || 0) + 1;
+    });
+
+    const packageNames = Array.from(packageNamesSet).sort();
+    const sortedKtvs = (ktvs || []).sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+    const result = sortedKtvs.map(ktv => {
+      const row: any = { id: ktv.id, name: ktv.full_name };
+      packageNames.forEach(pkg => {
+        row[pkg] = matrix[ktv.id]?.[pkg] || 0;
+      });
+      return row;
+    });
+
+    return {
+      ktvs: result,
+      packageNames
+    };
+  } catch (error) {
+    console.error('Error in getKtvSessionMatrix:', error);
+    return { ktvs: [], packageNames: [] };
+  }
+}
