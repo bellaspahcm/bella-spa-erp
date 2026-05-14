@@ -142,10 +142,11 @@ export async function approveSalary(ktvId: string) {
       const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
 
       const { error: mockExpenseError } = await supabase.from('expenses').insert({
+        expense_number: `SAL-KTV-${Date.now()}`,
         amount: 8000000, 
         category: 'salary',
         description: `Thanh toán lương T5/2026 - KTV ${ktvName}`,
-        status: 'submitted',
+        payment_status: 'submitted',
         expense_date: new Date().toISOString(),
         tenant_id: tenantId
       });
@@ -226,10 +227,11 @@ export async function approveSalary(ktvId: string) {
     const { error: expenseError } = await supabase
       .from('expenses')
       .insert({
+        expense_number: `SAL-REAL-${Date.now()}`,
         amount: totalSalary,
         category: 'salary',
         description: `Thanh toán lương T5/2026 - KTV ${ktv?.full_name || 'Nhân viên'}`,
-        status: 'submitted', // Will appear as "Chờ duyệt" in Finance
+        payment_status: 'submitted', // Will appear as "Chờ duyệt" in Finance
         expense_date: new Date().toISOString(),
         tenant_id: tenantId
       });

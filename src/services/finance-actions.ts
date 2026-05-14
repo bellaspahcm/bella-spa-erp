@@ -101,7 +101,7 @@ export async function getFinancialOverview() {
       amount: '-' + Number(e.amount).toLocaleString() + 'đ',
       date: ensure2026(new Date(e.expense_date || e.created_at || new Date()).toLocaleDateString('vi-VN')),
       method: 'Chuyển khoản', // Default for formal expenses like salary
-      status: (e.status === 'submitted' || e.status === 'pending') ? 'pending' : (e.status || 'pending'),
+      status: (e.payment_status === 'submitted' || e.payment_status === 'pending') ? 'pending' : (e.payment_status || 'pending'),
       details: e.description || 'Chi phí vận hành',
       timestamp: new Date(e.expense_date || e.created_at || new Date()).getTime()
     };
@@ -132,7 +132,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
 
   const { error } = await supabase
     .from(table)
-    .update({ status: 'confirmed' })
+    .update(type === 'expense' ? { payment_status: 'confirmed' } : { status: 'confirmed' })
     .eq('id', id);
 
   if (error) {
@@ -163,10 +163,11 @@ export async function recordTransaction(data: {
     const { data: result, error } = await supabase
       .from('expenses')
       .insert({
+        expense_number: `EXP-${Date.now()}`,
         amount: Math.abs(data.amount),
         category: 'other_admin',
         description: data.notes,
-        status: 'submitted',
+        payment_status: 'submitted',
         expense_date: new Date().toISOString(),
         tenant_id: tenantId
       })
