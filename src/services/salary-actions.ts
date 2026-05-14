@@ -113,8 +113,9 @@ export async function getSalaryData() {
       const hasExpense = (expenses || []).some((e: any) => e.description?.toLowerCase().includes(ktv.full_name.toLowerCase()));
       
       const ktvCompletedSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
-      const ktvSessionsCount = ktvCompletedSessions.length;
-      const isConfirmed = ktvSessionsCount > 0 && ktvCompletedSessions.every((s: any) => s.is_confirmed);
+      // Use confirmed count from record if available, otherwise use live count
+      const ktvSessionsCount = record?.total_sessions || ktvCompletedSessions.length;
+      const isConfirmed = ktvSessionsCount > 0 && (record?.total_sessions !== undefined || ktvCompletedSessions.every((s: any) => s.is_confirmed));
 
       // Calculate Average Rating
       const ktvReviews = reviews?.filter((r: any) => r.ktv_id === ktv.id) || [];
@@ -520,25 +521,42 @@ export async function getKtvSessionMatrix() {
   }
 }
 
-export async function confirmKtvSessions(ktvId: string) {
+export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
   const supabase = (await createClient()) as any;
   
   try {
-    // In a real database, we would update the sessions table
-    // For now, we simulate the update on all completed sessions for this KTV
-    const { error } = await supabase
+    // 1. Mark sessions as confirmed
+    await supabase
       .from('session_logs')
       .update({ is_confirmed: true })
       .eq('completed_by_ktv_id', ktvId)
       .eq('status', 'completed');
 
-    if (error) {
-      console.error('Error confirming sessions:', error);
-      // If table column doesn't exist yet, we just return success for UI demo
-      if (error.code === 'PGRST100' || error.message.includes('is_confirmed')) {
-         return { success: true, message: 'Simulated confirmation (Column is_confirmed missing)' };
-      }
-      throw error;
+    // 2. Update or insert into salary_records to "push" the confirmed count
+    const { data: existing } = await supabase
+      .from('salary_records')
+      .select('id')
+      .eq('ktv_id', ktvId)
+      .eq('month_year', '2026-05-01')
+      .single();
+
+    if (existing) {
+      await supabase
+        .from('salary_records')
+        .update({ 
+          total_sessions: totalSessions,
+          status: 'pending_approval' // Move to pending approval once sessions are confirmed
+        })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('salary_records')
+        .insert({
+          ktv_id: ktvId,
+          month_year: '2026-05-01',
+          total_sessions: totalSessions,
+          status: 'pending_approval'
+        });
     }
 
     revalidatePath('/dashboard/salary');

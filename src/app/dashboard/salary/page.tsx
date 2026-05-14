@@ -460,7 +460,10 @@ export default function SalaryPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="hover:bg-slate-50/50 transition-colors group"
+                  className={cn(
+                    "hover:bg-slate-50/50 transition-colors group",
+                    ktv.isConfirmed && "bg-emerald-50/30 opacity-90"
+                  )}
                 >
                   <td className="px-8 py-6 whitespace-nowrap sticky left-0 z-10 bg-white group-hover:bg-slate-50/50 transition-colors">
                     <div className="flex items-center gap-4">
@@ -486,8 +489,8 @@ export default function SalaryPage() {
                     <button 
                       onClick={async () => {
                         const total = matrixData.packageNames.reduce((acc: number, pkg: string) => acc + (ktv[pkg] || 0), 0);
-                        if (confirm(`Xác nhận đối soát ${total} buổi làm cho KTV ${ktv.name}?`)) {
-                          const res = await confirmKtvSessions(ktv.id);
+                        if (confirm(`Xác nhận đối soát ${total} buổi làm cho KTV ${ktv.name}? Số liệu này sẽ được chốt và đưa lên bảng lương tổng.`)) {
+                          const res = await confirmKtvSessions(ktv.id, total);
                           if (res.success) {
                             toast.success(`Đã duyệt dữ liệu cho ${ktv.name}`);
                             // Refresh both datasets to sync UI
