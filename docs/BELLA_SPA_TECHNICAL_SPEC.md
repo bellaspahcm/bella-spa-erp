@@ -1,5 +1,7 @@
-# BELLA SPA ERP — TECHNICAL SPECIFICATION
-**For Antigravity Development Team**
+# Bella Spa ERP - Technical Specification
+**Version:** 1.5  
+**Last Updated:** 2026-05-14  
+**Status:** Implementation Phase (Phase 12: Customer Portal & Rating Integration)
 
 ---
 
@@ -508,14 +510,11 @@ A: Yes, IF:
 - Scope strictly Phase 1 (no Phase 2 features)
 - Daily standup, clear requirements
 - No scope creep
-- Bella Spa approves design mockups upfront
-
----
-
-**Document Version:** 1.0  
-**Last Updated:** May 2025  
-**Status:** Ready for Antigravity development  
-**Contact:** [Your contact info]
+- Bella Spa approves design# Bella Spa ERP - Technical Specification
+**Version:** 1.5  
+**Last Updated:** 2026-05-14  
+**Status:** Implementation Phase (Phase 12: Customer Portal & Rating Integration)
+t:** [Your contact info]
 
 ---
 
@@ -625,6 +624,23 @@ A: Yes, IF:
     - **Horizontal Scroll**: Luôn bao bọc bảng trong một container `overflow-x-auto` để hỗ trợ hiển thị tốt trên mọi kích thước màn hình.
 
 ---
-**Document Version:** 1.4  
-**Last Updated:** May 14, 2026 (17:10)  
-**Status:** Active Guidelines & Tracking
+
+## 📅 MILESTONES & PHASES
+
+### PHASE 11: UI Refinement & Data Ergonomics
+- **Sticky Headers**: Implement sticky headers for all tables.
+- **Column Optimization**: Optimize column widths for data ergonomics.
+- **Data Persistence**: Harden state management.
+
+### PHASE 12: Customer Portal & Rating Integration
+- **Customer Portal**: Secure dashboard for clients to view history and progress.
+- **Rating System**: 5-star evaluation for each completed session.
+- **KTV Bonus Logic**: Automated monthly bonus calculation based on average rating.
+- **Notifications**: Evaluation reminders on completion.
+
+---
+
+**Document Version:** 1.5  
+**Last Updated:** 2026-05-14  
+**Status:** Implementation Phase  
+**Contact:** Bella Spa ERP Dev Team

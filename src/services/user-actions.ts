@@ -10,6 +10,18 @@ export async function getCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
+    // For local testing/demo purposes, we can simulate different roles
+    const isCustomerTest = process.env.NEXT_PUBLIC_DEBUG_ROLE === 'customer';
+    
+    if (isCustomerTest) {
+      return {
+        id: 'c1-mock-id',
+        full_name: 'Chị Nguyễn Thu Thủy',
+        role: 'customer',
+        tenant_id: '0e66365b-42b0-420e-acca-f7d7692e125e'
+      };
+    }
+
     return { 
       id: 'c294c8b0-25d2-4c7e-bed9-21246d957254', 
       full_name: 'Quản trị viên', 

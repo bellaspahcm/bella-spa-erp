@@ -101,12 +101,33 @@ export async function getSalaryData() {
     .select('id, completed_by_ktv_id, status, bookings(ktv_commission)')
     .eq('status', 'completed');
 
+  // Fetch session reviews for rating bonus calculation
+  const { data: reviews } = await supabase
+    .from('session_reviews')
+    .select('ktv_id, rating')
+    .eq('status', 'approved');
+
   const ktvSalaries = displayKtvs.map((ktv: any) => {
       const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
       const hasExpense = (expenses || []).some((e: any) => e.description?.toLowerCase().includes(ktv.full_name.toLowerCase()));
       
       const ktvCompletedSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
       const ktvSessionsCount = ktvCompletedSessions.length;
+
+      // Calculate Average Rating
+      const ktvReviews = reviews?.filter((r: any) => r.ktv_id === ktv.id) || [];
+      const avgRating = ktvReviews.length > 0 
+        ? ktvReviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / ktvReviews.length 
+        : 5.0; // Default to 5.0 if no reviews yet (encouragement)
+
+      // Calculate Rating Bonus per session
+      // Thresholds (Configurable)
+      let bonusPerSession = 0;
+      if (avgRating === 5.0) bonusPerSession = 50000;
+      else if (avgRating >= 4.5) bonusPerSession = 30000;
+      else if (avgRating >= 4.0) bonusPerSession = 10000;
+
+      const ratingBonus = ktvSessionsCount * bonusPerSession;
 
       // STATUS MAPPING
       let status = 'pending'; 
@@ -125,14 +146,16 @@ export async function getSalaryData() {
       const kpiBonus = record?.kpi_bonus || (ktvSessionsCount > 30 ? 1000000 : 0);
       const deductions = record?.violations_deduction || 0;
       const advances = record?.service_percentage_bonus || 0; 
-      const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
+      const totalSalary = baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances;
 
       return {
         id: ktv.id,
         name: ktv.full_name,
         sessions: ktvSessionsCount,
+        avgRating,
         baseSalary,
         sessionBonus,
+        ratingBonus,
         kpiBonus,
         deductions,
         advances,
