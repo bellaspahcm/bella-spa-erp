@@ -93,6 +93,7 @@ id | session_log_id (FK) | reviewer_id (FK customer) | ktv_id (FK)
 
 INDEX: ktv_id, session_log_id
 SECURITY: SELECT notes requires role=admin/manager, audit logged
+BUSINESS LOGIC: Approved ratings directly calculate monthly KTV performance bonuses.
 ```
 
 ### 6. KTV_SCHEDULE
@@ -571,12 +572,20 @@ t:** [Your contact info]
 - [x] **Horizontal Scalability**: Enhanced table wrappers to support smooth horizontal scrolling while maintaining data readability.
 - [x] **Type Safety Hardening**: Synchronized service management state with the new database schema to prevent build-time regressions.
 
+#### ✅ Phase 12: Customer Portal & Rating Integration (May 14, 2026)
+- [x] **Secure Customer Portal**: Built dedicated `/dashboard/customer` with treatment progress bars and session history.
+- [x] **Interactive Rating System**: Integrated 5-star session evaluation for clients with real-time feedback submission.
+- [x] **Automated Evaluation Trigger**: Implemented auto-creation of `pending_review` records upon session completion in `booking-actions.ts`.
+- [x] **Performance-Based Bonus Engine**: Updated salary management to calculate monthly bonuses based on average customer ratings (e.g., 5.0⭐ = +50k).
+- [x] **Transparent Compensation UI**: Added rating and bonus columns to the KTV salary table for full visibility.
+
 #### ⏭ Next Steps
-- [ ] **Advanced Database Triggers**: Move financial balance calculations to Postgres triggers.
-- [ ] **Staff Analytics**: Add productivity dashboards and dynamic KPI tracking.
+- [ ] **Zalo OA Integration**: Automate evaluation reminder notifications via Zalo when a session is marked as completed.
+- [ ] **Staff Performance Analytics**: Build a management dashboard to visualize rating trends and KTV productivity metrics.
+- [ ] **Advanced Database Triggers**: Migrate financial balance calculations and status synchronization to Postgres triggers.
 
 ---
-**Last Updated:** May 14, 2026 (16:55)
+**Last Updated:** May 14, 2026 (17:35)
 
 
 ## 🛠️ TROUBLESHOOTING & BEST PRACTICES (LESSONS LEARNED)
