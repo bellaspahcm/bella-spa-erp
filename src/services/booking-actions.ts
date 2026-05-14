@@ -898,10 +898,10 @@ export async function syncBookingProgress(bookingId: string) {
     .eq('id', bookingId)
     .single();
 
-  if (fetchError) return { error: fetchError.message };
+  if (!booking) return { error: 'Booking not found' };
 
   // 3. Update if discrepancy found
-  if (booking.completed_sessions !== count) {
+  if ((booking as any).completed_sessions !== count) {
     const { error: updateError } = await supabase
       .from('bookings')
       .update({ completed_sessions: count })
