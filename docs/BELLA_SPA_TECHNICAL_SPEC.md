@@ -551,14 +551,13 @@ A: Yes, IF:
     - `c294c8b0-25d2-4c7e-bed9-21246d957254` (Thành viên Admin)
   - [x] Liên kết Auth UUID với bảng `public.users` kèm vai trò Admin.
 
-### 🚀 Implementation Progress (Update: May 14, 2026 - 10:15)
+### 🚀 Implementation Progress (Update: May 14, 2026 - 12:05)
 
-#### ✅ Phase 1-7: Operations & UI Maturity (Completed)
-- [x] **Infrastructure & Luxury Identity**: Completed transition to "Luxury Deep Rose" and Corinthia branding.
-- [x] **Operational Logic**: Automated date calculation for treatment cycles and resolved timezone mismatches.
-- [x] **Financial Governance**: 2-step confirmation for transactions and auto-logging for bookings.
-- [x] **Human-Readable Audit Logs**: Relocated and formatted logs into a user-friendly Vietnamese interface.
-- [x] **Dashboard Refinement**: Streamlined session cards and synchronized "Upcoming Today" with 100% accuracy (no demo fallback).
+#### ✅ Phase 1-8: Logic Synchronization & Data Integrity (Completed)
+- [x] **Dashboard-Calendar Sync**: Unified `getUpcomingSessions` and `getCalendarSessions` to ensure 100% visibility of appointments across all modules.
+- [x] **Predictive Date Engine**: Robust implementation of date projection based on `start_date` and `session_number` for sessions missing explicit assignments.
+- [x] **Treatment Card Accuracy**: Fixed synchronization issues in "Thẻ liệu trình" to correctly reflect the number of performed sessions versus the total package.
+- [x] **Real-time Reliability**: Optimized Supabase subscription listeners to trigger immediate UI updates when sessions or bookings change.
 
 #### ⏭ Next Steps
 - [ ] **Advanced Database Triggers**: Move financial balance calculations to Postgres triggers.
@@ -566,7 +565,8 @@ A: Yes, IF:
 - [ ] **Staff Analytics**: Add productivity dashboards and dynamic KPI tracking.
 
 ---
-**Last Updated:** May 14, 2026 (10:15)
+**Last Updated:** May 14, 2026 (12:05)
+
 
 ## 🛠️ TROUBLESHOOTING & BEST PRACTICES (LESSONS LEARNED)
 

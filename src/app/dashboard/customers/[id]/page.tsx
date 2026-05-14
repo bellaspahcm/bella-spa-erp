@@ -35,6 +35,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { BookingModal } from '@/components/features/BookingModal';
 import { createClient } from '@/lib/supabase-client';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 export const dynamic = 'force-dynamic';
 
@@ -525,20 +526,16 @@ export default function CustomerDetailPage() {
                       <span className="text-[10px] font-black uppercase tracking-widest">KTV Phụ trách chính</span>
                     </div>
                     <div className="relative">
-                      <select 
+                      <PremiumSelect 
                         value={activeBooking.assigned_ktv_id || ''}
-                        onChange={(e) => handleUpdateKTV(e.target.value)}
+                        options={[
+                          { value: '', label: 'Chưa phân công' },
+                          ...ktvs.map(k => ({ value: k.id, label: k.full_name }))
+                        ]}
+                        onChange={(val) => handleUpdateKTV(val)}
                         disabled={isUpdatingKTV}
-                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-white font-black text-sm outline-none appearance-none focus:border-white/40 transition-all disabled:opacity-50"
-                      >
-                        <option value="" className="text-slate-900">Chưa phân công</option>
-                        {ktvs.map(k => (
-                          <option key={k.id} value={k.id} className="text-slate-900">{k.full_name}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/40">
-                        <ChevronRight className="w-4 h-4 rotate-90" />
-                      </div>
+                        className="w-full"
+                      />
                     </div>
                   </div>
                   
@@ -765,7 +762,7 @@ function EditCustomerModal({ isOpen, onClose, onConfirm, isSubmitting, data, set
                   type="button"
                   onClick={() => setData({ ...data, gender_baby: g.id })}
                   className={cn(
-                    "py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border",
+                    "py-2.5 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all border",
                     data.gender_baby === g.id 
                       ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-[1.02]" 
                       : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/30"

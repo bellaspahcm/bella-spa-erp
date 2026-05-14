@@ -180,10 +180,12 @@ export async function getMonthlyPerformance() {
   const [
     { data: sessionData },
     { data: revenueData },
+    { data: expenseData },
     { data: reviewData }
   ] = await Promise.all([
     supabase.from('session_logs').select('assigned_date').gte('assigned_date', sixMonthsAgoStr),
     supabase.from('revenue').select('amount, created_at').gte('created_at', sixMonthsAgoStr),
+    supabase.from('expenses').select('amount, expense_date').gte('expense_date', sixMonthsAgoStr),
     supabase.from('session_reviews').select('rating, created_at').gte('created_at', sixMonthsAgoStr)
   ]);
 
@@ -202,19 +204,17 @@ export async function getMonthlyPerformance() {
       return sDate.getMonth() === monthIndex && sDate.getFullYear() === year;
     }).length || 0;
 
-    // Filter revenue & expenses (created_at is timestamp)
-    const monthRevenueData = revenueData?.filter((r: any) => {
+    // Filter revenue
+    const monthRevenue = revenueData?.filter((r: any) => {
       const rDate = new Date(r.created_at);
       return rDate.getMonth() === monthIndex && rDate.getFullYear() === year;
-    }) || [];
-    
-    const revenue = monthRevenueData
-      .filter((r: any) => Number(r.amount) > 0)
-      .reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
+    }).reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0;
       
-    const expense = Math.abs(monthRevenueData
-      .filter((r: any) => Number(r.amount) < 0)
-      .reduce((acc: number, curr: any) => acc + Number(curr.amount), 0));
+    // Filter expenses
+    const monthExpense = expenseData?.filter((e: any) => {
+      const eDate = new Date(e.expense_date);
+      return eDate.getMonth() === monthIndex && eDate.getFullYear() === year;
+    }).reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0;
 
     // Filter ratings
     const monthReviews = reviewData?.filter((r: any) => {
@@ -229,8 +229,8 @@ export async function getMonthlyPerformance() {
     results.push({
       name: label,
       customers: sessionCount,
-      revenue: Number((revenue / 1000000).toFixed(1)), // In millions with 1 decimal
-      expense: Number((expense / 1000000).toFixed(1)), // In millions with 1 decimal
+      revenue: Number((monthRevenue / 1000000).toFixed(1)), // In millions with 1 decimal
+      expense: Number((monthExpense / 1000000).toFixed(1)), // In millions with 1 decimal
       rating: Number(avgRating.toFixed(1))
     });
   }
