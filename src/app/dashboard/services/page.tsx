@@ -40,6 +40,7 @@ export default function ServicesPage() {
   const [sessions, setSessions] = useState('');
   const [offer, setOffer] = useState('');
   const [details, setDetails] = useState('');
+  const [ktvCommission, setKtvCommission] = useState('');
 
   const openAddModal = () => {
     setModalMode('add');
@@ -50,6 +51,7 @@ export default function ServicesPage() {
     setSessions('');
     setOffer('');
     setDetails('');
+    setKtvCommission('');
     setIsModalOpen(true);
   };
 
@@ -62,6 +64,7 @@ export default function ServicesPage() {
     setSessions(service.sessions.toString());
     setOffer(service.offer);
     setDetails(service.details.join(', '));
+    setKtvCommission(service.ktv_commission.toString());
     setIsModalOpen(true);
   };
 
@@ -83,7 +86,8 @@ export default function ServicesPage() {
       sessions: parseInt(sessions),
       details: details.split(',').map(d => d.trim()).filter(d => d),
       offer,
-      status: 'active'
+      status: 'active',
+      ktv_commission: parseInt(ktvCommission) || 0
     };
 
     if (modalMode === 'add') {
@@ -301,6 +305,20 @@ export default function ServicesPage() {
                         onChange={(e) => setSessions(e.target.value)}
                         className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
                         placeholder="VD: 15" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-black text-slate-700 ml-1">Hoa hồng KTV (VNĐ/buổi)</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={ktvCommission ? formatNumberWithSeparator(ktvCommission) : ''}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^\d]/g, '');
+                          setKtvCommission(val);
+                        }}
+                        className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
+                        placeholder="VD: 150,000" 
                       />
                     </div>
                   </div>
