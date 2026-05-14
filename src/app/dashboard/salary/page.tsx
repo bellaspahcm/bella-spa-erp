@@ -255,19 +255,19 @@ export default function SalaryPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50/50">
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Kỹ thuật viên</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Số buổi</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Lương cứng</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Hoa hồng ca</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Thưởng KPI</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Phạt</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tạm ứng</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tổng nhận</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trạng thái</th>
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-slate-50/80 backdrop-blur-md">
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[220px]">Kỹ thuật viên</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[100px]">Số buổi</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Lương cứng</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Hoa hồng ca</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Thưởng KPI</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Phạt</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Tạm ứng</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[160px]">Tổng nhận</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Trạng thái</th>
                 {currentUser?.role !== 'ktv' && (
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Thao tác</th>
+                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[120px]">Thao tác</th>
                 )}
               </tr>
             </thead>
@@ -280,7 +280,7 @@ export default function SalaryPage() {
                   transition={{ delay: index * 0.05 }}
                   className="hover:bg-slate-50/50 transition-colors group"
                 >
-                  <td className="px-8 py-6">
+                  <td className="px-8 py-6 whitespace-nowrap">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center text-primary font-black shadow-sm group-hover:scale-110 transition-transform">
                         {s.name.charAt(0)}
@@ -288,16 +288,16 @@ export default function SalaryPage() {
                       <span className="font-bold text-slate-900">{s.name}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-6 font-bold text-slate-600">{s.sessions}</td>
-                  <td className="px-8 py-6 font-bold text-slate-600">{s.baseSalary.toLocaleString()}đ</td>
-                  <td className="px-8 py-6 font-bold text-emerald-600">+{s.sessionBonus.toLocaleString()}đ</td>
-                  <td className="px-8 py-6 font-bold text-primary">+{s.kpiBonus.toLocaleString()}đ</td>
-                  <td className="px-8 py-6 font-bold text-rose-500">-{s.deductions.toLocaleString()}đ</td>
-                  <td className="px-8 py-6 font-bold text-rose-500">-{s.advances.toLocaleString()}đ</td>
-                  <td className="px-8 py-6">
+                  <td className="px-8 py-6 font-bold text-slate-600 whitespace-nowrap">{s.sessions}</td>
+                  <td className="px-8 py-6 font-bold text-slate-600 whitespace-nowrap">{s.baseSalary.toLocaleString()}đ</td>
+                  <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">+{s.sessionBonus.toLocaleString()}đ</td>
+                  <td className="px-8 py-6 font-bold text-primary whitespace-nowrap">+{s.kpiBonus.toLocaleString()}đ</td>
+                  <td className="px-8 py-6 font-bold text-rose-500 whitespace-nowrap">-{s.deductions.toLocaleString()}đ</td>
+                  <td className="px-8 py-6 font-bold text-rose-500 whitespace-nowrap">-{s.advances.toLocaleString()}đ</td>
+                  <td className="px-8 py-6 whitespace-nowrap">
                     <span className="text-lg font-black text-slate-900">{s.totalSalary.toLocaleString()}đ</span>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-8 py-6 whitespace-nowrap">
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest inline-flex ${
                       s.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 
                       s.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'
@@ -306,7 +306,7 @@ export default function SalaryPage() {
                       {s.status === 'approved' ? 'Đã duyệt' : s.status === 'pending' ? 'Chờ duyệt' : 'Bản nháp'}
                     </div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-8 py-6 whitespace-nowrap">
                     {currentUser?.role !== 'ktv' && s.status !== 'approved' && (
                       <div className="flex gap-2">
                         <button 
