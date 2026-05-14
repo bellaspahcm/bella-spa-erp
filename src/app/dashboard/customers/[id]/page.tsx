@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
 import { getBookingsByCustomerId, updateBooking, completeSession, reusePackage, recordRemainingPayment } from '@/services/booking-actions';
-import { getUsers } from '@/services/user-actions';
+import { getUsers, getCurrentUser } from '@/services/user-actions';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -63,6 +63,18 @@ export default function CustomerDetailPage() {
     receipt_url: '',
     status: 'confirmed'
   });
+
+  const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
+
+  useEffect(() => {
+    async function checkRole() {
+      const user = await getCurrentUser();
+      if (user?.role) {
+        setUserRole(user.role as any);
+      }
+    }
+    checkRole();
+  }, []);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
@@ -338,20 +350,22 @@ export default function CustomerDetailPage() {
                 <Heart className="text-primary w-14 h-14" />
               </div>
               <h1 className="text-2xl font-black text-slate-900 mb-2">{customer.name_mother}</h1>
-              <span className={cn(
-                "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8",
-                customer.is_fully_paid ? 'bg-blue-50 text-blue-600' :
-                (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? 'bg-emerald-50 text-emerald-600' : 
-                customer.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                customer.status === 'deposit_pending' ? 'bg-amber-50 text-amber-600' : 
-                'bg-slate-50 text-slate-500'
-              )}>
-                {customer.is_fully_paid ? 'Đã thanh toán thành công' :
-                 (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? 'Đang chăm sóc' : 
-                 customer.status === 'completed' ? 'Đã hoàn tất' :
-                 customer.status === 'deposit_pending' ? 'Chờ sinh (Đã cọc)' : 
-                 'Khách mới (Lead)'}
-              </span>
+              {userRole === 'admin' && (
+                <span className={cn(
+                  "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8",
+                  customer.is_fully_paid ? 'bg-blue-50 text-blue-600' :
+                  (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? 'bg-emerald-50 text-emerald-600' : 
+                  customer.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                  customer.status === 'deposit_pending' ? 'bg-amber-50 text-amber-600' : 
+                  'bg-slate-50 text-slate-500'
+                )}>
+                  {customer.is_fully_paid ? 'Đã thanh toán thành công' :
+                  (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? 'Đang chăm sóc' : 
+                  customer.status === 'completed' ? 'Đã hoàn tất' :
+                  customer.status === 'deposit_pending' ? 'Chờ sinh (Đã cọc)' : 
+                  'Khách mới (Lead)'}
+                </span>
+              )}
 
               <div className="w-full space-y-4">
                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
@@ -430,13 +444,13 @@ export default function CustomerDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { label: 'Tiến độ', value: activeBooking ? `${activeBooking.completed_sessions || 0}/${activeBooking.total_sessions || 0}` : '0/0', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-              { 
+              ...(userRole === 'admin' ? [{ 
                 label: activeBooking && activeBooking.deposit_amount >= activeBooking.full_price ? 'Đã thanh toán thành công' : 'Đã cọc', 
                 value: activeBooking ? formatNumberWithSeparator(activeBooking.deposit_amount || 0) + 'đ' : '0đ', 
                 icon: DollarSign, 
                 color: 'text-primary', 
                 bg: 'bg-rose-50' 
-              },
+              }] : []),
               { label: 'Ngày bắt đầu', value: activeBooking?.start_date || 'Chưa có', icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
             ].map((stat, i) => (
               <div 
@@ -506,40 +520,44 @@ export default function CustomerDetailPage() {
                   </div>
                   
                   <div className="flex gap-4">
-                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                      <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Tổng cộng</p>
-                      <p className="font-black text-lg text-white">
-                        {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
-                      </p>
-                    </div>
+                    {userRole === 'admin' && (
+                      <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
+                        <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Tổng cộng</p>
+                        <p className="font-black text-lg text-white">
+                          {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
+                        </p>
+                      </div>
+                    )}
                     <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
                       <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Giờ mặc định</p>
                       <p className="font-black text-lg text-white">
                         {activeBooking?.preferred_time || '08:00'}
                       </p>
                     </div>
-                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 flex items-center gap-4">
-                      <div>
-                        <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
-                        <p className="font-black text-xl text-white">
-                          {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0))) + 'đ'}
-                        </p>
+                    {userRole === 'admin' && (
+                      <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 flex items-center gap-4">
+                        <div>
+                          <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
+                          <p className="font-black text-xl text-white">
+                            {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0))) + 'đ'}
+                          </p>
+                        </div>
+                        {!isDepositOnly && (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0) > 0 && (
+                          <button 
+                            onClick={() => {
+                              setPaymentData({
+                                ...paymentData,
+                                amount: (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0)
+                              });
+                              setIsPaymentModalOpen(true);
+                            }}
+                            className="bg-white text-rose-500 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-lg active:scale-95"
+                          >
+                            Thanh toán nốt
+                          </button>
+                        )}
                       </div>
-                      {!isDepositOnly && (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0) > 0 && (
-                        <button 
-                          onClick={() => {
-                            setPaymentData({
-                              ...paymentData,
-                              amount: (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0)
-                            });
-                            setIsPaymentModalOpen(true);
-                          }}
-                          className="bg-white text-rose-500 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-lg active:scale-95"
-                        >
-                          Thanh toán nốt
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
 
@@ -563,19 +581,21 @@ export default function CustomerDetailPage() {
                         <MessageCircle className="w-4 h-4" />
                         Gửi báo cáo Zalo
                       </button>
-                      <button 
-                        disabled={activeBooking?.deposit_amount < activeBooking?.full_price}
-                        onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
-                        className={cn(
-                          "flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black transition-all uppercase tracking-widest text-xs",
-                          activeBooking?.deposit_amount >= activeBooking?.full_price
-                            ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20"
-                            : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
-                        )}
-                      >
-                        <FileText className="w-4 h-4" />
-                        Xuất hợp đồng
-                      </button>
+                      {userRole === 'admin' && (
+                        <button 
+                          disabled={activeBooking?.deposit_amount < activeBooking?.full_price}
+                          onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
+                          className={cn(
+                            "flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black transition-all uppercase tracking-widest text-xs",
+                            activeBooking?.deposit_amount >= activeBooking?.full_price
+                              ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20"
+                              : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
+                          )}
+                        >
+                          <FileText className="w-4 h-4" />
+                          Xuất hợp đồng
+                        </button>
+                      )}
                     </>
                   )}
                 </div>
