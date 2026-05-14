@@ -513,33 +513,48 @@ export async function getKtvSessionMatrix() {
 
 export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
   const supabase = (await createClient()) as any;
+  console.log(`Confirming sessions for KTV: ${ktvId}, Total: ${totalSessions}`);
   
   try {
-    // 1. Mark sessions as confirmed
-    await supabase
+    // 1. Mark sessions as confirmed in session_logs
+    const { error: sessionError } = await supabase
       .from('session_logs')
       .update({ is_confirmed: true })
       .eq('completed_by_ktv_id', ktvId)
       .eq('status', 'completed');
 
-    // 2. Update or insert into salary_records to "push" the confirmed count
-    const { data: existing } = await supabase
+    if (sessionError) {
+      console.error('Error updating session_logs:', sessionError);
+      // Don't fail the whole operation if this column is missing, 
+      // but log it for debugging
+    }
+
+    // 2. Check for existing salary record
+    const { data: existing, error: fetchError } = await supabase
       .from('salary_records')
       .select('id')
       .eq('ktv_id', ktvId)
       .eq('month_year', '2026-05-01')
-      .single();
+      .maybeSingle();
 
+    if (fetchError) {
+      console.error('Error fetching existing salary record:', fetchError);
+      return { success: false, error: fetchError.message };
+    }
+
+    let result;
     if (existing) {
-      await supabase
+      console.log(`Updating existing salary record: ${existing.id}`);
+      result = await supabase
         .from('salary_records')
         .update({ 
           total_sessions: totalSessions,
-          status: 'pending_approval' // Move to pending approval once sessions are confirmed
+          status: 'pending_approval'
         })
         .eq('id', existing.id);
     } else {
-      await supabase
+      console.log(`Inserting new salary record for KTV: ${ktvId}`);
+      result = await supabase
         .from('salary_records')
         .insert({
           ktv_id: ktvId,
@@ -549,10 +564,16 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
         });
     }
 
+    if (result.error) {
+      console.error('Error updating/inserting salary record:', result.error);
+      return { success: false, error: result.error.message };
+    }
+
+    console.log('Session confirmation successful');
     revalidatePath('/dashboard/salary');
     return { success: true };
   } catch (error) {
-    console.error('Failed to confirm sessions:', error);
+    console.error('Failed to confirm sessions (exception):', error);
     return { success: false, error: (error as any).message };
   }
 }
