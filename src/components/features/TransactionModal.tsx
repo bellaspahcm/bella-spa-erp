@@ -16,6 +16,8 @@ import { recordTransaction } from '@/services/finance-actions';
 import { getBookings } from '@/services/booking-actions';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { User } from 'lucide-react';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -157,18 +159,19 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
             {type === 'revenue' && (
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Liên kết khách hàng/booking (Tùy chọn)</label>
-                <select
+                <PremiumSelect
                   value={bookingId}
-                  onChange={(e) => setBookingId(e.target.value)}
-                  className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-3xl outline-none transition-all font-bold text-slate-700 appearance-none cursor-pointer"
-                >
-                  <option value="">Chọn khách hàng...</option>
-                  {bookings.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      Mẹ {b.customers?.name_mother} - {b.package_name || 'Gói dịch vụ'}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Chọn khách hàng...' },
+                    ...bookings.map((b) => ({
+                      value: b.id,
+                      label: `Mẹ ${b.customers?.name_mother} - ${b.package_name || 'Gói dịch vụ'}`,
+                      icon: <User className="w-4 h-4" />
+                    }))
+                  ]}
+                  onChange={(val) => setBookingId(val)}
+                  className="w-full"
+                />
               </div>
             )}
 
