@@ -527,9 +527,9 @@ A: Yes, IF:
 
 ### 🟢 Completed (Done)
 - [x] **Phase 0: Infrastructure & Base**
-  - [x] Khởi tạo Next.js 16 + React 19 + Tailwind CSS v4.
+  - [x] Khởi tạo Next.js 16 + React 19 + Tailwind CSS
   - [x] Cấu hình Supabase Client (Auth/Database/SSR).
-  - [x] Thiết lập biến môi trường và liên kết Supabase project (`lvnvkpyxtuilhrabtlwv`).
+  - [x] Thiết lập biến môi trường và liên kết Supabase project.
 - [x] **Phase 1: Database Migration**
   - [x] Đẩy schema 16 bảng lên Supabase Remote.
   - [x] Khởi tạo dữ liệu mẫu (Seed): Bella Spa Headquarter + Admin User.
@@ -540,28 +540,27 @@ A: Yes, IF:
   - [x] **Customer Module**: Danh sách hồ sơ mẹ & bé + Modal thêm mới.
   - [x] **Booking Module**: Giao diện Timeline lịch hẹn + Bộ chọn ngày thông minh.
   - [x] **Finance Module**: Dashboard thu chi + Danh sách giao dịch.
-
 - [x] **Phase 3: Branding & Identity Migration**
-  - [x] Thay thế logo mẫu bằng logo chính thức của Bella Spa (`public/logo.png`).
+  - [x] Thay thế logo mẫu bằng logo chính thức của Bella Spa.
   - [x] Áp dụng hệ màu **Pink Pastel** (Primary: `#FF85A2`) trên toàn bộ hệ thống.
   - [x] Đồng bộ thiết kế Glassmorphism cho ngành chăm sóc mẹ và bé.
 - [x] **Phase 4: User Provisioning**
-  - [x] Cấp quyền Admin cho các tài khoản production:
-    - `46c75ad7-416d-48ef-9386-25cd6a4d4805` (Hệ thống)
-    - `c294c8b0-25d2-4c7e-bed9-21246d957254` (Thành viên Admin)
+  - [x] Cấp quyền Admin cho các tài khoản production.
   - [x] Liên kết Auth UUID với bảng `public.users` kèm vai trò Admin.
 
-### 🚀 Implementation Progress (Update: May 14, 2026 - 12:05)
+### 🚀 Implementation Progress (Update: May 14, 2026 - 13:20)
 
-#### ✅ Phase 1-8: Logic Synchronization & Data Integrity (Completed)
-- [x] **Dashboard-Calendar Sync**: Unified `getUpcomingSessions` and `getCalendarSessions` to ensure 100% visibility of appointments across all modules.
-- [x] **Predictive Date Engine**: Robust implementation of date projection based on `start_date` and `session_number` for sessions missing explicit assignments.
+#### ✅ Phase 1-9: Logic Synchronization & UI Standardization (Completed)
+- [x] **"Soft Luxury" Design System**: Integrated `PremiumSelect` across all modules (Booking, Transaction, Sessions) for 100% UI consistency.
+- [x] **Dropdown Clipping Fix**: Refactored card containers in Customer Detail view to support floating menus.
+- [x] **Cascading Rescheduling**: Implemented auto-shift logic for subsequent sessions when a scheduled date is changed.
+- [x] **Dashboard-Calendar Sync**: Unified all appointment views to ensure real-time visibility of daily operations.
+- [x] **Predictive Date Engine**: Robust calculation of projected session dates based on package start dates.
 - [x] **Treatment Card Accuracy**: Fixed synchronization issues in "Thẻ liệu trình" to correctly reflect the number of performed sessions versus the total package.
 - [x] **Real-time Reliability**: Optimized Supabase subscription listeners to trigger immediate UI updates when sessions or bookings change.
 
 #### ⏭ Next Steps
 - [ ] **Advanced Database Triggers**: Move financial balance calculations to Postgres triggers.
-- [ ] **Middleware Hardening**: Finalize RLS policy audit and production security verification.
 - [ ] **Staff Analytics**: Add productivity dashboards and dynamic KPI tracking.
 
 ---
@@ -598,7 +597,14 @@ A: Yes, IF:
     - Sử dụng `localStorage` để đồng bộ các thay đổi thủ công của người dùng trong quá trình Demo.
     - Các Server Actions nên tích hợp sẵn logic kiểm tra: Nếu DB lỗi/rỗng -> Trả về Demo Data + Merge với Local Storage.
 
+### 5. "Soft Luxury" UI Standards
+*   **Vấn đề**: Giao diện không đồng nhất do sử dụng các thẻ `select` mặc định và lỗi bị cắt nội dung (clipping) khi đặt trong các card có `overflow-hidden`.
+*   **Quy tắc**:
+    - **PremiumSelect**: Bắt buộc sử dụng component `PremiumSelect` cho toàn bộ các trường chọn (Dropdown). Không sử dụng HTML `<select>` nguyên bản.
+    - **Floating Menus**: Đối với các thẻ (Cards) chứa dropdown, tuyệt đối không sử dụng `overflow-hidden` trực tiếp trên container chính. Hãy tách phần trang trí (Background elements) vào một lớp riêng có overflow-hidden để đảm bảo menu dropdown có thể hiển thị tràn ra ngoài Card.
+    - **Pastel Palette**: Luôn tuân thủ mã màu `#FF85A2` cho Primary và các sắc độ Pastel tương ứng để duy trì nhận diện thương hiệu Bella Spa.
+
 ---
-**Document Version:** 1.2  
-**Last Updated:** May 14, 2026  
-**Status:** Active Guidelines
+**Document Version:** 1.3  
+**Last Updated:** May 14, 2026 (13:15)  
+**Status:** Active Guidelines & Tracking

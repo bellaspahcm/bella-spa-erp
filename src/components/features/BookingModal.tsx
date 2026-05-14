@@ -23,6 +23,7 @@ import { MOCK_SERVICES } from '@/constants/mock-data';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { getDraftBooking } from '@/services/booking-actions';
 import { getUsers } from '@/services/user-actions';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -451,19 +452,15 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                       <User className="w-4 h-4" /> Kỹ thuật viên phụ trách
                     </label>
                     <div className="relative">
-                      <select 
+                      <PremiumSelect 
                         value={formData.assigned_ktv_id}
-                        onChange={(e) => setFormData({...formData, assigned_ktv_id: e.target.value})}
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm appearance-none"
-                      >
-                        <option value="">Chưa phân công</option>
-                        {ktvs.map(k => (
-                          <option key={k.id} value={k.id}>{k.full_name}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
-                      </div>
+                        options={[
+                          { value: '', label: 'Chưa phân công' },
+                          ...ktvs.map(k => ({ value: k.id, label: k.full_name }))
+                        ]}
+                        onChange={(val) => setFormData({...formData, assigned_ktv_id: val})}
+                        className="w-full"
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">

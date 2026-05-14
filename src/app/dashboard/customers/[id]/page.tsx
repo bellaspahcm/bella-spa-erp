@@ -428,8 +428,11 @@ export default function CustomerDetailPage() {
             ))}
           </div>
 
-          <div className="luxury-card-pink rounded-[3rem] p-8 relative overflow-hidden shadow-2xl group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-700 group-hover:scale-110" />
+          <div className="luxury-card-pink rounded-[3rem] p-8 relative shadow-2xl group">
+            {/* Background Decorative Layer - Clipped */}
+            <div className="absolute inset-0 overflow-hidden rounded-[3rem] pointer-events-none">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-700 group-hover:scale-110" />
+            </div>
             
             <div className="relative z-10">
               <div className="flex flex-col md:flex-row justify-between gap-8 mb-8">
