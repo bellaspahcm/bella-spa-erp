@@ -108,20 +108,27 @@ export async function getUpcomingSessions(date?: string) {
   const supabase = (await createClient()) as any;
   
   // Get today's date in local time YYYY-MM-DD if not provided
-  let today = date;
-  if (!today) {
+  let todayStr = date;
+  if (!todayStr) {
     const now = new Date();
-    today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }
 
+  // To handle predictive logic, we fetch all non-completed sessions for active bookings
+  // and then filter in JS. This is more robust than a simple DB filter.
   const { data, error } = await supabase
     .from('session_logs')
     .select(`
       *,
       bookings (
+        id,
         package_id,
+        package_name,
+        full_price,
+        start_date,
         completed_sessions,
         total_sessions,
+        status,
         customers (
           name_mother,
           name_baby
@@ -131,7 +138,6 @@ export async function getUpcomingSessions(date?: string) {
         )
       )
     `)
-    .eq('assigned_date', today)
     .neq('status', 'completed')
     .order('assigned_time', { ascending: true });
 
@@ -140,11 +146,66 @@ export async function getUpcomingSessions(date?: string) {
     return [];
   }
 
-  return (data || []).map((s: any) => ({
-    ...s,
-    assigned_date: ensure2026(s.assigned_date),
-    completed_date: ensure2026(s.completed_date)
-  }));
+  const { MOCK_SERVICES } = await import('@/constants/mock-data');
+  function resolvePackageName(booking: any): string {
+    if (booking?.package_name) return booking.package_name;
+    const price = Number(booking?.full_price);
+    const matchedService = MOCK_SERVICES.find(s => {
+      const sPrice = parseInt(s.price.replace(/[^\d]/g, ''));
+      return sPrice === price;
+    });
+    return matchedService?.name || 'Chưa đăng ký';
+  }
+
+  // Group by booking for predictive logic (similar to getSessionsWithDetails)
+  const sessionsByBooking: Record<string, any[]> = {};
+  (data || []).forEach((s: any) => {
+    if (s.booking_id) {
+      if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = [];
+      sessionsByBooking[s.booking_id].push(s);
+    }
+  });
+
+  const finalSessions: any[] = [];
+
+  Object.values(sessionsByBooking).forEach((logs: any[]) => {
+    const sortedLogs = logs.sort((a, b) => (a.session_number || 0) - (b.session_number || 0));
+    const booking = sortedLogs[0].bookings;
+    
+    let lastKnownDate = booking?.start_date;
+    let lastKnownSessionNum = 1;
+
+    sortedLogs.forEach((s: any) => {
+      let finalDate = s.assigned_date;
+      
+      // Predictive logic if assigned_date is missing
+      if (!finalDate && lastKnownDate) {
+        const [y, m, d] = lastKnownDate.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        dateObj.setDate(dateObj.getDate() + (s.session_number - lastKnownSessionNum));
+        finalDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+      }
+
+      if (finalDate) {
+        lastKnownDate = finalDate;
+        lastKnownSessionNum = s.session_number;
+      }
+
+      // If the (predicted or actual) date matches today, include it
+      if (finalDate === todayStr) {
+        finalSessions.push({
+          ...s,
+          assigned_date: ensure2026(finalDate),
+          bookings: booking ? {
+            ...booking,
+            package_name: resolvePackageName(booking)
+          } : null
+        });
+      }
+    });
+  });
+
+  return finalSessions.sort((a, b) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
 }
 
 export async function getTopTechnicians() {
@@ -284,14 +345,20 @@ export async function getImportantAlerts() {
 }
 
 // Bundle everything into a single request for faster page loading
-export async function getFullDashboardData(startDate?: string, endDate?: string, today?: string) {
+export async function getFullDashboardData(startDate?: string, endDate?: string, todayDate?: string) {
   const [statsData, sessionsData, ktvsData, alertsData, perfData] = await Promise.all([
-    getDashboardStats(startDate, endDate, today),
-    getUpcomingSessions(today),
+    getDashboardStats(startDate, endDate, todayDate),
+    getUpcomingSessions(todayDate),
     getTopTechnicians(),
     getImportantAlerts(),
     getMonthlyPerformance()
   ]);
+
+  // Synchronize stats with the actual retrieved sessions for consistency
+  // especially since getUpcomingSessions uses predictive logic
+  if (statsData && statsData.todayBookings && sessionsData) {
+    statsData.todayBookings.value = sessionsData.length.toString();
+  }
 
   return {
     statsData,
