@@ -117,3 +117,46 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
     throw error;
   }
 }
+
+export async function exportSessionMatrixToExcel(data: any[], packageNames: string[]) {
+  try {
+    const wb = XLSX.utils.book_new();
+    
+    // 1. Prepare data for AOA (Array of Arrays)
+    const reportData = [
+      ['BẢNG ĐỐI SOÁT CHI TIẾT SỐ BUỔI LÀM THEO LIỆU TRÌNH'],
+      ['Kỳ lương:', '05/2026'],
+      ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+      [],
+      ['Kỹ thuật viên', ...packageNames, 'Tổng cộng']
+    ];
+
+    data.forEach(row => {
+      const rowData = [row.name];
+      let total = 0;
+      packageNames.forEach(pkg => {
+        const count = row[pkg] || 0;
+        rowData.push(count);
+        total += count;
+      });
+      rowData.push(total);
+      reportData.push(rowData);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(reportData);
+    
+    // Set column widths
+    const cols = [{ wch: 25 }]; // KTV name
+    packageNames.forEach(() => cols.push({ wch: 15 }));
+    cols.push({ wch: 15 }); // Total
+    ws['!cols'] = cols;
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Doi Soat Buoi Lam');
+
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    return buf.toString('base64');
+  } catch (error) {
+    console.error('Export matrix error:', error);
+    throw error;
+  }
+}

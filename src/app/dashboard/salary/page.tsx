@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { DollarSign, Download, TrendingUp, Search, Filter, Edit2, CheckCircle2, ChevronRight, User, Calendar as CalendarIcon, Briefcase, Award, AlertCircle, ShieldCheck, Star } from 'lucide-react';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { useState, useEffect } from 'react';
-import { getSalaryData, approveSalary, updateSalaryConfig } from '@/services/salary-actions';
-import { exportSalaryToExcel } from '@/services/export-actions';
+import { getSalaryData, approveSalary, updateSalaryConfig, getKtvSessionMatrix } from '@/services/salary-actions';
+import { exportSalaryToExcel, exportSessionMatrixToExcel } from '@/services/export-actions';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
+import { FileSpreadsheet } from 'lucide-react';
 
 export default function SalaryPage() {
   const [ktvSalaries, setKtvSalaries] = useState<any[]>([]);
@@ -17,6 +18,8 @@ export default function SalaryPage() {
   const [editingSalary, setEditingSalary] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [matrixData, setMatrixData] = useState<{ ktvs: any[], packageNames: string[] } | null>(null);
+  const [isExportingMatrix, setIsExportingMatrix] = useState(false);
 
   useEffect(() => {
     async function fetchUser() {
@@ -28,9 +31,18 @@ export default function SalaryPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const data = await getSalaryData();
-      setKtvSalaries(data);
-      setIsLoading(false);
+      try {
+        const [salaryData, matrix] = await Promise.all([
+          getSalaryData(),
+          getKtvSessionMatrix()
+        ]);
+        setKtvSalaries(salaryData);
+        setMatrixData(matrix);
+      } catch (error) {
+        console.error('Fetch data error:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchData();
   }, []);
@@ -125,6 +137,30 @@ export default function SalaryPage() {
     } catch (error) {
       console.error('Export failed:', error);
       toast.error('Lỗi khi xuất báo cáo Excel');
+    }
+  };
+
+  const handleExportMatrix = async () => {
+    if (!matrixData) return;
+    setIsExportingMatrix(true);
+    const toastId = toast.loading('Đang chuẩn bị bảng đối soát số buổi...');
+    try {
+      const base64 = await exportSessionMatrixToExcel(matrixData.ktvs, matrixData.packageNames);
+      const blob = await (await fetch(`data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`)).blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Bang_doi_soat_buoi_lam_KTV_05_2026.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Đã xuất bảng đối soát thành công', { id: toastId });
+    } catch (error) {
+      console.error('Matrix export failed:', error);
+      toast.error('Lỗi khi xuất bảng đối soát', { id: toastId });
+    } finally {
+      setIsExportingMatrix(false);
     }
   };
 
@@ -361,7 +397,7 @@ export default function SalaryPage() {
       </div>
 
       {/* Info Banner */}
-      <div className="bg-amber-50 border border-amber-100 p-6 rounded-[32px] flex items-start gap-4">
+      <div className="bg-amber-50 border border-amber-100 p-6 rounded-[32px] flex items-start gap-4 mb-10">
         <div className="p-3 bg-amber-100 rounded-2xl">
           <AlertCircle className="w-6 h-6 text-amber-600" />
         </div>
@@ -371,6 +407,73 @@ export default function SalaryPage() {
             Lương KTV được tính dựa trên số buổi thực tế hoàn thành (Hoa hồng theo từng loại dịch vụ) + Lương cứng + Thưởng hiệu suất KPI. 
             Giá tiền công được khóa tại thời điểm tạo hợp đồng để đảm bảo quyền lợi KTV. Hạn chốt lương cuối cùng là ngày 05 hàng tháng.
           </p>
+        </div>
+      </div>
+
+      {/* Session Matrix Table */}
+      <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden mb-10">
+        <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
+              <CalendarIcon className="w-8 h-8 text-primary" />
+              Đối soát số buổi làm chi tiết
+            </h2>
+            <p className="text-slate-500 font-medium text-sm mt-1">Chi tiết số buổi thực hiện theo từng kỹ thuật viên và gói dịch vụ</p>
+          </div>
+          <button 
+            onClick={handleExportMatrix}
+            disabled={isExportingMatrix || !matrixData}
+            className="flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white px-6 py-3 rounded-2xl font-black transition-all text-xs uppercase tracking-widest disabled:opacity-50"
+          >
+            <FileSpreadsheet className="w-5 h-5" />
+            <span>Xuất file đối soát</span>
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-slate-50/80 backdrop-blur-md">
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px] sticky left-0 z-20 bg-slate-50">Kỹ thuật viên</th>
+                {matrixData?.packageNames.map(pkg => (
+                  <th key={pkg} className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px] text-center">{pkg}</th>
+                ))}
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[120px] text-center bg-slate-100/50">Tổng buổi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {matrixData?.ktvs.filter(ktv => ktv.name.toLowerCase().includes(searchQuery.toLowerCase())).map((ktv, index) => (
+                <motion.tr 
+                  key={ktv.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="hover:bg-slate-50/50 transition-colors group"
+                >
+                  <td className="px-8 py-6 whitespace-nowrap sticky left-0 z-10 bg-white group-hover:bg-slate-50/50 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs">
+                        {ktv.name.charAt(0)}
+                      </div>
+                      <span className="font-bold text-slate-900">{ktv.name}</span>
+                    </div>
+                  </td>
+                  {matrixData?.packageNames.map(pkg => (
+                    <td key={pkg} className="px-8 py-6 text-center whitespace-nowrap">
+                      <span className={`font-black text-sm ${ktv[pkg] > 0 ? 'text-primary' : 'text-slate-300'}`}>
+                        {ktv[pkg] || 0}
+                      </span>
+                    </td>
+                  ))}
+                  <td className="px-8 py-6 text-center whitespace-nowrap bg-slate-50/30">
+                    <span className="font-black text-slate-900 text-lg">
+                      {matrixData.packageNames.reduce((acc, pkg) => acc + (ktv[pkg] || 0), 0)}
+                    </span>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
       
