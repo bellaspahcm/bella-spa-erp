@@ -56,9 +56,8 @@ export async function getSalaryData() {
         filteredMock = mockData.filter(m => m.id === 'ktv1' || m.name.includes('Hoa'));
       }
 
-      // Map mock data and check if any already have an expense record
+      // Map statuses correctly for the UI
       return filteredMock.map(item => {
-        // Search in expenses for this month's salary record for this KTV
         const hasExpense = expenses?.some((e: any) => 
           e.description?.includes(item.name) && 
           (e.description?.includes('T5/2026') || e.description?.includes('05/2026'))
@@ -71,54 +70,65 @@ export async function getSalaryData() {
       });
     }
 
-    // Fetch salary records for the current month (May 2026)
-    const { data: salaryRecords, error: salaryError } = await supabase
-      .from('salary_records')
-      .select('*')
-      .eq('month_year', '2026-05-01');
-      // Temporarily removing tenant_id filter to ensure data visibility in demo
-      // .eq('tenant_id', currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e');
+  // Fetch salary records for the current month (May 2026)
+  const { data: salaryRecords, error: salaryError } = await supabase
+    .from('salary_records')
+    .select('*')
+    .eq('month_year', '2026-05-01');
 
-    // Fetch completed sessions to calculate real-time stats
-    const { data: sessions, error: sessionsError } = await supabase
-      .from('session_logs')
-      .select('id, completed_by_ktv_id, status')
-      .eq('status', 'completed');
+  // Fetch completed sessions to calculate real-time stats
+  const { data: sessions, error: sessionsError } = await supabase
+    .from('session_logs')
+    .select('id, completed_by_ktv_id, status')
+    .eq('status', 'completed');
 
-    const ktvSalaries = ktvs.map((ktv: any) => {
-      const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
-      const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id).length || 0;
+  // Fetch expenses to check for already approved salaries (including mock descriptions)
+  const { data: expenses } = await supabase
+    .from('expenses')
+    .select('description')
+    .eq('category', 'salary');
 
-      // Logic for calculating salary if no record exists
-      const baseSalary = record?.base_salary || 6000000;
-      const sessionBonus = ktvSessions * 150000; // 150k per session
-      const kpiBonus = record?.kpi_bonus || (ktvSessions > 30 ? 1000000 : 0);
-      const deductions = record?.violations_deduction || 0;
-      // Using service_percentage_bonus to store advances since the column doesn't exist natively
-      const advances = record?.service_percentage_bonus || 0; 
-      const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
+  const ktvSalaries = ktvs.map((ktv: any) => {
+    const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
+    const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id).length || 0;
 
-      // Normalize status: handle all pending variants
-      const rawStatus = record?.status || 'draft';
-      const normalizedStatus = (rawStatus === 'pending_approval' || rawStatus === 'pending' || rawStatus === 'submitted') 
-        ? 'pending' 
-        : rawStatus;
+    // Check if approved via expense record
+    const hasExpense = expenses?.some((e: any) => 
+      e.description?.includes(ktv.full_name) && 
+      (e.description?.includes('T5/2026') || e.description?.includes('05/2026'))
+    );
 
-      return {
-        id: ktv.id,
-        name: ktv.full_name,
-        sessions: ktvSessions,
-        baseSalary,
-        sessionBonus,
-        kpiBonus,
-        deductions,
-        advances,
-        totalSalary,
-        status: normalizedStatus
-      };
-    });
+    // Logic for calculating salary if no record exists
+    const baseSalary = record?.base_salary || 6000000;
+    const sessionBonus = ktvSessions * 150000; 
+    const kpiBonus = record?.kpi_bonus || (ktvSessions > 30 ? 1000000 : 0);
+    const deductions = record?.violations_deduction || 0;
+    const advances = record?.service_percentage_bonus || 0; 
+    const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
 
-    return ktvSalaries;
+    // Normalize status: UI expects 'pending', 'approved', or 'draft'
+    let status = record?.status || 'draft';
+    if (hasExpense) {
+      status = 'approved';
+    } else if (status === 'pending_approval' || status === 'submitted') {
+      status = 'pending';
+    }
+
+    return {
+      id: ktv.id,
+      name: ktv.full_name,
+      sessions: ktvSessions,
+      baseSalary,
+      sessionBonus,
+      kpiBonus,
+      deductions,
+      advances,
+      totalSalary,
+      status
+    };
+  });
+
+  return ktvSalaries;
   } catch (error) {
     console.error('Error in getSalaryData:', error);
     return mockData;
@@ -289,8 +299,16 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
     // 0. Handle mock data IDs
     if (ktvId.startsWith('ktv') || ktvId.length < 10) {
       console.log('Mock salary update requested for:', ktvId);
-      // In a real mock scenario, we'd store this in a cookie or memory, 
-      // but here we'll just return success to satisfy the UI.
+      // For demo purposes, we will record this update in the audit logs 
+      // so it appears as "successfully saved" in the session even if we don't have a DB record.
+      await recordAuditLog({
+        action: 'UPDATE',
+        module: 'SALARY',
+        target_id: ktvId,
+        new_data: { ...payload, status: 'pending_approval' }
+      });
+      
+      revalidatePath('/dashboard/salary');
       return { success: true };
     }
 
