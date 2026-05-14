@@ -80,7 +80,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-72 glass-pink border-r border-pink-100 flex flex-col h-screen sticky top-0 shadow-xl relative overflow-hidden">
+      <aside className="w-72 glass-pink border-r border-pink-100 flex flex-col h-screen min-h-screen sticky top-0 shadow-xl relative z-30">
         {/* Decorative gradient overlay */}
         <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-3xl -mr-12 -mt-12" />
         
@@ -98,7 +98,7 @@ export function Sidebar() {
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1.5">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar pb-4">
           {user?.role !== 'ktv' && (
             <button 
               onClick={() => setIsQuickAddOpen(true)}
