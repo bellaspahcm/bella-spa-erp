@@ -26,8 +26,8 @@ import {
   PlusCircle,
   History
 } from 'lucide-react';
-import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession, rescheduleSession, syncBookingProgress, resolvePackageName } from '@/services/booking-actions';
-import { cn } from '@/lib/utils';
+import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession, rescheduleSession, syncBookingProgress } from '@/services/booking-actions';
+import { cn, resolvePackageName } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';

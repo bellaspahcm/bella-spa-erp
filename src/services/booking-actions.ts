@@ -1,25 +1,12 @@
 'use server';
 
-import { ensure2026 } from '@/lib/utils';
+import { ensure2026, resolvePackageName } from '@/lib/utils';
 import { DEMO_BOOKINGS, DEMO_SESSIONS } from '@/constants/demo-data';
 import { MOCK_SERVICES } from '@/constants/mock-data';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { bookingSchema } from '@/lib/validations';
 
-/**
- * Helper to resolve package name from booking data
- */
-export function resolvePackageName(booking: any): string {
-  if (booking?.package_name) return booking.package_name;
-  
-  const price = Number(booking?.full_price);
-  const matchedService = MOCK_SERVICES.find(s => {
-    const sPrice = parseInt(s.price.replace(/[^\d]/g, ''));
-    return sPrice === price;
-  });
 
-  return matchedService?.name || 'Dịch vụ lẻ';
-}
 
 function resolveKtvCommission(booking: any): number {
   if (booking?.ktv_commission) return Number(booking.ktv_commission);
