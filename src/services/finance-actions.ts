@@ -117,6 +117,10 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
     throw new Error(`Failed to confirm ${type}: ${error.message}`);
   }
 
+  // Force revalidation of the finance page
+  const { revalidatePath } = await import('next/cache');
+  revalidatePath('/dashboard/finance');
+
   return { success: true };
 }
 
@@ -166,6 +170,11 @@ export async function recordTransaction(data: {
       console.error('Error recording revenue:', error);
       throw new Error('Failed to record revenue');
     }
+    
+    // Force revalidation
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath('/dashboard/finance');
+    
     return result;
   }
 }
