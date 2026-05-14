@@ -40,32 +40,6 @@ export default function SessionsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('Cập nhật thành công!');
-  
-  // PERSISTENCE FOR DEMO: Track manual updates locally since DB might be restricted
-  const [localBookingUpdates, setLocalBookingUpdates] = useState<Record<string, number>>({});
-  const [localSessionLogUpdates, setLocalSessionLogUpdates] = useState<Record<string, string>>({});
-
-  // Sync with localStorage on mount
-  useEffect(() => {
-    const savedBookingUpdates = localStorage.getItem('demo_booking_updates');
-    const savedLogUpdates = localStorage.getItem('demo_log_updates');
-    if (savedBookingUpdates) setLocalBookingUpdates(JSON.parse(savedBookingUpdates));
-    if (savedLogUpdates) setLocalSessionLogUpdates(JSON.parse(savedLogUpdates));
-  }, []);
-
-  // Save to localStorage when changed
-  useEffect(() => {
-    if (Object.keys(localBookingUpdates).length > 0) {
-      localStorage.setItem('demo_booking_updates', JSON.stringify(localBookingUpdates));
-    }
-  }, [localBookingUpdates]);
-
-  useEffect(() => {
-    if (Object.keys(localSessionLogUpdates).length > 0) {
-      localStorage.setItem('demo_log_updates', JSON.stringify(localSessionLogUpdates));
-    }
-  }, [localSessionLogUpdates]);
-
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
@@ -117,20 +91,15 @@ export default function SessionsPage() {
     setIsLoadingLogs(true);
     try {
       const logs = await getSessionLogs(bookingId);
-      // Apply local updates
-      const mergedLogs = logs.map((log: any) => ({
-        ...log,
-        status: localSessionLogUpdates[log.id] ?? log.status
-      }));
-      setSessionLogs(mergedLogs);
+      setSessionLogs(logs);
       
       // Select the first scheduled session or the last completed one by default
-      const nextScheduled = mergedLogs.find((log: any) => log.status === 'scheduled');
+      const nextScheduled = logs.find((log: any) => log.status === 'scheduled');
       if (nextScheduled) {
         setSelectedSessionLog(nextScheduled);
         setCurrentNote(nextScheduled.notes || '');
-      } else if (mergedLogs.length > 0) {
-        const lastLog = mergedLogs[mergedLogs.length - 1];
+      } else if (logs.length > 0) {
+        const lastLog = logs[logs.length - 1];
         setSelectedSessionLog(lastLog);
         setCurrentNote(lastLog.notes || '');
       }
@@ -144,20 +113,8 @@ export default function SessionsPage() {
   const loadSessions = async () => {
     setIsSyncing(true);
     const data = await getSessionsWithDetails();
-    // Apply local updates
-    const mergedData = (data || []).map((b: any) => {
-      // Calculate actual completed count from logs, considering local overrides
-      const actualFromLogs = (b.session_logs || []).filter((l: any) => 
-        (localSessionLogUpdates[l.id] ?? l.status) === 'completed'
-      ).length;
-      
-      return {
-        ...b,
-        completed_sessions: Math.max(actualFromLogs, localBookingUpdates[b.id] ?? b.completed_sessions ?? 0)
-      };
-    });
-    setSessions(mergedData);
-    applyFilters(mergedData, searchQuery, statusFilter);
+    setSessions(data || []);
+    applyFilters(data || [], searchQuery, statusFilter);
     setIsSyncing(false);
   };
 
@@ -213,17 +170,9 @@ export default function SessionsPage() {
 
     setUpdatingId(bookingId);
     
-    // OPTIMISTIC UPDATE for Demo - chỉ làm khi đã có KTV
-    const prevCount = booking.completed_sessions || 0;
-    const newCount = prevCount + 1;
-    setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: newCount }));
-
     try {
       const logs = await getSessionLogs(bookingId);
-      const nextSession = logs.find((log: any) => {
-        const status = localSessionLogUpdates[log.id] ?? log.status;
-        return status === 'scheduled';
-      });
+      const nextSession = logs.find((log: any) => log.status === 'scheduled');
       
       if (nextSession) {
         // Save note if provided
@@ -831,7 +780,7 @@ export default function SessionsPage() {
                       Thẻ liệu trình: Mẹ {selectedBooking.customers?.name_mother} {selectedBooking.customers?.name_baby ? `& Bé ${selectedBooking.customers.name_baby}` : ''}
                     </h2>
                     <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">
-                      {selectedBooking.package_name} • Tiến độ: {sessionLogs.filter(l => (localSessionLogUpdates[l.id] ?? l.status) === 'completed').length}/{selectedBooking.total_sessions || 21}
+                      {selectedBooking.package_name} • Tiến độ: {sessionLogs.filter(l => l.status === 'completed').length}/{selectedBooking.total_sessions || 21}
                     </p>
                   </div>
                 </div>
