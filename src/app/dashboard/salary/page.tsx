@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { DollarSign, Download, TrendingUp, Search, Filter, Edit2, CheckCircle2, ChevronRight, User, Calendar as CalendarIcon, Briefcase, Award, AlertCircle, ShieldCheck, Star } from 'lucide-react';
+import { DollarSign, Download, TrendingUp, Search, Filter, Edit2, CheckCircle2, ChevronRight, User, Calendar as CalendarIcon, Briefcase, Award, AlertCircle, ShieldCheck, Star, Zap } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { useState, useEffect } from 'react';
 import { getSalaryData, approveSalary, updateSalaryConfig, getKtvSessionMatrix, confirmKtvSessions } from '@/services/salary-actions';

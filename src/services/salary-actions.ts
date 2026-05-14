@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
+import { MOCK_SERVICES } from '@/constants/mock-data';
 
 const mockData = [
   { id: 'ktv1', name: 'Nguyễn Thị Hoa', sessions: 52, baseSalary: 7000000, sessionBonus: 7800000, kpiBonus: 2500000, deductions: 0, advances: 0, totalSalary: 17300000, status: 'draft' },
@@ -411,7 +412,7 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
   }
 }
 
-import { MOCK_SERVICES } from '@/constants/mock-data';
+
 
 export async function getKtvSessionMatrix() {
   const supabase = (await createClient()) as any;
