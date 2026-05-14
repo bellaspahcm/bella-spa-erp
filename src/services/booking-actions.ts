@@ -176,12 +176,31 @@ export async function createBooking(formData: any) {
 
   if (!existingLogsCount || existingLogsCount === 0) {
     const totalSessions = validatedData.total_sessions || 21;
-    const sessionLogs = Array.from({ length: totalSessions }, (_: any, i: number) => ({
-      booking_id: booking.id,
-      session_number: i + 1,
-      status: 'scheduled',
-      assigned_date: i === 0 ? (validatedData.start_date || null) : null,
-    }));
+    let startDateStr = validatedData.start_date;
+    
+    if (!startDateStr) {
+      const now = new Date();
+      // Adjust to VN timezone (UTC+7) or just use local server time parts
+      // To be safe for VN, we can add 7 hours if we are on a UTC server
+      // But usually local date is better
+      startDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+    
+    const sessionLogs = Array.from({ length: totalSessions }, (_: any, i: number) => {
+      // Safely add days using local date parts
+      const [y, m, d] = startDateStr.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      date.setDate(date.getDate() + i);
+      
+      const assignedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+      return {
+        booking_id: booking.id,
+        session_number: i + 1,
+        status: 'scheduled',
+        assigned_date: assignedDate,
+      };
+    });
 
     const { error: sessionsError } = await supabase
       .from('session_logs')
@@ -742,12 +761,25 @@ export async function reusePackage(bookingId: string) {
 async function finalizeReuse(newBooking: any, total: number, supabase: any) {
   // 3. Generate new session logs
   const totalSessions = total || 21;
-  const sessionLogs = Array.from({ length: totalSessions }, (_, i) => ({
-    booking_id: newBooking.id,
-    session_number: i + 1,
-    status: 'scheduled',
-    assigned_date: i === 0 ? newBooking.start_date : null,
-  }));
+  let startDateStr = newBooking.start_date;
+  if (!startDateStr) {
+    const now = new Date();
+    startDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  }
+  
+  const sessionLogs = Array.from({ length: totalSessions }, (_, i) => {
+    const [y, m, d] = startDateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() + i);
+    const assignedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+    return {
+      booking_id: newBooking.id,
+      session_number: i + 1,
+      status: 'scheduled',
+      assigned_date: assignedDate,
+    };
+  });
 
   const { error: sessionsError } = await supabase
     .from('session_logs')
