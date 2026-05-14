@@ -1,7 +1,7 @@
 'use server';
 
 
-import { ensure2026 } from '@/lib/utils';
+import { ensure2026, resolvePackageName } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
