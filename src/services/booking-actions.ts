@@ -363,10 +363,20 @@ export async function completeSession(sessionId: string, bookingId: string) {
 export async function getSessionsWithDetails() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('*, customers(id, name_mother, name_baby, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes)')
-    .order('created_at', { ascending: false });
+    const { getCurrentUser } = await import('./user-actions');
+    const currentUser = await getCurrentUser();
+
+    let query = supabase
+      .from('bookings')
+      .select('*, customers(id, name_mother, name_baby, phone), session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes)')
+      .order('created_at', { ascending: false });
+
+    // If KTV, only show bookings where they are assigned
+    if (currentUser?.role === 'ktv') {
+      query = query.eq('assigned_ktv_id', currentUser.id);
+    }
+
+    const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching sessions with details:', error);
@@ -448,7 +458,10 @@ export async function getCalendarSessions() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
-  const { data, error } = await supabase
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
+
+  let query = supabase
     .from('session_logs')
     .select(`
       *,
@@ -460,12 +473,20 @@ export async function getCalendarSessions() {
           address
         ),
         assigned_ktv:users!bookings_assigned_ktv_id_fkey (
+          id,
           full_name
         )
       )
     `)
     .order('booking_id', { ascending: true })
     .order('session_number', { ascending: true });
+
+  // If KTV, only show sessions for their assigned bookings
+  if (currentUser?.role === 'ktv') {
+    query = query.eq('bookings.assigned_ktv_id', currentUser.id);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching calendar sessions:', error);

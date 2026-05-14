@@ -12,9 +12,13 @@ export async function getCurrentUser() {
   // we check for a search param or return a default (admin for now)
   if (!user) {
     // In a real app, we'd return null or redirect to login
-    // For this demo, let's allow "simulating" a KTV via a search param if needed
-    // But for safety, we return a default admin profile
-    return { id: 'admin-01', full_name: 'Quản trị viên', role: 'admin' };
+    // For this demo, let's return the main admin profile from the spec
+    return { 
+      id: 'c294c8b0-25d2-4c7e-bed9-21246d957254', 
+      full_name: 'Quản trị viên', 
+      role: 'admin',
+      tenant_id: '46c75ad7-416d-48ef-9386-25cd6a4d4805'
+    };
   }
 
   const { data: profile } = await supabase
@@ -74,6 +78,9 @@ export async function createUser(formData: any) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
+  
   const { data, error } = await supabase
     .from('users')
     .insert([{
@@ -81,9 +88,8 @@ export async function createUser(formData: any) {
       full_name: formData.full_name,
       role: formData.role || 'ktv',
       status: 'active',
-      // In a real multi-tenant app, we'd get the tenant_id from the session
-      // For now, we'll use 't01' as fallback for the demo
-      tenant_id: formData.tenant_id || 't01'
+      // Fetch tenant_id from current user or use system fallback
+      tenant_id: currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805'
     } as any])
     .select()
     .single();

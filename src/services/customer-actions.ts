@@ -25,15 +25,40 @@ export async function getCustomers() {
   const supabase = (await createClient()) as any;
   
   try {
-    const { data, error } = await supabase
+    const { getCurrentUser } = await import('./user-actions');
+    const currentUser = await getCurrentUser();
+
+    let query = supabase
       .from('customers')
       .select('*, bookings(*)')
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
+    // If KTV, only show customers where they have an assigned booking
+    if (currentUser?.role === 'ktv') {
+      // We use a subquery approach via filter if possible, or just fetch all and filter in JS
+      // In Supabase JS, we can use .filter with a specific join or just check in JS
+      // To keep it simple and correct, we'll fetch then filter
+    }
+
+    const { data, error } = await query;
+
+    let filteredData = data;
+    if (currentUser?.role === 'ktv' && data) {
+      filteredData = data.filter((c: any) => 
+        c.bookings?.some((b: any) => b.assigned_ktv_id === currentUser.id)
+      );
+    }
+
+    if (error || !filteredData || filteredData.length === 0) {
       if (error) console.error('Error fetching customers:', error);
       // Return stable mock data with consistent structure
-      return MOCK_CUSTOMERS.map(c => ({
+      let filteredMock = MOCK_CUSTOMERS;
+      if (currentUser?.role === 'ktv') {
+        // In demo mode, show a subset for KTV
+        filteredMock = MOCK_CUSTOMERS.slice(0, 3);
+      }
+
+      return filteredMock.map(c => ({
         ...c,
         id: c.id.toString(), // Ensure ID is string
         status: c.status || 'active',
@@ -42,7 +67,7 @@ export async function getCustomers() {
       }));
     }
 
-    return data.map((c: any) => {
+    return filteredData.map((c: any) => {
       const latestBooking = c.bookings && c.bookings.length > 0 ? c.bookings[0] : null;
       const isFullyPaid = latestBooking && latestBooking.deposit_amount >= latestBooking.full_price;
       
