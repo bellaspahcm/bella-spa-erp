@@ -58,6 +58,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     deposit_amount: 0,
     total_sessions: 21,
     start_date: new Date().toISOString().split('T')[0],
+    preferred_time: '08:00',
     assigned_ktv_id: '',
   });
 
@@ -103,6 +104,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
             deposit_amount: draft.deposit_amount || 0,
             total_sessions: draft.total_sessions || 21,
             start_date: draft.start_date || prev.start_date,
+            preferred_time: draft.preferred_time || prev.preferred_time,
             assigned_ktv_id: draft.assigned_ktv_id || '',
           }));
           
@@ -122,6 +124,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
               deposit_amount: 0,
               total_sessions: 21,
               start_date: new Date().toISOString().split('T')[0],
+              preferred_time: '08:00',
               assigned_ktv_id: '',
             });
           }
@@ -472,6 +475,17 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                       value={formData.start_date}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setFormData({...formData, start_date: e.target.value})}
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                      <Calendar className="w-4 h-4" /> Giờ làm mặc định
+                    </label>
+                    <input 
+                      type="time" 
+                      value={formData.preferred_time}
+                      onChange={(e) => setFormData({...formData, preferred_time: e.target.value})}
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
                     />
                   </div>
