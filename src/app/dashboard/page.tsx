@@ -78,12 +78,7 @@ const item = {
 };
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any[]>([
-    { label: 'Tổng khách hàng', value: '0', trend: 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Lịch hẹn hôm nay', value: '0', trend: 0, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { label: 'Doanh thu tháng', value: '0M', trend: 0, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Đánh giá KTV', value: '0.0', trend: 0, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
-  ]);
+  const [stats, setStats] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [topKTVs, setTopKTVs] = useState<any[]>([]);
   const [alerts, setAlerts] = useState<any[]>([]);
@@ -105,13 +100,15 @@ export default function DashboardPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');
-  const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
+  const [userRole, setUserRole] = useState<'admin' | 'ktv' | null>(null);
 
   useEffect(() => {
     async function checkRole() {
       const user = await getCurrentUser();
       if (user?.role) {
         setUserRole(user.role as any);
+      } else {
+        setUserRole('ktv'); // Default to ktv if no role found
       }
     }
     checkRole();
@@ -129,6 +126,8 @@ export default function DashboardPage() {
   };
 
   const fetchData = useCallback(async () => {
+    if (userRole === null) return; // Wait for role to be identified
+    
     setIsRefreshing(true);
     try {
       const { startDate, endDate } = getMonthRange(selectedMonth, selectedYear);
@@ -137,12 +136,14 @@ export default function DashboardPage() {
       
       const { statsData, sessionsData, ktvsData, alertsData, perfData } = await getFullDashboardData(startDate, endDate, localToday);
 
-      setStats([
+      const newStats = [
         { label: 'Tổng khách hàng', value: statsData.totalCustomers.value, trend: statsData.totalCustomers.trend, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings.value, trend: statsData.todayBookings.trend, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
         ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: statsData.totalRevenue.value, trend: statsData.totalRevenue.trend, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
         { label: 'Đánh giá KTV', value: statsData.avgRating.value, trend: statsData.avgRating.trend, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
-      ]);
+      ];
+      
+      setStats(newStats);
       
       setSessions(sessionsData || []);
       setTopKTVs(ktvsData || []);
