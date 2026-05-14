@@ -430,7 +430,23 @@ export async function getSessionsWithDetails() {
 
   const result: any[] = [];
   
-  (data || []).forEach((b: any) => {
+  const enrichedData = await Promise.all((data || []).map(async (b: any) => {
+    // Hardening: Verify session counts match session_logs truth
+    const { count, error: countError } = await supabase
+      .from('session_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('booking_id', b.id)
+      .eq('status', 'completed');
+
+    if (!countError && count !== null && count !== b.completed_sessions) {
+      console.log(`Syncing completed_sessions for booking ${b.id} in details: ${b.completed_sessions} -> ${count}`);
+      await supabase
+        .from('bookings')
+        .update({ completed_sessions: count })
+        .eq('id', b.id);
+      b.completed_sessions = count;
+    }
+
     const sortedLogs = (b.session_logs || []).sort((a: any, b2: any) => (a.session_number || 0) - (b2.session_number || 0));
     
     // Predictive logic
@@ -532,13 +548,28 @@ export async function getCalendarSessions() {
 
   const processedSessions: any[] = [];
 
-  Object.values(sessionsByBooking).forEach(bookingSessions => {
+  const processedSessionsList = await Promise.all(Object.values(sessionsByBooking).map(async (bookingSessions) => {
     bookingSessions.sort((a, b) => a.session_number - b.session_number);
     
     let lastKnownDate: string | null = null;
     let lastKnownSessionNum = 0;
+    const bookingResult: any[] = [];
 
-    bookingSessions.forEach((s) => {
+    for (const s of bookingSessions) {
+      // Hardening: Verify session counts match session_logs truth
+      if (s.bookings && s.booking_id) {
+        const { count, error: countError } = await supabase
+          .from('session_logs')
+          .select('*', { count: 'exact', head: true })
+          .eq('booking_id', s.booking_id)
+          .eq('status', 'completed');
+
+        if (!countError && count !== null && count !== s.bookings.completed_sessions) {
+          await supabase.from('bookings').update({ completed_sessions: count }).eq('id', s.booking_id);
+          s.bookings.completed_sessions = count;
+        }
+      }
+
       let finalDate = s.assigned_date;
       
       if (!finalDate) {
@@ -560,7 +591,7 @@ export async function getCalendarSessions() {
         lastKnownSessionNum = s.session_number;
       }
 
-      processedSessions.push({
+      bookingResult.push({
         ...s,
         assigned_date: ensure2026(finalDate),
         completed_date: ensure2026(s.completed_date),
@@ -568,13 +599,15 @@ export async function getCalendarSessions() {
           ...s.bookings,
           package_name: resolvePackageName(s.bookings),
           start_date: ensure2026(s.bookings.start_date),
+          completed_sessions: s.bookings.completed_sessions,
           expected_birth_date: ensure2026(s.bookings.expected_birth_date)
         } : null
       });
-    });
-  });
+    }
+    return bookingResult;
+  }));
 
-  return processedSessions;
+  return processedSessionsList.flat();
 }
 
 export async function updateSessionLog(id: string, payload: any) {
