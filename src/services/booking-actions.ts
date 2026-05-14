@@ -906,7 +906,7 @@ export async function updateBooking(id: string, payload: any) {
  */
 export async function syncBookingProgress(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
   
   // 1. Get current count from logs
   const { count, error: countError } = await supabase
