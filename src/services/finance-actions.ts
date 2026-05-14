@@ -5,7 +5,19 @@ import { DEMO_REVENUE } from '@/constants/demo-data';
 
 export async function getFinancialOverview() {
   const { createClient } = await import('@/lib/supabase-server');
+  const { getCurrentUser } = await import('./user-actions');
   const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+
+  // Security: KTVs cannot see financial overview
+  if (currentUser?.role === 'ktv') {
+    return {
+      totalRevenue: 0,
+      totalExpenses: 0,
+      balance: 0,
+      transactions: []
+    };
+  }
 
   // Fetch both revenue and expenses with relations
   const [revenueResponse, expensesResponse] = await Promise.all([

@@ -6,6 +6,7 @@ import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { useState, useEffect } from 'react';
 import { getSalaryData, approveSalary, updateSalaryConfig } from '@/services/salary-actions';
 import { toast } from 'sonner';
+import { getCurrentUser } from '@/services/user-actions';
 
 export default function SalaryPage() {
   const [ktvSalaries, setKtvSalaries] = useState<any[]>([]);
@@ -14,6 +15,15 @@ export default function SalaryPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingSalary, setEditingSalary] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+    }
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -102,10 +112,12 @@ export default function SalaryPage() {
         </div>
         <div className="flex items-center gap-3">
           <PremiumExportButton />
-          <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs">
-            <CheckCircle2 className="w-5 h-5" />
-            <span>Chốt lương toàn bộ</span>
-          </button>
+          {currentUser?.role !== 'ktv' && (
+            <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs">
+              <CheckCircle2 className="w-5 h-5" />
+              <span>Chốt lương toàn bộ</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -120,7 +132,9 @@ export default function SalaryPage() {
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/20">
               <DollarSign className="w-6 h-6 text-white" />
             </div>
-            <p className="text-sm font-black text-white/90 uppercase tracking-widest mb-2">Tổng quỹ lương tháng</p>
+            <p className="text-sm font-black text-white/90 uppercase tracking-widest mb-2">
+              {currentUser?.role === 'ktv' ? 'Thu nhập của bạn' : 'Tổng quỹ lương tháng'}
+            </p>
             <h3 className="text-4xl font-black mb-4">{totalPayout.toLocaleString()}đ</h3>
             <div className="flex items-center gap-2 text-white/90 font-black text-sm">
               <TrendingUp className="w-4 h-4" />
@@ -202,7 +216,9 @@ export default function SalaryPage() {
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tạm ứng</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tổng nhận</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Trạng thái</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Thao tác</th>
+                {currentUser?.role !== 'ktv' && (
+                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Thao tác</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -241,7 +257,7 @@ export default function SalaryPage() {
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    {s.status !== 'approved' && (
+                    {currentUser?.role !== 'ktv' && s.status !== 'approved' && (
                       <div className="flex gap-2">
                         <button 
                           onClick={() => openEditModal(s)}

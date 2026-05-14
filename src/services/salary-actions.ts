@@ -18,12 +18,21 @@ export async function getSalaryData() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
     const supabase = (await createClient()) as any;
+    const { getCurrentUser } = await import('./user-actions');
+    const currentUser = await getCurrentUser();
 
     // Fetch KTVs
-    const { data: ktvs, error: ktvError } = await supabase
+    const ktvQuery = supabase
       .from('users')
       .select('id, full_name, role')
       .eq('role', 'ktv');
+
+    // If current user is KTV, they can only see their own data
+    if (currentUser?.role === 'ktv') {
+      ktvQuery.eq('id', currentUser.id);
+    }
+
+    const { data: ktvs, error: ktvError } = await ktvQuery;
 
     // Fetch expenses to check for already approved mock salaries
     const { data: expenses } = await supabase
@@ -32,8 +41,14 @@ export async function getSalaryData() {
       .eq('category', 'Lương nhân viên');
 
     if (ktvError || !ktvs || ktvs.length < 3) {
+      let filteredMock = mockData;
+      // In demo mode, if the user is a KTV, only show one record (simulating their own)
+      if (currentUser?.role === 'ktv') {
+        filteredMock = mockData.filter(m => m.id === 'ktv1');
+      }
+
       // Map mock data and check if any already have an expense record
-      return mockData.map(item => {
+      return filteredMock.map(item => {
         const hasExpense = expenses?.some((e: any) => e.description?.includes(item.name));
         return {
           ...item,

@@ -2,6 +2,30 @@
 
 import { safeRevalidatePath } from '@/lib/revalidate';
 
+export async function getCurrentUser() {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // For the demo/mock environment, if no authenticated user is found, 
+  // we check for a search param or return a default (admin for now)
+  if (!user) {
+    // In a real app, we'd return null or redirect to login
+    // For this demo, let's allow "simulating" a KTV via a search param if needed
+    // But for safety, we return a default admin profile
+    return { id: 'admin-01', full_name: 'Quản trị viên', role: 'admin' };
+  }
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  return profile || { id: user.id, role: 'ktv', full_name: user.email?.split('@')[0] };
+}
+
 export async function getUsers() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
