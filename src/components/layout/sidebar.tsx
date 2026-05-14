@@ -80,89 +80,112 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-72 glass-pink border-r border-pink-100 flex flex-col h-screen min-h-screen sticky top-0 shadow-xl relative z-30">
-        {/* Decorative gradient overlay */}
-        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-3xl -mr-12 -mt-12" />
+      <aside className="w-80 bg-white/40 backdrop-blur-2xl border-r border-rose-100/50 flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.1)]">
+        {/* Soft decorative glows */}
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-rose-200/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/10 rounded-full blur-[100px] pointer-events-none" />
         
-        <div className="p-8">
-          <Link href="/dashboard" className="flex flex-col items-center gap-3 text-center py-4">
-            <img 
-              src="/FullLogo_Transparent_NoBuffer.png" 
-              alt="Bella Spa" 
-              className="w-20 h-20 object-contain" 
-            />
-            <div>
-              <h2 className="text-[3.45rem] font-handwriting text-primary leading-tight">Bella Spa</h2>
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] block -mt-1">Management System</span>
+        {/* Logo Section */}
+        <div className="px-8 pt-10 pb-6 shrink-0 relative z-10">
+          <Link href="/dashboard" className="flex flex-col items-center group">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-75 group-hover:scale-110 transition-transform duration-500" />
+              <img 
+                src="/FullLogo_Transparent_NoBuffer.png" 
+                alt="Bella Spa" 
+                className="w-24 h-24 object-contain relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500" 
+              />
+            </div>
+            <div className="text-center">
+              <h2 className="text-[3.2rem] font-handwriting text-slate-800 leading-[0.8] mb-2 drop-shadow-sm">Bella Spa</h2>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] block">Management System</span>
             </div>
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto custom-scrollbar pb-4">
+        {/* Action Section */}
+        <div className="px-6 mb-8 shrink-0 relative z-10">
           {user?.role !== 'ktv' && (
             <button 
               onClick={() => setIsQuickAddOpen(true)}
-              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-5 py-4 rounded-2xl transition-all shadow-lg shadow-rose-200 mb-6 font-bold tracking-tight active:scale-95"
+              className="w-full flex items-center justify-center gap-3 bg-[#9D174D] hover:bg-[#831440] text-white px-6 py-4.5 rounded-[1.5rem] transition-all shadow-[0_10px_25px_-5px_rgba(157,23,77,0.4)] font-black uppercase text-[11px] tracking-wider active:scale-95 group"
             >
-              <UserPlus className="w-5 h-5" />
+              <UserPlus className="w-5 h-5 transition-transform group-hover:scale-110" />
               <span>Thêm khách nhanh</span>
             </button>
           )}
-          {filteredMenuItems.map((item: any) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link key={item.href} href={item.href}>
-              <motion.div
-                whileHover={{ x: 5 }}
-                whileTap={{ scale: 0.98 }}
-                className={cn(
-                  "flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 font-bold tracking-tight group",
-                  isActive 
-                    ? "bg-primary text-white shadow-lg shadow-pink-200" 
-                    : "text-muted-foreground hover:bg-white hover:text-primary"
-                )}
-              >
-                <item.icon className={cn(
-                  "w-5 h-5 transition-transform group-hover:scale-110",
-                  isActive ? "text-white" : "text-primary/60 group-hover:text-primary"
-                )} />
-                <span className="text-sm">{item.label}</span>
-                {isActive && (
-                  <motion.div 
-                    layoutId="active-pill-v2"
-                    className="ml-auto w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.8)]"
-                  />
-                )}
-              </motion.div>
-            </Link>
-          );
-        })}
-      </nav>
+        </div>
 
-      <div className="p-6 mt-auto">
-        <div className="bg-white/80 backdrop-blur rounded-[2rem] p-5 shadow-sm border border-pink-50 mb-4">
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-pink-100">
-              {user?.full_name?.charAt(0) || 'B'}
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-black text-foreground truncate">{user?.full_name || 'Đang tải...'}</p>
-              <p className="text-[10px] text-primary font-black uppercase tracking-widest">
-                {user?.role === 'ktv' ? 'Kỹ thuật viên' : user?.role === 'customer' ? 'Khách hàng' : 'Quản trị viên'}
-              </p>
+        {/* Nav Section - Scrollable */}
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar relative z-10 pb-6">
+          <div className="px-4 mb-4 mt-2">
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Menu chính</span>
+          </div>
+          {filteredMenuItems.map((item: any) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}>
+                <motion.div
+                  whileHover={{ x: 8 }}
+                  className={cn(
+                    "flex items-center gap-5 px-6 py-4.5 rounded-[2rem] transition-all duration-300 relative group",
+                    isActive 
+                      ? "bg-white text-primary shadow-[0_15px_35px_-10px_rgba(225,29,72,0.15)] border border-rose-50" 
+                      : "text-slate-400 hover:bg-white/60 hover:text-slate-700"
+                  )}
+                >
+                  <item.icon className={cn(
+                    "w-5 h-5 transition-all duration-300",
+                    isActive ? "text-primary scale-110" : "group-hover:text-primary group-hover:scale-110"
+                  )} />
+                  <span className={cn(
+                    "text-[13px] tracking-tight transition-all duration-300",
+                    isActive ? "font-black" : "font-bold"
+                  )}>{item.label}</span>
+                  
+                  {isActive && (
+                    <motion.div 
+                      layoutId="active-indicator"
+                      className="absolute right-6 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_10px_#e11d48]"
+                    />
+                  )}
+                </motion.div>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User Profile & Logout - Pinned to bottom */}
+        <div className="p-6 mt-auto bg-gradient-to-t from-rose-50/50 to-transparent pt-10 shrink-0 relative z-10">
+          <div className="bg-white p-4.5 rounded-[2.2rem] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] border border-slate-50 mb-6 group cursor-pointer hover:border-rose-100 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-lg shadow-lg group-hover:scale-105 transition-transform">
+                  {user?.full_name?.charAt(0) || 'B'}
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'Admin'}</p>
+                <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest mt-0.5">
+                  {user?.role === 'ktv' ? 'Kỹ thuật viên' : user?.role === 'customer' ? 'Khách hàng' : 'Quản trị viên'}
+                </p>
+              </div>
             </div>
           </div>
+          
+          <button className="flex items-center gap-4 w-full px-6 py-3 text-slate-400 hover:text-rose-600 transition-all font-black text-xs uppercase tracking-[0.2em] group">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
+              <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            </div>
+            Đăng xuất
+          </button>
         </div>
-        <button className="flex items-center gap-4 w-full px-5 py-4 text-muted-foreground hover:text-accent hover:bg-pink-50 rounded-2xl transition-all font-black text-sm uppercase tracking-widest group">
-          <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-          Đăng xuất
-        </button>
-      </div>
-    </aside>
-    <QuickAddCustomerModal 
-      isOpen={isQuickAddOpen} 
-      onClose={() => setIsQuickAddOpen(false)} 
-    />
-  </>
+      </aside>
+      <QuickAddCustomerModal 
+        isOpen={isQuickAddOpen} 
+        onClose={() => setIsQuickAddOpen(false)} 
+      />
+    </>
   );
 }

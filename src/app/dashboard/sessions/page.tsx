@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { 
@@ -32,11 +33,15 @@ import { createClient } from '@/lib/supabase-client';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
-export default function SessionsPage() {
+function SessionsContent() {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+  const initialBookingId = searchParams.get('bookingId') || '';
+
   const [sessions, setSessions] = useState<any[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('Cập nhật thành công!');
@@ -122,6 +127,15 @@ export default function SessionsPage() {
     const data = await getSessionsWithDetails();
     setSessions(data || []);
     applyFilters(data || [], searchQuery, statusFilter);
+    
+    // Auto-select booking if ID provided in URL
+    if (initialBookingId && data) {
+      const target = data.find((s: any) => s.id === initialBookingId);
+      if (target) {
+        setSelectedBooking(target);
+      }
+    }
+    
     setIsSyncing(false);
   };
 
@@ -1153,5 +1167,17 @@ export default function SessionsPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function SessionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 p-10 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    }>
+      <SessionsContent />
+    </Suspense>
   );
 }
