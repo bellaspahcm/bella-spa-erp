@@ -114,35 +114,29 @@ export async function getUpcomingSessions(date?: string) {
     todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }
 
-  // To handle predictive logic, we fetch all non-completed sessions for active bookings
-  // and then filter in JS. This is more robust than a simple DB filter.
+  // MIRROR getCalendarSessions logic exactly
   const { data, error } = await supabase
     .from('session_logs')
     .select(`
       *,
       bookings (
-        id,
-        package_id,
-        package_name,
-        full_price,
-        start_date,
-        completed_sessions,
-        total_sessions,
-        status,
+        *,
         customers (
           name_mother,
-          name_baby
+          name_baby,
+          address
         ),
         assigned_ktv:users!bookings_assigned_ktv_id_fkey (
+          id,
           full_name
         )
       )
     `)
-    .neq('status', 'completed')
-    .order('assigned_time', { ascending: true });
+    .order('booking_id', { ascending: true })
+    .order('session_number', { ascending: true });
 
   if (error) {
-    console.error('Error fetching upcoming sessions:', error);
+    console.error('Error fetching dashboard sessions:', error);
     return [];
   }
 
@@ -157,33 +151,36 @@ export async function getUpcomingSessions(date?: string) {
     return matchedService?.name || 'Chưa đăng ký';
   }
 
-  // Group by booking for predictive logic (similar to getSessionsWithDetails)
   const sessionsByBooking: Record<string, any[]> = {};
   (data || []).forEach((s: any) => {
-    if (s.booking_id) {
-      if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = [];
-      sessionsByBooking[s.booking_id].push(s);
-    }
+    if (!s.booking_id) return;
+    if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = [];
+    sessionsByBooking[s.booking_id].push(s);
   });
 
-  const finalSessions: any[] = [];
+  const upcomingSessions: any[] = [];
 
-  Object.values(sessionsByBooking).forEach((logs: any[]) => {
-    const sortedLogs = logs.sort((a, b) => (a.session_number || 0) - (b.session_number || 0));
-    const booking = sortedLogs[0].bookings;
+  Object.values(sessionsByBooking).forEach(bookingSessions => {
+    bookingSessions.sort((a, b) => a.session_number - b.session_number);
     
-    let lastKnownDate = booking?.start_date;
-    let lastKnownSessionNum = 1;
+    let lastKnownDate: string | null = null;
+    let lastKnownSessionNum = 0;
 
-    sortedLogs.forEach((s: any) => {
+    bookingSessions.forEach((s) => {
       let finalDate = s.assigned_date;
       
-      // Predictive logic if assigned_date is missing
-      if (!finalDate && lastKnownDate) {
-        const [y, m, d] = lastKnownDate.split('-').map(Number);
-        const dateObj = new Date(y, m - 1, d);
-        dateObj.setDate(dateObj.getDate() + (s.session_number - lastKnownSessionNum));
-        finalDate = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+      if (!finalDate) {
+        if (lastKnownDate) {
+          const [y, m, d] = lastKnownDate.split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          date.setDate(date.getDate() + (s.session_number - lastKnownSessionNum));
+          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        } else if (s.bookings?.start_date) {
+          const [y, m, d] = s.bookings.start_date.split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          date.setDate(date.getDate() + (s.session_number - 1));
+          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
       }
 
       if (finalDate) {
@@ -191,21 +188,22 @@ export async function getUpcomingSessions(date?: string) {
         lastKnownSessionNum = s.session_number;
       }
 
-      // If the (predicted or actual) date matches today, include it
-      if (finalDate === todayStr) {
-        finalSessions.push({
+      // Final Filter for Dashboard: matches today AND not completed
+      if (finalDate === todayStr && s.status !== 'completed') {
+        upcomingSessions.push({
           ...s,
           assigned_date: ensure2026(finalDate),
-          bookings: booking ? {
-            ...booking,
-            package_name: resolvePackageName(booking)
+          bookings: s.bookings ? {
+            ...s.bookings,
+            package_name: resolvePackageName(s.bookings),
+            start_date: ensure2026(s.bookings.start_date)
           } : null
         });
       }
     });
   });
 
-  return finalSessions.sort((a, b) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
+  return upcomingSessions.sort((a, b) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
 }
 
 export async function getTopTechnicians() {
