@@ -287,14 +287,6 @@ export default function SessionsPage() {
             const currentBookingCount = selectedBooking.completed_sessions || 0;
             const newCount = Math.max(0, currentBookingCount + diff);
             
-            // Sync local updates map
-            setLocalBookingUpdates(prev => ({ ...prev, [selectedBooking.id]: newCount }));
-            setLocalSessionLogUpdates(prev => {
-              const next = { ...prev };
-              delete next[selectedSessionLog.id];
-              return next;
-            });
-            
             // Update the main sessions list locally to trigger immediate isNextToRun update
             setSessions(prev => prev.map(b => 
               b.id === selectedBooking.id ? { ...b, completed_sessions: newCount } : b
@@ -349,17 +341,10 @@ export default function SessionsPage() {
         setSelectedSessionLog(updatedLog);
         setSelectedStatus(newStatus);
 
-        // Clear any stale local cache for this log
-        setLocalSessionLogUpdates(prev => {
-          const next = { ...prev };
-          delete next[selectedSessionLog.id];
-          return next;
-        });
 
         // Adjust booking count
         if (selectedSessionLog.status === 'completed') {
           const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) - 1);
-          setLocalBookingUpdates(prev => ({ ...prev, [selectedBooking.id]: newCount }));
           setSessions(prev => prev.map(b =>
             b.id === selectedBooking.id ? { ...b, completed_sessions: newCount } : b
           ));
