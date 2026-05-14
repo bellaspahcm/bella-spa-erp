@@ -25,7 +25,8 @@ import {
   CreditCard as CreditCardIcon,
   DollarSign as DollarIcon,
   Camera,
-  Loader2
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
 import { getBookingsByCustomerId, updateBooking, completeSession, reusePackage, recordRemainingPayment } from '@/services/booking-actions';
@@ -59,7 +60,8 @@ export default function CustomerDetailPage() {
     amount: 0,
     method: 'bank_transfer',
     notes: '',
-    receipt_url: ''
+    receipt_url: '',
+    status: 'confirmed'
   });
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -284,7 +286,8 @@ export default function CustomerDetailPage() {
         amount: paymentData.amount,
         payment_method: paymentData.method,
         notes: paymentData.notes,
-        receipt_url: finalReceiptUrl
+        receipt_url: finalReceiptUrl,
+        status: paymentData.status // Pass status
       });
 
       if (result.error) throw new Error(result.error);
@@ -1006,6 +1009,33 @@ function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, s
               onChange={(e) => setData({ ...data, notes: e.target.value })}
               className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm h-24 resize-none"
             />
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ghi nhận tài chính</label>
+            <div 
+              onClick={() => setData({ ...data, status: data.status === 'confirmed' ? 'pending' : 'confirmed' })}
+              className={cn(
+                "flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all",
+                data.status === 'confirmed' 
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700" 
+                  : "bg-slate-50 border-transparent text-slate-500"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                {data.status === 'confirmed' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                <span className="text-[10px] font-black uppercase tracking-wider">{data.status === 'confirmed' ? 'Xác nhận ngay (Vào báo cáo)' : 'Chờ phê duyệt'}</span>
+              </div>
+              <div className={cn(
+                "w-10 h-5 rounded-full relative transition-all",
+                data.status === 'confirmed' ? "bg-emerald-500" : "bg-slate-300"
+              )}>
+                <div className={cn(
+                  "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                  data.status === 'confirmed' ? "left-6" : "left-1"
+                )} />
+              </div>
+            </div>
           </div>
         </div>
 
