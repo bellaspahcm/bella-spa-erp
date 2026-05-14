@@ -25,8 +25,21 @@ export async function getSalaryData() {
       .select('id, full_name, role')
       .eq('role', 'ktv');
 
+    // Fetch expenses to check for already approved mock salaries
+    const { data: expenses } = await supabase
+      .from('expenses')
+      .select('description')
+      .eq('category', 'Lương nhân viên');
+
     if (ktvError || !ktvs || ktvs.length < 3) {
-      return mockData;
+      // Map mock data and check if any already have an expense record
+      return mockData.map(item => {
+        const hasExpense = expenses?.some((e: any) => e.description?.includes(item.name));
+        return {
+          ...item,
+          status: hasExpense ? 'approved' : item.status
+        };
+      });
     }
 
     // Fetch salary records for the current month (May 2026)
