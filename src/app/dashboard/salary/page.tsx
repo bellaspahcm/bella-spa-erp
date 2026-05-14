@@ -69,6 +69,7 @@ export default function SalaryPage() {
             kpiBonus: editingSalary.kpiBonus,
             deductions: editingSalary.deductions,
             advances: editingSalary.advances,
+            status: 'pending', // Update status to reflect "Chờ duyệt"
             totalSalary: editingSalary.baseSalary + s.sessionBonus + editingSalary.kpiBonus - editingSalary.deductions - editingSalary.advances
           };
         }
@@ -79,6 +80,28 @@ export default function SalaryPage() {
       toast.error('Lỗi khi cập nhật lương: ' + result.error);
     }
     setIsSaving(false);
+  };
+
+  const handleApproveAll = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn chốt lương cho tất cả nhân viên trong danh sách này không?')) return;
+    
+    setIsLoading(true);
+    let successCount = 0;
+    for (const s of filteredSalaries) {
+      if (s.status !== 'approved') {
+        const result = await approveSalary(s.id);
+        if (result.success) successCount++;
+      }
+    }
+    
+    if (successCount > 0) {
+      toast.success(`Đã chốt lương thành công cho ${successCount} nhân viên`);
+      const data = await getSalaryData();
+      setKtvSalaries(data);
+    } else {
+      toast.info('Không có bản ghi nào cần chốt lương hoặc đã xảy ra lỗi.');
+    }
+    setIsLoading(false);
   };
 
   if (isLoading) {
@@ -113,7 +136,10 @@ export default function SalaryPage() {
         <div className="flex items-center gap-3">
           <PremiumExportButton />
           {currentUser?.role !== 'ktv' && (
-            <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs">
+            <button 
+              onClick={handleApproveAll}
+              className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs"
+            >
               <CheckCircle2 className="w-5 h-5" />
               <span>Chốt lương toàn bộ</span>
             </button>
