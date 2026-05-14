@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 1.8  
-**Last Updated:** 2026-05-14 (18:50)  
-**Status:** Implementation Phase (Phase 15: Zalo OA & Performance Analytics)
+**Version:** 1.9  
+**Last Updated:** 2026-05-15 (06:05)  
+**Status:** Implementation Phase (Phase 16: Staff Performance Analytics & Zalo OA)
 
 ---
 
@@ -78,7 +78,7 @@ id | booking_number (UNIQUE: BK-YYMMDD-NNN) | customer_id (FK) | package_id (FK)
 ```sql
 id | booking_id (FK) | session_number (1-21) | assigned_date | completed_date
 | completed_by_ktv_id (FK) | address | status (scheduled|completed|cancelled)
-| created_at (IMMUTABLE) | tenant_id
+| created_at (IMMUTABLE) | tenant_id | is_confirmed (BOOLEAN)
 
 INDEX: booking_id, completed_date
 ```
@@ -136,7 +136,7 @@ INDEX: category, expense_date
 ### 10. SALARY_RECORDS
 ```sql
 id | ktv_id (FK) | month_year (DATE) | base_salary | session_commission_total
-| kpi_bonus | violations_deduction | total_salary
+| kpi_bonus | violations_deduction | total_salary | total_sessions (INT)
 | status (draft|pending_approval|approved|paid) | paid_date | paid_method | tenant_id
 
 INDEX: (ktv_id, month_year)
@@ -511,15 +511,7 @@ A: Yes, IF:
 - Scope strictly Phase 1 (no Phase 2 features)
 - Daily standup, clear requirements
 - No scope creep
-- Bella Spa approves design# Bella Spa ERP - Technical Specification
-**Version:** 1.5  
-**Last Updated:** 2026-05-14  
-**Status:** Implementation Phase (Phase 12: Customer Portal & Rating Integration)
-t:** [Your contact info]
-
----
-
-**End of Technical Specification**
+- Bella Spa approves design
 
 ---
 
@@ -548,48 +540,12 @@ t:** [Your contact info]
   - [x] Cấp quyền Admin cho các tài khoản production.
   - [x] Liên kết Auth UUID với bảng `public.users` kèm vai trò Admin.
 
-### 🚀 Implementation Progress (Update: May 14, 2026 - 13:20)
-
-#### ✅ Phase 1-9: Logic Synchronization & UI Standardization (Completed)
-- [x] **"Soft Luxury" Design System**: Integrated `PremiumSelect` across all modules (Booking, Transaction, Sessions) for 100% UI consistency.
-- [x] **Dropdown Clipping Fix**: Refactored card containers in Customer Detail view to support floating menus.
-- [x] **Cascading Rescheduling**: Implemented auto-shift logic for subsequent sessions when a scheduled date is changed.
-- [x] **Dashboard-Calendar Sync**: Unified all appointment views to ensure real-time visibility of daily operations.
-- [x] **Predictive Date Engine**: Robust calculation of projected session dates based on package start dates.
-- [x] **Treatment Card Accuracy**: Fixed synchronization issues in "Thẻ liệu trình" to correctly reflect the number of performed sessions versus the total package.
-- [x] **Real-time Reliability**: Optimized Supabase subscription listeners to trigger immediate UI updates when sessions or bookings change.
-
-#### ✅ Phase 10: Dynamic KTV Salary & Session Precision (May 14, 2026)
-- [x] **Dynamic Salary Model**: Replaced flat-rate payments with a service-based commission structure (`ktv_commission` per service).
-- [x] **Commission Locking**: Implemented logic to lock commission rates at the time of booking to protect earnings from future price changes.
-- [x] **Automated Excel Reporting**: Integrated `xlsx` for granular salary reports including session counts, package details, and final compensation.
-- [x] **Precision Progress Tracking**: Resolved visual inaccuracies in progress bars (e.g., 2/15 ratio) and standardized 15-session defaults across all views.
-- [x] **Flexible Booking**: Enabled custom session counts per booking to handle individual services alongside full packages.
-
-#### ✅ Phase 11: UI Refinement & Table Ergonomics (May 14, 2026)
-- [x] **Sticky Headers**: Implemented persistent header rows for salary and management tables to ensure context during vertical scrolling.
-- [x] **Column Optimization**: Set ergonomic minimum widths for critical data columns (KTV Name, Status, Financials) to prevent text wrapping.
-- [x] **Horizontal Scalability**: Enhanced table wrappers to support smooth horizontal scrolling while maintaining data readability.
-- [x] **Type Safety Hardening**: Synchronized service management state with the new database schema to prevent build-time regressions.
-
-#### ✅ Phase 12: Customer Portal & Rating Integration (May 14, 2026)
-- [x] **Secure Customer Portal**: Built dedicated `/dashboard/customer` with treatment progress bars and session history.
-- [x] **Interactive Rating System**: Integrated 5-star session evaluation for clients with real-time feedback submission.
-- [x] **Automated Evaluation Trigger**: Implemented auto-creation of `pending_review` records upon session completion in `booking-actions.ts`.
-- [x] **Performance-Based Bonus Engine**: Updated salary management to calculate monthly bonuses based on average customer ratings (e.g., 5.0⭐ = +50k).
-- [x] **Transparent Compensation UI**: Added rating and bonus columns to the KTV salary table for full visibility.
-#### ✅ Phase 13: Data Integrity & Multi-Booking Context (May 14, 2026)
-- [x] **"Single Active Booking" Logic**: Enforced selection of primary active records in the UI to prevent data divergence when multiple bookings exist.
-- [x] **Booking Context Navigation**: Updated dashboard and session links to pass `bookingId`, ensuring consistency when a customer has multiple packages.
-- [x] **Booking Switcher UI**: Added a dedicated selection interface in the Customer Detail view to allow manual switching between historical or concurrent packages.
-- [x] **Refined Status Sorting**: Prioritized `active`, `in_progress`, and `booked` statuses in data fetching to suppress ambiguity from legacy or deposit records.
-
-#### ✅ Phase 14: Advanced Search & Automated Integrity (May 14, 2026)
-- [x] **Full-Text Multi-Filter**: Expanded session search to include Package Name, KTV Name, Booking Number, and Phone Number.
-- [x] **Self-Healing Sync Utility**: Implemented `syncBookingProgress` to reconcile `completed_sessions` counts with actual `session_logs` records.
-- [x] **Automated Integrity Checks**: Integrated background sync triggers whenever a session card is opened to ensure zero data drift.
-- [x] **RLS Policy Deployment**: Hardened multi-tenant security by enabling RLS across all core tables (`customers`, `bookings`, `session_logs`, etc.).
-- [x] **Role-based Immutability**: Hardened session logs to be immutable for KTVs once completed, with Admin-only override capability.
+#### ✅ Phase 15: Salary Reconciliation & Security Hardening (May 15, 2026)
+- [x] **Deterministic KTV Session Matrix**: Linked salary detail view directly to `session_logs` and `bookings` for 100% data accuracy instead of mock counts.
+- [x] **Session Approval Workflow**: Implemented `confirmKtvSessions` server action to lock and persist confirmed counts into `salary_records`.
+- [x] **Database Schema Hardening**: Added `total_sessions` (INT) to `salary_records` and `is_confirmed` (BOOL) to `session_logs` for auditability.
+- [x] **Enterprise-Grade RLS**: Enabled Row Level Security and deployed authenticated access policies for 11 core tables to prevent anonymous leaks.
+- [x] **UI Reconciliation Feedback**: Added visual status indicators and real-time toast feedback for approval actions in the salary dashboard.
 
 #### ⏭ Next Steps
 - [ ] **Zalo OA Integration**: Automate evaluation reminder notifications via Zalo khi hoàn thành buổi (Phase 2).
@@ -598,7 +554,7 @@ t:** [Your contact info]
 - [ ] **Archived Records Logic**: Tự động chuyển các booking cũ sang trạng thái archived khi phát hiện trùng lặp.
 
 ---
-**Last Updated:** May 14, 2026 (18:40)
+**Last Updated:** May 15, 2026 (06:05)
 
 
 ## 🛠️ TROUBLESHOOTING & BEST PRACTICES (LESSONS LEARNED)
@@ -652,6 +608,13 @@ t:** [Your contact info]
     - **Multiplicity**: Mỗi lần khách làm dịch vụ lẻ được coi là 1 bản ghi `booking` riêng biệt. Sử dụng `Booking Switcher` để chuyển đổi giữa các lần làm dịch vụ lẻ khác nhau.
     - **Status Mapping**: Dịch vụ lẻ vẫn tuân thủ logic `scheduled` -> `completed`. Khi hoàn thành, thẻ sẽ được đóng lại và lưu vào lịch sử (Completed).
 
+### 9. Salary & Financial Reconciliation
+*   **Vấn đề**: Số buổi làm việc của KTV thường bị thay đổi hoặc không khớp giữa bảng đối soát và bảng lương tổng.
+*   **Quy tắc**:
+    - **Snapshot Confirmation**: Khi Admin nhấn "Duyệt", số buổi tại thời điểm đó phải được ghi đè (persist) vào cột `total_sessions` của bảng `salary_records`.
+    - **Audit Trail**: Đánh dấu `is_confirmed = true` cho các buổi đã được đối soát trong bảng `session_logs` để ngăn chặn việc sửa đổi hoặc tính trùng lặp trong tương lai.
+    - **Schema Awareness**: Luôn kiểm tra sự tồn tại của các cột nghiệp vụ mới bổ sung (`total_sessions`, `is_confirmed`) trước khi thực hiện các tác vụ cập nhật tài chính.
+
 ### 14.3 Quy tắc tính toàn vẹn và Bảo mật (Hardened)
 
 1.  **Tính bất biến của dữ liệu (Data Immutability):**
@@ -682,16 +645,6 @@ t:** [Your contact info]
 
 ## 📅 MILESTONES & PHASES
 
-### PHASE 11: UI Refinement & Data Ergonomics
-- **Sticky Headers**: Implement sticky headers for all tables.
-- **Column Optimization**: Optimize column widths for data ergonomics.
-- **Data Persistence**: Harden state management.
-
-### PHASE 12: Customer Portal & Rating Integration
-- **Customer Portal**: Secure dashboard for clients to view history and progress.
-- **Rating System**: 5-star evaluation for each completed session.
-- **KTV Bonus Logic**: Automated monthly bonus calculation based on average rating.
-- **Notifications**: Evaluation reminders on completion.
 ### PHASE 13: Data Integrity & Multi-Booking Context
 - **Booking Context**: Pass bookingId through navigation links.
 - **Booking Switcher**: UI for switching between concurrent treatment packages.
@@ -702,9 +655,14 @@ t:** [Your contact info]
 - **Auto-Sync Logic**: Automated reconciliation of session logs and booking progress.
 - **Security Audit**: Deployment of RLS policies for multi-tenant isolation.
 
+### PHASE 15: Salary Reconciliation & Security Hardening
+- **Salary Matrix**: Direct integration with real session logs for KTV reconciliation.
+- **Approval Flow**: Persistent locking of confirmed sessions into payroll records.
+- **Security Enforcement**: Full RLS deployment and authenticated policy management across all core tables.
+
 ---
 
-**Document Version:** 1.8  
-**Last Updated:** 2026-05-14 (18:50)  
-**Status:** Implementation Phase (Phase 15)  
+**Document Version:** 1.9  
+**Last Updated:** 2026-05-15 (06:05)  
+**Status:** Implementation Phase (Phase 16)  
 **Contact:** Bella Spa ERP Dev Team
