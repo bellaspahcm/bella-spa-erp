@@ -389,22 +389,31 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: updateError.message };
   }
 
-  // 5. Fetch customer_id for specific revalidation
-  const { data: customerData } = await supabase
-    .from('bookings')
-    .select('customer_id')
-    .eq('id', bookingId)
-    .single();
+  // 6. Create a pending review for the customer to fill out
+  try {
+    const { data: bookingDetails } = await supabase
+      .from('bookings')
+      .select('customer_id, assigned_ktv_id')
+      .eq('id', bookingId)
+      .single();
 
-  await safeRevalidatePath('/dashboard/bookings');
-  await safeRevalidatePath('/dashboard/customers');
-  await safeRevalidatePath('/dashboard/sessions');
-  await safeRevalidatePath('/dashboard');
-  
-  if (customerData?.customer_id) {
-    await safeRevalidatePath(`/dashboard/customers/${customerData.customer_id}`);
+    if (bookingDetails) {
+      await supabase
+        .from('session_reviews')
+        .insert([{
+          session_log_id: sessionId,
+          reviewer_id: null, // To be linked to customer auth user later
+          ktv_id: bookingDetails.assigned_ktv_id,
+          rating: 0, // Placeholder
+          status: 'pending_review',
+          tenant_id: currentBooking?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e'
+        } as any]);
+    }
+  } catch (reviewErr) {
+    console.error('Error creating pending review:', reviewErr);
+    // Non-blocking error
   }
-  
+
   return { success: true };
 }
 

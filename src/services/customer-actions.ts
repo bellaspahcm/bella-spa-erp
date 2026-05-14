@@ -452,3 +452,110 @@ export async function deleteCustomer(id: string) {
   await safeRevalidatePath('/dashboard/customers');
   return { success: true };
 }
+
+/**
+ * CUSTOMER PORTAL ACTIONS
+ */
+
+export async function getCustomerPortalData() {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  const { getCurrentUser } = await import('./user-actions');
+  const user = await getCurrentUser();
+  
+  if (user.role !== 'customer' && user.role !== 'admin') {
+    return { error: 'Unauthorized access to customer portal.' };
+  }
+
+  // Find the customer record associated with this user
+  const { data: customer, error: customerError } = await supabase
+    .from('customers')
+    .select('id, name_mother, phone')
+    .or(`auth_user_id.eq.${user.id},phone.eq.${user.phone || '0000000000'}`)
+    .maybeSingle();
+
+  if (customerError) {
+    console.error('Error fetching customer profile:', customerError);
+    return { error: 'Could not load customer profile.' };
+  }
+
+  if (!customer) {
+    // Return mock for demo if no DB record matches
+    return {
+      activeBooking: {
+        id: 'mock-b1',
+        package_name: 'Mẹ Bầu Toàn Diện (Demo)',
+        total_sessions: 15,
+        completed_sessions: 2,
+        start_date: '2026-05-10',
+        next_session: '2026-05-16 09:00',
+      },
+      sessions: [
+        { id: 's1', number: 1, date: '2026-05-10', ktv: 'Nguyễn Thị Hoa', status: 'completed', rating: 5 },
+        { id: 's2', number: 2, date: '2026-05-13', ktv: 'Nguyễn Thị Hoa', status: 'completed', rating: null },
+        { id: 's3', number: 3, date: '2026-05-16', ktv: 'Đang sắp xếp', status: 'scheduled', rating: null },
+      ]
+    };
+  }
+
+  // Fetch real data
+  const { data: bookings } = await supabase
+    .from('bookings')
+    .select('*, session_logs(*, session_reviews(*))')
+    .eq('customer_id', customer.id)
+    .order('created_at', { ascending: false });
+
+  const activeBooking = bookings?.[0];
+  
+  if (!activeBooking) return { message: 'No active treatment packages found.' };
+
+  const sessions = (activeBooking.session_logs || [])
+    .sort((a: any, b: any) => a.session_number - b.session_number)
+    .map((s: any) => ({
+      id: s.id,
+      number: s.session_number,
+      date: s.completed_date || s.assigned_date || '---',
+      ktv: s.completed_by_ktv_id ? 'Đã hoàn thành' : 'Chờ thực hiện',
+      status: s.status,
+      rating: s.session_reviews?.[0]?.rating || null
+    }));
+
+  return {
+    activeBooking: {
+      id: activeBooking.id,
+      package_name: activeBooking.package_name || 'Liệu trình của bạn',
+      total_sessions: activeBooking.total_sessions || 15,
+      completed_sessions: activeBooking.completed_sessions || 0,
+      start_date: activeBooking.start_date,
+      next_session: '---', 
+    },
+    sessions
+  };
+}
+
+export async function submitSessionRating(sessionId: string, rating: number, comment: string) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  const { getCurrentUser } = await import('./user-actions');
+  const user = await getCurrentUser();
+
+  // 1. Update or Insert review
+  const { error } = await supabase
+    .from('session_reviews')
+    .upsert({
+      session_log_id: sessionId,
+      reviewer_id: user.id,
+      rating: rating,
+      note: comment,
+      status: 'approved',
+      tenant_id: user.tenant_id
+    } as any, { onConflict: 'session_log_id' });
+
+  if (error) {
+    console.error('Error submitting rating:', error);
+    return { error: error.message };
+  }
+
+  await safeRevalidatePath('/dashboard/customer');
+  return { success: true };
+}

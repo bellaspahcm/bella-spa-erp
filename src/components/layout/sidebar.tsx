@@ -39,6 +39,13 @@ const menuItems = [
   { icon: Settings, label: 'Cài đặt', href: '/dashboard/settings' },
 ];
 
+const customerMenuItems = [
+  { icon: Flower2, label: 'Tiến trình liệu trình', href: '/dashboard/customer' },
+  { icon: Calendar, label: 'Lịch sử buổi làm', href: '/dashboard/customer/history' },
+  { icon: MessageSquare, label: 'Thông báo', href: '/dashboard/customer/notifications' },
+  { icon: Settings, label: 'Hồ sơ cá nhân', href: '/dashboard/customer/profile' },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -52,13 +59,15 @@ export function Sidebar() {
     fetchUser();
   }, []);
 
-  const filteredMenuItems = menuItems.filter(item => {
-    if (user?.role === 'ktv') {
-      // KTV can't see Finance or Settings or Users/Salary management
-      return !['Tài chính', 'Cài đặt', 'Lương KTV'].includes(item.label);
-    }
-    return true;
-  });
+  const filteredMenuItems = user?.role === 'customer' 
+    ? customerMenuItems 
+    : menuItems.filter(item => {
+      if (user?.role === 'ktv') {
+        // KTV can't see Finance or Settings or Users/Salary management
+        return !['Tài chính', 'Cài đặt', 'Lương KTV'].includes(item.label);
+      }
+      return true;
+    });
 
   // Special items for KTV
   if (user?.role === 'ktv') {
@@ -139,7 +148,7 @@ export function Sidebar() {
             <div className="overflow-hidden">
               <p className="text-sm font-black text-foreground truncate">{user?.full_name || 'Đang tải...'}</p>
               <p className="text-[10px] text-primary font-black uppercase tracking-widest">
-                {user?.role === 'ktv' ? 'Kỹ thuật viên' : 'Quản trị viên'}
+                {user?.role === 'ktv' ? 'Kỹ thuật viên' : user?.role === 'customer' ? 'Khách hàng' : 'Quản trị viên'}
               </p>
             </div>
           </div>
