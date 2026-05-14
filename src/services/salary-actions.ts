@@ -191,7 +191,6 @@ export async function approveSalary(ktvId: string) {
     const advances = existing?.service_percentage_bonus || 0;
     const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
 
-    const { getCurrentUser } = await import('./user-actions');
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
 
@@ -238,7 +237,6 @@ export async function approveSalary(ktvId: string) {
     }
 
     // Force revalidation of related pages
-    const { revalidatePath } = await import('next/cache');
     revalidatePath('/dashboard/finance');
     revalidatePath('/dashboard/salary');
 
@@ -250,7 +248,6 @@ export async function approveSalary(ktvId: string) {
 }
 
 export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: number, kpiBonus: number, deductions: number, advances: number }) {
-  const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   const monthYear = '2026-05-01'; // Default demo month
 
@@ -262,7 +259,6 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
     .eq('month_year', monthYear)
     .single();
 
-  const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
 
