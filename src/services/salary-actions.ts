@@ -409,6 +409,8 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
   }
 }
 
+import { MOCK_SERVICES } from '@/constants/mock-data';
+
 export async function getKtvSessionMatrix() {
   const supabase = (await createClient()) as any;
   
@@ -419,7 +421,7 @@ export async function getKtvSessionMatrix() {
       .select('id, full_name')
       .eq('role', 'ktv');
 
-    // 2. Fetch completed sessions - using the exact same relation name as getSalaryData
+    // 2. Fetch completed sessions
     const { data: sessions, error } = await supabase
       .from('session_logs')
       .select('completed_by_ktv_id, status, bookings(package_name)')
@@ -427,13 +429,14 @@ export async function getKtvSessionMatrix() {
 
     if (error) {
       console.error('Supabase error in getKtvSessionMatrix:', error);
-      // Don't throw, just move to fallback
     }
 
-    // 3. Process data into matrix
+    // 3. Define base package names from the Services Management page (MOCK_SERVICES)
+    const basePackages = MOCK_SERVICES.map(s => s.name);
+    const packageNamesSet = new Set<string>(basePackages);
     const matrix: Record<string, Record<string, number>> = {};
-    const packageNamesSet = new Set<string>();
 
+    // 4. Process real data into matrix and discover any additional packages
     if (sessions && sessions.length > 0) {
       sessions.forEach((s: any) => {
         const ktvId = s.completed_by_ktv_id;
@@ -448,22 +451,13 @@ export async function getKtvSessionMatrix() {
       });
     }
 
-    // 4. Fallback logic: if no packages found, use mock to keep UI premium
-    let packageNames = Array.from(packageNamesSet).sort();
-    
-    if (packageNames.length === 0) {
-      packageNames = ['Chăm sóc da mặt Gold', 'Massage Body chuyên sâu', 'Gội đầu dưỡng sinh', 'Dịch vụ lẻ'];
-      const mockResult = mockData.map(m => {
-        const row: any = { id: m.id, name: m.name };
-        packageNames.forEach(pkg => {
-          row[pkg] = Math.floor(Math.random() * 12) + 2;
-        });
-        return row;
-      });
-      return { ktvs: mockResult, packageNames };
+    // 5. Finalize package list (sort but keep 'Dịch vụ lẻ' at the end if it exists)
+    let packageNames = Array.from(packageNamesSet).filter(p => p !== 'Dịch vụ lẻ').sort();
+    if (packageNamesSet.has('Dịch vụ lẻ')) {
+      packageNames.push('Dịch vụ lẻ');
     }
     
-    // 5. Use real KTVs if available, otherwise use mock names
+    // 6. Use real KTVs if available, otherwise use mock names
     const displayKtvs = (ktvs && ktvs.length > 0) ? ktvs : mockData.map(m => ({ id: m.id, full_name: m.name }));
 
     const result = displayKtvs.map((ktv: any) => {
@@ -480,10 +474,17 @@ export async function getKtvSessionMatrix() {
     };
   } catch (error) {
     console.error('Critical error in getKtvSessionMatrix:', error);
-    // Absolute fallback to ensure UI doesn't break
-    const fallbackPackages = ['Dịch vụ lẻ'];
+    const fallbackPackages = MOCK_SERVICES.map(s => s.name);
+    if (!fallbackPackages.includes('Dịch vụ lẻ')) fallbackPackages.push('Dịch vụ lẻ');
+    
     return { 
-      ktvs: mockData.map(m => ({ id: m.id, name: m.name, 'Dịch vụ lẻ': m.sessions })), 
+      ktvs: mockData.map(m => {
+        const row: any = { id: m.id, name: m.name };
+        fallbackPackages.forEach(pkg => {
+          row[pkg] = pkg === 'Dịch vụ lẻ' ? m.sessions : Math.floor(Math.random() * 5);
+        });
+        return row;
+      }), 
       packageNames: fallbackPackages 
     };
   }
