@@ -143,10 +143,17 @@ export default function SessionsPage() {
     setIsSyncing(true);
     const data = await getSessionsWithDetails();
     // Apply local updates
-    const mergedData = (data || []).map((b: any) => ({
-      ...b,
-      completed_sessions: localBookingUpdates[b.id] ?? b.completed_sessions
-    }));
+    const mergedData = (data || []).map((b: any) => {
+      // Calculate actual completed count from logs, considering local overrides
+      const actualFromLogs = (b.session_logs || []).filter((l: any) => 
+        (localSessionLogUpdates[l.id] ?? l.status) === 'completed'
+      ).length;
+      
+      return {
+        ...b,
+        completed_sessions: Math.max(actualFromLogs, localBookingUpdates[b.id] ?? b.completed_sessions ?? 0)
+      };
+    });
     setSessions(mergedData);
     applyFilters(mergedData, searchQuery, statusFilter);
     setIsSyncing(false);
@@ -805,7 +812,9 @@ export default function SessionsPage() {
                     <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
                       Thẻ liệu trình: Mẹ {selectedBooking.customers?.name_mother} {selectedBooking.customers?.name_baby ? `& Bé ${selectedBooking.customers.name_baby}` : ''}
                     </h2>
-                    <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">{selectedBooking.package_name} • Tiến độ: {selectedBooking.completed_sessions}/{selectedBooking.total_sessions || 21}</p>
+                    <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">
+                      {selectedBooking.package_name} • Tiến độ: {sessionLogs.filter(l => (localSessionLogUpdates[l.id] ?? l.status) === 'completed').length}/{selectedBooking.total_sessions || 21}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -979,7 +988,7 @@ export default function SessionsPage() {
                       <div className="grid grid-cols-2 gap-6 relative z-10">
                         <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm">
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Hoàn thành</p>
-                          <p className="text-3xl font-black text-slate-900">{selectedBooking.completed_sessions}</p>
+                          <p className="text-3xl font-black text-slate-900">{sessionLogs.filter(l => (localSessionLogUpdates[l.id] ?? l.status) === 'completed').length}</p>
                         </div>
                         <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm relative group">
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Tổng cộng</p>
@@ -1001,7 +1010,7 @@ export default function SessionsPage() {
                         <div className="w-full bg-white/30 h-1.5 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-primary" 
-                            style={{ width: `${(selectedBooking.completed_sessions / (selectedBooking.total_sessions || 21)) * 100}%` }}
+                            style={{ width: `${(sessionLogs.filter(l => (localSessionLogUpdates[l.id] ?? l.status) === 'completed').length / (selectedBooking.total_sessions || 21)) * 100}%` }}
                           />
                         </div>
                       </div>
