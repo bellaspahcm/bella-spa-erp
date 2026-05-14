@@ -17,7 +17,7 @@ export async function getCurrentUser() {
       id: 'c294c8b0-25d2-4c7e-bed9-21246d957254', 
       full_name: 'Quản trị viên', 
       role: 'admin',
-      tenant_id: '46c75ad7-416d-48ef-9386-25cd6a4d4805'
+      tenant_id: '0e66365b-42b0-420e-acca-f7d7692e125e'
     };
   }
 
@@ -89,7 +89,7 @@ export async function createUser(formData: any) {
       role: formData.role || 'ktv',
       status: 'active',
       // Fetch tenant_id from current user or use system fallback
-      tenant_id: currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805'
+      tenant_id: currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e'
     } as any])
     .select()
     .single();
