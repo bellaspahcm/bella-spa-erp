@@ -12,14 +12,10 @@ import {
   Settings, 
   LogOut,
   Flower2,
-  ChevronLeft,
-  MessageSquare,
-  Sparkles,
-  UserPlus
+  Sparkles
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { QuickAddCustomerModal } from '@/components/features/QuickAddCustomerModal';
 import { getCurrentUser } from '@/services/user-actions';
 import { useEffect } from 'react';
 
@@ -48,7 +44,6 @@ const customerMenuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -142,37 +137,33 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* User Profile & Logout - Pinned to bottom, Slimmer */}
-        <div className="px-5 pb-5 mt-auto bg-gradient-to-t from-rose-50/30 to-transparent pt-4 shrink-0 relative z-10">
-          <div className="bg-white p-3.5 rounded-[1.8rem] shadow-[0_8px_20px_-10px_rgba(0,0,0,0.05)] border border-slate-50 mb-3 group cursor-pointer hover:border-rose-100 transition-colors">
-            <div className="flex items-center gap-3">
+        {/* User Profile & Logout - Slimmed & Pinned */}
+        <div className="px-4 pb-4 mt-auto bg-gradient-to-t from-rose-100/20 to-transparent pt-2 shrink-0 relative z-10">
+          <div className="bg-white/80 p-2.5 rounded-[1.5rem] shadow-sm border border-rose-50 mb-2 group cursor-pointer hover:border-rose-200 transition-all">
+            <div className="flex items-center gap-2.5">
               <div className="relative">
-                <div className="w-9 h-9 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-sm shadow-md group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-xs shadow-md group-hover:scale-105 transition-transform">
                   {user?.full_name?.charAt(0) || 'B'}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'Admin'}</p>
-                <p className="text-[8.5px] text-rose-500 font-black uppercase tracking-widest mt-0.5">
+                <p className="text-[10px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'Admin'}</p>
+                <p className="text-[8px] text-rose-500 font-black uppercase tracking-widest mt-0.5">
                   {user?.role === 'ktv' ? 'Kỹ thuật viên' : user?.role === 'customer' ? 'Khách hàng' : 'Quản trị viên'}
                 </p>
               </div>
             </div>
           </div>
           
-          <button className="flex items-center gap-3 w-full px-4 py-2 text-slate-400 hover:text-rose-600 transition-all font-black text-[10px] uppercase tracking-[0.2em] group">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
-              <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+          <button className="flex items-center gap-2.5 w-full px-3 py-1.5 text-slate-400 hover:text-rose-600 transition-all font-black text-[9px] uppercase tracking-[0.2em] group">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
+              <LogOut className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
             </div>
             Đăng xuất
           </button>
         </div>
       </aside>
-      <QuickAddCustomerModal 
-        isOpen={isQuickAddOpen} 
-        onClose={() => setIsQuickAddOpen(false)} 
-      />
     </>
   );
 }
