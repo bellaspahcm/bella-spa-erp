@@ -543,7 +543,9 @@ export default function SessionsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6">
           {filteredSessions.map((booking: any, idx: number) => {
-            const progress = ((booking.completed_sessions || 0) / (booking.total_sessions || 21)) * 100;
+            const completedCount = Number(booking.completed_sessions) || 0;
+            const totalCount = Number(booking.total_sessions) || 15;
+            const progress = (completedCount / Math.max(1, totalCount)) * 100;
             const isUpdating = updatingId === booking.id;
             const isFullyCompleted = (booking.completed_sessions || 0) >= (booking.total_sessions || 21);
             const alreadyDoneToday = isUpdatedToday(booking);
@@ -596,7 +598,7 @@ export default function SessionsPage() {
                   <div className="flex flex-wrap gap-y-3 gap-x-8 text-sm font-bold text-slate-500 mb-5">
                     <div className="flex items-center gap-2.5">
                       <Clock className="w-4 h-4 text-primary/60" />
-                      Tiến độ: <span className="text-slate-900 font-black">{booking.completed_sessions || 0}/{booking.total_sessions || 21} buổi</span>
+                      Tiến độ: <span className="text-slate-900 font-black">{completedCount}/{totalCount} buổi</span>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <Calendar className="w-4 h-4 text-primary/60" />
@@ -756,7 +758,7 @@ export default function SessionsPage() {
                       Thẻ liệu trình: Mẹ {selectedBooking.customers?.name_mother} {selectedBooking.customers?.name_baby ? `& Bé ${selectedBooking.customers.name_baby}` : ''}
                     </h2>
                     <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em]">
-                      {selectedBooking.package_name} • Tiến độ: {sessionLogs.filter(l => l.status === 'completed').length}/{selectedBooking.total_sessions || 21}
+                      {selectedBooking.package_name} • Tiến độ: {selectedBooking.completed_sessions || 0}/{selectedBooking.total_sessions || 15}
                     </p>
                   </div>
                 </div>
@@ -931,11 +933,11 @@ export default function SessionsPage() {
                       <div className="grid grid-cols-2 gap-6 relative z-10">
                         <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm">
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Hoàn thành</p>
-                          <p className="text-3xl font-black text-slate-900">{sessionLogs.filter(l => l.status === 'completed').length}</p>
+                          <p className="text-3xl font-black text-slate-900">{selectedBooking.completed_sessions || 0}</p>
                         </div>
                         <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm relative group">
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Tổng cộng</p>
-                          <p className="text-3xl font-black text-slate-900">{selectedBooking.total_sessions || 21}</p>
+                          <p className="text-3xl font-black text-slate-900">{selectedBooking.total_sessions || 15}</p>
                           {userRole === 'ADMIN' && (
                             <button 
                               onClick={() => handleAddExtraSession(selectedBooking.id)}
@@ -948,12 +950,11 @@ export default function SessionsPage() {
                         </div>
                       </div>
 
-                      {/* Add progress bar inside summary too for visual impact */}
                       <div className="mt-6 relative z-10">
                         <div className="w-full bg-white/30 h-1.5 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-primary" 
-                            style={{ width: `${(sessionLogs.filter(l => l.status === 'completed').length / (selectedBooking.total_sessions || 21)) * 100}%` }}
+                            style={{ width: `${((selectedBooking.completed_sessions || 0) / (selectedBooking.total_sessions || 15)) * 100}%` }}
                           />
                         </div>
                       </div>
