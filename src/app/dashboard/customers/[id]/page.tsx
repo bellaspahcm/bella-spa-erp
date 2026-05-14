@@ -597,6 +597,12 @@ export default function CustomerDetailPage() {
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Tiến độ buổi</span>
                       <span className="text-white font-black text-sm">{activeBooking.completed_sessions || 0}/{activeBooking.total_sessions || 0}</span>
+                      <button 
+                        onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}&bookingId=${activeBooking.id}`)}
+                        className="p-2 hover:bg-slate-50 rounded-xl transition-colors group/btn"
+                      >
+                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover/btn:text-primary transition-colors" />
+                      </button>
                     </div>
                     <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
                       <div 
@@ -616,7 +622,12 @@ export default function CustomerDetailPage() {
                 <History className="text-primary w-6 h-6" />
                 Lịch sử chăm sóc ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 15})
               </h3>
-              <button className="text-sm font-bold text-primary hover:underline">Xem tất cả</button>
+              <button 
+                onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}`)}
+                className="text-[10px] font-black text-primary hover:text-rose-600 uppercase tracking-widest flex items-center gap-2 transition-colors"
+              >
+                Xem tất cả <ChevronRight className="w-3 h-3" />
+              </button>
             </div>
 
             <div className="space-y-4">
@@ -635,7 +646,7 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
                   <button 
-                    onClick={() => router.push('/dashboard/sessions')}
+                    onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}`)}
                     className="w-full md:w-auto bg-primary hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-rose-200 flex items-center justify-center gap-3 active:scale-95"
                   >
                     <ClipboardList className="w-5 h-5" />
@@ -683,7 +694,12 @@ export default function CustomerDetailPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">Hoàn thành</span>
-                      <ChevronRight className="w-5 h-5 text-slate-300" />
+                      <button 
+                        onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}&bookingId=${activeBooking.id}`)}
+                        className="p-2 hover:bg-white rounded-xl transition-all shadow-sm group/btn active:scale-90"
+                      >
+                        <ChevronRight className="w-5 h-5 text-slate-300 group-hover/btn:text-primary transition-colors" />
+                      </button>
                     </div>
                   </div>
                 ))
