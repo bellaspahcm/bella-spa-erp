@@ -72,7 +72,7 @@ export async function getBookingsByCustomerId(customerId: string) {
       console.log(`Syncing completed_sessions for booking ${b.id}: ${b.completed_sessions} -> ${count}`);
       await supabase
         .from('bookings')
-        .update({ completed_sessions: count })
+        .update({ completed_sessions: count } as any)
         .eq('id', b.id);
       b.completed_sessions = count;
     }
@@ -450,7 +450,7 @@ export async function getSessionsWithDetails() {
       console.log(`Syncing completed_sessions for booking ${b.id} in details: ${b.completed_sessions} -> ${count}`);
       await supabase
         .from('bookings')
-        .update({ completed_sessions: count })
+        .update({ completed_sessions: count } as any)
         .eq('id', b.id);
       b.completed_sessions = count;
     }
@@ -930,7 +930,7 @@ export async function syncBookingProgress(bookingId: string) {
   if ((booking as any).completed_sessions !== count) {
     const { error: updateError } = await supabase
       .from('bookings')
-      .update({ completed_sessions: count })
+      .update({ completed_sessions: count } as any)
       .eq('id', bookingId);
     
     if (updateError) return { error: updateError.message };
@@ -1090,7 +1090,7 @@ export async function recordRemainingPayment(params: {
       .update({ 
         deposit_amount: newTotalPaid,
         status: newStatus
-      })
+      } as any)
       .eq('id', params.booking_id);
 
     if (updateError) throw updateError;
