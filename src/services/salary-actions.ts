@@ -474,13 +474,14 @@ export async function getKtvSessionMatrix() {
       const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
       const salaryRecord = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
       
-      // Confirmed if sessions are explicitly marked confirmed OR if a salary record exists with confirmed status
+      // Confirmed only if status is explicitly pending_approval or approved
       const isRecordConfirmed = !!(salaryRecord && 
-                                salaryRecord.status !== 'draft' && 
-                                salaryRecord.status !== null);
+                                (salaryRecord.status === 'pending_approval' || salaryRecord.status === 'approved'));
                                 
       row.isConfirmed = (ktvSessions.length > 0 && ktvSessions.every((s: any) => s.is_confirmed)) || 
                         isRecordConfirmed;
+      
+      console.log(`KTV: ${ktv.full_name}, Sessions: ${ktvSessions.length}, Record Status: ${salaryRecord?.status}, isConfirmed: ${row.isConfirmed}`);
       
       packageNames.forEach((pkg: string) => {
         if (hasAnyRealData && matrix[ktv.id]) {
