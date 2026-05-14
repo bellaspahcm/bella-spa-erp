@@ -186,7 +186,6 @@ export async function createBooking(formData: any) {
 
   // Record revenue for the deposit if any
   if (validatedData.deposit_amount > 0 && booking?.id) {
-    const isBooked = booking.status === 'booked';
     const { error: revError } = await supabase
       .from('revenue')
       .insert([{
@@ -195,13 +194,17 @@ export async function createBooking(formData: any) {
         revenue_type: 'deposit',
         payment_method: 'bank_transfer',
         received_date: new Date().toISOString().split('T')[0],
-        status: isBooked ? 'confirmed' : 'pending',
+        status: 'confirmed', // Always confirm initial deposit if recorded
         notes: `Cọc gói ${resolvePackageName(booking)}`,
         tenant_id: tenantId
       }]);
     
     if (revError) console.error('Error recording initial deposit revenue:', revError);
   }
+
+  // 3. Revalidate paths
+  await safeRevalidatePath(`/dashboard/customers/${validatedData.customer_id}`);
+  await safeRevalidatePath('/dashboard/finance');
 
   // 2. Automation: Generate session logs (only if they don't exist yet for this booking)
   const { count: existingLogsCount } = await supabase
@@ -252,6 +255,7 @@ export async function createBooking(formData: any) {
   await safeRevalidatePath('/dashboard/customers');
   await safeRevalidatePath(`/dashboard/customers/${validatedData.customer_id}`);
   await safeRevalidatePath('/dashboard');
+  await safeRevalidatePath('/dashboard/finance');
   return { data: booking };
 }
 
@@ -1045,6 +1049,7 @@ export async function recordRemainingPayment(params: {
   payment_method: string;
   notes?: string;
   receipt_url?: string;
+  status?: string; // Add status field
 }) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
@@ -1061,7 +1066,7 @@ export async function recordRemainingPayment(params: {
         revenue_type: 'remaining_payment',
         payment_method: params.payment_method,
         received_date: new Date().toISOString().split('T')[0],
-        status: 'pending', // Default to pending, will be synced below
+        status: params.status || 'pending', // Use provided status
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
         receipt_url: params.receipt_url || null
       }]);
@@ -1098,8 +1103,8 @@ export async function recordRemainingPayment(params: {
     if (updateError) throw updateError;
 
     // 2.5 Logic: Sync Revenue Status
-    // If booking is now 'booked', confirm all pending revenue for this booking
-    if (newStatus === 'booked') {
+    // If auto_confirm is true OR the booking is now fully paid, confirm relevant records
+    if (params.status === 'confirmed' || newStatus === 'booked') {
       const { error: syncError } = await supabase
         .from('revenue')
         .update({ status: 'confirmed' })
