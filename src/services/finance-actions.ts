@@ -142,6 +142,8 @@ export async function recordTransaction(data: {
   notes: string;
   booking_id?: string;
 }) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
   const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
