@@ -511,6 +511,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     />
                     <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>
                   </div>
+                  </div>
                 </div>
 
                 {/* Pricing Summary */}
