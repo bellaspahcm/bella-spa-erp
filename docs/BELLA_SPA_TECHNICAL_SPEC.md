@@ -643,6 +643,18 @@ t:** [Your contact info]
     - **Sticky Header**: Bắt buộc sử dụng `sticky top-0 z-10` kèm `backdrop-blur` cho hàng tiêu đề (`thead`) của các bảng danh sách lớn.
     - **Column Constraints**: Sử dụng `min-w-[...]` cho các cột chứa text dài (như Tên KTV, Tên khách hàng) và `whitespace-nowrap` cho các cột chứa số liệu tài chính để đảm bảo tính dễ đọc.
     - **Horizontal Scroll**: Luôn bao bọc bảng trong một container `overflow-x-auto` để hỗ trợ hiển thị tốt trên mọi kích thước màn hình.
+### 14.3 Quy tắc tính toàn vẹn và Bảo mật (Hardened)
+
+1.  **Tính bất biến của dữ liệu (Data Immutability):**
+    *   **KTV/Nhân viên:** Chỉ có thể cập nhật thông tin (Ngày, Giờ, Ghi chú) cho các buổi tập đang ở trạng thái `scheduled`. Khi một buổi đã chuyển sang `completed` hoặc `cancelled`, toàn bộ dữ liệu của buổi đó sẽ bị khóa chặt.
+    *   **Admin:** Có quyền ghi đè (Override) mọi trạng thái. Admin có thể khôi phục một buổi đã hoàn thành về trạng thái chờ để sửa lỗi.
+2.  **Chống cập nhật trùng lặp (Anti-Fraud):**
+    *   KTV không thể nhấn "Hoàn thành" 2 lần cho cùng một khách hàng trong cùng 1 ngày (trừ Admin) để tránh sai sót trong việc tính buổi tập.
+3.  **Tự chữa lành dữ liệu (Self-healing Sync):**
+    *   Bất cứ khi nào chi tiết của một thẻ liệu trình được mở ra, hệ thống sẽ chạy tác vụ ngầm `syncBookingProgress` để đếm lại số `session_logs` thực tế và cập nhật lại cột `completed_sessions` trong bảng `bookings` nếu có sai lệch.
+4.  **Minh bạch nhân sự (Personnel Transparency):**
+    *   Mỗi buổi tập hoàn thành đều lưu lại "Snapshot" KTV thực hiện (`completed_by_ktv_id`) để phục vụ đối soát lương và thưởng (KTV Bonus).
+
 ### 7. Cross-Page Data Consistency
 *   **Vấn đề**: Khi một khách hàng có nhiều booking (ví dụ: 1 gói cũ hoàn thành và 1 gói mới), việc chuyển hướng chung đến `/dashboard/customers/[id]` gây ra sự mơ hồ về gói dữ liệu đang xem.
 *   **Quy tắc**:
