@@ -100,7 +100,7 @@ export async function getSalaryData() {
     .from('session_logs')
     .select('id, completed_by_ktv_id, status')
     .eq('status', 'completed');
-
+  const ktvSalaries = displayKtvs.map((ktv: any) => {
       const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
       const hasExpense = (expenses || []).some((e: any) => e.description?.toLowerCase().includes(ktv.full_name.toLowerCase()));
       
