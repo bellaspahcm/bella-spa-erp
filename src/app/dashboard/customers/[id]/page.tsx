@@ -670,7 +670,7 @@ export default function CustomerDetailPage() {
                       <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">Buổi tiếp theo</p>
                       <h4 className="text-xl font-black text-slate-900">Buổi số {nextSession.session_number}</h4>
                       <p className="text-xs text-slate-500 font-bold mt-1">
-                        Ngày {nextSession.assigned_date || 'Chưa đặt'} • {nextSession.assigned_time || '--:--'}
+                        Ngày {nextSession.assigned_date || 'Chưa đặt'} • {nextSession.assigned_time || activeBooking?.preferred_time || '--:--'}
                       </p>
                     </div>
                   </div>
