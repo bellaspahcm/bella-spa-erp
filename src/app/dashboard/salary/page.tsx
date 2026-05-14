@@ -501,7 +501,7 @@ export default function SalaryPage() {
                             setMatrixData(matrix);
                             setKtvSalaries(salary);
                           } else {
-                            toast.error('Lỗi khi duyệt dữ liệu: ' + res.error);
+                            toast.error(`Lỗi: ${res.error || 'Không thể duyệt dữ liệu'}`);
                           }
                         }
                       }}
