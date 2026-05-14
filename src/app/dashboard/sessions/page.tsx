@@ -26,7 +26,7 @@ import {
   PlusCircle,
   History
 } from 'lucide-react';
-import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession } from '@/services/booking-actions';
+import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession, rescheduleSession } from '@/services/booking-actions';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
@@ -80,6 +80,7 @@ export default function SessionsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [quickNoteBookingId, setQuickNoteBookingId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');
+  const [originalDateString, setOriginalDateString] = useState<string | null>(null);
 
   const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Hoàn thành'];
 
@@ -284,6 +285,7 @@ export default function SessionsPage() {
       setSelectedDate(selectedSessionLog.assigned_date || todayLocal);
       setSelectedTime(selectedSessionLog.assigned_time || '');
       setSelectedStatus(selectedSessionLog.status || 'scheduled');
+      setOriginalDateString(selectedSessionLog.assigned_date || todayLocal);
     }
   }, [selectedSessionLog]);
 
@@ -300,6 +302,21 @@ export default function SessionsPage() {
 
     setIsSavingNote(true);
     try {
+      // Detect date change for rescheduling
+      const dateChanged = selectedDate && originalDateString && selectedDate !== originalDateString;
+      
+      if (dateChanged && finalStatus === 'scheduled') {
+        const rescheduleResult = await rescheduleSession(selectedSessionLog.id, selectedDate);
+        if (rescheduleResult.error) {
+          setToastMessage('Lỗi dời lịch: ' + rescheduleResult.error);
+          setShowToast(true);
+          setIsSavingNote(false);
+          return;
+        }
+        setToastMessage('Đã tự động dời lịch các buổi tiếp theo!');
+        setShowToast(true);
+      }
+
       const updates = {
         notes: currentNote || null,
         assigned_date: selectedDate || null,

@@ -37,7 +37,7 @@ declare global {
   }
 }
 
-import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog, completeSession } from '@/services/booking-actions';
+import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog, completeSession, rescheduleSession } from '@/services/booking-actions';
 import { getUsers } from '@/services/user-actions';
 import { MOCK_BOOKINGS } from '@/constants/mock-data';
 import { MOCK_SERVICES } from '@/constants/mock-data';
@@ -209,6 +209,7 @@ function BookingsContent() {
         bookingId: s.booking_id,
         ktvId: s.bookings?.assigned_ktv_id,
         originalStatus: s.status,
+        originalDateString: s.assigned_date,
         sessionNumber: s.session_number || 1,
         totalSessions: s.bookings?.total_sessions || 21
       };
@@ -222,6 +223,21 @@ function BookingsContent() {
   const handleUpdatePlan = async () => {
     setIsUpdating(true);
     try {
+      // 0. Check for Reschedule (Date Shift)
+      // Only shift if it's scheduled and the date has actually changed
+      const isDateChanged = modalData.dateString && modalData.dateString !== modalData.originalDateString;
+      
+      if (isDateChanged && modalData.status === 'scheduled') {
+        const rescheduleResult = await rescheduleSession(modalData.id, modalData.dateString);
+        if (rescheduleResult.error) {
+          toast.error('Lỗi khi dời lịch: ' + rescheduleResult.error);
+          setIsUpdating(false);
+          return;
+        }
+        // If we rescheduled, we still might want to update notes/time/ktv below,
+        // but the date is already handled.
+      }
+
       // 1. If status changed to completed, use the specialized completeSession action
       if (modalData.status === 'completed' && modalData.originalStatus !== 'completed') {
         const result = await completeSession(modalData.id, modalData.bookingId);
@@ -242,6 +258,7 @@ function BookingsContent() {
       }
 
       // 3. Update the rest of the fields (date, time, notes, and status if not handled above)
+      // If we rescheduled above, we don't need to update the date here again, but it's safe to do so.
       const result = await updateSessionLog(modalData.id, {
         assigned_date: modalData.dateString || modalData.date.toISOString().split('T')[0],
         assigned_time: modalData.time,
@@ -252,7 +269,7 @@ function BookingsContent() {
       if (result.error) {
         toast.error('Lỗi: ' + result.error);
       } else {
-        toast.success('Đã cập nhật tiến độ và kế hoạch thành công!');
+        toast.success(isDateChanged ? 'Đã dời lịch và cập nhật thành công!' : 'Đã cập nhật tiến độ và kế hoạch thành công!');
         fetchSessions();
         fetchAllBookings();
         setShowDetailModal(false);
@@ -462,7 +479,9 @@ function BookingsContent() {
                         ktvId: session.bookings?.assigned_ktv_id,
                         location: session.bookings?.customers?.address || 'Tại Spa',
                         sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
+                        sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
                         originalStatus: session.status,
+                        originalDateString: session.assigned_date,
                         status: session.status,
                         sessionNumber: session.session_number || 1,
                         totalSessions: session.bookings?.total_sessions || 21

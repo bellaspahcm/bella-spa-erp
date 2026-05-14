@@ -974,3 +974,107 @@ export async function recordRemainingPayment(params: {
     return { error: error.message };
   }
 }
+
+/**
+ * Reschedules a session and shifts all subsequent scheduled sessions accordingly
+ */
+export async function rescheduleSession(sessionId: string, newDate: string) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+
+  // 1. Fetch the session to find its booking and current date
+  const { data: session, error: sessionError } = await supabase
+    .from('session_logs')
+    .select('booking_id, assigned_date, session_number, status')
+    .eq('id', sessionId)
+    .single();
+
+  if (sessionError || !session) {
+    return { error: 'Không tìm thấy buổi cần dời lịch.' };
+  }
+
+  if (session.status === 'completed') {
+    return { error: 'Không thể dời lịch cho buổi đã hoàn thành.' };
+  }
+
+  const bookingId = session.booking_id;
+  const oldDateStr = session.assigned_date;
+  
+  // If we don't have an old date, we use the new date as a base (which won't shift anything)
+  // or we try to find it from the booking start_date.
+  let effectiveOldDateStr = oldDateStr;
+  if (!effectiveOldDateStr) {
+    const { data: booking } = await supabase.from('bookings').select('start_date').eq('id', bookingId).single();
+    if (booking?.start_date) {
+      const bDate = new Date(booking.start_date);
+      bDate.setDate(bDate.getDate() + (session.session_number - 1));
+      effectiveOldDateStr = bDate.toISOString().split('T')[0];
+    } else {
+      effectiveOldDateStr = newDate;
+    }
+  }
+
+  // 2. Calculate the day difference
+  const oldDate = new Date(effectiveOldDateStr);
+  const targetDate = new Date(newDate);
+  
+  // Reset time to midnight for accurate day comparison
+  oldDate.setHours(0, 0, 0, 0);
+  targetDate.setHours(0, 0, 0, 0);
+  
+  const diffTime = targetDate.getTime() - oldDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return { success: true };
+
+  // 3. Find all scheduled sessions for this booking starting from this session number
+  const { data: futureSessions, error: futureError } = await supabase
+    .from('session_logs')
+    .select('id, session_number, assigned_date')
+    .eq('booking_id', bookingId)
+    .eq('status', 'scheduled')
+    .gte('session_number', session.session_number)
+    .order('session_number', { ascending: true });
+
+  if (futureError) {
+    return { error: futureError.message };
+  }
+
+  // 4. Update each session with the new shifted date
+  const updates = futureSessions.map((s: any) => {
+    let currentAssignedDate = s.assigned_date;
+    
+    // If no assigned date, calculate what it SHOULD have been
+    if (!currentAssignedDate) {
+      const baseDate = new Date(effectiveOldDateStr);
+      baseDate.setDate(baseDate.getDate() + (s.session_number - session.session_number));
+      currentAssignedDate = baseDate.toISOString().split('T')[0];
+    }
+
+    const baseDate = new Date(currentAssignedDate);
+    baseDate.setDate(baseDate.getDate() + diffDays);
+    const newAssignedDate = `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, '0')}-${String(baseDate.getDate()).padStart(2, '0')}`;
+
+    return supabase
+      .from('session_logs')
+      .update({ assigned_date: newAssignedDate } as any)
+      .eq('id', s.id);
+  });
+
+  const results = await Promise.all(updates);
+  const hasError = results.some(r => r.error);
+  if (hasError) {
+    return { error: 'Có lỗi xảy ra khi cập nhật một số buổi học.' };
+  }
+
+  // 5. Revalidate paths
+  const { data: bookingData } = await supabase.from('bookings').select('customer_id').eq('id', bookingId).single();
+  
+  await safeRevalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard/sessions');
+  if (bookingData?.customer_id) {
+    await safeRevalidatePath(`/dashboard/customers/${bookingData.customer_id}`);
+  }
+
+  return { success: true };
+}
