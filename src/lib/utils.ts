@@ -41,3 +41,16 @@ export function ensure2026(dateStr: any): any {
   return dateStr.replace(/202[45]/g, '2026');
 }
 
+import { MOCK_SERVICES } from '@/constants/mock-data';
+
+export function resolvePackageName(booking: any): string {
+  if (booking?.package_name) return booking.package_name;
+  
+  const price = Number(booking?.full_price);
+  const matchedService = MOCK_SERVICES.find(s => {
+    const sPrice = parseInt(s.price.replace(/[^\d]/g, ''));
+    return sPrice === price;
+  });
+
+  return matchedService?.name || 'Dịch vụ lẻ';
+}
