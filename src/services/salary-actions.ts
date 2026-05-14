@@ -425,8 +425,13 @@ export async function getKtvSessionMatrix() {
       .select('id, full_name')
       .eq('role', 'ktv');
 
-    // 2. Fetch completed sessions with booking details
-    // We fetch more fields to be safe and match getSalaryData's pattern
+    // 2. Fetch salary records for confirmation status
+    const { data: salaryRecords } = await supabase
+      .from('salary_records')
+      .select('ktv_id, total_sessions, status')
+      .eq('month_year', '2026-05-01');
+
+    // 3. Fetch completed sessions with booking details
     const { data: sessions, error } = await supabase
       .from('session_logs')
       .select(`
@@ -484,15 +489,20 @@ export async function getKtvSessionMatrix() {
       
       // Determine if this KTV's sessions are confirmed
       const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
-      row.isConfirmed = ktvSessions.length > 0 && ktvSessions.every((s: any) => s.is_confirmed);
+      const salaryRecord = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
+      
+      // Confirmed if sessions are confirmed OR if a salary record exists with pushed total
+      row.isConfirmed = (ktvSessions.length > 0 && ktvSessions.every((s: any) => s.is_confirmed)) || 
+                        (salaryRecord !== undefined && salaryRecord.total_sessions !== null);
       
       packageNames.forEach((pkg: string) => {
         if (hasAnyRealData) {
           row[pkg] = matrix[ktv.id]?.[pkg] || 0;
         } else {
-          // Deterministic mock: Use a hash to ensure the number is stable across refreshes
-          const hash = (ktv.id.length * 7 + pkg.length * 3) % 10;
-          row[pkg] = hash;
+          // Better deterministic mock: unique values per KTV and package
+          const charSum = ktv.name.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+          const pkgSum = pkg.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+          row[pkg] = (charSum + pkgSum * 7) % 12;
         }
       });
       return row;
