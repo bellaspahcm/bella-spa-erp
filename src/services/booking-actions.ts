@@ -58,12 +58,34 @@ export async function getBookingsByCustomerId(customerId: string) {
     return [];
   }
   
-  return (data || []).map((b: any) => ({
-    ...b,
-    package_name: resolvePackageName(b),
-    start_date: ensure2026(b.start_date),
-    expected_birth_date: ensure2026(b.expected_birth_date)
+  if (!data || data.length === 0) return [];
+  
+  // Hardening: Verify session counts match session_logs truth
+  const enrichedData = await Promise.all(data.map(async (b: any) => {
+    const { count, error: countError } = await supabase
+      .from('session_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('booking_id', b.id)
+      .eq('status', 'completed');
+
+    if (!countError && count !== null && count !== b.completed_sessions) {
+      console.log(`Syncing completed_sessions for booking ${b.id}: ${b.completed_sessions} -> ${count}`);
+      await supabase
+        .from('bookings')
+        .update({ completed_sessions: count })
+        .eq('id', b.id);
+      b.completed_sessions = count;
+    }
+
+    return {
+      ...b,
+      package_name: resolvePackageName(b),
+      start_date: ensure2026(b.start_date),
+      expected_birth_date: ensure2026(b.expected_birth_date)
+    };
   }));
+
+  return enrichedData;
 }
 
 import { bookingSchema } from '@/lib/validations';

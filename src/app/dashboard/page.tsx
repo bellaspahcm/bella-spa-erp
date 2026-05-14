@@ -449,7 +449,7 @@ export default function DashboardPage() {
                                 </h3>
                               </div>
                               <Link 
-                                href={`/dashboard/customers/${session.bookings?.customers?.id}`}
+                                href={`/dashboard/customers/${booking?.customers?.id}`}
                                 className="px-3 py-1.5 bg-white border border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 flex items-center gap-2 shrink-0 group/link"
                               >
                                 Chi tiết <ChevronRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 transition-transform" />
