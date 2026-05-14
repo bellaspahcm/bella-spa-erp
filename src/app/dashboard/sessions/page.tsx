@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { 
   Search, 
   Filter, 
@@ -720,7 +721,7 @@ export default function SessionsPage() {
                           <span>Chưa phân công KTV</span>
                         </div>
                         <p className="text-center text-[9px] font-bold text-slate-400 leading-snug">
-                          Vào <span className="text-primary">Chi tiết khách hàng</span> để phân KTV trước khi cập nhật buổi
+                          Vào <Link href={`/dashboard/customers/${booking.customers?.id}`} className="text-primary hover:underline font-black cursor-pointer underline-offset-2">Chi tiết khách hàng</Link> để phân KTV trước khi cập nhật buổi
                         </p>
                       </div>
                     ) : (
