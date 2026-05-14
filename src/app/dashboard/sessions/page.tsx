@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { 
@@ -34,9 +34,11 @@ import { MOCK_BOOKINGS } from '@/constants/mock-data';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 function SessionsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
   const initialBookingId = searchParams.get('bookingId') || '';
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
 
   const [sessions, setSessions] = useState<any[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<any[]>([]);
@@ -84,7 +86,7 @@ function SessionsContent() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedBooking]);
+  }, []); // Remove selectedBooking dependency to prevent reload loop
 
   useEffect(() => {
     if (selectedBooking) {
@@ -127,16 +129,28 @@ function SessionsContent() {
     const data = await getSessionsWithDetails();
     setSessions(data || []);
     applyFilters(data || [], searchQuery, statusFilter);
-    
-    // Auto-select booking if ID provided in URL
-    if (initialBookingId && data) {
-      const target = data.find((s: any) => s.id === initialBookingId);
+    setIsSyncing(false);
+    return data;
+  };
+
+  // Dedicated Effect for Auto-opening from URL - Runs once after first data load
+  useEffect(() => {
+    if (initialBookingId && sessions.length > 0 && !hasAutoOpened) {
+      const target = sessions.find((s: any) => s.id === initialBookingId);
       if (target) {
         setSelectedBooking(target);
+        setHasAutoOpened(true);
       }
     }
-    
-    setIsSyncing(false);
+  }, [initialBookingId, sessions, hasAutoOpened]);
+
+  const handleCloseModal = () => {
+    setSelectedBooking(null);
+    // Clear bookingId from URL without full page reload
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('bookingId');
+    const newPath = params.toString() ? `/dashboard/sessions?${params.toString()}` : '/dashboard/sessions';
+    router.replace(newPath, { scroll: false });
   };
 
   const applyFilters = (data: any[], query: string, status: string) => {
@@ -775,7 +789,7 @@ function SessionsContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setSelectedBooking(null)}
+              onClick={handleCloseModal}
               className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-sm"
             />
             <motion.div 
@@ -818,7 +832,7 @@ function SessionsContent() {
                     <UserCircle className="w-3.5 h-3.5" /> Hồ sơ
                   </Link>
                   <button 
-                    onClick={() => setSelectedBooking(null)}
+                    onClick={handleCloseModal}
                     className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"
                   >
                     <X className="w-6 h-6" />
