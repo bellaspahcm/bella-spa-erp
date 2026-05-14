@@ -379,31 +379,69 @@ export async function getSessionsWithDetails() {
   
   const { MOCK_CUSTOMERS } = await import('@/constants/mock-data');
   
-  return (data || []).map((b: any) => {
+  // Group by booking to calculate missing dates
+  const sessionsByBooking: Record<string, any[]> = {};
+  (data || []).forEach((b: any) => {
+    const logs = b.session_logs || [];
+    logs.forEach((s: any) => {
+      if (!sessionsByBooking[b.id]) sessionsByBooking[b.id] = [];
+      sessionsByBooking[b.id].push({ ...s, _parent_booking: b });
+    });
+  });
+
+  const result: any[] = [];
+  
+  (data || []).forEach((b: any) => {
     const sortedLogs = (b.session_logs || []).sort((a: any, b2: any) => (a.session_number || 0) - (b2.session_number || 0));
-    const nextSession = sortedLogs.find((s: any) => s.status === 'scheduled');
     
-    // Fallback for customer data if join fails
+    // Predictive logic
+    let lastKnownDate = b.start_date;
+    let lastKnownSessionNum = 1;
+
+    const mappedLogs = sortedLogs.map((s: any) => {
+      let finalDate = s.assigned_date;
+      if (!finalDate) {
+        if (lastKnownDate) {
+          const [y, m, d] = lastKnownDate.split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          date.setDate(date.getDate() + (s.session_number - lastKnownSessionNum));
+          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+      }
+      if (finalDate) {
+        lastKnownDate = finalDate;
+        lastKnownSessionNum = s.session_number;
+      }
+      return { ...s, assigned_date: finalDate };
+    });
+
+    const nextSession = mappedLogs.find((s: any) => s.status === 'scheduled');
+    
+    // Fallback for customer data
     let customerData = b.customers;
     if (!customerData && b.customer_id) {
       const mockCustomer = MOCK_CUSTOMERS.find(c => c.id === b.customer_id);
       if (mockCustomer) {
         customerData = {
           name_mother: mockCustomer.name_mother,
+          name_baby: mockCustomer.name_baby,
           phone: mockCustomer.phone
         };
       }
     }
 
-    return {
+    result.push({
       ...b,
+      session_logs: mappedLogs,
       customers: customerData || { name_mother: 'Khách hàng Bella Spa', phone: '---' },
       next_session_date: nextSession?.assigned_date || null,
       start_date: ensure2026(b.start_date),
       end_date: ensure2026(b.end_date),
       expected_birth_date: ensure2026(b.expected_birth_date)
-    };
+    });
   });
+
+  return result;
 }
 
 export async function getCalendarSessions() {
@@ -414,7 +452,7 @@ export async function getCalendarSessions() {
     .from('session_logs')
     .select(`
       *,
-      bookings!inner (
+      bookings (
         *,
         customers (
           name_mother,
@@ -426,24 +464,67 @@ export async function getCalendarSessions() {
         )
       )
     `)
-    .order('assigned_date', { ascending: true });
+    .order('booking_id', { ascending: true })
+    .order('session_number', { ascending: true });
 
   if (error) {
     console.error('Error fetching calendar sessions:', error);
     return [];
   }
   
-  return (data || []).map((s: any) => ({
-    ...s,
-    assigned_date: ensure2026(s.assigned_date),
-    completed_date: ensure2026(s.completed_date),
-    bookings: s.bookings ? {
-      ...s.bookings,
-      package_name: resolvePackageName(s.bookings),
-      start_date: ensure2026(s.bookings.start_date),
-      expected_birth_date: ensure2026(s.bookings.expected_birth_date)
-    } : null
-  }));
+  // Predictive Date Calculation
+  const sessionsByBooking: Record<string, any[]> = {};
+  (data || []).forEach((s: any) => {
+    if (!s.booking_id) return;
+    if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = [];
+    sessionsByBooking[s.booking_id].push(s);
+  });
+
+  const processedSessions: any[] = [];
+
+  Object.values(sessionsByBooking).forEach(bookingSessions => {
+    bookingSessions.sort((a, b) => a.session_number - b.session_number);
+    
+    let lastKnownDate: string | null = null;
+    let lastKnownSessionNum = 0;
+
+    bookingSessions.forEach((s) => {
+      let finalDate = s.assigned_date;
+      
+      if (!finalDate) {
+        if (lastKnownDate) {
+          const [y, m, d] = lastKnownDate.split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          date.setDate(date.getDate() + (s.session_number - lastKnownSessionNum));
+          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        } else if (s.bookings?.start_date) {
+          const [y, m, d] = s.bookings.start_date.split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          date.setDate(date.getDate() + (s.session_number - 1));
+          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+      }
+
+      if (finalDate) {
+        lastKnownDate = finalDate;
+        lastKnownSessionNum = s.session_number;
+      }
+
+      processedSessions.push({
+        ...s,
+        assigned_date: ensure2026(finalDate),
+        completed_date: ensure2026(s.completed_date),
+        bookings: s.bookings ? {
+          ...s.bookings,
+          package_name: resolvePackageName(s.bookings),
+          start_date: ensure2026(s.bookings.start_date),
+          expected_birth_date: ensure2026(s.bookings.expected_birth_date)
+        } : null
+      });
+    });
+  });
+
+  return processedSessions;
 }
 
 export async function updateSessionLog(id: string, payload: any) {
