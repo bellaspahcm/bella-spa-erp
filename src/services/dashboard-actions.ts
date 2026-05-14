@@ -52,7 +52,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     supabase.from('revenue').select('amount').gte('received_date', currentMonthStart).lte('received_date', currentMonthEnd),
     supabase.from('revenue').select('amount').gte('received_date', prevMonthStart).lte('received_date', prevMonthEnd),
     
-    // Ratings
+    // Ratings - fallback to created_at if exists, otherwise assigned_date from sessions if linked
     supabase.from('session_reviews').select('rating').gte('created_at', currentMonthStart).lte('created_at', currentMonthEnd),
     supabase.from('session_reviews').select('rating').gte('created_at', prevMonthStart).lte('created_at', prevMonthEnd)
   ]);
@@ -184,7 +184,7 @@ export async function getMonthlyPerformance() {
     { data: reviewData }
   ] = await Promise.all([
     supabase.from('session_logs').select('assigned_date').gte('assigned_date', sixMonthsAgoStr),
-    supabase.from('revenue').select('amount, created_at').gte('created_at', sixMonthsAgoStr),
+    supabase.from('revenue').select('amount, received_date').gte('received_date', sixMonthsAgoStr),
     supabase.from('expenses').select('amount, expense_date').gte('expense_date', sixMonthsAgoStr),
     supabase.from('session_reviews').select('rating, created_at').gte('created_at', sixMonthsAgoStr)
   ]);
@@ -206,7 +206,7 @@ export async function getMonthlyPerformance() {
 
     // Filter revenue
     const monthRevenue = revenueData?.filter((r: any) => {
-      const rDate = new Date(r.created_at);
+      const rDate = new Date(r.received_date || r.created_at);
       return rDate.getMonth() === monthIndex && rDate.getFullYear() === year;
     }).reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0;
       
@@ -218,6 +218,7 @@ export async function getMonthlyPerformance() {
 
     // Filter ratings
     const monthReviews = reviewData?.filter((r: any) => {
+      if (!r.created_at) return false;
       const rDate = new Date(r.created_at);
       return rDate.getMonth() === monthIndex && rDate.getFullYear() === year;
     }) || [];
@@ -235,7 +236,10 @@ export async function getMonthlyPerformance() {
     });
   }
 
-  if (results.every(r => r.customers === 0 && r.revenue === 0)) {
+  // Only use mock data if there is absolutely no session activity AND no revenue
+  const hasAnyData = results.some(r => r.customers > 0 || r.revenue > 0 || r.expense > 0);
+  
+  if (!hasAnyData) {
     // If absolutely no data, return high-fidelity mock data for demo
     return [
       { name: 'T12', customers: 45, revenue: 85.5, expense: 62.0, rating: 4.8 },

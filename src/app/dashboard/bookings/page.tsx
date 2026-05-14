@@ -479,7 +479,6 @@ function BookingsContent() {
                         ktvId: session.bookings?.assigned_ktv_id,
                         location: session.bookings?.customers?.address || 'Tại Spa',
                         sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
-                        sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 21} buổi`,
                         originalStatus: session.status,
                         originalDateString: session.assigned_date,
                         status: session.status,

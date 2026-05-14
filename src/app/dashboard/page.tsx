@@ -440,12 +440,21 @@ export default function DashboardPage() {
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-col mb-4">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Khách hàng</span>
-                              <h3 className="font-bold text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
-                                Mẹ: {customerName}
-                                {babyName && <span className="text-rose-400 font-medium ml-2">- Bé: {babyName}</span>}
-                              </h3>
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Khách hàng</span>
+                                <h3 className="font-bold text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
+                                  Mẹ: {customerName}
+                                  {babyName && <span className="text-rose-400 font-medium ml-2">- Bé: {babyName}</span>}
+                                </h3>
+                              </div>
+                              <Link 
+                                href={`/dashboard/customers/${session.bookings?.customers?.id}`}
+                                className="px-3 py-1.5 bg-white border border-slate-200 text-slate-400 hover:text-primary hover:border-primary/30 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 flex items-center gap-2 shrink-0 group/link"
+                              >
+                                Chi tiết <ChevronRight className="w-3.5 h-3.5 group-hover/link:translate-x-0.5 transition-transform" />
+                              </Link>
+                            </div>
                               <div className="mt-1.5 flex items-center gap-3">
                                 <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider">
                                   KTV
@@ -457,8 +466,7 @@ export default function DashboardPage() {
                                   {technicianName}
                                 </span>
                               </div>
-                            </div>
-
+                            
                             {/* Badge Row - Cleaned up */}
                             <div className="flex flex-wrap items-center gap-2 mb-6">
                               <div className={cn(
