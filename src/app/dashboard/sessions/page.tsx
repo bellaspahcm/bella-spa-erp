@@ -184,17 +184,12 @@ export default function SessionsPage() {
         
         // Kiểm tra lỗi từ server action
         if (result && 'error' in result && result.error) {
-          // Rollback optimistic update
-          setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: prevCount }));
           setToastMessage('❌ ' + result.error);
           setShowToast(true);
           setTimeout(() => setShowToast(false), 6000);
           return;
         }
 
-        // Server xác nhận thành công
-        setLocalSessionLogUpdates(prev => ({ ...prev, [nextSession.id]: 'completed' }));
-        
         // Reset quick note
         setQuickNoteValue('');
         setQuickNoteBookingId(null);
@@ -208,15 +203,11 @@ export default function SessionsPage() {
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
       } else {
-        // Không có session nào để cập nhật, rollback
-        setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: prevCount }));
         setToastMessage('Không tìm thấy buổi tập nào để cập nhật.');
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
       }
     } catch (error: any) {
-      // Rollback optimistic update khi có lỗi bất ngờ
-      setLocalBookingUpdates(prev => ({ ...prev, [bookingId]: prevCount }));
       console.error('Update failed:', error);
       setToastMessage('Lỗi hệ thống: ' + (error.message || 'Không rõ nguyên nhân'));
       setShowToast(true);
