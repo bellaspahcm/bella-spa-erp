@@ -118,6 +118,16 @@ export async function approveSalary(ktvId: string) {
       .select('id')
       .eq('completed_by_ktv_id', ktvId)
       .eq('status', 'completed');
+    
+    const ktvSessions = sessions?.length || 0;
+
+    // 3. Get/Calculate salary details
+    const { data: existing } = await supabase
+      .from('salary_records')
+      .select('*')
+      .eq('ktv_id', ktvId)
+      .eq('month_year', monthYear)
+      .single();
 
     const baseSalary = existing?.base_salary || 6000000;
     const sessionBonus = ktvSessions * 150000;
