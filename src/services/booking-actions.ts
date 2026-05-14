@@ -501,6 +501,7 @@ export async function getCalendarSessions() {
       bookings (
         *,
         customers (
+          id,
           name_mother,
           name_baby,
           address

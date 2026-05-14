@@ -244,6 +244,25 @@ export async function getCustomerById(id: string) {
 
     // Map database structure to UI structure
     const latestBooking = bookings && bookings.length > 0 ? bookings[0] : null;
+
+    // Hardening: Verify session counts match session_logs truth if booking exists
+    if (latestBooking) {
+      const { count, error: countError } = await supabase
+        .from('session_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('booking_id', latestBooking.id)
+        .eq('status', 'completed');
+
+      if (!countError && count !== null && count !== latestBooking.completed_sessions) {
+        console.log(`Syncing completed_sessions for customer booking ${latestBooking.id}: ${latestBooking.completed_sessions} -> ${count}`);
+        await supabase
+          .from('bookings')
+          .update({ completed_sessions: count })
+          .eq('id', latestBooking.id);
+        latestBooking.completed_sessions = count;
+      }
+    }
+
     const isFullyPaid = latestBooking && (latestBooking.deposit_amount || 0) >= (latestBooking.full_price || 0);
     
     return {

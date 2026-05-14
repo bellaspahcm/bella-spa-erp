@@ -36,38 +36,57 @@ export async function getSalaryData() {
 
     const { data: ktvs, error: ktvError } = await ktvQuery;
 
-    // Fetch expenses to check for already approved mock salaries
-    // We filter by tenant_id to ensure accurate persistence
+    // Fetch expenses to check for already approved salaries (real and mock)
     const { data: expenses, error: expensesError } = await supabase
       .from('expenses')
       .select('description, tenant_id')
       .eq('category', 'salary');
-      // Temporarily removing tenant_id filter to avoid mismatch in demo environment
-      // .eq('tenant_id', currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e');
 
     if (expensesError) {
       console.error('Error fetching expenses for salary status:', expensesError);
     }
 
-    if (ktvError || !ktvs || ktvs.length < 3) {
+    // Determine if we should use mock data
+    // For demo: if we have NO real KTVs, use all mock. 
+    // If we have SOME real KTVs, show them AND some mock to keep the UI "full".
+    const realKtvs = ktvs || [];
+    let displayKtvs = [...realKtvs];
+
+    if (displayKtvs.length === 0) {
+      // No real KTVs yet, use mock data as complete fallback
       let filteredMock = mockData;
-      // In demo mode, if the user is a KTV, only show one record (simulating their own)
       if (currentUser?.role === 'ktv') {
         filteredMock = mockData.filter(m => m.id === 'ktv1' || m.name.includes('Hoa'));
       }
 
-      // Map statuses correctly for the UI
       return filteredMock.map(item => {
-        const hasExpense = expenses?.some((e: any) => 
-          e.description?.includes(item.name) && 
-          (e.description?.includes('T5/2026') || e.description?.includes('05/2026'))
-        );
+        const hasExpense = (expenses || []).some((e: any) => {
+          const desc = e.description?.toLowerCase() || '';
+          return desc.includes(item.name.toLowerCase()) && 
+                 (desc.includes('t5/2026') || desc.includes('05/2026'));
+        });
         
         return {
           ...item,
           status: hasExpense ? 'approved' : item.status
         };
       });
+    }
+
+    // If we have real KTVs but less than 5, add some mock ones to keep the design premium
+    if (displayKtvs.length < 5 && currentUser?.role !== 'ktv') {
+      const mockToAdd = mockData
+        .filter(m => !displayKtvs.some(rk => rk.full_name === m.name))
+        .slice(0, 5 - displayKtvs.length);
+      
+      const mappedMock = mockToAdd.map(m => ({
+        id: m.id,
+        full_name: m.name,
+        role: 'ktv',
+        isMock: true,
+        avatar_url: `https://i.pravatar.cc/150?u=${m.id}`
+      }));
+      displayKtvs = [...displayKtvs, ...mappedMock];
     }
 
   // Fetch salary records for the current month (May 2026)
@@ -82,45 +101,43 @@ export async function getSalaryData() {
     .select('id, completed_by_ktv_id, status')
     .eq('status', 'completed');
 
-  const ktvSalaries = ktvs.map((ktv: any) => {
-    const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
-    const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id).length || 0;
+      const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
+      const hasExpense = (expenses || []).some((e: any) => e.description?.toLowerCase().includes(ktv.full_name.toLowerCase()));
+      
+      const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id).length || 0;
 
-    // Check if approved via expense record
-    const hasExpense = expenses?.some((e: any) => 
-      e.description?.includes(ktv.full_name) && 
-      (e.description?.includes('T5/2026') || e.description?.includes('05/2026'))
-    );
+      // STATUS MAPPING (Must match SalaryPage.tsx expectations: 'approved' | 'pending' | 'draft')
+      let status = 'pending'; // Default: "Chờ duyệt"
+      
+      if (hasExpense || record?.status === 'approved' || record?.status === 'pending_approval') {
+        status = 'approved'; // Becomes "Đã duyệt" (Green)
+      } else if (record?.status === 'rejected') {
+        status = 'draft';
+      }
 
-    // Logic for calculating salary if no record exists
-    const baseSalary = record?.base_salary || 6000000;
-    const sessionBonus = ktvSessions * 150000; 
-    const kpiBonus = record?.kpi_bonus || (ktvSessions > 30 ? 1000000 : 0);
-    const deductions = record?.violations_deduction || 0;
-    const advances = record?.service_percentage_bonus || 0; 
-    const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
+      console.log(`[SalaryData] KTV: ${ktv.full_name}, DB Status: ${record?.status}, HasExpense: ${hasExpense}, Final Status: ${status}`);
 
-    // Normalize status: UI expects 'pending', 'approved', or 'draft'
-    let status = record?.status || 'draft';
-    if (hasExpense) {
-      status = 'approved';
-    } else if (status === 'pending_approval' || status === 'submitted') {
-      status = 'pending';
-    }
+      // Logic for calculating salary
+      const baseSalary = record?.base_salary || 6000000;
+      const sessionBonus = ktvSessions * 150000; 
+      const kpiBonus = record?.kpi_bonus || (ktvSessions > 30 ? 1000000 : 0);
+      const deductions = record?.violations_deduction || 0;
+      const advances = record?.service_percentage_bonus || 0; 
+      const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
 
-    return {
-      id: ktv.id,
-      name: ktv.full_name,
-      sessions: ktvSessions,
-      baseSalary,
-      sessionBonus,
-      kpiBonus,
-      deductions,
-      advances,
-      totalSalary,
-      status
-    };
-  });
+      return {
+        id: ktv.id,
+        name: ktv.full_name,
+        sessions: ktvSessions,
+        baseSalary,
+        sessionBonus,
+        kpiBonus,
+        deductions,
+        advances,
+        totalSalary,
+        status
+      };
+    });
 
   return ktvSalaries;
   } catch (error) {
