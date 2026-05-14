@@ -27,11 +27,13 @@ import {
   Trash2,
   MessageCircle,
   ClipboardList,
-  ChevronDown
+  ChevronDown,
+  ShieldCheck
 } from 'lucide-react';
 
 import { MOCK_CUSTOMERS } from '@/constants/mock-data';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/customer-actions';
+import { getCurrentUser } from '@/services/user-actions';
 
 
 
@@ -69,7 +71,20 @@ export default function CustomersPage() {
     gender_baby: 'unknown'
   });
 
+  const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
+
   useEffect(() => {
+    async function checkRole() {
+      const user = await getCurrentUser();
+      if (user?.role) {
+        setUserRole(user.role as any);
+      }
+    }
+    checkRole();
+  }, []);
+
+  useEffect(() => {
+
     loadCustomers();
   }, []);
 
@@ -342,7 +357,7 @@ export default function CustomersPage() {
                    customer.status === 'deposit' ? 'Chờ sinh (Đã cọc)' : 
                    'Tiềm năng'}
                 </span>
-                {customer.deposit_amount && (
+                {customer.deposit_amount && userRole === 'admin' && (
                   <span className={cn(
                     "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
                     customer.is_fully_paid ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"

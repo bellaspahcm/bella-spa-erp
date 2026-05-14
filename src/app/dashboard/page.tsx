@@ -54,6 +54,7 @@ import {
 import { completeSession, saveSessionNote } from '@/services/booking-actions';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
+import { getCurrentUser } from '@/services/user-actions';
 
 import { 
   MOCK_DASHBOARD_STATS, 
@@ -104,6 +105,17 @@ export default function DashboardPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');
+  const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
+
+  useEffect(() => {
+    async function checkRole() {
+      const user = await getCurrentUser();
+      if (user?.role) {
+        setUserRole(user.role as any);
+      }
+    }
+    checkRole();
+  }, []);
 
   const getMonthRange = (month: number, year: number) => {
     // Manually construct YYYY-MM-DD to avoid timezone shifts from .toISOString()
@@ -128,7 +140,7 @@ export default function DashboardPage() {
       setStats([
         { label: 'Tổng khách hàng', value: statsData.totalCustomers.value, trend: statsData.totalCustomers.trend, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
         { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings.value, trend: statsData.todayBookings.trend, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-        { label: 'Doanh thu tháng', value: statsData.totalRevenue.value, trend: statsData.totalRevenue.trend, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: statsData.totalRevenue.value, trend: statsData.totalRevenue.trend, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
         { label: 'Đánh giá KTV', value: statsData.avgRating.value, trend: statsData.avgRating.trend, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
       ]);
       
@@ -223,7 +235,7 @@ export default function DashboardPage() {
           <h1 className="text-4xl font-bold text-foreground tracking-tight uppercase">Dashboard</h1>
           <p className="text-muted-foreground font-semibold mt-1 flex items-center gap-2">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-            Chào buổi sáng, Bella Spa Admin!
+            Chào buổi sáng, Bella Spa {userRole === 'admin' ? 'Admin' : 'KTV'}!
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
@@ -668,66 +680,70 @@ export default function DashboardPage() {
               </div>
             </div>
             
-            <Link 
-              href="/dashboard/finance"
-              className="w-full py-4 bg-white/10 hover:bg-white text-white hover:text-primary border border-white/20 hover:border-white rounded-2xl font-black transition-all duration-300 backdrop-blur-md uppercase tracking-widest text-[10px] active:scale-95 flex items-center justify-center gap-3 shadow-lg group/btn"
-            >
-              <span>Chi tiết báo cáo</span>
-              <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-            </Link>
+            {userRole === 'admin' && (
+              <Link 
+                href="/dashboard/finance"
+                className="w-full py-4 bg-white/10 hover:bg-white text-white hover:text-primary border border-white/20 hover:border-white rounded-2xl font-black transition-all duration-300 backdrop-blur-md uppercase tracking-widest text-[10px] active:scale-95 flex items-center justify-center gap-3 shadow-lg group/btn"
+              >
+                <span>Chi tiết báo cáo</span>
+                <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+              </Link>
+            )}
             
             <div className="absolute top-[-10%] right-[-10%] w-72 h-72 bg-white/10 rounded-full blur-[100px]"></div>
           </motion.div>
 
           {/* Revenue & Expense Chart (Moved to Sidebar) */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 }}
-            className="glass-pink luxury-box-hover rounded-[3rem] p-8 shadow-sm border border-white relative overflow-hidden h-[400px]"
-          >
-            <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-emerald-400/30 via-primary/30 to-rose-400/30" />
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-emerald-600" />
+          {userRole === 'admin' && (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+              className="glass-pink luxury-box-hover rounded-[3rem] p-8 shadow-sm border border-white relative overflow-hidden h-[400px]"
+            >
+              <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-emerald-400/30 via-primary/30 to-rose-400/30" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <h2 className="text-lg font-bold text-foreground uppercase tracking-tight">Tài chính</h2>
                 </div>
-                <h2 className="text-lg font-bold text-foreground uppercase tracking-tight">Tài chính</h2>
               </div>
-            </div>
-            
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={performanceData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#888', fontSize: 10, fontWeight: 700 }}
-                  />
-                  <YAxis 
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#888', fontSize: 10, fontWeight: 700 }}
-                    unit="tr"
-                  />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(0,0,0,0.02)' }}
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                      borderRadius: '1rem', 
-                      border: 'none',
-                      boxShadow: '0 10px 20px -5px rgba(0, 0, 0, 0.1)',
-                      fontSize: '10px'
-                    }}
-                  />
-                  <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
-                  <Bar dataKey="expense" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={20} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
+              
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={performanceData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#888', fontSize: 10, fontWeight: 700 }}
+                    />
+                    <YAxis 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: '#888', fontSize: 10, fontWeight: 700 }}
+                      unit="tr"
+                    />
+                    <Tooltip 
+                      cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                        borderRadius: '1rem', 
+                        border: 'none',
+                        boxShadow: '0 10px 20px -5px rgba(0, 0, 0, 0.1)',
+                        fontSize: '10px'
+                      }}
+                    />
+                    <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
+                    <Bar dataKey="expense" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={20} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
+          )}
 
           {/* Rating Chart (Moved to Sidebar) */}
           <motion.div 
