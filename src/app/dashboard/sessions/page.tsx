@@ -665,7 +665,7 @@ export default function SessionsPage() {
                           <span>Chưa phân công KTV</span>
                         </div>
                         <p className="text-center text-[9px] font-bold text-slate-400 leading-snug">
-                          Vào <Link href={`/dashboard/customers/${booking.customers?.id}`} className="text-primary hover:underline font-black cursor-pointer underline-offset-2">Chi tiết khách hàng</Link> để phân KTV trước khi cập nhật buổi
+                          Vào <Link href={`/dashboard/customers/${booking.customers?.id}?bookingId=${booking.id}`} className="text-primary hover:underline font-black cursor-pointer underline-offset-2">Chi tiết khách hàng</Link> để phân KTV trước khi cập nhật buổi
                         </p>
                       </div>
                     ) : (
@@ -770,6 +770,12 @@ export default function SessionsPage() {
                     {userRole === 'ADMIN' ? <ShieldCheck className="w-3 h-3" /> : <UserCircle className="w-3 h-3" />}
                     Quyền: {userRole}
                   </div>
+                  <Link
+                    href={`/dashboard/customers/${selectedBooking.customers?.id}?bookingId=${selectedBooking.id}`}
+                    className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-pink-100 active:scale-95 flex items-center gap-2"
+                  >
+                    <UserCircle className="w-3.5 h-3.5" /> Hồ sơ
+                  </Link>
                   <button 
                     onClick={() => setSelectedBooking(null)}
                     className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"

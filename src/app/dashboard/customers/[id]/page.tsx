@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -43,6 +43,8 @@ export default function CustomerDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const searchParams = useSearchParams();
+  const targetBookingId = searchParams.get('bookingId');
   const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -89,14 +91,35 @@ export default function CustomerDetailPage() {
                     data.gender_baby === 'girl' ? 'Bé Gái' : 
                     'Chưa xác định'
           },
-          sessions: data.sessions || []
+          sessions: data.sessions || [],
+          allBookings: bookings || []
         });
         
         if (bookings && bookings.length > 0) {
-          // Sort to get the most relevant one (active or most recent)
+          // 1. If targetBookingId exists in URL, try to find it first
+          if (targetBookingId) {
+            const found = bookings.find(b => b.id === targetBookingId);
+            if (found) {
+              setActiveBooking(found);
+              return;
+            }
+          }
+
+          // 2. Default Sort to get the most relevant one
           const sorted = [...bookings].sort((a, b) => {
-            if (a.status === 'active' && b.status !== 'active') return -1;
-            if (b.status === 'active' && a.status !== 'active') return 1;
+            // Prioritize active/booked/in_progress over others
+            const priority = (s: string) => {
+              if (s === 'active' || s === 'in_progress') return 0;
+              if (s === 'booked') return 1;
+              if (s === 'deposit_pending') return 2;
+              if (s === 'completed') return 3;
+              return 4;
+            };
+
+            const pA = priority(a.status);
+            const pB = priority(b.status);
+
+            if (pA !== pB) return pA - pB;
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
           });
           setActiveBooking(sorted[0]);
@@ -110,7 +133,7 @@ export default function CustomerDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, targetBookingId]);
 
   async function fetchKtvs() {
     try {
@@ -427,6 +450,34 @@ export default function CustomerDetailPage() {
               </div>
             ))}
           </div>
+
+          {customer.allBookings?.length > 1 && (
+            <div className="bg-white rounded-[2.5rem] p-6 shadow-lg border border-primary/10 mb-8">
+              <div className="flex items-center justify-between mb-4 px-2">
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Chọn gói liệu trình đang xem</p>
+                <span className="px-3 py-1 bg-primary/5 text-primary text-[9px] font-black rounded-full uppercase">
+                  Có {customer.allBookings.length} gói dịch vụ
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {customer.allBookings.map((b: any) => (
+                  <button
+                    key={b.id}
+                    onClick={() => setActiveBooking(b)}
+                    className={cn(
+                      "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border",
+                      activeBooking?.id === b.id 
+                        ? "bg-primary text-white border-primary shadow-lg shadow-pink-100" 
+                        : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/30"
+                    )}
+                  >
+                    {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')} 
+                    <span className="ml-2 opacity-60">({b.status})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="luxury-card-pink rounded-[3rem] p-8 relative shadow-2xl group">
             {/* Background Decorative Layer - Clipped */}

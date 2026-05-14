@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 1.5  
-**Last Updated:** 2026-05-14  
-**Status:** Implementation Phase (Phase 12: Customer Portal & Rating Integration)
+**Version:** 1.6  
+**Last Updated:** 2026-05-14 (18:15)  
+**Status:** Implementation Phase (Phase 13: Data Integrity & Multi-Booking Context)
 
 ---
 
@@ -578,14 +578,21 @@ t:** [Your contact info]
 - [x] **Automated Evaluation Trigger**: Implemented auto-creation of `pending_review` records upon session completion in `booking-actions.ts`.
 - [x] **Performance-Based Bonus Engine**: Updated salary management to calculate monthly bonuses based on average customer ratings (e.g., 5.0⭐ = +50k).
 - [x] **Transparent Compensation UI**: Added rating and bonus columns to the KTV salary table for full visibility.
++ 
++ #### ✅ Phase 13: Data Integrity & Multi-Booking Context (May 14, 2026)
++ - [x] **"Single Active Booking" Logic**: Enforced selection of primary active records in the UI to prevent data divergence when multiple bookings exist.
++ - [x] **Booking Context Navigation**: Updated dashboard and session links to pass `bookingId`, ensuring consistency when a customer has multiple packages.
++ - [x] **Booking Switcher UI**: Added a dedicated selection interface in the Customer Detail view to allow manual switching between historical or concurrent packages.
++ - [x] **Refined Status Sorting**: Prioritized `active`, `in_progress`, and `booked` statuses in data fetching to suppress ambiguity from legacy or deposit records.
 
 #### ⏭ Next Steps
-- [ ] **Zalo OA Integration**: Automate evaluation reminder notifications via Zalo when a session is marked as completed.
-- [ ] **Staff Performance Analytics**: Build a management dashboard to visualize rating trends and KTV productivity metrics.
-- [ ] **Advanced Database Triggers**: Migrate financial balance calculations and status synchronization to Postgres triggers.
+- [ ] **Zalo OA Integration**: Automate evaluation reminder notifications via Zalo khi hoàn thành buổi (Phase 2).
+- [ ] **Staff Performance Analytics**: Xây dựng biểu đồ xu hướng đánh giá và năng suất KTV.
+- [ ] **Advanced Database Triggers**: Di chuyển logic tính toán số dư tài chính sang Postgres Triggers.
+- [ ] **Archived Records Logic**: Tự động chuyển các booking cũ sang trạng thái archived khi phát hiện trùng lặp.
 
 ---
-**Last Updated:** May 14, 2026 (17:35)
+**Last Updated:** May 14, 2026 (18:15)
 
 
 ## 🛠️ TROUBLESHOOTING & BEST PRACTICES (LESSONS LEARNED)
@@ -631,6 +638,13 @@ t:** [Your contact info]
     - **Sticky Header**: Bắt buộc sử dụng `sticky top-0 z-10` kèm `backdrop-blur` cho hàng tiêu đề (`thead`) của các bảng danh sách lớn.
     - **Column Constraints**: Sử dụng `min-w-[...]` cho các cột chứa text dài (như Tên KTV, Tên khách hàng) và `whitespace-nowrap` cho các cột chứa số liệu tài chính để đảm bảo tính dễ đọc.
     - **Horizontal Scroll**: Luôn bao bọc bảng trong một container `overflow-x-auto` để hỗ trợ hiển thị tốt trên mọi kích thước màn hình.
++ 
++ ### 7. Cross-Page Data Consistency
++ *   **Vấn đề**: Khi một khách hàng có nhiều booking (ví dụ: 1 gói cũ hoàn thành và 1 gói mới), việc chuyển hướng chung đến `/dashboard/customers/[id]` gây ra sự mơ hồ về gói dữ liệu đang xem.
++ *   **Quy tắc**:
++     - **Booking Context**: Luôn đính kèm `bookingId` vào query params khi điều hướng đến hồ sơ khách hàng từ các thành phần liên quan đến session (`/dashboard/customers/[id]?bookingId=[ID]`).
++     - **Explicit Switcher**: Trong trang chi tiết, nếu phát hiện nhiều hơn 1 bản ghi booking, phải hiển thị UI Switcher để người dùng tự do chuyển đổi giữa các gói, tránh hiển thị thông tin sai lệch.
++     - **Sorting Priority**: Khi không có `bookingId` cụ thể, logic mặc định phải ưu tiên `active` > `in_progress` > `booked` > `deposit_pending` > `completed`.
 
 ---
 
@@ -646,10 +660,15 @@ t:** [Your contact info]
 - **Rating System**: 5-star evaluation for each completed session.
 - **KTV Bonus Logic**: Automated monthly bonus calculation based on average rating.
 - **Notifications**: Evaluation reminders on completion.
++ 
++ ### PHASE 13: Data Integrity & Multi-Booking Context
++ - **Booking Context**: Pass bookingId through navigation links.
++ - **Booking Switcher**: UI for switching between concurrent treatment packages.
++ - **Status Hardening**: Refined sorting and filtering for active records.
 
 ---
 
-**Document Version:** 1.5  
-**Last Updated:** 2026-05-14  
-**Status:** Implementation Phase  
+**Document Version:** 1.6  
+**Last Updated:** 2026-05-14 (18:15)  
+**Status:** Implementation Phase (Phase 13)  
 **Contact:** Bella Spa ERP Dev Team
