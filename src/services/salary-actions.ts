@@ -5,12 +5,12 @@ import { ensure2026 } from '@/lib/utils';
 
 export async function getSalaryData() {
   const mockData = [
-    { id: 'ktv1', name: 'Nguyễn Thị Hoa', sessions: 52, baseSalary: 7000000, sessionBonus: 7800000, kpiBonus: 2500000, deductions: 0, advances: 0, totalSalary: 17300000, status: 'approved' },
-    { id: 'ktv2', name: 'Lê Thu Hà', sessions: 45, baseSalary: 6500000, sessionBonus: 6750000, kpiBonus: 1800000, deductions: 200000, advances: 500000, totalSalary: 14350000, status: 'pending' },
-    { id: 'ktv3', name: 'Phạm Minh Tuyết', sessions: 38, baseSalary: 6000000, sessionBonus: 5700000, kpiBonus: 1500000, deductions: 0, advances: 0, totalSalary: 13200000, status: 'pending' },
+    { id: 'ktv1', name: 'Nguyễn Thị Hoa', sessions: 52, baseSalary: 7000000, sessionBonus: 7800000, kpiBonus: 2500000, deductions: 0, advances: 0, totalSalary: 17300000, status: 'draft' },
+    { id: 'ktv2', name: 'Lê Thu Hà', sessions: 45, baseSalary: 6500000, sessionBonus: 6750000, kpiBonus: 1800000, deductions: 200000, advances: 500000, totalSalary: 14350000, status: 'draft' },
+    { id: 'ktv3', name: 'Phạm Minh Tuyết', sessions: 38, baseSalary: 6000000, sessionBonus: 5700000, kpiBonus: 1500000, deductions: 0, advances: 0, totalSalary: 13200000, status: 'draft' },
     { id: 'ktv4', name: 'Trần Thị Thanh', sessions: 42, baseSalary: 6000000, sessionBonus: 6300000, kpiBonus: 1600000, deductions: 100000, advances: 1000000, totalSalary: 12800000, status: 'draft' },
     { id: 'ktv5', name: 'Hoàng Ngọc Mai', sessions: 31, baseSalary: 6000000, sessionBonus: 4650000, kpiBonus: 1000000, deductions: 0, advances: 0, totalSalary: 11650000, status: 'draft' },
-    { id: 'ktv6', name: 'Đặng Thùy Chi', sessions: 48, baseSalary: 6500000, sessionBonus: 7200000, kpiBonus: 2000000, deductions: 0, advances: 0, totalSalary: 15700000, status: 'approved' },
+    { id: 'ktv6', name: 'Đặng Thùy Chi', sessions: 48, baseSalary: 6500000, sessionBonus: 7200000, kpiBonus: 2000000, deductions: 0, advances: 0, totalSalary: 15700000, status: 'draft' },
     { id: 'ktv7', name: 'Võ Thị Bích', sessions: 35, baseSalary: 6000000, sessionBonus: 5250000, kpiBonus: 1200000, deductions: 0, advances: 0, totalSalary: 12450000, status: 'draft' },
     { id: 'ktv8', name: 'Ngô Diễm My', sessions: 29, baseSalary: 6000000, sessionBonus: 4350000, kpiBonus: 800000, deductions: 50000, advances: 200000, totalSalary: 10900000, status: 'draft' },
   ];
@@ -35,10 +35,12 @@ export async function getSalaryData() {
     const { data: ktvs, error: ktvError } = await ktvQuery;
 
     // Fetch expenses to check for already approved mock salaries
+    // We filter by tenant_id to ensure accurate persistence
     const { data: expenses } = await supabase
       .from('expenses')
-      .select('description')
-      .eq('category', 'Lương nhân viên');
+      .select('description, tenant_id')
+      .eq('category', 'Lương nhân viên')
+      .eq('tenant_id', currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805');
 
     if (ktvError || !ktvs || ktvs.length < 3) {
       let filteredMock = mockData;
@@ -61,7 +63,8 @@ export async function getSalaryData() {
     const { data: salaryRecords, error: salaryError } = await supabase
       .from('salary_records')
       .select('*')
-      .eq('month_year', '2026-05-01');
+      .eq('month_year', '2026-05-01')
+      .eq('tenant_id', currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805');
 
     // Fetch completed sessions to calculate real-time stats
     const { data: sessions, error: sessionsError } = await supabase
@@ -114,29 +117,33 @@ export async function approveSalary(ktvId: string) {
       console.log('Using mock salary approval logic for ID:', ktvId);
       const ktvName = ktvId === 'ktv1' ? 'Nguyễn Thị Hoa' : (ktvId === 'ktv2' ? 'Lê Thu Hà' : 'Phạm Minh Tuyết');
       
+      const { getCurrentUser } = await import('./user-actions');
+      const currentUser = await getCurrentUser();
+      const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+
       const { error: mockExpenseError } = await supabase.from('expenses').insert({
         amount: 8000000, 
         category: 'Lương nhân viên',
         description: `Thanh toán lương T5/2026 - KTV ${ktvName}`,
         status: 'submitted',
-        expense_date: new Date().toISOString()
+        expense_date: new Date().toISOString(),
+        tenant_id: tenantId
       });
 
       if (mockExpenseError) {
         console.error('Mock expense insert failed:', mockExpenseError);
-        // If the table doesn't exist or RLS blocks it, we still return success for UI demo
       }
 
       const { revalidatePath } = await import('next/cache');
-      revalidatePath('/dashboard/finance');
       revalidatePath('/dashboard/salary');
+      revalidatePath('/dashboard/finance');
       return { success: true };
     }
 
     // 1. Get KTV info for description
     const { data: ktv } = await supabase
       .from('users')
-      .select('full_name')
+      .select('full_name, tenant_id')
       .eq('id', ktvId)
       .single();
 
@@ -164,6 +171,10 @@ export async function approveSalary(ktvId: string) {
     const advances = existing?.service_percentage_bonus || 0;
     const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
 
+    const { getCurrentUser } = await import('./user-actions');
+    const currentUser = await getCurrentUser();
+    const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+
     // 4. Update or Insert salary record
     if (existing) {
       const { error: updateError } = await supabase
@@ -182,13 +193,18 @@ export async function approveSalary(ktvId: string) {
           kpi_bonus: kpiBonus,
           violations_deduction: deductions,
           service_percentage_bonus: advances,
-          status: 'approved'
+          status: 'approved',
+          tenant_id: tenantId
         }]);
       
       if (insertError) throw insertError;
     }
 
     // 5. Create expense record in Finance dashboard
+    const { getCurrentUser } = await import('./user-actions');
+    const currentUser = await getCurrentUser();
+    const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+
     const { error: expenseError } = await supabase
       .from('expenses')
       .insert({
@@ -196,7 +212,8 @@ export async function approveSalary(ktvId: string) {
         category: 'Lương nhân viên',
         description: `Thanh toán lương T5/2026 - KTV ${ktv?.full_name || 'Nhân viên'}`,
         status: 'submitted', // Will appear as "Chờ duyệt" in Finance
-        expense_date: new Date().toISOString()
+        expense_date: new Date().toISOString(),
+        tenant_id: tenantId
       });
 
     if (expenseError) {
@@ -228,6 +245,10 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
     .eq('month_year', monthYear)
     .single();
 
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id || '46c75ad7-416d-48ef-9386-25cd6a4d4805';
+
   if (existing) {
     const { error } = await supabase
       .from('salary_records')
@@ -251,7 +272,8 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
         kpi_bonus: payload.kpiBonus,
         violations_deduction: payload.deductions,
         service_percentage_bonus: payload.advances,
-        status: 'draft'
+        status: 'draft',
+        tenant_id: tenantId
       }]);
 
     if (error) return { success: false, error: error.message };
