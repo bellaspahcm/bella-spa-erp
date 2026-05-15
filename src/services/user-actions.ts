@@ -119,9 +119,9 @@ export async function createUser(formData: any) {
 
   // Record Audit Log
   await recordAuditLog({
-    action: 'CREATE',
-    module: 'STAFF',
-    target_id: data.id,
+    action: 'INSERT',
+    table_name: 'users',
+    record_id: data.id,
     new_data: { 
       full_name: formData.full_name, 
       email: formData.email, 
@@ -149,8 +149,8 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   // Record Audit Log
   await recordAuditLog({
     action: 'UPDATE',
-    module: 'STAFF',
-    target_id: id,
+    table_name: 'users',
+    record_id: id,
     new_data: { status }
   });
 
