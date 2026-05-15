@@ -120,19 +120,17 @@ export async function getTopTechnicians() {
     const supabase = (await createClient()) as any;
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
-    if (!tenantId) return [];
 
-    const [ktvRes, sessionRes, reviewRes] = await Promise.all([
-      // KTV users
-      supabase.from('users').select('id, full_name')
-        .eq('role', 'ktv').eq('tenant_id', tenantId),
-      // Completed sessions per KTV (via completed_by_ktv_id)
-      supabase.from('session_logs').select('completed_by_ktv_id')
-        .eq('tenant_id', tenantId).eq('status', 'completed'),
-      // Reviews per KTV
-      supabase.from('session_reviews').select('ktv_id, rating')
-        .eq('tenant_id', tenantId)
-    ]);
+    // Build queries — apply tenant filter only when available
+    let ktvQ = supabase.from('users').select('id, full_name').eq('role', 'ktv');
+    let sessQ = supabase.from('session_logs').select('completed_by_ktv_id').eq('status', 'completed');
+    let revQ = supabase.from('session_reviews').select('ktv_id, rating');
+    if (tenantId) {
+      ktvQ = ktvQ.eq('tenant_id', tenantId);
+      sessQ = sessQ.eq('tenant_id', tenantId);
+      revQ = revQ.eq('tenant_id', tenantId);
+    }
+    const [ktvRes, sessionRes, reviewRes] = await Promise.all([ktvQ, sessQ, revQ]);
 
     // Aggregate session counts
     const sessionCount: Record<string, number> = {};
@@ -182,7 +180,6 @@ export async function getMonthlyPerformance() {
     const supabase = (await createClient()) as any;
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
-    if (!tenantId) return [];
 
     // Build last 6 months
     const now = new Date();
@@ -194,23 +191,30 @@ export async function getMonthlyPerformance() {
       const end = mo === 12 ? `${y + 1}-01-01` : `${y}-${String(mo + 1).padStart(2, '0')}-01`;
       return { label: `T${mo}`, start, end };
     });
-
     const rangeStart = months[0].start;
-    const rangeEnd = months[months.length - 1].end;
+    const rangeEnd   = months[months.length - 1].end;
 
     const [revData, expData, reviewData, customerData] = await Promise.all([
-      supabase.from('revenue').select('amount, received_date')
-        .eq('tenant_id', tenantId).eq('status', 'confirmed')
-        .gte('received_date', rangeStart).lt('received_date', rangeEnd),
-      supabase.from('expenses').select('amount, expense_date')
-        .eq('tenant_id', tenantId)
-        .gte('expense_date', rangeStart).lt('expense_date', rangeEnd),
-      supabase.from('session_reviews').select('rating, created_at')
-        .eq('tenant_id', tenantId)
-        .gte('created_at', rangeStart).lt('created_at', rangeEnd),
-      supabase.from('customers').select('id, created_at')
-        .eq('tenant_id', tenantId)
-        .gte('created_at', rangeStart).lt('created_at', rangeEnd)
+      (() => {
+        let q = supabase.from('revenue').select('amount, received_date')
+          .eq('status', 'confirmed').gte('received_date', rangeStart).lt('received_date', rangeEnd);
+        return tenantId ? q.eq('tenant_id', tenantId) : q;
+      })(),
+      (() => {
+        let q = supabase.from('expenses').select('amount, expense_date')
+          .gte('expense_date', rangeStart).lt('expense_date', rangeEnd);
+        return tenantId ? q.eq('tenant_id', tenantId) : q;
+      })(),
+      (() => {
+        let q = supabase.from('session_reviews').select('rating, created_at')
+          .gte('created_at', rangeStart).lt('created_at', rangeEnd);
+        return tenantId ? q.eq('tenant_id', tenantId) : q;
+      })(),
+      (() => {
+        let q = supabase.from('customers').select('id, created_at')
+          .gte('created_at', rangeStart).lt('created_at', rangeEnd);
+        return tenantId ? q.eq('tenant_id', tenantId) : q;
+      })()
     ]);
 
     return months.map(mo => {
@@ -226,7 +230,6 @@ export async function getMonthlyPerformance() {
         : 5.0;
       const newCustomers = (customerData.data || [])
         .filter((c: any) => c.created_at >= mo.start && c.created_at < mo.end).length;
-
       return {
         name: mo.label,
         customers: newCustomers,
@@ -249,26 +252,24 @@ export async function getImportantAlerts() {
     const supabase = (await createClient()) as any;
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
-    if (!tenantId) return [];
 
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    // Overdue sessions (assigned in past, not completed)
-    const { data: overdue } = await supabase
-      .from('session_logs')
+    // Overdue sessions (past date, not completed)
+    let overdueQ = supabase.from('session_logs')
       .select('id, assigned_date, booking_id')
-      .eq('tenant_id', tenantId)
       .lt('assigned_date', today)
       .not('status', 'eq', 'completed')
       .limit(5);
+    if (tenantId) overdueQ = overdueQ.eq('tenant_id', tenantId);
+    const { data: overdue } = await overdueQ;
 
     const alerts: any[] = [];
-
     for (const s of (overdue || [])) {
       alerts.push({
-        type: 'warning',                    // UI: alert.type === 'warning' → amber styling
-        icon: 'alert',                      // UI: alert.icon === 'alert' → AlertTriangle icon
+        type: 'warning',
+        icon: 'alert',
         title: 'Buổi chưa hoàn thành',
         message: `Buổi ngày ${new Date(s.assigned_date + 'T00:00:00').toLocaleDateString('vi-VN')} còn ở trạng thái chưa hoàn thành`,
         severity: 'warning',
@@ -277,12 +278,12 @@ export async function getImportantAlerts() {
     }
 
     // Bookings nearing completion (< 3 sessions left)
-    const { data: nearEnd } = await supabase
-      .from('bookings')
+    let bookingQ = supabase.from('bookings')
       .select('id, package_name, completed_sessions, total_sessions, customers!bookings_customer_id_fkey(name_mother)')
-      .eq('tenant_id', tenantId)
       .eq('status', 'in_progress')
       .limit(10);
+    if (tenantId) bookingQ = bookingQ.eq('tenant_id', tenantId);
+    const { data: nearEnd } = await bookingQ;
 
     for (const b of (nearEnd || [])) {
       const remaining = Number(b.total_sessions || 0) - Number(b.completed_sessions || 0);
