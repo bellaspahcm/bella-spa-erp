@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 
 export async function getChatCustomers() {
-  const supabase = createClient();
+  const supabase = (await createClient()) as any;
   const user = await getCurrentUser();
   
   if (!user?.tenant_id) {
@@ -22,7 +22,7 @@ export async function getChatCustomers() {
 }
 
 export async function getChatMessages(customerId: string) {
-  const supabase = createClient();
+  const supabase = (await createClient()) as any;
   const user = await getCurrentUser();
   
   if (!user?.tenant_id) {
@@ -44,8 +44,8 @@ export async function getChatMessages(customerId: string) {
   return data;
 }
 
-export async function sendChatMessage(customerId: string, message: string, senderType: 'customer' | 'staff') {
-  const supabase = createClient();
+export async function sendChatMessage(customerId: string, message: string, senderType: 'customer' | 'staff'): Promise<any> {
+  const supabase = (await createClient()) as any;
   const user = await getCurrentUser();
   
   if (!user?.tenant_id) {
@@ -74,7 +74,7 @@ export async function sendChatMessage(customerId: string, message: string, sende
 }
 
 export async function markMessagesAsRead(customerId: string) {
-  const supabase = createClient();
+  const supabase = (await createClient()) as any;
   const user = await getCurrentUser();
   
   if (!user?.tenant_id) return;

@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
-import { getCurrentUser } from './auth-actions';
+import { getCurrentUser } from './user-actions';
 
 /**
  * Lấy các buổi trị liệu đang thực hiện của KTV hiện tại

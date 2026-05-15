@@ -37,7 +37,9 @@ export default function CustomerDashboard() {
   useEffect(() => {
     async function loadData() {
       const result = await getCustomerPortalData();
-      if ('error' in result) {
+      if (!result) {
+        console.error('No booking data found');
+      } else if ('error' in result) {
         console.error(result.error);
       } else {
         setData(result);

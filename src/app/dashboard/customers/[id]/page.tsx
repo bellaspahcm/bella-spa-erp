@@ -113,7 +113,7 @@ export default function CustomerDetailPage() {
         if (bookings && bookings.length > 0) {
           // 1. If targetBookingId exists in URL, try to find it first
           if (targetBookingId) {
-            const found = bookings.find(b => b.id === targetBookingId);
+            const found = bookings.find((b: any) => b.id === targetBookingId);
             if (found) {
               setActiveBooking(found);
               return;
@@ -121,7 +121,7 @@ export default function CustomerDetailPage() {
           }
 
           // 2. Default Sort to get the most relevant one
-          const sorted = [...bookings].sort((a, b) => {
+          const sorted = [...bookings].sort((a: any, b: any) => {
             // Prioritize active/booked/in_progress over others
             const priority = (s: string) => {
               if (s === 'active' || s === 'in_progress') return 0;

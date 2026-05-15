@@ -124,6 +124,7 @@ export async function approveSalary(ktvId: string) {
   const now = new Date();
   const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+  const supabase = await createClient();
 
   try {
     // 1. Get KTV info for description
@@ -131,7 +132,7 @@ export async function approveSalary(ktvId: string) {
       .from('users')
       .select('full_name, tenant_id')
       .eq('id', ktvId)
-      .single();
+      .single() as any;
 
     // 2. Fetch completed sessions with booking details to get the locked commission rate
     const { data: sessions } = await supabase
@@ -147,12 +148,12 @@ export async function approveSalary(ktvId: string) {
     }, 0);
 
     // 3. Get/Calculate salary details
-    const { data: existing } = await supabase
+    const { data: existing } = await (supabase
       .from('salary_records')
       .select('*')
       .eq('ktv_id', ktvId)
       .eq('month_year', monthYear)
-      .single();
+      .single() as any);
 
     const baseSalary = existing?.base_salary || 6000000;
     const kpiBonus = existing?.kpi_bonus || (ktvSessionsCount > 30 ? 1000000 : 0);
@@ -166,15 +167,15 @@ export async function approveSalary(ktvId: string) {
 
     // 4. Update or Insert salary record
     if (existing) {
-      const { error: updateError } = await supabase
-        .from('salary_records')
+      const { error: updateError } = await (supabase
+        .from('salary_records') as any)
         .update({ status: 'approved' })
         .eq('id', existing.id);
       
       if (updateError) throw updateError;
     } else {
-      const { error: insertError } = await supabase
-        .from('salary_records')
+      const { error: insertError } = await (supabase
+        .from('salary_records') as any)
         .insert([{
           ktv_id: ktvId,
           month_year: monthYear,
@@ -191,8 +192,8 @@ export async function approveSalary(ktvId: string) {
 
     // 5. Create expense record in Finance dashboard
 
-    const { error: expenseError } = await supabase
-      .from('expenses')
+    const { error: expenseError } = await (supabase
+      .from('expenses') as any)
       .insert({
         amount: totalSalary,
         category: 'salary',

@@ -2,14 +2,15 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from './user-actions';
 
 /**
  * Truy xuất thông tin booking qua Share Token (Dành cho khách hàng)
  */
-export async function getCustomerBookingByToken(token: string) {
+export async function getCustomerBookingByToken(token?: string) {
   const supabase = (await createClient()) as any;
   
-  const { data, error } = await supabase
+  let query = supabase
     .from('bookings')
     .select(`
       *,
@@ -19,12 +20,25 @@ export async function getCustomerBookingByToken(token: string) {
         loyalty_points
       ),
       session_logs (*)
-    `)
-    .eq('share_token', token)
-    .single();
+    `);
+
+  if (token) {
+    query = query.eq('share_token', token);
+  } else {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'customer') {
+      return null;
+    }
+    query = query.eq('customer_id', user.id);
+  }
+
+  const { data, error } = await query
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (error || !data) {
-    console.error('Error fetching customer booking:', error);
+    if (error) console.error('Error fetching customer booking:', error);
     return null;
   }
 
@@ -88,3 +102,105 @@ export async function addLoyaltyPoints(customerId: string, amount: number) {
     if (error) console.error('Error adding loyalty points:', error);
   }
 }
+
+/**
+ * Lấy danh sách khách hàng
+ */
+export async function getCustomers() {
+  const supabase = (await createClient()) as any;
+  const { data, error } = await supabase
+    .from('customers')
+    .select('*')
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching customers:', error);
+    return [];
+  }
+  return data;
+}
+
+/**
+ * Lấy chi tiết khách hàng
+ */
+export async function getCustomerById(id: string) {
+  const supabase = (await createClient()) as any;
+  const { data, error } = await supabase
+    .from('customers')
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (error) {
+    console.error('Error fetching customer:', error);
+    return null;
+  }
+  return data;
+}
+
+/**
+ * Tạo mới khách hàng
+ */
+export async function createCustomer(customerData: any) {
+  const supabase = (await createClient()) as any;
+  const { data, error } = await supabase
+    .from('customers')
+    .insert([customerData])
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error creating customer:', error);
+    return { data: null, error: error.message, warning: null };
+  }
+  
+  revalidatePath('/dashboard/customers');
+  return { data, error: null, warning: null };
+}
+
+/**
+ * Cập nhật khách hàng
+ */
+export async function updateCustomer(id: string, customerData: any) {
+  const supabase = (await createClient()) as any;
+  const { data, error } = await supabase
+    .from('customers')
+    .update(customerData)
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error updating customer:', error);
+    return { data: null, error: error.message, warning: null };
+  }
+  
+  revalidatePath('/dashboard/customers');
+  revalidatePath(`/dashboard/customers/${id}`);
+  return { data, error: null, warning: null };
+}
+
+/**
+ * Xóa khách hàng
+ */
+export async function deleteCustomer(id: string) {
+  const supabase = (await createClient()) as any;
+  const { error } = await supabase
+    .from('customers')
+    .delete()
+    .eq('id', id);
+  
+  if (error) {
+    console.error('Error deleting customer:', error);
+    return { error: error.message };
+  }
+  
+  revalidatePath('/dashboard/customers');
+  return { success: true, error: null };
+}
+
+/**
+ * Alias cho submitCustomerRating để tương thích với các component cũ
+ */
+export const submitSessionRating = submitCustomerRating;
+export const getCustomerPortalData = getCustomerBookingByToken;

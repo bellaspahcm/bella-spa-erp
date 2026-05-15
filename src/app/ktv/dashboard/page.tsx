@@ -22,7 +22,7 @@ import {
   completeKTVSession, 
   getKTVEarnings 
 } from '@/services/ktv-actions';
-import { getCurrentUser } from '@/services/auth-actions';
+import { getCurrentUser } from '@/services/user-actions';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
 
