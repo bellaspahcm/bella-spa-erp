@@ -1,11 +1,10 @@
 'use server';
 
-import { cache } from 'react';
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
 
-export const getCurrentUser = cache(async function getCurrentUser() {
+export async function getCurrentUser() {
   const supabase = (await createClient()) as any;
   
   const { data: { user } } = await supabase.auth.getUser();
@@ -55,7 +54,7 @@ export const getCurrentUser = cache(async function getCurrentUser() {
   }
 
   return profile;
-}); // end cache()
+}
 
 
 export async function getUsers() {
