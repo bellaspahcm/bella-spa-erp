@@ -8,7 +8,6 @@ import {
   ArrowRightLeft, X, ShieldCheck
 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase-client';
-import { restockItem, addInventoryItem } from '@/services/inventory-actions';
 import { toast } from 'sonner';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -37,6 +36,9 @@ export default function InventoryPage() {
   const [restockTarget, setRestockTarget] = useState<any>(null);
   const [restockAmt,    setRestockAmt]    = useState(0);
   const [submitting,    setSubmitting]    = useState(false);
+
+  // Auth context — fetched once, used for writes
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
   // Add item modal
   const [showAdd, setShowAdd] = useState(false);
@@ -74,7 +76,18 @@ export default function InventoryPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    // Fetch tenant_id from browser auth session (for writes)
+    const sb = getSupabase();
+    sb.auth.getSession().then(({ data: { session } }) => {
+      const uid = session?.user?.id;
+      if (uid) {
+        sb.from('users').select('tenant_id').eq('id', uid).single()
+          .then(({ data }) => setTenantId(data?.tenant_id || null));
+      }
+    });
+    fetchData();
+  }, []);
 
   // Filter items by search + stock status
   const filteredItems = useMemo(() =>
@@ -102,11 +115,36 @@ export default function InventoryPage() {
     if (!restockTarget || restockAmt <= 0) return;
     setSubmitting(true);
     try {
-      const res = await restockItem(restockTarget.id, restockAmt);
-      if (res.success) {
-        toast.success(`Đã nhập ${restockAmt} ${restockTarget.unit} — ${restockTarget.name}`);
-        setRestockTarget(null); setRestockAmt(0); fetchData();
-      } else toast.error(res.error || 'Lỗi nhập kho');
+      const sb = getSupabase();
+
+      // 1. Get current stock
+      const { data: item, error: fetchErr } = await sb
+        .from('inventory_items').select('stock_level').eq('id', restockTarget.id).single();
+      if (fetchErr) throw fetchErr;
+
+      const newStock = Number(item.stock_level || 0) + restockAmt;
+
+      // 2. Update stock level
+      const { error: updateErr } = await sb
+        .from('inventory_items')
+        .update({ stock_level: newStock, updated_at: new Date().toISOString() })
+        .eq('id', restockTarget.id);
+      if (updateErr) throw updateErr;
+
+      // 3. Insert log
+      await sb.from('inventory_logs').insert({
+        item_id:       restockTarget.id,
+        change_amount: restockAmt,
+        reason:        'restock',
+        notes:         `Nhập kho: +${restockAmt} ${restockTarget.unit}`,
+        tenant_id:     tenantId,
+      });
+
+      toast.success(`Đã nhập ${restockAmt} ${restockTarget.unit} — ${restockTarget.name}`);
+      setRestockTarget(null); setRestockAmt(0); fetchData();
+    } catch (e: any) {
+      console.error('[handleRestock]', e);
+      toast.error(e?.message || 'Lỗi nhập kho');
     } finally { setSubmitting(false); }
   };
 
@@ -114,13 +152,35 @@ export default function InventoryPage() {
     if (!newItem.name || !newItem.unit) { toast.error('Nhập tên và đơn vị'); return; }
     setSubmitting(true);
     try {
-      const res = await addInventoryItem(newItem);
-      if (res.success) {
-        toast.success('Đã thêm vật tư mới');
-        setShowAdd(false);
-        setNewItem({ name:'', sku:'', unit:'cái', stock_level:0, min_stock_level:10, price_per_unit:0, category:'' });
-        fetchData();
-      } else toast.error(res.error || 'Lỗi thêm vật tư');
+      const sb = getSupabase();
+      const { error } = await sb.from('inventory_items').insert({
+        ...newItem,
+        tenant_id: tenantId,
+      });
+      if (error) throw error;
+
+      // Log initial stock if > 0
+      if (newItem.stock_level > 0) {
+        const { data: created } = await sb.from('inventory_items')
+          .select('id').order('created_at', { ascending: false }).limit(1).single();
+        if (created) {
+          await sb.from('inventory_logs').insert({
+            item_id:       created.id,
+            change_amount: newItem.stock_level,
+            reason:        'initial',
+            notes:         'Tồn kho ban đầu',
+            tenant_id:     tenantId,
+          });
+        }
+      }
+
+      toast.success('Đã thêm vật tư mới');
+      setShowAdd(false);
+      setNewItem({ name:'', sku:'', unit:'cái', stock_level:0, min_stock_level:10, price_per_unit:0, category:'' });
+      fetchData();
+    } catch (e: any) {
+      console.error('[handleAddItem]', e);
+      toast.error(e?.message || 'Lỗi thêm vật tư');
     } finally { setSubmitting(false); }
   };
 
