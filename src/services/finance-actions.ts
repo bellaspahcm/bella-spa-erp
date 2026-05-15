@@ -189,8 +189,8 @@ export async function recordTransaction(data: {
       };
       const dbCategory = catMap[data.category] || data.category || 'other';
 
-      // expenses.status: 'approved' | 'pending' (NO payment_status column!)
-      const dbStatus = data.status === 'confirmed' ? 'approved' : 'pending';
+      // expenses.status: 'approved' | 'submitted' | 'rejected'
+      const dbStatus = data.status === 'confirmed' ? 'approved' : 'submitted';
 
       const { data: result, error } = await supabase
         .from('expenses')

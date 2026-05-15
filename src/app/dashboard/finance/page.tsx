@@ -44,6 +44,8 @@ export default function FinancePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'revenue' | 'expense'>('all');
 
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'timestamp', direction: 'desc' });
   const [isConfirmingId, setIsConfirmingId] = useState<string | null>(null);
@@ -162,9 +164,20 @@ export default function FinancePage() {
 
   const { totalBalance, totalRevenueMonth, totalExpenseMonth, transactions } = data;
   
+  // Filtering & Search
+  const filteredTransactions = transactions.filter((tx: any) => {
+    const matchesSearch = searchTerm === '' || 
+      tx.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tx.details?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tx.amount?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesFilter = filterType === 'all' || tx.type === filterType;
+    return matchesSearch && matchesFilter;
+  });
+
   // Calculate Pagination
-  const totalPages = Math.ceil(transactions.length / itemsPerPage);
-  const currentTransactions = transactions.slice(
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage) || 1;
+  const currentTransactions = filteredTransactions.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -302,11 +315,25 @@ export default function FinancePage() {
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input type="text" placeholder="Tìm giao dịch..." className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-rose-500/10 w-48" />
+              <input 
+                type="text" 
+                placeholder="Tìm giao dịch..." 
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-rose-500/10 w-48 sm:w-64 transition-all" 
+              />
             </div>
-            <button className="p-2 hover:bg-slate-50 rounded-lg text-slate-400">
-              <Filter className="w-5 h-5" />
-            </button>
+            <div className="relative group">
+              <button className="flex items-center gap-2 p-2 px-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-500 font-bold text-xs transition-all">
+                <Filter className="w-4 h-4" />
+                {filterType === 'all' ? 'Tất cả' : filterType === 'revenue' ? 'Thu vào' : 'Chi ra'}
+              </button>
+              <div className="absolute right-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 overflow-hidden">
+                <button onClick={() => { setFilterType('all'); setCurrentPage(1); }} className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-slate-50 ${filterType === 'all' ? 'text-primary' : 'text-slate-600'}`}>Tất cả</button>
+                <button onClick={() => { setFilterType('revenue'); setCurrentPage(1); }} className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-slate-50 ${filterType === 'revenue' ? 'text-emerald-600' : 'text-slate-600'}`}>Thu vào</button>
+                <button onClick={() => { setFilterType('expense'); setCurrentPage(1); }} className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-slate-50 ${filterType === 'expense' ? 'text-rose-600' : 'text-slate-600'}`}>Chi ra</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -407,7 +434,7 @@ export default function FinancePage() {
         </div>
         <div className="p-8 border-t border-slate-50 flex items-center justify-between bg-slate-50/30">
           <p className="text-xs font-bold text-slate-500">
-            Hiển thị <span className="text-slate-900">{currentTransactions.length}</span> trên <span className="text-slate-900">{transactions.length}</span> giao dịch
+            Hiển thị <span className="text-slate-900">{currentTransactions.length}</span> trên <span className="text-slate-900">{filteredTransactions.length}</span> giao dịch
           </p>
           
           <div className="flex items-center gap-2">

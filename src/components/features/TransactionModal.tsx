@@ -60,14 +60,65 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
 
     setIsSubmitting(true);
     try {
-      await recordTransaction({
-        amount: Number(cleanAmount),
-        type,
-        category,
-        notes: notes || (type === 'revenue' ? 'Thu nhập' : 'Chi phí'),
-        status: autoConfirm ? 'confirmed' : 'pending',
-        booking_id: (type === 'revenue' && bookingId) ? bookingId : undefined
-      });
+      const { createClient } = await import('@/lib/supabase-client');
+      const supabase = createClient();
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Không tìm thấy phiên đăng nhập');
+
+      // Resolve tenant_id
+      const { data: profile } = await supabase
+        .from('users')
+        .select('tenant_id')
+        .eq('id', user.id)
+        .single();
+      const tenantId = profile?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+      const parsedAmount = Number(cleanAmount);
+      const notesValue = notes || (type === 'revenue' ? 'Thu nhập' : 'Chi phí');
+
+      if (type === 'expense') {
+        const catMap: Record<string, string> = {
+          'office_rent': 'rent',
+          'other_admin': 'other',
+          'materials': 'materials',
+          'maintenance': 'maintenance'
+        };
+        const dbCategory = catMap[category] || category || 'other';
+        const dbStatus = autoConfirm ? 'approved' : 'submitted';
+
+        const { error } = await supabase.from('expenses').insert({
+          amount: Math.abs(parsedAmount),
+          category: dbCategory,
+          description: notesValue,
+          status: dbStatus,
+          expense_date: new Date().toISOString().split('T')[0],
+          tenant_id: tenantId,
+          submitted_by_id: user.id,
+          approved_by_id: autoConfirm ? user.id : null
+        });
+
+        if (error) throw error;
+      } else {
+        const validRevenueTypes = ['deposit', 'session_completed', 'additional', 'package_payment', 'remaining_payment'];
+        const dbRevenueType = validRevenueTypes.includes(category) ? category : 'additional';
+        const dbStatus = autoConfirm ? 'confirmed' : 'pending';
+
+        const { error } = await supabase.from('revenue').insert({
+          amount: Math.abs(parsedAmount),
+          notes: notesValue,
+          booking_id: bookingId || null,
+          revenue_type: dbRevenueType,
+          payment_method: 'bank_transfer',
+          status: dbStatus,
+          received_date: new Date().toISOString().split('T')[0],
+          tenant_id: tenantId,
+          recorded_by_id: user.id
+        });
+
+        if (error) throw error;
+      }
+
       toast.success('Ghi nhận giao dịch thành công');
       if (onSuccess) onSuccess();
       onClose();
@@ -76,9 +127,9 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
       setNotes('');
       setBookingId('');
       setCategory('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submit error:', error);
-      toast.error('Lỗi khi ghi nhận giao dịch');
+      toast.error(error.message || 'Lỗi khi ghi nhận giao dịch');
     } finally {
       setIsSubmitting(false);
     }

@@ -1,11 +1,348 @@
 'use server';
 
-
 import { resolvePackageName } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getMonthStart(now = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
+/** Calculate pro-rata base salary for resigned KTVs */
+function calcProRataBaseSalary(baseSalary: number, resignationDate: Date, monthYear: Date): number {
+  const monthStart = new Date(monthYear.getFullYear(), monthYear.getMonth(), 1);
+  const daysInMonth = new Date(monthYear.getFullYear(), monthYear.getMonth() + 1, 0).getDate();
+  const daysWorked = Math.max(0, Math.floor((resignationDate.getTime() - monthStart.getTime()) / 86400000) + 1);
+  return Math.round(baseSalary * (daysWorked / daysInMonth));
+}
+
+// ─── V2 WORKFLOW ACTIONS ──────────────────────────────────────────────────────
+
+/**
+ * ADMIN: Publish salary record to KTV for confirmation.
+ * Calculates final salary breakdown and sets status to 'published'.
+ */
+export async function publishSalaryRecord(ktvId: string) {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không tìm thấy tenant' };
+
+  const now = new Date();
+  const monthYear = getMonthStart(now);
+
+  try {
+    // 1. Get KTV info (base_salary, resignation_date)
+    const { data: ktv } = await supabase
+      .from('users')
+      .select('id, full_name, base_salary, resignation_date')
+      .eq('id', ktvId)
+      .single();
+
+    // 2. Fetch completed sessions this month
+    const startOfMonth = monthYear;
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+    const { data: sessions } = await supabase
+      .from('session_logs')
+      .select('id, bookings(ktv_commission)')
+      .eq('completed_by_ktv_id', ktvId)
+      .eq('status', 'completed')
+      .gte('completed_date', startOfMonth)
+      .lt('completed_date', endOfMonth);
+
+    // 3. Fetch reviews for rating bonus
+    const { data: reviews } = await supabase
+      .from('session_reviews')
+      .select('rating')
+      .eq('ktv_id', ktvId)
+      .eq('status', 'approved');
+
+    const sessionsCount = sessions?.length || 0;
+    const sessionBonus = (sessions || []).reduce((acc: number, s: any) =>
+      acc + (s.bookings?.ktv_commission || 150000), 0);
+
+    const avgRating = reviews?.length > 0
+      ? reviews.reduce((a: number, r: any) => a + (r.rating || 0), 0) / reviews.length
+      : 5.0;
+    const bonusPerSession = avgRating === 5.0 ? 50000 : avgRating >= 4.5 ? 30000 : avgRating >= 4.0 ? 10000 : 0;
+    const ratingBonus = sessionsCount * bonusPerSession;
+
+    // 4. Get or init salary record for adjustments
+    const { data: existing } = await supabase
+      .from('salary_records')
+      .select('*')
+      .eq('ktv_id', ktvId)
+      .eq('month_year', monthYear)
+      .maybeSingle();
+
+    const rawBaseSalary = existing?.base_salary ?? ktv?.base_salary ?? 6000000;
+    const kpiBonus = existing?.kpi_bonus ?? (sessionsCount > 30 ? 1000000 : 0);
+    const deductions = existing?.violations_deduction ?? 0;
+    const advances = existing?.service_percentage_bonus ?? 0;
+
+    // 5. Pro-rata if resigned
+    let finalBaseSalary = rawBaseSalary;
+    let finalKpiBonus = kpiBonus;
+    let finalRatingBonus = ratingBonus;
+    let proRataNote = '';
+
+    if (ktv?.resignation_date) {
+      const resignDate = new Date(ktv.resignation_date);
+      const monthDate = new Date(monthYear);
+      if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
+        finalBaseSalary = calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
+        finalKpiBonus = 0;
+        finalRatingBonus = 0;
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysWorked = resignDate.getDate();
+        proRataNote = `⚠️ KTV nghỉ ngày ${resignDate.toLocaleDateString('vi-VN')} — Lương cứng tính ${daysWorked}/${daysInMonth} ngày`;
+      }
+    }
+
+    const totalSalary = finalBaseSalary + sessionBonus + finalRatingBonus + finalKpiBonus - deductions - advances;
+
+    // 6. Upsert salary record
+    const payload = {
+      ktv_id: ktvId,
+      month_year: monthYear,
+      base_salary: finalBaseSalary,
+      session_bonus: sessionBonus,
+      rating_bonus: finalRatingBonus,
+      kpi_bonus: finalKpiBonus,
+      violations_deduction: deductions,
+      service_percentage_bonus: advances,
+      total_sessions: sessionsCount,
+      total_salary: totalSalary,
+      status: 'published',
+      published_at: new Date().toISOString(),
+      notes: proRataNote || null,
+      tenant_id: tenantId,
+    };
+
+    if (existing) {
+      await supabase.from('salary_records').update(payload).eq('id', existing.id);
+    } else {
+      await supabase.from('salary_records').insert(payload);
+    }
+
+    await recordAuditLog({ action: 'UPDATE', module: 'SALARY', target_id: ktvId, new_data: { status: 'published', totalSalary } });
+    revalidatePath('/dashboard/salary');
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+/** ADMIN: Publish ALL draft salary records in current period */
+export async function publishAllSalaryRecords() {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không tìm thấy tenant' };
+
+  const { data: ktvs } = await supabase
+    .from('users')
+    .select('id')
+    .eq('role', 'ktv')
+    .eq('tenant_id', tenantId);
+
+  let count = 0;
+  for (const ktv of (ktvs || [])) {
+    const res = await publishSalaryRecord(ktv.id);
+    if (res.success) count++;
+  }
+  return { success: true, count };
+}
+
+/** KTV: Confirm their own salary record */
+export async function ktvConfirmSalary(salaryRecordId: string) {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { success: false, error: 'Chưa đăng nhập' };
+
+  const { error } = await supabase
+    .from('salary_records')
+    .update({ status: 'confirmed', ktv_confirmed_at: new Date().toISOString() })
+    .eq('id', salaryRecordId)
+    .eq('ktv_id', currentUser.id)
+    .in('status', ['published', 'disputed']);
+
+  if (error) return { success: false, error: error.message };
+
+  await recordAuditLog({ action: 'UPDATE', module: 'SALARY', target_id: salaryRecordId, new_data: { status: 'confirmed' } });
+  revalidatePath('/ktv/earnings');
+  revalidatePath('/dashboard/salary');
+  return { success: true };
+}
+
+/** KTV: Dispute their salary with a reason */
+export async function ktvDisputeSalary(salaryRecordId: string, reason: string) {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { success: false, error: 'Chưa đăng nhập' };
+
+  const tenantId = currentUser.tenant_id;
+
+  const { error: updateError } = await supabase
+    .from('salary_records')
+    .update({ status: 'disputed', dispute_reason: reason })
+    .eq('id', salaryRecordId)
+    .eq('ktv_id', currentUser.id)
+    .eq('status', 'published');
+
+  if (updateError) return { success: false, error: updateError.message };
+
+  await supabase.from('salary_disputes').insert({
+    salary_record_id: salaryRecordId,
+    ktv_id: currentUser.id,
+    dispute_reason: reason,
+    status: 'open',
+    tenant_id: tenantId,
+  });
+
+  revalidatePath('/ktv/earnings');
+  revalidatePath('/dashboard/salary');
+  return { success: true };
+}
+
+/** ADMIN: Confirm salary on behalf of KTV (no-smartphone case) */
+export async function adminConfirmOnBehalf(ktvId: string) {
+  const supabase = (await createClient()) as any;
+  const monthYear = getMonthStart();
+
+  const { error } = await supabase
+    .from('salary_records')
+    .update({ status: 'confirmed', ktv_confirmed_at: new Date().toISOString(), confirmed_by_admin: true })
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear)
+    .in('status', ['published', 'disputed']);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/dashboard/salary');
+  return { success: true };
+}
+
+/** ADMIN: Finalize salary record — locks and creates expense entry */
+export async function finalizeSalaryRecord(ktvId: string) {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không tìm thấy tenant' };
+
+  const now = new Date();
+  const monthYear = getMonthStart(now);
+  const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+  const { data: record } = await supabase
+    .from('salary_records')
+    .select('*, users(full_name)')
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear)
+    .eq('status', 'confirmed')
+    .single();
+
+  if (!record) return { success: false, error: 'Không tìm thấy bản ghi đã được xác nhận' };
+
+  // Lock record
+  await supabase.from('salary_records')
+    .update({ status: 'finalized', finalized_at: new Date().toISOString() })
+    .eq('id', record.id);
+
+  // Lock session_logs
+  await supabase.from('session_logs')
+    .update({ is_confirmed: true })
+    .eq('completed_by_ktv_id', ktvId)
+    .eq('status', 'completed');
+
+  // Create expense for Finance
+  await supabase.from('expenses').insert({
+    amount: record.total_salary,
+    category: 'salary',
+    description: `Lương T${monthLabel} - ${record.users?.full_name || 'KTV'}`,
+    status: 'submitted',
+    expense_date: new Date().toISOString(),
+    tenant_id: tenantId,
+  });
+
+  await recordAuditLog({ action: 'UPDATE', module: 'SALARY', target_id: ktvId, new_data: { status: 'finalized', amount: record.total_salary } });
+  revalidatePath('/dashboard/salary');
+  revalidatePath('/dashboard/finance');
+  return { success: true };
+}
+
+/** ADMIN: Finalize ALL confirmed records */
+export async function finalizeAllSalaryRecords() {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không tìm thấy tenant' };
+
+  const monthYear = getMonthStart();
+  const { data: confirmed } = await supabase
+    .from('salary_records')
+    .select('ktv_id')
+    .eq('month_year', monthYear)
+    .eq('status', 'confirmed')
+    .eq('tenant_id', tenantId);
+
+  let count = 0;
+  for (const r of (confirmed || [])) {
+    const res = await finalizeSalaryRecord(r.ktv_id);
+    if (res.success) count++;
+  }
+  return { success: true, count };
+}
+
+/** ADMIN: Trigger auto-confirm for records published > 48h ago */
+export async function checkAndAutoConfirm() {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.tenant_id) return { count: 0 };
+
+  const { data } = await supabase.rpc('auto_confirm_stale_salary_records', {
+    p_tenant_id: currentUser.tenant_id,
+  });
+
+  if (data > 0) revalidatePath('/dashboard/salary');
+  return { count: data ?? 0 };
+}
+
+/** KTV: Get their own salary record for the confirmation screen */
+export async function getKtvSalaryForConfirmation(month?: string) {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return null;
+
+  const now = new Date();
+  const monthStr = month || getMonthStart(now);
+  const startOfMonth = monthStr;
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+
+  // Get salary record
+  const { data: record } = await supabase
+    .from('salary_records')
+    .select('*')
+    .eq('ktv_id', currentUser.id)
+    .eq('month_year', monthStr)
+    .maybeSingle();
+
+  // Get session details for KTV to cross-check
+  const { data: sessions } = await supabase
+    .from('session_logs')
+    .select(`id, completed_date, session_number, bookings(package_name, ktv_commission, customers(name_mother))`)
+    .eq('completed_by_ktv_id', currentUser.id)
+    .eq('status', 'completed')
+    .gte('completed_date', startOfMonth)
+    .lt('completed_date', endOfMonth)
+    .order('completed_date', { ascending: false });
+
+  return { record, sessions: sessions || [] };
+}
 
 
 
