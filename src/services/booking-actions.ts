@@ -110,7 +110,13 @@ export async function createBooking(formData: any) {
   const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
-  if (!tenantId) throw new Error('Tenant ID not found for current user session');
+  
+  console.log('[createBooking] currentUser:', currentUser?.email, '| tenantId:', tenantId);
+  
+  if (!tenantId) {
+    console.error('[createBooking] ERROR: No tenant_id for user:', currentUser?.email);
+    return { error: 'Không xác định được phiên làm việc. Vui lòng đăng xuất và đăng nhập lại.' };
+  }
 
   const isFullBooking = validatedData.full_price > 0 || !!validatedData.package_name;
   

@@ -176,8 +176,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       ...formData,
       package_id: pkg.id,
       package_name: pkg.name,
-      full_price: pkg.price || 0,
-      total_sessions: pkg.total_sessions || 10
+      full_price: Number(pkg.price || pkg.full_price || 0),
+      total_sessions: Number(pkg.total_sessions || 10)
     });
   };
 
@@ -221,8 +221,10 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
         customer_id: customerId
       });
 
-      if (result.error) {
-        toast.error(result.error);
+      console.log('[BookingModal] createBooking result:', result);
+
+      if (result?.error) {
+        toast.error('Lỗi tạo lịch hẹn: ' + result.error);
       } else {
         toast.success('Tạo lịch hẹn thành công!');
         if (onSuccess) {
@@ -231,9 +233,9 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
           onClose();
         }
       }
-    } catch (error) {
-      console.error('Error creating booking:', error);
-      toast.error('Đã xảy ra lỗi khi tạo lịch hẹn');
+    } catch (error: any) {
+      console.error('[BookingModal] Exception in handleSubmit:', error);
+      toast.error('Lỗi: ' + (error?.message || 'Không rõ nguyên nhân. Kiểm tra console để biết thêm.'));
     } finally {
       setIsSubmitting(false);
     }
