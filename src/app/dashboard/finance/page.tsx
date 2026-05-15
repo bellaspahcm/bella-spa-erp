@@ -54,19 +54,26 @@ export default function FinancePage() {
 
   const fetchData = async (month?: string) => {
     setIsRefreshing(true);
-    const m = month || selectedMonth;
-    const [overview, pnl, performance] = await Promise.all([
-      getFinancialOverview(),
-      getMonthlyPnL(m),
-      getServicePerformance()
-    ]);
-    
-    setData(overview);
-    setPnlData(pnl);
-    setPerformanceData(performance);
-    setIsRefreshing(false);
-    setIsLoading(false);
+    try {
+      const m = month || selectedMonth;
+      const [overview, pnl, performance] = await Promise.all([
+        getFinancialOverview(),
+        getMonthlyPnL(m),
+        getServicePerformance()
+      ]);
+      
+      setData(overview);
+      setPnlData(pnl);
+      setPerformanceData(performance);
+    } catch (error) {
+      console.error('Error fetching finance data:', error);
+      toast.error('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');
+    } finally {
+      setIsRefreshing(false);
+      setIsLoading(false);
+    }
   };
+
 
   const handleMonthChange = (newMonth: string) => {
     setSelectedMonth(newMonth);
