@@ -52,7 +52,6 @@ import {
   getMonthlyPerformance,
   getFullDashboardData
 } from '@/services/dashboard-actions';
-import { getInventorySummary } from '@/services/inventory-actions';
 import { completeSession, saveSessionNote } from '@/services/booking-actions';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
@@ -135,10 +134,18 @@ export default function DashboardPage() {
       const now = new Date();
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       
-      const [{ statsData, sessionsData, ktvsData, alertsData, perfData }, invSummary] = await Promise.all([
+      const sb = createClient() as any;
+      const [{ statsData, sessionsData, ktvsData, alertsData, perfData }, invRes] = await Promise.all([
         getFullDashboardData(startDate, endDate, localToday),
-        getInventorySummary()
+        sb.from('inventory_items').select('id, stock_level, min_stock_level, price_per_unit')
       ]);
+
+      const invItems = invRes.data || [];
+      const invSummary = {
+        totalItems:    invItems.length,
+        lowStockCount: invItems.filter((i: any) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
+        totalValue:    invItems.reduce((s: number, i: any) => s + Number(i.stock_level || 0) * Number(i.price_per_unit || 0), 0)
+      };
 
       const newStats = [
         { label: 'Tổng khách hàng', value: statsData.totalCustomers?.value || '0', trend: statsData.totalCustomers?.trend || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
