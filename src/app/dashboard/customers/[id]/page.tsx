@@ -468,16 +468,16 @@ export default function CustomerDetailPage() {
             ))}
           </div>
 
-          {customer.allBookings?.length > 1 && (
-            <div className="bg-white rounded-[2.5rem] p-6 shadow-lg border border-primary/10 mb-8">
-              <div className="flex items-center justify-between mb-4 px-2">
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Chọn gói liệu trình đang xem</p>
-                <span className="px-3 py-1 bg-primary/5 text-primary text-[9px] font-black rounded-full uppercase">
-                  Có {customer.allBookings.length} gói dịch vụ
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {customer.allBookings.map((b: any) => (
+          <div className="bg-white rounded-[2.5rem] p-6 shadow-lg border border-primary/10 mb-8">
+            <div className="flex items-center justify-between mb-4 px-2">
+              <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Chọn gói liệu trình đang xem</p>
+              <span className="px-3 py-1 bg-primary/5 text-primary text-[9px] font-black rounded-full uppercase">
+                Có {customer.allBookings?.length || 0} gói dịch vụ
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {customer.allBookings?.length > 0 ? (
+                customer.allBookings.map((b: any) => (
                   <button
                     key={b.id}
                     onClick={() => setActiveBooking(b)}
@@ -491,10 +491,14 @@ export default function CustomerDetailPage() {
                     {b.package_name || (b.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Gói lẻ')} 
                     <span className="ml-2 opacity-60">({b.status})</span>
                   </button>
-                ))}
-              </div>
+                ))
+              ) : (
+                <div className="w-full py-4 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Khách hàng chưa có gói liệu trình nào</p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="luxury-card-pink rounded-[3rem] p-8 relative shadow-2xl group">
             {/* Background Decorative Layer - Clipped */}
