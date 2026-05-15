@@ -61,6 +61,7 @@ function BookingsContent() {
   const [ktvs, setKtvs] = useState<any[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [createTimeRange, setCreateTimeRange] = useState({ start: '09:00', end: '11:00' });
 
   useEffect(() => {
     if (customerName) {
@@ -846,7 +847,7 @@ function BookingsContent() {
                   const result = await createSessionLog({
                     booking_id: formData.get('booking_id'),
                     assigned_date: formData.get('date'),
-                    assigned_time: formData.get('time'),
+                    assigned_time: createTimeRange.start, // Valid HH:MM for DB; display range is cosmetic
                     notes: formData.get('notes'),
                     status: 'scheduled'
                   });
@@ -886,8 +887,22 @@ function BookingsContent() {
                       <input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Giờ thực hiện</label>
-                      <input name="time" type="text" placeholder="09:00 - 11:00" className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" />
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Giờ bắt đầu</label>
+                      <input 
+                        type="time" 
+                        value={createTimeRange.start}
+                        onChange={(e) => setCreateTimeRange(p => ({ ...p, start: e.target.value }))}
+                        className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Giờ kết thúc</label>
+                      <input 
+                        type="time" 
+                        value={createTimeRange.end}
+                        onChange={(e) => setCreateTimeRange(p => ({ ...p, end: e.target.value }))}
+                        className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" 
+                      />
                     </div>
                   </div>
 

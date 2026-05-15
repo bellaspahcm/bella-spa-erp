@@ -839,6 +839,23 @@ export async function createSessionLog(data: any) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
+  // Helper: normalize any time string to HH:MM for Postgres time type
+  function sanitizeTime(raw: any): string | null {
+    if (!raw) return null;
+    const s = String(raw).trim();
+    // Already HH:MM or HH:MM:SS
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
+      const [h, m] = s.split(':');
+      return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+    }
+    // Extract first HH:MM found (e.g. "09:00 - 11:00" → "09:00")
+    const match = s.match(/(\d{1,2}):(\d{2})/);
+    if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
+    // Pure digits "09" → "09:00"
+    if (/^\d{1,2}$/.test(s)) return `${s.padStart(2, '0')}:00`;
+    return null;
+  }
+
   // 1. Get current session number for this booking
   const { count, error: countError } = await supabase
     .from('session_logs')
@@ -858,7 +875,7 @@ export async function createSessionLog(data: any) {
         booking_id: data.booking_id,
         session_number: (count || 0) + 1,
         assigned_date: data.assigned_date || null,
-        assigned_time: data.assigned_time || null,
+        assigned_time: sanitizeTime(data.assigned_time),
         notes: data.notes || null,
         status: data.status || 'scheduled'
       } as any,
