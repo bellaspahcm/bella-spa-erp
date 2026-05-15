@@ -293,7 +293,6 @@ function BookingsContent() {
           <p className="text-slate-500 font-medium mt-1">Điều phối và theo dõi lịch chăm sóc</p>
         </div>
         <div className="flex items-center gap-3">
-          <PremiumExportButton />
           <div className="bg-white p-1 rounded-2xl border border-slate-200 flex">
             <button 
               onClick={() => setView('list')}
@@ -308,6 +307,7 @@ function BookingsContent() {
               <LayoutGrid className="w-5 h-5" />
             </button>
           </div>
+          <PremiumExportButton />
           <button 
             onClick={() => setShowCreateModal(true)}
             className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 active:scale-95"
@@ -319,7 +319,14 @@ function BookingsContent() {
       </div>
 
       {/* Date Selector (Google Calendar Style Box) */}
-      <div className="luxury-card-white p-8 rounded-[40px] mb-8 overflow-hidden relative">
+      <AnimatePresence mode="wait">
+        {view === 'calendar' && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="luxury-card-white p-8 rounded-[40px] mb-8 overflow-hidden relative"
+          >
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-6">
             <div className="flex items-center bg-slate-50 rounded-2xl p-1 border border-slate-100">
@@ -428,7 +435,9 @@ function BookingsContent() {
             );
           })}
         </div>
-      </div>
+      </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Bookings Timeline */}
       <div id="bookings-timeline" className="space-y-4 scroll-mt-8">
@@ -436,9 +445,10 @@ function BookingsContent() {
           <div className="flex justify-center py-20">
             <Loader2 className="w-10 h-10 text-slate-200 animate-spin" />
           </div>
-        ) : sessions.filter(s => isSameDay(new Date(s.assigned_date || 0), selectedDate)).length > 0 ? (
+        ) : sessions.filter(s => view === 'list' || isSameDay(new Date(s.assigned_date || 0), selectedDate)).length > 0 ? (
           sessions
-            .filter(s => isSameDay(new Date(s.assigned_date || 0), selectedDate))
+            .filter(s => view === 'list' || isSameDay(new Date(s.assigned_date || 0), selectedDate))
+            .sort((a, b) => new Date(b.assigned_date).getTime() - new Date(a.assigned_date).getTime())
             .map((session: any, idx: number) => (
               <motion.div 
                 key={session.id}
@@ -486,6 +496,11 @@ function BookingsContent() {
                     <div className="flex items-center gap-4 mb-3">
                       <div className="flex items-center gap-1.5 text-slate-900 font-black">
                         <Clock className="w-4 h-4 text-rose-500" />
+                        {view === 'list' && (
+                          <span className="text-slate-500 font-bold mr-2">
+                            {new Date(session.assigned_date).toLocaleDateString('vi-VN')}
+                          </span>
+                        )}
                         {session.assigned_time || '09:00 - 11:00'}
                       </div>
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -592,7 +607,7 @@ function BookingsContent() {
         ) : (
           <div className="bg-white/50 border border-dashed border-slate-200 rounded-[32px] p-12 text-center">
             <CalendarIcon className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-bold">Không có lịch hẹn nào cho ngày này</p>
+            <p className="text-slate-400 font-bold">Không có lịch hẹn nào {view === 'calendar' ? 'cho ngày này' : 'trong tháng'}</p>
           </div>
         )}
       </div>
