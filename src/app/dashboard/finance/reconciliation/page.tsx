@@ -102,7 +102,7 @@ export default function FinancialReconciliationPage() {
 
       if (historyError) throw historyError;
 
-      const historyFormatted = historyData?.map(item => ({
+      const historyFormatted = historyData?.map((item: any) => ({
         revenue_id: item.id,
         amount: item.amount,
         received_date: item.received_date,
