@@ -39,3 +39,8 @@ Status: 🟢 Standardization Complete | 🟡 Phase 1 Starting
 ## ⚪ Phase 5: CRM & Zalo Integration
 - [ ] **Automated Reminders**: Appointment alerts 2 hours before session.
 - [ ] **Marketing Automation**: Birthday greetings and targeted voucher campaigns.
+
+## 🟢 Phase 6: Messaging Center & Communication (Completed)
+- [x] **Internal & Customer Chat**: Built and stabilized the real-time chat module for administrative coordination.
+- [x] **Customer Portal UI/UX**: Enhanced the customer treatment tracking portal with improved styling and official social media integrations.
+- [x] **Client-side Fetching Optimization**: Refactored real-time connections to bypass server-action bottlenecks.
