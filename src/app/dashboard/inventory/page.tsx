@@ -322,8 +322,12 @@ export default function InventoryPage() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">
                     Số lượng nhập ({restockTarget.unit})
                   </label>
-                  <input type="number" value={restockAmt} min={1}
-                    onChange={e => setRestockAmt(Number(e.target.value))}
+                  <input type="number"
+                    value={restockAmt === 0 ? '' : restockAmt}
+                    min={1}
+                    placeholder="0"
+                    onFocus={e => e.target.select()}
+                    onChange={e => setRestockAmt(e.target.value === '' ? 0 : Number(e.target.value))}
                     className="w-full bg-slate-50 rounded-2xl p-4 text-xl font-black text-center outline-none focus:ring-2 focus:ring-primary/20" autoFocus />
                 </div>
                 <div className="bg-slate-50 p-4 rounded-2xl flex justify-between items-center">
@@ -373,9 +377,19 @@ export default function InventoryPage() {
                 ].map(f => (
                   <div key={f.key}>
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block ml-1">{f.label}</label>
-                    <input type={f.type} placeholder={f.placeholder}
-                      value={(newItem as any)[f.key]}
-                      onChange={e => setNewItem(prev => ({ ...prev, [f.key]: f.type === 'number' ? Number(e.target.value) : e.target.value }))}
+                    <input
+                      type={f.type}
+                      placeholder={f.placeholder}
+                      min={f.type === 'number' ? 0 : undefined}
+                      value={f.type === 'number'
+                        ? ((newItem as any)[f.key] === 0 ? '' : (newItem as any)[f.key])
+                        : (newItem as any)[f.key]
+                      }
+                      onFocus={f.type === 'number' ? e => e.target.select() : undefined}
+                      onChange={e => setNewItem(prev => ({
+                        ...prev,
+                        [f.key]: f.type === 'number' ? (e.target.value === '' ? 0 : Number(e.target.value)) : e.target.value
+                      }))}
                       className="w-full bg-slate-50 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20" />
                   </div>
                 ))}

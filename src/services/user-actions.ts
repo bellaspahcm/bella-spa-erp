@@ -7,11 +7,17 @@ import { recordAuditLog } from './audit-actions';
 export async function getCurrentUser() {
   const supabase = (await createClient()) as any;
   
-  const { data: { user } } = await supabase.auth.getUser();
+  // Use getSession() instead of getUser() — getSession() validates JWT locally
+  // (no extra network round-trip to Supabase Auth server). getUser() can silently
+  // return null in server action contexts if the auth verification network call fails.
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
   
   if (!user) {
+    console.warn('[getCurrentUser] No active session found');
     return null;
   }
+
 
   // Try fetching from 'users' table by ID (primary path)
   let { data: profile } = await supabase
