@@ -12,23 +12,25 @@ import { getCurrentUser } from './user-actions';
 //                    quantity_per_session, created_at
 // ───────────────────────────────────────────────────────────────────────────────
 
+// ─── Helper: get supabase client + optional tenant_id ─────────────────────────
+async function getSupabaseWithTenant() {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  return { supabase, tenantId: user?.tenant_id || null, userId: user?.id || null };
+}
+
+// ─── READ: apply tenant filter when available, never early-return ──────────────
+
 export async function getInventoryItems() {
   try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
-    const user = await getCurrentUser();
-    if (!user?.tenant_id) return [];
+    const { supabase, tenantId } = await getSupabaseWithTenant();
 
-    const { data, error } = await supabase
-      .from('inventory_items')
-      .select('*')
-      .eq('tenant_id', user.tenant_id)
-      .order('name');
+    let query = supabase.from('inventory_items').select('*').order('name');
+    if (tenantId) query = query.eq('tenant_id', tenantId);
 
-    if (error) {
-      console.error('[getInventoryItems]', error);
-      return [];
-    }
+    const { data, error } = await query;
+    if (error) { console.error('[getInventoryItems]', error); return []; }
     return data || [];
   } catch (e) {
     console.error('[getInventoryItems]', e);
@@ -36,33 +38,106 @@ export async function getInventoryItems() {
   }
 }
 
-export async function getInventoryLogs(limit = 20) {
+export async function getInventoryLogs(limit = 50) {
   try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
-    const user = await getCurrentUser();
-    if (!user?.tenant_id) return [];
+    const { supabase, tenantId } = await getSupabaseWithTenant();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('inventory_logs')
       .select(`
         id, change_amount, reason, notes, created_at,
         inventory_items!inventory_logs_item_id_fkey(name, unit)
       `)
-      .eq('tenant_id', user.tenant_id)
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (error) {
-      console.error('[getInventoryLogs]', error);
-      return [];
-    }
+    if (tenantId) query = query.eq('tenant_id', tenantId);
+
+    const { data, error } = await query;
+    if (error) { console.error('[getInventoryLogs]', error); return []; }
     return data || [];
   } catch (e) {
     console.error('[getInventoryLogs]', e);
     return [];
   }
 }
+
+export async function getInventoryLogsByDateRange(dateFrom: string, dateTo: string) {
+  try {
+    const { supabase, tenantId } = await getSupabaseWithTenant();
+
+    // dateTo: extend to end of day
+    const dateToEnd = dateTo + 'T23:59:59';
+
+    let query = supabase
+      .from('inventory_logs')
+      .select(`
+        id, change_amount, reason, notes, created_at,
+        inventory_items!inventory_logs_item_id_fkey(name, unit)
+      `)
+      .gte('created_at', dateFrom)
+      .lte('created_at', dateToEnd)
+      .order('created_at', { ascending: false });
+
+    if (tenantId) query = query.eq('tenant_id', tenantId);
+
+    const { data, error } = await query;
+    if (error) { console.error('[getInventoryLogsByDateRange]', error); return []; }
+    return data || [];
+  } catch (e) {
+    console.error('[getInventoryLogsByDateRange]', e);
+    return [];
+  }
+}
+
+export async function getInventorySummary() {
+  try {
+    const { supabase, tenantId } = await getSupabaseWithTenant();
+
+    let query = supabase
+      .from('inventory_items')
+      .select('stock_level, min_stock_level, price_per_unit');
+
+    if (tenantId) query = query.eq('tenant_id', tenantId);
+
+    const { data, error } = await query;
+    if (error || !data) return { totalItems: 0, lowStockCount: 0, totalValue: 0 };
+
+    return {
+      totalItems: data.length,
+      lowStockCount: data.filter((i: any) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
+      totalValue: data.reduce((sum: number, i: any) => sum + Number(i.stock_level) * Number(i.price_per_unit), 0)
+    };
+  } catch (e) {
+    console.error('[getInventorySummary]', e);
+    return { totalItems: 0, lowStockCount: 0, totalValue: 0 };
+  }
+}
+
+export async function getPackageMaterials(packageId: string) {
+  try {
+    const { supabase, tenantId } = await getSupabaseWithTenant();
+
+    let query = supabase
+      .from('package_materials')
+      .select(`
+        id, quantity_per_session,
+        inventory_items!package_materials_item_id_fkey(id, name, unit, stock_level)
+      `)
+      .eq('package_id', packageId);
+
+    if (tenantId) query = query.eq('tenant_id', tenantId);
+
+    const { data, error } = await query;
+    if (error) { console.error('[getPackageMaterials]', error); return []; }
+    return data || [];
+  } catch (e) {
+    console.error('[getPackageMaterials]', e);
+    return [];
+  }
+}
+
+// ─── WRITE: still require auth (needed for audit trail + tenant scoping) ───────
 
 export async function addInventoryItem(item: {
   name: string;
@@ -75,21 +150,16 @@ export async function addInventoryItem(item: {
   notes?: string;
 }) {
   try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
-    const user = await getCurrentUser();
-    if (!user?.tenant_id) return { success: false, error: 'Chưa đăng nhập' };
+    const { supabase, tenantId } = await getSupabaseWithTenant();
+    if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
 
     const { data, error } = await supabase
       .from('inventory_items')
-      .insert({ ...item, tenant_id: user.tenant_id })
+      .insert({ ...item, tenant_id: tenantId })
       .select()
       .single();
 
-    if (error) {
-      console.error('[addInventoryItem]', error);
-      return { success: false, error: 'Không thể thêm vật tư' };
-    }
+    if (error) { console.error('[addInventoryItem]', error); return { success: false, error: 'Không thể thêm vật tư' }; }
 
     revalidatePath('/dashboard/inventory');
     return { success: true, data };
@@ -101,44 +171,33 @@ export async function addInventoryItem(item: {
 
 export async function restockItem(itemId: string, amount: number, notes?: string) {
   try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
-    const user = await getCurrentUser();
-    if (!user?.tenant_id) return { success: false, error: 'Chưa đăng nhập' };
+    const { supabase, tenantId, userId } = await getSupabaseWithTenant();
+    if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
 
-    // Fetch current stock
     const { data: item, error: fetchError } = await supabase
       .from('inventory_items')
       .select('stock_level')
       .eq('id', itemId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
-    if (fetchError || !item) {
-      console.error('[restockItem] fetch:', fetchError);
-      return { success: false, error: 'Không tìm thấy vật tư' };
-    }
+    if (fetchError || !item) return { success: false, error: 'Không tìm thấy vật tư' };
 
-    // Update stock level
     const { error: updateError } = await supabase
       .from('inventory_items')
       .update({ stock_level: Number(item.stock_level) + Number(amount) })
       .eq('id', itemId)
-      .eq('tenant_id', user.tenant_id);
+      .eq('tenant_id', tenantId);
 
-    if (updateError) {
-      console.error('[restockItem] update:', updateError);
-      return { success: false, error: 'Lỗi cập nhật tồn kho' };
-    }
+    if (updateError) return { success: false, error: 'Lỗi cập nhật tồn kho' };
 
-    // Log the restock action
     await supabase.from('inventory_logs').insert({
       item_id: itemId,
       change_amount: amount,
       reason: 'restock',
       notes: notes || 'Nhập hàng',
-      created_by: user.id,
-      tenant_id: user.tenant_id
+      created_by: userId,
+      tenant_id: tenantId
     });
 
     revalidatePath('/dashboard/inventory');
@@ -156,21 +215,17 @@ export async function consumeInventory(
   notes?: string
 ) {
   try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
-    const user = await getCurrentUser();
-    if (!user?.tenant_id) return { success: false, error: 'Chưa đăng nhập' };
+    const { supabase, tenantId, userId } = await getSupabaseWithTenant();
+    if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
 
     const { data: item, error: fetchError } = await supabase
       .from('inventory_items')
       .select('stock_level')
       .eq('id', itemId)
-      .eq('tenant_id', user.tenant_id)
+      .eq('tenant_id', tenantId)
       .single();
 
-    if (fetchError || !item) {
-      return { success: false, error: 'Không tìm thấy vật tư' };
-    }
+    if (fetchError || !item) return { success: false, error: 'Không tìm thấy vật tư' };
 
     const newStock = Math.max(0, Number(item.stock_level) - Number(amount));
 
@@ -178,20 +233,18 @@ export async function consumeInventory(
       .from('inventory_items')
       .update({ stock_level: newStock })
       .eq('id', itemId)
-      .eq('tenant_id', user.tenant_id);
+      .eq('tenant_id', tenantId);
 
-    if (updateError) {
-      return { success: false, error: 'Lỗi cập nhật tồn kho' };
-    }
+    if (updateError) return { success: false, error: 'Lỗi cập nhật tồn kho' };
 
     await supabase.from('inventory_logs').insert({
       item_id: itemId,
-      change_amount: -amount,                 // âm = tiêu hao
+      change_amount: -amount,
       reason: 'session_consumption',
       session_log_id: sessionLogId || null,
       notes: notes || 'Tiêu hao buổi liệu trình',
-      created_by: user.id,
-      tenant_id: user.tenant_id
+      created_by: userId,
+      tenant_id: tenantId
     });
 
     revalidatePath('/dashboard/inventory');
@@ -202,34 +255,7 @@ export async function consumeInventory(
   }
 }
 
-export async function getPackageMaterials(packageId: string) {
-  try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
-    const user = await getCurrentUser();
-    if (!user?.tenant_id) return [];
-
-    const { data, error } = await supabase
-      .from('package_materials')
-      .select(`
-        id, quantity_per_session,
-        inventory_items!package_materials_item_id_fkey(id, name, unit, stock_level)
-      `)
-      .eq('package_id', packageId)
-      .eq('tenant_id', user.tenant_id);
-
-    if (error) {
-      console.error('[getPackageMaterials]', error);
-      return [];
-    }
-    return data || [];
-  } catch (e) {
-    console.error('[getPackageMaterials]', e);
-    return [];
-  }
-}
-
-// Auto-consume vật tư khi hoàn thành buổi liệu trình
+// ─── Auto-consume khi hoàn thành buổi ─────────────────────────────────────────
 export async function autoConsumeForSession(packageId: string, sessionLogId: string) {
   try {
     const materials = await getPackageMaterials(packageId);
@@ -239,7 +265,7 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
           mat.inventory_items?.id,
           mat.quantity_per_session,
           sessionLogId,
-          `Tự động tiêu hao buổi liệu trình`
+          'Tự động tiêu hao buổi liệu trình'
         )
       )
     );
@@ -247,30 +273,5 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
   } catch (e) {
     console.error('[autoConsumeForSession]', e);
     return { success: false, error: 'Lỗi tiêu hao tự động' };
-  }
-}
-
-export async function getInventorySummary() {
-  try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
-    const user = await getCurrentUser();
-    if (!user?.tenant_id) return { totalItems: 0, lowStockCount: 0, totalValue: 0 };
-
-    const { data, error } = await supabase
-      .from('inventory_items')
-      .select('stock_level, min_stock_level, price_per_unit')
-      .eq('tenant_id', user.tenant_id);
-
-    if (error || !data) return { totalItems: 0, lowStockCount: 0, totalValue: 0 };
-
-    return {
-      totalItems: data.length,
-      lowStockCount: data.filter((i: any) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
-      totalValue: data.reduce((sum: number, i: any) => sum + Number(i.stock_level) * Number(i.price_per_unit), 0)
-    };
-  } catch (e) {
-    console.error('[getInventorySummary]', e);
-    return { totalItems: 0, lowStockCount: 0, totalValue: 0 };
   }
 }
