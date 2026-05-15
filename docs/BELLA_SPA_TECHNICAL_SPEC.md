@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 2.3  
-**Last Updated:** 2026-05-16 (05:15)  
-**Status:** Implementation Phase (Phase 21: Financial Reconciliation & Transaction Hardening - Completed)
+**Version:** 2.4  
+**Last Updated:** 2026-05-16 (06:30)  
+**Status:** Implementation Phase (Phase 22: Audit Trail & Build Stabilization - Completed)
 
 ---
 
@@ -547,6 +547,7 @@ A: Yes, IF:
 - [x] Phase 19: Security Hardening & Analytics Optimization (Completed)
 - [x] Phase 20: Operational Stability & Bug Fixes (Completed)
 - [x] Phase 21: Financial Reconciliation & Transaction Hardening (Completed)
+- [x] Phase 22: Audit Trail & Build Stabilization (Completed)
 
 #### ✅ Phase 21: Financial Reconciliation & Transaction Hardening (May 16, 2026) - Verified Stable
 - [x] **Reconciliation Module**: Launched a specialized dashboard (`/dashboard/finance/reconciliation`) to track Customer Debt, Orphaned Funds, and Price Mismatches.
@@ -554,6 +555,12 @@ A: Yes, IF:
 - [x] **Transaction Reliability**: Migrated critical writes (Revenue/Expenses) to direct Client-side Supabase calls, resolving "cookies outside request scope" and RLS insertion errors.
 - [x] **Debt Collection Workflow**: Enhanced the payment modal with direct Booking ID display and pre-filled customer context to ensure 100% audit accuracy.
 - [x] **Schema Compliance**: Standardized `expenses` status mapping to `submitted` to satisfy database check constraints.
+
+#### ✅ Phase 22: Audit Trail & Build Stabilization (May 16, 2026) - Verified Stable
+- [x] **Audit Trail System**: Implemented a robust database-level audit system using the `audit_logs` table and Postgres triggers (`log_audit_event`). Automatically tracks all `INSERT`, `UPDATE`, and `DELETE` on financial tables.
+- [x] **Build Stabilization**: Resolved Vercel build-time TypeScript errors by applying strict type definitions to dynamic data mappings in the reconciliation module.
+- [x] **Database Type Sync**: Synchronized `database.types.ts` with the remote schema to include all recent RPCs and tables.
+- [x] **Transaction Integrity**: Enforced security-definer triggers for audit logs to ensure immutable records even under restrictive RLS.
 
 #### ✅ Phase 20: Operational Stability & Bug Fixes (May 15, 2026) - Verified Stable
 - [x] **Package Visibility Fix**: Corrected `tenant_id` mapping for the `packages` table, resolving RLS isolation issues that caused empty service lists in booking modals.
@@ -577,7 +584,7 @@ A: Yes, IF:
 
 #### ⏭ Next Steps
 - [ ] **Zalo OA Integration**: Automate evaluation reminder notifications & Payment reminders (Phase 2).
-- [ ] **Audit Trail System**: Implement a dedicated `audit_logs` table for sensitive financial operations.
+- [ ] **Audit Trail UI**: Build a dedicated interface for Admin to view and filter `audit_logs` by user, action, and date.
 - [ ] **Bank Statement Sync**: Integration with banking APIs or OCR for automated transaction matching.
 - [ ] **Staff Performance Analytics**: Xây dựng biểu đồ xu hướng đánh giá và năng suất KTV.
 
@@ -728,7 +735,7 @@ A: Yes, IF:
 
 ---
 
-**Document Version:** 2.3  
-**Last Updated:** 2026-05-16 (05:15)  
-**Status:** Implementation Phase (Phase 21: Completed)  
+**Document Version:** 2.4  
+**Last Updated:** 2026-05-16 (06:30)  
+**Status:** Implementation Phase (Phase 22: Completed)  
 **Contact:** Bella Spa ERP Dev Team
