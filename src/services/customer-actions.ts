@@ -62,6 +62,7 @@ export async function getCustomers() {
         ...c,
         id: c.id.toString(), // Ensure ID is string
         status: c.status || 'active',
+        is_in_care: c.status === 'active' || (c.package_name && c.package_name !== 'Chưa đăng ký'),
         package_name: c.package_name || 'Chưa đăng ký',
         start_date: ensure2026(c.dob_baby || c.dob_expected || '2026-01-01')
       }));
@@ -78,11 +79,12 @@ export async function getCustomers() {
         dob_expected: ensure2026(c.dob_expected),
         status: latestBooking ? (
           latestBooking.status === 'deposit_pending' ? 'deposit' : 
-          isFullyPaid ? 'paid' : 'active'
+          latestBooking.status === 'completed' ? 'paid' : 'active'
         ) : 'lead',
         deposit_amount: latestBooking?.deposit_amount ? `${latestBooking.deposit_amount.toLocaleString()}đ` : null,
         full_price: latestBooking?.full_price || 0,
         is_fully_paid: isFullyPaid,
+        is_in_care: latestBooking && latestBooking.status !== 'completed' && latestBooking.status !== 'lead',
         package_name: resolvePackageName(latestBooking),
         start_date: ensure2026(latestBooking?.start_date || c.dob_expected)
       };
