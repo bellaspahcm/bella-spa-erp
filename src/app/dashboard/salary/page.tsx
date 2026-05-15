@@ -5,11 +5,11 @@ import { DollarSign, Download, TrendingUp, Search, Filter, Edit2, CheckCircle2, 
 import { cn } from '@/lib/utils';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { useState, useEffect } from 'react';
-import { getSalaryData, approveSalary, updateSalaryConfig, getKtvSessionMatrix, confirmKtvSessions } from '@/services/salary-actions';
+import { getSalaryData, approveSalary, updateSalaryConfig, getKtvSessionMatrix, confirmKtvSessions, publishSalaryRecord, publishAllSalaryRecords, adminConfirmOnBehalf, finalizeSalaryRecord, finalizeAllSalaryRecords, checkAndAutoConfirm } from '@/services/salary-actions';
 import { exportSalaryToExcel, exportSessionMatrixToExcel } from '@/services/export-actions';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
-import { FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet, Send, Lock, UserCheck, Clock } from 'lucide-react';
 
 export default function SalaryPage() {
   const [ktvSalaries, setKtvSalaries] = useState<any[]>([]);
@@ -38,6 +38,10 @@ export default function SalaryPage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        // Auto-confirm stale records on page load
+        const autoRes = await checkAndAutoConfirm();
+        if (autoRes.count > 0) toast.info(`Đã tự động xác nhận ${autoRes.count} bảng lương quá hạn 48h`);
+
         const [salaryData, matrix] = await Promise.all([
           getSalaryData(),
           getKtvSessionMatrix()
@@ -103,7 +107,6 @@ export default function SalaryPage() {
 
   const handleApproveAll = async () => {
     if (!window.confirm('Bạn có chắc chắn muốn chốt lương cho tất cả nhân viên trong danh sách này không?')) return;
-    
     setIsLoading(true);
     let successCount = 0;
     for (const s of filteredSalaries) {
@@ -112,15 +115,65 @@ export default function SalaryPage() {
         if (result.success) successCount++;
       }
     }
-    
     if (successCount > 0) {
       toast.success(`Đã chốt lương thành công cho ${successCount} nhân viên`);
       const data = await getSalaryData();
       setKtvSalaries(data);
     } else {
-      toast.info('Không có bản ghi nào cần chốt lương hoặc đã xảy ra lỗi.');
+      toast.info('Không có bản ghi nào cần chốt lương.');
     }
     setIsLoading(false);
+  };
+
+  const handlePublishAll = async () => {
+    if (!window.confirm('Gửi bảng lương dự thảo đến TẤT CẢ KTV để xác nhận?')) return;
+    setIsLoading(true);
+    const res = await publishAllSalaryRecords();
+    if (res.success) {
+      toast.success(`Đã gửi đối soát cho ${res.count} KTV`);
+      const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
+      setKtvSalaries(salary); setMatrixData(matrix);
+    } else toast.error('Lỗi khi gửi đối soát');
+    setIsLoading(false);
+  };
+
+  const handleFinalizeAll = async () => {
+    if (!window.confirm('Chốt sổ tất cả bảng lương đã được KTV xác nhận?')) return;
+    setIsLoading(true);
+    const res = await finalizeAllSalaryRecords();
+    if (res.success) {
+      toast.success(`Đã chốt sổ ${res.count} bảng lương`);
+      const data = await getSalaryData(); setKtvSalaries(data);
+    } else toast.error('Lỗi khi chốt sổ');
+    setIsLoading(false);
+  };
+
+  const handlePublishOne = async (ktvId: string, ktvName: string) => {
+    const res = await publishSalaryRecord(ktvId);
+    if (res.success) {
+      toast.success(`Đã gửi đối soát cho ${ktvName}`);
+      const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
+      setKtvSalaries(salary); setMatrixData(matrix);
+    } else toast.error('Lỗi: ' + res.error);
+  };
+
+  const handleConfirmOnBehalf = async (ktvId: string, ktvName: string) => {
+    if (!window.confirm(`Xác nhận thay cho KTV ${ktvName}?`)) return;
+    const res = await adminConfirmOnBehalf(ktvId);
+    if (res.success) {
+      toast.success(`Đã xác nhận thay cho ${ktvName}`);
+      const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
+      setKtvSalaries(salary); setMatrixData(matrix);
+    } else toast.error('Lỗi: ' + res.error);
+  };
+
+  const handleFinalizeOne = async (ktvId: string, ktvName: string) => {
+    if (!window.confirm(`Chốt sổ lương cho ${ktvName}?`)) return;
+    const res = await finalizeSalaryRecord(ktvId);
+    if (res.success) {
+      toast.success(`Đã chốt sổ lương cho ${ktvName}`);
+      const data = await getSalaryData(); setKtvSalaries(data);
+    } else toast.error(res.error || 'Lỗi khi chốt sổ');
   };
 
   const handleExport = async (s: any) => {
@@ -202,13 +255,22 @@ export default function SalaryPage() {
         <div className="flex items-center gap-3">
           <PremiumExportButton />
           {currentUser?.role !== 'ktv' && (
-            <button 
-              onClick={handleApproveAll}
-              className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs"
-            >
-              <CheckCircle2 className="w-5 h-5" />
-              <span>Chốt lương toàn bộ</span>
-            </button>
+            <>
+              <button
+                onClick={handlePublishAll}
+                className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-4 rounded-2xl font-black transition-all shadow-lg shadow-amber-100 uppercase tracking-widest text-xs"
+              >
+                <Send className="w-4 h-4" />
+                <span>Gửi đối soát</span>
+              </button>
+              <button
+                onClick={handleFinalizeAll}
+                className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs"
+              >
+                <Lock className="w-4 h-4" />
+                <span>Chốt sổ</span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -360,11 +422,22 @@ export default function SalaryPage() {
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest inline-flex ${
-                      s.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 
-                      s.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'
+                      s.status === 'finalized' || s.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                      s.status === 'confirmed' ? 'bg-blue-50 text-blue-600' :
+                      s.status === 'disputed' ? 'bg-rose-50 text-rose-600' :
+                      s.status === 'published' || s.status === 'pending' || s.status === 'pending_approval' ? 'bg-amber-50 text-amber-600' :
+                      'bg-slate-100 text-slate-500'
                     }`}>
-                      {s.status === 'approved' ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                      {s.status === 'approved' ? 'Đã duyệt' : s.status === 'pending' ? 'Chờ duyệt' : 'Bản nháp'}
+                      {(s.status === 'finalized' || s.status === 'approved') ? <CheckCircle2 className="w-3 h-3" /> :
+                       s.status === 'confirmed' ? <CheckCircle2 className="w-3 h-3" /> :
+                       s.status === 'disputed' ? <AlertCircle className="w-3 h-3" /> :
+                       <AlertCircle className="w-3 h-3" />}
+                      {s.status === 'finalized' ? 'Đã chốt sổ' :
+                       s.status === 'approved' ? 'Đã duyệt' :
+                       s.status === 'confirmed' ? 'KTV đã xác nhận' :
+                       s.status === 'disputed' ? 'KTV phản hồi' :
+                       s.status === 'published' || s.status === 'pending_approval' ? 'Chờ KTV xác nhận' :
+                       'Bản nháp'}
                     </div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
@@ -455,7 +528,8 @@ export default function SalaryPage() {
                   <th key={pkg} className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px] text-center">{pkg}</th>
                 ))}
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[120px] text-center bg-slate-100/50">Tổng buổi</th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px] text-center">Thao tác</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[180px] text-center">Trạng thái đối soát</th>
+                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px] text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -490,46 +564,60 @@ export default function SalaryPage() {
                       {matrixData.packageNames.reduce((acc: number, pkg: string) => acc + (ktv[pkg] || 0), 0)}
                     </span>
                   </td>
+                  {/* Status column */}
                   <td className="px-8 py-6 text-center whitespace-nowrap">
-                    <button 
-                      onClick={async () => {
-                        const total = matrixData.packageNames.reduce((acc: number, pkg: string) => acc + (ktv[pkg] || 0), 0);
-                        if (confirm(`Xác nhận đối soát ${total} buổi làm cho KTV ${ktv.name}? Số liệu này sẽ được chốt và đưa lên bảng lương tổng.`)) {
-                          const res = await confirmKtvSessions(ktv.id, total);
-                          if (res.success) {
-                            toast.success(`Đã duyệt dữ liệu cho ${ktv.name}`);
-                            // Refresh both datasets to sync UI
-                            const [matrix, salary] = await Promise.all([
-                              getKtvSessionMatrix(),
-                              getSalaryData()
-                            ]);
-                            setMatrixData(matrix);
-                            setKtvSalaries(salary);
-                          } else {
-                            toast.error(`Lỗi: ${res.error || 'Không thể duyệt dữ liệu'}`);
-                          }
-                        }
-                      }}
-                      disabled={ktv.isConfirmed}
-                      className={cn(
-                        "group/btn flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest mx-auto shadow-sm active:scale-95",
-                        ktv.isConfirmed 
-                          ? "bg-emerald-50 text-emerald-600 cursor-default shadow-none border border-emerald-100" 
-                          : "bg-rose-50 text-primary hover:bg-primary hover:text-white border border-rose-100"
-                      )}
-                    >
-                      {ktv.isConfirmed ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          Đã Duyệt
-                        </>
-                      ) : (
-                        <>
-                          <Zap className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
-                          Duyệt Số Buổi
-                        </>
-                      )}
-                    </button>
+                    {(() => {
+                      const salaryRow = ktvSalaries.find((s: any) => s.id === ktv.id);
+                      const st = salaryRow?.status;
+                      if (st === 'finalized' || st === 'approved') return <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black"><Lock className="w-3 h-3" />Đã chốt sổ</span>;
+                      if (st === 'confirmed') return <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-black"><CheckCircle2 className="w-3 h-3" />KTV đã xác nhận</span>;
+                      if (st === 'disputed') return (
+                        <div className="text-left">
+                          <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-600 px-3 py-1 rounded-lg text-[10px] font-black mb-1"><AlertCircle className="w-3 h-3" />KTV phản hồi</span>
+                          {salaryRow?.disputeReason && <p className="text-[10px] text-rose-500 max-w-[160px] truncate" title={salaryRow.disputeReason}>{salaryRow.disputeReason}</p>}
+                        </div>
+                      );
+                      if (st === 'published' || st === 'pending_approval') return (
+                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 px-3 py-1 rounded-lg text-[10px] font-black">
+                          <Clock className="w-3 h-3" />Chờ KTV xác nhận
+                        </span>
+                      );
+                      return <span className="text-slate-300 text-[10px]">—</span>;
+                    })()}
+                  </td>
+                  {/* Action column */}
+                  <td className="px-8 py-6 text-center whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-2">
+                      {(() => {
+                        const salaryRow = ktvSalaries.find((s: any) => s.id === ktv.id);
+                        const st = salaryRow?.status;
+                        if (st === 'finalized' || st === 'approved') return <span className="text-slate-300 text-[10px]">Hoàn tất</span>;
+                        if (st === 'confirmed') return (
+                          <button onClick={() => handleFinalizeOne(ktv.id, ktv.name)}
+                            className="flex items-center gap-1 px-3 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            <Lock className="w-3 h-3" />Chốt sổ
+                          </button>
+                        );
+                        if (st === 'published' || st === 'pending_approval') return (
+                          <button onClick={() => handleConfirmOnBehalf(ktv.id, ktv.name)}
+                            className="flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            <UserCheck className="w-3 h-3" />Xác nhận thay
+                          </button>
+                        );
+                        if (st === 'disputed') return (
+                          <button onClick={() => handlePublishOne(ktv.id, ktv.name)}
+                            className="flex items-center gap-1 px-3 py-2 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            <Send className="w-3 h-3" />Gửi lại
+                          </button>
+                        );
+                        return (
+                          <button onClick={() => handlePublishOne(ktv.id, ktv.name)}
+                            className="flex items-center gap-1 px-3 py-2 bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            <Send className="w-3 h-3" />Gửi đối soát
+                          </button>
+                        );
+                      })()}
+                    </div>
                   </td>
                 </motion.tr>
               ))}

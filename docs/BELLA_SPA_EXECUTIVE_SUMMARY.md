@@ -265,8 +265,8 @@ A: Có. Hệ thống có tính năng "Export dữ liệu" ra Excel bất kỳ l�
 
 **Document Version:** 1.2 — Executive Summary  
 **Cập nhật:** 15/05/2026
-**Trạng thái:** Đã hoàn thành hệ thống Tài chính, KTV Mobile, Portal Khách hàng và Quản lý Kho.
-**Tiếp theo:** Tối ưu hóa hiệu suất & Mở rộng quy mô (Scaling Phase).
+**Trạng thái:** Đã hoàn thành hệ thống Tài chính, KTV Mobile, Portal Khách hàng, Quản lý Kho và Tối ưu hóa Luồng duyệt Lương (1-Loop Workflow).
+**Tiếp theo:** Mở rộng quy mô và tích hợp các tính năng tự động hóa nâng cao.
 
 ---
 

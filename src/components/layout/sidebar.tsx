@@ -15,7 +15,8 @@ import {
   Flower2,
   Sparkles,
   MessageSquare,
-  Banknote
+  Banknote,
+  ShieldAlert
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -34,6 +35,7 @@ const menuItems = [
   { icon: MessageSquare,   label: 'Tin nhắn',        href: '/dashboard/chat' },
   { icon: Sparkles,        label: 'Dịch vụ',         href: '/dashboard/services' },
   { icon: DollarSign,      label: 'Tài chính',       href: '/dashboard/finance' },
+  { icon: ShieldAlert,     label: 'Đối soát',        href: '/dashboard/finance/reconciliation' },
   { icon: Package,         label: 'Kho hàng',        href: '/dashboard/inventory' },
   { icon: Banknote,        label: 'Bảng lương',      href: '/dashboard/salary' },
   { icon: Settings,        label: 'Cài đặt',         href: '/dashboard/settings' },
@@ -63,8 +65,8 @@ export function Sidebar() {
     ? customerMenuItems
     : menuItems.filter(item => {
         if (user?.role === 'ktv') {
-          // KTV cannot see Finance, Settings, or Salary management
-          return !['Tài chính', 'Cài đặt', 'Bảng lương'].includes(item.label);
+          // KTV cannot see Finance, Settings, Salary management, or Reconciliation
+          return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát'].includes(item.label);
         }
         return true;
       });
