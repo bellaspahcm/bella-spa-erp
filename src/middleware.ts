@@ -1,10 +1,10 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Next.js 16 renamed middleware.ts → proxy.ts
-// This file refreshes the Supabase auth session on every request,
-// which is REQUIRED for Server Actions to reliably get the current user.
-export async function proxy(request: NextRequest) {
+// Next.js middleware: runs on every request BEFORE page/API handlers.
+// REQUIRED for Supabase SSR — refreshes the auth session so Server Actions
+// can reliably call supabase.auth.getUser() without getting null.
+export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -20,6 +20,8 @@ export async function proxy(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
+          // Update cookies on both request and response so downstream
+          // Server Components / Actions see the refreshed token.
           request.cookies.set({ name, value, ...options });
           response = NextResponse.next({
             request: {
@@ -41,7 +43,8 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired — REQUIRED for Server Actions to work correctly
+  // Calling getUser() here triggers token refresh if the JWT is expired.
+  // Do NOT remove this — it is what keeps sessions alive for Server Actions.
   await supabase.auth.getUser();
 
   return response;
@@ -49,7 +52,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all requests except static files and images
+    // Run on all routes EXCEPT Next.js internals and static assets
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
