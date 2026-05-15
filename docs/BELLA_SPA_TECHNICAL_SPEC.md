@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 2.2  
-**Last Updated:** 2026-05-15 (21:40)  
-**Status:** Implementation Phase (Phase 20: Operational Stability & Bug Fixes - Completed)
+**Version:** 2.3  
+**Last Updated:** 2026-05-16 (05:15)  
+**Status:** Implementation Phase (Phase 21: Financial Reconciliation & Transaction Hardening - Completed)
 
 ---
 
@@ -546,6 +546,14 @@ A: Yes, IF:
 - [x] Phase 18: Service Management & Package Schema Alignment (Completed)
 - [x] Phase 19: Security Hardening & Analytics Optimization (Completed)
 - [x] Phase 20: Operational Stability & Bug Fixes (Completed)
+- [x] Phase 21: Financial Reconciliation & Transaction Hardening (Completed)
+
+#### ✅ Phase 21: Financial Reconciliation & Transaction Hardening (May 16, 2026) - Verified Stable
+- [x] **Reconciliation Module**: Launched a specialized dashboard (`/dashboard/finance/reconciliation`) to track Customer Debt, Orphaned Funds, and Price Mismatches.
+- [x] **Real-time UX**: Implemented high-performance local search and multi-type filtering (Revenue/Expense) for the main finance diary.
+- [x] **Transaction Reliability**: Migrated critical writes (Revenue/Expenses) to direct Client-side Supabase calls, resolving "cookies outside request scope" and RLS insertion errors.
+- [x] **Debt Collection Workflow**: Enhanced the payment modal with direct Booking ID display and pre-filled customer context to ensure 100% audit accuracy.
+- [x] **Schema Compliance**: Standardized `expenses` status mapping to `submitted` to satisfy database check constraints.
 
 #### ✅ Phase 20: Operational Stability & Bug Fixes (May 15, 2026) - Verified Stable
 - [x] **Package Visibility Fix**: Corrected `tenant_id` mapping for the `packages` table, resolving RLS isolation issues that caused empty service lists in booking modals.
@@ -568,10 +576,10 @@ A: Yes, IF:
 - [x] **Data Migration**: Successfully migrated legacy `full_price` data to the new `price` column. (Verified)
 
 #### ⏭ Next Steps
-- [ ] **Zalo OA Integration**: Automate evaluation reminder notifications via Zalo khi hoàn thành buổi (Phase 2).
+- [ ] **Zalo OA Integration**: Automate evaluation reminder notifications & Payment reminders (Phase 2).
+- [ ] **Audit Trail System**: Implement a dedicated `audit_logs` table for sensitive financial operations.
+- [ ] **Bank Statement Sync**: Integration with banking APIs or OCR for automated transaction matching.
 - [ ] **Staff Performance Analytics**: Xây dựng biểu đồ xu hướng đánh giá và năng suất KTV.
-- [ ] **Advanced Database Triggers**: Di chuyển logic tính toán số dư tài chính sang Postgres Triggers.
-- [ ] **Archived Records Logic**: Tự động chuyển các booking cũ sang trạng thái archived khi phát hiện trùng lặp.
 
 ---
 **Last Updated:** May 15, 2026 (06:05)
@@ -720,7 +728,7 @@ A: Yes, IF:
 
 ---
 
-**Document Version:** 2.2  
-**Last Updated:** 2026-05-15 (21:40)  
-**Status:** Implementation Phase (Phase 20: Completed)  
+**Document Version:** 2.3  
+**Last Updated:** 2026-05-16 (05:15)  
+**Status:** Implementation Phase (Phase 21: Completed)  
 **Contact:** Bella Spa ERP Dev Team
