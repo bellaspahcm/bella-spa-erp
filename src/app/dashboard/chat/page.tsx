@@ -44,23 +44,32 @@ export default function ChatPage() {
   useEffect(() => {
     async function loadChats() {
       try {
-        const customers = await getChatCustomers();
-        const mappedChats = customers.map((c: any) => ({
-          id: c.id,
-          name: c.full_name,
-          avatar: c.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase(),
-          lastMessage: 'Nhấn để xem tin nhắn...',
-          time: new Date(c.created_at),
-          unread: c.unread_count || 0,
-          online: false,
-          level: c.customer_level || 'Thành viên',
-          phone: c.phone || 'N/A',
-          lastBooking: c.last_package_name || 'Chưa có',
-          totalSpent: `${(c.total_spent || 0).toLocaleString()}đ`
-        }));
-        setChats(mappedChats);
-        if (mappedChats.length > 0 && !selectedChat) {
-          setSelectedChat(mappedChats[0]);
+        const supabase = createClient();
+        const { data: customers, error } = await supabase.rpc('get_chat_customers');
+        
+        if (error) {
+          console.error('Error fetching chat customers:', error);
+          return;
+        }
+
+        if (customers) {
+          const mappedChats = customers.map((c: any) => ({
+            id: c.id,
+            name: c.full_name,
+            avatar: c.full_name?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'KH',
+            lastMessage: 'Nhấn để xem tin nhắn...',
+            time: new Date(c.created_at),
+            unread: c.unread_count || 0,
+            online: false,
+            level: c.customer_level || 'Thành viên',
+            phone: c.phone || 'N/A',
+            lastBooking: c.last_package_name || 'Chưa có',
+            totalSpent: `${(c.total_spent || 0).toLocaleString()}đ`
+          }));
+          setChats(mappedChats);
+          if (mappedChats.length > 0 && !selectedChat) {
+            setSelectedChat(mappedChats[0]);
+          }
         }
       } catch (error) {
         console.error('Error loading chats:', error);
@@ -77,16 +86,39 @@ export default function ChatPage() {
 
     async function loadMessages() {
       try {
-        const data = await getChatMessages(selectedChat.id);
-        const mappedMessages = data.map((m: any) => ({
-          id: m.id,
-          chatId: m.customer_id,
-          sender: m.sender_type === 'staff' ? 'spa' : 'customer',
-          text: m.message,
-          time: new Date(m.created_at)
-        }));
-        setMessages(mappedMessages);
-        markMessagesAsRead(selectedChat.id);
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('customer_id', selectedChat.id)
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching chat messages:', error);
+          return;
+        }
+
+        if (data) {
+          const mappedMessages = data.map((m: any) => ({
+            id: m.id,
+            chatId: m.customer_id,
+            sender: m.sender_type === 'staff' ? 'spa' : 'customer',
+            text: m.message,
+            time: new Date(m.created_at)
+          }));
+          setMessages(mappedMessages);
+          
+          // Mark as read without awaiting to prevent blocking UI
+          supabase
+            .from('chat_messages')
+            .update({ is_read: true } as any)
+            .eq('customer_id', selectedChat.id)
+            .eq('sender_type', 'customer')
+            .eq('is_read', false)
+            .then(({ error }) => {
+              if (error) console.error('Error marking read:', error);
+            });
+        }
       } catch (error) {
         console.error('Error loading messages:', error);
       }
@@ -120,7 +152,15 @@ export default function ChatPage() {
             return [...prev, newMessage];
           });
           if (payload.new.sender_type === 'customer') {
-            markMessagesAsRead(selectedChat.id);
+            supabase
+              .from('chat_messages')
+              .update({ is_read: true } as any)
+              .eq('customer_id', selectedChat.id)
+              .eq('sender_type', 'customer')
+              .eq('is_read', false)
+              .then(({ error }) => {
+                if (error) console.error('Error marking read from subscription:', error);
+              });
           }
         }
       )
@@ -147,19 +187,42 @@ export default function ChatPage() {
     setInputValue('');
 
     try {
-      const sentMsg = await sendChatMessage(selectedChat.id, messageText, 'staff');
-      // Optimistically add message (though subscription will also add it, we check for duplicates)
-      const newMessage = {
-        id: sentMsg.id,
-        chatId: selectedChat.id,
-        sender: 'spa',
-        text: messageText,
-        time: new Date()
-      };
-      setMessages(prev => {
-        if (prev.some(m => m.id === newMessage.id)) return prev;
-        return [...prev, newMessage];
-      });
+      const supabase = createClient();
+      
+      const { data: customerData } = await supabase.from('customers').select('tenant_id').eq('id', selectedChat.id).single();
+      const tenantId = customerData?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+      
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+
+      const { data: sentMsg, error } = await supabase
+        .from('chat_messages')
+        .insert({
+          customer_id: selectedChat.id,
+          message: messageText,
+          sender_type: 'staff',
+          sender_id: authUser?.id || null,
+          tenant_id: tenantId,
+          is_read: false
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      if (sentMsg) {
+        // Optimistically add message (though subscription will also add it, we check for duplicates)
+        const newMessage = {
+          id: sentMsg.id,
+          chatId: selectedChat.id,
+          sender: 'spa',
+          text: messageText,
+          time: new Date()
+        };
+        setMessages(prev => {
+          if (prev.some(m => m.id === newMessage.id)) return prev;
+          return [...prev, newMessage];
+        });
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
