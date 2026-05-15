@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 2.0  
-**Last Updated:** 2026-05-15 (11:05)  
-**Status:** Implementation Phase (Phase 18: Service Management & Schema Alignment)
+**Version:** 2.1  
+**Last Updated:** 2026-05-15 (21:00)  
+**Status:** Implementation Phase (Phase 19: Security Hardening & Analytics Optimization - Completed)
 
 ---
 
@@ -296,9 +296,10 @@ GET    /api/v1/finance/dashboard?period=month&month=5
    - **Secure Auth flow**: Sử dụng PKCE flow cho Client-side và `auth-helpers-nextjs` (hoặc `@supabase/ssr`) cho Server-side.
    - **Rate limit**: Tích hợp sẵn bởi Supabase & Vercel Edge Middleware.
 
-2. **Authorization (RBAC)**
-   - **Supabase RLS (Row Level Security)**: Đây là lớp bảo mật cốt lõi. Mọi bảng dữ liệu phải có chính sách RLS để giới hạn quyền truy cập theo `auth.uid()`.
-   - **Role Middleware**: Kiểm tra role từ `user_metadata` hoặc bảng `profiles` trong Next.js Middleware để bảo vệ các route Dashboard.
+2. **Authorization (RBAC & Tenant Isolation)**
+   - **Supabase RLS (Row Level Security)**: Đây là lớp bảo mật cốt lõi. Toàn bộ bảng dữ liệu hiện đã được kích hoạt RLS và áp dụng chính sách cách ly Tenant (`tenant_id`) nghiêm ngặt.
+   - **Standardized Policies**: Sử dụng hàm `get_my_tenant_id()` để tự động lọc dữ liệu theo người dùng đang đăng nhập. Quyền truy cập được phân cấp theo Role (Admin, KTV, Customer).
+   - **Service Layer Security**: Mọi Server Action đều xác thực `tenant_id` từ Session trước khi thực hiện truy vấn DB.
 
 3. **Data Protection**
    - **HTTPS/TLS 1.3**: Tự động quản lý bởi Vercel & Supabase.
@@ -543,6 +544,14 @@ A: Yes, IF:
 - [x] Phase 16: Financial Automation, KTV Experience & Customer Portal (Completed)
 - [x] Phase 17: Inventory Stability & RLS Hardening (Completed)
 - [x] Phase 18: Service Management & Package Schema Alignment (Completed)
+- [x] Phase 19: Security Hardening & Analytics Optimization (Completed)
+
+#### ✅ Phase 19: Security Hardening & Analytics Optimization (May 15, 2026) - Verified Stable
+- [x] **Hardened RLS Policies**: Enabled RLS across all core tables with standardized tenant-isolation policies. Dropped legacy public/authenticated access.
+- [x] **Analytics Unification**: Refactored `get_ktv_leaderboard` RPC to unify data from `session_reviews` and `session_logs`. Leaderboard now accurately reflects KPI bonuses and ratings.
+- [x] **Dashboard Rating Source**: Updated dashboard stats to pull ratings from `session_logs` (current truth) with fallback logic to ensure no "zero-data" scenarios.
+- [x] **Session Maintenance (Proxy)**: Implemented `proxy.ts` to handle transparent Supabase session refreshes on every request, replacing deprecated middleware logic.
+- [x] **Rating Sync**: Enhanced `submitCustomerRating` to populate `session_reviews` for future-proofing while maintaining backward compatibility with `session_logs`.
 
 #### ✅ Phase 18: Service Management & Schema Hardening (May 15, 2026) - Verified Stable
 - [x] **Package Schema Alignment**: Synchronized `packages` table with source code by adding `price`, `duration`, `details`, `ktv_commission`, and `offer` columns. (Verified)
@@ -649,6 +658,12 @@ A: Yes, IF:
     - **Self-Healing Sync**: Bắt buộc triển khai hàm `syncBookingProgress` để đếm lại thực tế từ bảng `session_logs` và ghi đè (overwrite) vào bảng `bookings`.
     - **Background Trigger**: Kích hoạt lệnh đồng bộ này ngay khi người dùng mở chi tiết thẻ liệu trình để đảm bảo giao diện luôn hiển thị dữ liệu mới nhất.
     - **Multi-Field Filter**: Thanh tìm kiếm tại Dashboard phải hỗ trợ tìm kiếm mờ (fuzzy) qua tên gói, tên KTV, số điện thoại và mã booking thay vì chỉ tìm theo tên khách hàng.
+### 9. Analytics Unification & Data Source Hierarchy
+*   **Vấn đề**: Tồn tại song song hai bảng chứa rating (`session_logs` và `session_reviews`) dẫn đến số liệu không nhất quán trên Dashboard và Leaderboard.
+*   **Quy tắc**:
+    - **Hierarchy**: Hệ thống ưu tiên dữ liệu từ `session_reviews` (chính thức). Nếu trống, tự động fallback sang `session_logs` (legacy/quick-rating).
+    - **Sync on Submit**: Khi khách hàng đánh giá, `submitCustomerRating` phải cập nhật đồng thời cả hai bảng để đảm bảo tính nhất quán và phục vụ báo cáo KTV Bonus.
+    - **RPC First**: Các logic tính toán phức tạp (Leaderboard, P&L) phải được đẩy xuống tầng Database (Postgres RPC) thay vì xử lý tại Client để đảm bảo hiệu năng và bảo mật RLS.
 
 ---
 
@@ -678,9 +693,15 @@ A: Yes, IF:
     - `apply_rating_bonus` RPC (20k/50k bonus for 5-star ratings).
     - `increment_loyalty_points` RPC (1 point per 100k confirmed revenue).
 
+### PHASE 19: Security Hardening & Analytics Optimization (Completed)
+- **Hardened RLS**: Strict tenant-isolation policies across 100% of core tables.
+- **Unified Leaderboard**: High-performance RPC for KTV performance tracking.
+- **Session Refresh Proxy**: Automated auth maintenance for stable ERP sessions.
+- **Rating Consistency**: Cross-table sync for customer feedback data.
+
 ---
 
-**Document Version:** 2.0  
-**Last Updated:** 2026-05-15 (11:05)  
-**Status:** Implementation Phase (Phase 18)  
+**Document Version:** 2.1  
+**Last Updated:** 2026-05-15 (21:00)  
+**Status:** Implementation Phase (Phase 19: Completed)  
 **Contact:** Bella Spa ERP Dev Team

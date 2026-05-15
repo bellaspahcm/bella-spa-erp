@@ -13,7 +13,7 @@ import {
   Star,
   Clock
 } from 'lucide-react';
-import { getKTVEarnings } from '@/services/ktv-actions';
+import { getKTVEarnings, getKTVLeaderboard } from '@/services/ktv-actions';
 import { createClient } from '@/lib/supabase-client';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -22,6 +22,7 @@ import Link from 'next/link';
 export default function KTVEarningsPage() {
   const [earnings, setEarnings] = useState<any>(null);
   const [details, setDetails] = useState<any[]>([]);
+  const [leaderboardData, setLeaderboardData] = useState<any>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -63,6 +64,10 @@ export default function KTVEarningsPage() {
           .order('completed_date', { ascending: false });
 
         setDetails(sessions || []);
+
+        const lb = await getKTVLeaderboard(selectedMonth);
+        const myStats = lb.find((k: any) => k.ktv_id === user.id) || { total_kpi_bonus: 0, average_rating: 0 };
+        setLeaderboardData(myStats);
       }
     } catch (error) {
       toast.error('Lỗi khi tải dữ liệu thu nhập');
@@ -130,14 +135,14 @@ export default function KTVEarningsPage() {
                   <Award className="w-5 h-5" />
                </div>
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Thưởng KPI</p>
-               <p className="text-lg font-black text-slate-900">0đ</p>
+               <p className="text-lg font-black text-slate-900">{formatCurrency(leaderboardData?.total_kpi_bonus || 0)}</p>
             </div>
             <div className="bg-white p-5 rounded-[32px] shadow-sm border border-slate-100">
                <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mb-3">
                   <Star className="w-5 h-5" />
                </div>
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Đánh giá TB</p>
-               <p className="text-lg font-black text-slate-900">5.0 ⭐</p>
+               <p className="text-lg font-black text-slate-900">{Number(leaderboardData?.average_rating || 0).toFixed(1)} ⭐</p>
             </div>
          </div>
 

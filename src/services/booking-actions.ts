@@ -383,14 +383,16 @@ export async function completeSession(sessionId: string, bookingId: string) {
       .eq('id', bookingId)
       .single();
 
-    if (bookingDetails) {
+    if (bookingDetails && bookingDetails.assigned_ktv_id) {
+      // Only create placeholder review if KTV is assigned
+      // rating=0 is now allowed by DB constraint (pending_review state)
       await supabase
         .from('session_reviews')
         .insert([{
           session_log_id: sessionId,
-          reviewer_id: null, // To be linked to customer auth user later
+          reviewer_id: null,
           ktv_id: bookingDetails.assigned_ktv_id,
-          rating: 0, // Placeholder
+          rating: 0,
           status: 'pending_review',
           tenant_id: currentBooking?.tenant_id
         } as any]);

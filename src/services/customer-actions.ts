@@ -56,7 +56,14 @@ export async function getCustomerBookingByToken(token?: string) {
 export async function submitCustomerRating(sessionId: string, rating: number, comment: string = '') {
   const supabase = (await createClient()) as any;
 
-  // 1. Cập nhật rating vào session_log
+  // 1. Lấy thông tin session để đồng bộ hóa
+  const { data: session } = await supabase
+    .from('session_logs')
+    .select('completed_by_ktv_id, tenant_id, bookings(customer_id)')
+    .eq('id', sessionId)
+    .single();
+
+  // 2. Cập nhật rating vào session_log (Legacy support & quick read)
   const { error: updateError } = await supabase
     .from('session_logs')
     .update({
@@ -70,16 +77,30 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
     throw new Error('Không thể gửi đánh giá');
   }
 
-  // 2. Kích hoạt tính toán thưởng cho KTV qua RPC
+  // 3. Tạo bản ghi review chính thức (Analytics source)
+  if (session) {
+    await supabase.from('session_reviews').insert({
+      session_id: sessionId,
+      ktv_id: session.completed_by_ktv_id,
+      customer_id: session.bookings?.customer_id,
+      rating: rating,
+      comment: comment,
+      tenant_id: session.tenant_id
+    });
+  }
+
+  // 4. Kích hoạt tính toán thưởng cho KTV qua RPC
   const { error: rpcError } = await supabase.rpc('apply_rating_bonus', {
     p_session_id: sessionId
   });
 
   if (rpcError) {
     console.error('Bonus RPC error:', rpcError);
-    // Vẫn cho qua vì rating đã lưu, nhưng log lỗi bonus
   }
 
+  revalidatePath('/dashboard');
+  revalidatePath('/ktv/earnings');
+  
   return { success: true };
 }
 

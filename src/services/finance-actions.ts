@@ -217,18 +217,21 @@ export async function recordTransaction(data: {
       // revenue.status: 'confirmed' | 'pending'
       const dbStatus = data.status === 'confirmed' ? 'confirmed' : 'pending';
 
+      // Map frontend categories to valid DB revenue_type values
+      const validRevenueTypes = ['deposit', 'session_completed', 'additional', 'package_payment', 'remaining_payment'];
+      const dbRevenueType = validRevenueTypes.includes(data.category) ? data.category : 'additional';
+
       const { data: result, error } = await supabase
         .from('revenue')
         .insert({
           amount: Math.abs(data.amount),
           notes: data.notes,
           booking_id: data.booking_id || null,
-          revenue_type: data.category || 'additional',
+          revenue_type: dbRevenueType,
           payment_method: 'bank_transfer',
-          status: dbStatus,                           // ✓ 'confirmed' | 'pending'
+          status: dbStatus,
           received_date: new Date().toISOString().split('T')[0],
           tenant_id: tenantId
-          // No: created_at (doesn't exist in schema)
         })
         .select()
         .single();
