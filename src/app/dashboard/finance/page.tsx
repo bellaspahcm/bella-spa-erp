@@ -56,15 +56,21 @@ export default function FinancePage() {
     setIsRefreshing(true);
     try {
       const m = month || selectedMonth;
-      const [overview, pnl, performance] = await Promise.all([
+      const [overviewResult, pnlResult, perfResult] = await Promise.allSettled([
         getFinancialOverview(),
         getMonthlyPnL(m),
         getServicePerformance()
       ]);
-      
-      setData(overview);
-      setPnlData(pnl);
-      setPerformanceData(performance);
+
+      if (overviewResult.status === 'fulfilled' && overviewResult.value) {
+        setData(overviewResult.value as any);
+      } else if (overviewResult.status === 'rejected') {
+        console.error('Overview failed:', overviewResult.reason);
+        toast.error('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');
+      }
+
+      if (pnlResult.status === 'fulfilled') setPnlData(pnlResult.value);
+      if (perfResult.status === 'fulfilled') setPerformanceData((perfResult.value as any) || []);
     } catch (error) {
       console.error('Error fetching finance data:', error);
       toast.error('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');
