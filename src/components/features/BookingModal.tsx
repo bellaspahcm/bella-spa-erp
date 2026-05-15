@@ -21,6 +21,7 @@ import { getCustomers, createCustomer } from '@/services/customer-actions';
 import { createBooking, getPackages, getDraftBooking } from '@/services/booking-actions';
 import { getUsers } from '@/services/user-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { formatNumberWithSeparator, cn } from '@/lib/utils';
 
 interface BookingModalProps {
   isOpen: boolean;

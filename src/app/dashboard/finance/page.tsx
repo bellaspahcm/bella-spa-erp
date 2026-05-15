@@ -217,7 +217,7 @@ export default function FinancePage() {
           onRefresh={() => fetchData(selectedMonth)}
         />
       ) : (
-        <>
+        <div className="space-y-10">
           {/* Financial Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <motion.div 
@@ -431,7 +431,8 @@ export default function FinancePage() {
             </button>
           </div>
         </div>
-      </>
+      </div>
+    </div>
       )}
       <TransactionModal 
         isOpen={isModalOpen} 

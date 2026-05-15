@@ -10,7 +10,8 @@ import {
   ChevronRight,
   RefreshCw,
   Award,
-  Star
+  Star,
+  Clock
 } from 'lucide-react';
 import { getKTVEarnings } from '@/services/ktv-actions';
 import { createClient } from '@/lib/supabase-client';
