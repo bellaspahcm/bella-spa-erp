@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   LayoutDashboard, 
@@ -20,7 +20,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { getCurrentUser } from '@/services/user-actions';
-import { useEffect } from 'react';
+import { createClient } from '@/lib/supabase-client';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -48,6 +48,7 @@ const customerMenuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -70,11 +71,22 @@ export function Sidebar() {
 
   // KTV gets a personal income shortcut instead
   if (user?.role === 'ktv') {
-    const hasIncome = filteredMenuItems.some(i => i.label === 'Thu nhập cá nhân');
+    const hasIncome = filteredMenuItems.some((i: any) => i.label === 'Thu nhập cá nhân');
     if (!hasIncome) {
-      filteredMenuItems.push({ icon: DollarSign, label: 'Thu nhập cá nhân', href: '/dashboard/salary' });
+      filteredMenuItems.push({ icon: DollarSign, label: 'Thu nhập cá nhân', href: '/ktv/earnings' });
     }
   }
+
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push('/login');
+    } catch (e) {
+      console.error('Logout error:', e);
+      router.push('/login');
+    }
+  };
 
   const roleLabel =
     user?.role === 'ktv' ? 'Kỹ thuật viên'
@@ -167,7 +179,10 @@ export function Sidebar() {
           </div>
 
           {/* Logout */}
-          <button className="flex items-center gap-2.5 w-full px-3 py-1.5 text-slate-400 hover:text-rose-600 transition-all font-black text-[11px] uppercase tracking-[0.2em] group">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2.5 w-full px-3 py-1.5 text-slate-400 hover:text-rose-600 transition-all font-black text-[11px] uppercase tracking-[0.2em] group"
+          >
             <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
               <LogOut className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
             </div>

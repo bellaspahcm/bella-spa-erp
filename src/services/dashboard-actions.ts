@@ -50,7 +50,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     let prevCustQ = supabase.from('customers').select('id', { count: 'exact', head: true }).lt('created_at', monthStart);
     let revQ     = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', monthStart).lt('received_date', monthEnd);
     let prevRevQ = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', prevStart).lt('received_date', monthStart);
-    let ratQ     = supabase.from('session_reviews').select('rating');
+    let ratQ     = supabase.from('session_logs').select('rating').not('rating', 'is', null); 
 
     if (tenantId) {
       custQ    = custQ.eq('tenant_id', tenantId);
@@ -121,55 +121,39 @@ export async function getTopTechnicians() {
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
 
-    // Build queries — apply tenant filter only when available
-    let ktvQ = supabase.from('users').select('id, full_name').eq('role', 'ktv');
-    let sessQ = supabase.from('session_logs').select('completed_by_ktv_id').eq('status', 'completed');
-    let revQ = supabase.from('session_reviews').select('ktv_id, rating');
-    if (tenantId) {
-      ktvQ = ktvQ.eq('tenant_id', tenantId);
-      sessQ = sessQ.eq('tenant_id', tenantId);
-      revQ = revQ.eq('tenant_id', tenantId);
-    }
-    const [ktvRes, sessionRes, reviewRes] = await Promise.all([ktvQ, sessQ, revQ]);
+    if (!tenantId) return [];
 
-    // Aggregate session counts
-    const sessionCount: Record<string, number> = {};
-    for (const sl of (sessionRes.data || [])) {
-      if (sl.completed_by_ktv_id) {
-        sessionCount[sl.completed_by_ktv_id] = (sessionCount[sl.completed_by_ktv_id] || 0) + 1;
-      }
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
+    const { data, error } = await supabase.rpc('get_ktv_leaderboard', {
+      p_tenant_id: tenantId,
+      p_month: month
+    });
+
+    if (error) {
+      console.error('[getTopTechnicians] RPC error:', error);
+      return [];
     }
 
-    // Aggregate ratings
-    const ratingMap: Record<string, number[]> = {};
-    for (const rv of (reviewRes.data || [])) {
-      if (rv.ktv_id) {
-        if (!ratingMap[rv.ktv_id]) ratingMap[rv.ktv_id] = [];
-        ratingMap[rv.ktv_id].push(Number(rv.rating));
-      }
-    }
-
-    return (ktvRes.data || [])
-      .map((u: any) => {
-        const sessions = sessionCount[u.id] || 0;
-        const userRatings = ratingMap[u.id] || [];
-        const avgRating = userRatings.length
-          ? userRatings.reduce((s, r) => s + r, 0) / userRatings.length
-          : 5.0;
-        return {
-          name: u.full_name,
-          sessions,
-          rating: avgRating.toFixed(1),
-          status: avgRating >= 4.8 ? 'Xuất Sắc' : 'Tốt',
-          bonus: avgRating >= 4.8 ? '+2,000k' : '+1,500k'
-        };
-      })
-      .sort((a: any, b: any) => b.sessions - a.sessions)
-      .slice(0, 3);
+    return (data || []).slice(0, 3).map((u: any) => ({
+      name: u.full_name,
+      sessions: Number(u.sessions || 0),
+      rating: Number(u.average_rating || 0).toFixed(1),
+      status: Number(u.average_rating || 0) >= 4.8 ? 'Xuất Sắc' : 'Tốt',
+      bonus: formatCurrency(Number(u.total_kpi_bonus || 0))
+    }));
   } catch (e) {
     console.error('[getTopTechnicians]', e);
     return [];
   }
+}
+
+// Helper for formatting in dashboard-actions
+function formatCurrency(val: number) {
+  if (val >= 1000000) return `+${(val / 1000000).toFixed(1)}M`;
+  if (val >= 1000) return `+${(val / 1000).toFixed(0)}k`;
+  return `+${val}`;
 }
 
 // ─── getMonthlyPerformance ────────────────────────────────────────────────────
@@ -206,8 +190,8 @@ export async function getMonthlyPerformance() {
         return tenantId ? q.eq('tenant_id', tenantId) : q;
       })(),
       (() => {
-        let q = supabase.from('session_reviews').select('rating, created_at')
-          .gte('created_at', rangeStart).lt('created_at', rangeEnd);
+        let q = supabase.from('session_logs').select('rating, completed_date')
+          .not('rating', 'is', null).gte('completed_date', rangeStart).lt('completed_date', rangeEnd);
         return tenantId ? q.eq('tenant_id', tenantId) : q;
       })(),
       (() => {
@@ -224,7 +208,7 @@ export async function getMonthlyPerformance() {
       const exp = (expData.data || [])
         .filter((e: any) => e.expense_date >= mo.start && e.expense_date < mo.end)
         .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-      const monthRatings = (reviewData.data || []).filter((r: any) => r.created_at >= mo.start && r.created_at < mo.end);
+      const monthRatings = (reviewData.data || []).filter((r: any) => r.completed_date >= mo.start && r.completed_date < mo.end);
       const avg = monthRatings.length
         ? monthRatings.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / monthRatings.length
         : 5.0;

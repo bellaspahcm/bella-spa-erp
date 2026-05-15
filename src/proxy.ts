@@ -1,10 +1,10 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Next.js middleware: runs on every request BEFORE page/API handlers.
+// Next.js 16 proxy: runs on every request BEFORE page/API handlers.
 // REQUIRED for Supabase SSR — refreshes the auth session so Server Actions
 // can reliably call supabase.auth.getUser() without getting null.
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -20,8 +20,6 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          // Update cookies on both request and response so downstream
-          // Server Components / Actions see the refreshed token.
           request.cookies.set({ name, value, ...options });
           response = NextResponse.next({
             request: {
@@ -43,8 +41,8 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Calling getUser() here triggers token refresh if the JWT is expired.
-  // Do NOT remove this — it is what keeps sessions alive for Server Actions.
+  // Calling getUser() triggers token refresh if the JWT is expired.
+  // Do NOT remove this — it keeps sessions alive for Server Actions.
   await supabase.auth.getUser();
 
   return response;
