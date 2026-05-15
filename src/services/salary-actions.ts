@@ -471,17 +471,11 @@ export async function getKtvSessionMatrix() {
       const row: any = { id: ktv.id, name: ktv.full_name, isConfirmed: false };
       
       // Determine if this KTV's sessions are confirmed
-      const ktvSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
       const salaryRecord = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
       
-      // Confirmed only if status is explicitly pending_approval or approved
-      const isRecordConfirmed = !!(salaryRecord && 
-                                (salaryRecord.status === 'pending_approval' || salaryRecord.status === 'approved'));
-                                
-      row.isConfirmed = (ktvSessions.length > 0 && ktvSessions.every((s: any) => s.is_confirmed)) || 
-                        isRecordConfirmed;
-      
-      console.log(`KTV: ${ktv.full_name}, Sessions: ${ktvSessions.length}, Record Status: ${salaryRecord?.status}, isConfirmed: ${row.isConfirmed}`);
+      // Confirmed ONLY if status is explicitly pending_approval or approved
+      row.isConfirmed = !!(salaryRecord && 
+                        (salaryRecord.status === 'pending_approval' || salaryRecord.status === 'approved'));
       
       packageNames.forEach((pkg: string) => {
         if (hasAnyRealData && matrix[ktv.id]) {
@@ -518,6 +512,9 @@ export async function getKtvSessionMatrix() {
 
 export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
   const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  
   console.log(`Confirming sessions for KTV: ${ktvId}, Total: ${totalSessions}`);
   
   try {
@@ -530,8 +527,6 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
 
     if (sessionError) {
       console.error('Error updating session_logs:', sessionError);
-      // Don't fail the whole operation if this column is missing, 
-      // but log it for debugging
     }
 
     // 2. Check for existing salary record
@@ -565,7 +560,8 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
           ktv_id: ktvId,
           month_year: '2026-05-01',
           total_sessions: totalSessions,
-          status: 'pending_approval'
+          status: 'pending_approval',
+          tenant_id: tenantId // Crucial: add tenant_id for consistency
         });
     }
 
