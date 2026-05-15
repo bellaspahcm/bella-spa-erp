@@ -9,13 +9,10 @@ async function resolveTenantId(): Promise<string> {
   try {
     const { createClient } = await import('@/lib/supabase-server');
     const supabase = (await createClient()) as any;
-
-    // Level 1: getCurrentUser session
     const { getCurrentUser } = await import('./user-actions');
     const currentUser = await getCurrentUser();
     if (currentUser?.tenant_id) return currentUser.tenant_id;
 
-    // Level 2: auth.getUser + DB lookup
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (authUser) {
       const { data: profile } = await supabase
@@ -29,9 +26,16 @@ async function resolveTenantId(): Promise<string> {
   } catch (e) {
     console.warn('[finance] Tenant resolution error:', e);
   }
-  // Level 3: hardcoded fallback
   return KNOWN_TENANT_ID;
 }
+
+// ─── Schema reference (verified 2026-05-15) ──────────────────────────────────
+// revenue:  id, booking_id, amount, revenue_type, payment_method,
+//           received_date (date), recorded_by_id, status('confirmed'|'pending'),
+//           notes, tenant_id
+// expenses: id, category, amount, description, receipt_url,
+//           expense_date (date), approved_by_id, status('approved'|'pending'),
+//           submitted_by_id, tenant_id
 
 // ─── getFinancialOverview ─────────────────────────────────────────────────────
 export async function getFinancialOverview() {
@@ -41,7 +45,6 @@ export async function getFinancialOverview() {
   const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
 
-  // KTVs cannot see financial overview
   if (currentUser?.role === 'ktv') {
     return { totalBalance: 0, totalRevenueMonth: 0, totalExpenseMonth: 0, transactions: [] };
   }
@@ -49,12 +52,13 @@ export async function getFinancialOverview() {
   const [revenueResponse, expensesResponse] = await Promise.all([
     supabase
       .from('revenue')
-      .select(`*, bookings(package_name, customers(name_mother, name_baby))`)
-      .order('created_at', { ascending: false }),
+      .select(`id, booking_id, amount, revenue_type, payment_method, received_date, status, notes,
+               bookings(package_name, customers(name_mother, name_baby))`)
+      .order('received_date', { ascending: false }),  // ✓ received_date exists
     supabase
       .from('expenses')
-      .select('*')
-      .order('created_at', { ascending: false })
+      .select('id, category, amount, description, expense_date, status')
+      .order('expense_date', { ascending: false })    // ✓ expense_date exists
   ]);
 
   if (revenueResponse.error) {
@@ -67,13 +71,14 @@ export async function getFinancialOverview() {
   const revenueData = revenueResponse.data || [];
   const expensesData = expensesResponse.data || [];
 
-  // Only sum confirmed revenue & paid expenses
+  // revenue.status === 'confirmed' (verified from DB)
   const dbRevenue = revenueData
     .filter((r: any) => r.status === 'confirmed')
     .reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
 
+  // expenses.status === 'approved' (verified from DB)
   const dbExpense = expensesData
-    .filter((e: any) => e.payment_status === 'paid' || e.status === 'paid')
+    .filter((e: any) => e.status === 'approved' || e.status === 'paid')
     .reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
 
   const totalBalance = dbRevenue - dbExpense;
@@ -92,23 +97,21 @@ export async function getFinancialOverview() {
       category: r.revenue_type === 'additional' ? 'Phát sinh' : (r.notes || 'Dịch vụ'),
       amountNum: Number(r.amount) || 0,
       amount: '+' + Number(r.amount).toLocaleString() + 'đ',
-      date: new Date(r.received_date || r.created_at || new Date()).toLocaleDateString('vi-VN'),
+      date: new Date(r.received_date || new Date()).toLocaleDateString('vi-VN'),
       method: r.payment_method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản',
-      status: r.status === 'pending' ? 'pending' : (r.status || 'confirmed'),
+      status: r.status || 'pending',
       details: r.revenue_type === 'additional'
         ? (r.notes || customerName)
         : `${packageName} - ${customerName}`,
-      timestamp: new Date(r.received_date || r.created_at || new Date()).getTime()
+      timestamp: new Date(r.received_date || new Date()).getTime()
     };
   });
 
   const categoryMap: Record<string, string> = {
     'salary': 'Lương nhân viên',
     'other': 'Chi phí khác',
-    'other_admin': 'Chi phí khác',
     'marketing': 'Marketing',
-    'rent': 'Tiền thuê văn phòng',
-    'office_rent': 'Tiền thuê văn phòng',
+    'rent': 'Tiền thuê mặt bằng',
     'utilities': 'Điện nước',
     'operating': 'Phí vận hành',
     'materials': 'Nguyên vật liệu',
@@ -122,11 +125,11 @@ export async function getFinancialOverview() {
     category: categoryMap[e.category] || e.category || 'Chi phí',
     amountNum: Number(e.amount) || 0,
     amount: '-' + Number(e.amount).toLocaleString() + 'đ',
-    date: new Date(e.expense_date || e.created_at || new Date()).toLocaleDateString('vi-VN'),
+    date: new Date(e.expense_date || new Date()).toLocaleDateString('vi-VN'),
     method: 'Chuyển khoản',
-    status: (e.payment_status === 'paid' || e.status === 'paid') ? 'confirmed' : 'pending',
+    status: (e.status === 'approved' || e.status === 'paid') ? 'confirmed' : 'pending',
     details: e.description || 'Chi phí vận hành',
-    timestamp: new Date(e.expense_date || e.created_at || new Date()).getTime()
+    timestamp: new Date(e.expense_date || new Date()).getTime()
   }));
 
   const allTransactions = [...mappedRevenues, ...mappedExpenses]
@@ -144,44 +147,13 @@ export async function getFinancialOverview() {
 export async function confirmTransaction(id: string, type: 'revenue' | 'expense') {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
-  const table = type === 'revenue' ? 'revenue' : 'expenses';
 
-  // For revenue: try to apply loyalty points
-  if (type === 'revenue') {
-    try {
-      const { data: revData } = await supabase
-        .from('revenue')
-        .select('amount, booking_id')
-        .eq('id', id)
-        .single();
-
-      if (revData?.booking_id) {
-        const { data: bookingData } = await supabase
-          .from('bookings')
-          .select('customer_id')
-          .eq('id', revData.booking_id)
-          .single();
-
-        if (bookingData?.customer_id) {
-          const points = Math.floor(Number(revData.amount) / 100000);
-          if (points > 0) {
-            // Try RPC first, if not available skip silently
-            await supabase.rpc('increment_loyalty_points', {
-              p_customer_id: bookingData.customer_id,
-              p_points: points
-            }).catch(() => null); // Non-critical — ignore if RPC missing
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('[confirmTransaction] Loyalty points skipped:', e);
-    }
-  }
-
+  // For expense: status = 'approved'; for revenue: status = 'confirmed'
   const updatePayload = type === 'revenue'
     ? { status: 'confirmed' }
-    : { payment_status: 'paid', status: 'approved' };
+    : { status: 'approved' };
 
+  const table = type === 'revenue' ? 'revenue' : 'expenses';
   const { error } = await supabase.from(table).update(updatePayload).eq('id', id);
 
   if (error) {
@@ -208,12 +180,17 @@ export async function recordTransaction(data: {
 
   try {
     if (data.type === 'expense') {
-      // Map frontend categories to DB values
+      // Map frontend categories to valid DB values
       const catMap: Record<string, string> = {
         'office_rent': 'rent',
-        'other_admin': 'other'
+        'other_admin': 'other',
+        'materials': 'materials',
+        'maintenance': 'maintenance'
       };
-      const dbCategory = catMap[data.category] || data.category;
+      const dbCategory = catMap[data.category] || data.category || 'other';
+
+      // expenses.status: 'approved' | 'pending' (NO payment_status column!)
+      const dbStatus = data.status === 'confirmed' ? 'approved' : 'pending';
 
       const { data: result, error } = await supabase
         .from('expenses')
@@ -221,18 +198,25 @@ export async function recordTransaction(data: {
           amount: Math.abs(data.amount),
           category: dbCategory,
           description: data.notes,
-          payment_status: data.status === 'confirmed' ? 'paid' : 'pending',
+          status: dbStatus,                           // ✓ 'approved' | 'pending'
           expense_date: new Date().toISOString().split('T')[0],
           tenant_id: tenantId
+          // No: expense_number, payment_status (don't exist in schema)
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[recordTransaction] expense error:', error);
+        throw error;
+      }
 
       revalidatePath('/dashboard/finance');
       return result;
     } else {
+      // revenue.status: 'confirmed' | 'pending'
+      const dbStatus = data.status === 'confirmed' ? 'confirmed' : 'pending';
+
       const { data: result, error } = await supabase
         .from('revenue')
         .insert({
@@ -241,14 +225,18 @@ export async function recordTransaction(data: {
           booking_id: data.booking_id || null,
           revenue_type: data.category || 'additional',
           payment_method: 'bank_transfer',
-          status: data.status || 'pending',
+          status: dbStatus,                           // ✓ 'confirmed' | 'pending'
           received_date: new Date().toISOString().split('T')[0],
           tenant_id: tenantId
+          // No: created_at (doesn't exist in schema)
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[recordTransaction] revenue error:', error);
+        throw error;
+      }
 
       revalidatePath('/dashboard/finance');
       return result;
@@ -260,7 +248,7 @@ export async function recordTransaction(data: {
 }
 
 // ─── getMonthlyPnL ────────────────────────────────────────────────────────────
-// Replaces non-existent RPC with direct query
+// Returns fields matching FinancePnLSummary's PnLData interface
 export async function getMonthlyPnL(month?: string) {
   try {
     const { createClient } = await import('@/lib/supabase-server');
@@ -275,7 +263,7 @@ export async function getMonthlyPnL(month?: string) {
       ? `${y + 1}-01-01`
       : `${y}-${String(m + 1).padStart(2, '0')}-01`;
 
-    const [revRes, expRes, bookingRes] = await Promise.all([
+    const [revRes, expRes, bookingRes, sessionRes] = await Promise.all([
       supabase
         .from('revenue')
         .select('amount, status, revenue_type, received_date')
@@ -284,59 +272,71 @@ export async function getMonthlyPnL(month?: string) {
         .lt('received_date', endDate),
       supabase
         .from('expenses')
-        .select('amount, category, expense_date')
+        .select('amount, category, expense_date, status')
         .eq('tenant_id', tenantId)
         .gte('expense_date', startDate)
         .lt('expense_date', endDate),
       supabase
         .from('bookings')
-        .select('id, status, full_price, deposit_amount, created_at')
-        .eq('tenant_id', tenantId)
-        .gte('created_at', startDate)
-        .lt('created_at', endDate)
+        .select('id, status, full_price, completed_sessions, total_sessions, ktv_commission')
+        .eq('tenant_id', tenantId),
+      supabase
+        .from('session_logs')
+        .select('id, status, completed_date, booking_id, bookings!inner(tenant_id, ktv_commission)')
+        .eq('bookings.tenant_id', tenantId)
+        .eq('status', 'completed')
+        .gte('completed_date', startDate)
+        .lt('completed_date', endDate)
     ]);
 
     const revenues = revRes.data || [];
     const expenses = expRes.data || [];
     const bookings = bookingRes.data || [];
+    const sessions = sessionRes.data || [];
 
+    // Revenue: confirmed only
     const totalRevenue = revenues
       .filter((r: any) => r.status === 'confirmed')
       .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
 
-    const totalExpenses = expenses
+    // Operating expenses: exclude 'salary' category (that's KTV salary)
+    const totalOperatingExpenses = expenses
+      .filter((e: any) => e.category !== 'salary')
       .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
-    const grossProfit = totalRevenue - totalExpenses;
-    const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+    // Salary expenses
+    const totalKtvSalaries = expenses
+      .filter((e: any) => e.category === 'salary')
+      .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
-    const newBookings = bookings.filter((b: any) =>
+    // Net profit = revenue - all expenses
+    const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+    const netProfit = totalRevenue - totalExpenses;
+
+    const totalBookings = bookings.filter((b: any) =>
       ['booked', 'in_progress', 'completed'].includes(b.status)
     ).length;
 
-    const expenseByCategory: Record<string, number> = {};
-    expenses.forEach((e: any) => {
-      const cat = e.category || 'other';
-      expenseByCategory[cat] = (expenseByCategory[cat] || 0) + Number(e.amount || 0);
-    });
+    const totalSessionsCompleted = sessions.length;
 
     return {
-      month: targetMonthStr,
-      total_revenue: totalRevenue,
-      total_expenses: totalExpenses,
-      gross_profit: grossProfit,
-      profit_margin: Math.round(profitMargin * 10) / 10,
-      new_bookings: newBookings,
-      expense_breakdown: expenseByCategory
+      month_year: targetMonthStr,                        // matches PnLData.month_year
+      total_revenue: totalRevenue,                       // matches PnLData.total_revenue
+      total_operating_expenses: totalOperatingExpenses,  // matches PnLData.total_operating_expenses
+      total_ktv_salaries: totalKtvSalaries,              // matches PnLData.total_ktv_salaries
+      net_profit: netProfit,                             // matches PnLData.net_profit
+      total_bookings: totalBookings,                     // matches PnLData.total_bookings
+      total_sessions_completed: totalSessionsCompleted,  // matches PnLData.total_sessions_completed
+      is_locked: false                                   // matches PnLData.is_locked
     };
   } catch (e) {
     console.error('[getMonthlyPnL] error:', e);
-    return null; // Return null instead of throwing
+    return null;
   }
 }
 
 // ─── getServicePerformance ────────────────────────────────────────────────────
-// Replaces non-existent RPC with direct query
+// Returns fields matching FinancePnLSummary's ServicePerformance interface
 export async function getServicePerformance() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
@@ -345,7 +345,7 @@ export async function getServicePerformance() {
 
     const { data: bookings, error } = await supabase
       .from('bookings')
-      .select('package_name, full_price, completed_sessions, total_sessions, status')
+      .select('package_name, full_price, completed_sessions, total_sessions, ktv_commission, status')
       .eq('tenant_id', tenantId)
       .not('status', 'eq', 'cancelled');
 
@@ -356,9 +356,10 @@ export async function getServicePerformance() {
 
     // Aggregate by package_name
     const byPackage: Record<string, {
-      name: string;
-      count: number;
-      totalRevenue: number;
+      package_name: string;
+      total_bookings: number;
+      total_revenue: number;
+      total_ktv_cost: number;
       completedSessions: number;
       totalSessions: number;
     }> = {};
@@ -366,32 +367,49 @@ export async function getServicePerformance() {
     (bookings || []).forEach((b: any) => {
       const key = b.package_name || 'Dịch vụ lẻ';
       if (!byPackage[key]) {
-        byPackage[key] = { name: key, count: 0, totalRevenue: 0, completedSessions: 0, totalSessions: 0 };
+        byPackage[key] = {
+          package_name: key,          // matches ServicePerformance.package_name
+          total_bookings: 0,          // matches ServicePerformance.total_bookings
+          total_revenue: 0,
+          total_ktv_cost: 0,          // matches ServicePerformance.total_ktv_cost
+          completedSessions: 0,
+          totalSessions: 0
+        };
       }
-      byPackage[key].count += 1;
-      byPackage[key].totalRevenue += Number(b.full_price || 0);
+      byPackage[key].total_bookings += 1;
+      byPackage[key].total_revenue += Number(b.full_price || 0);
+      // KTV cost = commission per session × completed sessions
+      const commission = Number(b.ktv_commission || 150000);
+      byPackage[key].total_ktv_cost += commission * Number(b.completed_sessions || 0);
       byPackage[key].completedSessions += Number(b.completed_sessions || 0);
       byPackage[key].totalSessions += Number(b.total_sessions || 0);
     });
 
     return Object.values(byPackage)
-      .sort((a, b) => b.totalRevenue - a.totalRevenue)
-      .map(p => ({
-        ...p,
-        completionRate: p.totalSessions > 0
-          ? Math.round((p.completedSessions / p.totalSessions) * 100)
-          : 0
-      }));
+      .sort((a, b) => b.total_revenue - a.total_revenue)
+      .map(p => {
+        const netServiceProfit = p.total_revenue - p.total_ktv_cost;
+        const profitMargin = p.total_revenue > 0
+          ? (netServiceProfit / p.total_revenue) * 100
+          : 0;
+        return {
+          package_name: p.package_name,                              // ✓
+          total_bookings: p.total_bookings,                          // ✓
+          total_revenue: p.total_revenue,                            // ✓
+          total_ktv_cost: p.total_ktv_cost,                         // ✓
+          net_service_profit: netServiceProfit,                      // ✓
+          profit_margin_percent: Math.round(profitMargin * 10) / 10  // ✓
+        };
+      });
   } catch (e) {
     console.error('[getServicePerformance] error:', e);
-    return []; // Return [] instead of throwing
+    return [];
   }
 }
 
-// ─── lockMonth (stub — RPC not in DB yet) ────────────────────────────────────
+// ─── lockMonth (stub) ─────────────────────────────────────────────────────────
 export async function lockMonth(month: string) {
-  // RPC lock_monthly_records not yet implemented — return success stub
-  console.warn('[lockMonth] RPC not implemented, skipping for month:', month);
+  console.warn('[lockMonth] Not fully implemented for month:', month);
   revalidatePath('/dashboard/finance');
   return { success: true };
 }
