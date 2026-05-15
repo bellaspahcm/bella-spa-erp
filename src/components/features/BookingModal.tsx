@@ -18,10 +18,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCustomers, createCustomer } from '@/services/customer-actions';
-import { createBooking, getPackages, getDraftBooking } from '@/services/booking-actions';
-import { getUsers } from '@/services/user-actions';
+import { createBooking, getDraftBooking } from '@/services/booking-actions';
+import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { formatNumberWithSeparator, cn } from '@/lib/utils';
+
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -82,8 +83,15 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
   async function fetchPackages() {
     try {
-      const data = await getPackages();
-      setPackages(data);
+      const supabase = createBrowserClient();
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+        
+      if (error) throw error;
+      setPackages(data || []);
     } catch (error) {
       console.error('Error fetching packages:', error);
     }
@@ -91,12 +99,21 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
   async function fetchKtvs() {
     try {
-      const data = await getUsers();
-      setKtvs(data.filter((u: any) => u.role === 'ktv'));
+      const supabase = createBrowserClient();
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('role', 'ktv')
+        .eq('status', 'active')
+        .order('full_name', { ascending: true });
+        
+      if (error) throw error;
+      setKtvs(data || []);
     } catch (error) {
       console.error('Error fetching KTVs:', error);
     }
   }
+
 
   // Load draft booking when customer is selected
   useEffect(() => {
@@ -146,9 +163,16 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   async function fetchCustomers() {
     setIsLoading(true);
     try {
-      const data = await getCustomers();
-      setCustomers(data);
-      setFilteredCustomers(data);
+      const supabase = createBrowserClient();
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('status', 'active')
+        .order('name_mother', { ascending: true });
+        
+      if (error) throw error;
+      setCustomers(data || []);
+      setFilteredCustomers(data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast.error('Không thể tải danh sách khách hàng');
@@ -156,6 +180,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       setIsLoading(false);
     }
   }
+
 
   useEffect(() => {
     if (searchQuery.trim() === '') {

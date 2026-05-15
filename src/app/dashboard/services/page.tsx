@@ -23,6 +23,8 @@ import { toast } from 'sonner';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
 import { getPackages, createPackage, updatePackage, deletePackage } from '@/services/package-actions';
+import { createClient as createBrowserClient } from '@/lib/supabase-client';
+
 
 export default function ServicesPage() {
   const [services, setServices] = useState<any[]>([]);
@@ -40,13 +42,44 @@ export default function ServicesPage() {
   const [offer, setOffer] = useState('');
   const [details, setDetails] = useState('');
   const [ktvCommission, setKtvCommission] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const resetForm = () => {
+    setName('');
+    setPrice('');
+    setDuration('');
+    setSessions('');
+    setOffer('');
+    setDetails('');
+    setKtvCommission('');
+    setSelectedService(null);
+  };
+
 
   const loadData = async () => {
     setIsLoading(true);
-    const data = await getPackages();
-    setServices(data);
-    setIsLoading(false);
+    try {
+      const supabase = createBrowserClient();
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .order('name', { ascending: true });
+        
+      if (error) {
+        console.error('Error fetching packages:', error);
+        toast.error('Không thể tải danh sách dịch vụ');
+        setServices([]);
+      } else {
+        setServices(data || []);
+      }
+    } catch (err) {
+      console.error('Load data error:', err);
+      setServices([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
 
   useEffect(() => {
     loadData();
@@ -79,49 +112,92 @@ export default function ServicesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) {
-      const result = await deletePackage(id);
-      if (result.error) {
-        toast.error('Lỗi khi xóa: ' + result.error);
+    if (!confirm('Bạn có chắc chắn muốn xóa gói dịch vụ này?')) return;
+    
+    setIsLoading(true);
+    try {
+      const supabase = createBrowserClient();
+      const { error } = await supabase
+        .from('packages')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting package:', error);
+        toast.error('Lỗi khi xóa gói dịch vụ: ' + error.message);
       } else {
-        setServices(services.filter(s => s.id !== id));
-        toast.success('Đã xóa dịch vụ');
+        toast.success('Đã xóa gói dịch vụ');
+        loadData();
       }
+    } catch (err) {
+      console.error('Delete error:', err);
+      toast.error('Lỗi hệ thống khi xóa');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    const serviceData = {
-      name,
-      price,
-      duration: `${duration} phút/buổi`,
-      sessions: parseInt(sessions),
-      details: details.split(',').map(d => d.trim()).filter(d => d),
-      offer,
-      ktv_commission: ktvCommission
-    };
+    try {
+      const supabase = createBrowserClient();
+      
+      // Get current user for tenant_id if needed
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Phiên làm việc hết hạn. Vui lòng đăng nhập lại.');
+        return;
+      }
 
-    if (modalMode === 'add') {
-      const result = await createPackage(serviceData);
-      if (result.error) {
-        toast.error('Lỗi: ' + result.error);
+      // Fetch user profile to get tenant_id
+      const { data: profile } = await supabase
+        .from('users')
+        .select('tenant_id')
+        .eq('id', session.user.id)
+        .single();
+      
+      const tenant_id = profile?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+      const dbData = {
+        name: name,
+        price: parseInt(price.toString().replace(/[^\d]/g, '') || '0'),
+        duration: `${duration} phút/buổi`,
+        total_sessions: parseInt(sessions.toString() || '10'),
+        details: details.split(',').map(d => d.trim()).filter(d => d),
+        offer: offer || '',
+        ktv_commission: parseInt(ktvCommission.toString().replace(/[^\d]/g, '') || '150000'),
+        status: 'active',
+        tenant_id
+      };
+
+      if (modalMode === 'edit' && selectedService) {
+        const { error } = await supabase
+          .from('packages')
+          .update(dbData)
+          .eq('id', selectedService.id);
+          
+        if (error) throw error;
+        toast.success('Đã cập nhật gói dịch vụ');
       } else {
-        toast.success('Đã thêm dịch vụ mới');
-        loadData();
+        const { error } = await supabase
+          .from('packages')
+          .insert([dbData]);
+          
+        if (error) throw error;
+        toast.success('Đã thêm gói dịch vụ mới');
       }
-    } else {
-      const result = await updatePackage(selectedService.id, serviceData);
-      if (result.error) {
-        toast.error('Lỗi: ' + result.error);
-      } else {
-        toast.success('Đã cập nhật dịch vụ');
-        loadData();
-      }
+      
+      setIsModalOpen(false);
+      resetForm();
+      loadData();
+    } catch (error: any) {
+      console.error('Submit error:', error);
+      toast.error('Lỗi khi lưu dữ liệu: ' + (error.message || 'Lỗi không xác định'));
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    setIsModalOpen(false);
   };
 
   const filteredServices = services.filter(s => 
