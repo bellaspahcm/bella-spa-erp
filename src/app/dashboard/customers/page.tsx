@@ -32,8 +32,8 @@ import {
   Sparkles
 } from 'lucide-react';
 
-import { MOCK_CUSTOMERS } from '@/constants/mock-data';
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/customer-actions';
+import { getPackages } from '@/services/booking-actions';
 import { getCurrentUser } from '@/services/user-actions';
 
 
@@ -41,7 +41,8 @@ import { getCurrentUser } from '@/services/user-actions';
 export default function CustomersPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [customers, setCustomers] = useState<any[]>(MOCK_CUSTOMERS);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [packages, setPackages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,7 +88,13 @@ export default function CustomersPage() {
   useEffect(() => {
 
     loadCustomers();
+    loadPackages();
   }, []);
+
+  const loadPackages = async () => {
+    const data = await getPackages();
+    setPackages(data);
+  };
 
   const loadCustomers = async () => {
     setIsSyncing(true);
@@ -685,19 +692,27 @@ export default function CustomersPage() {
                               exit={{ opacity: 0, y: 10, scale: 0.95 }}
                               className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-slate-100 z-[60] overflow-hidden p-2"
                             >
-                              {['Mẹ Bầu Toàn Diện', 'Phục Hồi Sau Sinh', 'Chăm Sóc Bé Pro'].map((pkg) => (
-                                <button
-                                  key={pkg}
-                                  type="button"
-                                  onClick={() => { setSelectedPackage(pkg); setIsServiceDropdownOpen(false); }}
-                                  className={cn(
-                                    "w-full text-left px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                                    selectedPackage === pkg ? "bg-rose-500 text-white shadow-lg shadow-rose-100" : "text-slate-600 hover:bg-slate-50"
-                                  )}
-                                >
-                                  {pkg}
-                                </button>
-                              ))}
+                              <div className="max-h-[250px] overflow-auto custom-scrollbar">
+                                {packages.length > 0 ? (
+                                  packages.map((pkg) => (
+                                    <button
+                                      key={pkg.id}
+                                      type="button"
+                                      onClick={() => { setSelectedPackage(pkg.name); setIsServiceDropdownOpen(false); }}
+                                      className={cn(
+                                        "w-full text-left px-4 py-3 rounded-2xl text-sm font-bold transition-all",
+                                        selectedPackage === pkg.name ? "bg-rose-500 text-white shadow-lg shadow-rose-100" : "text-slate-600 hover:bg-slate-50"
+                                      )}
+                                    >
+                                      {pkg.name}
+                                    </button>
+                                  ))
+                                ) : (
+                                  <div className="p-4 text-center text-xs text-slate-400 font-bold">
+                                    Đang tải danh mục...
+                                  </div>
+                                )}
+                              </div>
                             </motion.div>
                           )}
                         </AnimatePresence>

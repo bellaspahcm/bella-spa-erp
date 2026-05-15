@@ -24,6 +24,7 @@ import {
   Image as ImageIcon,
   CreditCard as CreditCardIcon,
   DollarSign as DollarIcon,
+  Share2,
   Camera,
   Loader2,
   AlertCircle
@@ -328,7 +329,7 @@ export default function CustomerDetailPage() {
     </div>
   );
 
-  const isDepositOnly = activeBooking && activeBooking.status === 'deposit_pending' && !activeBooking.package_name;
+  const isDepositOnly = activeBooking && activeBooking.status === 'deposit_pending' && !activeBooking.package_id;
   const nextSession = customer.sessions?.find((s: any) => s.status === 'scheduled');
   const isCompleted = activeBooking && activeBooking.completed_sessions >= (activeBooking.total_sessions || 15);
 
@@ -519,7 +520,7 @@ export default function CustomerDetailPage() {
                           {isDepositOnly ? 'Trạng thái: Chờ chọn gói' : 'Gói dịch vụ hiện tại'}
                         </p>
                         <h2 className="text-3xl font-black text-white">
-                          {isDepositOnly ? 'Đã đặt cọc (Chưa chọn gói)' : (activeBooking?.package_name || 'Chưa có gói liệu trình')}
+                          {isDepositOnly ? 'Đã đặt cọc (Chưa chọn gói)' : (activeBooking?.packages?.name || activeBooking?.package_name || 'Chưa có gói liệu trình')}
                         </h2>
                       </div>
                       
@@ -589,6 +590,21 @@ export default function CustomerDetailPage() {
                         <MessageCircle className="w-4 h-4" />
                         Gửi báo cáo Zalo
                       </button>
+                      
+                      {activeBooking?.share_token && (
+                        <button 
+                          onClick={() => {
+                            const url = `${window.location.origin}/portal/${activeBooking.share_token}`;
+                            navigator.clipboard.writeText(url);
+                            toast.success('Đã sao chép link Cổng thông tin khách hàng');
+                          }}
+                          className="flex items-center justify-center gap-3 bg-white/20 backdrop-blur-md text-white px-8 py-4 rounded-2xl font-black transition-all hover:bg-white/30 uppercase tracking-widest text-xs border border-white/20 shadow-lg"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          Link Portal Khách
+                        </button>
+                      )}
+
                       {userRole === 'admin' && (
                         <button 
                           disabled={activeBooking?.deposit_amount < activeBooking?.full_price}

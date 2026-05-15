@@ -19,18 +19,26 @@ import {
   ChevronDown,
   Check
 } from 'lucide-react';
-import { getFinancialOverview, confirmTransaction } from '@/services/finance-actions';
+import { getFinancialOverview, confirmTransaction, getMonthlyPnL, getServicePerformance } from '@/services/finance-actions';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { TransactionModal } from '@/components/features/TransactionModal';
+import { FinancePnLSummary } from '@/components/features/FinancePnLSummary';
 import { createClient } from '@/lib/supabase-client';
 
 export default function FinancePage() {
   const [data, setData] = useState<any>({
-    totalBalance: 113400000,
-    totalRevenueMonth: 156200000,
-    totalExpenseMonth: 42800000,
+    totalBalance: 0,
+    totalRevenueMonth: 0,
+    totalExpenseMonth: 0,
     transactions: []
+  });
+  const [pnlData, setPnlData] = useState<any>(null);
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'transactions' | 'analysis'>('transactions');
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -44,12 +52,25 @@ export default function FinancePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const fetchData = async () => {
+  const fetchData = async (month?: string) => {
     setIsRefreshing(true);
-    const result = await getFinancialOverview();
-    setData(result);
+    const m = month || selectedMonth;
+    const [overview, pnl, performance] = await Promise.all([
+      getFinancialOverview(),
+      getMonthlyPnL(m),
+      getServicePerformance()
+    ]);
+    
+    setData(overview);
+    setPnlData(pnl);
+    setPerformanceData(performance);
     setIsRefreshing(false);
     setIsLoading(false);
+  };
+
+  const handleMonthChange = (newMonth: string) => {
+    setSelectedMonth(newMonth);
+    fetchData(newMonth);
   };
 
   const handleConfirm = async (tx: any) => {
@@ -167,7 +188,37 @@ export default function FinancePage() {
         </div>
       </div>
 
-      {/* Financial Overview */}
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm w-fit mb-8">
+        <button 
+          onClick={() => setActiveTab('transactions')}
+          className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            activeTab === 'transactions' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          Sổ nhật ký thu chi
+        </button>
+        <button 
+          onClick={() => setActiveTab('analysis')}
+          className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            activeTab === 'analysis' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'
+          }`}
+        >
+          Phân tích P&L & ROI
+        </button>
+      </div>
+
+      {activeTab === 'analysis' ? (
+        <FinancePnLSummary 
+          pnl={pnlData} 
+          performance={performanceData} 
+          selectedMonth={selectedMonth}
+          onMonthChange={handleMonthChange}
+          onRefresh={() => fetchData(selectedMonth)}
+        />
+      ) : (
+        <>
+          {/* Financial Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
         <motion.div 
           whileHover={{ y: -5 }}
@@ -380,7 +431,8 @@ export default function FinancePage() {
             </button>
           </div>
         </div>
-      </div>
+      </>
+      )}
       <TransactionModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 

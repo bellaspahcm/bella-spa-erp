@@ -1,23 +1,33 @@
 'use server';
 
-import { ensure2026, resolvePackageName } from '@/lib/utils';
-import { DEMO_BOOKINGS, DEMO_SESSIONS } from '@/constants/demo-data';
-import { MOCK_SERVICES } from '@/constants/mock-data';
+import { resolvePackageName } from '@/lib/utils';
+
+
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { bookingSchema } from '@/lib/validations';
 
 
 
+export async function getPackages() {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  const { data, error } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('status', 'active')
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching packages:', error);
+    return [];
+  }
+  return data || [];
+}
+
 function resolveKtvCommission(booking: any): number {
   if (booking?.ktv_commission) return Number(booking.ktv_commission);
-  
-  const price = Number(booking?.full_price);
-  const matchedService = MOCK_SERVICES.find(s => {
-    const sPrice = parseInt(s.price.replace(/[^\d]/g, ''));
-    return sPrice === price;
-  });
-
-  return matchedService?.ktv_commission || 150000; // Default fallback
+  if (booking?.packages?.ktv_commission) return Number(booking.packages.ktv_commission);
+  return 150000; // Default fallback
 }
 
 export async function getBookings() {
@@ -25,7 +35,7 @@ export async function getBookings() {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, customers(name_mother, phone)')
+    .select('*, customers(name_mother, phone), packages(name)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -38,9 +48,9 @@ export async function getBookings() {
   return (data || []).map((b: any) => ({
     ...b,
     package_name: resolvePackageName(b),
-    start_date: ensure2026(b.start_date),
-    end_date: ensure2026(b.end_date),
-    expected_birth_date: ensure2026(b.expected_birth_date)
+    start_date: b.start_date,
+    end_date: b.end_date,
+    expected_birth_date: b.expected_birth_date
   }));
 }
 
@@ -49,7 +59,7 @@ export async function getBookingsByCustomerId(customerId: string) {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name)')
+    .select('*, assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name), packages(name)')
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false });
 
@@ -60,32 +70,13 @@ export async function getBookingsByCustomerId(customerId: string) {
   
   if (!data || data.length === 0) return [];
   
-  // Hardening: Verify session counts match session_logs truth
-  const enrichedData = await Promise.all(data.map(async (b: any) => {
-    const { count, error: countError } = await supabase
-      .from('session_logs')
-      .select('*', { count: 'exact', head: true })
-      .eq('booking_id', b.id)
-      .eq('status', 'completed');
-
-    if (!countError && count !== null && count !== b.completed_sessions) {
-      console.log(`Syncing completed_sessions for booking ${b.id}: ${b.completed_sessions} -> ${count}`);
-      await supabase
-        .from('bookings')
-        .update({ completed_sessions: count } as any)
-        .eq('id', b.id);
-      b.completed_sessions = count;
-    }
-
-    return {
-      ...b,
-      package_name: resolvePackageName(b),
-      start_date: ensure2026(b.start_date),
-      expected_birth_date: ensure2026(b.expected_birth_date)
-    };
+  // NOTE: Logic đồng bộ completed_sessions thủ công đã được thay thế bằng Database Trigger
+  return (data || []).map((b: any) => ({
+    ...b,
+    package_name: resolvePackageName(b),
+    start_date: b.start_date,
+    expected_birth_date: b.expected_birth_date
   }));
-
-  return enrichedData;
 }
 
 
@@ -118,7 +109,8 @@ export async function createBooking(formData: any) {
 
   const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) throw new Error('Tenant ID not found for current user session');
 
   const isFullBooking = validatedData.full_price > 0 || !!validatedData.package_name;
   
@@ -163,26 +155,8 @@ export async function createBooking(formData: any) {
   }
 
   if (bookingError) {
-    // Fallback: If it's a "column not found" error for package_name or "type mismatch" for package_id or ktv_commission
-    if (bookingError.message?.includes('package_name') || 
-        bookingError.message?.includes('package_id') || 
-        bookingError.message?.includes('uuid') ||
-        bookingError.message?.includes('ktv_commission')) {
-      const { package_name, package_id, ktv_commission, ...retryPayload } = bookingPayload;
-      
-      const { data: retryBooking, error: retryError } = existingBooking 
-        ? await supabase.from('bookings').update(retryPayload).eq('id', existingBooking.id).select().single()
-        : await supabase.from('bookings').insert([retryPayload]).select().single();
-      
-      if (retryError) {
-        console.error('Error creating booking (retry):', retryError);
-        return { error: retryError.message };
-      }
-      booking = retryBooking;
-    } else {
-      console.error('Error creating booking:', bookingError);
-      return { error: bookingError.message };
-    }
+    console.error('Error creating booking:', bookingError);
+    return { error: bookingError.message };
   }
 
   // Record revenue for the deposit if any
@@ -293,16 +267,7 @@ export async function getSessionLogs(bookingId: string) {
     .order('session_number', { ascending: true });
 
   if (error || !data || data.length === 0) {
-    console.error('Error fetching session logs or empty:', error);
-    // Return mock sessions (default 15 as seen in user's UI)
-    return Array.from({ length: 15 }, (_, i) => ({
-      id: `mock-session-${i + 1}`,
-      booking_id: bookingId,
-      session_number: i + 1,
-      status: 'scheduled',
-      notes: '',
-      completed_date: null
-    }));
+    return [];
   }
 
   return data;
@@ -353,34 +318,17 @@ export async function completeSession(sessionId: string, bookingId: string) {
 
   if (countError) {
     console.error('Error counting completed sessions:', countError);
-    return { error: countError.message };
-  }
-
-  // 4. Update booking with actual count and status transition
-  const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status').eq('id', bookingId).single();
-  
-  const updates: any = { 
-    completed_sessions: count || 0,
-    last_updated_date: today,
-    updated_at: new Date().toISOString()
-  };
-  
-  if (count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
-    updates.status = 'active';
   }
   
-  if (currentBooking?.total_sessions && count >= currentBooking.total_sessions) {
-    updates.status = 'completed';
+  // 4. Update booking status transition (completed_sessions is now handled by Trigger)
+  const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, tenant_id').eq('id', bookingId).single();
+  
+  if (count && count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
+    await supabase.from('bookings').update({ status: 'active', updated_at: new Date().toISOString() }).eq('id', bookingId);
   }
-
-  const { error: updateError } = await supabase
-    .from('bookings')
-    .update(updates)
-    .eq('id', bookingId);
-
-  if (updateError) {
-    console.error('Error updating booking progress:', updateError);
-    return { error: updateError.message };
+  
+  if (currentBooking?.total_sessions && count && count >= currentBooking.total_sessions) {
+    await supabase.from('bookings').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', bookingId);
   }
 
   // 6. Create a pending review for the customer to fill out
@@ -400,7 +348,7 @@ export async function completeSession(sessionId: string, bookingId: string) {
           ktv_id: bookingDetails.assigned_ktv_id,
           rating: 0, // Placeholder
           status: 'pending_review',
-          tenant_id: currentBooking?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e'
+          tenant_id: currentBooking?.tenant_id
         } as any]);
     }
   } catch (reviewErr) {
@@ -424,6 +372,7 @@ export async function getSessionsWithDetails() {
       preferred_time,
       customers(id, name_mother, name_baby, phone), 
       assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name),
+      packages(name),
       session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes, ktv:users!session_logs_completed_by_ktv_id_fkey(full_name))
     `)
     .order('created_at', { ascending: false });
@@ -444,25 +393,10 @@ export async function getSessionsWithDetails() {
     return [];
   }
   
-  const { MOCK_CUSTOMERS } = await import('@/constants/mock-data');
+
   
   const enrichedData = await Promise.all((data || []).map(async (b: any) => {
-    // Hardening: Verify session counts match session_logs truth
-    const { count, error: countError } = await supabase
-      .from('session_logs')
-      .select('*', { count: 'exact', head: true })
-      .eq('booking_id', b.id)
-      .eq('status', 'completed');
-
-    if (!countError && count !== null && count !== b.completed_sessions) {
-      console.log(`Syncing completed_sessions for booking ${b.id} in details: ${b.completed_sessions} -> ${count}`);
-      await supabase
-        .from('bookings')
-        .update({ completed_sessions: count } as any)
-        .eq('id', b.id);
-      b.completed_sessions = count;
-    }
-
+    // NOTE: Sync completed_sessions is now handled by Trigger
     const sortedLogs = (b.session_logs || []).sort((a: any, b2: any) => (a.session_number || 0) - (b2.session_number || 0));
     
     // Predictive logic
@@ -487,19 +421,9 @@ export async function getSessionsWithDetails() {
     });
 
     const nextSession = mappedLogs.find((s: any) => s.status === 'scheduled');
+    const customerData = b.customers;
     
-    // Fallback for customer data
-    let customerData = b.customers;
-    if (!customerData && b.customer_id) {
-      const mockCustomer = MOCK_CUSTOMERS.find(c => c.id === b.customer_id);
-      if (mockCustomer) {
-        customerData = {
-          name_mother: mockCustomer.name_mother,
-          name_baby: mockCustomer.name_baby,
-          phone: mockCustomer.phone
-        };
-      }
-    }
+
 
     return {
       ...b,
@@ -508,9 +432,9 @@ export async function getSessionsWithDetails() {
       customers: customerData || { name_mother: 'Khách hàng Bella Spa', phone: '---' },
       assigned_ktv_name: b.assigned_ktv?.full_name || 'Chưa phân công',
       next_session_date: nextSession?.assigned_date || null,
-      start_date: ensure2026(b.start_date),
-      end_date: ensure2026(b.end_date),
-      expected_birth_date: ensure2026(b.expected_birth_date)
+      start_date: b.start_date,
+      end_date: b.end_date,
+      expected_birth_date: b.expected_birth_date
     };
   }));
 
@@ -531,6 +455,7 @@ export async function getCalendarSessions() {
       bookings (
         *,
         preferred_time,
+        packages (name),
         customers (
           id,
           name_mother,
@@ -569,21 +494,7 @@ export async function getCalendarSessions() {
   const processedSessionsList = await Promise.all(Object.entries(sessionsByBooking).map(async ([bookingId, bookingSessions]) => {
     bookingSessions.sort((a, b) => a.session_number - b.session_number);
     
-    // Hardening: Verify session counts match session_logs truth (ONCE PER BOOKING)
-    const firstSession = bookingSessions[0];
-    if (firstSession?.bookings) {
-      const { count, error: countError } = await supabase
-        .from('session_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('booking_id', bookingId)
-        .eq('status', 'completed');
-
-      if (!countError && count !== null && count !== firstSession.bookings.completed_sessions) {
-        await supabase.from('bookings').update({ completed_sessions: count } as any).eq('id', bookingId);
-        // Update all local references for this booking
-        bookingSessions.forEach(s => { if (s.bookings) s.bookings.completed_sessions = count; });
-      }
-    }
+      // NOTE: Sync completed_sessions is now handled by Trigger
 
     let lastKnownDate: string | null = null;
     let lastKnownSessionNum = 0;
@@ -613,14 +524,14 @@ export async function getCalendarSessions() {
 
       bookingResult.push({
         ...s,
-        assigned_date: ensure2026(finalDate),
-        completed_date: ensure2026(s.completed_date),
+        assigned_date: finalDate,
+        completed_date: s.completed_date,
         bookings: s.bookings ? {
           ...s.bookings,
           package_name: resolvePackageName(s.bookings),
-          start_date: ensure2026(s.bookings.start_date),
+          start_date: s.bookings.start_date,
           completed_sessions: s.bookings.completed_sessions,
-          expected_birth_date: ensure2026(s.bookings.expected_birth_date)
+          expected_birth_date: s.bookings.expected_birth_date
         } : null
       });
     }
@@ -694,7 +605,7 @@ export async function updateSessionLog(id: string, payload: any) {
     .eq('status', 'completed');
 
   if (!countError) {
-    const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status').eq('id', bookingId).single();
+    const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, package_name, ktv_commission').eq('id', bookingId).single();
     const today = new Date().toISOString().split('T')[0];
     const bUpdates: any = { 
       completed_sessions: count || 0,
@@ -714,6 +625,59 @@ export async function updateSessionLog(id: string, payload: any) {
       .from('bookings')
       .update(bUpdates)
       .eq('id', bookingId);
+
+    // --- AUTOMATION START: Financial Recognition ---
+    if (safeUpdates.status === 'completed' && existingLog?.status !== 'completed') {
+      const ktvId = safeUpdates.completed_by_ktv_id || null;
+      const tenantId = currentUser?.tenant_id;
+      
+      // 1. Revenue Automation for "Dịch vụ lẻ"
+      if (currentBooking?.package_name?.toLowerCase().includes('lẻ')) {
+        await supabase.from('revenue').insert([{
+          booking_id: bookingId,
+          amount: 350000,
+          revenue_type: 'package_payment',
+          payment_method: 'bank_transfer',
+          received_date: today,
+          status: 'confirmed',
+          notes: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
+          tenant_id: tenantId
+        }]);
+      }
+
+      // 2. Salary Automation: Update salary_records
+      if (ktvId && tenantId) {
+        const monthYear = `${today.substring(0, 7)}-01`;
+        const commission = Number(currentBooking?.ktv_commission) || 150000;
+
+        // Check if salary record exists for this month
+        const { data: salaryRec } = await supabase
+          .from('salary_records')
+          .select('id, total_sessions, service_percentage_bonus')
+          .eq('ktv_id', ktvId)
+          .eq('month_year', monthYear)
+          .single();
+
+        if (salaryRec) {
+          await supabase.from('salary_records').update({
+            total_sessions: (salaryRec.total_sessions || 0) + 1,
+            service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission,
+            updated_at: new Date().toISOString()
+          }).eq('id', salaryRec.id);
+        } else {
+          await supabase.from('salary_records').insert([{
+            ktv_id: ktvId,
+            month_year: monthYear,
+            total_sessions: 1,
+            service_percentage_bonus: commission,
+            base_salary: 6000000, // Default
+            status: 'draft',
+            tenant_id: tenantId
+          }]);
+        }
+      }
+    }
+    // --- AUTOMATION END ---
   }
 
   // 4. Fetch customer_id for specific revalidation

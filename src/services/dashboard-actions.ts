@@ -1,103 +1,64 @@
 'use server';
 
 
-import { ensure2026 } from '@/lib/utils';
-import { DEMO_SESSIONS, DEMO_TECH_TOP } from '@/constants/demo-data';
+
+
 
 export async function getDashboardStats(startDate?: string, endDate?: string, todayDate?: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
 
   const now = new Date();
-  const today = todayDate || now.toLocaleDateString('en-CA'); 
+  const today = todayDate || now.toISOString().split('T')[0];
   const currentMonthStart = startDate || today.substring(0, 7) + '-01';
   const currentMonthEnd = endDate || today.substring(0, 7) + '-31';
 
-  // Calculate previous month range relative to currentMonthStart
-  const currentStart = new Date(currentMonthStart);
-  const prevMonthDate = new Date(currentStart);
-  prevMonthDate.setMonth(currentStart.getMonth() - 1);
-  const prevMonthStart = prevMonthDate.toISOString().substring(0, 7) + '-01';
-  
-  // Last day of previous month
-  const prevMonthEndObj = new Date(currentStart);
-  prevMonthEndObj.setDate(0); // 0th day of current month is last day of prev month
-  const prevMonthEnd = prevMonthEndObj.toISOString().substring(0, 10);
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
 
-  // Calculate yesterday
-  const yesterdayDate = new Date(now);
-  yesterdayDate.setDate(now.getDate() - 1);
-  const yesterday = yesterdayDate.toLocaleDateString('en-CA');
+  const { data, error } = await supabase.rpc('get_dashboard_summary', {
+    p_start_date: currentMonthStart,
+    p_end_date: currentMonthEnd,
+    p_today: today,
+    p_tenant_id: tenantId
+  });
 
-  // Parallel fetching for performance
-  const [
-    { count: totalCustomers },
-    { count: customersAtStartOfMonth },
-    { count: todayBookings },
-    { count: yesterdayBookings },
-    { data: revenueData },
-    { data: prevRevenueData },
-    { data: ratingsData },
-    { data: prevRatingsData }
-  ] = await Promise.all([
-    // Total Customers
-    supabase.from('customers').select('*', { count: 'exact', head: true }),
-    supabase.from('customers').select('*', { count: 'exact', head: true }).lt('created_at', currentMonthStart),
-    
-    // Today Bookings
-    supabase.from('session_logs').select('*', { count: 'exact', head: true }).eq('assigned_date', today),
-    supabase.from('session_logs').select('*', { count: 'exact', head: true }).eq('assigned_date', yesterday),
-    
-    // Revenue
-    supabase.from('revenue').select('amount').gte('received_date', currentMonthStart).lte('received_date', currentMonthEnd),
-    supabase.from('revenue').select('amount').gte('received_date', prevMonthStart).lte('received_date', prevMonthEnd),
-    
-    // Ratings - fallback to created_at if exists, otherwise assigned_date from sessions if linked
-    supabase.from('session_reviews').select('rating').gte('created_at', currentMonthStart).lte('created_at', currentMonthEnd),
-    supabase.from('session_reviews').select('rating').gte('created_at', prevMonthStart).lte('created_at', prevMonthEnd)
-  ]);
+  if (error) {
+    console.error('Error calling get_dashboard_summary:', error);
+    // Fallback to empty stats if RPC fails (e.g. migration not applied yet)
+    return {
+      totalCustomers: { value: '0', trend: 0 },
+      todayBookings: { value: '0', trend: 0 },
+      totalRevenue: { value: '0M', trend: 0 },
+      avgRating: { value: '5.0', trend: 0 }
+    };
+  }
 
-  // Calculations
   const calcTrend = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0;
     return Math.round(((current - previous) / previous) * 100);
   };
 
-  // Customers Trend (New this month vs total before)
-  const customersTrend = calcTrend(totalCustomers || 0, customersAtStartOfMonth || 0);
-
-  // Bookings Trend
-  const bookingsTrend = calcTrend(todayBookings || 0, yesterdayBookings || 0);
-
-  // Revenue
-  const totalRevenue = revenueData?.reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0) || 0;
-  const prevRevenue = prevRevenueData?.reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0) || 0;
-  const revenueTrend = calcTrend(totalRevenue, prevRevenue);
-
-  // Ratings
-  const avgRating = ratingsData?.length 
-    ? (ratingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / ratingsData.length).toFixed(1) 
-    : '5.0';
-  const prevAvgRating = prevRatingsData?.length
-    ? (prevRatingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / prevRatingsData.length)
-    : 5.0;
-  const ratingsTrend = calcTrend(Number(avgRating), Number(prevAvgRating));
+  const customersTrend = calcTrend(data.total_customers, data.customers_prev);
+  const bookingsTrend = calcTrend(data.today_bookings, data.yesterday_bookings);
+  const revenueTrend = calcTrend(data.total_revenue, data.prev_revenue);
+  const ratingsTrend = calcTrend(data.avg_rating, data.prev_avg_rating);
 
   return {
     totalCustomers: {
-      value: (totalCustomers || 0).toLocaleString(),
+      value: data.total_customers.toLocaleString(),
       trend: customersTrend
     },
     todayBookings: {
-      value: (todayBookings || 0).toString(),
+      value: data.today_bookings.toString(),
       trend: bookingsTrend
     },
     totalRevenue: {
-      value: totalRevenue > 0 ? (totalRevenue / 1000000).toFixed(1) + 'M' : '0M',
+      value: data.total_revenue > 0 ? (data.total_revenue / 1000000).toFixed(1) + 'M' : '0M',
       trend: revenueTrend
     },
     avgRating: {
-      value: avgRating,
+      value: data.avg_rating.toFixed(1),
       trend: ratingsTrend
     }
   };
@@ -135,6 +96,10 @@ export async function getTopTechnicians() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return [];
+
   const { data, error } = await supabase
     .from('users')
     .select(`
@@ -144,11 +109,12 @@ export async function getTopTechnicians() {
       session_reviews(rating)
     `)
     .eq('role', 'ktv')
+    .eq('tenant_id', tenantId)
     .limit(3);
 
   if (error) {
     console.error('Error fetching top technicians:', error);
-    return DEMO_TECH_TOP;
+    return [];
   }
 
   return (data || []).map((user: any) => {
@@ -171,104 +137,45 @@ export async function getMonthlyPerformance() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
-  const now = new Date();
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-  sixMonthsAgo.setDate(1);
-  const sixMonthsAgoStr = sixMonthsAgo.toISOString().substring(0, 10);
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return [];
   
-  const [
-    { data: sessionData },
-    { data: revenueData },
-    { data: expenseData },
-    { data: reviewData }
-  ] = await Promise.all([
-    supabase.from('session_logs').select('assigned_date').gte('assigned_date', sixMonthsAgoStr),
-    supabase.from('revenue').select('amount, received_date').gte('received_date', sixMonthsAgoStr),
-    supabase.from('expenses').select('amount, expense_date').gte('expense_date', sixMonthsAgoStr),
-    supabase.from('session_reviews').select('rating, created_at').gte('created_at', sixMonthsAgoStr)
-  ]);
+  const { data, error } = await supabase.rpc('get_monthly_performance_v2', {
+    p_tenant_id: tenantId
+  });
 
-  const monthNames = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-  const results = [];
-  
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthIndex = d.getMonth();
-    const year = d.getFullYear();
-    const label = monthNames[monthIndex];
-    
-    // Filter sessions (assigned_date is YYYY-MM-DD)
-    const sessionCount = sessionData?.filter((s: any) => {
-      const sDate = new Date(s.assigned_date);
-      return sDate.getMonth() === monthIndex && sDate.getFullYear() === year;
-    }).length || 0;
-
-    // Filter revenue
-    const monthRevenue = revenueData?.filter((r: any) => {
-      const rDate = new Date(r.received_date || r.created_at);
-      return rDate.getMonth() === monthIndex && rDate.getFullYear() === year;
-    }).reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0;
-      
-    // Filter expenses
-    const monthExpense = expenseData?.filter((e: any) => {
-      const eDate = new Date(e.expense_date);
-      return eDate.getMonth() === monthIndex && eDate.getFullYear() === year;
-    }).reduce((acc: number, curr: any) => acc + Number(curr.amount), 0) || 0;
-
-    // Filter ratings
-    const monthReviews = reviewData?.filter((r: any) => {
-      if (!r.created_at) return false;
-      const rDate = new Date(r.created_at);
-      return rDate.getMonth() === monthIndex && rDate.getFullYear() === year;
-    }) || [];
-    
-    const avgRating = monthReviews.length 
-      ? monthReviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / monthReviews.length 
-      : 5.0;
-
-    results.push({
-      name: label,
-      customers: sessionCount,
-      revenue: Number((monthRevenue / 1000000).toFixed(1)), // In millions with 1 decimal
-      expense: Number((monthExpense / 1000000).toFixed(1)), // In millions with 1 decimal
-      rating: Number(avgRating.toFixed(1))
-    });
+  if (error) {
+    // Return empty array if RPC fails
+    return [];
   }
 
-  // Only use mock data if there is absolutely no session activity AND no revenue
-  const hasAnyData = results.some(r => r.customers > 0 || r.revenue > 0 || r.expense > 0);
-  
-  if (!hasAnyData) {
-    // If absolutely no data, return high-fidelity mock data for demo
-    return [
-      { name: 'T12', customers: 45, revenue: 85.5, expense: 62.0, rating: 4.8 },
-      { name: 'T1', customers: 52, revenue: 92.0, expense: 70.5, rating: 4.9 },
-      { name: 'T2', customers: 48, revenue: 88.2, expense: 68.0, rating: 4.7 },
-      { name: 'T3', customers: 61, revenue: 105.5, expense: 75.2, rating: 4.9 },
-      { name: 'T4', customers: 55, revenue: 98.0, expense: 72.8, rating: 5.0 },
-      { name: 'T5', customers: 67, revenue: 110.4, expense: 78.5, rating: 4.9 },
-    ];
-  }
-
-  return results;
+  return (data || []).map((row: any) => ({
+    name: row.month_label,
+    customers: row.customers_count,
+    revenue: Number((row.revenue_amount / 1000000).toFixed(1)),
+    expense: Number((row.expense_amount / 1000000).toFixed(1)),
+    rating: Number(row.avg_rating.toFixed(1))
+  }));
 }
 
 export async function getImportantAlerts() {
-  return [
-    {
-      type: 'warning',
-      title: 'Dự báo doanh thu',
-      message: '97 triệu / mục tiêu 110 triệu — Cần thêm 1-2 booking để vượt mục tiêu',
-      icon: 'alert'
-    },
-    {
-      type: 'info',
-      title: 'Mẹo',
-      message: '💡 Tuần cuối tháng khách hay huỷ — nên đẩy booking sớm để tăng doanh thu',
-      icon: 'lightbulb'
-    }
-  ];
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return [];
+
+  const { data, error } = await supabase.rpc('get_important_alerts', {
+    p_tenant_id: tenantId
+  });
+
+  if (error) {
+    console.error('Error fetching alerts:', error);
+    return [];
+  }
+
+  return data || [];
 }
 
 // Bundle everything into a single request for faster page loading

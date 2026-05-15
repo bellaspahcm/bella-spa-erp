@@ -1,5 +1,6 @@
 # BELLA SPA ERP — EXECUTIVE SUMMARY
 **Cho Chủ Spa & Người Quản Lý**
+**Trạng thái:** 🟢 Phase 1, 2, 3, 4 Hoàn tất | ⚪ Giai đoạn Tối ưu Bắt đầu
 
 ---
 
@@ -262,10 +263,10 @@ A: Có. Hệ thống có tính năng "Export dữ liệu" ra Excel bất kỳ l�
 
 ---
 
-**Document Version:** 1.0 — Executive Summary  
-**Tổng Cộng Investment:** 140-220 triệu VND / 4-5 tháng  
-**Expected ROI:** 200-300 triệu VND/năm (từ năm 2)  
-**Risk Level:** Thấp (team Antigravity có kinh nghiệm, tech stack ổn định)
+**Document Version:** 1.2 — Executive Summary  
+**Cập nhật:** 15/05/2026
+**Trạng thái:** Đã hoàn thành hệ thống Tài chính, KTV Mobile, Portal Khách hàng và Quản lý Kho.
+**Tiếp theo:** Tối ưu hóa hiệu suất & Mở rộng quy mô (Scaling Phase).
 
 ---
 

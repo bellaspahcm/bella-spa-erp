@@ -30,7 +30,7 @@ import {
 import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession, rescheduleSession, syncBookingProgress } from '@/services/booking-actions';
 import { cn, resolvePackageName } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
-import { MOCK_BOOKINGS } from '@/constants/mock-data';
+
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 function SessionsContent() {
@@ -619,7 +619,7 @@ function SessionsContent() {
                     </h3>
                     <div className="flex items-center gap-2">
                       <span className="px-2.5 py-1 bg-rose-50 text-primary rounded-lg text-[9px] font-black uppercase tracking-[0.05em] border border-primary/10">
-                        {booking.package_name}
+                        {resolvePackageName(booking)}
                       </span>
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
                         {booking.booking_number}

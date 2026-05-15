@@ -1,0 +1,212 @@
+'use server';
+
+import { createClient } from '@/lib/supabase-server';
+import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from './auth-actions';
+
+/**
+ * Lấy các buổi trị liệu đang thực hiện của KTV hiện tại
+ */
+export async function getKTVActiveSessions() {
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ktv') return [];
+
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select(`
+      *,
+      bookings (
+        id,
+        booking_number,
+        package_name,
+        customer_id,
+        customers (
+          name_mother,
+          phone,
+          address
+        )
+      )
+    `)
+    .eq('completed_by_ktv_id', user.id)
+    .eq('status', 'in_progress')
+    .order('start_time', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching active sessions:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Lấy các buổi trị liệu được phân công hôm nay
+ */
+export async function getKTVUpcomingSessions() {
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ktv') return [];
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select(`
+      *,
+      bookings (
+        id,
+        booking_number,
+        package_name,
+        customer_id,
+        customers (
+          name_mother,
+          phone,
+          address
+        )
+      )
+    `)
+    .eq('status', 'scheduled')
+    .eq('assigned_date', today)
+    .eq('bookings.assigned_ktv_id', user.id)
+    .order('assigned_time', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching upcoming sessions:', error);
+    return [];
+  }
+
+  return data?.filter((s: any) => s.bookings !== null) || [];
+}
+
+/**
+ * Bắt đầu một buổi trị liệu (Check-in)
+ */
+export async function startSession(sessionId: string) {
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ktv') throw new Error('Unauthorized');
+
+  const { error } = await supabase
+    .from('session_logs')
+    .update({
+      status: 'in_progress',
+      start_time: new Date().toISOString(),
+      completed_by_ktv_id: user.id
+    })
+    .eq('id', sessionId);
+
+  if (error) {
+    console.error('Error starting session:', error);
+    throw new Error('Không thể bắt đầu buổi trị liệu');
+  }
+
+  revalidatePath('/ktv/dashboard');
+  return { success: true };
+}
+
+/**
+ * Hoàn thành một buổi trị liệu (Check-out)
+ */
+export async function completeKTVSession(sessionId: string, notes: string = '') {
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ktv') throw new Error('Unauthorized');
+
+  // 1. Lấy thông tin session để tìm booking_id
+  const { data: session } = await supabase
+    .from('session_logs')
+    .select('booking_id')
+    .eq('id', sessionId)
+    .single();
+
+  if (!session) throw new Error('Session not found');
+
+  // 2. Cập nhật session log
+  const { error: sessionError } = await supabase
+    .from('session_logs')
+    .update({
+      status: 'completed',
+      end_time: new Date().toISOString(),
+      completed_date: new Date().toISOString(),
+      notes: notes
+    })
+    .eq('id', sessionId);
+
+  if (sessionError) throw new Error('Failed to complete session');
+
+  // 3. Cập nhật số buổi đã hoàn thành trong booking
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('completed_sessions, total_sessions')
+    .eq('id', session.booking_id)
+    .single();
+
+  if (booking) {
+    const newCount = (booking.completed_sessions || 0) + 1;
+    await supabase
+      .from('bookings')
+      .update({ 
+        completed_sessions: newCount,
+        status: newCount >= booking.total_sessions ? 'completed' : 'in_care'
+      })
+      .eq('id', session.booking_id);
+  }
+
+  revalidatePath('/ktv/dashboard');
+  revalidatePath('/dashboard/bookings');
+  return { success: true };
+}
+
+/**
+ * Lấy thu nhập hoa hồng của KTV trong tháng
+ */
+export async function getKTVEarnings(month: string) {
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ktv') return { total: 0, sessions: 0 };
+
+  const startOfMonth = `${month}-01`;
+  const nextMonth = new Date(new Date(startOfMonth).setMonth(new Date(startOfMonth).getMonth() + 1)).toISOString().split('T')[0];
+
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select(`
+      id,
+      bookings (
+        ktv_commission
+      )
+    `)
+    .eq('completed_by_ktv_id', user.id)
+    .eq('status', 'completed')
+    .gte('completed_date', startOfMonth)
+    .lt('completed_date', nextMonth);
+
+  if (error) return { total: 0, sessions: 0 };
+
+  const total = data.reduce((acc: number, s: any) => acc + (Number(s.bookings?.ktv_commission) || 0), 0);
+  
+  return {
+    total,
+    sessions: data.length
+  };
+}
+
+export async function getKTVLeaderboard(month: string) {
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  const tenantId = user?.tenant_id;
+  if (!tenantId) return [];
+
+  const { data, error } = await supabase.rpc('get_ktv_leaderboard', {
+    p_tenant_id: tenantId,
+    p_month: `${month}-01`
+  });
+
+  if (error) {
+    console.error('Error fetching leaderboard:', error);
+    return [];
+  }
+
+  return data || [];
+}

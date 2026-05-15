@@ -21,6 +21,11 @@ export default function SalaryPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [matrixData, setMatrixData] = useState<{ ktvs: any[], packageNames: string[] } | null>(null);
   const [isExportingMatrix, setIsExportingMatrix] = useState(false);
+  
+  const now = new Date();
+  const currentMonthYear = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+  const prevMonthYear = now.getMonth() === 0 ? `12/${now.getFullYear() - 1}` : `${String(now.getMonth()).padStart(2, '0')}/${now.getFullYear()}`;
+
 
   useEffect(() => {
     async function fetchUser() {
@@ -128,7 +133,7 @@ export default function SalaryPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Bao_cao_luong_${s.name.replace(/\s+/g, '_')}_05_2026.xlsx`;
+      a.download = `Bao_cao_luong_${s.name.replace(/\s+/g, '_')}_${currentMonthYear.replace('/', '_')}.xlsx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -151,7 +156,7 @@ export default function SalaryPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Bang_doi_soat_buoi_lam_KTV_05_2026.xlsx`;
+      a.download = `Bang_doi_soat_buoi_lam_KTV_${currentMonthYear.replace('/', '_')}.xlsx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -189,7 +194,7 @@ export default function SalaryPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest">Kỳ lương: 05/2026</span>
+            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest">Kỳ lương: {currentMonthYear}</span>
           </div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Lương KTV</h1>
           <p className="text-slate-500 font-medium mt-1">Quản lý thu nhập và hiệu suất làm việc của kỹ thuật viên</p>
@@ -225,7 +230,7 @@ export default function SalaryPage() {
             <h3 className="text-4xl font-black mb-4">{totalPayout.toLocaleString()}đ</h3>
             <div className="flex items-center gap-2 text-white/90 font-black text-sm">
               <TrendingUp className="w-4 h-4" />
-              Tăng 8% so với tháng 04/2026
+              So với tháng {prevMonthYear}
             </div>
           </div>
           <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
@@ -245,7 +250,7 @@ export default function SalaryPage() {
               <h4 className="text-2xl font-black text-slate-900">{totalSessions} Buổi</h4>
             </div>
           </div>
-          <p className="text-xs font-bold text-slate-500">Hiệu suất trung bình 1.2 buổi/ngày/KTV</p>
+          <p className="text-xs font-bold text-slate-500">Dựa trên dữ liệu thực tế hệ thống</p>
         </motion.div>
 
         <motion.div 
@@ -262,7 +267,7 @@ export default function SalaryPage() {
               <h4 className="text-2xl font-black text-slate-900">{(Math.max(...ktvSalaries.map((s: any) => s.totalSalary)) / 1000000).toFixed(1)}M</h4>
             </div>
           </div>
-          <p className="text-xs font-bold text-slate-500">KTV Nguyễn Thị Hoa (Top 1)</p>
+          <p className="text-xs font-bold text-slate-500">Nhân viên đạt hiệu suất tốt nhất</p>
         </motion.div>
       </div>
 

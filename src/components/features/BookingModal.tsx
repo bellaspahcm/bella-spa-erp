@@ -18,10 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCustomers, createCustomer } from '@/services/customer-actions';
-import { createBooking } from '@/services/booking-actions';
-import { MOCK_SERVICES } from '@/constants/mock-data';
-import { cn, formatNumberWithSeparator } from '@/lib/utils';
-import { getDraftBooking } from '@/services/booking-actions';
+import { createBooking, getPackages, getDraftBooking } from '@/services/booking-actions';
 import { getUsers } from '@/services/user-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
@@ -49,6 +46,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   });
 
   const [ktvs, setKtvs] = useState<any[]>([]);
+  const [packages, setPackages] = useState<any[]>([]);
   const [draftBooking, setDraftBooking] = useState<any>(null);
 
   const [formData, setFormData] = useState({
@@ -77,8 +75,18 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       setNewCustomer({ name_mother: '', phone: '', address: '' });
       fetchCustomers();
       fetchKtvs();
+      fetchPackages();
     }
   }, [isOpen, preselectedCustomer]);
+
+  async function fetchPackages() {
+    try {
+      const data = await getPackages();
+      setPackages(data);
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+    }
+  }
 
   async function fetchKtvs() {
     try {
@@ -162,14 +170,13 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     }
   }, [searchQuery, customers]);
 
-  const handleSelectService = (service: any) => {
-    const price = parseInt(service.price.replace(/[^\d]/g, ''));
+  const handleSelectService = (pkg: any) => {
     setFormData({
       ...formData,
-      package_id: '', // Leave empty to send null and avoid UUID type errors with mock ids
-      package_name: service.name,
-      full_price: price,
-      total_sessions: service.sessions
+      package_id: pkg.id,
+      package_name: pkg.name,
+      full_price: pkg.price || 0,
+      total_sessions: pkg.total_sessions || 10
     });
   };
 
@@ -427,24 +434,29 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     <Package className="w-4 h-4" /> Chọn gói dịch vụ
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {MOCK_SERVICES.map((service) => (
+                    {packages.map((pkg) => (
                       <button
-                        key={service.id}
-                        onClick={() => handleSelectService(service)}
+                        key={pkg.id}
+                        onClick={() => handleSelectService(pkg)}
                         className={cn(
                           "p-4 rounded-2xl border text-left transition-all relative group",
-                          formData.package_name === service.name 
+                          formData.package_id === pkg.id 
                             ? "border-primary bg-primary/5 shadow-lg shadow-primary/5" 
                             : "border-slate-100 hover:border-primary/50"
                         )}
                       >
-                        {formData.package_name === service.name && (
+                        {(formData.package_id === pkg.id || formData.package_name === pkg.name) && (
                           <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-primary" />
                         )}
-                        <h5 className="font-black text-slate-900 group-hover:text-primary transition-colors">{service.name}</h5>
-                        <p className="text-xs text-slate-500 font-bold mt-1">{service.sessions} buổi - {service.price}</p>
+                        <h5 className="font-black text-slate-900 group-hover:text-primary transition-colors">{pkg.name}</h5>
+                        <p className="text-xs text-slate-500 font-bold mt-1">{pkg.total_sessions} buổi - {formatNumberWithSeparator(pkg.price)}đ</p>
                       </button>
                     ))}
+                    {packages.length === 0 && !isLoading && (
+                      <p className="col-span-2 text-center py-4 text-slate-400 italic font-bold">
+                        Chưa có dữ liệu gói dịch vụ trong hệ thống.
+                      </p>
+                    )}
                   </div>
                 </div>
 
