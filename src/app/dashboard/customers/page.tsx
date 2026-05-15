@@ -251,9 +251,10 @@ export default function CustomersPage() {
       customer.phone,
       customer.name_baby,
       customer.dob_expected,
+      customer.dob_baby,
       customer.address,
-      customer.package_name,
       customer.notes,
+      customer.zalo_oa_id,
       customer.gender_baby === 'boy' ? 'bé trai' : customer.gender_baby === 'girl' ? 'bé gái' : '',
     ].some(f => (f || '').toLowerCase().includes(q));
 
