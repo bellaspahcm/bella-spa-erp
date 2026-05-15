@@ -137,10 +137,10 @@ export default function DashboardPage() {
       const { statsData, sessionsData, ktvsData, alertsData, perfData } = await getFullDashboardData(startDate, endDate, localToday);
 
       const newStats = [
-        { label: 'Tổng khách hàng', value: statsData.totalCustomers.value, trend: statsData.totalCustomers.trend, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings.value, trend: statsData.todayBookings.trend, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-        ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: statsData.totalRevenue.value, trend: statsData.totalRevenue.trend, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
-        { label: 'Đánh giá KTV', value: statsData.avgRating.value, trend: statsData.avgRating.trend, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Tổng khách hàng', value: statsData.totalCustomers?.value || '0', trend: statsData.totalCustomers?.trend || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings?.value || '0', trend: statsData.todayBookings?.trend || 0, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
+        { label: 'Doanh thu tháng', value: statsData.totalRevenue?.value || '0M', trend: statsData.totalRevenue?.trend || 0, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        { label: 'Đánh giá KTV', value: statsData.avgRating?.value || '5.0', trend: statsData.avgRating?.trend || 0, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
       ];
       
       setStats(newStats);
