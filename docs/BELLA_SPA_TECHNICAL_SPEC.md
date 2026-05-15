@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 2.5  
-**Last Updated:** 2026-05-16 (12:30)  
-**Status:** Implementation Phase (Phase 23: UI Standardization & Quality Assurance - Active)
+**Version:** 2.6  
+**Last Updated:** 2026-05-16 (13:30)  
+**Status:** Implementation Phase (Phase 24: Messaging Center Stabilization & UI Enhancements - Completed)
 
 ---
 
@@ -549,6 +549,7 @@ A: Yes, IF:
 - [x] Phase 21: Financial Reconciliation & Transaction Hardening (Completed)
 - [x] Phase 22: Audit Trail & Build Stabilization (Completed)
 - [x] Phase 23: UI Standardization & Quality Assurance (Completed)
+- [x] Phase 24: Messaging Center Stabilization & UI Enhancements (Completed)
 
 #### ✅ Phase 21: Financial Reconciliation & Transaction Hardening (May 16, 2026) - Verified Stable
 - [x] **Reconciliation Module**: Launched a specialized dashboard (`/dashboard/finance/reconciliation`) to track Customer Debt, Orphaned Funds, and Price Mismatches.
@@ -739,9 +740,15 @@ A: Yes, IF:
 - **Strict Time Validation**: Replaced free-text time fields with structured pickers and added server-side normalization.
 - **UX Improvement**: Default time ranges for faster scheduling.
 
+### PHASE 24: Messaging Center Stabilization & UI Enhancements (Completed)
+- **RPC Hardening**: Resolved ambiguous column reference in `get_chat_customers` by explicitly qualifying table prefixes (`public.users.id`).
+- **Client-Side Refactoring**: Migrated `/dashboard/chat` from brittle Server Actions to direct Client-side Supabase requests for reliable real-time subscription and data fetching.
+- **Portal UI Enhancement**: Redesigned the Customer Portal (`/portal/[token]`) greeting section (large font, primary brand color) and integrated official social media contact links (Facebook).
+- **Production Deployment**: Verified all changes and successfully deployed to the Vercel production environment.
+
 ---
 
-**Document Version:** 2.4  
-**Last Updated:** 2026-05-16 (06:30)  
-**Status:** Implementation Phase (Phase 22: Completed)  
+**Document Version:** 2.6  
+**Last Updated:** 2026-05-16 (13:30)  
+**Status:** Implementation Phase (Phase 24: Completed)  
 **Contact:** Bella Spa ERP Dev Team
