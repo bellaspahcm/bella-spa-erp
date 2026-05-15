@@ -5,32 +5,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, AlertTriangle, PlusCircle, History,
   TrendingDown, TrendingUp, RefreshCw, Search,
-  ArrowRightLeft, X, ShieldCheck, Calendar, ChevronDown
+  ArrowRightLeft, X, ShieldCheck
 } from 'lucide-react';
 import { getInventoryItems, getInventoryLogs, restockItem, addInventoryItem } from '@/services/inventory-actions';
 import { toast } from 'sonner';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
-// ── Date helpers ──────────────────────────────────────────────────────────────
-function thisMonthRange() {
-  const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth();
-  const from = new Date(y, m, 1).toISOString().slice(0, 10);
-  const to   = new Date(y, m + 1, 0).toISOString().slice(0, 10);
-  return { from, to };
-}
+const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
+                'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+const YEARS  = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
 
 export default function InventoryPage() {
   const [items,    setItems]    = useState<any[]>([]);
   const [logs,     setLogs]     = useState<any[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [search,   setSearch]   = useState('');
+  const [stockFilter, setStockFilter] = useState<'all'|'low'|'ok'>('all');
 
-  // Date filter for logs
-  const def = thisMonthRange();
-  const [dateFrom, setDateFrom] = useState(def.from);
-  const [dateTo,   setDateTo]   = useState(def.to);
+  // Month/Year dropdowns for log history
+  const now = new Date();
+  const [logMonth, setLogMonth] = useState(now.getMonth()); // 0-based
+  const [logYear,  setLogYear]  = useState(now.getFullYear());
+
+  // Derived date range
+  const dateFrom = `${logYear}-${String(logMonth + 1).padStart(2,'0')}-01`;
+  const dateTo   = new Date(logYear, logMonth + 1, 0).toISOString().slice(0, 10);
 
   // Restock modal
   const [restockTarget, setRestockTarget] = useState<any>(null);
@@ -59,14 +59,20 @@ export default function InventoryPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // Filter items by search
+  // Filter items by search + stock status
   const filteredItems = useMemo(() =>
-    items.filter(it =>
-      it.name?.toLowerCase().includes(search.toLowerCase()) ||
-      (it.sku && it.sku.toLowerCase().includes(search.toLowerCase()))
-    ), [items, search]);
+    items.filter(it => {
+      const q = search.toLowerCase();
+      const matchSearch = !q ||
+        it.name?.toLowerCase().includes(q) ||
+        (it.sku && it.sku.toLowerCase().includes(q)) ||
+        (it.category && it.category.toLowerCase().includes(q));
+      const isLow = Number(it.stock_level) <= Number(it.min_stock_level);
+      const matchStatus = stockFilter === 'all' || (stockFilter === 'low' ? isLow : !isLow);
+      return matchSearch && matchStatus;
+    }), [items, search, stockFilter]);
 
-  // Filter logs by date range
+  // Filter logs by selected month/year
   const filteredLogs = useMemo(() =>
     logs.filter(lg => {
       const d = lg.created_at?.slice(0, 10);
@@ -145,21 +151,31 @@ export default function InventoryPage() {
         <div className="xl:col-span-2">
           <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
             {/* toolbar */}
-            <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="relative flex-grow max-w-sm">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text" placeholder="Tìm vật tư, SKU..."
-                  value={search} onChange={e => setSearch(e.target.value)}
-                  className="w-full bg-slate-50 rounded-2xl py-3 pl-11 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
-                />
+            <div className="p-8 border-b border-slate-50 flex flex-col gap-3">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="relative flex-grow max-w-sm">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text" placeholder="Tìm vật tư, SKU, danh mục..."
+                    value={search} onChange={e => setSearch(e.target.value)}
+                    className="w-full bg-slate-50 rounded-2xl py-3 pl-11 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <select value={stockFilter} onChange={e => setStockFilter(e.target.value as any)}
+                    className="bg-slate-50 border-0 rounded-2xl py-3 px-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer">
+                    <option value="all">Tất cả ({items.length})</option>
+                    <option value="low">⚠️ Sắp hết ({lowCount})</option>
+                    <option value="ok">✅ Còn hàng ({items.length - lowCount})</option>
+                  </select>
+                  <button
+                    onClick={() => setShowAdd(true)}
+                    className="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 active:scale-95 transition-all shadow-lg whitespace-nowrap"
+                  >
+                    <PlusCircle className="w-4 h-4" /> Thêm Vật Tư
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => setShowAdd(true)}
-                className="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 active:scale-95 transition-all shadow-lg"
-              >
-                <PlusCircle className="w-4 h-4" /> Thêm Vật Tư
-              </button>
             </div>
 
             {/* table */}
@@ -236,22 +252,18 @@ export default function InventoryPage() {
               </h3>
             </div>
 
-            {/* Date filter */}
+            {/* Month/Year dropdown filter */}
             <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" /> Lọc theo ngày
-              </p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lọc theo tháng</p>
               <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[9px] font-black text-slate-400 uppercase block mb-1 ml-1">Từ ngày</label>
-                  <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20" />
-                </div>
-                <div>
-                  <label className="text-[9px] font-black text-slate-400 uppercase block mb-1 ml-1">Đến ngày</label>
-                  <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20" />
-                </div>
+                <select value={logMonth} onChange={e => setLogMonth(Number(e.target.value))}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20">
+                  {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                </select>
+                <select value={logYear} onChange={e => setLogYear(Number(e.target.value))}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20">
+                  {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
               </div>
               <p className="text-[9px] text-slate-400 font-medium text-right">{filteredLogs.length} giao dịch</p>
             </div>
