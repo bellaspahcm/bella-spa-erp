@@ -115,8 +115,8 @@ export default function ChatPage() {
             .eq('customer_id', selectedChat.id)
             .eq('sender_type', 'customer')
             .eq('is_read', false)
-            .then(({ error }) => {
-              if (error) console.error('Error marking read:', error);
+            .then((res: any) => {
+              if (res.error) console.error('Error marking read:', res.error);
             });
         }
       } catch (error) {
@@ -158,8 +158,8 @@ export default function ChatPage() {
               .eq('customer_id', selectedChat.id)
               .eq('sender_type', 'customer')
               .eq('is_read', false)
-              .then(({ error }) => {
-                if (error) console.error('Error marking read from subscription:', error);
+              .then((res: any) => {
+                if (res.error) console.error('Error marking read from subscription:', res.error);
               });
           }
         }
