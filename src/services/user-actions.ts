@@ -13,14 +13,33 @@ export async function getCurrentUser() {
     return null;
   }
 
-  const { data: profile } = await supabase
+  // Try fetching from 'users' table first
+  let { data: profile } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)
     .single();
 
+  // Fallback to 'profiles' table if not found in 'users'
+  if (!profile) {
+    const { data: fallbackProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    if (fallbackProfile) {
+      // Map 'Admin' role to 'admin' if necessary
+      profile = {
+        ...fallbackProfile,
+        role: fallbackProfile.role?.toLowerCase() === 'admin' ? 'admin' : fallbackProfile.role
+      };
+    }
+  }
+
   return profile;
 }
+
 
 export async function getUsers() {
   const supabase = (await createClient()) as any;
