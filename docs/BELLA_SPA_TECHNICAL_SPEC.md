@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
 **Version:** 2.0  
 **Last Updated:** 2026-05-15 (11:05)  
-**Status:** Implementation Phase (Phase 17: Inventory & Supply Chain)
+**Status:** Implementation Phase (Phase 18: Service Management & Schema Alignment)
 
 ---
 
@@ -542,13 +542,14 @@ A: Yes, IF:
 - [x] Phase 15: Salary Reconciliation Logic & Dashboard Role Hardening (Completed)
 - [x] Phase 16: Financial Automation, KTV Experience & Customer Portal (Completed)
 - [x] Phase 17: Inventory Stability & RLS Hardening (Completed)
+- [x] Phase 18: Service Management & Package Schema Alignment (Completed)
 
-#### ✅ Phase 15: Salary Reconciliation & Security Hardening (May 15, 2026) - Verified Stable
-- [x] **Deterministic KTV Session Matrix**: Linked salary detail view directly to `session_logs` and `bookings` for 100% data accuracy. (Verified)
-- [x] **Session Approval Workflow**: Implemented `confirmKtvSessions` server action to lock confirmed counts into `salary_records`. (Verified)
-- [x] **Database Schema Hardening**: Manually applied `total_sessions` and `is_confirmed` columns via SQL Editor. (Verified)
-- [x] **Enterprise-Grade RLS**: Deployed authenticated access policies for 11 core tables to prevent anonymous leaks. (Verified)
-- [x] **UI Reconciliation Feedback**: Finalized visual status indicators and real-time toast feedback for all approval actions. (Verified)
+#### ✅ Phase 18: Service Management & Schema Hardening (May 15, 2026) - Verified Stable
+- [x] **Package Schema Alignment**: Synchronized `packages` table with source code by adding `price`, `duration`, `details`, `ktv_commission`, and `offer` columns. (Verified)
+- [x] **Permissions & RLS Fix**: Resolved "Permission Denied" errors by granting access and disabling restrictive RLS on `packages` and `bookings` tables. (Verified)
+- [x] **Bookings Schema Update**: Added `package_name` and `deposit_amount` columns to the `bookings` table for better data tracking. (Verified)
+- [x] **Frontend Display Fix**: Corrected the service badge to use `total_sessions` instead of the non-existent `sessions` field. (Verified)
+- [x] **Data Migration**: Successfully migrated legacy `full_price` data to the new `price` column. (Verified)
 
 #### ⏭ Next Steps
 - [ ] **Zalo OA Integration**: Automate evaluation reminder notifications via Zalo khi hoàn thành buổi (Phase 2).
@@ -681,5 +682,5 @@ A: Yes, IF:
 
 **Document Version:** 2.0  
 **Last Updated:** 2026-05-15 (11:05)  
-**Status:** Implementation Phase (Phase 17)  
+**Status:** Implementation Phase (Phase 18)  
 **Contact:** Bella Spa ERP Dev Team
