@@ -79,11 +79,11 @@ export default function InventoryPage() {
   useEffect(() => {
     // Fetch tenant_id from browser auth session (for writes)
     const sb = getSupabase();
-    sb.auth.getSession().then(({ data: { session } }) => {
-      const uid = session?.user?.id;
+    sb.auth.getSession().then((res: any) => {
+      const uid = res?.data?.session?.user?.id;
       if (uid) {
         sb.from('users').select('tenant_id').eq('id', uid).single()
-          .then(({ data }) => setTenantId(data?.tenant_id || null));
+          .then(({ data }: any) => setTenantId(data?.tenant_id || null));
       }
     });
     fetchData();
