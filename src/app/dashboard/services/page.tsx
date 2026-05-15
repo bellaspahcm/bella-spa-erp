@@ -182,7 +182,7 @@ export default function ServicesPage() {
                 <Sparkles className="text-primary w-8 h-8" />
               </div>
               <div className="bg-primary text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full z-10">
-                {service.sessions} Buổi
+                {service.total_sessions} Buổi
               </div>
             </div>
 
