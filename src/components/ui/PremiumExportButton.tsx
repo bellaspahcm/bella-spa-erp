@@ -39,12 +39,10 @@ export default function PremiumExportButton({ onExport, className }: PremiumExpo
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group flex items-center gap-3 bg-white border border-slate-200 hover:border-rose-200 text-slate-700 px-6 py-4 rounded-[28px] font-bold transition-all shadow-sm hover:shadow-xl hover:shadow-rose-100/50 active:scale-95"
+        className="group flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-rose-200 text-slate-700 px-6 py-3 rounded-2xl font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
       >
-        <div className={`p-2 rounded-xl transition-colors ${isOpen ? 'bg-primary text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-primary/10 group-hover:text-primary'}`}>
-          <Download className="w-5 h-5" />
-        </div>
-        <span className="text-sm font-black uppercase tracking-widest hidden md:inline">Xuất dữ liệu</span>
+        <Download className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
+        <span className="text-sm font-black tracking-widest hidden md:inline">Xuất dữ liệu</span>
         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
