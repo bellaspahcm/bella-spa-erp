@@ -177,14 +177,16 @@ export async function recordTransaction(data: {
   if (!tenantId) throw new Error('Tenant ID not found for current user session');
 
   if (data.type === 'expense') {
+    const expenseNumber = `EXP-${new Date().getTime()}-${Math.floor(Math.random() * 1000)}`;
     const { data: result, error } = await supabase
       .from('expenses')
       .insert({
+        expense_number: expenseNumber,
         amount: Math.abs(data.amount),
         category: data.category || 'other_admin',
         description: data.notes,
         status: data.status === 'confirmed' ? 'approved' : 'submitted',
-        expense_date: new Date().toISOString(),
+        expense_date: new Date().toISOString().split('T')[0],
         tenant_id: tenantId
       })
       .select()
