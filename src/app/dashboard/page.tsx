@@ -52,6 +52,7 @@ import {
   getMonthlyPerformance,
   getFullDashboardData
 } from '@/services/dashboard-actions';
+import { getInventorySummary } from '@/services/inventory-actions';
 import { completeSession, saveSessionNote } from '@/services/booking-actions';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
@@ -82,6 +83,7 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [performanceData, setPerformanceData] = useState<any[]>([]);
+  const [inventorySummary, setInventorySummary] = useState({ totalItems: 0, lowStockCount: 0, totalValue: 0 });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isLoading, setIsLoading] = useState(false);
@@ -124,7 +126,10 @@ export default function DashboardPage() {
       const now = new Date();
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       
-      const { statsData, sessionsData, ktvsData, alertsData, perfData } = await getFullDashboardData(startDate, endDate, localToday);
+      const [{ statsData, sessionsData, ktvsData, alertsData, perfData }, invSummary] = await Promise.all([
+        getFullDashboardData(startDate, endDate, localToday),
+        getInventorySummary()
+      ]);
 
       const newStats = [
         { label: 'Tổng khách hàng', value: statsData.totalCustomers?.value || '0', trend: statsData.totalCustomers?.trend || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -134,11 +139,11 @@ export default function DashboardPage() {
       ];
       
       setStats(newStats);
-      
       setSessions(sessionsData || []);
       setTopKTVs(ktvsData || []);
       setPerformanceData(perfData || []);
       setAlerts(alertsData || []);
+      setInventorySummary(invSummary || { totalItems: 0, lowStockCount: 0, totalValue: 0 });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Lỗi cập nhật dữ liệu');
@@ -907,21 +912,21 @@ export default function DashboardPage() {
 
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white/50 p-6 rounded-3xl border border-white/50 flex items-center gap-4">
-               <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
-                  <AlertTriangle className="w-6 h-6 animate-pulse" />
+               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${inventorySummary.lowStockCount > 0 ? 'bg-amber-50 text-amber-500 animate-pulse' : 'bg-emerald-50 text-emerald-500'}`}>
+                  <AlertTriangle className="w-6 h-6" />
                </div>
                <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Mặt hàng sắp hết</p>
-                  <p className="text-2xl font-black text-slate-900">2 <span className="text-sm text-slate-400 font-medium">sản phẩm</span></p>
+                  <p className="text-2xl font-black text-slate-900">{inventorySummary.lowStockCount} <span className="text-sm text-slate-400 font-medium">sản phẩm</span></p>
                </div>
             </div>
             <div className="bg-white/50 p-6 rounded-3xl border border-white/50 flex items-center gap-4">
                <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-primary">
-                  <TrendingDown className="w-6 h-6" />
+                  <Package className="w-6 h-6" />
                </div>
                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tiêu hao hôm nay</p>
-                  <p className="text-2xl font-black text-slate-900">~15 <span className="text-sm text-slate-400 font-medium">đơn vị</span></p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tổng mặt hàng</p>
+                  <p className="text-2xl font-black text-slate-900">{inventorySummary.totalItems} <span className="text-sm text-slate-400 font-medium">loại</span></p>
                </div>
             </div>
             <div className="bg-white/50 p-6 rounded-3xl border border-white/50 flex items-center gap-4">
@@ -930,10 +935,13 @@ export default function DashboardPage() {
                </div>
                <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Giá trị tồn kho</p>
-                  <p className="text-2xl font-black text-slate-900">~4.5M <span className="text-sm text-slate-400 font-medium">VND</span></p>
+                  <p className="text-2xl font-black text-slate-900">
+                    {inventorySummary.totalValue > 0 ? (inventorySummary.totalValue / 1_000_000).toFixed(1) + 'M' : '0M'} <span className="text-sm text-slate-400 font-medium">VND</span>
+                  </p>
                </div>
             </div>
          </div>
+
       </motion.div>
 
       {/* Modals */}
