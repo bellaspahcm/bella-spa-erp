@@ -32,9 +32,9 @@ import {
   Sparkles
 } from 'lucide-react';
 
-import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/customer-actions';
-import { getPackages } from '@/services/booking-actions';
-import { getCurrentUser } from '@/services/user-actions';
+import { createCustomer, updateCustomer, deleteCustomer } from '@/services/customer-actions';
+import { createClient as createBrowserClient } from '@/lib/supabase-client';
+
 
 
 
@@ -77,13 +77,22 @@ export default function CustomersPage() {
 
   useEffect(() => {
     async function checkRole() {
-      const user = await getCurrentUser();
-      if (user?.role) {
-        setUserRole(user.role as any);
+      const supabase = createBrowserClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        if (userData?.role) {
+          setUserRole(userData.role as any);
+        }
       }
     }
     checkRole();
   }, []);
+
 
   useEffect(() => {
 
@@ -92,18 +101,37 @@ export default function CustomersPage() {
   }, []);
 
   const loadPackages = async () => {
-    const data = await getPackages();
-    setPackages(data);
+    try {
+      const supabase = createBrowserClient();
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      setPackages(data || []);
+    } catch (error) {
+      console.error('Error loading packages:', error);
+    }
   };
 
   const loadCustomers = async () => {
     setIsSyncing(true);
-    const data = await getCustomers();
-    if (data && data.length > 0) {
-      setCustomers(data);
+    try {
+      const supabase = createBrowserClient();
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('name_mother', { ascending: true });
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (error) {
+      console.error('Error loading customers:', error);
+    } finally {
+      setIsSyncing(false);
     }
-    setIsSyncing(false);
   };
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
