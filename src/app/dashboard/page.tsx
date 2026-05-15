@@ -156,11 +156,11 @@ export default function DashboardPage() {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear, userRole]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, userRole]);
 
   useEffect(() => {
     // REALTIME SUBSCRIPTION
