@@ -230,6 +230,7 @@ export default function CustomersPage() {
 
   const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Chờ sinh', 'Tiềm năng', 'Đã kết thúc'];
 
+  const [searchQuery, setSearchQuery] = useState('');
   const [monthFilter, setMonthFilter]  = useState('all');
   const [yearFilter,  setYearFilter]   = useState(String(new Date().getFullYear()));
 
