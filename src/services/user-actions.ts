@@ -13,14 +13,27 @@ export async function getCurrentUser() {
     return null;
   }
 
-  // Try fetching from 'users' table first
+  // Try fetching from 'users' table by ID (primary path)
   let { data: profile } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)
     .single();
 
-  // Fallback to 'profiles' table if not found in 'users'
+  // Fallback 1: lookup by email (handles auth users created separately from public.users)
+  if (!profile && user.email) {
+    const { data: emailProfile } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', user.email)
+      .single();
+    
+    if (emailProfile) {
+      profile = emailProfile;
+    }
+  }
+
+  // Fallback 2: 'profiles' table
   if (!profile) {
     const { data: fallbackProfile } = await supabase
       .from('profiles')
@@ -29,12 +42,15 @@ export async function getCurrentUser() {
       .single();
     
     if (fallbackProfile) {
-      // Map 'Admin' role to 'admin' if necessary
       profile = {
         ...fallbackProfile,
         role: fallbackProfile.role?.toLowerCase() === 'admin' ? 'admin' : fallbackProfile.role
       };
     }
+  }
+
+  if (!profile) {
+    console.error('[getCurrentUser] No profile found for auth user:', user.email, '| auth_id:', user.id);
   }
 
   return profile;
