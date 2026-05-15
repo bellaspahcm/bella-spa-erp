@@ -15,7 +15,8 @@ import {
   MessageSquare,
   Sparkles,
   RefreshCw,
-  X
+  X,
+  Facebook
 } from 'lucide-react';
 import { getCustomerBookingByToken, submitCustomerRating } from '@/services/customer-actions';
 import { toast } from 'sonner';
@@ -96,8 +97,8 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                <Heart className="white w-6 h-6 fill-current text-white" />
             </div>
             <div>
-               <h1 className="text-xs font-black text-primary uppercase tracking-[0.2em]">Bella Spa Portal</h1>
-               <p className="text-[10px] font-bold text-slate-400 uppercase">Chào mừng chị {booking.customers?.name_mother}</p>
+               <h1 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Bella Spa Portal</h1>
+               <p className="text-xl sm:text-2xl font-black text-primary leading-tight">Chào mừng chị {booking.customers?.name_mother}</p>
             </div>
           </div>
 
@@ -198,14 +199,18 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
            <p className="text-slate-500 text-xs mb-6 px-4">Tận tâm chăm sóc mẹ và bé với những liệu trình chuẩn y khoa và tình yêu thương.</p>
            
            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2 text-slate-400 text-xs">
-                 <MapPin className="w-4 h-4" />
-                 <span>Hải Châu, Đà Nẵng</span>
+              <div className="flex items-center justify-center gap-2 text-slate-500 text-xs">
+                 <MapPin className="w-4 h-4 text-primary/60" />
+                 <span>Khu vực TP. Hồ Chí Minh</span>
               </div>
-              <div className="flex items-center justify-center gap-2 text-slate-400 text-xs">
-                 <Phone className="w-4 h-4" />
+              <a href="tel:0905123456" className="flex items-center justify-center gap-2 text-slate-500 text-xs hover:text-primary transition-colors">
+                 <Phone className="w-4 h-4 text-primary/60" />
                  <span>0905 123 456</span>
-              </div>
+              </a>
+              <a href="https://www.facebook.com/bellaspahcm" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 text-slate-500 text-xs hover:text-primary transition-colors">
+                 <Facebook className="w-4 h-4 text-primary/60" />
+                 <span>facebook.com/bellaspahcm</span>
+              </a>
            </div>
         </section>
       </div>
