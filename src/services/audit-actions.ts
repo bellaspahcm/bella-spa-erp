@@ -10,14 +10,21 @@ export async function getAuditLogs() {
   const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
 
   try {
+    // Note: audit_logs.changed_by_id points to auth.users.id. 
+    // We usually have a mapping in public.users.id as well.
     const { data, error } = await supabase
       .from('audit_logs')
       .select(`
         *,
-        users(full_name)
+        users:changed_by_id(full_name)
       `)
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase error fetching audit logs:', error);
+      return [];
+    }
 
     if (!data || data.length === 0) {
       return [];
@@ -27,7 +34,8 @@ export async function getAuditLogs() {
       id: log.id,
       user_name: log.users?.full_name || 'Hệ thống',
       action: log.action,
-      module: log.module,
+      table_name: log.table_name,
+      record_id: log.record_id,
       old_data: log.old_data,
       new_data: log.new_data,
       created_at: log.created_at
@@ -38,12 +46,10 @@ export async function getAuditLogs() {
   }
 }
 
-
-
 export async function recordAuditLog(payload: {
-  action: 'CREATE' | 'UPDATE' | 'DELETE';
-  module: string;
-  target_id: string;
+  action: 'INSERT' | 'UPDATE' | 'DELETE';
+  table_name: string;
+  record_id: string;
   old_data?: any;
   new_data?: any;
 }) {
@@ -53,17 +59,17 @@ export async function recordAuditLog(payload: {
 
   try {
     const { error } = await supabase.from('audit_logs').insert({
-      user_id: currentUser?.id,
+      changed_by_id: currentUser?.id,
       action: payload.action,
-      module: payload.module,
-      target_id: payload.target_id,
+      table_name: payload.table_name,
+      record_id: payload.record_id,
       old_data: payload.old_data,
       new_data: payload.new_data,
       tenant_id: tenantId
     });
 
     if (error) {
-      console.warn('Failed to record audit log (table might be missing):', error.message);
+      console.warn('Failed to record audit log:', error.message);
     }
   } catch (err) {
     console.error('Audit log recording failed:', err);
