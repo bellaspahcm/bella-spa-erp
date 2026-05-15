@@ -56,7 +56,6 @@ import { getInventorySummary } from '@/services/inventory-actions';
 import { completeSession, saveSessionNote } from '@/services/booking-actions';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
-import { getCurrentUser } from '@/services/user-actions';
 
 
 
@@ -96,11 +95,21 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function checkRole() {
-      const user = await getCurrentUser();
-      if (user?.role) {
-        setUserRole(user.role as any);
-      } else {
-        setUserRole('ktv'); 
+      try {
+        const supabase = createClient() as any;
+        // Use client-side auth — always available without cookie forwarding issues
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { setUserRole('ktv'); return; }
+
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        setUserRole((profile?.role as any) || 'ktv');
+      } catch {
+        setUserRole('ktv');
       }
     }
     checkRole();

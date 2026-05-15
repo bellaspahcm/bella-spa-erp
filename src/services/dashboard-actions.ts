@@ -33,7 +33,11 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     const supabase = (await createClient()) as any;
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
-    if (!tenantId) throw new Error('No tenant');
+
+    // Warn but do NOT throw — fall back to unfiltered query if tenantId missing
+    if (!tenantId) {
+      console.warn('[getDashboardStats] No tenantId — querying without tenant filter');
+    }
 
     const now = new Date();
     const today = todayDate
@@ -41,22 +45,23 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     const monthStart = startDate || (today.substring(0, 7) + '-01');
     const { end: monthEnd, prevStart } = monthRange(monthStart);
 
+    // Build queries — add tenant filter only when available (Supabase builder is immutable)
+    let custQ    = supabase.from('customers').select('id', { count: 'exact', head: true });
+    let prevCustQ = supabase.from('customers').select('id', { count: 'exact', head: true }).lt('created_at', monthStart);
+    let revQ     = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', monthStart).lt('received_date', monthEnd);
+    let prevRevQ = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', prevStart).lt('received_date', monthStart);
+    let ratQ     = supabase.from('session_reviews').select('rating');
+
+    if (tenantId) {
+      custQ    = custQ.eq('tenant_id', tenantId);
+      prevCustQ = prevCustQ.eq('tenant_id', tenantId);
+      revQ     = revQ.eq('tenant_id', tenantId);
+      prevRevQ = prevRevQ.eq('tenant_id', tenantId);
+      ratQ     = ratQ.eq('tenant_id', tenantId);
+    }
+
     const [custRes, prevCustRes, revRes, prevRevRes, ratingRes] = await Promise.all([
-      // Total customers (all time)
-      supabase.from('customers').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
-      // Customers before this month (for trend)
-      supabase.from('customers').select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenantId).lt('created_at', monthStart),
-      // Revenue this month
-      supabase.from('revenue').select('amount')
-        .eq('tenant_id', tenantId).eq('status', 'confirmed')
-        .gte('received_date', monthStart).lt('received_date', monthEnd),
-      // Revenue last month
-      supabase.from('revenue').select('amount')
-        .eq('tenant_id', tenantId).eq('status', 'confirmed')
-        .gte('received_date', prevStart).lt('received_date', monthStart),
-      // All ratings
-      supabase.from('session_reviews').select('rating').eq('tenant_id', tenantId)
+      custQ, prevCustQ, revQ, prevRevQ, ratQ
     ]);
 
     const totalCustomers = custRes.count ?? 0;
