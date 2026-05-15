@@ -540,7 +540,8 @@ A: Yes, IF:
   - [x] Cấp quyền Admin cho các tài khoản production.
   - [x] Phase 14: Hardening Financial Integrity & Transactional Consistency (Completed)
 - [x] Phase 15: Salary Reconciliation Logic & Dashboard Role Hardening (Completed)
-- [ ] Phase 16: KTV Performance Analytics & Advanced Financial Reporting (In Progress)
+- [x] Phase 16: Financial Automation, KTV Experience & Customer Portal (Completed)
+- [x] Phase 17: Inventory Stability & RLS Hardening (Completed)
 
 #### ✅ Phase 15: Salary Reconciliation & Security Hardening (May 15, 2026) - Verified Stable
 - [x] **Deterministic KTV Session Matrix**: Linked salary detail view directly to `session_logs` and `bookings` for 100% data accuracy. (Verified)
