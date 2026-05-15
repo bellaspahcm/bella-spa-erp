@@ -262,14 +262,16 @@ export async function getImportantAlerts() {
 
     for (const s of (overdue || [])) {
       alerts.push({
-        type: 'overdue_session',
-        message: `Buổi ngày ${new Date(s.assigned_date + 'T00:00:00').toLocaleDateString('vi-VN')} chưa hoàn thành`,
+        type: 'warning',                    // UI: alert.type === 'warning' → amber styling
+        icon: 'alert',                      // UI: alert.icon === 'alert' → AlertTriangle icon
+        title: 'Buổi chưa hoàn thành',
+        message: `Buổi ngày ${new Date(s.assigned_date + 'T00:00:00').toLocaleDateString('vi-VN')} còn ở trạng thái chưa hoàn thành`,
         severity: 'warning',
         link: `/dashboard/sessions`
       });
     }
 
-    // Bookings nearing completion (< 2 sessions left)
+    // Bookings nearing completion (< 3 sessions left)
     const { data: nearEnd } = await supabase
       .from('bookings')
       .select('id, package_name, completed_sessions, total_sessions, customers!bookings_customer_id_fkey(name_mother)')
@@ -279,10 +281,12 @@ export async function getImportantAlerts() {
 
     for (const b of (nearEnd || [])) {
       const remaining = Number(b.total_sessions || 0) - Number(b.completed_sessions || 0);
-      if (remaining <= 2 && remaining >= 0) {
+      if (remaining <= 3 && remaining >= 0) {
         alerts.push({
-          type: 'near_completion',
-          message: `KH ${b.customers?.name_mother || 'Không rõ'} còn ${remaining} buổi trong gói ${b.package_name || ''}`,
+          type: 'info',                     // UI: else → blue styling
+          icon: 'lightbulb',               // UI: else → Lightbulb icon
+          title: 'Gói sắp kết thúc',
+          message: `KH ${b.customers?.name_mother || 'Không rõ'} còn ${remaining} buổi trong gói ${b.package_name || 'liệu trình'}`,
           severity: 'info',
           link: `/dashboard/sessions`
         });
