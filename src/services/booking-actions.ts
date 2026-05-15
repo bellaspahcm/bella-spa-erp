@@ -35,7 +35,7 @@ export async function getBookings() {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, customers(name_mother, phone), packages(name)')
+    .select('*, customers(name_mother, phone), packages!bookings_package_id_fkey(name)')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -59,7 +59,7 @@ export async function getBookingsByCustomerId(customerId: string) {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name), packages(name)')
+    .select('*, assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name), packages!bookings_package_id_fkey(name)')
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false });
 
@@ -271,6 +271,7 @@ export async function createBooking(formData: any) {
   }
 
   await safeRevalidatePath('/dashboard/bookings');
+  await safeRevalidatePath('/dashboard/sessions');
   await safeRevalidatePath('/dashboard/customers');
   await safeRevalidatePath(`/dashboard/customers/${validatedData.customer_id}`);
   await safeRevalidatePath('/dashboard');
@@ -415,7 +416,7 @@ export async function getSessionsWithDetails() {
       preferred_time,
       customers(id, name_mother, name_baby, phone), 
       assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name),
-      packages(name),
+      packages!bookings_package_id_fkey(name),
       session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, status, notes, ktv:users!session_logs_completed_by_ktv_id_fkey(full_name))
     `)
     .order('created_at', { ascending: false });
@@ -498,7 +499,7 @@ export async function getCalendarSessions() {
       bookings (
         *,
         preferred_time,
-        packages (name),
+        packages!bookings_package_id_fkey (name),
         customers (
           id,
           name_mother,
