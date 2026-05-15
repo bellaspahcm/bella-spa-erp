@@ -7,7 +7,8 @@ import {
   TrendingDown, TrendingUp, RefreshCw, Search,
   ArrowRightLeft, X, ShieldCheck
 } from 'lucide-react';
-import { getInventoryItems, getInventoryLogs, restockItem, addInventoryItem } from '@/services/inventory-actions';
+import { getSupabase } from '@/lib/supabase-client';
+import { restockItem, addInventoryItem } from '@/services/inventory-actions';
 import { toast } from 'sonner';
 import { formatNumberWithSeparator } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -47,10 +48,26 @@ export default function InventoryPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [i, l] = await Promise.all([getInventoryItems(), getInventoryLogs(50)]);
-      setItems(i);
-      setLogs(l);
-    } catch {
+      const sb = getSupabase();
+      // Direct browser client queries — Public Select: true, no auth needed
+      const [itemsRes, logsRes] = await Promise.all([
+        sb.from('inventory_items').select('*').order('name'),
+        sb.from('inventory_logs')
+          .select(`
+            id, change_amount, reason, notes, created_at, tenant_id,
+            inventory_items!inventory_logs_item_id_fkey(name, unit)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(200)
+      ]);
+
+      if (itemsRes.error) console.error('[inventory] items error:', itemsRes.error);
+      if (logsRes.error)  console.error('[inventory] logs error:',  logsRes.error);
+
+      setItems(itemsRes.data || []);
+      setLogs(logsRes.data   || []);
+    } catch (e) {
+      console.error('[fetchData]', e);
       toast.error('Lỗi tải dữ liệu kho');
     } finally {
       setLoading(false);
