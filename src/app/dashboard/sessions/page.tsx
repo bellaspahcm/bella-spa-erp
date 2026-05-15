@@ -28,6 +28,7 @@ import {
   History
 } from 'lucide-react';
 import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession, rescheduleSession, syncBookingProgress } from '@/services/booking-actions';
+import { toast } from 'sonner';
 import { cn, resolvePackageName } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
 
@@ -593,21 +594,23 @@ function SessionsContent() {
           />
         </div>
         {/* Month dropdown */}
-        <select
-          value={monthFilter}
-          onChange={e => setMonthFilter(e.target.value)}
-          className="w-full md:w-40 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-        >
-          {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <div className="w-full md:w-40">
+          <PremiumSelect
+            value={monthFilter}
+            options={monthOptions}
+            onChange={val => setMonthFilter(val)}
+            placeholder="Tháng..."
+          />
+        </div>
         {/* Year dropdown */}
-        <select
-          value={yearFilter}
-          onChange={e => setYearFilter(e.target.value)}
-          className="w-full md:w-32 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
-        >
-          {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
+        <div className="w-full md:w-32">
+          <PremiumSelect
+            value={yearFilter}
+            options={yearOptions.map(y => ({ value: y, label: y }))}
+            onChange={val => setYearFilter(val)}
+            placeholder="Năm..."
+          />
+        </div>
       </div>
 
       {displaySessions.length === 0 ? (
@@ -856,6 +859,29 @@ function SessionsContent() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <PremiumSelect 
+                      value={filterMonth}
+                      onChange={(value) => setFilterMonth(value)}
+                      options={[
+                        { value: 'all', label: 'Tất cả tháng' },
+                        ...Array.from({ length: 12 }, (_, i) => ({ 
+                          value: String(i + 1), 
+                          label: `Tháng ${i + 1}` 
+                        }))
+                      ]}
+                      className="w-40"
+                    />
+                    <PremiumSelect 
+                      value={filterYear}
+                      onChange={(value) => setFilterYear(value)}
+                      options={Array.from({ length: 5 }, (_, i) => ({ 
+                        value: String(new Date().getFullYear() - i), 
+                        label: `Năm ${new Date().getFullYear() - i}` 
+                      }))}
+                      className="w-32"
+                    />
+                  </div>
                   <div className={cn(
                     "flex items-center gap-2 px-4 py-2 rounded-xl border font-black text-[10px] uppercase tracking-widest",
                     userRole === 'ADMIN' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"

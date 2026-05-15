@@ -25,6 +25,7 @@ import { useState, useEffect } from 'react';
 import { TransactionModal } from '@/components/features/TransactionModal';
 import { FinancePnLSummary } from '@/components/features/FinancePnLSummary';
 import { createClient } from '@/lib/supabase-client';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 export default function FinancePage() {
   const [data, setData] = useState<any>({
@@ -323,17 +324,16 @@ export default function FinancePage() {
                 className="pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-rose-500/10 w-48 sm:w-64 transition-all" 
               />
             </div>
-            <div className="relative group">
-              <button className="flex items-center gap-2 p-2 px-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-500 font-bold text-xs transition-all">
-                <Filter className="w-4 h-4" />
-                {filterType === 'all' ? 'Tất cả' : filterType === 'revenue' ? 'Thu vào' : 'Chi ra'}
-              </button>
-              <div className="absolute right-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 overflow-hidden">
-                <button onClick={() => { setFilterType('all'); setCurrentPage(1); }} className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-slate-50 ${filterType === 'all' ? 'text-primary' : 'text-slate-600'}`}>Tất cả</button>
-                <button onClick={() => { setFilterType('revenue'); setCurrentPage(1); }} className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-slate-50 ${filterType === 'revenue' ? 'text-emerald-600' : 'text-slate-600'}`}>Thu vào</button>
-                <button onClick={() => { setFilterType('expense'); setCurrentPage(1); }} className={`w-full text-left px-4 py-2 text-xs font-bold hover:bg-slate-50 ${filterType === 'expense' ? 'text-rose-600' : 'text-slate-600'}`}>Chi ra</button>
-              </div>
-            </div>
+            <PremiumSelect
+              value={filterType}
+              onChange={(val) => { setFilterType(val as any); setCurrentPage(1); }}
+              options={[
+                { value: 'all', label: 'Tất cả' },
+                { value: 'revenue', label: 'Thu vào' },
+                { value: 'expense', label: 'Chi ra' }
+              ]}
+              className="w-32"
+            />
           </div>
         </div>
 

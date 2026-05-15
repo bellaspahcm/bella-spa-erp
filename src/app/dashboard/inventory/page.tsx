@@ -9,8 +9,8 @@ import {
 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase-client';
 import { toast } from 'sonner';
-import { formatNumberWithSeparator } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { cn, formatNumberWithSeparator } from '@/lib/utils';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
                 'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
@@ -239,12 +239,16 @@ export default function InventoryPage() {
                   />
                 </div>
                 <div className="flex items-center gap-3">
-                  <select value={stockFilter} onChange={e => setStockFilter(e.target.value as any)}
-                    className="bg-slate-50 border-0 rounded-2xl py-3 px-4 text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer">
-                    <option value="all">Tất cả ({items.length})</option>
-                    <option value="low">⚠️ Sắp hết ({lowCount})</option>
-                    <option value="ok">✅ Còn hàng ({items.length - lowCount})</option>
-                  </select>
+                  <PremiumSelect 
+                    value={stockFilter}
+                    onChange={(val) => setStockFilter(val as any)}
+                    options={[
+                      { value: 'all', label: `Tất cả (${items.length})` },
+                      { value: 'low', label: `⚠️ Sắp hết (${lowCount})` },
+                      { value: 'ok', label: `✅ Còn hàng (${items.length - lowCount})` }
+                    ]}
+                    className="w-52"
+                  />
                   <button
                     onClick={() => setShowAdd(true)}
                     className="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 active:scale-95 transition-all shadow-lg whitespace-nowrap"
@@ -333,14 +337,16 @@ export default function InventoryPage() {
             <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lọc theo tháng</p>
               <div className="grid grid-cols-2 gap-2">
-                <select value={logMonth} onChange={e => setLogMonth(Number(e.target.value))}
-                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20">
-                  {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                </select>
-                <select value={logYear} onChange={e => setLogYear(Number(e.target.value))}
-                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20">
-                  {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
+                <PremiumSelect 
+                  value={String(logMonth)}
+                  onChange={(val) => setLogMonth(Number(val))}
+                  options={MONTHS.map((m, i) => ({ value: String(i), label: m }))}
+                />
+                <PremiumSelect 
+                  value={String(logYear)}
+                  onChange={(val) => setLogYear(Number(val))}
+                  options={YEARS.map(y => ({ value: String(y), label: String(y) }))}
+                />
               </div>
               <p className="text-[9px] text-slate-400 font-medium text-right">{filteredLogs.length} giao dịch</p>
             </div>

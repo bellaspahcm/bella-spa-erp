@@ -372,21 +372,23 @@ export default function CustomersPage() {
           />
         </div>
         {/* Month dropdown */}
-        <select
-          value={monthFilter}
-          onChange={e => setMonthFilter(e.target.value)}
-          className="w-full md:w-40 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-rose-500/20 cursor-pointer"
-        >
-          {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <div className="w-full md:w-40">
+          <PremiumSelect
+            value={monthFilter}
+            options={monthOptions}
+            onChange={val => setMonthFilter(val)}
+            placeholder="Tháng..."
+          />
+        </div>
         {/* Year dropdown */}
-        <select
-          value={yearFilter}
-          onChange={e => setYearFilter(e.target.value)}
-          className="w-full md:w-32 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-rose-500/20 cursor-pointer"
-        >
-          {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
+        <div className="w-full md:w-32">
+          <PremiumSelect
+            value={yearFilter}
+            options={yearOptions.map(y => ({ value: y, label: y }))}
+            onChange={val => setYearFilter(val)}
+            placeholder="Năm..."
+          />
+        </div>
       </div>
 
       {/* Customer Grid/Table */}
