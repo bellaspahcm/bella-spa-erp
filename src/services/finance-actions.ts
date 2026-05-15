@@ -46,7 +46,7 @@ export async function getFinancialOverview() {
     .reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
     
   const dbExpense = expensesData
-    .filter((e: any) => e.status === 'confirmed')
+    .filter((e: any) => e.payment_status === 'paid')
     .reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
   
   // Cumulative balance
@@ -93,7 +93,7 @@ export async function getFinancialOverview() {
       amount: '-' + Number(e.amount).toLocaleString() + 'đ',
       date: new Date(e.expense_date || e.created_at || new Date()).toLocaleDateString('vi-VN'),
       method: 'Chuyển khoản', 
-      status: e.status === 'submitted' ? 'pending' : (e.status === 'approved' ? 'confirmed' : 'pending'),
+      status: e.payment_status === 'paid' ? 'confirmed' : 'pending',
       details: e.description || 'Chi phí vận hành',
       timestamp: new Date(e.expense_date || e.created_at || new Date()).getTime()
     };
@@ -149,7 +149,11 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
 
   const { error } = await supabase
     .from(table)
-    .update({ status: type === 'revenue' ? 'confirmed' : 'approved' })
+    .update(
+      type === 'revenue' 
+        ? { status: 'confirmed' } 
+        : { payment_status: 'paid' }
+    )
     .eq('id', id);
 
   if (error) {
@@ -185,7 +189,7 @@ export async function recordTransaction(data: {
         amount: Math.abs(data.amount),
         category: data.category || 'other_admin',
         description: data.notes,
-        status: data.status === 'confirmed' ? 'approved' : 'submitted',
+        payment_status: data.status === 'confirmed' ? 'paid' : 'pending',
         expense_date: new Date().toISOString().split('T')[0],
         tenant_id: tenantId
       })
