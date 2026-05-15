@@ -129,7 +129,7 @@ export async function publishSalaryRecord(ktvId: string) {
       await supabase.from('salary_records').insert(payload);
     }
 
-    await recordAuditLog({ action: 'UPDATE', module: 'SALARY', target_id: ktvId, new_data: { status: 'published', totalSalary } });
+    await recordAuditLog({ action: 'UPDATE', table_name: 'salary_records', record_id: ktvId, new_data: { status: 'published', totalSalary } });
     revalidatePath('/dashboard/salary');
     return { success: true };
   } catch (e: any) {
@@ -173,7 +173,7 @@ export async function ktvConfirmSalary(salaryRecordId: string) {
 
   if (error) return { success: false, error: error.message };
 
-  await recordAuditLog({ action: 'UPDATE', module: 'SALARY', target_id: salaryRecordId, new_data: { status: 'confirmed' } });
+  await recordAuditLog({ action: 'UPDATE', table_name: 'salary_records', record_id: salaryRecordId, new_data: { status: 'confirmed' } });
   revalidatePath('/ktv/earnings');
   revalidatePath('/dashboard/salary');
   return { success: true };
@@ -269,7 +269,7 @@ export async function finalizeSalaryRecord(ktvId: string) {
     tenant_id: tenantId,
   });
 
-  await recordAuditLog({ action: 'UPDATE', module: 'SALARY', target_id: ktvId, new_data: { status: 'finalized', amount: record.total_salary } });
+  await recordAuditLog({ action: 'UPDATE', table_name: 'salary_records', record_id: ktvId, new_data: { status: 'finalized', amount: record.total_salary } });
   revalidatePath('/dashboard/salary');
   revalidatePath('/dashboard/finance');
   return { success: true };
@@ -547,8 +547,8 @@ export async function approveSalary(ktvId: string) {
     // Record Audit Log
     await recordAuditLog({
       action: 'UPDATE',
-      module: 'SALARY',
-      target_id: ktvId,
+      table_name: 'salary_records',
+      record_id: ktvId,
       new_data: { 
         status: 'approved', 
         amount: totalSalary, 
@@ -622,9 +622,9 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
 
     // Record Audit Log
     await recordAuditLog({
-      action: existing ? 'UPDATE' : 'CREATE',
-      module: 'SALARY',
-      target_id: ktvId,
+      action: existing ? 'UPDATE' : 'INSERT',
+      table_name: 'salary_records',
+      record_id: ktvId,
       new_data: payload
     });
 
