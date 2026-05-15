@@ -15,8 +15,7 @@ import {
   MessageSquare,
   Sparkles,
   RefreshCw,
-  X,
-  Facebook
+  X
 } from 'lucide-react';
 import { getCustomerBookingByToken, submitCustomerRating } from '@/services/customer-actions';
 import { toast } from 'sonner';
@@ -208,7 +207,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                  <span>0905 123 456</span>
               </a>
               <a href="https://www.facebook.com/bellaspahcm" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 text-slate-500 text-xs hover:text-primary transition-colors">
-                 <Facebook className="w-4 h-4 text-primary/60" />
+                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-primary/60"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
                  <span>facebook.com/bellaspahcm</span>
               </a>
            </div>
