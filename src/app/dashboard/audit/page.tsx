@@ -171,7 +171,6 @@ export default function AuditPage() {
             { value: 'inventory_items', label: 'Kho hàng' },
             { value: 'users', label: 'Người dùng' },
           ]}
-          icon={<Database className="w-4 h-4" />}
         />
 
         <PremiumSelect
@@ -183,7 +182,6 @@ export default function AuditPage() {
             { value: 'UPDATE', label: 'Cập nhật' },
             { value: 'DELETE', label: 'Xóa' },
           ]}
-          icon={<Filter className="w-4 h-4" />}
         />
         
         <div className="flex items-center justify-center text-slate-400 text-xs italic">
