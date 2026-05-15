@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 2.1  
-**Last Updated:** 2026-05-15 (21:00)  
-**Status:** Implementation Phase (Phase 19: Security Hardening & Analytics Optimization - Completed)
+**Version:** 2.2  
+**Last Updated:** 2026-05-15 (21:40)  
+**Status:** Implementation Phase (Phase 20: Operational Stability & Bug Fixes - Completed)
 
 ---
 
@@ -545,6 +545,13 @@ A: Yes, IF:
 - [x] Phase 17: Inventory Stability & RLS Hardening (Completed)
 - [x] Phase 18: Service Management & Package Schema Alignment (Completed)
 - [x] Phase 19: Security Hardening & Analytics Optimization (Completed)
+- [x] Phase 20: Operational Stability & Bug Fixes (Completed)
+
+#### ✅ Phase 20: Operational Stability & Bug Fixes (May 15, 2026) - Verified Stable
+- [x] **Package Visibility Fix**: Corrected `tenant_id` mapping for the `packages` table, resolving RLS isolation issues that caused empty service lists in booking modals.
+- [x] **Strict Time Validation**: Implemented `sanitizeTime` backend normalization to ensure all time inputs conform to the strict `HH:MM` PostgreSQL `time` format.
+- [x] **UI/UX Hardening**: Replaced free-text "Giờ thực hiện" input with separate structured `time` pickers (Start/End) in the scheduling modal.
+- [x] **Workflow Automation**: Set default time ranges (09:00 - 11:00) for new schedules to improve administrative efficiency.
 
 #### ✅ Phase 19: Security Hardening & Analytics Optimization (May 15, 2026) - Verified Stable
 - [x] **Hardened RLS Policies**: Enabled RLS across all core tables with standardized tenant-isolation policies. Dropped legacy public/authenticated access.
@@ -665,6 +672,13 @@ A: Yes, IF:
     - **Sync on Submit**: Khi khách hàng đánh giá, `submitCustomerRating` phải cập nhật đồng thời cả hai bảng để đảm bảo tính nhất quán và phục vụ báo cáo KTV Bonus.
     - **RPC First**: Các logic tính toán phức tạp (Leaderboard, P&L) phải được đẩy xuống tầng Database (Postgres RPC) thay vì xử lý tại Client để đảm bảo hiệu năng và bảo mật RLS.
 
+### 10. Strict Time Handling for PostgreSQL Compatibility
+*   **Vấn đề**: Cột kiểu `time` trong Postgres (như `assigned_time`) sẽ báo lỗi `invalid input syntax` nếu nhận chuỗi tự do như `"09 - 10"`.
+*   **Quy tắc**:
+    - **Frontend**: Luôn sử dụng `<input type="time" />` để đảm bảo trình duyệt gửi dữ liệu chuẩn. Nếu cần dải giờ, hãy sử dụng 2 input riêng biệt (Bắt đầu/Kết thúc).
+    - **Backend**: Mọi Server Action nhận chuỗi thời gian phải đi qua hàm chuẩn hóa (ví dụ: `sanitizeTime`) để loại bỏ khoảng trắng và chuẩn về dạng `HH:MM`.
+    - **Database**: Tránh lưu dải giờ (range) vào cột kiểu `time`. Nếu cần lưu range, hãy lưu giờ bắt đầu vào cột `time` và tính toán duration hoặc lưu vào cột kiểu `text`/`tstzrange`.
+
 ---
 
 ## 📅 MILESTONES & PHASES
@@ -697,11 +711,16 @@ A: Yes, IF:
 - **Hardened RLS**: Strict tenant-isolation policies across 100% of core tables.
 - **Unified Leaderboard**: High-performance RPC for KTV performance tracking.
 - **Session Refresh Proxy**: Automated auth maintenance for stable ERP sessions.
-- **Rating Consistency**: Cross-table sync for customer feedback data.
+- [x] Rating Consistency: Cross-table sync for customer feedback data.
+
+### PHASE 20: Operational Stability & Bug Fixes (Completed)
+- **Data Integrity**: Corrected `tenant_id` mapping for `packages` table.
+- **Strict Time Validation**: Replaced free-text time fields with structured pickers and added server-side normalization.
+- **UX Improvement**: Default time ranges for faster scheduling.
 
 ---
 
-**Document Version:** 2.1  
-**Last Updated:** 2026-05-15 (21:00)  
-**Status:** Implementation Phase (Phase 19: Completed)  
+**Document Version:** 2.2  
+**Last Updated:** 2026-05-15 (21:40)  
+**Status:** Implementation Phase (Phase 20: Completed)  
 **Contact:** Bella Spa ERP Dev Team
