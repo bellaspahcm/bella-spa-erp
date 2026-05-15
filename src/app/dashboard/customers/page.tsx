@@ -28,7 +28,8 @@ import {
   MessageCircle,
   ClipboardList,
   ChevronDown,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 
 import { MOCK_CUSTOMERS } from '@/constants/mock-data';
@@ -239,8 +240,8 @@ export default function CustomersPage() {
     if (statusFilter !== 'Tất cả trạng thái') {
       if (statusFilter === 'Đang chăm sóc') matchesStatus = customer.status === 'active';
       else if (statusFilter === 'Chờ sinh') matchesStatus = customer.status === 'deposit';
-      else if (statusFilter === 'Tiềm năng') matchesStatus = customer.status === 'potential';
-      else if (statusFilter === 'Đã kết thúc') matchesStatus = customer.status === 'completed';
+      else if (statusFilter === 'Tiềm năng') matchesStatus = customer.status === 'lead';
+      else if (statusFilter === 'Đã kết thúc') matchesStatus = customer.status === 'paid';
     }
     
     return matchesSearch && matchesStatus;
@@ -344,23 +345,39 @@ export default function CustomersPage() {
             </div>
             
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-1">
+              <div className="flex flex-wrap items-center gap-3 mb-1">
                 <h3 className="text-lg font-bold text-slate-900 truncate">{customer.name_mother}</h3>
-                <span className={cn(
-                  "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                  customer.status === 'active' || customer.status === 'paid' ? 'bg-emerald-50 text-emerald-600' : 
-                  customer.status === 'deposit' ? 'bg-amber-50 text-amber-600' :
-                  'bg-blue-50 text-blue-600'
-                )}>
-                  {customer.status === 'active' ? 'Đang chăm sóc' : 
-                   customer.status === 'paid' ? 'Đã thanh toán' :
-                   customer.status === 'deposit' ? 'Chờ sinh (Đã cọc)' : 
-                   'Tiềm năng'}
-                </span>
+                
+                {/* Secondary Status Badges */}
+                {customer.status === 'lead' && (
+                  <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-blue-100">
+                    Tiềm năng
+                  </span>
+                )}
+                {customer.status === 'deposit' && (
+                  <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-amber-100">
+                    Chờ sinh (Đã cọc)
+                  </span>
+                )}
+
+                {/* Prominent Notification for Active Care */}
+                {customer.is_in_care && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex items-center gap-2 bg-rose-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-rose-200 animate-pulse cursor-pointer"
+                    onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    Đang có gói liệu trình, xem chi tiết để biết thông tin
+                  </motion.div>
+                )}
+
+                {/* Payment Status (Admin Only) - This replaces the redundant "Đã thanh toán" label */}
                 {customer.deposit_amount && userRole === 'admin' && (
                   <span className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider",
-                    customer.is_fully_paid ? "bg-emerald-50 text-emerald-500" : "bg-rose-50 text-rose-500"
+                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
+                    customer.is_fully_paid ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
                   )}>
                     {customer.is_fully_paid ? `Đã thanh toán: ${customer.deposit_amount}` : `Cọc: ${customer.deposit_amount}`}
                   </span>

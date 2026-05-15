@@ -538,7 +538,9 @@ A: Yes, IF:
   - [x] Đồng bộ thiết kế Glassmorphism cho ngành chăm sóc mẹ và bé.
 - [x] **Phase 4: User Provisioning**
   - [x] Cấp quyền Admin cho các tài khoản production.
-  - [x] Liên kết Auth UUID với bảng `public.users` kèm vai trò Admin.
+  - [x] Phase 14: Hardening Financial Integrity & Transactional Consistency (Completed)
+- [x] Phase 15: Salary Reconciliation Logic & Dashboard Role Hardening (Completed)
+- [ ] Phase 16: KTV Performance Analytics & Advanced Financial Reporting (In Progress)
 
 #### ✅ Phase 15: Salary Reconciliation & Security Hardening (May 15, 2026) - Verified Stable
 - [x] **Deterministic KTV Session Matrix**: Linked salary detail view directly to `session_logs` and `bookings` for 100% data accuracy. (Verified)
@@ -655,9 +657,13 @@ A: Yes, IF:
 - **Auto-Sync Logic**: Automated reconciliation of session logs and booking progress.
 - **Security Audit**: Deployment of RLS policies for multi-tenant isolation.
 
-### PHASE 15: Salary Reconciliation & Security Hardening
-- **Salary Matrix**: Direct integration with real session logs for KTV reconciliation.
-- **Approval Flow**: Persistent locking of confirmed sessions into payroll records.
+### Phase 15: Salary Reconciliation Logic & Dashboard Role Hardening
+- **Objective**: Stabilize payroll confirmation and ensure secure administrative visibility.
+- **Key Fixes**:
+    - Refined `isConfirmed` logic to use explicit status checks (`pending_approval`, `approved`).
+    - Deployed multi-table RLS policies with `authenticated_access` for data security.
+    - Hardened `DashboardPage` to prevent UI flicker and correctly identify `userRole` before rendering financial stats.
+    - Verified `expenses` vs `expense_records` table naming consistency in database policies.
 - **Security Enforcement**: Full RLS deployment and authenticated policy management across all core tables.
 
 ---
