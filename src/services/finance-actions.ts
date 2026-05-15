@@ -78,11 +78,17 @@ export async function getFinancialOverview() {
     // Map database enum values back to user-friendly Vietnamese labels
     const categoryMap: Record<string, string> = {
       'salary': 'Lương nhân viên',
+      'other': 'Chi phí khác',
       'other_admin': 'Chi phí khác',
       'marketing': 'Marketing',
+      'rent': 'Tiền thuê văn phòng',
       'office_rent': 'Tiền thuê văn phòng',
-      'utilities': 'Điện nước'
+      'utilities': 'Điện nước',
+      'operating': 'Phí vận hành',
+      'materials': 'Nguyên vật liệu',
+      'maintenance': 'Bảo trì'
     };
+
     
     return {
       id: `exp-${e.id}`,
@@ -178,56 +184,90 @@ export async function recordTransaction(data: {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
-  if (!tenantId) throw new Error('Tenant ID not found for current user session');
+  
+  if (!tenantId) {
+    console.error('Transaction recording failed: No tenantId found for user', currentUser?.id);
+    throw new Error('Không tìm thấy thông tin định danh (Tenant ID). Vui lòng đăng nhập lại.');
+  }
 
-  if (data.type === 'expense') {
-    const expenseNumber = `EXP-${new Date().getTime()}-${Math.floor(Math.random() * 1000)}`;
-    const { data: result, error } = await supabase
-      .from('expenses')
-      .insert({
-        expense_number: expenseNumber,
-        amount: Math.abs(data.amount),
-        category: data.category || 'other_admin',
-        description: data.notes,
-        payment_status: data.status === 'confirmed' ? 'paid' : 'pending',
-        expense_date: new Date().toISOString().split('T')[0],
-        tenant_id: tenantId
-      })
-      .select()
-      .single();
+  try {
+    if (data.type === 'expense') {
+      const expenseNumber = `EXP-${new Date().getTime()}-${Math.floor(Math.random() * 1000)}`;
+      
+      // Map frontend categories to database enum (cost_category)
+      let dbCategory = data.category;
+      if (dbCategory === 'office_rent') dbCategory = 'rent';
+      if (dbCategory === 'other_admin') dbCategory = 'other';
+      if (dbCategory === 'utilities') dbCategory = 'utilities';
+      if (dbCategory === 'marketing') dbCategory = 'marketing';
+      if (dbCategory === 'salary') dbCategory = 'salary';
+      if (dbCategory === 'operating') dbCategory = 'operating';
 
-    if (error) {
-      console.error('Error recording expense:', error);
-      throw new Error('Failed to record expense');
+      const { data: result, error } = await supabase
+        .from('expenses')
+        .insert({
+          expense_number: expenseNumber,
+          amount: Math.abs(data.amount),
+          category: dbCategory as any,
+          description: data.notes,
+          payment_status: data.status === 'confirmed' ? 'paid' : 'pending',
+          expense_date: new Date().toISOString().split('T')[0],
+          tenant_id: tenantId
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error recording expense:', error);
+        throw error;
+      }
+
+      await recordAuditLog({
+        action: 'CREATE',
+        module: 'FINANCE',
+        target_id: result.id,
+        new_data: data
+      });
+
+      revalidatePath('/dashboard/finance');
+      return result;
+    } else {
+      const { data: result, error } = await supabase
+        .from('revenue')
+        .insert({
+          amount: Math.abs(data.amount),
+          notes: data.notes,
+          booking_id: data.booking_id || null,
+          revenue_type: data.category || 'package_payment',
+          payment_method: 'bank_transfer',
+          status: data.status || 'pending',
+          received_date: new Date().toISOString(),
+          tenant_id: tenantId
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database error recording revenue:', error);
+        throw error;
+      }
+      
+      await recordAuditLog({
+        action: 'CREATE',
+        module: 'FINANCE',
+        target_id: result.id,
+        new_data: data
+      });
+      
+      revalidatePath('/dashboard/finance');
+      return result;
     }
-    return result;
-  } else {
-    const { data: result, error } = await supabase
-      .from('revenue')
-      .insert({
-        amount: Math.abs(data.amount),
-        notes: data.notes,
-        booking_id: data.booking_id || null,
-        revenue_type: data.category === 'additional' ? 'additional' : 'package_payment',
-        payment_method: 'bank_transfer',
-        status: data.status || 'pending',
-        received_date: new Date().toISOString(),
-        tenant_id: tenantId
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error recording revenue:', error);
-      throw new Error('Failed to record revenue');
-    }
-    
-    // Force revalidation
-    revalidatePath('/dashboard/finance');
-    
-    return result;
+  } catch (error: any) {
+    console.error('recordTransaction critical failure:', error);
+    throw new Error(error.message || 'Lỗi hệ thống khi ghi nhận giao dịch');
   }
 }
+
 
 export async function getMonthlyPnL(month?: string) {
   const supabase = (await createClient()) as any;

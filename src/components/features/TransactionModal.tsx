@@ -181,10 +181,11 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
                   ] : [
                     { value: 'salary', label: 'Lương nhân viên' },
                     { value: 'marketing', label: 'Marketing' },
-                    { value: 'office_rent', label: 'Mặt bằng' },
+                    { value: 'rent', label: 'Mặt bằng' },
                     { value: 'utilities', label: 'Điện nước' },
-                    { value: 'other_admin', label: 'Chi phí khác' },
+                    { value: 'other', label: 'Chi phí khác' },
                   ]}
+
                   onChange={(val) => setCategory(val)}
                   className="w-full"
                 />
