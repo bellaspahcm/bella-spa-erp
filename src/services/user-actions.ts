@@ -10,24 +10,7 @@ export async function getCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    // For local testing/demo purposes, we can simulate different roles
-    const isCustomerTest = process.env.NEXT_PUBLIC_DEBUG_ROLE === 'customer';
-    
-    if (isCustomerTest) {
-      return {
-        id: 'c1-mock-id',
-        full_name: 'Chị Nguyễn Thu Thủy',
-        role: 'customer',
-        tenant_id: '0e66365b-42b0-420e-acca-f7d7692e125e'
-      };
-    }
-
-    return { 
-      id: 'c294c8b0-25d2-4c7e-bed9-21246d957254', 
-      full_name: 'Quản trị viên', 
-      role: 'admin',
-      tenant_id: '0e66365b-42b0-420e-acca-f7d7692e125e'
-    };
+    return null;
   }
 
   const { data: profile } = await supabase
@@ -36,7 +19,7 @@ export async function getCurrentUser() {
     .eq('id', user.id)
     .single();
 
-  return profile || { id: user.id, role: 'ktv', full_name: user.email?.split('@')[0] };
+  return profile;
 }
 
 export async function getUsers() {
@@ -67,16 +50,7 @@ export async function getUsers() {
     };
   });
 
-  if (processedData.length <= 1) {
-    const mockUsers = [
-      { id: 'm1', full_name: 'Nguyễn Thị Hoa', role: 'ktv', email: 'hoa.nt@bellaspa.vn', status: 'active', sessions_count: 45, avg_rating: '5.0', created_at: new Date().toISOString() },
-      { id: 'm2', full_name: 'Lê Thu Hà', role: 'ktv', email: 'ha.lt@bellaspa.vn', status: 'active', sessions_count: 38, avg_rating: '4.9', created_at: new Date().toISOString() },
-      { id: 'm3', full_name: 'Phạm Minh Tuyết', role: 'ktv', email: 'tuyet.pm@bellaspa.vn', status: 'active', sessions_count: 32, avg_rating: '4.8', created_at: new Date().toISOString() },
-      { id: 'm4', full_name: 'Trần Tâm', role: 'ktv', email: 'tam.t@bellaspa.vn', status: 'active', sessions_count: 28, avg_rating: '4.7', created_at: new Date().toISOString() },
-      { id: 'm5', full_name: 'Lê Diệu Huyền', role: 'staff', email: 'receptionist@bellaspa.vn', status: 'active', sessions_count: 120, avg_rating: '5.0', created_at: new Date().toISOString() },
-    ];
-    return [...processedData, ...mockUsers];
-  }
+
 
   return processedData;
 }
@@ -92,7 +66,7 @@ export async function createUser(formData: any) {
       full_name: formData.full_name,
       role: formData.role || 'ktv',
       status: 'active',
-      tenant_id: currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e'
+      tenant_id: currentUser?.tenant_id
     } as any])
     .select()
     .single();

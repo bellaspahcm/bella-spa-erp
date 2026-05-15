@@ -22,35 +22,17 @@ export function formatNumberWithSeparator(value: number | string) {
   return new Intl.NumberFormat('vi-VN').format(parseInt(digits));
 }
 
-export function ensure2026(dateStr: any): any {
-  if (!dateStr) return dateStr;
-  
-  if (dateStr instanceof Date) {
-    const year = dateStr.getFullYear();
-    if (year === 2024 || year === 2025) {
-      const newDate = new Date(dateStr);
-      newDate.setFullYear(2026);
-      return newDate;
-    }
-    return dateStr;
-  }
 
-  if (typeof dateStr !== 'string') return dateStr;
-  
-  // Replace 2024 or 2025 with 2026 to ensure consistent demo timeline
-  return dateStr.replace(/202[45]/g, '2026');
-}
 
-import { MOCK_SERVICES } from '@/constants/mock-data';
+
+
 
 export function resolvePackageName(booking: any): string {
+  // 1. Priority: Dynamic name from joined packages table
+  if (booking?.packages?.name) return booking.packages.name;
+  
+  // 2. Secondary: Hardcoded name in booking record (legacy)
   if (booking?.package_name) return booking.package_name;
   
-  const price = Number(booking?.full_price);
-  const matchedService = MOCK_SERVICES.find(s => {
-    const sPrice = parseInt(s.price.replace(/[^\d]/g, ''));
-    return sPrice === price;
-  });
-
-  return matchedService?.name || 'Dịch vụ lẻ';
+  return 'Dịch vụ lẻ';
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
@@ -22,12 +22,11 @@ import { twMerge } from 'tailwind-merge';
 import { toast } from 'sonner';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
-import { MOCK_SERVICES } from '@/constants/mock-data';
-
-const mockServices = MOCK_SERVICES;
+import { getPackages, createPackage, updatePackage, deletePackage } from '@/services/package-actions';
 
 export default function ServicesPage() {
-  const [services, setServices] = useState(MOCK_SERVICES);
+  const [services, setServices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedService, setSelectedService] = useState<any>(null);
@@ -41,6 +40,17 @@ export default function ServicesPage() {
   const [offer, setOffer] = useState('');
   const [details, setDetails] = useState('');
   const [ktvCommission, setKtvCommission] = useState('');
+
+  const loadData = async () => {
+    setIsLoading(true);
+    const data = await getPackages();
+    setServices(data);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const openAddModal = () => {
     setModalMode('add');
@@ -59,43 +69,56 @@ export default function ServicesPage() {
     setModalMode('edit');
     setSelectedService(service);
     setName(service.name);
-    setPrice(service.price.replace(/[^\d]/g, ''));
-    setDuration(service.duration.replace(/[^\d]/g, ''));
-    setSessions(service.sessions.toString());
-    setOffer(service.offer);
-    setDetails(service.details.join(', '));
-    setKtvCommission(service.ktv_commission.toString());
+    setPrice(service.price?.toString() || '');
+    setDuration(service.duration?.replace(/[^\d]/g, '') || '90');
+    setSessions(service.total_sessions?.toString() || '10');
+    setOffer(service.offer || '');
+    setDetails(Array.isArray(service.details) ? service.details.join(', ') : (service.details || ''));
+    setKtvCommission(service.ktv_commission?.toString() || '150000');
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) {
-      setServices(services.filter(s => s.id !== id));
-      toast.success('Đã xóa dịch vụ');
+      const result = await deletePackage(id);
+      if (result.error) {
+        toast.error('Lỗi khi xóa: ' + result.error);
+      } else {
+        setServices(services.filter(s => s.id !== id));
+        toast.success('Đã xóa dịch vụ');
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const serviceData = {
-      id: modalMode === 'add' ? `s${Date.now()}` : selectedService.id,
       name,
-      price: formatNumberWithSeparator(price) + 'đ',
+      price,
       duration: `${duration} phút/buổi`,
       sessions: parseInt(sessions),
       details: details.split(',').map(d => d.trim()).filter(d => d),
       offer,
-      status: 'active',
-      ktv_commission: parseInt(ktvCommission) || 0
+      ktv_commission: ktvCommission
     };
 
     if (modalMode === 'add') {
-      setServices([serviceData, ...services]);
-      toast.success('Đã thêm dịch vụ mới');
+      const result = await createPackage(serviceData);
+      if (result.error) {
+        toast.error('Lỗi: ' + result.error);
+      } else {
+        toast.success('Đã thêm dịch vụ mới');
+        loadData();
+      }
     } else {
-      setServices(services.map(s => s.id === selectedService.id ? serviceData : s));
-      toast.success('Đã cập nhật dịch vụ');
+      const result = await updatePackage(selectedService.id, serviceData);
+      if (result.error) {
+        toast.error('Lỗi: ' + result.error);
+      } else {
+        toast.success('Đã cập nhật dịch vụ');
+        loadData();
+      }
     }
     
     setIsModalOpen(false);
@@ -170,7 +193,7 @@ export default function ServicesPage() {
                   <h3 className="text-xl font-black text-slate-900 mb-1">{service.name}</h3>
                   <div className="flex items-center gap-2 text-primary font-black text-lg">
                     <DollarSign className="w-4 h-4" />
-                    {service.price}
+                    {formatNumberWithSeparator(service.price)}đ
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -197,11 +220,11 @@ export default function ServicesPage() {
                 <div className="space-y-2">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Chi tiết dịch vụ</p>
                   <div className="flex flex-wrap gap-2">
-                    {service.details.map((detail, i) => (
+                    {Array.isArray(service.details) ? service.details.map((detail: string, i: number) => (
                       <span key={i} className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold border border-slate-100">
                         {detail}
                       </span>
-                    ))}
+                    )) : null}
                   </div>
                 </div>
               </div>

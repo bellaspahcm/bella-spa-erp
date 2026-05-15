@@ -1,26 +1,19 @@
 'use server';
 
 
-import { ensure2026, resolvePackageName } from '@/lib/utils';
+import { resolvePackageName } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
-import { MOCK_SERVICES } from '@/constants/mock-data';
 
-const mockData = [
-  { id: 'ktv1', name: 'Nguyễn Thị Hoa', sessions: 52, baseSalary: 7000000, sessionBonus: 7800000, kpiBonus: 2500000, deductions: 0, advances: 0, totalSalary: 17300000, status: 'draft' },
-  { id: 'ktv2', name: 'Lê Thu Hà', sessions: 45, baseSalary: 6500000, sessionBonus: 6750000, kpiBonus: 1800000, deductions: 200000, advances: 500000, totalSalary: 14350000, status: 'draft' },
-  { id: 'ktv3', name: 'Phạm Minh Tuyết', sessions: 38, baseSalary: 6000000, sessionBonus: 5700000, kpiBonus: 1500000, deductions: 0, advances: 0, totalSalary: 13200000, status: 'draft' },
-  { id: 'ktv4', name: 'Trần Thị Thanh', sessions: 42, baseSalary: 6000000, sessionBonus: 6300000, kpiBonus: 1600000, deductions: 100000, advances: 1000000, totalSalary: 12800000, status: 'draft' },
-  { id: 'ktv5', name: 'Hoàng Ngọc Mai', sessions: 31, baseSalary: 6000000, sessionBonus: 4650000, kpiBonus: 1000000, deductions: 0, advances: 0, totalSalary: 11650000, status: 'draft' },
-  { id: 'ktv6', name: 'Đặng Thùy Chi', sessions: 48, baseSalary: 6500000, sessionBonus: 7200000, kpiBonus: 2000000, deductions: 0, advances: 0, totalSalary: 15700000, status: 'draft' },
-  { id: 'ktv7', name: 'Võ Thị Bích', sessions: 35, baseSalary: 6000000, sessionBonus: 5250000, kpiBonus: 1200000, deductions: 0, advances: 0, totalSalary: 12450000, status: 'draft' },
-  { id: 'ktv8', name: 'Ngô Diễm My', sessions: 29, baseSalary: 6000000, sessionBonus: 4350000, kpiBonus: 800000, deductions: 50000, advances: 200000, totalSalary: 10900000, status: 'draft' },
-];
+
+
 
 export async function getSalaryData() {
   try {
+    const now = new Date();
+    const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const supabase = (await createClient()) as any;
     const currentUser = await getCurrentUser();
 
@@ -47,188 +40,92 @@ export async function getSalaryData() {
       console.error('Error fetching expenses for salary status:', expensesError);
     }
 
-    // Determine if we should use mock data
-    // For demo: if we have NO real KTVs, use all mock. 
-    // If we have SOME real KTVs, show them AND some mock to keep the UI "full".
     const realKtvs = ktvs || [];
-    let displayKtvs = [...realKtvs];
 
-    if (displayKtvs.length === 0) {
-      // No real KTVs yet, use mock data as complete fallback
-      let filteredMock = mockData;
-      if (currentUser?.role === 'ktv') {
-        filteredMock = mockData.filter(m => m.id === 'ktv1' || m.name.includes('Hoa'));
-      }
+    const { data: salaryRecords, error: salaryError } = await supabase
+      .from('salary_records')
+      .select('*')
+      .eq('month_year', currentMonthYear);
 
-      return filteredMock.map(item => {
-        const hasExpense = (expenses || []).some((e: any) => {
-          const desc = e.description?.toLowerCase() || '';
-          return desc.includes(item.name.toLowerCase()) && 
-                 (desc.includes('t5/2026') || desc.includes('05/2026'));
-        });
+    // Fetch completed sessions with booking details to get the locked commission rate
+    const { data: sessions, error: sessionsError } = await supabase
+      .from('session_logs')
+      .select('id, completed_by_ktv_id, status, is_confirmed, bookings(ktv_commission)')
+      .eq('status', 'completed');
+
+    // Fetch session reviews for rating bonus calculation
+    const { data: reviews } = await supabase
+      .from('session_reviews')
+      .select('ktv_id, rating')
+      .eq('status', 'approved');
+
+    const ktvSalaries = realKtvs.map((ktv: any) => {
+        const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
+        const hasExpense = (expenses || []).some((e: any) => e.description?.toLowerCase().includes(ktv.full_name.toLowerCase()));
         
+        const ktvCompletedSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
+        // Use confirmed count from record if available, otherwise use live count
+        const ktvSessionsCount = record?.total_sessions || ktvCompletedSessions.length;
+        
+        // Calculate Average Rating
+        const ktvReviews = reviews?.filter((r: any) => r.ktv_id === ktv.id) || [];
+        const avgRating = ktvReviews.length > 0 
+          ? ktvReviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / ktvReviews.length 
+          : 5.0; 
+
+        let bonusPerSession = 0;
+        if (avgRating === 5.0) bonusPerSession = 50000;
+        else if (avgRating >= 4.5) bonusPerSession = 30000;
+        else if (avgRating >= 4.0) bonusPerSession = 10000;
+
+        const ratingBonus = ktvSessionsCount * bonusPerSession;
+
+        let status = 'pending'; 
+        if (hasExpense || record?.status === 'approved' || record?.status === 'pending_approval') {
+          status = 'approved';
+        } else if (record?.status === 'rejected') {
+          status = 'draft';
+        }
+
+        const sessionBonus = ktvCompletedSessions.reduce((acc: number, s: any) => {
+          return acc + (s.bookings?.ktv_commission || 150000);
+        }, 0);
+
+        const baseSalary = record?.base_salary || 6000000;
+        const kpiBonus = record?.kpi_bonus || (ktvSessionsCount > 30 ? 1000000 : 0);
+        const deductions = record?.violations_deduction || 0;
+        const advances = record?.service_percentage_bonus || 0; 
+        const totalSalary = baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances;
+
         return {
-          ...item,
-          status: hasExpense ? 'approved' : item.status
+          id: ktv.id,
+          name: ktv.full_name,
+          sessions: ktvSessionsCount,
+          avgRating,
+          baseSalary,
+          sessionBonus,
+          ratingBonus,
+          kpiBonus,
+          deductions,
+          advances,
+          totalSalary,
+          status
         };
-      });
-    }
-
-    // If we have real KTVs but less than 5, add some mock ones to keep the design premium
-    if (displayKtvs.length < 5 && currentUser?.role !== 'ktv') {
-      const mockToAdd = mockData
-        .filter(m => !displayKtvs.some(rk => rk.full_name === m.name))
-        .slice(0, 5 - displayKtvs.length);
-      
-      const mappedMock = mockToAdd.map(m => ({
-        id: m.id,
-        full_name: m.name,
-        role: 'ktv',
-        isMock: true,
-        avatar_url: `https://i.pravatar.cc/150?u=${m.id}`
-      }));
-      displayKtvs = [...displayKtvs, ...mappedMock];
-    }
-
-  // Fetch salary records for the current month (May 2026)
-  const { data: salaryRecords, error: salaryError } = await supabase
-    .from('salary_records')
-    .select('*')
-    .eq('month_year', '2026-05-01');
-
-  // Fetch completed sessions with booking details to get the locked commission rate
-  const { data: sessions, error: sessionsError } = await supabase
-    .from('session_logs')
-    .select('id, completed_by_ktv_id, status, is_confirmed, bookings(ktv_commission)')
-    .eq('status', 'completed');
-
-  // Fetch session reviews for rating bonus calculation
-  const { data: reviews } = await supabase
-    .from('session_reviews')
-    .select('ktv_id, rating')
-    .eq('status', 'approved');
-
-  const ktvSalaries = displayKtvs.map((ktv: any) => {
-      const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
-      const hasExpense = (expenses || []).some((e: any) => e.description?.toLowerCase().includes(ktv.full_name.toLowerCase()));
-      
-      const ktvCompletedSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
-      // Use confirmed count from record if available, otherwise use live count
-      const ktvSessionsCount = record?.total_sessions || ktvCompletedSessions.length;
-      const isConfirmed = ktvSessionsCount > 0 && (record?.total_sessions !== undefined || ktvCompletedSessions.every((s: any) => s.is_confirmed));
-
-      // Calculate Average Rating
-      const ktvReviews = reviews?.filter((r: any) => r.ktv_id === ktv.id) || [];
-      const avgRating = ktvReviews.length > 0 
-        ? ktvReviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / ktvReviews.length 
-        : 5.0; // Default to 5.0 if no reviews yet (encouragement)
-
-      // Calculate Rating Bonus per session
-      // Thresholds (Configurable)
-      let bonusPerSession = 0;
-      if (avgRating === 5.0) bonusPerSession = 50000;
-      else if (avgRating >= 4.5) bonusPerSession = 30000;
-      else if (avgRating >= 4.0) bonusPerSession = 10000;
-
-      const ratingBonus = ktvSessionsCount * bonusPerSession;
-
-      // STATUS MAPPING
-      let status = 'pending'; 
-      if (hasExpense || record?.status === 'approved' || record?.status === 'pending_approval') {
-        status = 'approved';
-      } else if (record?.status === 'rejected') {
-        status = 'draft';
-      }
-
-      // Calculate session bonus by summing up locked commissions from bookings
-      const sessionBonus = ktvCompletedSessions.reduce((acc: number, s: any) => {
-        return acc + (s.bookings?.ktv_commission || 150000);
-      }, 0);
-
-      const baseSalary = record?.base_salary || 6000000;
-      const kpiBonus = record?.kpi_bonus || (ktvSessionsCount > 30 ? 1000000 : 0);
-      const deductions = record?.violations_deduction || 0;
-      const advances = record?.service_percentage_bonus || 0; 
-      const totalSalary = baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances;
-
-      return {
-        id: ktv.id,
-        name: ktv.full_name,
-        sessions: ktvSessionsCount,
-        avgRating,
-        baseSalary,
-        sessionBonus,
-        ratingBonus,
-        kpiBonus,
-        deductions,
-        advances,
-        totalSalary,
-        status,
-        isConfirmed
-      };
     });
 
-  return ktvSalaries;
+    return ktvSalaries;
   } catch (error) {
     console.error('Error in getSalaryData:', error);
-    return mockData;
+    return [];
   }
 }
 
 export async function approveSalary(ktvId: string) {
-  const supabase = (await createClient()) as any;
-  const monthYear = '2026-05-01'; // Default demo month
+  const now = new Date();
+  const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
 
   try {
-    // 0. Fallback logic for mock data IDs (ktv1, ktv2...) - MUST BE FIRST to avoid UUID errors
-    if (ktvId.startsWith('ktv') || ktvId.length < 10) {
-      console.log('Using mock salary approval logic for ID:', ktvId);
-      
-      const ktvNames: Record<string, string> = {
-        'ktv1': 'Nguyễn Thị Hoa',
-        'ktv2': 'Lê Thu Hà',
-        'ktv3': 'Phạm Minh Tuyết',
-        'ktv4': 'Trần Thị Thanh',
-        'ktv5': 'Hoàng Ngọc Mai',
-        'ktv6': 'Đặng Thùy Chi',
-        'ktv7': 'Võ Thị Bích',
-        'ktv8': 'Ngô Diễm My',
-      };
-      const ktvName = ktvNames[ktvId] || 'Nhân viên';
-      
-      const currentUser = await getCurrentUser();
-      // Use a more robust tenant_id lookup or fallback
-      const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
-
-      const { data: inserted, error: mockExpenseError } = await supabase.from('expenses').insert({
-        amount: 8000000, 
-        category: 'salary',
-        description: `Thanh toán lương T5/2026 - KTV ${ktvName}`,
-        status: 'approved',
-        expense_date: new Date().toISOString(),
-        tenant_id: tenantId
-      }).select();
-
-      if (mockExpenseError) {
-        console.error('Mock expense insert failed:', mockExpenseError);
-        return { success: false, error: mockExpenseError.message };
-      }
-
-      console.log('Successfully inserted mock salary expense:', inserted);
-      // Record Audit Log for mock
-      await recordAuditLog({
-        action: 'UPDATE',
-        module: 'SALARY',
-        target_id: ktvId,
-        new_data: { status: 'approved', ktv_name: ktvName }
-      });
-
-      revalidatePath('/dashboard/salary', 'page');
-      revalidatePath('/dashboard/finance', 'page');
-      revalidatePath('/', 'layout');
-      return { success: true };
-    }
-
     // 1. Get KTV info for description
     const { data: ktv } = await supabase
       .from('users')
@@ -264,8 +161,8 @@ export async function approveSalary(ktvId: string) {
     const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
 
     const currentUser = await getCurrentUser();
-    // Ensure we use the correct tenant_id if available, but the queries above don't depend on it for finding records
-    const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+    const tenantId = currentUser?.tenant_id;
+    if (!tenantId) throw new Error('Tenant ID not found for current user session');
 
     // 4. Update or Insert salary record
     if (existing) {
@@ -299,7 +196,7 @@ export async function approveSalary(ktvId: string) {
       .insert({
         amount: totalSalary,
         category: 'salary',
-        description: `Thanh toán lương T5/2026 - KTV ${ktv?.full_name || 'Nhân viên'}`,
+        description: `Thanh toán lương T${monthLabel} - KTV ${ktv?.full_name || 'Nhân viên'}`,
         status: 'submitted', // Will appear as "Chờ duyệt" in Finance
         expense_date: new Date().toISOString(),
         tenant_id: tenantId
@@ -335,25 +232,12 @@ export async function approveSalary(ktvId: string) {
 }
 
 export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: number, kpiBonus: number, deductions: number, advances: number }) {
+  const now = new Date();
+  const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const supabase = (await createClient()) as any;
-  const monthYear = '2026-05-01'; // Default demo month
 
   try {
-    // 0. Handle mock data IDs
-    if (ktvId.startsWith('ktv') || ktvId.length < 10) {
-      console.log('Mock salary update requested for:', ktvId);
-      // For demo purposes, we will record this update in the audit logs 
-      // so it appears as "successfully saved" in the session even if we don't have a DB record.
-      await recordAuditLog({
-        action: 'UPDATE',
-        module: 'SALARY',
-        target_id: ktvId,
-        new_data: { ...payload, status: 'pending_approval' }
-      });
-      
-      revalidatePath('/dashboard/salary');
-      return { success: true };
-    }
+
 
     // Check if record exists
     const { data: existing } = await supabase
@@ -364,7 +248,8 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
       .single();
 
     const currentUser = await getCurrentUser();
-    const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+    const tenantId = currentUser?.tenant_id;
+    if (!tenantId) throw new Error('Tenant ID not found for current user session');
 
     if (existing) {
       const { error } = await supabase
@@ -425,11 +310,14 @@ export async function getKtvSessionMatrix() {
       .select('id, full_name')
       .eq('role', 'ktv');
 
+    const now = new Date();
+    const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
     // 2. Fetch salary records for confirmation status
     const { data: salaryRecords } = await supabase
       .from('salary_records')
       .select('ktv_id, total_sessions, status')
-      .eq('month_year', '2026-05-01');
+      .eq('month_year', currentMonthYear);
 
     // 3. Fetch completed sessions with booking details
     const { data: sessions, error: sessionsError } = await supabase
@@ -451,7 +339,16 @@ export async function getKtvSessionMatrix() {
 
     // 4. Group sessions by KTV and package
     const matrix: Record<string, Record<string, number>> = {};
-    const packageNames = [...MOCK_SERVICES.map(s => s.name), 'Dịch vụ lẻ'];
+    // Build list of package names from sessions to avoid mock reliance
+    const dynamicPackageNames = new Set<string>();
+    if (sessions) {
+      sessions.forEach((s: any) => {
+        const pkgName = s.bookings ? resolvePackageName(s.bookings) : 'Dịch vụ lẻ';
+        dynamicPackageNames.add(pkgName);
+      });
+    }
+    const packageNames = Array.from(dynamicPackageNames);
+    if (!packageNames.includes('Dịch vụ lẻ')) packageNames.push('Dịch vụ lẻ');
     
     if (sessions && sessions.length > 0) {
       sessions.forEach((s: any) => {
@@ -481,10 +378,7 @@ export async function getKtvSessionMatrix() {
         if (hasAnyRealData && matrix[ktv.id]) {
           row[pkg] = matrix[ktv.id][pkg] || 0;
         } else {
-          // Robust deterministic mock: unique values per KTV and package using full_name
-          const charSum = (ktv.full_name || 'KTV').split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-          const pkgSum = pkg.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-          row[pkg] = (charSum + pkgSum * 7) % 12;
+          row[pkg] = 0;
         }
       });
       return row;
@@ -493,27 +387,17 @@ export async function getKtvSessionMatrix() {
     return { packageNames, ktvs: rows };
   } catch (error) {
     console.error('Critical error in getKtvSessionMatrix:', error);
-    const fallbackPackages = MOCK_SERVICES.map(s => s.name);
-    if (!fallbackPackages.includes('Dịch vụ lẻ')) fallbackPackages.push('Dịch vụ lẻ');
-    
-    return { 
-      ktvs: mockData.map(m => {
-        const row: any = { id: m.id, name: m.name };
-        fallbackPackages.forEach(pkg => {
-          // Deterministic fallback
-          row[pkg] = (m.id.length + pkg.length) % 8;
-        });
-        return row;
-      }), 
-      packageNames: fallbackPackages 
-    };
+    return { ktvs: [], packageNames: [] };
   }
 }
 
 export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
   const supabase = (await createClient()) as any;
+  const now = new Date();
+  const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) throw new Error('Tenant ID not found for current user session');
   
   console.log(`Confirming sessions for KTV: ${ktvId}, Total: ${totalSessions}`);
   
@@ -534,7 +418,7 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
       .from('salary_records')
       .select('id')
       .eq('ktv_id', ktvId)
-      .eq('month_year', '2026-05-01')
+      .eq('month_year', currentMonthYear)
       .maybeSingle();
 
     if (fetchError) {
@@ -558,7 +442,7 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
         .from('salary_records')
         .insert({
           ktv_id: ktvId,
-          month_year: '2026-05-01',
+          month_year: currentMonthYear,
           total_sessions: totalSessions,
           status: 'pending_approval',
           tenant_id: tenantId // Crucial: add tenant_id for consistency

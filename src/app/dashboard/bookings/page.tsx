@@ -39,21 +39,9 @@ declare global {
 
 import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog, completeSession, rescheduleSession } from '@/services/booking-actions';
 import { getUsers } from '@/services/user-actions';
-import { MOCK_BOOKINGS } from '@/constants/mock-data';
-import { MOCK_SERVICES } from '@/constants/mock-data';
 
-const mockBookings = MOCK_BOOKINGS.map(b => ({
-  id: b.id,
-  customer: b.customers?.name_mother || 'Khách hàng',
-  package: b.package_name,
-  time: '09:00 - 11:00', // Mock time
-  ktv: 'Kỹ thuật viên',
-  status: b.status === 'in_progress' ? 'in_progress' : b.status === 'booked' ? 'scheduled' : 'completed',
-  location: 'Số 123, Đường ABC, Quận 1, TP.HCM',
-  sessionCount: '10/12 buổi',
-  contractId: 'HD-2024-001',
-  contractDetail: 'Gói chăm sóc Mẹ & Bé chuyên sâu - 12 buổi'
-}));
+
+
 
 function BookingsContent() {
   const searchParams = useSearchParams();
@@ -198,7 +186,7 @@ function BookingsContent() {
         id: s.id,
         date,
         customer: `Mẹ: ${s.bookings?.customers?.name_mother || 'Khách hàng'}${s.bookings?.customers?.name_baby ? ` - Bé: ${s.bookings?.customers?.name_baby}` : ''}`,
-        package: s.bookings?.package_name || 'Gói liệu trình',
+        package: s.bookings?.packages?.name || s.bookings?.package_name || 'Gói liệu trình',
         time: s.assigned_time || '09:00 - 11:00',
         ktv: s.bookings?.assigned_ktv?.full_name || 'Chưa phân công',
         status: s.status,
@@ -472,7 +460,7 @@ function BookingsContent() {
                         date: new Date(session.assigned_date),
                         dateString: session.assigned_date,
                         customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
-                        package: session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình',
+                        package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
                         time: session.assigned_time || '09:00 - 11:00',
                         contractId: session.bookings?.booking_number || 'N/A',
                         contractDetail: session.notes || 'Không có ghi chú',
@@ -516,7 +504,7 @@ function BookingsContent() {
                     </h3>
                     <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
                       <LayoutGrid className="w-4 h-4 text-slate-300" />
-                      {session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình'}
+                      {session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình'}
                     </p>
                   </div>
 
@@ -539,7 +527,7 @@ function BookingsContent() {
                             date: new Date(session.assigned_date),
                             dateString: session.assigned_date,
                             customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
-                            package: session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình',
+                            package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
                             time: session.assigned_time || '09:00 - 11:00',
                             contractId: session.bookings?.booking_number || 'N/A',
                             contractDetail: session.notes || 'Không có ghi chú',
@@ -573,7 +561,7 @@ function BookingsContent() {
                             date: new Date(session.assigned_date),
                             dateString: session.assigned_date,
                             customer: session.bookings?.customers?.name_mother || 'Khách hàng',
-                            package: session.bookings?.customers?.package_name || session.bookings?.package_name || 'Gói liệu trình',
+                            package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
                             time: session.assigned_time || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
                             contractId: session.bookings?.booking_number || 'N/A',
                             contractDetail: session.notes || '',
@@ -884,7 +872,7 @@ function BookingsContent() {
                       value={selectedBookingIdForCreate}
                       options={allBookings.map(b => ({
                         value: b.id,
-                        label: `${b.customers?.name_mother} - ${b.booking_number}`
+                        label: `${b.customers?.name_mother} - ${b.packages?.name || b.package_name || 'Gói liệu trình'}`
                       }))}
                       onChange={(val) => setSelectedBookingIdForCreate(val)}
                       placeholder="Chọn hợp đồng..."

@@ -27,7 +27,8 @@ import {
   Activity,
   MessageSquare,
   Sparkles as SparklesIcon,
-  Wallet
+  Wallet,
+  Package
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -56,11 +57,7 @@ import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 import { getCurrentUser } from '@/services/user-actions';
 
-import { 
-  MOCK_DASHBOARD_STATS, 
-  MOCK_TOP_KTVS, 
-  MOCK_BOOKINGS 
-} from '@/constants/mock-data';
+
 
 const container = {
   hidden: { opacity: 0 },
@@ -84,14 +81,7 @@ export default function DashboardPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [performanceData, setPerformanceData] = useState<any[]>([
-    { name: 'T12', customers: 45, revenue: 85, expense: 65, rating: 4.8 },
-    { name: 'T1', customers: 52, revenue: 92, expense: 70, rating: 4.9 },
-    { name: 'T2', customers: 48, revenue: 88, expense: 68, rating: 4.7 },
-    { name: 'T3', customers: 61, revenue: 105, expense: 75, rating: 4.9 },
-    { name: 'T4', customers: 55, revenue: 98, expense: 72, rating: 5.0 },
-    { name: 'T5', customers: 67, revenue: 110, expense: 78, rating: 4.9 },
-  ]);
+  const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isLoading, setIsLoading] = useState(false);
@@ -108,7 +98,7 @@ export default function DashboardPage() {
       if (user?.role) {
         setUserRole(user.role as any);
       } else {
-        setUserRole('ktv'); // Default to ktv if no role found
+        setUserRole('ktv'); 
       }
     }
     checkRole();
@@ -420,7 +410,7 @@ export default function DashboardPage() {
               const filteredSessions = sessions.filter(session => {
                 const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
                 const customerName = booking?.customers?.name_mother || '';
-                const packageName = booking?.package_id || '';
+                const packageName = booking?.packages?.name || booking?.package_name || '';
                 const isNotCompleted = session.status !== 'completed';
                 const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                                      packageName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -434,7 +424,7 @@ export default function DashboardPage() {
                   const customerName = booking?.customers?.name_mother || 'Khách hàng';
                   const babyName = booking?.customers?.name_baby;
                   const technicianName = booking?.assigned_ktv?.full_name || 'Chưa phân công';
-                  const packageName = booking?.package_id || 'Gói dịch vụ';
+                  const packageName = booking?.packages?.name || booking?.package_name || 'Gói dịch vụ';
                   
                   return (
                     <div 
@@ -894,6 +884,57 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Inventory Quick Status */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+        className="glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden mt-12"
+      >
+         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-400/30 via-orange-300/30 to-amber-400/30" />
+         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+            <div className="flex items-center gap-3">
+               <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                  <Package className="w-6 h-6 text-amber-500" />
+               </div>
+               <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Vật Tư & Tồn Kho</h2>
+            </div>
+            <Link href="/dashboard/inventory" className="px-6 py-3 bg-white/50 hover:bg-white text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 group/inv">
+               Quản lý kho <ArrowRight className="w-4 h-4 group-hover/inv:translate-x-1 transition-transform" />
+            </Link>
+         </div>
+
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white/50 p-6 rounded-3xl border border-white/50 flex items-center gap-4">
+               <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500">
+                  <AlertTriangle className="w-6 h-6 animate-pulse" />
+               </div>
+               <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Mặt hàng sắp hết</p>
+                  <p className="text-2xl font-black text-slate-900">2 <span className="text-sm text-slate-400 font-medium">sản phẩm</span></p>
+               </div>
+            </div>
+            <div className="bg-white/50 p-6 rounded-3xl border border-white/50 flex items-center gap-4">
+               <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-primary">
+                  <TrendingDown className="w-6 h-6" />
+               </div>
+               <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tiêu hao hôm nay</p>
+                  <p className="text-2xl font-black text-slate-900">~15 <span className="text-sm text-slate-400 font-medium">đơn vị</span></p>
+               </div>
+            </div>
+            <div className="bg-white/50 p-6 rounded-3xl border border-white/50 flex items-center gap-4">
+               <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500">
+                  <TrendingUp className="w-6 h-6" />
+               </div>
+               <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Giá trị tồn kho</p>
+                  <p className="text-2xl font-black text-slate-900">~4.5M <span className="text-sm text-slate-400 font-medium">VND</span></p>
+               </div>
+            </div>
+         </div>
+      </motion.div>
 
       {/* Modals */}
       <BookingModal 

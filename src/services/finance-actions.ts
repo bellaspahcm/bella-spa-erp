@@ -3,8 +3,8 @@
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 import { revalidatePath } from 'next/cache';
-import { ensure2026 } from '@/lib/utils';
-import { DEMO_REVENUE } from '@/constants/demo-data';
+
+
 
 export async function getFinancialOverview() {
   const supabase = await createClient() as any;
@@ -38,16 +38,7 @@ export async function getFinancialOverview() {
   const revenueData = revenueResponse.data || [];
   const expensesData = expensesResponse.data || [];
 
-  // Mock transactions as baseline
-  const mockTransactions = [
-    { id: 'm1', type: 'revenue', category: 'Dịch vụ', amount: '+2,400,000', date: '12/05/2026', method: 'Chuyển khoản', status: 'confirmed', details: 'Gói chăm sóc cơ bản - Mẹ Lan' },
-    { id: 'm2', type: 'expense', category: 'Vật tư', amount: '-850,000', date: '12/05/2026', method: 'Tiền mặt', status: 'pending', details: 'Mua khăn và tinh dầu' },
-    { id: 'm3', type: 'revenue', category: 'Cọc gói', amount: '+5,000,000', date: '11/05/2026', method: 'ZaloPay', status: 'confirmed', details: 'Gói VIP 21 buổi - Mẹ Vy' },
-    { id: 'm4', type: 'revenue', category: 'Thanh toán đợt 2', amount: '+8,500,000', date: '11/05/2026', method: 'Chuyển khoản', status: 'confirmed', details: 'Gói tắm bé - Mẹ Hà' },
-    { id: 'm5', type: 'expense', category: 'Lương nhân viên', amount: '-15,000,000', date: '10/05/2026', method: 'Chuyển khoản', status: 'confirmed', details: 'Lương KTV tháng 4' },
-    { id: 'm6', type: 'revenue', category: 'Dịch vụ lẻ', amount: '+550,000', date: '10/05/2026', method: 'Tiền mặt', status: 'confirmed', details: 'Massage mặt - Khách lẻ' },
-    { id: 'm7', type: 'expense', category: 'Điện nước', amount: '-2,100,000', date: '09/05/2026', method: 'Chuyển khoản', status: 'confirmed', details: 'Thanh toán tiền điện tháng 4' },
-  ];
+
 
   // ONLY sum if status is 'confirmed'
   const dbRevenue = revenueData
@@ -59,9 +50,9 @@ export async function getFinancialOverview() {
     .reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
   
   // Cumulative balance
-  const totalBalance = DEMO_REVENUE.totalBalance + (dbRevenue - dbExpense);
-  const totalRevenueMonth = DEMO_REVENUE.totalRevenueMonth + dbRevenue;
-  const totalExpenseMonth = DEMO_REVENUE.totalExpenseMonth + dbExpense;
+  const totalBalance = dbRevenue - dbExpense;
+  const totalRevenueMonth = dbRevenue;
+  const totalExpenseMonth = dbExpense;
   
   const mappedRevenues = revenueData.map((r: any) => {
     const customer = r.bookings?.customers;
@@ -75,7 +66,7 @@ export async function getFinancialOverview() {
       category: r.revenue_type === 'additional' ? 'Phát sinh' : (r.notes || 'Dịch vụ'),
       amountNum: Number(r.amount) || 0,
       amount: '+' + Number(r.amount).toLocaleString() + 'đ',
-      date: ensure2026(new Date(r.received_date || r.created_at || new Date()).toLocaleDateString('vi-VN')),
+      date: new Date(r.received_date || r.created_at || new Date()).toLocaleDateString('vi-VN'),
       method: r.payment_method === 'cash' ? 'Tiền mặt' : 'Chuyển khoản',
       status: r.status === 'pending' ? 'pending' : (r.status || 'confirmed'),
       details: r.revenue_type === 'additional' ? (r.notes || customerName) : `${packageName} - ${customerName}`,
@@ -100,7 +91,7 @@ export async function getFinancialOverview() {
       category: categoryMap[e.category] || e.category || 'Chi phí',
       amountNum: Number(e.amount) || 0,
       amount: '-' + Number(e.amount).toLocaleString() + 'đ',
-      date: ensure2026(new Date(e.expense_date || e.created_at || new Date()).toLocaleDateString('vi-VN')),
+      date: new Date(e.expense_date || e.created_at || new Date()).toLocaleDateString('vi-VN'),
       method: 'Chuyển khoản', 
       status: e.status === 'submitted' ? 'pending' : (e.status === 'approved' ? 'confirmed' : 'pending'),
       details: e.description || 'Chi phí vận hành',
@@ -108,9 +99,7 @@ export async function getFinancialOverview() {
     };
   });
 
-  // Combine mock and real transactions
-  const dbTransactions = [...mappedRevenues, ...mappedExpenses];
-  const allTransactions = [...dbTransactions, ...mockTransactions].sort((a, b) => {
+  const allTransactions = [...mappedRevenues, ...mappedExpenses].sort((a, b) => {
     const timeA = (a as any).timestamp || 0;
     const timeB = (b as any).timestamp || 0;
     return timeB - timeA;
@@ -129,6 +118,34 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   const table = type === 'revenue' ? 'revenue' : 'expenses';
 
   console.log(`Confirming ${type} with ID: ${id} in table: ${table}`);
+
+  // If revenue, fetch details first to apply loyalty points
+  if (type === 'revenue') {
+    const { data: revData, error: fetchError } = await supabase
+      .from('revenue')
+      .select('amount, booking_id')
+      .eq('id', id)
+      .single();
+
+    if (!fetchError && revData?.booking_id) {
+      // Get customer_id from booking
+      const { data: bookingData } = await supabase
+        .from('bookings')
+        .select('customer_id')
+        .eq('id', revData.booking_id)
+        .single();
+
+      if (bookingData?.customer_id) {
+        const points = Math.floor(Number(revData.amount) / 100000);
+        if (points > 0) {
+          await supabase.rpc('increment_loyalty_points', { 
+            p_customer_id: bookingData.customer_id, 
+            p_points: points 
+          });
+        }
+      }
+    }
+  }
 
   const { error } = await supabase
     .from(table)
@@ -156,7 +173,8 @@ export async function recordTransaction(data: {
 }) {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) throw new Error('Tenant ID not found for current user session');
 
   if (data.type === 'expense') {
     const { data: result, error } = await supabase
@@ -203,4 +221,64 @@ export async function recordTransaction(data: {
     
     return result;
   }
+}
+
+export async function getMonthlyPnL(month?: string) {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) throw new Error('Tenant ID not found');
+
+  const now = new Date();
+  const targetMonth = month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+
+  const { data, error } = await supabase.rpc('get_monthly_pnl', {
+    p_tenant_id: tenantId,
+    p_month: targetMonth
+  });
+
+  if (error) {
+    console.error('Error fetching monthly P&L:', error);
+    return null;
+  }
+
+  return data?.[0] || null;
+}
+
+export async function getServicePerformance() {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) throw new Error('Tenant ID not found');
+
+  const { data, error } = await supabase.rpc('get_service_performance', {
+    p_tenant_id: tenantId
+  });
+
+  if (error) {
+    console.error('Error fetching service performance:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function lockMonth(month: string) {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) throw new Error('Tenant ID not found');
+
+  const { error } = await supabase.rpc('lock_monthly_records', {
+    p_tenant_id: tenantId,
+    p_month: month
+  });
+
+  if (error) {
+    console.error('Error locking month:', error);
+    throw new Error('Failed to lock month');
+  }
+
+  revalidatePath('/dashboard/finance');
+  return { success: true };
 }

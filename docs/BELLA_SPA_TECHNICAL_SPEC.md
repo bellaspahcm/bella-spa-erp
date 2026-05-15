@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 1.9  
-**Last Updated:** 2026-05-15 (06:05)  
-**Status:** Implementation Phase (Phase 16: Staff Performance Analytics & Zalo OA)
+**Version:** 2.0  
+**Last Updated:** 2026-05-15 (11:05)  
+**Status:** Implementation Phase (Phase 17: Inventory & Supply Chain)
 
 ---
 
@@ -596,6 +596,11 @@ A: Yes, IF:
     - **Floating Menus**: Đối với các thẻ (Cards) chứa dropdown, tuyệt đối không sử dụng `overflow-hidden` trực tiếp trên container chính. Hãy tách phần trang trí (Background elements) vào một lớp riêng có overflow-hidden để đảm bảo menu dropdown có thể hiển thị tràn ra ngoài Card.
     - **Pastel Palette**: Luôn tuân thủ mã màu `#FF85A2` cho Primary và các sắc độ Pastel tương ứng để duy trì nhận diện thương hiệu Bella Spa.
 
+### 17. Quản lý Kho & Vật tư (v2.1)
+- **Tự động hóa**: Trigger `trigger_deduct_inventory_on_session_complete` tự động trừ kho dựa trên định mức gói dịch vụ (ví dụ: trừ 20ml tinh dầu khi xong 1 buổi tắm bé).
+- **Cảnh báo**: Tích hợp thông báo tồn kho thấp vào Dashboard Admin và RPC `get_important_alerts`.
+- **Dữ liệu**: Bảng `inventory_items` lưu trữ tồn kho, `package_materials` lưu định mức tiêu hao.
+
 ### 6. Ergonomic Data Tables
 *   **Vấn đề**: Khi số lượng dữ liệu lớn (nhiều nhân viên, nhiều phiên làm việc), bảng dữ liệu thường bị co hẹp hoặc mất dấu tiêu đề khi cuộn, làm giảm hiệu suất quản lý.
 *   **Quy tắc**:
@@ -657,18 +662,23 @@ A: Yes, IF:
 - **Auto-Sync Logic**: Automated reconciliation of session logs and booking progress.
 - **Security Audit**: Deployment of RLS policies for multi-tenant isolation.
 
-### Phase 15: Salary Reconciliation Logic & Dashboard Role Hardening
-- **Objective**: Stabilize payroll confirmation and ensure secure administrative visibility.
-- **Key Fixes**:
-    - Refined `isConfirmed` logic to use explicit status checks (`pending_approval`, `approved`).
-    - Deployed multi-table RLS policies with `authenticated_access` for data security.
-    - Hardened `DashboardPage` to prevent UI flicker and correctly identify `userRole` before rendering financial stats.
-    - Verified `expenses` vs `expense_records` table naming consistency in database policies.
-- **Security Enforcement**: Full RLS deployment and authenticated policy management across all core tables.
+### Phase 16: Financial Automation, KTV Experience & Customer Portal (Completed)
+- **Objective**: Standardize financial reporting, optimize KTV operations, and enhance customer engagement.
+- **Financial Engine**: 
+    - Implemented `get_monthly_pnl` RPC for Revenue/Expense/Salary aggregation.
+    - Added `lock_monthly_records` to prevent retrospective financial changes.
+    - Implemented `get_service_performance` for ROI tracking.
+- **KTV Mobile Experience**:
+    - Mobile-optimized dashboard for check-in/out and earnings tracking.
+    - `get_ktv_leaderboard` RPC for staff gamification.
+- **Customer Portal & Loyalty**:
+    - Public `/portal/[token]` page for treatment tracking.
+    - `apply_rating_bonus` RPC (20k/50k bonus for 5-star ratings).
+    - `increment_loyalty_points` RPC (1 point per 100k confirmed revenue).
 
 ---
 
-**Document Version:** 1.9  
-**Last Updated:** 2026-05-15 (06:05)  
-**Status:** Implementation Phase (Phase 16)  
+**Document Version:** 2.0  
+**Last Updated:** 2026-05-15 (11:05)  
+**Status:** Implementation Phase (Phase 17)  
 **Contact:** Bella Spa ERP Dev Team
