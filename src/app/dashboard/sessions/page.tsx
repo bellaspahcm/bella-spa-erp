@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
@@ -64,6 +64,14 @@ function SessionsContent() {
   const [originalDateString, setOriginalDateString] = useState<string | null>(null);
 
   const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Hoàn thành'];
+  const [monthFilter, setMonthFilter] = useState('all');
+  const [yearFilter,  setYearFilter]  = useState(String(new Date().getFullYear()));
+  const currentYear = new Date().getFullYear();
+  const monthOptions = [
+    { value: 'all', label: 'Tất cả tháng' },
+    ...Array.from({length:12}, (_,i) => ({ value: String(i+1).padStart(2,'0'), label: `Tháng ${i+1}` }))
+  ];
+  const yearOptions = Array.from({length:4}, (_,i) => String(currentYear - i));
 
   useEffect(() => {
     loadSessions();
@@ -157,15 +165,18 @@ function SessionsContent() {
     let result = [...data];
     
     if (query) {
-      const q = query.toLowerCase();
+      const q = query.toLowerCase().trim();
       result = result.filter(s => {
-        const pkgName = resolvePackageName(s).toLowerCase();
-        const ktvName = s.assigned_ktv?.full_name?.toLowerCase() || '';
+        const pkgName    = resolvePackageName(s).toLowerCase();
+        const ktvName    = s.assigned_ktv?.full_name?.toLowerCase() || '';
         const motherName = s.customers?.name_mother?.toLowerCase() || '';
-        const bNumber = s.booking_number?.toLowerCase() || '';
-        const phone = s.customers?.phone || '';
-        
-        return motherName.includes(q) || bNumber.includes(q) || pkgName.includes(q) || ktvName.includes(q) || phone.includes(q);
+        const babyName   = s.customers?.name_baby?.toLowerCase() || '';
+        const bNumber    = s.booking_number?.toLowerCase() || '';
+        const phone      = s.customers?.phone || '';
+        const dobBaby    = s.customers?.dob_expected || '';
+        return motherName.includes(q) || babyName.includes(q) || bNumber.includes(q)
+            || pkgName.includes(q) || ktvName.includes(q) || phone.includes(q)
+            || dobBaby.includes(q);
       });
     }
     
@@ -182,7 +193,18 @@ function SessionsContent() {
 
   useEffect(() => {
     applyFilters(sessions, searchQuery, statusFilter);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, sessions]);
+
+  // Date filter applied on top of text+status filter
+  const displaySessions = useMemo(() => {
+    if (monthFilter === 'all' && !yearFilter) return filteredSessions;
+    return filteredSessions.filter(s => {
+      const ref = s.created_at || s.start_date || '';
+      const okMonth = monthFilter === 'all' || ref.slice(5,7) === monthFilter;
+      const okYear  = !yearFilter            || ref.slice(0,4) === yearFilter;
+      return okMonth && okYear;
+    });
+  }, [filteredSessions, monthFilter, yearFilter]);
 
   const isUpdatedToday = (booking: any) => {
     const today = new Date().toLocaleDateString('sv-SE');
@@ -547,32 +569,48 @@ function SessionsContent() {
       </div>
 
       {/* Filters & Search */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full group">
+      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-8 flex flex-col md:flex-row gap-3 items-center flex-wrap">
+        <div className="relative flex-1 min-w-[220px] group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm tên khách hàng hoặc mã hợp đồng..." 
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-bold text-slate-700"
+            placeholder="Tìm tên mẹ, tên bé, SĐT, tên KTV, tên gói..."
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-sm"
           />
         </div>
-          <div className="w-full md:w-64">
-            <PremiumSelect 
-              value={statusFilter}
-              options={statusOptions.map(opt => ({
-                value: opt,
-                label: opt,
-                icon: <Filter className="w-4 h-4" />
-              }))}
-              onChange={(val) => setStatusFilter(val)}
-              placeholder="Lọc trạng thái..."
-            />
-          </div>
+        <div className="w-full md:w-52">
+          <PremiumSelect
+            value={statusFilter}
+            options={statusOptions.map(opt => ({
+              value: opt,
+              label: opt,
+              icon: <Filter className="w-4 h-4" />
+            }))}
+            onChange={(val) => setStatusFilter(val)}
+            placeholder="Lọc trạng thái..."
+          />
+        </div>
+        {/* Month dropdown */}
+        <select
+          value={monthFilter}
+          onChange={e => setMonthFilter(e.target.value)}
+          className="w-full md:w-40 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+        >
+          {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        {/* Year dropdown */}
+        <select
+          value={yearFilter}
+          onChange={e => setYearFilter(e.target.value)}
+          className="w-full md:w-32 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+        >
+          {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
       </div>
 
-      {filteredSessions.length === 0 ? (
+      {displaySessions.length === 0 ? (
         <div className="bg-white rounded-[3rem] p-20 text-center border border-dashed border-slate-200">
           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <Search className="w-10 h-10 text-slate-300" />
@@ -582,7 +620,7 @@ function SessionsContent() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {filteredSessions.map((booking: any, idx: number) => {
+          {displaySessions.map((booking: any, idx: number) => {
             const completedCount = Number(booking.completed_sessions) || 0;
             const totalCount = Number(booking.total_sessions) || 15;
             const progress = (completedCount / Math.max(1, totalCount)) * 100;

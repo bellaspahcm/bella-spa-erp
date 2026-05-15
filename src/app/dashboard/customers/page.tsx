@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -230,29 +230,47 @@ export default function CustomersPage() {
 
   const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Chờ sinh', 'Tiềm năng', 'Đã kết thúc'];
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [monthFilter, setMonthFilter]  = useState('all');
+  const [yearFilter,  setYearFilter]   = useState(String(new Date().getFullYear()));
 
-  // Reset pagination when filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  const currentYear = new Date().getFullYear();
+  const monthOptions = [
+    { value: 'all', label: 'Tất cả tháng' },
+    ...Array.from({length:12}, (_,i) => ({ value: String(i+1).padStart(2,'0'), label: `Tháng ${i+1}` }))
+  ];
+  const yearOptions = Array.from({length:4}, (_,i) => String(currentYear - i));
 
-  const filteredCustomers = customers.filter(customer => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch = 
-      (customer.name_mother || '').toLowerCase().includes(q) || 
-      (customer.phone || '').toLowerCase().includes(q);
-    
+  // Reset pagination when any filter changes
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter, monthFilter, yearFilter]);
+
+  const filteredCustomers = useMemo(() => customers.filter(customer => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch = !q || [
+      customer.name_mother,
+      customer.phone,
+      customer.name_baby,
+      customer.dob_expected,
+      customer.address,
+      customer.package_name,
+      customer.notes,
+      customer.gender_baby === 'boy' ? 'bé trai' : customer.gender_baby === 'girl' ? 'bé gái' : '',
+    ].some(f => (f || '').toLowerCase().includes(q));
+
     let matchesStatus = true;
     if (statusFilter !== 'Tất cả trạng thái') {
       if (statusFilter === 'Đang chăm sóc') matchesStatus = customer.status === 'active';
-      else if (statusFilter === 'Chờ sinh') matchesStatus = customer.status === 'deposit';
+      else if (statusFilter === 'Chờ sinh')  matchesStatus = customer.status === 'deposit';
       else if (statusFilter === 'Tiềm năng') matchesStatus = customer.status === 'lead';
       else if (statusFilter === 'Đã kết thúc') matchesStatus = customer.status === 'paid';
     }
-    
-    return matchesSearch && matchesStatus;
-  });
+
+    let matchesDate = true;
+    const ref = customer.dob_expected || customer.created_at || '';
+    if (monthFilter !== 'all') matchesDate = matchesDate && ref.slice(5,7) === monthFilter;
+    if (yearFilter)            matchesDate = matchesDate && ref.slice(0,4) === yearFilter;
+
+    return matchesSearch && matchesStatus && matchesDate;
+  }), [customers, searchQuery, statusFilter, monthFilter, yearFilter]);
 
   const totalPages = Math.ceil(filteredCustomers.length / pageSize);
   const paginatedCustomers = filteredCustomers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -302,29 +320,43 @@ export default function CustomersPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full group">
+      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-8 flex flex-col md:flex-row gap-3 items-center flex-wrap">
+        {/* Search — all fields */}
+        <div className="relative flex-1 min-w-[220px] group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-500 transition-colors w-5 h-5" />
-          <input 
-            type="text" 
-            placeholder="Tìm theo tên, số điện thoại..." 
+          <input
+            type="text"
+            placeholder="Tìm tên mẹ, tên bé, SĐT, ngày sinh, gói, địa chỉ..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all font-medium text-slate-700"
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none font-medium text-slate-700 text-sm"
           />
         </div>
-          <div className="w-full md:w-64">
-            <PremiumSelect 
-              value={statusFilter}
-              options={statusOptions.map(opt => ({
-                value: opt,
-                label: opt,
-                icon: <Filter className="w-4 h-4" />
-              }))}
-              onChange={(val) => setStatusFilter(val)}
-              placeholder="Trạng thái..."
-            />
-          </div>
+        {/* Status dropdown */}
+        <div className="w-full md:w-52">
+          <PremiumSelect
+            value={statusFilter}
+            options={statusOptions.map(opt => ({ value: opt, label: opt, icon: <Filter className="w-4 h-4" /> }))}
+            onChange={val => setStatusFilter(val)}
+            placeholder="Trạng thái..."
+          />
+        </div>
+        {/* Month dropdown */}
+        <select
+          value={monthFilter}
+          onChange={e => setMonthFilter(e.target.value)}
+          className="w-full md:w-40 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-rose-500/20 cursor-pointer"
+        >
+          {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        {/* Year dropdown */}
+        <select
+          value={yearFilter}
+          onChange={e => setYearFilter(e.target.value)}
+          className="w-full md:w-32 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-600 outline-none focus:ring-2 focus:ring-rose-500/20 cursor-pointer"
+        >
+          {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
       </div>
 
       {/* Customer Grid/Table */}
