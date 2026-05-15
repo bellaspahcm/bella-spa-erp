@@ -861,8 +861,8 @@ function SessionsContent() {
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
                     <PremiumSelect 
-                      value={filterMonth}
-                      onChange={(value) => setFilterMonth(value)}
+                      value={monthFilter}
+                      onChange={(value) => setMonthFilter(value)}
                       options={[
                         { value: 'all', label: 'Tất cả tháng' },
                         ...Array.from({ length: 12 }, (_, i) => ({ 
@@ -873,8 +873,8 @@ function SessionsContent() {
                       className="w-40"
                     />
                     <PremiumSelect 
-                      value={filterYear}
-                      onChange={(value) => setFilterYear(value)}
+                      value={yearFilter}
+                      onChange={(value) => setYearFilter(value)}
                       options={Array.from({ length: 5 }, (_, i) => ({ 
                         value: String(new Date().getFullYear() - i), 
                         label: `Năm ${new Date().getFullYear() - i}` 
