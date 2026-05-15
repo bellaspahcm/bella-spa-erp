@@ -14,7 +14,8 @@ import {
   LogOut,
   Flower2,
   Sparkles,
-  MessageSquare
+  MessageSquare,
+  Banknote
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -26,23 +27,23 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-  { icon: Users, label: 'Khách hàng', href: '/dashboard/customers' },
-  { icon: Calendar, label: 'Lịch hẹn', href: '/dashboard/bookings' },
-  { icon: Flower2, label: 'Thẻ liệu trình', href: '/dashboard/sessions' },
-  { icon: MessageSquare, label: 'Tin nhắn', href: '/dashboard/chat' },
-  { icon: Sparkles, label: 'Dịch vụ', href: '/dashboard/services' },
-  { icon: DollarSign, label: 'Tài chính', href: '/dashboard/finance' },
-  { icon: Package, label: 'Kho hàng', href: '/dashboard/inventory' },
-  { icon: Users, label: 'Lương KTV', href: '/dashboard/salary' },
-  { icon: Settings, label: 'Cài đặt', href: '/dashboard/settings' },
+  { icon: LayoutDashboard, label: 'Dashboard',      href: '/dashboard' },
+  { icon: Users,           label: 'Khách hàng',     href: '/dashboard/customers' },
+  { icon: Calendar,        label: 'Lịch hẹn',       href: '/dashboard/bookings' },
+  { icon: Flower2,         label: 'Thẻ liệu trình', href: '/dashboard/sessions' },
+  { icon: MessageSquare,   label: 'Tin nhắn',        href: '/dashboard/chat' },
+  { icon: Sparkles,        label: 'Dịch vụ',         href: '/dashboard/services' },
+  { icon: DollarSign,      label: 'Tài chính',       href: '/dashboard/finance' },
+  { icon: Package,         label: 'Kho hàng',        href: '/dashboard/inventory' },
+  { icon: Banknote,        label: 'Bảng lương',      href: '/dashboard/salary' },
+  { icon: Settings,        label: 'Cài đặt',         href: '/dashboard/settings' },
 ];
 
 const customerMenuItems = [
-  { icon: Flower2, label: 'Tiến trình liệu trình', href: '/dashboard/customer' },
-  { icon: Calendar, label: 'Lịch sử buổi làm', href: '/dashboard/customer/history' },
-  { icon: MessageSquare, label: 'Thông báo', href: '/dashboard/customer/notifications' },
-  { icon: Settings, label: 'Hồ sơ cá nhân', href: '/dashboard/customer/profile' },
+  { icon: Flower2,       label: 'Tiến trình liệu trình', href: '/dashboard/customer' },
+  { icon: Calendar,      label: 'Lịch sử buổi làm',      href: '/dashboard/customer/history' },
+  { icon: MessageSquare, label: 'Thông báo',              href: '/dashboard/customer/notifications' },
+  { icon: Settings,      label: 'Hồ sơ cá nhân',          href: '/dashboard/customer/profile' },
 ];
 
 export function Sidebar() {
@@ -57,24 +58,28 @@ export function Sidebar() {
     fetchUser();
   }, []);
 
-  const filteredMenuItems = user?.role === 'customer' 
-    ? customerMenuItems 
+  const filteredMenuItems = user?.role === 'customer'
+    ? customerMenuItems
     : menuItems.filter(item => {
-      if (user?.role === 'ktv') {
-        // KTV can't see Finance or Settings or Users/Salary management
-        return !['Tài chính', 'Cài đặt', 'Lương KTV'].includes(item.label);
-      }
-      return true;
-    });
+        if (user?.role === 'ktv') {
+          // KTV cannot see Finance, Settings, or Salary management
+          return !['Tài chính', 'Cài đặt', 'Bảng lương'].includes(item.label);
+        }
+        return true;
+      });
 
-  // Special items for KTV
+  // KTV gets a personal income shortcut instead
   if (user?.role === 'ktv') {
-    // KTV has a personal income link instead of management
     const hasIncome = filteredMenuItems.some(i => i.label === 'Thu nhập cá nhân');
     if (!hasIncome) {
       filteredMenuItems.push({ icon: DollarSign, label: 'Thu nhập cá nhân', href: '/dashboard/salary' });
     }
   }
+
+  const roleLabel =
+    user?.role === 'ktv' ? 'Kỹ thuật viên'
+    : user?.role === 'customer' ? 'Khách hàng'
+    : 'Quản trị viên';
 
   return (
     <>
@@ -82,16 +87,16 @@ export function Sidebar() {
         {/* Soft decorative glows */}
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-rose-200/20 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/10 rounded-full blur-[100px] pointer-events-none" />
-        
-        {/* Logo Section */}
+
+        {/* ── Logo ── */}
         <div className="px-8 pt-10 pb-6 shrink-0 relative z-10">
           <Link href="/dashboard" className="flex flex-col items-center group">
             <div className="relative mb-4">
               <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-75 group-hover:scale-110 transition-transform duration-500" />
-              <img 
-                src="/FullLogo_Transparent_NoBuffer.png" 
-                alt="Bella Spa" 
-                className="w-24 h-24 object-contain relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500" 
+              <img
+                src="/FullLogo_Transparent_NoBuffer.png"
+                alt="Bella Spa"
+                className="w-24 h-24 object-contain relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500"
               />
             </div>
             <div className="text-center">
@@ -101,11 +106,14 @@ export function Sidebar() {
           </Link>
         </div>
 
-        {/* Nav Section - Scrollable */}
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-hidden relative z-10 pb-6">
+        {/* ── Nav (scrollable) ── */}
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto relative z-10 pb-2
+                        [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent
+                        [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-rose-200/60">
           <div className="px-4 mb-3 mt-2">
             <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.2em]">Menu chính</span>
           </div>
+
           {filteredMenuItems.map((item: any) => {
             const isActive = pathname === item.href;
             return (
@@ -114,8 +122,8 @@ export function Sidebar() {
                   whileHover={{ x: 6 }}
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group",
-                    isActive 
-                      ? "bg-white text-primary shadow-[0_10px_25px_-10px_rgba(225,29,72,0.12)] border border-rose-50" 
+                    isActive
+                      ? "bg-white text-primary shadow-[0_10px_25px_-10px_rgba(225,29,72,0.12)] border border-rose-50"
                       : "text-slate-400 hover:bg-white/60 hover:text-slate-700"
                   )}
                 >
@@ -127,9 +135,9 @@ export function Sidebar() {
                     "text-[14px] tracking-tight transition-all duration-300",
                     isActive ? "font-black" : "font-bold"
                   )}>{item.label}</span>
-                  
+
                   {isActive && (
-                    <motion.div 
+                    <motion.div
                       layoutId="active-indicator"
                       className="absolute right-5 w-1 h-1 bg-primary rounded-full shadow-[0_0_8px_#e11d48]"
                     />
@@ -140,8 +148,9 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* User Profile & Logout - Slimmed & Pinned */}
-        <div className="px-4 pb-4 mt-auto bg-gradient-to-t from-rose-100/20 to-transparent pt-2 shrink-0 relative z-10">
+        {/* ── User Profile & Logout — pinned at bottom ── */}
+        <div className="px-4 pt-3 pb-5 shrink-0 relative z-10 border-t border-rose-100/40 bg-gradient-to-t from-rose-50/30 to-transparent">
+          {/* Admin card */}
           <div className="bg-white/80 p-2.5 rounded-[1.5rem] shadow-sm border border-rose-50 mb-2 group cursor-pointer hover:border-rose-200 transition-all">
             <div className="flex items-center gap-2.5">
               <div className="relative">
@@ -152,13 +161,12 @@ export function Sidebar() {
               </div>
               <div className="min-w-0">
                 <p className="text-[12px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'Admin'}</p>
-                <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest mt-0.5">
-                  {user?.role === 'ktv' ? 'Kỹ thuật viên' : user?.role === 'customer' ? 'Khách hàng' : 'Quản trị viên'}
-                </p>
+                <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{roleLabel}</p>
               </div>
             </div>
           </div>
-          
+
+          {/* Logout */}
           <button className="flex items-center gap-2.5 w-full px-3 py-1.5 text-slate-400 hover:text-rose-600 transition-all font-black text-[11px] uppercase tracking-[0.2em] group">
             <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
               <LogOut className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
