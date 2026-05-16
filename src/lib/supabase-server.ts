@@ -11,7 +11,7 @@ export async function createClient() {
     {
       cookies: {
         get(name: string) {
-          return cookieStore.get(name)?.value;
+          const val = cookieStore.get(name)?.value; console.log("[supabase-server] Cookie get:", name, !!val); return val;
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
