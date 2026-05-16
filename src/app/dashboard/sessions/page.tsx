@@ -859,29 +859,6 @@ function SessionsContent() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <PremiumSelect 
-                      value={monthFilter}
-                      onChange={(value) => setMonthFilter(value)}
-                      options={[
-                        { value: 'all', label: 'Tất cả tháng' },
-                        ...Array.from({ length: 12 }, (_, i) => ({ 
-                          value: String(i + 1), 
-                          label: `Tháng ${i + 1}` 
-                        }))
-                      ]}
-                      className="w-40"
-                    />
-                    <PremiumSelect 
-                      value={yearFilter}
-                      onChange={(value) => setYearFilter(value)}
-                      options={Array.from({ length: 5 }, (_, i) => ({ 
-                        value: String(new Date().getFullYear() - i), 
-                        label: `Năm ${new Date().getFullYear() - i}` 
-                      }))}
-                      className="w-32"
-                    />
-                  </div>
                   <div className={cn(
                     "flex items-center gap-2 px-4 py-2 rounded-xl border font-black text-[10px] uppercase tracking-widest",
                     userRole === 'ADMIN' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
