@@ -1261,3 +1261,31 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
 
   return { success: true };
 }
+
+export async function generateShareToken(bookingId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+  const crypto = await import('crypto');
+  
+  const token = crypto.randomUUID().split('-')[0] + crypto.randomUUID().split('-')[1];
+  
+  const { data, error } = await supabase
+    .from('bookings')
+    .update({ share_token: token })
+    .eq('id', bookingId)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error('Error generating share token:', error);
+    return { error: error.message };
+  }
+  
+  await safeRevalidatePath('/dashboard/customers');
+  if (data?.customer_id) {
+    await safeRevalidatePath(`/dashboard/customers/${data.customer_id}`);
+  }
+  
+  return { data };
+}
+

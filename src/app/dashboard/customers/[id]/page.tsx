@@ -30,7 +30,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
-import { getBookingsByCustomerId, updateBooking, completeSession, reusePackage, recordRemainingPayment } from '@/services/booking-actions';
+import { getBookingsByCustomerId, updateBooking, completeSession, reusePackage, recordRemainingPayment, generateShareToken } from '@/services/booking-actions';
 import { getUsers, getCurrentUser } from '@/services/user-actions';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { useState, useEffect, useCallback } from 'react';
@@ -533,40 +533,36 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
                   
-                  <div className="flex gap-4">
-                    {userRole === 'admin' && (
-                      <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10">
-                        <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Tổng cộng</p>
-                        <p className="font-black text-lg text-white">
-                          {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
+                  <div className="flex flex-wrap gap-4 mt-2">
+                    <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-[2rem] border border-white/20">
+                      <p className="text-[10px] text-rose-100/80 font-bold uppercase mb-1">Tổng cộng</p>
+                      <p className="font-black text-xl text-white">
+                        {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
+                      </p>
+                    </div>
+
+                    <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-[2rem] border border-white/20 flex items-center gap-4">
+                      <div>
+                        <p className="text-[10px] text-rose-100/80 font-bold uppercase mb-1">Còn lại</p>
+                        <p className="font-black text-xl text-white">
+                          {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0))) + 'đ'}
                         </p>
                       </div>
-                    )}
-
-                    {userRole === 'admin' && (
-                      <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 flex items-center gap-4">
-                        <div>
-                          <p className="text-[10px] text-rose-100/60 font-bold uppercase mb-1">Còn lại</p>
-                          <p className="font-black text-xl text-white">
-                            {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0))) + 'đ'}
-                          </p>
-                        </div>
-                        {!isDepositOnly && (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0) > 0 && (
-                          <button 
-                            onClick={() => {
-                              setPaymentData({
-                                ...paymentData,
-                                amount: (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0)
-                              });
-                              setIsPaymentModalOpen(true);
-                            }}
-                            className="bg-white text-rose-500 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-lg active:scale-95"
-                          >
-                            Thanh toán nốt
-                          </button>
-                        )}
-                      </div>
-                    )}
+                      {!isDepositOnly && (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0) > 0 && (
+                        <button 
+                          onClick={() => {
+                            setPaymentData({
+                              ...paymentData,
+                              amount: (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0)
+                            });
+                            setIsPaymentModalOpen(true);
+                          }}
+                          className="bg-white text-rose-500 px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-xl active:scale-95 border border-white"
+                        >
+                          Thanh toán nốt
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -591,19 +587,29 @@ export default function CustomerDetailPage() {
                         Gửi báo cáo Zalo
                       </button>
                       
-                      {activeBooking?.share_token && (
-                        <button 
-                          onClick={() => {
-                            const url = `${window.location.origin}/portal/${activeBooking.share_token}`;
-                            navigator.clipboard.writeText(url);
-                            toast.success('Đã sao chép link Cổng thông tin khách hàng');
-                          }}
-                          className="flex items-center justify-center gap-3 bg-white/20 backdrop-blur-md text-white px-8 py-4 rounded-2xl font-black transition-all hover:bg-white/30 uppercase tracking-widest text-xs border border-white/20 shadow-lg"
-                        >
-                          <Share2 className="w-4 h-4" />
-                          Link Portal Khách
-                        </button>
-                      )}
+                      <button 
+                        onClick={async () => {
+                          let token = activeBooking?.share_token;
+                          if (!token) {
+                            toast.loading('Đang khởi tạo link...', { id: 'portal-link' });
+                            const result = await generateShareToken(activeBooking.id);
+                            if (result.error || !result.data) {
+                              toast.error('Lỗi khởi tạo link: ' + (result.error || 'Unknown error'), { id: 'portal-link' });
+                              return;
+                            }
+                            token = result.data.share_token;
+                            setActiveBooking({ ...activeBooking, share_token: token });
+                            toast.dismiss('portal-link');
+                          }
+                          const url = `${window.location.origin}/portal/${token}`;
+                          navigator.clipboard.writeText(url);
+                          toast.success('Đã sao chép link Cổng thông tin khách hàng');
+                        }}
+                        className="flex items-center justify-center gap-3 bg-white/20 backdrop-blur-md text-white px-8 py-4 rounded-2xl font-black transition-all hover:bg-white/30 uppercase tracking-widest text-xs border border-white/20 shadow-lg"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        Link Portal Khách
+                      </button>
 
                       {userRole === 'admin' && (
                         <button 
