@@ -17,7 +17,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getAuditLogs } from '@/services/audit-actions';
+import { supabase } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
@@ -49,12 +49,51 @@ export default function AuditPage() {
   const fetchLogs = async () => {
     setIsRefreshing(true);
     try {
-      const data = await getAuditLogs();
-      setLogs(data as AuditLog[]);
-      setFilteredLogs(data as AuditLog[]);
-    } catch (error) {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('tenant_id')
+          .eq('id', user.id)
+          .single();
+        if (userData?.tenant_id) {
+          tenantId = userData.tenant_id;
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select(`
+          *,
+          users:changed_by_id(full_name)
+        `)
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching logs:', error);
+        toast.error('Lỗi khi tải nhật ký: ' + error.message);
+        return;
+      }
+
+      const formattedLogs = data?.map((log: any) => ({
+        id: log.id,
+        user_name: log.users?.full_name || 'Hệ thống',
+        action: log.action,
+        table_name: log.table_name,
+        record_id: log.record_id,
+        old_data: log.old_data,
+        new_data: log.new_data,
+        created_at: log.created_at
+      })) || [];
+
+      setLogs(formattedLogs);
+      setFilteredLogs(formattedLogs);
+    } catch (error: any) {
       console.error('Error fetching logs:', error);
-      toast.error('Không thể tải nhật ký hệ thống.');
+      toast.error('Không thể tải nhật ký hệ thống: ' + (error.message || 'Lỗi không xác định'));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
