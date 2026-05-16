@@ -447,7 +447,7 @@ export default function CustomerDetailPage() {
             {[
               { label: 'Tiến độ', value: activeBooking ? `${activeBooking.completed_sessions || 0}/${activeBooking.total_sessions || 0}` : '0/0', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
               ...(userRole === 'admin' ? [{ 
-                label: activeBooking && activeBooking.deposit_amount >= (activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100) ? 'Đã thanh toán thành công' : 'Đã cọc', 
+                label: activeBooking && ((activeBooking.full_price || 0) > 0 || (activeBooking.deposit_amount || 0) > 0) && activeBooking.deposit_amount >= (activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100) ? 'Đã thanh toán thành công' : 'Đã cọc', 
                 value: activeBooking ? formatNumberWithSeparator(activeBooking.deposit_amount || 0) + 'đ' : '0đ', 
                 icon: DollarSign, 
                 color: 'text-primary', 
@@ -565,7 +565,7 @@ export default function CustomerDetailPage() {
                         <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Còn lại</p>
                         <p className="font-black text-lg text-white">
                           {isDepositOnly ? '---' : (
-                            Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0)) === 0 
+                            ((activeBooking?.full_price || 0) > 0 || (activeBooking?.deposit_amount || 0) > 0) && Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0)) === 0 
                               ? <span className="text-emerald-300">Đã thanh toán đủ</span>
                               : formatNumberWithSeparator(Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0))) + 'đ'
                           )}
