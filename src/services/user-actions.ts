@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
@@ -7,11 +7,11 @@ import { recordAuditLog } from './audit-actions';
 export async function getCurrentUser() {
   const supabase = (await createClient()) as any;
   
-  // Use getSession() instead of getUser() — getSession() validates JWT locally
+  // Use getSession() instead of getUser() â€” getSession() validates JWT locally
   // (no extra network round-trip to Supabase Auth server). getUser() can silently
   // return null in server action contexts if the auth verification network call fails.
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  const { data: { user } } = await supabase.auth.getUser();
+  
   
   if (!user) {
     console.warn('[getCurrentUser] No active session found');
@@ -160,3 +160,4 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   await safeRevalidatePath('/dashboard/settings');
   return { success: true };
 }
+

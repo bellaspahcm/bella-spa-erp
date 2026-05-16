@@ -1338,3 +1338,4 @@ export async function generateShareToken(bookingId: string) {
   return { data: tokenData };
 }
 
+
