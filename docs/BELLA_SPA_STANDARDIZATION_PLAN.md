@@ -37,6 +37,10 @@
 *   **4.1. RLS Policy Audit:** Siết chặt quyền truy cập trên 16 bảng.
 *   **4.2. Data Integrity Script:** Rà soát và dọn dẹp các dữ liệu không nhất quán.
 
+### 5. Giai đoạn 5: Tối ưu hoá luồng dữ liệu & Giao diện (Workflow & UI Optimization)
+*   **5.1. Payroll UI Enhancement (Session Matrix):** Tối ưu giao diện đối soát lương, khắc phục lỗi RLS ẩn trên bảng `packages` để hiển thị động (dynamic columns) tất cả các dịch vụ, kết hợp thanh cuộn ngang thông minh đảm bảo trải nghiệm người dùng khi số lượng gói dịch vụ tăng cao.
+*   **5.2. Debugging & Error Handling:** Tách biệt luồng xử lý lỗi của client component và server action để không xảy ra tình trạng "crash ngầm".
+
 ---
 
 ## 📈 Trạng thái thực hiện
@@ -44,6 +48,7 @@
 - [x] **Giai đoạn 2**: Hoàn tất (Logic Hardening & Server Actions Refactor)
 - [x] **Giai đoạn 3**: Hoàn tất (Đã tích hợp BookingModal, Dynamic Packages UI, UI Standardization và Customer Portal/Messaging Center)
 - [x] **Giai đoạn 4**: Hoàn tất (Đã xác nhận & Triển khai các cấu hình Audit/Security/Chat RLS)
+- [x] **Giai đoạn 5**: Hoàn tất (Tối ưu Bảng đối soát Session Matrix & Sửa lỗi truy vấn RLS ẩn)
 
 ---
 **Ngày khởi tạo:** 15/05/2026

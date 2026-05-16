@@ -507,6 +507,7 @@ export default function SalaryPage() {
               <CalendarIcon className="w-8 h-8 text-primary" />
               Đối soát số buổi làm chi tiết
             </h2>
+
             <p className="text-slate-500 font-medium text-sm mt-1">Chi tiết số buổi thực hiện theo từng kỹ thuật viên và gói dịch vụ</p>
           </div>
           <button 
@@ -520,7 +521,7 @@ export default function SalaryPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full min-w-max text-left">
             <thead>
               <tr className="bg-slate-50/80 backdrop-blur-md">
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px] sticky left-0 z-20 bg-slate-50">Kỹ thuật viên</th>
