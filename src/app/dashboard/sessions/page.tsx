@@ -31,6 +31,7 @@ import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionL
 import { toast } from 'sonner';
 import { cn, resolvePackageName } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
+import { getCurrentUser } from '@/services/user-actions';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
@@ -51,7 +52,7 @@ function SessionsContent() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
-  const [userRole, setUserRole] = useState<'KTV' | 'ADMIN'>('KTV');
+  const [userRole, setUserRole] = useState<'KTV' | 'ADMIN' | ''>('');
   const [selectedSessionLog, setSelectedSessionLog] = useState<any>(null);
   const [currentNote, setCurrentNote] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
@@ -76,6 +77,15 @@ function SessionsContent() {
 
   useEffect(() => {
     loadSessions();
+    const fetchUser = async () => {
+      const user = await getCurrentUser();
+      if (user?.role?.toLowerCase() === 'admin') {
+        setUserRole('ADMIN');
+      } else {
+        setUserRole('KTV');
+      }
+    };
+    fetchUser();
 
     // REALTIME SUBSCRIPTION
     const supabase = createClient() as any;
@@ -297,7 +307,7 @@ function SessionsContent() {
     
     const finalStatus = forcedStatus || selectedStatus;
     
-    if (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled') {
+    if (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status)) {
       setToastMessage('Buổi tập này đã hoàn thành hoặc bị hủy. Chỉ Quản trị viên mới có quyền điều chỉnh lịch sử!');
       setShowToast(true);
       return;
@@ -520,7 +530,7 @@ function SessionsContent() {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="flex bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="hidden bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
             <button 
               onClick={() => setUserRole('KTV')}
               className={cn(
@@ -929,7 +939,7 @@ function SessionsContent() {
                                       type="date"
                                       value={selectedDate}
                                       onChange={(e) => setSelectedDate(e.target.value)}
-                                      disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                                      disabled={!selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                                       className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                                     />
                                 </div>
@@ -942,7 +952,7 @@ function SessionsContent() {
                                       type="time"
                                       value={selectedTime}
                                       onChange={(e) => setSelectedTime(e.target.value)}
-                                      disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                                      disabled={!selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                                       className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                                     />
                                 </div>
@@ -959,7 +969,7 @@ function SessionsContent() {
                                   { value: 'cancelled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
                                 ]}
                                 onChange={(value) => setSelectedStatus(value)}
-                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                               />
                             </div>
 
@@ -969,7 +979,7 @@ function SessionsContent() {
                                 placeholder="Hôm nay mẹ và bé thế nào? Các bước kỹ thuật đã thực hiện, lưu ý cho buổi sau..."
                                 value={currentNote}
                                 onChange={(e) => setCurrentNote(e.target.value)}
-                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                                 className="w-full h-32 p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50 text-xs shadow-inner"
                               />
                             </div>
@@ -989,14 +999,14 @@ function SessionsContent() {
                         <div className="flex flex-col gap-2">
                           <button 
                             onClick={() => handleSaveFullUpdate()}
-                            disabled={isSavingNote || !selectedSessionLog || (userRole !== 'ADMIN' && selectedSessionLog.status !== 'scheduled')}
+                            disabled={isSavingNote || !selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                             className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
                           >
                             {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
                             Cập nhật thông tin
                           </button>
 
-                          {userRole === 'ADMIN' && selectedSessionLog && selectedSessionLog.status !== 'scheduled' && (
+                          {userRole === 'ADMIN' && selectedSessionLog && !['scheduled', 'in_progress'].includes(selectedSessionLog.status) && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
                               <button 
                                 onClick={() => handleStatusChange('scheduled')}
