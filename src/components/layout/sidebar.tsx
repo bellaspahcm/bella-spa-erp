@@ -176,7 +176,7 @@ export function Sidebar() {
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
               </div>
               <div className="min-w-0">
-                <p className="text-[12px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'Admin'}</p>
+                <p className="text-[12px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'admin'}</p>
                 <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{roleLabel}</p>
               </div>
             </div>
