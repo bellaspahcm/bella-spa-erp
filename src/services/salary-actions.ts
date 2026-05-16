@@ -623,6 +623,9 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
 
 
 export async function getKtvSessionMatrix() {
+  const { unstable_noStore: noStore } = await import('next/cache');
+  noStore();
+  
   const supabase = (await createClient()) as any;
   
   try {
@@ -666,7 +669,7 @@ export async function getKtvSessionMatrix() {
     const matrix: Record<string, Record<string, number>> = {};
     
     // Fetch all available packages from the database to ensure all columns are shown
-    const { data: allPackages } = await supabase.from('packages').select('name');
+    const { data: allPackages, error: allPackagesError } = await supabase.from('packages').select('name');
     
     // Build list of package names from sessions AND available packages
     const dynamicPackageNames = new Set<string>();
@@ -721,7 +724,10 @@ export async function getKtvSessionMatrix() {
       return row;
     });
 
-    return { packageNames, ktvs: rows };
+    return { 
+      packageNames, 
+      ktvs: rows
+    };
   } catch (error) {
     console.error('Critical error in getKtvSessionMatrix:', error);
     return { ktvs: [], packageNames: [] };
