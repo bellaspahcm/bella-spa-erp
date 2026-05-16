@@ -332,7 +332,7 @@ export async function completeSession(sessionId: string, bookingId: string) {
     .single();
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
-    return { error: 'Unauthorized. Role: ' + (currentUser?.role || 'null') };
+    return { error: `DEBUG: ID: ${currentUser?.id || 'null'}, Role: ${currentUser?.role || 'null'}, Email: ${currentUser?.email || 'null'}` };
   }
 
   // 1. Get current booking to check assigned KTV
@@ -615,7 +615,7 @@ export async function updateSessionLog(id: string, payload: any) {
     .single();
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
-    return { error: 'Unauthorized. Role: ' + (currentUser?.role || 'null') };
+    return { error: `DEBUG: ID: ${currentUser?.id || 'null'}, Role: ${currentUser?.role || 'null'}, Email: ${currentUser?.email || 'null'}` };
   }
 
   const updates: any = { ...payload };
@@ -808,7 +808,7 @@ export async function saveSessionNote(sessionId: string, note: string) {
     .single();
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
-    return { error: 'Unauthorized. Role: ' + (currentUser?.role || 'null') };
+    return { error: `DEBUG: ID: ${currentUser?.id || 'null'}, Role: ${currentUser?.role || 'null'}, Email: ${currentUser?.email || 'null'}` };
   }
   
   const { error } = await supabase
