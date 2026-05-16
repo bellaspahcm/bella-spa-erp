@@ -332,7 +332,7 @@ export async function completeSession(sessionId: string, bookingId: string) {
     .single();
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
-    return { error: 'Buổi tập đã hoàn thành hoặc bị hủy.' };
+    return { error: 'Unauthorized. Role: ' + (currentUser?.role || 'null') };
   }
 
   // 1. Get current booking to check assigned KTV
@@ -615,7 +615,7 @@ export async function updateSessionLog(id: string, payload: any) {
     .single();
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
-    return { error: 'Buổi tập đã hoàn thành hoặc bị hủy. Chỉ Quản trị viên mới có quyền điều chỉnh thông tin này.' };
+    return { error: 'Unauthorized. Role: ' + (currentUser?.role || 'null') };
   }
 
   const updates: any = { ...payload };
@@ -808,7 +808,7 @@ export async function saveSessionNote(sessionId: string, note: string) {
     .single();
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
-    return { error: 'Không thể cập nhật ghi chú cho buổi tập đã hoàn thành.' };
+    return { error: 'Unauthorized. Role: ' + (currentUser?.role || 'null') };
   }
   
   const { error } = await supabase
@@ -1337,5 +1337,7 @@ export async function generateShareToken(bookingId: string) {
   
   return { data: tokenData };
 }
+
+
 
 
