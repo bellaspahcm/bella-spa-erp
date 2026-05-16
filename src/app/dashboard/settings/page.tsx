@@ -72,8 +72,6 @@ export default function SettingsPage() {
     email: "",
     role: "ktv",
   });
-  const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
   useEffect(() => {
     if (activeTab === "staff") {
@@ -95,22 +93,7 @@ export default function SettingsPage() {
         supabase.removeChannel(channel);
       };
     }
-    if (activeTab === "audit") {
-      fetchLogs();
-    }
   }, [activeTab]);
-
-  async function fetchLogs() {
-    setIsLoadingLogs(true);
-    try {
-      const data = await getAuditLogs();
-      setAuditLogs(data);
-    } catch (error) {
-      console.error("Error fetching logs:", error);
-    } finally {
-      setIsLoadingLogs(false);
-    }
-  }
 
   async function fetchUsers() {
     setIsLoadingUsers(true);
@@ -588,6 +571,7 @@ export default function SettingsPage() {
                   </div>
                 )}
               </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </div>
