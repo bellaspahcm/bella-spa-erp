@@ -533,18 +533,25 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap gap-4 mt-2">
-                    <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-[2rem] border border-white/20">
-                      <p className="text-[10px] text-rose-100/80 font-bold uppercase mb-1">Tổng cộng</p>
-                      <p className="font-black text-xl text-white">
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
+                      <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Tổng cộng</p>
+                      <p className="font-black text-lg text-white">
                         {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
                       </p>
                     </div>
 
-                    <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-[2rem] border border-white/20 flex items-center gap-4">
+                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
+                      <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Đã cọc</p>
+                      <p className="font-black text-lg text-white">
+                        {formatNumberWithSeparator(activeBooking?.deposit_amount || 0)}đ
+                      </p>
+                    </div>
+
+                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20 flex items-center gap-4">
                       <div>
-                        <p className="text-[10px] text-rose-100/80 font-bold uppercase mb-1">Còn lại</p>
-                        <p className="font-black text-xl text-white">
+                        <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Còn lại</p>
+                        <p className="font-black text-lg text-white">
                           {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0))) + 'đ'}
                         </p>
                       </div>
@@ -557,7 +564,7 @@ export default function CustomerDetailPage() {
                             });
                             setIsPaymentModalOpen(true);
                           }}
-                          className="bg-white text-rose-500 px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-xl active:scale-95 border border-white"
+                          className="bg-white text-rose-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-md active:scale-95 border border-white ml-2"
                         >
                           Thanh toán nốt
                         </button>
@@ -570,7 +577,7 @@ export default function CustomerDetailPage() {
                   {isDepositOnly ? (
                     <button 
                       onClick={() => setIsBookingModalOpen(true)}
-                      className="w-full flex items-center justify-center gap-3 bg-white text-rose-500 px-8 py-4 rounded-2xl font-black transition-all hover:scale-105 shadow-xl"
+                      className="w-full flex items-center justify-center gap-3 bg-white text-rose-500 px-6 py-3.5 rounded-2xl font-black transition-all hover:scale-105 shadow-xl"
                     >
                       CHỌN GÓI NGAY
                     </button>
@@ -581,7 +588,7 @@ export default function CustomerDetailPage() {
                           const cleanPhone = customer.phone.replace(/[^\d]/g, '');
                           window.open(`https://zalo.me/${cleanPhone}`, '_blank');
                         }}
-                        className="flex items-center justify-center gap-3 bg-white text-slate-900 px-8 py-4 rounded-2xl font-black transition-all hover:bg-rose-50 uppercase tracking-widest text-xs shadow-lg"
+                        className="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3.5 rounded-2xl font-black transition-all hover:bg-slate-50 uppercase tracking-widest text-[11px] shadow-lg"
                       >
                         <MessageCircle className="w-4 h-4" />
                         Gửi báo cáo Zalo
@@ -605,7 +612,7 @@ export default function CustomerDetailPage() {
                           navigator.clipboard.writeText(url);
                           toast.success('Đã sao chép link Cổng thông tin khách hàng');
                         }}
-                        className="flex items-center justify-center gap-3 bg-white/20 backdrop-blur-md text-white px-8 py-4 rounded-2xl font-black transition-all hover:bg-white/30 uppercase tracking-widest text-xs border border-white/20 shadow-lg"
+                        className="flex items-center justify-center gap-3 bg-white/20 backdrop-blur-md text-white px-6 py-3.5 rounded-2xl font-black transition-all hover:bg-white/30 uppercase tracking-widest text-[11px] border border-white/20 shadow-lg"
                       >
                         <Share2 className="w-4 h-4" />
                         Link Portal Khách
@@ -616,7 +623,7 @@ export default function CustomerDetailPage() {
                           disabled={activeBooking?.deposit_amount < activeBooking?.full_price}
                           onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
                           className={cn(
-                            "flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black transition-all uppercase tracking-widest text-xs",
+                            "flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl font-black transition-all uppercase tracking-widest text-[11px]",
                             activeBooking?.deposit_amount >= activeBooking?.full_price
                               ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20"
                               : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
