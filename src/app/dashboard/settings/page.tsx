@@ -25,7 +25,6 @@ import {
   X,
   ShieldAlert,
   BadgeCheck,
-  History,
   ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -36,7 +35,6 @@ import {
 } from "@/services/user-actions";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase-client";
-import { getAuditLogs } from "@/services/audit-actions";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -54,103 +52,12 @@ const item = {
   show: { y: 0, opacity: 1 },
 };
 
-const renderReadableChanges = (oldData: any, newData: any) => {
-  const fieldLabels: Record<string, string> = {
-    status: "Trạng thái",
-    full_name: "Họ tên",
-    email: "Email",
-    role: "Vai trò",
-    amount: "Số tiền",
-    category: "Hạng mục",
-    description: "Mô tả",
-    base_salary: "Lương cơ bản",
-    kpi_bonus: "Thưởng KPI",
-    violations_deduction: "Vi phạm/Giảm trừ",
-    service_percentage_bonus: "Tạm ứng",
-    ktv_name: "Nhân viên",
-    sessions_count: "Số buổi thực hiện",
-    avg_rating: "Đánh giá TB",
-  };
-
-  const ignoredFields = [
-    "id",
-    "created_at",
-    "updated_at",
-    "user_id",
-    "id_staff",
-  ];
-
-  const formatValue = (val: any) => {
-    if (val === "active") return "Hoạt động";
-    if (val === "inactive") return "Ngừng hoạt động";
-    if (val === "approved") return "Đã duyệt";
-    if (val === "draft") return "Nháp";
-    if (typeof val === "number") return val.toLocaleString("vi-VN") + "đ";
-    if (val === null || val === undefined) return "---";
-    return String(val);
-  };
-
-  // If one of them is null, it's a CREATE or DELETE
-  if (!oldData && newData)
-    return (
-      <span className="text-xs font-black text-emerald-500 uppercase tracking-[0.2em] italic">
-        Khởi tạo dữ liệu mới
-      </span>
-    );
-  if (oldData && !newData)
-    return (
-      <span className="text-xs font-black text-rose-500 uppercase tracking-[0.2em] italic">
-        Đã xóa khỏi hệ thống
-      </span>
-    );
-
-  const changes = [];
-  if (typeof newData === "object" && newData !== null) {
-    for (const key in newData) {
-      if (ignoredFields.includes(key)) continue;
-
-      const oldVal = oldData?.[key];
-      const newVal = newData[key];
-
-      if (oldVal !== newVal) {
-        changes.push(
-          <div
-            key={key}
-            className="flex items-center gap-4 text-[11px] font-bold py-1 border-b border-slate-50 last:border-none"
-          >
-            <span className="text-slate-400 w-32 shrink-0">
-              {fieldLabels[key] || key}:
-            </span>
-            <div className="flex items-center gap-3 overflow-hidden">
-              <span className="text-slate-400 line-through decoration-rose-200/50 truncate max-w-[150px]">
-                {formatValue(oldVal)}
-              </span>
-              <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
-              <span className="text-blue-600 bg-blue-50/50 px-2 py-0.5 rounded-md font-black">
-                {formatValue(newVal)}
-              </span>
-            </div>
-          </div>,
-        );
-      }
-    }
-  }
-
-  return changes.length > 0 ? (
-    <div className="space-y-1">{changes}</div>
-  ) : (
-    <span className="text-xs text-slate-400 italic">
-      Cập nhật thông tin hệ thống
-    </span>
-  );
-};
 
 const TABS = [
   { id: "general", label: "Thông tin chung", icon: Store },
   { id: "staff", label: "Nhân sự & Quyền", icon: Shield },
   { id: "notifications", label: "Thông báo", icon: Bell },
   { id: "appearance", label: "Giao diện", icon: Palette },
-  { id: "audit", label: "Nhật ký thay đổi", icon: History },
 ];
 
 export default function SettingsPage() {
@@ -681,133 +588,11 @@ export default function SettingsPage() {
                   </div>
                 )}
               </motion.div>
-            )}
           </AnimatePresence>
-
-          {activeTab === "audit" && (
-            <div className="hidden lg:block h-full border border-dashed border-pink-200 rounded-[3rem] flex items-center justify-center text-pink-300 font-bold italic">
-              Đang hiển thị Nhật ký bên dưới...
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Audit Log Section (Moved Below the Grid) */}
-      <AnimatePresence>
-        {activeTab === "audit" && (
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            className="mt-12 glass-pink rounded-[3rem] p-10 shadow-sm border border-white overflow-hidden"
-          >
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-600 shadow-inner">
-                <History className="w-7 h-7" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-black text-foreground uppercase tracking-tight">
-                  Nhật ký thay đổi hệ thống
-                </h2>
-                <p className="text-sm text-muted-foreground font-semibold">
-                  Toàn bộ lịch sử cập nhật và điều chỉnh dữ liệu Bella Spa
-                </p>
-              </div>
-            </div>
 
-            <div className="overflow-x-auto rounded-[2rem] border border-white bg-white/40 shadow-sm">
-              <table className="w-full text-left min-w-[800px]">
-                <thead>
-                  <tr className="border-b border-white/50 bg-white/20">
-                    <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">
-                      Thời điểm
-                    </th>
-                    <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">
-                      Quản trị viên
-                    </th>
-                    <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">
-                      Phân hệ
-                    </th>
-                    <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">
-                      Chi tiết thay đổi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/20">
-                  {isLoadingLogs ? (
-                    <tr>
-                      <td colSpan={4} className="py-24 text-center">
-                        <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-500 rounded-full animate-spin mx-auto mb-6" />
-                        <p className="text-slate-500 font-black uppercase tracking-widest text-xs">
-                          Đang truy xuất dữ liệu...
-                        </p>
-                      </td>
-                    </tr>
-                  ) : auditLogs.length > 0 ? (
-                    auditLogs.map((log) => (
-                      <tr
-                        key={log.id}
-                        className="group hover:bg-white/60 transition-all"
-                      >
-                        <td className="px-8 py-8 whitespace-nowrap">
-                          <p className="text-base font-black text-slate-900 tracking-tighter">
-                            {format(new Date(log.created_at), "HH:mm:ss")}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">
-                            {format(new Date(log.created_at), "dd/MM/yyyy")}
-                          </p>
-                        </td>
-                        <td className="px-8 py-8">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center text-slate-600 font-black text-xs border border-white shadow-sm">
-                              {log.user_name?.substring(0, 2).toUpperCase()}
-                            </div>
-                            <span className="text-sm font-black text-slate-800">
-                              {log.user_name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-8">
-                          <div className="flex flex-col gap-1.5">
-                            <span
-                              className={cn(
-                                "px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-[0.1em] inline-block w-fit shadow-sm border",
-                                log.action === "CREATE"
-                                  ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                  : log.action === "UPDATE"
-                                    ? "bg-blue-50 text-blue-600 border-blue-100"
-                                    : "bg-rose-50 text-rose-600 border-rose-100",
-                              )}
-                            >
-                              {log.action}
-                            </span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                              {log.module}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-8">
-                          <div className="flex flex-col gap-3">
-                            {renderReadableChanges(log.old_data, log.new_data)}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="py-24 text-center">
-                        <p className="text-muted-foreground font-bold italic text-lg">
-                          Chưa có bản ghi nào được lưu lại
-                        </p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Add Staff Modal */}
       <AnimatePresence>
