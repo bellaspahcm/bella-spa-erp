@@ -62,7 +62,7 @@ export async function getCurrentUser() {
     profile.role = profile.role?.toLowerCase();
   }
 
-  return profile;
+  return profile || { id: user.id, email: user.email, role: "user" };
 }
 
 
