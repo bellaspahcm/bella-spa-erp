@@ -174,26 +174,6 @@ export default function CustomersPage() {
         result = await createCustomer({
           ...formData
         });
-
-        if (!result.error && result.data && result.data.id && (selectedPackage || depositAmount)) {
-          const { createBooking } = await import('@/services/booking-actions');
-          const pkg = packages.find((p: any) => p.name === selectedPackage);
-          
-          const bookingPayload = {
-            customer_id: result.data.id,
-            package_id: pkg?.id || null,
-            package_name: selectedPackage || null,
-            deposit_amount: parseInt(depositAmount.replace(/[^\d]/g, '') || '0', 10),
-            full_price: pkg?.full_price || 0,
-            total_sessions: pkg?.total_sessions || 15
-          };
-          
-          const bookingResult = await createBooking(bookingPayload);
-          if (bookingResult.error) {
-             console.error("Booking error:", bookingResult.error);
-             toast.error("Tạo khách hàng thành công nhưng lỗi khi tạo gói: " + bookingResult.error);
-          }
-        }
       }
 
       if (result.error) {
@@ -227,8 +207,6 @@ export default function CustomersPage() {
       notes: '',
       gender_baby: 'unknown'
     });
-    setDepositAmount('');
-    setSelectedPackage('');
     setIsEditMode(false);
     setEditingCustomerId(null);
   };
@@ -243,8 +221,6 @@ export default function CustomersPage() {
       notes: customer.notes || '',
       gender_baby: customer.gender_baby || 'unknown'
     });
-    setDepositAmount(customer.deposit_amount?.toString().replace(/[^\d]/g, '') || '');
-    setSelectedPackage(customer.package_name || '');
     setIsEditMode(true);
     setEditingCustomerId(customer.id);
     setIsModalOpen(true);
@@ -764,64 +740,6 @@ export default function CustomersPage() {
                           </button>
                         ))}
                       </div>
-                    </div>
-                    <div className="space-y-2 relative">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Gói dịch vụ đăng ký</label>
-                      <div className="relative">
-                        <button 
-                          type="button"
-                          onClick={(e) => { e.preventDefault(); setIsServiceDropdownOpen(!isServiceDropdownOpen); }}
-                          className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none text-left font-bold text-slate-600"
-                        >
-                          <span>{selectedPackage || 'Chọn gói...'}</span>
-                          <motion.div animate={{ rotate: isServiceDropdownOpen ? 180 : 0 }}>
-                            <ChevronDown className="w-4 h-4" />
-                          </motion.div>
-                        </button>
-                        
-                        <AnimatePresence>
-                          {isServiceDropdownOpen && (
-                            <motion.div 
-                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                              animate={{ opacity: 1, y: 4, scale: 1 }}
-                              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                              className="absolute top-full left-0 right-0 mt-2 bg-white rounded-3xl shadow-2xl border border-slate-100 z-[60] overflow-hidden p-2"
-                            >
-                              <div className="max-h-[250px] overflow-auto custom-scrollbar">
-                                {packages.length > 0 ? (
-                                  packages.map((pkg) => (
-                                    <button
-                                      key={pkg.id}
-                                      type="button"
-                                      onClick={() => { setSelectedPackage(pkg.name); setIsServiceDropdownOpen(false); }}
-                                      className={cn(
-                                        "w-full text-left px-4 py-3 rounded-2xl text-sm font-bold transition-all",
-                                        selectedPackage === pkg.name ? "bg-rose-500 text-white shadow-lg shadow-rose-100" : "text-slate-600 hover:bg-slate-50"
-                                      )}
-                                    >
-                                      {pkg.name}
-                                    </button>
-                                  ))
-                                ) : (
-                                  <div className="p-4 text-center text-xs text-slate-400 font-bold">
-                                    Đang tải danh mục...
-                                  </div>
-                                )}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Số tiền đặt cọc (VNĐ)</label>
-                      <input 
-                        type="text" 
-                        value={depositAmount}
-                        onChange={(e) => setDepositAmount(formatNumberWithSeparator(e.target.value))}
-                        className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
-                        placeholder="VD: 2,000,000" 
-                      />
                     </div>
                   </div>
                   <div className="space-y-2">
