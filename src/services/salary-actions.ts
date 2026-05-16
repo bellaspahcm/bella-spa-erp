@@ -367,16 +367,6 @@ export async function getSalaryData() {
 
     const { data: ktvs, error: ktvError } = await ktvQuery;
 
-    // Fetch expenses to check for already approved salaries (real and mock)
-    const { data: expenses, error: expensesError } = await supabase
-      .from('expenses')
-      .select('description, tenant_id')
-      .eq('category', 'salary');
-
-    if (expensesError) {
-      console.error('Error fetching expenses for salary status:', expensesError);
-    }
-
     const realKtvs = ktvs || [];
 
     const { data: salaryRecords, error: salaryError } = await supabase
@@ -398,7 +388,6 @@ export async function getSalaryData() {
 
     const ktvSalaries = realKtvs.map((ktv: any) => {
         const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
-        const hasExpense = (expenses || []).some((e: any) => e.description?.toLowerCase().includes(ktv.full_name.toLowerCase()));
         
         const ktvCompletedSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
         // Use confirmed count from record if available, otherwise use live count
@@ -417,12 +406,7 @@ export async function getSalaryData() {
 
         const ratingBonus = ktvSessionsCount * bonusPerSession;
 
-        let status = 'pending'; 
-        if (hasExpense || record?.status === 'approved' || record?.status === 'pending_approval') {
-          status = 'approved';
-        } else if (record?.status === 'rejected') {
-          status = 'draft';
-        }
+        let status = record?.status || 'draft';
 
         const sessionBonus = ktvCompletedSessions.reduce((acc: number, s: any) => {
           return acc + (s.bookings?.ktv_commission || 150000);
@@ -668,7 +652,10 @@ export async function getKtvSessionMatrix() {
         bookings (
           id,
           package_name,
-          full_price
+          full_price,
+          packages (
+            name
+          )
         )
       `)
       .eq('status', 'completed');
@@ -677,8 +664,20 @@ export async function getKtvSessionMatrix() {
 
     // 4. Group sessions by KTV and package
     const matrix: Record<string, Record<string, number>> = {};
-    // Build list of package names from sessions to avoid mock reliance
+    
+    // Fetch all available packages from the database to ensure all columns are shown
+    const { data: allPackages } = await supabase.from('packages').select('name');
+    
+    // Build list of package names from sessions AND available packages
     const dynamicPackageNames = new Set<string>();
+    
+    // Add all existing packages to the columns list
+    if (allPackages) {
+      allPackages.forEach((pkg: any) => {
+        if (pkg.name) dynamicPackageNames.add(pkg.name);
+      });
+    }
+
     if (sessions) {
       sessions.forEach((s: any) => {
         const pkgName = s.bookings ? resolvePackageName(s.bookings) : 'Dịch vụ lẻ';
