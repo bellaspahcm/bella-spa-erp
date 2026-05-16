@@ -247,7 +247,7 @@ export default function DashboardPage() {
           <h1 className="text-4xl font-bold text-foreground tracking-tight uppercase">Dashboard</h1>
           <p className="text-muted-foreground font-semibold mt-1 flex items-center gap-2">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-            Chào buổi sáng, Bella Spa {userRole === 'admin' ? 'Admin' : 'KTV'}!
+            Chào buổi sáng, Bella Spa {userRole === 'admin' ? 'admin' : 'KTV'}!
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
