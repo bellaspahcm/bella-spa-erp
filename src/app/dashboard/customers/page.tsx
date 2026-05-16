@@ -125,7 +125,7 @@ export default function CustomersPage() {
         .order('name_mother', { ascending: true });
       if (error) throw error;
       
-      const enrichedCustomers = (data || []).map(c => {
+      const enrichedCustomers = (data || []).map((c: any) => {
         // Lấy booking mới nhất (nếu có)
         const latestBooking = c.bookings && c.bookings.length > 0 
           ? c.bookings.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0] 
