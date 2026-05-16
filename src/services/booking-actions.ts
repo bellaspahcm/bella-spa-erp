@@ -601,7 +601,7 @@ export async function updateSessionLog(id: string, payload: any) {
     .eq('id', id)
     .single();
 
-  if (currentUser?.role?.toLowerCase() !== 'admin' && existingLog?.status !== 'scheduled') {
+  if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
     return { error: 'Buổi tập đã hoàn thành hoặc bị hủy. Chỉ Quản trị viên mới có quyền điều chỉnh thông tin này.' };
   }
 
@@ -758,7 +758,7 @@ export async function saveSessionNote(sessionId: string, note: string) {
     .eq('id', sessionId)
     .single();
 
-  if (currentUser?.role?.toLowerCase() !== 'admin' && existingLog?.status !== 'scheduled') {
+  if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
     return { error: 'Không thể cập nhật ghi chú cho buổi tập đã hoàn thành.' };
   }
   
