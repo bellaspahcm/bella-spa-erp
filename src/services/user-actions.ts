@@ -57,6 +57,9 @@ export async function getCurrentUser() {
 
   if (!profile) {
     console.error('[getCurrentUser] No profile found for auth user:', user.email, '| auth_id:', user.id);
+  } else {
+    // Standardize role to lowercase to avoid case-sensitivity issues across the app
+    profile.role = profile.role?.toLowerCase();
   }
 
   return profile;

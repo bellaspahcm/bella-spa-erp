@@ -24,7 +24,9 @@ import {
   Briefcase,
   Loader2,
   RefreshCw,
-  MessageSquare
+  MessageSquare,
+  TrendingUp,
+  XCircle
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
@@ -228,15 +230,7 @@ function BookingsContent() {
         // but the date is already handled.
       }
 
-      // 1. If status changed to completed, use the specialized completeSession action
-      if (modalData.status === 'completed' && modalData.originalStatus !== 'completed') {
-        const result = await completeSession(modalData.id, modalData.bookingId);
-        if (result.error) {
-          toast.error('Lỗi khi cập nhật tiến độ: ' + result.error);
-          setIsUpdating(false);
-          return;
-        }
-      }
+      // 1. Status transitions are now handled directly by updateSessionLog to avoid race conditions
 
       // 2. Update Booking KTV if changed
       const supabase = createClient() as any;
@@ -448,7 +442,9 @@ function BookingsContent() {
                 <div className="absolute left-[11px] top-0 bottom-0 w-[2px] bg-slate-100 group-last:bottom-1/2"></div>
                 {/* Timeline Dot */}
                 <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border-4 border-white shadow-md z-10 ${
-                  session.status === 'completed' ? 'bg-emerald-500' : session.status === 'scheduled' ? 'bg-amber-500' : 'bg-slate-300'
+                  session.status === 'completed' ? 'bg-emerald-500' : 
+                  session.status === 'in_progress' ? 'bg-blue-500' : 
+                  session.status === 'scheduled' ? 'bg-amber-500' : 'bg-slate-300'
                 }`}></div>
 
                   <div 
@@ -569,7 +565,7 @@ function BookingsContent() {
                             sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
                             completedSessions: session.bookings?.completed_sessions || 0,
                             totalSessions: session.bookings?.total_sessions || 15,
-                            status: 'completed', // Auto-set to completed for check-in
+                            status: session.status === 'scheduled' ? 'in_progress' : session.status,
                             originalStatus: session.status,
                             sessionNumber: session.session_number || 1
                           };
@@ -579,7 +575,7 @@ function BookingsContent() {
                         }}
                         className="px-4 py-2 bg-primary hover:bg-rose-600 text-white rounded-xl font-bold text-xs transition-colors disabled:opacity-50 flex items-center gap-1 shadow-lg shadow-rose-100"
                       >
-                        Check-in
+                        Chăm sóc
                       </button>
                     </div>
                   </div>
@@ -731,8 +727,9 @@ function BookingsContent() {
                           value={modalData.status}
                           options={[
                             { value: 'scheduled', label: 'Sắp tới', icon: <Clock className="w-4 h-4" /> },
-                            { value: 'completed', label: 'Đã xong', icon: <CheckCircle2 className="w-4 h-4" /> },
-                            { value: 'canceled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
+                            { value: 'in_progress', label: 'Đang thực hiện', icon: <TrendingUp className="w-4 h-4" /> },
+                            { value: 'completed', label: 'Hoàn thành', icon: <CheckCircle2 className="w-4 h-4" /> },
+                            { value: 'canceled', label: 'Đã hủy', icon: <XCircle className="w-4 h-4" /> }
                           ]}
                           onChange={(value) => setModalData({...modalData, status: value})}
                         />
@@ -774,8 +771,8 @@ function BookingsContent() {
                           <MessageSquare className="w-5 h-5" />
                           <span className="text-xs font-black uppercase tracking-widest">Nội dung chăm sóc hôm nay</span>
                         </div>
-                        {modalData.status === 'completed' && (
-                          <span className="bg-emerald-100 text-emerald-600 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider animate-pulse">Đang check-in</span>
+                        {modalData.status === 'in_progress' && (
+                          <span className="bg-blue-100 text-blue-600 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider animate-pulse">Đang thực hiện</span>
                         )}
                       </div>
                       <textarea 
