@@ -273,7 +273,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       } else {
         toast.success('Tạo lịch hẹn thành công!');
         if (onSuccess) {
-          onSuccess();
+          await onSuccess();
         } else {
           onClose();
         }
