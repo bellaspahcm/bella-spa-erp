@@ -446,7 +446,7 @@ export default function CustomerDetailPage() {
             {[
               { label: 'Tiến độ', value: activeBooking ? `${activeBooking.completed_sessions || 0}/${activeBooking.total_sessions || 0}` : '0/0', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
               ...(userRole === 'admin' ? [{ 
-                label: activeBooking && activeBooking.deposit_amount >= activeBooking.full_price ? 'Đã thanh toán thành công' : 'Đã cọc', 
+                label: activeBooking && activeBooking.deposit_amount >= (activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100) ? 'Đã thanh toán thành công' : 'Đã cọc', 
                 value: activeBooking ? formatNumberWithSeparator(activeBooking.deposit_amount || 0) + 'đ' : '0đ', 
                 icon: DollarSign, 
                 color: 'text-primary', 
@@ -535,13 +535,22 @@ export default function CustomerDetailPage() {
                   
                   <div className="flex flex-wrap gap-3 mt-4">
                     <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
-                      <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Tổng cộng</p>
+                      <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Tổng cộng (Giá gốc)</p>
                       <p className="font-black text-lg text-white">
                         {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
                       </p>
                     </div>
 
-                    {(!activeBooking || isDepositOnly || (activeBooking.full_price || 0) > (activeBooking.deposit_amount || 0)) && (
+                    {!isDepositOnly && (activeBooking?.discount_percent || 0) > 0 && (
+                      <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
+                        <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Khuyến mãi ({activeBooking?.discount_percent}%)</p>
+                        <p className="font-black text-lg text-rose-200">
+                          -{formatNumberWithSeparator((activeBooking?.full_price || 0) * (activeBooking?.discount_percent || 0) / 100)}đ
+                        </p>
+                      </div>
+                    )}
+
+                    {(!activeBooking || isDepositOnly || ((activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100)) > (activeBooking.deposit_amount || 0)) && (
                       <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
                         <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Đã cọc</p>
                         <p className="font-black text-lg text-white">
@@ -554,15 +563,15 @@ export default function CustomerDetailPage() {
                       <div>
                         <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Còn lại</p>
                         <p className="font-black text-lg text-white">
-                          {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0))) + 'đ'}
+                          {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0))) + 'đ'}
                         </p>
                       </div>
-                      {!isDepositOnly && (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0) > 0 && (
+                      {!isDepositOnly && ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0) > 0 && (
                         <button 
                           onClick={() => {
                             setPaymentData({
                               ...paymentData,
-                              amount: (activeBooking?.full_price || 0) - (activeBooking?.deposit_amount || 0)
+                              amount: ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0)
                             });
                             setIsPaymentModalOpen(true);
                           }}
@@ -622,11 +631,11 @@ export default function CustomerDetailPage() {
 
                       {userRole === 'admin' && (
                         <button 
-                          disabled={activeBooking?.deposit_amount < activeBooking?.full_price}
+                          disabled={activeBooking?.deposit_amount < (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)}
                           onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
                           className={cn(
                             "flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl font-black transition-all uppercase tracking-widest text-[11px]",
-                            activeBooking?.deposit_amount >= activeBooking?.full_price
+                            activeBooking?.deposit_amount >= (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)
                               ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20"
                               : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
                           )}

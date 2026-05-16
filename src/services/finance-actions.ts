@@ -348,7 +348,7 @@ export async function getServicePerformance() {
 
     const { data: bookings, error } = await supabase
       .from('bookings')
-      .select('package_name, full_price, completed_sessions, total_sessions, ktv_commission, status')
+      .select('package_name, full_price, discount_percent, completed_sessions, total_sessions, ktv_commission, status')
       .eq('tenant_id', tenantId)
       .not('status', 'eq', 'cancelled');
 
@@ -380,7 +380,8 @@ export async function getServicePerformance() {
         };
       }
       byPackage[key].total_bookings += 1;
-      byPackage[key].total_revenue += Number(b.full_price || 0);
+      const actualPrice = Number(b.full_price || 0) * (1 - (b.discount_percent || 0)/100);
+      byPackage[key].total_revenue += actualPrice;
       // KTV cost = commission per session × completed sessions
       const commission = Number(b.ktv_commission || 150000);
       byPackage[key].total_ktv_cost += commission * Number(b.completed_sessions || 0);

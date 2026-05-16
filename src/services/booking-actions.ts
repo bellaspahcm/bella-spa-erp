@@ -170,6 +170,7 @@ export async function createBooking(formData: any) {
     deposit_amount: (existingBooking?.deposit_amount || 0) + (validatedData.deposit_amount || 0),
     total_sessions: validatedData.total_sessions,
     ktv_commission: lockedCommission, // Locked rate
+    discount_percent: validatedData.discount_percent || 0,
     start_date: validatedData.start_date || null,
     assigned_ktv_id: validatedData.assigned_ktv_id || null,
     preferred_time: validatedData.preferred_time || null,
@@ -1109,7 +1110,7 @@ export async function recordRemainingPayment(params: {
     // 2. Update the booking's deposit_amount (summing it up)
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')
-      .select('deposit_amount, full_price, status')
+      .select('deposit_amount, full_price, discount_percent, status')
       .eq('id', params.booking_id)
       .single();
 
@@ -1119,7 +1120,8 @@ export async function recordRemainingPayment(params: {
     
     // Determine new status - If paid in full, change from deposit_pending to booked/active
     let newStatus = booking.status;
-    if (newTotalPaid >= booking.full_price && (booking.status === 'deposit_pending' || booking.status === 'deposit')) {
+    const targetPrice = booking.full_price * (1 - (booking.discount_percent || 0)/100);
+    if (newTotalPaid >= targetPrice && (booking.status === 'deposit_pending' || booking.status === 'deposit')) {
       newStatus = 'booked';
     }
 

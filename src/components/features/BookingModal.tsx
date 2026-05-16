@@ -209,14 +209,11 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     const pkgPrice = Number(pkg.price || pkg.full_price || 0);
     setOriginalPrice(pkgPrice);
     
-    const discount = Number(discountPercent) || 0;
-    const finalPrice = pkgPrice - (pkgPrice * discount / 100);
-
     setFormData({
       ...formData,
       package_id: pkg.id,
       package_name: pkg.name,
-      full_price: finalPrice,
+      full_price: pkgPrice,
       total_sessions: Number(pkg.total_sessions || 10)
     });
   };
@@ -225,9 +222,6 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     const val = e.target.value;
     if (val === '' || (Number(val) >= 0 && Number(val) <= 100)) {
        setDiscountPercent(val);
-       const discount = Number(val) || 0;
-       const finalPrice = originalPrice - (originalPrice * discount / 100);
-       setFormData(prev => ({ ...prev, full_price: finalPrice }));
     }
   };
 
@@ -618,6 +612,12 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     <span className="font-bold">Tổng tiền gói</span>
                     <span className="font-bold">{formatNumberWithSeparator(formData.full_price)}đ</span>
                   </div>
+                  {Number(discountPercent) > 0 && (
+                    <div className="flex justify-between items-center mb-4 opacity-70">
+                      <span className="font-bold">Khuyến mãi giảm giá ({discountPercent}%)</span>
+                      <span className="font-bold text-rose-300">-{formatNumberWithSeparator(formData.full_price * Number(discountPercent) / 100)}đ</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mb-4 opacity-70">
                     <span className="font-bold">Tiền đã đặt cọc (Tổng)</span>
                     <span className="font-bold">-{formatNumberWithSeparator((draftBooking?.deposit_amount || 0) + formData.deposit_amount)}đ</span>
@@ -625,7 +625,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                   <div className="flex justify-between items-center pt-4 border-t border-white/10">
                     <span className="font-bold">Cần thanh toán thêm</span>
                     <span className="text-2xl font-bold text-primary">
-                      {formatNumberWithSeparator(Math.max(0, formData.full_price - (draftBooking?.deposit_amount || 0) - formData.deposit_amount))}đ
+                      {formatNumberWithSeparator(Math.max(0, formData.full_price * (1 - (Number(discountPercent) || 0) / 100) - (draftBooking?.deposit_amount || 0) - formData.deposit_amount))}đ
                     </span>
                   </div>
                 </div>

@@ -121,7 +121,7 @@ export default function CustomersPage() {
       const supabase = createBrowserClient();
       const { data, error } = await supabase
         .from('customers')
-        .select('*, bookings(deposit_amount, package_name, full_price, created_at)')
+        .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at)')
         .order('name_mother', { ascending: true });
       if (error) throw error;
       
@@ -135,7 +135,7 @@ export default function CustomersPage() {
           ...c,
           deposit_amount: latestBooking?.deposit_amount || '',
           package_name: latestBooking?.package_name || '',
-          is_fully_paid: latestBooking?.deposit_amount >= (latestBooking?.full_price || 999999999)
+          is_fully_paid: latestBooking?.deposit_amount >= ((latestBooking?.full_price || 999999999) * (1 - (latestBooking?.discount_percent || 0)/100))
         };
       });
       
