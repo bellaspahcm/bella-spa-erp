@@ -293,20 +293,7 @@ function BookingsContent() {
           <p className="text-slate-500 font-medium mt-1">Điều phối và theo dõi lịch chăm sóc</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-white p-1 rounded-2xl border border-slate-200 flex">
-            <button 
-              onClick={() => setView('list')}
-              className={`p-2 rounded-xl transition-all ${view === 'list' ? 'bg-primary text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              <List className="w-5 h-5" />
-            </button>
-            <button 
-              onClick={() => setView('calendar')}
-              className={`p-2 rounded-xl transition-all ${view === 'calendar' ? 'bg-primary text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              <LayoutGrid className="w-5 h-5" />
-            </button>
-          </div>
+
           <PremiumExportButton />
           <button 
             onClick={() => setShowCreateModal(true)}
@@ -320,7 +307,7 @@ function BookingsContent() {
 
       {/* Date Selector (Google Calendar Style Box) */}
       <AnimatePresence mode="wait">
-        {view === 'calendar' && (
+        {true && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -445,9 +432,9 @@ function BookingsContent() {
           <div className="flex justify-center py-20">
             <Loader2 className="w-10 h-10 text-slate-200 animate-spin" />
           </div>
-        ) : sessions.filter(s => view === 'list' || isSameDay(new Date(s.assigned_date || 0), selectedDate)).length > 0 ? (
+        ) : sessions.filter(s => isSameDay(new Date(s.assigned_date || 0), selectedDate)).length > 0 ? (
           sessions
-            .filter(s => view === 'list' || isSameDay(new Date(s.assigned_date || 0), selectedDate))
+            .filter(s => isSameDay(new Date(s.assigned_date || 0), selectedDate))
             .sort((a, b) => new Date(b.assigned_date).getTime() - new Date(a.assigned_date).getTime())
             .map((session: any, idx: number) => (
               <motion.div 
@@ -496,11 +483,6 @@ function BookingsContent() {
                     <div className="flex items-center gap-4 mb-3">
                       <div className="flex items-center gap-1.5 text-slate-900 font-black">
                         <Clock className="w-4 h-4 text-rose-500" />
-                        {view === 'list' && (
-                          <span className="text-slate-500 font-bold mr-2">
-                            {new Date(session.assigned_date).toLocaleDateString('vi-VN')}
-                          </span>
-                        )}
                         {session.assigned_time || '09:00 - 11:00'}
                       </div>
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
