@@ -14,7 +14,8 @@ import {
   ChevronRight,
   RefreshCw,
   X,
-  ArrowRight
+  ArrowRight,
+  Info
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase-client';
@@ -31,6 +32,122 @@ interface AuditLog {
   new_data: any;
   created_at: string;
 }
+
+const FIELD_TRANSLATIONS: Record<string, string> = {
+  amount: "Số tiền",
+  notes: "Ghi chú / Tên khoản",
+  status: "Trạng thái",
+  payment_method: "Hình thức thanh toán",
+  revenue_type: "Loại khoản thu",
+  description: "Mô tả",
+  category: "Danh mục",
+  total_price: "Tổng tiền",
+  customer_name: "Khách hàng",
+  full_name: "Họ và tên",
+  phone: "Số điện thoại",
+  role: "Chức vụ",
+  base_salary: "Lương cơ bản",
+  commission_amount: "Tiền hoa hồng",
+  allowance_amount: "Tiền phụ cấp",
+  deduction_amount: "Tiền phạt/trừ",
+  net_salary: "Thực lãnh",
+  month: "Tháng",
+  year: "Năm",
+  item_name: "Tên sản phẩm",
+  quantity: "Số lượng",
+  unit: "Đơn vị tính",
+  unit_price: "Đơn giá",
+  type: "Loại",
+  received_date: "Ngày nhận"
+};
+
+const VALUE_TRANSLATIONS: Record<string, string> = {
+  confirmed: "Đã xác nhận",
+  pending: "Chờ xử lý",
+  cancelled: "Đã hủy",
+  deposit: "Tiền cọc",
+  full_payment: "Thanh toán đủ",
+  installment: "Trả góp",
+  bank_transfer: "Chuyển khoản",
+  cash: "Tiền mặt",
+  card: "Quẹt thẻ",
+  admin: "Quản trị viên",
+  ktv: "Kỹ thuật viên",
+  receptionist: "Lễ tân",
+  accountant: "Kế toán"
+};
+
+function formatReadableValue(key: string, val: any) {
+  if (val === null || val === undefined) return 'Trống';
+  if (key === 'amount' || key.includes('salary') || key.includes('price')) {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(val));
+  }
+  if (typeof val === 'string' && VALUE_TRANSLATIONS[val]) {
+    return VALUE_TRANSLATIONS[val];
+  }
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+}
+
+const renderReadableChanges = (log: AuditLog) => {
+  if (log.action === 'INSERT' && log.new_data) {
+    const fields = Object.entries(log.new_data)
+      .filter(([k, v]) => k !== 'id' && k !== 'tenant_id' && k !== 'created_at' && k !== 'updated_at' && k !== 'booking_id' && k !== 'recorded_by_id' && v !== null && v !== '');
+    return (
+      <span>
+        Đã thêm mới bản ghi với các thông tin:{' '}
+        {fields.map(([k, v], i) => (
+          <span key={k}>
+            <strong className="font-semibold">{FIELD_TRANSLATIONS[k] || k}</strong>: {formatReadableValue(k, v)}
+            {i < fields.length - 1 ? ', ' : '.'}
+          </span>
+        ))}
+      </span>
+    );
+  }
+  
+  if (log.action === 'DELETE' && log.old_data) {
+     const fields = Object.entries(log.old_data)
+      .filter(([k, v]) => k !== 'id' && k !== 'tenant_id' && k !== 'created_at' && k !== 'updated_at' && k !== 'booking_id' && k !== 'recorded_by_id' && v !== null && v !== '');
+    return (
+      <span>
+        Đã xóa bản ghi. Dữ liệu trước khi xóa:{' '}
+        {fields.map(([k, v], i) => (
+          <span key={k}>
+            <strong className="font-semibold">{FIELD_TRANSLATIONS[k] || k}</strong>: {formatReadableValue(k, v)}
+            {i < fields.length - 1 ? ', ' : '.'}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  if (log.action === 'UPDATE' && log.old_data && log.new_data) {
+    const changes = [];
+    for (const key in log.new_data) {
+      if (key === 'id' || key === 'tenant_id' || key === 'updated_at' || key === 'created_at' || key === 'booking_id' || key === 'recorded_by_id') continue;
+      const oldVal = log.old_data[key];
+      const newVal = log.new_data[key];
+      if (oldVal !== newVal) {
+        changes.push({ key, oldVal, newVal });
+      }
+    }
+    if (changes.length === 0) return <span>Không có thông tin thay đổi cụ thể.</span>;
+    return (
+      <span>
+        Đã cập nhật:{' '}
+        {changes.map((c, i) => (
+          <span key={c.key}>
+            <strong className="font-semibold">{FIELD_TRANSLATIONS[c.key] || c.key}</strong>: từ <span className="line-through opacity-70">"{formatReadableValue(c.key, c.oldVal)}"</span> thành <span className="text-rose-600 font-medium">"{formatReadableValue(c.key, c.newVal)}"</span>
+            {i < changes.length - 1 ? '; ' : '.'}
+          </span>
+        ))}
+      </span>
+    );
+  }
+  
+  return <span>Không có thông tin chi tiết.</span>;
+};
 
 export default function AuditPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -362,6 +479,15 @@ export default function AuditPage() {
               </div>
 
               <div className="p-6 max-h-[70vh] overflow-y-auto">
+                <div className="mb-8 bg-blue-50/50 border border-blue-100 rounded-2xl p-5">
+                  <h4 className="text-sm font-bold text-blue-900 uppercase tracking-widest flex items-center gap-2 mb-3">
+                    <Info className="w-4 h-4" /> Diễn giải nội dung thay đổi (Dành cho Quản lý)
+                  </h4>
+                  <p className="text-slate-700 leading-relaxed text-sm">
+                    {renderReadableChanges(selectedLog)}
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Old Data */}
                   <div className="space-y-3">
