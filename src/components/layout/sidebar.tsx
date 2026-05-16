@@ -63,10 +63,10 @@ export function Sidebar() {
     fetchUser();
   }, []);
 
-  const filteredMenuItems = user?.role === 'customer'
+  const filteredMenuItems = user?.role?.toLowerCase() === 'customer'
     ? customerMenuItems
     : menuItems.filter(item => {
-        if (user?.role === 'ktv') {
+        if (user?.role?.toLowerCase() === 'ktv') {
           // KTV cannot see Finance, Settings, Salary management, Reconciliation, or Audit Trail
           return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống'].includes(item.label);
         }
@@ -74,7 +74,7 @@ export function Sidebar() {
       });
 
   // KTV gets a personal income shortcut instead
-  if (user?.role === 'ktv') {
+  if (user?.role?.toLowerCase() === 'ktv') {
     const hasIncome = filteredMenuItems.some((i: any) => i.label === 'Thu nhập cá nhân');
     if (!hasIncome) {
       filteredMenuItems.push({ icon: DollarSign, label: 'Thu nhập cá nhân', href: '/ktv/earnings' });
@@ -93,8 +93,8 @@ export function Sidebar() {
   };
 
   const roleLabel =
-    user?.role === 'ktv' ? 'Kỹ thuật viên'
-    : user?.role === 'customer' ? 'Khách hàng'
+    user?.role?.toLowerCase() === 'ktv' ? 'Kỹ thuật viên'
+    : user?.role?.toLowerCase() === 'customer' ? 'Khách hàng'
     : 'Quản trị viên';
 
   return (

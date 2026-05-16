@@ -106,7 +106,7 @@ export default function DashboardPage() {
           .eq('id', user.id)
           .single();
 
-        setUserRole((profile?.role as any) || 'ktv');
+        setUserRole((profile?.role?.toLowerCase() as any) || 'ktv');
       } catch {
         setUserRole('ktv');
       }
