@@ -541,12 +541,14 @@ export default function CustomerDetailPage() {
                       </p>
                     </div>
 
-                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
-                      <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Đã cọc</p>
-                      <p className="font-black text-lg text-white">
-                        {formatNumberWithSeparator(activeBooking?.deposit_amount || 0)}đ
-                      </p>
-                    </div>
+                    {(!activeBooking || isDepositOnly || (activeBooking.full_price || 0) > (activeBooking.deposit_amount || 0)) && (
+                      <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
+                        <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Đã cọc</p>
+                        <p className="font-black text-lg text-white">
+                          {formatNumberWithSeparator(activeBooking?.deposit_amount || 0)}đ
+                        </p>
+                      </div>
+                    )}
 
                     <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20 flex items-center gap-4">
                       <div>
