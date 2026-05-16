@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   ChevronRight,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Tag
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCustomers, createCustomer } from '@/services/customer-actions';
@@ -50,6 +51,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   const [ktvs, setKtvs] = useState<any[]>([]);
   const [packages, setPackages] = useState<any[]>([]);
   const [draftBooking, setDraftBooking] = useState<any>(null);
+  const [originalPrice, setOriginalPrice] = useState<number>(0);
+  const [discountPercent, setDiscountPercent] = useState<string>('');
 
   const [formData, setFormData] = useState({
     package_id: '',
@@ -75,6 +78,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       }
       setSearchQuery('');
       setNewCustomer({ name_mother: '', phone: '', address: '' });
+      setOriginalPrice(0);
+      setDiscountPercent('');
       fetchCustomers();
       fetchKtvs();
       fetchPackages();
@@ -134,6 +139,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
             assigned_ktv_id: draft.assigned_ktv_id || '',
           }));
           
+          setOriginalPrice(draft.full_price || 0);
+          
           if (draft.package_name) {
             toast.success(`Đã tự động nạp thông tin gói "${draft.package_name}" và số tiền cọc cũ.`);
           } else if (draft.deposit_amount > 0) {
@@ -153,6 +160,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
               preferred_time: '08:00',
               assigned_ktv_id: '',
             });
+            setOriginalPrice(0);
+            setDiscountPercent('');
           }
         }
       };
@@ -197,13 +206,29 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   }, [searchQuery, customers]);
 
   const handleSelectService = (pkg: any) => {
+    const pkgPrice = Number(pkg.price || pkg.full_price || 0);
+    setOriginalPrice(pkgPrice);
+    
+    const discount = Number(discountPercent) || 0;
+    const finalPrice = pkgPrice - (pkgPrice * discount / 100);
+
     setFormData({
       ...formData,
       package_id: pkg.id,
       package_name: pkg.name,
-      full_price: Number(pkg.price || pkg.full_price || 0),
+      full_price: finalPrice,
       total_sessions: Number(pkg.total_sessions || 10)
     });
+  };
+
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (val === '' || (Number(val) >= 0 && Number(val) <= 100)) {
+       setDiscountPercent(val);
+       const discount = Number(val) || 0;
+       const finalPrice = originalPrice - (originalPrice * discount / 100);
+       setFormData(prev => ({ ...prev, full_price: finalPrice }));
+    }
   };
 
   const handleSubmit = async () => {
@@ -565,6 +590,24 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     />
                     <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">đ</span>
                   </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-6">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Tag className="w-4 h-4" /> Ưu đãi giảm giá (%)
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      placeholder="0"
+                      min="0"
+                      max="100"
+                      value={discountPercent}
+                      onChange={handleDiscountChange}
+                      className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
+                    />
+                    <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
                   </div>
                 </div>
 
