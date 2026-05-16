@@ -121,10 +121,25 @@ export default function CustomersPage() {
       const supabase = createBrowserClient();
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select('*, bookings(deposit_amount, package_name, full_price, created_at)')
         .order('name_mother', { ascending: true });
       if (error) throw error;
-      setCustomers(data || []);
+      
+      const enrichedCustomers = (data || []).map(c => {
+        // Lấy booking mới nhất (nếu có)
+        const latestBooking = c.bookings && c.bookings.length > 0 
+          ? c.bookings.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0] 
+          : null;
+          
+        return {
+          ...c,
+          deposit_amount: latestBooking?.deposit_amount || '',
+          package_name: latestBooking?.package_name || '',
+          is_fully_paid: latestBooking?.deposit_amount >= (latestBooking?.full_price || 999999999)
+        };
+      });
+      
+      setCustomers(enrichedCustomers);
     } catch (error) {
       console.error('Error loading customers:', error);
     } finally {
@@ -153,16 +168,32 @@ export default function CustomersPage() {
       let result: any;
       if (isEditMode && editingCustomerId) {
         result = await updateCustomer(editingCustomerId, {
-          ...formData,
-          deposit_amount: depositAmount,
-          package_name: selectedPackage
+          ...formData
         });
       } else {
         result = await createCustomer({
-          ...formData,
-          deposit_amount: depositAmount,
-          package_name: selectedPackage
+          ...formData
         });
+
+        if (!result.error && result.data && result.data.id && (selectedPackage || depositAmount)) {
+          const { createBooking } = await import('@/services/booking-actions');
+          const pkg = packages.find((p: any) => p.name === selectedPackage);
+          
+          const bookingPayload = {
+            customer_id: result.data.id,
+            package_id: pkg?.id || null,
+            package_name: selectedPackage || null,
+            deposit_amount: parseInt(depositAmount.replace(/[^\d]/g, '') || '0', 10),
+            full_price: pkg?.full_price || 0,
+            total_sessions: pkg?.total_sessions || 15
+          };
+          
+          const bookingResult = await createBooking(bookingPayload);
+          if (bookingResult.error) {
+             console.error("Booking error:", bookingResult.error);
+             toast.error("Tạo khách hàng thành công nhưng lỗi khi tạo gói: " + bookingResult.error);
+          }
+        }
       }
 
       if (result.error) {
@@ -212,7 +243,7 @@ export default function CustomersPage() {
       notes: customer.notes || '',
       gender_baby: customer.gender_baby || 'unknown'
     });
-    setDepositAmount(customer.deposit_amount?.replace(/[^\d]/g, '') || '');
+    setDepositAmount(customer.deposit_amount?.toString().replace(/[^\d]/g, '') || '');
     setSelectedPackage(customer.package_name || '');
     setIsEditMode(true);
     setEditingCustomerId(customer.id);
