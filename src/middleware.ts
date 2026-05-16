@@ -43,7 +43,7 @@ export async function middleware(request: NextRequest) {
 
   // Calling getUser() triggers token refresh if the JWT is expired.
   // Do NOT remove this â€” it keeps sessions alive for Server Actions.
-  await supabase.auth.getUser();
+  const { data: { user }, error } = await supabase.auth.getUser(); console.log("[Middleware] User refresh:", !!user, error?.message);
 
   return response;
 }
