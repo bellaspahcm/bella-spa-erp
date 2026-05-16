@@ -167,8 +167,7 @@ export async function createCustomer(customerData: any) {
   const { data, error } = await supabase
     .from('customers')
     .insert([customerData])
-    .select()
-    .single();
+    .select();
   
   if (error) {
     console.error('Error creating customer:', error);
@@ -176,7 +175,7 @@ export async function createCustomer(customerData: any) {
   }
   
   revalidatePath('/dashboard/customers');
-  return { data, error: null, warning: null };
+  return { data: data?.[0] || null, error: null, warning: null };
 }
 
 /**
@@ -188,8 +187,7 @@ export async function updateCustomer(id: string, customerData: any) {
     .from('customers')
     .update(customerData)
     .eq('id', id)
-    .select()
-    .single();
+    .select();
   
   if (error) {
     console.error('Error updating customer:', error);
@@ -198,7 +196,7 @@ export async function updateCustomer(id: string, customerData: any) {
   
   revalidatePath('/dashboard/customers');
   revalidatePath(`/dashboard/customers/${id}`);
-  return { data, error: null, warning: null };
+  return { data: data?.[0] || null, error: null, warning: null };
 }
 
 /**

@@ -35,8 +35,7 @@ export async function createPackage(packageData: any) {
   const { data, error } = await supabase
     .from('packages')
     .insert([dbData])
-    .select()
-    .single();
+    .select();
 
   if (error) {
     console.error('Error creating package:', error);
@@ -44,7 +43,7 @@ export async function createPackage(packageData: any) {
   }
 
   safeRevalidatePath('/dashboard/services');
-  return { data };
+  return { data: data?.[0] };
 }
 
 export async function updatePackage(id: string, packageData: any) {
@@ -66,8 +65,7 @@ export async function updatePackage(id: string, packageData: any) {
     .from('packages')
     .update(dbData)
     .eq('id', id)
-    .select()
-    .single();
+    .select();
 
   if (error) {
     console.error('Error updating package:', error);
@@ -75,7 +73,7 @@ export async function updatePackage(id: string, packageData: any) {
   }
 
   safeRevalidatePath('/dashboard/services');
-  return { data };
+  return { data: data?.[0] };
 }
 
 export async function deletePackage(id: string) {

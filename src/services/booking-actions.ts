@@ -636,13 +636,13 @@ export async function updateSessionLog(id: string, payload: any) {
     .from('session_logs')
     .update(safeUpdates)
     .eq('id', id)
-    .select()
-    .single();
+    .select();
 
   if (error) {
     console.error('Error updating session log:', error);
     return { error: error.message };
   }
+
 
   // 3. Recalculate and sync completed_sessions for the booking
   const { count, error: countError } = await supabase
@@ -881,8 +881,7 @@ export async function createSessionLog(data: any) {
         status: data.status || 'scheduled'
       } as any,
     ])
-    .select()
-    .single();
+    .select();
 
   if (error) {
     console.error('Error creating session log:', error);
@@ -901,8 +900,7 @@ export async function updateBooking(id: string, payload: any) {
     .from('bookings')
     .update(payload)
     .eq('id', id)
-    .select()
-    .single();
+    .select();
 
   if (error) {
     // Fallback: If it's a "column not found" error for package_name or "type mismatch" for package_id
@@ -912,8 +910,7 @@ export async function updateBooking(id: string, payload: any) {
         .from('bookings')
         .update(retryPayload)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
       
       if (retryError) {
         console.error('Error updating booking (retry):', retryError);
@@ -1009,24 +1006,24 @@ export async function reusePackage(bookingId: string) {
     bookingData.package_name = original.package_name;
   }
 
-  const { data: newBooking, error: createError } = await supabase
+  const { data: newBookingData, error: createError } = await supabase
     .from('bookings')
     .insert([bookingData])
-    .select()
-    .single();
+    .select();
+
+  let newBooking = newBookingData?.[0];
 
   if (createError) {
     // Fallback: If it's a "column not found" error for package_name, try without it
     if (createError.message?.includes('package_name')) {
       delete bookingData.package_name;
-      const { data: retryBooking, error: retryError } = await supabase
+      const { data: retryBookingData, error: retryError } = await supabase
         .from('bookings')
         .insert([bookingData])
-        .select()
-        .single();
+        .select();
       
       if (retryError) return { error: 'Lỗi tạo gói mới: ' + retryError.message };
-      return finalizeReuse(retryBooking, original.total_sessions, supabase);
+      return finalizeReuse(retryBookingData?.[0], original.total_sessions, supabase);
     }
     return { error: 'Lỗi tạo gói mới: ' + createError.message };
   }
@@ -1275,19 +1272,20 @@ export async function generateShareToken(bookingId: string) {
     .from('bookings')
     .update({ share_token: token })
     .eq('id', bookingId)
-    .select()
-    .single();
+    .select();
     
   if (error) {
     console.error('Error generating share token:', error);
     return { error: error.message };
   }
   
+  const tokenData = data?.[0];
+  
   await safeRevalidatePath('/dashboard/customers');
-  if (data?.customer_id) {
-    await safeRevalidatePath(`/dashboard/customers/${data.customer_id}`);
+  if (tokenData?.customer_id) {
+    await safeRevalidatePath(`/dashboard/customers/${tokenData.customer_id}`);
   }
   
-  return { data };
+  return { data: tokenData };
 }
 
