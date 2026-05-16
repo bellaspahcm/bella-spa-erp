@@ -122,7 +122,7 @@ function BookingsContent() {
 
   const fetchKtvs = async () => {
     const data = await getUsers();
-    setKtvs(data.filter((u: any) => u.role === 'ktv'));
+    setKtvs(data.filter((u: any) => u.role?.toLowerCase() === 'ktv'));
   };
 
   const getMonthDays = (date: Date) => {

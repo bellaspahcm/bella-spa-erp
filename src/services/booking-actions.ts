@@ -425,7 +425,7 @@ export async function getSessionsWithDetails() {
     .order('created_at', { ascending: false });
 
   // If KTV, only show bookings where they are assigned
-  if (currentUser?.role === 'ktv') {
+  if (currentUser?.role?.toLowerCase() === 'ktv') {
     query = query.eq('assigned_ktv_id', currentUser.id);
   }
 
@@ -519,7 +519,7 @@ export async function getCalendarSessions() {
     .order('session_number', { ascending: true });
 
   // If KTV, only show sessions for their assigned bookings
-  if (currentUser?.role === 'ktv') {
+  if (currentUser?.role?.toLowerCase() === 'ktv') {
     query = query.eq('bookings.assigned_ktv_id', currentUser.id);
   }
 
@@ -601,7 +601,7 @@ export async function updateSessionLog(id: string, payload: any) {
     .eq('id', id)
     .single();
 
-  if (currentUser?.role !== 'admin' && existingLog?.status !== 'scheduled') {
+  if (currentUser?.role?.toLowerCase() !== 'admin' && existingLog?.status !== 'scheduled') {
     return { error: 'Buổi tập đã hoàn thành hoặc bị hủy. Chỉ Quản trị viên mới có quyền điều chỉnh thông tin này.' };
   }
 
@@ -758,7 +758,7 @@ export async function saveSessionNote(sessionId: string, note: string) {
     .eq('id', sessionId)
     .single();
 
-  if (currentUser?.role !== 'admin' && existingLog?.status !== 'scheduled') {
+  if (currentUser?.role?.toLowerCase() !== 'admin' && existingLog?.status !== 'scheduled') {
     return { error: 'Không thể cập nhật ghi chú cho buổi tập đã hoàn thành.' };
   }
   

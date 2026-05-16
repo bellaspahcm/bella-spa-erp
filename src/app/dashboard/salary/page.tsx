@@ -254,7 +254,7 @@ export default function SalaryPage() {
         </div>
         <div className="flex items-center gap-3">
           <PremiumExportButton />
-          {currentUser?.role !== 'ktv' && (
+          {currentUser?.role?.toLowerCase() !== 'ktv' && (
             <>
               <button
                 onClick={handlePublishAll}
@@ -287,7 +287,7 @@ export default function SalaryPage() {
               <DollarSign className="w-6 h-6 text-white" />
             </div>
             <p className="text-sm font-black text-white/90 uppercase tracking-widest mb-2">
-              {currentUser?.role === 'ktv' ? 'Thu nhập của bạn' : 'Tổng quỹ lương tháng'}
+              {currentUser?.role?.toLowerCase() === 'ktv' ? 'Thu nhập của bạn' : 'Tổng quỹ lương tháng'}
             </p>
             <h3 className="text-4xl font-black mb-4">{totalPayout.toLocaleString()}đ</h3>
             <div className="flex items-center gap-2 text-white/90 font-black text-sm">
@@ -372,7 +372,7 @@ export default function SalaryPage() {
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Tạm ứng</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[160px]">Tổng nhận</th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Trạng thái</th>
-                {currentUser?.role !== 'ktv' && (
+                {currentUser?.role?.toLowerCase() !== 'ktv' && (
                   <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[120px]">Thao tác</th>
                 )}
               </tr>
@@ -441,7 +441,7 @@ export default function SalaryPage() {
                     </div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
-                    {currentUser?.role !== 'ktv' && s.status !== 'approved' && (
+                    {currentUser?.role?.toLowerCase() !== 'ktv' && s.status !== 'approved' && (
                       <div className="flex gap-2">
                         <button 
                           onClick={() => openEditModal(s)}
@@ -468,7 +468,7 @@ export default function SalaryPage() {
                         </button>
                       </div>
                     )}
-                    {currentUser?.role === 'ktv' && (
+                    {currentUser?.role?.toLowerCase() === 'ktv' && (
                       <button 
                         onClick={() => handleExport(s)}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all font-bold text-xs"

@@ -361,7 +361,7 @@ export async function getSalaryData() {
       .eq('role', 'ktv');
 
     // If current user is KTV, they can only see their own data
-    if (currentUser?.role === 'ktv') {
+    if (currentUser?.role?.toLowerCase() === 'ktv') {
       ktvQuery.eq('id', currentUser.id);
     }
 

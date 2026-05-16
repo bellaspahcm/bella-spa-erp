@@ -71,7 +71,7 @@ export default function CustomerDetailPage() {
     async function checkRole() {
       const user = await getCurrentUser();
       if (user?.role) {
-        setUserRole(user.role as any);
+        setUserRole(user.role?.toLowerCase() as any);
       }
     }
     checkRole();
@@ -154,7 +154,7 @@ export default function CustomerDetailPage() {
   async function fetchKtvs() {
     try {
       const data = await getUsers();
-      setKtvs(data.filter((u: any) => u.role === 'ktv'));
+      setKtvs(data.filter((u: any) => u.role?.toLowerCase() === 'ktv'));
     } catch (error) {
       console.error('Error fetching KTVs:', error);
     }

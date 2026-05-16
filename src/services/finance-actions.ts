@@ -45,7 +45,7 @@ export async function getFinancialOverview() {
   const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
 
-  if (currentUser?.role === 'ktv') {
+  if (currentUser?.role?.toLowerCase() === 'ktv') {
     return { totalBalance: 0, totalRevenueMonth: 0, totalExpenseMonth: 0, transactions: [] };
   }
 

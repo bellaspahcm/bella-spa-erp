@@ -387,9 +387,9 @@ export default function SettingsPage() {
                                   <span
                                     className={cn(
                                       "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                                      user.role === "admin"
+                                      user.role?.toLowerCase() === "admin"
                                         ? "bg-rose-50 text-rose-600 border-rose-100"
-                                        : user.role === "ktv"
+                                        : user.role?.toLowerCase() === "ktv"
                                           ? "bg-blue-50 text-blue-600 border-blue-100"
                                           : "bg-slate-50 text-slate-600 border-slate-100",
                                     )}
