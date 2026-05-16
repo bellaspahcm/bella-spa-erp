@@ -52,7 +52,7 @@ function SessionsContent() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
-  const [userRole, setUserRole] = useState<'KTV' | 'ADMIN' | ''>('');
+  const [userRole, setUserRole] = useState<'KTV' | 'admin' | ''>('');
   const [selectedSessionLog, setSelectedSessionLog] = useState<any>(null);
   const [currentNote, setCurrentNote] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
@@ -80,7 +80,7 @@ function SessionsContent() {
     const fetchUser = async () => {
       const user = await getCurrentUser();
       if (user?.role?.toLowerCase() === 'admin') {
-        setUserRole('ADMIN');
+        setUserRole('admin');
       } else {
         setUserRole('KTV');
       }
@@ -234,7 +234,7 @@ function SessionsContent() {
       return;
     }
     
-    if (isUpdatedToday(booking) && userRole !== 'ADMIN') {
+    if (isUpdatedToday(booking) && userRole !== 'admin') {
       setToastMessage('Bạn đã cập nhật buổi tập hôm nay rồi. Chỉ Admin mới có quyền điều chỉnh thêm!');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
@@ -307,7 +307,7 @@ function SessionsContent() {
     
     const finalStatus = forcedStatus || selectedStatus;
     
-    if (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status)) {
+    if (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status)) {
       setToastMessage('Buổi tập này đã hoàn thành hoặc bị hủy. Chỉ Quản trị viên mới có quyền điều chỉnh lịch sử!');
       setShowToast(true);
       return;
@@ -391,7 +391,7 @@ function SessionsContent() {
   // Dedicated handler for Restore/Cancel - ONLY changes status & completed_date
   const handleStatusChange = async (newStatus: 'scheduled' | 'cancelled') => {
     if (!selectedSessionLog || !selectedBooking) return;
-    if (userRole !== 'ADMIN') return;
+    if (userRole !== 'admin') return;
 
     setIsSavingNote(true);
     try {
@@ -541,10 +541,10 @@ function SessionsContent() {
               <UserCircle className="w-3.5 h-3.5" /> KTV
             </button>
             <button 
-              onClick={() => setUserRole('ADMIN')}
+              onClick={() => setUserRole('admin')}
               className={cn(
                 "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                userRole === 'ADMIN' ? "bg-emerald-500 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
+                userRole === 'admin' ? "bg-emerald-500 text-white shadow-lg" : "text-slate-400 hover:text-slate-600"
               )}
             >
               <ShieldCheck className="w-3.5 h-3.5" /> Admin
@@ -642,7 +642,7 @@ function SessionsContent() {
             const alreadyDoneToday = isUpdatedToday(booking);
             const today = new Date().toLocaleDateString('sv-SE');
             const isScheduledForToday = booking.next_session_date === today;
-            const canUpdate = isScheduledForToday || userRole === 'ADMIN';
+            const canUpdate = isScheduledForToday || userRole === 'admin';
             const hasKtv = !!booking.assigned_ktv_id;
 
             return (
@@ -774,13 +774,13 @@ function SessionsContent() {
                       <button 
                         onClick={(e) => { 
                           e.stopPropagation(); 
-                          if (alreadyDoneToday && userRole !== 'ADMIN') {
+                          if (alreadyDoneToday && userRole !== 'admin') {
                             setToastMessage('Bạn đã cập nhật buổi tập hôm nay rồi!');
                             setShowToast(true);
                             setTimeout(() => setShowToast(false), 3000);
                             return;
                           }
-                          if (!isScheduledForToday && userRole !== 'ADMIN') {
+                          if (!isScheduledForToday && userRole !== 'admin') {
                             setToastMessage(`Buổi này được hẹn vào ngày ${booking.next_session_date || 'chưa xác định'}. Chỉ có thể cập nhật vào đúng ngày hẹn!`);
                             setShowToast(true);
                             setTimeout(() => setShowToast(false), 3000);
@@ -791,16 +791,16 @@ function SessionsContent() {
                         disabled={isUpdating}
                         className={cn(
                           "w-full flex items-center gap-3 px-8 py-4 rounded-2xl font-black transition-all text-[10px] uppercase tracking-widest justify-center shadow-lg active:scale-95",
-                          (alreadyDoneToday || (!isScheduledForToday && userRole !== 'ADMIN')) 
+                          (alreadyDoneToday || (!isScheduledForToday && userRole !== 'admin')) 
                             ? "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed" 
                             : "bg-primary text-white shadow-pink-100 hover:bg-primary-hover"
                         )}
                       >
                         {isUpdating ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : alreadyDoneToday && userRole !== 'ADMIN' ? (
+                        ) : alreadyDoneToday && userRole !== 'admin' ? (
                           <><CheckCircle2 className="w-4 h-4" /> Đã xong hôm nay</>
-                        ) : !isScheduledForToday && userRole !== 'ADMIN' ? (
+                        ) : !isScheduledForToday && userRole !== 'admin' ? (
                           <><Clock className="w-4 h-4" /> Chưa đến ngày ({booking.next_session_date || '---'})</>
                         ) : (
                           <><ChevronRight className="w-4 h-4" /> Cập nhật buổi {(booking.completed_sessions || 0) + 1}</>
@@ -871,9 +871,9 @@ function SessionsContent() {
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "flex items-center gap-2 px-4 py-2 rounded-xl border font-black text-[10px] uppercase tracking-widest",
-                    userRole === 'ADMIN' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
+                    userRole === 'admin' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
                   )}>
-                    {userRole === 'ADMIN' ? <ShieldCheck className="w-3 h-3" /> : <UserCircle className="w-3 h-3" />}
+                    {userRole === 'admin' ? <ShieldCheck className="w-3 h-3" /> : <UserCircle className="w-3 h-3" />}
                     Quyền: {userRole}
                   </div>
                   <Link
@@ -939,7 +939,7 @@ function SessionsContent() {
                                       type="date"
                                       value={selectedDate}
                                       onChange={(e) => setSelectedDate(e.target.value)}
-                                      disabled={!selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
+                                      disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                                       className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                                     />
                                 </div>
@@ -952,7 +952,7 @@ function SessionsContent() {
                                       type="time"
                                       value={selectedTime}
                                       onChange={(e) => setSelectedTime(e.target.value)}
-                                      disabled={!selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
+                                      disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                                       className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                                     />
                                 </div>
@@ -969,7 +969,7 @@ function SessionsContent() {
                                   { value: 'cancelled', label: 'Đã hủy', icon: <X className="w-4 h-4" /> }
                                 ]}
                                 onChange={(value) => setSelectedStatus(value)}
-                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
+                                disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                               />
                             </div>
 
@@ -979,7 +979,7 @@ function SessionsContent() {
                                 placeholder="Hôm nay mẹ và bé thế nào? Các bước kỹ thuật đã thực hiện, lưu ý cho buổi sau..."
                                 value={currentNote}
                                 onChange={(e) => setCurrentNote(e.target.value)}
-                                disabled={!selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
+                                disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                                 className="w-full h-32 p-4 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all disabled:opacity-50 text-xs shadow-inner"
                               />
                             </div>
@@ -999,14 +999,14 @@ function SessionsContent() {
                         <div className="flex flex-col gap-2">
                           <button 
                             onClick={() => handleSaveFullUpdate()}
-                            disabled={isSavingNote || !selectedSessionLog || (userRole !== 'ADMIN' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
+                            disabled={isSavingNote || !selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
                             className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
                           >
                             {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
                             Cập nhật thông tin
                           </button>
 
-                          {userRole === 'ADMIN' && selectedSessionLog && !['scheduled', 'in_progress'].includes(selectedSessionLog.status) && (
+                          {userRole === 'admin' && selectedSessionLog && !['scheduled', 'in_progress'].includes(selectedSessionLog.status) && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
                               <button 
                                 onClick={() => handleStatusChange('scheduled')}
@@ -1032,7 +1032,7 @@ function SessionsContent() {
                       </div>
                     </div>
 
-                    {userRole === 'ADMIN' && (
+                    {userRole === 'admin' && (
                       <div className="bg-amber-50 p-6 rounded-[2rem] border border-amber-200">
                         <div className="flex items-center gap-3 text-amber-700 font-black uppercase text-[10px] tracking-widest mb-2">
                           <AlertCircle className="w-4 h-4" /> Chế độ Admin
@@ -1060,7 +1060,7 @@ function SessionsContent() {
                         <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm relative group">
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Tổng cộng</p>
                           <p className="text-3xl font-black text-slate-900">{selectedBooking.total_sessions || 15}</p>
-                          {userRole === 'ADMIN' && (
+                          {userRole === 'admin' && (
                             <button 
                               onClick={() => handleAddExtraSession(selectedBooking.id)}
                               className="absolute top-1 right-1 p-1 bg-white/80 rounded-lg text-primary hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
@@ -1143,7 +1143,7 @@ function SessionsContent() {
                             const isUpdating = updatingId === log.id;
                             const nextScheduledIndex = sessionLogs.findIndex(l => l.status === 'scheduled');
                             const isNextToRun = status === 'scheduled' && i === nextScheduledIndex;
-                            const canEdit = userRole === 'ADMIN' || isNextToRun;
+                            const canEdit = userRole === 'admin' || isNextToRun;
 
                             return (
                               <div 
