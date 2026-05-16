@@ -10,7 +10,7 @@ export async function getCurrentUser() {
   // Use getSession() instead of getUser() â€” getSession() validates JWT locally
   // (no extra network round-trip to Supabase Auth server). getUser() can silently
   // return null in server action contexts if the auth verification network call fails.
-  let { data: { user } } = await supabase.auth.getUser(); if (!user) { const { data: { session } } = await supabase.auth.getSession(); user = session?.user ?? null; }
+  let { data: { user } } = await supabase.auth.getUser(); if (!user) { const { data: { session } } = await supabase.auth.getSession(); user = session?.user ?? null; console.log("[getCurrentUser] Auth result:", !!user, user?.id); }
   
   
   if (!user) {
