@@ -268,6 +268,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       // 2. Create the booking
       const result = await createBooking({
         ...formData,
+        discount_percent: discountPercent ? Number(discountPercent) : 0,
         customer_id: customerId
       });
 

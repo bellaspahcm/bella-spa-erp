@@ -159,6 +159,7 @@ export type Database = {
           end_date: string | null
           expected_birth_date: string | null
           full_price: number | null
+          discount_percent: number | null
           id: string
           is_in_care: boolean | null
           ktv_commission: number | null
@@ -185,6 +186,7 @@ export type Database = {
           end_date?: string | null
           expected_birth_date?: string | null
           full_price?: number | null
+          discount_percent?: number | null
           id?: string
           is_in_care?: boolean | null
           ktv_commission?: number | null
@@ -211,6 +213,7 @@ export type Database = {
           end_date?: string | null
           expected_birth_date?: string | null
           full_price?: number | null
+          discount_percent?: number | null
           id?: string
           is_in_care?: boolean | null
           ktv_commission?: number | null
