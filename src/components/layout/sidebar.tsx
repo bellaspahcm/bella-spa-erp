@@ -165,18 +165,18 @@ export function Sidebar() {
         </nav>
 
         {/* ── User Profile & Logout — pinned at bottom ── */}
-        <div className="px-4 pt-3 pb-5 shrink-0 relative z-10 border-t border-rose-100/40 bg-gradient-to-t from-rose-50/30 to-transparent">
+        <div className="mt-auto shrink-0 relative z-10 border-t border-rose-100/40 bg-white/60 backdrop-blur-md px-6 pt-5 pb-8">
           {/* Admin card */}
-          <div className="bg-white/80 p-2.5 rounded-[1.5rem] shadow-sm border border-rose-50 mb-2 group cursor-pointer hover:border-rose-200 transition-all">
-            <div className="flex items-center gap-2.5">
+          <div className="bg-white p-3 rounded-[1.5rem] shadow-sm border border-rose-50 mb-3 group cursor-pointer hover:border-rose-200 transition-all">
+            <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-xs shadow-md group-hover:scale-105 transition-transform">
+                <div className="w-9 h-9 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-sm shadow-md group-hover:scale-105 transition-transform">
                   {user?.full_name?.charAt(0) || 'B'}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
               </div>
               <div className="min-w-0">
-                <p className="text-[12px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'admin'}</p>
+                <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'admin'}</p>
                 <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{roleLabel}</p>
               </div>
             </div>
@@ -185,12 +185,12 @@ export function Sidebar() {
           {/* Logout */}
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-2.5 w-full px-3 py-1.5 text-slate-400 hover:text-rose-600 transition-all font-black text-[11px] uppercase tracking-[0.2em] group"
+            className="flex items-center gap-3 w-full px-3 py-2 text-slate-400 hover:text-rose-600 transition-all font-black text-[11px] uppercase tracking-[0.2em] group"
           >
-            <div className="w-6 h-6 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
-              <LogOut className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
+              <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
             </div>
-            Đăng xuất
+            ĐĂNG XUẤT
           </button>
         </div>
       </aside>
