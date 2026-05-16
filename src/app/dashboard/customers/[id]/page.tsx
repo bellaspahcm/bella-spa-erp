@@ -147,6 +147,7 @@ export default function CustomerDetailPage() {
       toast.error('Lỗi khi tải dữ liệu');
     } finally {
       setLoading(false);
+      router.refresh();
     }
   }, [id, targetBookingId]);
 
@@ -306,9 +307,9 @@ export default function CustomerDetailPage() {
       if (result.error) throw new Error(result.error);
       
       toast.success('Đã ghi nhận thanh toán thành công!');
+      await loadData();
       setIsPaymentModalOpen(false);
       setPaymentFile(null);
-      loadData();
     } catch (error: any) {
       toast.error('Lỗi: ' + error.message);
     } finally {
@@ -563,7 +564,11 @@ export default function CustomerDetailPage() {
                       <div>
                         <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Còn lại</p>
                         <p className="font-black text-lg text-white">
-                          {isDepositOnly ? '---' : formatNumberWithSeparator(Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0))) + 'đ'}
+                          {isDepositOnly ? '---' : (
+                            Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0)) === 0 
+                              ? <span className="text-emerald-300">Đã thanh toán đủ</span>
+                              : formatNumberWithSeparator(Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0))) + 'đ'
+                          )}
                         </p>
                       </div>
                       {!isDepositOnly && ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0) > 0 && (
@@ -795,7 +800,10 @@ export default function CustomerDetailPage() {
       <BookingModal 
         isOpen={isBookingModalOpen} 
         onClose={() => setIsBookingModalOpen(false)}
-        onSuccess={() => { setIsBookingModalOpen(false); loadData(); }}
+        onSuccess={async () => { 
+          await loadData();
+          setIsBookingModalOpen(false); 
+        }}
         preselectedCustomer={customer}
       />
 
