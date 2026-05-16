@@ -263,9 +263,9 @@ A: Có. Hệ thống có tính năng "Export dữ liệu" ra Excel bất kỳ l�
 
 ---
 
-**Document Version:** 1.3 — Executive Summary  
-**Cập nhật:** 16/05/2026
-**Trạng thái:** Đã hoàn thành hệ thống Tài chính, KTV Mobile, Portal Khách hàng, Quản lý Kho, Tối ưu hóa Luồng duyệt Lương (1-Loop Workflow, Session Matrix dynamic columns) và Trung tâm Tin nhắn (Messaging Center).
+**Document Version:** 1.4 — Executive Summary  
+**Cập nhật:** 16/05/2026 (Maintenance Update)
+**Trạng thái:** Đã hoàn thành hệ thống Tài chính, KTV Mobile, Quản lý Kho, Tối ưu hóa Luồng duyệt Lương và Trung tâm Tin nhắn. Đã dọn dẹp dữ liệu rác (TEST data), sửa lỗi Đối soát tài chính và tối ưu giao diện Sidebar.
 **Tiếp theo:** Tích hợp Zalo OA và các công cụ nhắc lịch tự động.
 
 ---
