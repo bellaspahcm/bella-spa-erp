@@ -14,6 +14,10 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 -- RLS for audit_logs
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT ON public.audit_logs TO authenticated;
+GRANT SELECT, INSERT ON public.audit_logs TO service_role;
+GRANT SELECT ON public.audit_logs TO anon;
+
 -- Admins can read audit logs for their tenant
 CREATE POLICY "Admins can view audit logs"
     ON public.audit_logs
