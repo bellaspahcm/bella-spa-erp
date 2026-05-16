@@ -321,6 +321,19 @@ export async function getSessionLogs(bookingId: string) {
 export async function completeSession(sessionId: string, bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
+  const { getCurrentUser } = await import('./user-actions');
+  const currentUser = await getCurrentUser();
+
+  // 0. Security Check
+  const { data: existingLog } = await supabase
+    .from('session_logs')
+    .select('status')
+    .eq('id', sessionId)
+    .single();
+
+  if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
+    return { error: 'Buổi tập đã hoàn thành hoặc bị hủy.' };
+  }
 
   // 1. Get current booking to check assigned KTV
   const { data: bookingData, error: bookingError } = await supabase
@@ -631,6 +644,19 @@ export async function updateSessionLog(id: string, payload: any) {
   if (logError) return { error: logError.message };
   const bookingId = logData.booking_id;
 
+  // 1.5 Auto-fill completion data if status changed to completed
+  if (safeUpdates.status === 'completed' && existingLog?.status !== 'completed') {
+    if (!safeUpdates.completed_date) {
+      safeUpdates.completed_date = new Date().toISOString();
+    }
+    if (!safeUpdates.completed_by_ktv_id) {
+      const { data: bData } = await supabase.from('bookings').select('assigned_ktv_id').eq('id', bookingId).single();
+      if (bData?.assigned_ktv_id) {
+        safeUpdates.completed_by_ktv_id = bData.assigned_ktv_id;
+      }
+    }
+  }
+
   // 2. Update the log
   const { data, error } = await supabase
     .from('session_logs')
@@ -652,7 +678,7 @@ export async function updateSessionLog(id: string, payload: any) {
     .eq('status', 'completed');
 
   if (!countError) {
-    const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, package_name, ktv_commission').eq('id', bookingId).single();
+    const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id').eq('id', bookingId).single();
     const today = new Date().toISOString().split('T')[0];
     const bUpdates: any = { 
       completed_sessions: count || 0,
@@ -721,6 +747,29 @@ export async function updateSessionLog(id: string, payload: any) {
             status: 'draft',
             tenant_id: tenantId
           }]);
+        }
+      }
+
+      // 3. Review Automation: Create pending review placeholder
+      if (currentBooking?.assigned_ktv_id) {
+        // Check if review already exists to avoid duplicates
+        const { data: existingReview } = await supabase
+          .from('session_reviews')
+          .select('id')
+          .eq('session_log_id', id)
+          .single();
+
+        if (!existingReview) {
+          await supabase
+            .from('session_reviews')
+            .insert([{
+              session_log_id: id,
+              reviewer_id: null,
+              ktv_id: currentBooking.assigned_ktv_id,
+              rating: 0,
+              status: 'pending_review',
+              tenant_id: currentBooking.tenant_id
+            } as any]);
         }
       }
     }

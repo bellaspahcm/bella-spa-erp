@@ -245,7 +245,7 @@ function SessionsContent() {
     
     try {
       const logs = await getSessionLogs(bookingId);
-      const nextSession = logs.find((log: any) => log.status === 'scheduled');
+      const nextSession = logs.find((log: any) => ['scheduled', 'in_progress'].includes(log.status));
       
       if (nextSession) {
         // Save note if provided
