@@ -59,7 +59,15 @@ export async function getBookingsByCustomerId(customerId: string) {
   const supabase = (await createClient()) as any;
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name), packages!bookings_package_id_fkey(name)')
+    .select(`
+      *, 
+      assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name, phone), 
+      packages!bookings_package_id_fkey(name),
+      session_logs(
+        *,
+        completed_by_ktv:users!session_logs_completed_by_ktv_id_fkey(full_name, phone)
+      )
+    `)
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false });
 

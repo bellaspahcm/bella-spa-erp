@@ -331,7 +331,10 @@ export default function CustomerDetailPage() {
   );
 
   const isDepositOnly = activeBooking && activeBooking.status === 'deposit_pending' && !activeBooking.package_id;
-  const nextSession = customer.sessions?.find((s: any) => s.status === 'scheduled');
+  const sortedSessions = activeBooking?.session_logs
+    ? [...activeBooking.session_logs].sort((a: any, b: any) => a.session_number - b.session_number)
+    : [];
+  const nextSession = sortedSessions.find((s: any) => s.status === 'scheduled');
   const isCompleted = activeBooking && activeBooking.completed_sessions >= (activeBooking.total_sessions || 15);
 
   return (
@@ -471,12 +474,17 @@ export default function CustomerDetailPage() {
           </div>
 
           <div className="bg-white rounded-[2.5rem] p-6 shadow-lg border border-primary/10 mb-8">
-            <div className="flex items-center justify-between mb-4 px-2">
+            <div className="flex items-center justify-between mb-2 px-2">
               <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Chọn gói liệu trình đang xem</p>
               <span className="px-3 py-1 bg-primary/5 text-primary text-[9px] font-black rounded-full uppercase">
                 Có {customer.allBookings?.length || 0} gói dịch vụ
               </span>
             </div>
+            {activeBooking && (
+              <p className="text-xs font-bold text-slate-500 mb-4 px-2">
+                Hệ thống đang hiển thị thông tin và tiến độ của gói: <span className="text-primary font-black">{activeBooking.package_name || activeBooking.packages?.name || (activeBooking.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Dịch vụ lẻ')}</span>
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
               {customer.allBookings?.length > 0 ? (
                 customer.allBookings.map((b: any) => (
@@ -700,9 +708,11 @@ export default function CustomerDetailPage() {
 
           <div className="bg-white rounded-[3rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                <History className="text-primary w-6 h-6" />
-                Lịch sử chăm sóc ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 15})
+              <h3 className="text-xl font-black text-slate-900 flex items-center gap-3 flex-wrap">
+                <History className="text-primary w-6 h-6 flex-shrink-0" />
+                <span>
+                  Lịch sử chăm sóc: <span className="text-primary">{activeBooking?.package_name || activeBooking?.packages?.name || (activeBooking?.status === 'deposit_pending' ? 'Phiếu Đặt Cọc' : 'Dịch vụ lẻ')}</span> ({activeBooking?.completed_sessions || 0}/{activeBooking?.total_sessions || 15})
+                </span>
               </h3>
               <button 
                 onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}`)}
@@ -757,8 +767,8 @@ export default function CustomerDetailPage() {
                 </div>
               ) : null}
 
-              {customer.sessions?.filter((s: any) => s.status === 'completed').length > 0 ? (
-                customer.sessions.filter((s: any) => s.status === 'completed').map((session: any) => (
+              {sortedSessions.filter((s: any) => s.status === 'completed').length > 0 ? (
+                sortedSessions.filter((s: any) => s.status === 'completed').map((session: any) => (
                   <div key={session.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-slate-100 transition-all group">
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
@@ -766,11 +776,15 @@ export default function CustomerDetailPage() {
                       </div>
                       <div>
                         <p className="font-black text-slate-800">{session.type || 'Chăm sóc liệu trình'} - Buổi {session.session_number}/{activeBooking?.total_sessions || 15}</p>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                          KTV: {activeBooking?.assigned_ktv?.full_name || 'Chưa phân công'} • {session.completed_date || session.assigned_date || 'Chưa cập nhật'}
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-wrap mt-1">
+                          <span>KTV: <strong className="text-slate-700">{session.completed_by_ktv?.full_name || activeBooking?.assigned_ktv?.full_name || 'Chưa phân công'}</strong>{session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone ? ` (${session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone})` : ''}</span>
+                          <span>•</span>
+                          <span>Hotline: <strong className="text-rose-500 font-black">0905 123 456</strong></span>
+                          <span>•</span>
+                          <span>{session.completed_date || session.assigned_date || 'Chưa cập nhật'}</span>
                         </p>
                         {session.notes && (
-                          <p className="text-[11px] font-medium text-slate-500 mt-1 line-clamp-1">{session.notes}</p>
+                          <p className="text-[11px] font-medium text-slate-500 mt-2 pl-3 border-l-2 border-slate-200">{session.notes}</p>
                         )}
                       </div>
                     </div>

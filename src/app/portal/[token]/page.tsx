@@ -84,6 +84,9 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
   const completedSessions = booking.session_logs.filter((s: any) => s.status === 'completed').length;
   const progress = (completedSessions / booking.total_sessions) * 100;
 
+  // Tìm buổi trị liệu đã hoàn thành gần nhất chưa được đánh giá
+  const pendingReviewSession = booking.session_logs.find((s: any) => s.status === 'completed' && !s.rating);
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20 font-sans">
       {/* Hero Section */}
@@ -101,10 +104,15 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
             </div>
           </div>
 
-          <h2 className="text-2xl font-black text-slate-900 mb-6 leading-tight">
-             Liệu trình <br/>
-             <span className="text-primary">{booking.package_name}</span>
-          </h2>
+          <div className="mb-6">
+            <h2 className="text-2xl font-black text-slate-900 leading-tight">
+               Liệu trình <br/>
+               <span className="text-primary">{booking.package_name || 'Gói dịch vụ'}</span>
+            </h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 bg-slate-50 border border-slate-100/50 inline-block px-3 py-1.5 rounded-full">
+              Mã dịch vụ: <span className="text-slate-800 font-black">#{booking.id.substring(0, 8).toUpperCase()}</span> • Đăng ký ngày: <span className="text-slate-800 font-black">{booking.created_at ? new Date(booking.created_at).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</span>
+            </p>
+          </div>
 
           {/* Progress Card */}
           <div className="bg-slate-900 rounded-[32px] p-6 text-white shadow-2xl shadow-slate-200">
@@ -137,6 +145,39 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
       </div>
 
       <div className="px-6 mt-10 space-y-8">
+        {/* Review Request Banner - Highly Prominent Call to Action */}
+        {pendingReviewSession && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gradient-to-br from-amber-50/90 to-rose-50/90 border border-amber-200/60 rounded-[32px] p-6 shadow-md shadow-pink-100/50 flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-400/5 rounded-full blur-xl -mr-12 -mt-12 pointer-events-none" />
+            
+            <div className="flex items-center gap-4 text-left relative z-10">
+              <div className="w-12 h-12 bg-amber-400 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-100 flex-shrink-0 animate-bounce">
+                <Star className="w-6 h-6 fill-current" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+                  Đánh giá buổi chăm sóc vừa qua
+                  <span className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                </h4>
+                <p className="text-xs text-slate-600 font-bold mt-1 leading-relaxed">
+                  Chị ơi, hãy dành 5s đánh giá chất lượng phục vụ của KTV <span className="text-rose-500 font-black">{pendingReviewSession.completed_by_ktv?.full_name || 'Bella Spa'}</span> ở buổi thứ <span className="text-rose-500 font-black">{pendingReviewSession.session_number}</span> để giúp Spa nâng cao chất lượng và tích điểm Loyalty nhé! 🥰
+                </p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setSelectedSession(pendingReviewSession)}
+              className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 whitespace-nowrap relative z-10"
+            >
+              <Sparkles className="w-4 h-4 text-white" />
+              Đánh giá ngay
+            </button>
+          </motion.div>
+        )}
+
         {/* Session History */}
         <section>
           <div className="flex items-center justify-between mb-4 px-2">
@@ -158,12 +199,12 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                   </div>
                   
                   <div className="flex-grow min-w-0">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buổi {session.session_number}</p>
                        {session.status === 'completed' && !session.rating && (
                           <button 
                             onClick={() => setSelectedSession(session)}
-                            className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest animate-pulse"
+                            className="bg-amber-400 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md shadow-amber-100/50 animate-bounce active:scale-95 transition-all"
                           >
                              Đánh giá ngay
                           </button>
@@ -176,11 +217,36 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                           </div>
                        )}
                     </div>
-                    <h4 className="text-sm font-black text-slate-900">
+                    <h4 className="text-sm font-black text-slate-900 mt-0.5">
                        {session.status === 'completed' ? 'Đã chăm sóc' : 'Chưa diễn ra'}
                     </h4>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                       {session.completed_date ? new Date(session.completed_date).toLocaleDateString('vi-VN') : session.assigned_date || 'Đang cập nhật'}
+                    
+                    {session.status === 'completed' ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50 w-fit">
+                        <span>KTV thực hiện:</span>
+                        <span className="text-primary font-black">{session.completed_by_ktv?.full_name || 'Bella Spa'}</span>
+                        <span className="text-slate-300 font-normal">|</span>
+                        <span>Hotline:</span>
+                        <a href="tel:0905123456" className="text-rose-500 hover:text-rose-600 font-black transition-colors underline decoration-dotted">0905 123 456</a>
+                      </div>
+                    ) : (
+                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50 w-fit">
+                        <span>KTV phụ trách:</span>
+                        <span className="text-slate-800 font-black">{booking.assigned_ktv?.full_name || 'Đang sắp xếp KTV'}</span>
+                        <span className="text-slate-300 font-normal">|</span>
+                        <span>Hotline:</span>
+                        <a href="tel:0905123456" className="text-rose-500 hover:text-rose-600 font-black transition-colors underline decoration-dotted">0905 123 456</a>
+                      </div>
+                    )}
+                    
+                    <p className="text-[10px] text-slate-400 font-medium mt-2">
+                       {session.completed_date ? 'Chăm sóc lúc: ' : 'Thời gian dự kiến: '}
+                       <span className="font-bold text-slate-600">
+                         {session.completed_date 
+                           ? new Date(session.completed_date).toLocaleDateString('vi-VN') 
+                           : (session.assigned_date || 'Đang cập nhật')
+                         }
+                       </span>
                     </p>
                   </div>
                 </div>
