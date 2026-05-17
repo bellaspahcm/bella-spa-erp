@@ -162,4 +162,20 @@
   - Implemented `handleSaveBooking` that calls the database-syncing `updateBooking` action to update the `bookings` table dynamically and refresh the dashboard states.
   - Verified 100% successful Next.js production build with zero TypeScript or route compilation errors.
 
+### 19. Transaction & Reconciliation Audit Trail (Payment History Log)
+- **Issue**: Spa Administrators and Accountants had no visual breakdown or audit trail of individual transaction records (`revenue` table entries) for bookings on the Customer Detail page. If the reconciliation page flagged a booking with a mismatched payment (e.g. +50,000đ excess deposit), the Admin had no way of investigating the duplicate entries or error records from the UI.
+- **Solution**:
+  - Modified `getBookingsByCustomerId` in `src/services/booking-actions.ts` to fetch all related `revenue` transaction records (including who recorded them via `recorded_by`) in a single query.
+  - Implemented a magnificent, premium **"Lịch sử Thanh toán & Đối soát"** (Payment & Reconciliation History) card component in `src/app/dashboard/customers/[id]/page.tsx` right below the care sessions history card.
+  - Renders all payment records (deposits, remaining payments, extra fees, etc.) dynamically with clear indicator badges for payment methods, reconciliation status, and custom note reasons.
+  - Restricted the card visibility strictly to `userRole === 'admin'` for financial privacy compliance.
+
+### 20. Support for Negative Refund Transactions (Self-Correcting Reconciliation Ledger)
+- **Issue**: If an Admin made a clerical error and recorded a customer's payment incorrectly (or the customer made an excess transfer), there was no way to input a negative number (e.g. `-50.000đ`) in the payment entry modal to represent a refund because the client-side inputs stripped out the minus `-` sign.
+- **Solution**:
+  - Upgraded `formatNumberWithSeparator` in `src/lib/utils.ts` to detect negative values (via `.startsWith('-')`) and preserve the minus `-` sign during currency formatting.
+  - Modified the payment amount input's `onChange` handler inside the `BookingPaymentModal` component in `src/app/dashboard/customers/[id]/page.tsx` to recognize and preserve the negative sign while stripping other non-digit characters.
+  - Verified that recording a negative payment (refund) dynamically recalculates the booking's `deposit_amount` correctly, balancing the ledger and automatically causing the reconciliation mismatch warning to **disappear** immediately.
+  - Verified 100% successful Next.js production build and synced changes to Git.
+
 

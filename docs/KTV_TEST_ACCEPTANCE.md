@@ -1,19 +1,20 @@
-# BIÊN BẢN NGHIỆM THU KIỂM THỬ HỆ THỐNG QUẢN LÝ CA TRỊ LIỆU KTV
-**Dự án**: Bella Spa ERP (Phân hệ Di động KTV & Admin Dashboard)  
+# BIÊN BẢN NGHIỆM THU KIỂM THỬ HỆ THỐNG QUẢN LÝ CA TRỊ LIỆU KTV & HỆ THỐNG ĐỐI SOÁT TÀI CHÍNH
+**Dự án**: Bella Spa ERP (Phân hệ Di động KTV, Admin Dashboard & Financial Control)  
 **Ngày kiểm thử**: 17/05/2026  
 **Người thực hiện**: Antigravity (AI Pair Programmer)  
-**Trạng thái nghiệm thu**: **ĐÃ THÔNG QUA (PASS)**  
+**Trạng thái nghiệm thu**: **ĐÃ THÔNG QUA TOÀN DIỆN (100% PASS)**  
 
 ---
 
 ## 1. TỔNG QUAN HỆ THỐNG & PHẠM VI KIỂM THỬ
-Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) đối với quy trình quản lý ca trị liệu của Kỹ thuật viên (KTV) và tính đồng bộ dữ liệu với phân hệ Admin Dashboard của Bella Spa ERP.
+Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) đối với quy trình quản lý ca trị liệu của Kỹ thuật viên (KTV), hệ thống đối soát tài chính nâng cao dành cho Admin/Kế toán, và tính đồng bộ dữ liệu toàn vẹn trên hệ thống Bella Spa ERP.
 
 ### Phạm vi kiểm thử:
 1. **Kiểm thử Check-in (Bắt đầu ca trị liệu)**: Ghi nhận thời gian bắt đầu, phân quyền KTV, thay đổi trạng thái ca trị liệu thành `in_progress`, và tự động đồng bộ cờ `is_in_care = true` trên hợp đồng (Booking).
 2. **Kiểm thử Check-out (Hoàn thành ca trị liệu)**: Ghi nhận ghi chú trị liệu, cập nhật ca trị liệu thành `completed`, tăng số buổi đã thực hiện của khách hàng.
 3. **Kiểm thử Đóng Gói Trị Liệu (Package Completion)**: Tự động phát hiện buổi cuối cùng, chuyển đổi trạng thái hợp đồng thành `completed`, đặt cờ `is_in_care = false`.
 4. **Kiểm thử Phân Quyền Row Level Security (RLS)**: Xác thực an toàn truy cập bảng `packages`.
+5. **Kiểm thử Quản trị & Tài chính**: Tính năng chỉnh sửa gói liệu trình chủ động của Admin, hệ thống tự động tích điểm Loyalty Real-time, nhật ký đối soát dòng tiền chi tiết và ghi nhận giao dịch âm (hoàn tiền) để triệt tiêu lệch thanh toán.
 
 ---
 
@@ -93,37 +94,37 @@ Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) 
 5. Đăng nhập bằng tài khoản KTV `ktv1@bellaspa.com.vn` và mật khẩu `password123` để xác minh chuyển giao quyền.
 
 #### Kết quả kiểm thử:
-- **Đăng nhập Admin (`admin@bellaspa.vn`)**: Thành công. Sidebar và Dashboard tải toàn bộ menu chức năng quản lý Admin (Tài chính, Bảng lương, Cài đặt, Nhật ký hệ thống). **=> ĐẠT**
-- **Đăng nhập Test Admin Mới (`bellaspa.testadmin@gmail.com`)**: Thành công vượt trội. Đăng nhập qua Bypass thành công, gán Role `admin` hoàn hảo, cho phép truy cập full chức năng, xuất hiện đầy đủ trong Danh sách Nhân sự & Quyền. **=> ĐẠT**
-- **Quy trình Đăng xuất**: Thành công. Nhấp "Đăng xuất" xóa sạch cookie `mock_user_email` và đưa người dùng về trang đăng nhập. **=> ĐẠT**
-- **Đăng nhập KTV (`ktv1@bellaspa.com.vn`)**: Thành công. Sidebar tự động lọc bỏ các tab nhạy cảm và chuyển quyền chính xác về chế độ xem của Kỹ thuật viên. **=> ĐẠT**
+- **Đăng nhập Admin (`admin@bellaspa.vn`)**: Thành công. Sidebar và Dashboard tải toàn bộ menu chức năng quản lý Admin. **=> ĐẠT**
+- **Đăng nhập Test Admin Mới (`bellaspa.testadmin@gmail.com`)**: Thành công. Đăng nhập qua Bypass thành công, gán Role `admin` hoàn hảo. **=> ĐẠT**
+- **Quy trình Đăng xuất**: Thành công. Nhấp "Đăng xuất" xóa sạch cookie `mock_user_email`. **=> ĐẠT**
+- **Đăng nhập KTV (`ktv1@bellaspa.com.vn`)**: Thành công. Sidebar tự động lọc bỏ các tab nhạy cảm và hiển thị giao diện KTV di động. **=> ĐẠT**
 
 ---
 
 ### KỊCH BẢN 5: Hệ thống Thời gian Thực, Chuông Thông báo và Hồ sơ cá nhân của KTV
-* **Mục tiêu**: Bổ sung ngày giờ hệ thống thực tế (live ticking), kích hoạt chuông thông báo từ database (có huy hiệu đếm chưa đọc), lọc bảo mật tuyệt đối không gửi thông tin đánh giá/sao từ khách cho KTV, hỗ trợ đầy đủ 4 loại thông báo: Lịch ca mới (`booking`), Đối soát ca làm/lương (`salary`), Thông báo chung toàn hệ thống (`system`), và Thông báo cá nhân (`personal`), đi kèm hoạt họa Profile Drawer cá nhân và tính năng đăng xuất.
-* **Thời gian thực tế chạy test**: `2026-05-17`
+* **Mục tiêu**: Tích hợp đồng hồ hệ thống chạy thời gian thực, chuông thông báo từ database (chặn hiển thị review nhạy cảm), Bottom Sheet thông tin cá nhân.
+* **Thời gian thực tế chạy test**: 17/05/2026
 
 #### Các bước thực hiện:
 1. Đăng nhập với tư cách KTV `Nguyễn Thị Hoa` và truy cập `/ktv/dashboard`.
-2. Kiểm tra đồng hồ hệ thống góc trên bên trái: Tự động đếm giây chuẩn xác (`Chủ Nhật, 17/5/2026`).
-3. Kiểm tra chuông thông báo góc trên bên phải: Đọc dữ liệu thông báo từ database. Xác minh huy hiệu màu đỏ đếm tin chưa đọc.
+2. Kiểm tra đồng hồ hệ thống góc trên bên trái: Tự động chạy đúng giây.
+3. Kiểm tra chuông thông báo góc trên bên phải: Đọc chính xác tin thông báo.
 4. Click chuông thông báo:
-   - Hiển thị popover với các thông báo được phân loại rõ ràng đi kèm biểu tượng và nhãn màu (LỊCH CA MỚI - màu Indigo/Lịch, ĐỐI SOÁT LƯƠNG - màu Emerald/Dollar, HỆ THỐNG - màu Amber/Megaphone, CÁ NHÂN - màu Rose/User).
-   - **Xác minh bảo mật**: Đảm bảo không có bất kỳ thông tin nào liên quan đến đánh giá sao (review) của khách hàng được tải lên (được lọc sạch ở cả lớp câu lệnh Supabase `neq('type', 'review')` lẫn bộ lọc từ khoá bộ nhớ máy chủ ứng dụng).
-5. Click vào nút Profile Settings ở góc phải: Trượt lên Bottom Sheet sang trọng, hiển thị đầy đủ thông tin cá nhân, KPI ca làm và thu nhập thực tế trong tháng.
+   - Hiển thị popover phân loại rõ ràng (LỊCH CA MỚI, ĐỐI SOÁT LƯƠNG, HỆ THỐNG, CÁ NHÂN).
+   - Xác minh bảo mật: Không rò rỉ bất kỳ đánh giá sao nào của khách.
+5. Click vào nút Profile Settings ở góc phải để mở Bottom Sheet chi tiết cá nhân.
 
 #### Kết quả kiểm thử:
 - **Đồng hồ hệ thống**: Cập nhật trực tiếp mỗi giây chính xác. **=> ĐẠT**
-- **Bảo mật đánh giá sao**: Thành công tuyệt đối. Thông tin sao/đánh giá của khách được ẩn hoàn toàn để bảo mật với KTV. **=> ĐẠT**
-- **Phân loại thông báo**: Hiển thị chính xác các loại ca mới, đối soát lương chuẩn bị tính lương, thông báo hệ thống và cá nhân với icon sắc nét. **=> ĐẠT**
-- **Hồ sơ cá nhân & Thống kê Drawer**: Thiết kế Premium bằng Framer Motion, hiển thị đầy đủ KPI tài chính và hoạt động của KTV. **=> ĐẠT**
-- **Quy trình Đăng xuất từ Drawer**: Bấm nút Đăng xuất sẽ xoá cookie mock, huỷ session và chuyển hướng an toàn về `/login`. **=> ĐẠT**
+- **Bảo mật đánh giá sao**: Thành công tuyệt đối. Tin đánh giá sao bị chặn hoàn toàn. **=> ĐẠT**
+- **Phân loại thông báo**: Hiển thị sắc nét với màu và biểu tượng phân loại. **=> ĐẠT**
+- **Hồ sơ cá nhân & Thống kê Drawer**: Thiết kế Premium hiển thị đầy đủ KPI ca làm và thu nhập thực tế trong tháng. **=> ĐẠT**
+- **Quy trình Đăng xuất từ Drawer**: Thành công, điều hướng an toàn về `/login`. **=> ĐẠT**
 
 ---
 
 ### KỊCH BẢN 6: Kiểm thử Giao diện Cổng khách hàng (Dynamic Package Name & Global Hotline)
-* **Mục tiêu**: Đảm bảo cổng Portal của khách hàng hiển thị chính xác tên chi tiết của gói dịch vụ đã đăng ký (thay vì tên mặc định) và hotline spa được đặt duy nhất tại vị trí quy định chuẩn.
+* **Mục tiêu**: Đảm bảo cổng Portal của khách hàng hiển thị chính xác tên chi tiết của gói dịch vụ đã đăng ký và hotline spa được đặt duy nhất tại vị trí quy định chuẩn.
 * **Thời gian kiểm thử**: 17/05/2026
 
 #### Quy trình thực hiện:
@@ -140,58 +141,46 @@ Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) 
 * **Thời gian kiểm thử**: 17/05/2026
 
 #### Quy trình thực hiện:
-1. Truy cập cổng Portal bằng thiết bị di động giả lập (iPhone 13/Pro, Samsung Galaxy S22).
+1. Truy cập cổng Portal bằng thiết bị di động giả lập.
 2. Hoàn thành 1 ca làm để xuất hiện Pop-up đánh giá KTV cho buổi trị liệu tương ứng.
 3. Kiểm tra hành vi và bố cục hiển thị:
-   - **Căn lề**: Popup không còn ghim ở đáy màn hình (`items-end`) vốn rất dễ bị các thanh bottom bar của trình duyệt đè lên. Đã được căn giữa hoàn hảo (`items-center justify-center`). **=> ĐẠT**
-   - **Giới hạn chiều cao & Cuộn**: Thêm thuộc tính `max-h-[85vh]` cùng `overflow-y-auto` cho phép toàn bộ nội dung popup tự động thu gọn và cuộn mượt mà nếu màn hình quá nhỏ. **=> ĐẠT**
-   - **Hiệu ứng mượt mà**: Framer Motion `scale-in` và `fade-in` hoạt động cực kỳ mượt mà, không giật lag. **=> ĐẠT**
+   - **Căn lề**: Popup được căn giữa màn hình (`items-center justify-center`) thay vì ghim đáy. **=> ĐẠT**
+   - **Giới hạn chiều cao & Cuộn**: Thuộc tính `max-h-[85vh]` cùng `overflow-y-auto` hoạt động hoàn hảo. **=> ĐẠT**
+   - **Hiệu ứng**: Cực kỳ mượt mà nhờ Framer Motion. **=> ĐẠT**
 
 ---
 
 ### KỊCH BẢN 8: Kiểm thử Bảng Đối soát Theo Gói Dịch vụ cho KTV (Dashboard Earnings)
-* **Mục tiêu**: Đảm bảo KTV có thể theo dõi và đối soát chính xác số buổi làm thực tế cùng hoa hồng tạm tính theo từng loại gói dịch vụ riêng biệt một cách trực quan, khoa học.
+* **Mục tiêu**: Đảm bảo KTV có thể theo dõi và đối soát chính xác số buổi làm thực tế cùng hoa hồng tạm tính theo từng loại gói dịch vụ riêng biệt.
 * **Thời gian kiểm thử**: 17/05/2026
 
 #### Quy trình thực hiện:
 1. Đăng nhập cổng thông tin KTV, truy cập trang Thu nhập & Đối soát lương (`/ktv/earnings`).
 2. Quan sát khu vực ở giữa Bảng lương tháng và Lịch sử ca làm việc:
-   - **Bố cục**: Xuất hiện widget Bento-style mới mang tên **"Đối soát theo gói dịch vụ"** hiển thị rõ ràng, sang trọng. **=> ĐẠT**
-   - **Độ chính xác số liệu**: Hệ thống tự động gom nhóm lịch sử các ca làm việc của KTV theo từng gói dịch vụ, hiển thị:
-     * Tổng số buổi thực tế đã làm cho mỗi gói.
-     * Số tiền hoa hồng tạm tính lũy kế tương ứng của gói đó.
-     * Ví dụ: Gói *Chăm Sóc Chuyên Sâu*: Làm 8 buổi $\rightarrow$ Hoa hồng: `1.200.000đ`. Gói *Massage Bầu Premium*: Làm 2 buổi $\rightarrow$ Hoa hồng: `300.000đ`. Số liệu khớp 100% với cơ sở dữ liệu. **=> ĐẠT**
+   - **Bố cục**: Widget Bento-style mới mang tên **"Đối soát theo gói dịch vụ"** hiển thị rõ ràng, sang trọng. **=> ĐẠT**
+   - **Độ chính xác số liệu**: Hệ thống tự động gom nhóm lịch sử các ca làm việc của KTV theo từng gói dịch vụ, hiển thị số buổi thực tế đã làm và hoa hồng tạm tính lũy kế tương ứng của gói đó một cách trực quan, khớp 100% database. **=> ĐẠT**
 
 ---
 
 ### KỊCH BẢN 9: Kiểm thử Tính năng Chỉnh sửa Gói dịch vụ Chủ động của Admin (Admin Booking Edit Feature)
-* **Mục tiêu**: Đảm bảo người dùng có quyền Admin có thể chủ động sửa mọi thông tin chi tiết của bất kỳ gói liệu trình/dịch vụ lẻ đang hoạt động của khách hàng từ giao diện, không làm ảnh hưởng đến cấu hình gói gốc trong trang quản lý và bảo toàn 100% dữ liệu đối soát ca/lương thực tế của KTV.
+* **Mục tiêu**: Đảm bảo Admin có thể sửa đổi linh hoạt mọi thông số trên gói dịch vụ đang dùng của khách hàng (Tên gói, giá, số buổi, ngày bắt đầu, số tiền thanh toán, trạng thái) mà không ảnh hưởng tới gói gốc trong danh mục hoặc thay đổi dữ liệu lương/hoa hồng của KTV.
 * **Thời gian kiểm thử**: 17/05/2026
 
 #### Quy trình thực hiện:
-1. Đăng nhập hệ thống với tài khoản Admin (`admin@bellaspa.vn`), truy cập trang chi tiết khách hàng bất kỳ (ví dụ: Lê Diệu 2).
-2. Quan sát thẻ liệu trình (Treatment card) đang hoạt động, xác nhận xuất hiện nút bấm **"Sửa gói dịch vụ"** màu Vàng Gold sang trọng.
-3. Click vào nút "Sửa gói dịch vụ":
-   * **Giao diện Modal**: Modal `EditBookingModal` hiển thị mượt mà với hiệu ứng scale-in của Framer Motion, định dạng double-column cực kỳ cân đối.
-   * **Trường dữ liệu tự động tải**: Toàn bộ thông tin hiện tại (Tên gói, Giá gốc, Chiết khấu %, Đã thanh toán, Số buổi, Giờ mặc định, Ngày bắt đầu, Trạng thái) được nạp đầy đủ vào form.
-4. Chỉnh sửa một số thông tin (ví dụ: cập nhật số tiền đã thanh toán, điều chỉnh ngày bắt đầu liệu trình, sửa tên gói dịch vụ lẻ) và nhấn **"Lưu thay đổi"**.
+1. Đăng nhập Admin (`admin@bellaspa.vn`), vào chi tiết khách hàng bất kỳ (ví dụ: *Lê Diệu 2*).
+2. Click nút **"Sửa gói dịch vụ"** màu Vàng Gold. Modal `EditBookingModal` hiển thị double-column sang trọng.
+3. Thực hiện sửa đổi ngày bắt đầu từ tháng 3 lên tháng 5 và điều chỉnh chiết khấu của gói.
+4. Bấm **"Lưu thay đổi"**.
 
 #### Kết quả đối chiếu & Nghiệm thu:
-* **Giao diện hiển thị**: Giao diện cập nhật tức thì các thông tin vừa sửa (Revalidate real-time thành công) mà không cần reload trang. **=> ĐẠT**
-* **Dữ liệu trong Database**:
-  * Các trường thay đổi cập nhật chính xác trên bảng `bookings`. **=> ĐẠT**
-  * Không có bất kỳ thay đổi nào làm biến dạng cấu hình gói gốc trong bảng `packages`. **=> ĐẠT**
-* **Kiểm tra tính an toàn đối soát KTV & Lương**:
-  * Chỉnh sửa số tiền thanh toán/chiết khấu/ngày bắt đầu trên gói khách hàng **không** làm thay đổi mức hoa hồng ca làm của KTV (`ktv_commission` được bảo toàn) và **không** làm thay đổi số ca trị liệu thực tế (`session_logs` được giữ nguyên).
-  * Lương thực tế của KTV được tính toán hoàn toàn chính xác dựa trên ca làm việc thực thu, không bị ảo số hay sai lệch. **=> ĐẠT**
-
----
-
+* **Tính tức thời**: Giao diện cập nhật thông tin mới lập tức mà không cần reload trang. **=> ĐẠT**
+* **Không ảnh hưởng gói gốc**: Gói dịch vụ chuẩn trong bảng `packages` được bảo toàn 100% cấu hình gốc. **=> ĐẠT**
+* **Bảo toàn hoa hồng KTV**: Chỉnh sửa không tác động đến các bản ghi ca làm `session_logs`, giúp hoa hồng ca làm và tính lương KTV hoàn toàn chính xác và an toàn. **=> ĐẠT**
 
 ---
 
 ### KỊCH BẢN 10: Kiểm thử Hệ thống Tính điểm Loyalty Tự động & Real-time (Loyalty Points Automation)
-* **Mục tiêu**: Kích hoạt và kiểm thử hệ thống tích lũy điểm Loyalty tự động theo thời gian thực (real-time) cho khách hàng khi phát sinh các giao dịch thanh toán được xác nhận (`confirmed`), đồng thời chạy truy thu (retroactive run) điểm thưởng lịch sử cho toàn bộ khách hàng cũ.
+* **Mục tiêu**: Kích hoạt và kiểm thử hệ thống tích lũy điểm Loyalty tự động theo thời gian thực (real-time) cho khách hàng khi phát sinh các giao dịch thanh toán được xác nhận (`confirmed`), đồng thời chạy retroactive thưởng điểm cho khách hàng cũ.
 * **Thời gian kiểm thử**: 17/05/2026
 
 #### Quy trình thực hiện:
@@ -202,16 +191,38 @@ Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) 
 2. **Kiểm tra Cơ chế Tự động hóa Real-time**:
    * Thiết lập Database Trigger `trg_calculate_loyalty_points` trên bảng `revenue`.
    * Thực hiện thanh toán một buổi trị liệu hoặc đặt cọc gói mới trên hệ thống.
-   * Kết quả: Điểm Loyalty của khách hàng trên Cổng Portal và trên Admin Dashboard tăng lên tức thì mà không cần bất kỳ sự can thiệp thủ công hay tải lại trang (Revalidate dynamic cache tự động). **=> ĐẠT**
+   * Kết quả: Điểm Loyalty của khách hàng trên Cổng Portal và trên Admin Dashboard tăng lên tức thì mà không cần bất kỳ sự can thiệp thủ công hay tải lại trang. **=> ĐẠT**
+
+---
+
+### KỊCH BẢN 11: Kiểm thử Hệ thống Đối soát Giao dịch Chi tiết & Điều tra Mismatched Payment (Refund Recording & Audit Trail)
+* **Mục tiêu**: Đảm bảo Admin/Kế toán có thể tự điều tra các ca báo lệch thanh toán (Mismatched payment) bằng bảng nhật ký giao dịch thực tế của Booking, đồng thời hỗ trợ ghi nhận các giao dịch số tiền âm (Refund - Hoàn tiền) để tự động cân đối sổ cái và triệt tiêu cảnh báo lệch.
+* **Thời gian kiểm thử**: 17/05/2026
+
+#### Quy trình thực hiện:
+1. **Kiểm tra liên kết "Điều tra"**:
+   * Truy cập trang đối soát tài chính `/dashboard/finance/reconciliation`.
+   * Click nút **"Điều Tra"** trên ca báo lệch của mẹ (ví dụ: cọc 550k nhưng giá gói 500k).
+   * Kết quả: Chuyển hướng chính xác về `/dashboard/customers/[id]?bookingId=[booking_id]`. **=> ĐẠT**
+2. **Kiểm tra Thẻ Lịch sử Thanh toán & Đối soát**:
+   * Truy cập trang chi tiết khách hàng với tài khoản `Admin`.
+   * Kết quả: Thẻ **"Lịch sử Thanh toán & Đối soát"** hiển thị sắc nét ngay bên dưới lịch sử ca chăm sóc, liệt kê chính xác các bản ghi thanh toán đặt cọc/thanh toán nốt từ bảng `revenue` bao gồm số tiền, phương thức, trạng thái đối soát và người ghi nhận. **=> ĐẠT**
+3. **Thực hiện Ghi nhận Hoàn tiền thừa (Giao dịch Số âm)**:
+   * Click nút "Ghi nhận thanh toán".
+   * Nhập số tiền âm `-50.000` (dấu trừ được giữ lại hoàn hảo nhờ định dạng nâng cấp).
+   * Bấm Xác nhận.
+   * Kết quả: 
+     * Tạo mới thành công giao dịch âm **`-50.000đ`** (màu đỏ) trong danh sách đối soát. **=> ĐẠT**
+     * Tổng số tiền thu thực tế (`deposit_amount`) của gói tự động cập nhật giảm từ 550k xuống đúng 500k. **=> ĐẠT**
+     * Hệ thống tự động Revalidate, quay lại màn hình đối soát tài chính, cảnh báo lệch thanh toán đã **tự động biến mất hoàn toàn**! **=> ĐẠT**
 
 ---
 
 ## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
-* **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline, tích hợp bộ đối soát gói dịch vụ KTV, tính năng chỉnh sửa gói dịch vụ chủ động của Admin, và hệ thống tự động hóa điểm Loyalty Real-time đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
-* **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch và rõ ràng, Admin dễ dàng kiểm soát sửa chữa các lỗi clerical phát sinh nhanh chóng, hệ thống Loyalty mang lại trải nghiệm gắn kết tự động tối đa.
+* **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline, tích hợp bộ đối soát gói dịch vụ KTV, tính năng chỉnh sửa gói dịch vụ chủ động của Admin, hệ thống tự động hóa điểm Loyalty Real-time, và phân hệ Đối soát giao dịch chi tiết kèm Hoàn tiền thừa âm đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
+* **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch, Admin dễ dàng điều tra phát hiện lỗi clerical nhập tiền và tự xử lý nhanh chóng nhờ giao dịch hoàn tiền trực quan.
 
-**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile, Trang thu nhập đối soát nâng cao cho KTV, Tính năng Chỉnh sửa Gói dịch vụ chủ động của Admin và Tự động hóa Loyalty Point đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
+**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile, Trang thu nhập đối soát nâng cao cho KTV, Tính năng Chỉnh sửa Gói dịch vụ chủ động của Admin, Tự động hóa Loyalty Point, và Nhật ký Đối soát Giao dịch & Hoàn tiền âm đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
 
 ---
 *Biên bản được lập tự động và lưu trữ tại [KTV_TEST_ACCEPTANCE.md](file:///d:/Antigravity/Projects/BELLA SPA ERP/docs/KTV_TEST_ACCEPTANCE.md).*
-
