@@ -140,3 +140,17 @@
   - Left the booking-specific care package detail indicator (`is_in_care` warning banner) intact so that admins can easily click through to view active therapy cards for active cares.
   - Verified 100% clean build using `npx tsc --noEmit`.
 
+### 17. Customer Detail Payment Stat Card UI Enhancement
+- **Issue**: In the Customer Detail page (`/dashboard/customers/[id]`), the main financial stat card displayed only the amount paid as a single value (e.g. `ĐÃ THANH TOÁN THÀNH CÔNG: 5.100.000đ`). This led to potential misunderstandings where administrators or staff could assume the package itself only cost that much money, overlooking the actual package original price and any applied discounts.
+- **Solution**:
+  - Refactored `src/app/dashboard/customers/[id]/page.tsx` to expand the payment stat card's layout dynamically:
+    - Updated the label to `'Đã thanh toán đủ'` instead of `'Đã thanh toán thành công'` when fully paid, which is cleaner and more professional.
+    - Rendered the actual amount paid as the primary prominent value.
+    - Added immediate, elegant sub-details displaying:
+      - The package's **original price** (`Giá gốc: [Số tiền]đ`) styled with a clean `line-through`.
+      - The **discount percentage** (`Đã giảm [Phần trăm]%`) when applicable.
+      - The **remaining balance owed** (`Còn nợ: [Số tiền]đ`) computed in real-time when the booking is not fully paid yet.
+  - Converted the container `<p>` to `<div>` to eliminate HTML DOM validation mismatch warnings.
+  - Verified 100% clean build using `npx tsc --noEmit`.
+
+
