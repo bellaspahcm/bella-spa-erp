@@ -164,11 +164,34 @@ Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) 
 
 ---
 
-## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
-* **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline và tích hợp bộ đối soát gói dịch vụ KTV đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
-* **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch và rõ ràng.
+### KỊCH BẢN 9: Kiểm thử Tính năng Chỉnh sửa Gói dịch vụ Chủ động của Admin (Admin Booking Edit Feature)
+* **Mục tiêu**: Đảm bảo người dùng có quyền Admin có thể chủ động sửa mọi thông tin chi tiết của bất kỳ gói liệu trình/dịch vụ lẻ đang hoạt động của khách hàng từ giao diện, không làm ảnh hưởng đến cấu hình gói gốc trong trang quản lý và bảo toàn 100% dữ liệu đối soát ca/lương thực tế của KTV.
+* **Thời gian kiểm thử**: 17/05/2026
 
-**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile và Trang thu nhập đối soát nâng cao cho KTV đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
+#### Quy trình thực hiện:
+1. Đăng nhập hệ thống với tài khoản Admin (`admin@bellaspa.vn`), truy cập trang chi tiết khách hàng bất kỳ (ví dụ: Lê Diệu 2).
+2. Quan sát thẻ liệu trình (Treatment card) đang hoạt động, xác nhận xuất hiện nút bấm **"Sửa gói dịch vụ"** màu Vàng Gold sang trọng.
+3. Click vào nút "Sửa gói dịch vụ":
+   * **Giao diện Modal**: Modal `EditBookingModal` hiển thị mượt mà với hiệu ứng scale-in của Framer Motion, định dạng double-column cực kỳ cân đối.
+   * **Trường dữ liệu tự động tải**: Toàn bộ thông tin hiện tại (Tên gói, Giá gốc, Chiết khấu %, Đã thanh toán, Số buổi, Giờ mặc định, Ngày bắt đầu, Trạng thái) được nạp đầy đủ vào form.
+4. Chỉnh sửa một số thông tin (ví dụ: cập nhật số tiền đã thanh toán, điều chỉnh ngày bắt đầu liệu trình, sửa tên gói dịch vụ lẻ) và nhấn **"Lưu thay đổi"**.
+
+#### Kết quả đối chiếu & Nghiệm thu:
+* **Giao diện hiển thị**: Giao diện cập nhật tức thì các thông tin vừa sửa (Revalidate real-time thành công) mà không cần reload trang. **=> ĐẠT**
+* **Dữ liệu trong Database**:
+  * Các trường thay đổi cập nhật chính xác trên bảng `bookings`. **=> ĐẠT**
+  * Không có bất kỳ thay đổi nào làm biến dạng cấu hình gói gốc trong bảng `packages`. **=> ĐẠT**
+* **Kiểm tra tính an toàn đối soát KTV & Lương**:
+  * Chỉnh sửa số tiền thanh toán/chiết khấu/ngày bắt đầu trên gói khách hàng **không** làm thay đổi mức hoa hồng ca làm của KTV (`ktv_commission` được bảo toàn) và **không** làm thay đổi số ca trị liệu thực tế (`session_logs` được giữ nguyên).
+  * Lương thực tế của KTV được tính toán hoàn toàn chính xác dựa trên ca làm việc thực thu, không bị ảo số hay sai lệch. **=> ĐẠT**
+
+---
+
+## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
+* **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline, tích hợp bộ đối soát gói dịch vụ KTV, và tính năng chỉnh sửa gói dịch vụ chủ động của Admin đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
+* **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch và rõ ràng, Admin dễ dàng kiểm soát sửa chữa các lỗi clerical phát sinh nhanh chóng.
+
+**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile, Trang thu nhập đối soát nâng cao cho KTV và Tính năng Chỉnh sửa Gói dịch vụ chủ động của Admin đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
 
 ---
 *Biên bản được lập tự động và lưu trữ tại [KTV_TEST_ACCEPTANCE.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/KTV_TEST_ACCEPTANCE.md).*
