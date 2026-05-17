@@ -132,3 +132,11 @@
   - Added dozens of missing property translation mappings in `FIELD_TRANSLATIONS` and `VALUE_TRANSLATIONS` to guarantee that all system mutations are described clearly and professionally.
   - Corrected table grid `colSpan` variables for loading and empty state layouts.
   - Verified 100% production build stability.
+
+### 16. Customer Profile List Card Payment Badge Removal
+- **Issue**: Customer profile list cards inside `/dashboard/customers` displayed a payment status badge (`Đã thanh toán: [Số tiền]` or `Cọc: [Số tiền]`). However, customers frequently purchase multiple distinct service packages over their lifetime, meaning this transaction/booking-specific financial data should not be treated as a static customer profile attribute. The customer cards should strictly represent personal identity information (Name, Phone, Address, Baby, etc.) to keep the list view clean and logically coherent.
+- **Solution**:
+  - Refactored `src/app/dashboard/customers/page.tsx` by removing the redundant, admin-only payment status badge block (`customer.deposit_amount && userRole === 'admin'`).
+  - Left the booking-specific care package detail indicator (`is_in_care` warning banner) intact so that admins can easily click through to view active therapy cards for active cares.
+  - Verified 100% clean build using `npx tsc --noEmit`.
+
