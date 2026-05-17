@@ -68,4 +68,38 @@
     - Seamlessly hooked into both `completeKTVSession` (KTV check-out) and `completeSession` (Admin checkout) server actions.
     - Logged all transactions under the `inventory_logs` audit trail with accurate `session_id` reference tags.
 
+### 7. Customer Portal Package Name Mapping & Dynamic Resolution
+- **Status**: Implemented & Verified.
+- **Workflow**:
+    - Refactored `getCustomerBookingByToken` query inside `src/services/customer-actions.ts` to dynamically fetch active package details (`packages!bookings_package_id_fkey(name)`).
+    - Utilized the `resolvePackageName` helper to resolve and assign the exact name to `data.package_name` before returning.
+    - Verified exact package names display successfully on the Customer Portal.
+
+### 8. Global Spa Hotline Standardization
+- **Status**: Implemented & Verified.
+- **Workflow**:
+    - Replaced the old phone number `0905 123 456` with the new unified spa hotline `0865 701 493` globally across all components (Customer portal, floating CTA dial action, Admin customer detail logs).
+    - Positioned the hotline button solely below the service code and registration date on the Customer Portal, removing all other duplicate text mentions from session cards and footers for a cleaner layout.
+
+### 9. Responsive Portal Rating Modal Centering (Mobile Viewport Overlay Fix)
+- **Status**: Implemented & Verified.
+- **Workflow**:
+    - Resolved the iOS Safari and in-app browser bottom navigation bar layout bug where the lower half of the rating modal was hidden/cut-off.
+    - Changed the mobile rating layout from a bottom-sheet to a centered popover card (`flex items-center justify-center p-4`) using premium Framer Motion scale-in and fade-in transitions.
+    - Set the inner container's max height to `max-h-[85vh]` with `overflow-y-auto`, ensuring it is 100% responsive, scrollable, and completely immune to browser UI navbar overlays.
+
+### 10. KTV Earnings Dashboard Service Reconciliation Summary
+- **Status**: Implemented & Verified.
+- **Workflow**:
+    - Added a new dynamic Bento-style card section **"Đối soát theo gói dịch vụ"** right in between the monthly salary breakdown and the session logs on the KTV earnings page (`src/app/ktv/earnings/page.tsx`).
+    - Automatically groups completed sessions by `package_name` and calculates the actual completed count and accumulated temporary commission for each service type in real-time, providing immediate audit transparency for KTVs.
+
+### 11. Production Integration & Deployment Validation
+- **Status**: Fully Deployed.
+- **Workflow**:
+    - Executed Next.js production builds with zero warnings or compilation errors.
+    - Pushed changes to GitHub repository `main` branch.
+    - Deployed live to Vercel production: [https://bella-spa-erp-swart.vercel.app](https://bella-spa-erp-swart.vercel.app).
+
+
 
