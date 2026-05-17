@@ -58,7 +58,29 @@ const FIELD_TRANSLATIONS: Record<string, string> = {
   unit: "Đơn vị tính",
   unit_price: "Đơn giá",
   type: "Loại",
-  received_date: "Ngày nhận"
+  received_date: "Ngày nhận",
+  booking_id: "Mã lịch hẹn",
+  recorded_by_id: "Người ghi nhận",
+  completed_by_ktv_id: "KTV thực hiện",
+  expense_date: "Ngày chi",
+  approved_by_id: "Người duyệt",
+  submitted_by_id: "Người yêu cầu",
+  commission_rate: "Tỷ lệ hoa hồng",
+  rating_bonus: "Thưởng đánh giá",
+  salary_advance: "Tạm ứng lương",
+  total_salary: "Tổng lương",
+  finalized_by_id: "Người chốt lương",
+  user_id: "Nhân viên",
+  ktv_id: "Kỹ thuật viên",
+  email: "Thư điện tử",
+  package_name: "Gói dịch vụ",
+  deposit: "Số tiền cọc",
+  remaining_amount: "Số tiền còn lại",
+  price: "Đơn giá",
+  customer_id: "Mã khách hàng",
+  address: "Địa chỉ",
+  notes_private: "Ghi chú nội bộ",
+  notes_customer: "Yêu cầu của khách"
 };
 
 const VALUE_TRANSLATIONS: Record<string, string> = {
@@ -74,7 +96,27 @@ const VALUE_TRANSLATIONS: Record<string, string> = {
   admin: "Quản trị viên",
   ktv: "Kỹ thuật viên",
   receptionist: "Lễ tân",
-  accountant: "Kế toán"
+  accountant: "Kế toán",
+  paid: "Đã thanh toán",
+  approved: "Đã duyệt",
+  rejected: "Đã từ chối",
+  completed: "Đã hoàn thành",
+  active: "Hoạt động",
+  inactive: "Ngừng hoạt động",
+  in_progress: "Đang thực hiện",
+  success: "Thành công",
+  failed: "Thất bại",
+  additional: "Thu phát sinh"
+};
+
+const TABLE_TRANSLATIONS: Record<string, string> = {
+  revenue: "Doanh thu",
+  expenses: "Chi phí",
+  bookings: "Lịch hẹn",
+  inventory_items: "Kho hàng",
+  users: "Nhân viên",
+  salary_records: "Chốt lương",
+  session_logs: "Ca làm việc KTV"
 };
 
 function formatReadableValue(key: string, val: any) {
@@ -355,18 +397,19 @@ export default function AuditPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Thời gian</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Người thực hiện</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Hành động</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Bảng dữ liệu</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right">Thao tác</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px]">Thời gian</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px]">Người thực hiện</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[120px]">Hành động</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[160px]">Bảng dữ liệu</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Chi tiết thay đổi</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right w-[80px]">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={5} className="px-6 py-8 h-16 bg-slate-50/20"></td>
+                    <td colSpan={6} className="px-6 py-8 h-16 bg-slate-50/20"></td>
                   </tr>
                 ))
               ) : paginatedLogs.length > 0 ? (
@@ -374,7 +417,7 @@ export default function AuditPage() {
                   <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-slate-400" />
+                        <Clock className="w-4 h-4 text-slate-400 animate-pulse group-hover:text-rose-500 transition-colors" />
                         <span className="text-sm text-slate-600">
                           {new Date(log.created_at).toLocaleString('vi-VN')}
                         </span>
@@ -382,19 +425,29 @@ export default function AuditPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <UserIcon className="w-4 h-4 text-slate-400" />
+                        <UserIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
                         <span className="text-sm font-medium text-slate-700">{log.user_name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getActionColor(log.action)}`}>
-                        {log.action}
+                        {log.action === 'INSERT' ? 'Thêm mới' : log.action === 'UPDATE' ? 'Cập nhật' : 'Xóa'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <code className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
-                        {log.table_name}
-                      </code>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm font-semibold text-slate-700">
+                          {TABLE_TRANSLATIONS[log.table_name] || log.table_name}
+                        </span>
+                        <code className="text-[10px] text-slate-400 font-mono self-start bg-slate-50 px-1 py-0.5 rounded border border-slate-100">
+                          {log.table_name}
+                        </code>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-slate-600 max-w-[600px] break-words leading-relaxed">
+                        {renderReadableChanges(log)}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button 
@@ -408,7 +461,7 @@ export default function AuditPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center">
+                  <td colSpan={6} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-2 opacity-40">
                       <AlertCircle className="w-12 h-12" />
                       <p>Không có dữ liệu nhật ký nào.</p>
