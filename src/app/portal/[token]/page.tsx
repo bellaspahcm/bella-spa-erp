@@ -283,7 +283,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
       {/* Rating Modal */}
       <AnimatePresence>
         {selectedSession && (
-          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 sm:p-6 pb-0 sm:pb-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -295,26 +295,26 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="bg-white w-full max-w-md rounded-t-[40px] sm:rounded-[40px] p-8 relative z-10 shadow-2xl"
+              className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-6 sm:p-8 pb-8 sm:pb-8 relative z-10 shadow-2xl max-h-[92vh] overflow-y-auto flex flex-col"
             >
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                   <Star className="w-8 h-8 fill-current" />
+              <div className="text-center mb-5 sm:mb-6">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                   <Star className="w-6 h-6 sm:w-8 sm:h-8 fill-current" />
                 </div>
-                <h3 className="text-xl font-black text-slate-900">Đánh giá buổi {selectedSession.session_number}</h3>
-                <p className="text-slate-500 text-sm mt-1">Ý kiến của chị giúp Bella Spa phục vụ tốt hơn</p>
+                <h3 className="text-lg sm:text-xl font-black text-slate-900">Đánh giá buổi {selectedSession.session_number}</h3>
+                <p className="text-slate-500 text-xs sm:text-sm mt-1">Ý kiến của chị giúp Bella Spa phục vụ tốt hơn</p>
               </div>
 
-              <div className="flex justify-center gap-3 mb-8">
+              <div className="flex justify-center gap-2.5 sm:gap-3 mb-5 sm:mb-6">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <button 
                     key={s} 
                     onClick={() => setRating(s)}
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-                      rating >= s ? 'bg-amber-400 text-white shadow-lg shadow-amber-100 scale-110' : 'bg-slate-50 text-slate-300'
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all ${
+                      rating >= s ? 'bg-amber-400 text-white shadow-lg shadow-amber-100 scale-105' : 'bg-slate-50 text-slate-300'
                     }`}
                   >
-                    <Star className={`w-6 h-6 ${rating >= s ? 'fill-current' : ''}`} />
+                    <Star className={`w-5 h-5 sm:w-6 sm:h-6 ${rating >= s ? 'fill-current' : ''}`} />
                   </button>
                 ))}
               </div>
@@ -323,7 +323,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 placeholder="Chị có hài lòng về dịch vụ và KTV không ạ?"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="w-full bg-slate-50 border-none rounded-3xl p-6 text-sm outline-none focus:ring-2 focus:ring-primary/20 min-h-[120px] mb-8"
+                className="w-full bg-slate-50 border-none rounded-2xl p-4 sm:p-6 text-sm outline-none focus:ring-2 focus:ring-primary/20 min-h-[90px] sm:min-h-[120px] mb-5 sm:mb-6"
               />
 
               <button 
