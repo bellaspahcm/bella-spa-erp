@@ -452,15 +452,6 @@ export default function CustomersPage() {
                   </motion.div>
                 )}
 
-                {/* Payment Status (Admin Only) - This replaces the redundant "Đã thanh toán" label */}
-                {customer.deposit_amount && userRole === 'admin' && (
-                  <span className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border",
-                    customer.is_fully_paid ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
-                  )}>
-                    {customer.is_fully_paid ? `Đã thanh toán: ${customer.deposit_amount}` : `Cọc: ${customer.deposit_amount}`}
-                  </span>
-                )}
               </div>
               <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm font-medium text-slate-500">
                 <div className="flex items-center gap-2">
