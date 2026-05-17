@@ -187,12 +187,31 @@ Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) 
 
 ---
 
-## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
-* **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline, tích hợp bộ đối soát gói dịch vụ KTV, và tính năng chỉnh sửa gói dịch vụ chủ động của Admin đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
-* **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch và rõ ràng, Admin dễ dàng kiểm soát sửa chữa các lỗi clerical phát sinh nhanh chóng.
-
-**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile, Trang thu nhập đối soát nâng cao cho KTV và Tính năng Chỉnh sửa Gói dịch vụ chủ động của Admin đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
 
 ---
-*Biên bản được lập tự động và lưu trữ tại [KTV_TEST_ACCEPTANCE.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/KTV_TEST_ACCEPTANCE.md).*
+
+### KỊCH BẢN 10: Kiểm thử Hệ thống Tính điểm Loyalty Tự động & Real-time (Loyalty Points Automation)
+* **Mục tiêu**: Kích hoạt và kiểm thử hệ thống tích lũy điểm Loyalty tự động theo thời gian thực (real-time) cho khách hàng khi phát sinh các giao dịch thanh toán được xác nhận (`confirmed`), đồng thời chạy truy thu (retroactive run) điểm thưởng lịch sử cho toàn bộ khách hàng cũ.
+* **Thời gian kiểm thử**: 17/05/2026
+
+#### Quy trình thực hiện:
+1. **Kiểm tra Truy thu dữ liệu (Retroactive run)**:
+   * Chạy script cập nhật lịch sử, hệ thống tự động đối chiếu các hóa đơn doanh thu đã được phê duyệt (`status = 'confirmed'`) của mỗi khách hàng.
+   * Tính toán theo công thức chuẩn: **100,000đ thanh toán thực tế = 1 điểm Loyalty**.
+   * Kết quả: 27 khách hàng cũ đã được tự động cộng điểm tích lũy chính xác (ví dụ: khách *Phạm Hải 18* đạt 168 điểm, *Lê Diệu 17* đạt 167 điểm, *Nguyễn Thị 5* đạt 155 điểm). **=> ĐẠT**
+2. **Kiểm tra Cơ chế Tự động hóa Real-time**:
+   * Thiết lập Database Trigger `trg_calculate_loyalty_points` trên bảng `revenue`.
+   * Thực hiện thanh toán một buổi trị liệu hoặc đặt cọc gói mới trên hệ thống.
+   * Kết quả: Điểm Loyalty của khách hàng trên Cổng Portal và trên Admin Dashboard tăng lên tức thì mà không cần bất kỳ sự can thiệp thủ công hay tải lại trang (Revalidate dynamic cache tự động). **=> ĐẠT**
+
+---
+
+## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
+* **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline, tích hợp bộ đối soát gói dịch vụ KTV, tính năng chỉnh sửa gói dịch vụ chủ động của Admin, và hệ thống tự động hóa điểm Loyalty Real-time đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
+* **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch và rõ ràng, Admin dễ dàng kiểm soát sửa chữa các lỗi clerical phát sinh nhanh chóng, hệ thống Loyalty mang lại trải nghiệm gắn kết tự động tối đa.
+
+**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile, Trang thu nhập đối soát nâng cao cho KTV, Tính năng Chỉnh sửa Gói dịch vụ chủ động của Admin và Tự động hóa Loyalty Point đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
+
+---
+*Biên bản được lập tự động và lưu trữ tại [KTV_TEST_ACCEPTANCE.md](file:///d:/Antigravity/Projects/BELLA SPA ERP/docs/KTV_TEST_ACCEPTANCE.md).*
 
