@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
+import { resolvePackageName } from '@/lib/utils';
 
 /**
  * Lấy các buổi trị liệu đang thực hiện của KTV hiện tại
@@ -21,6 +22,9 @@ export async function getKTVActiveSessions() {
         booking_number,
         package_name,
         customer_id,
+        packages (
+          name
+        ),
         customers (
           name_mother,
           phone,
@@ -37,7 +41,13 @@ export async function getKTVActiveSessions() {
     return [];
   }
 
-  return data || [];
+  return (data || []).map((s: any) => ({
+    ...s,
+    bookings: s.bookings ? {
+      ...s.bookings,
+      package_name: resolvePackageName(s.bookings)
+    } : null
+  }));
 }
 
 /**
@@ -48,8 +58,10 @@ export async function getKTVUpcomingSessions() {
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return [];
 
-  const today = new Date().toISOString().split('T')[0];
+  // Get current date in Vietnam timezone (YYYY-MM-DD)
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
+  // Fetch all sessions for bookings assigned to this KTV
   const { data, error } = await supabase
     .from('session_logs')
     .select(`
@@ -58,25 +70,95 @@ export async function getKTVUpcomingSessions() {
         id,
         booking_number,
         package_name,
+        start_date,
+        total_sessions,
+        completed_sessions,
+        preferred_time,
         customer_id,
+        packages (
+          name
+        ),
         customers (
           name_mother,
+          name_baby,
           phone,
           address
         )
       )
     `)
-    .eq('status', 'scheduled')
-    .eq('assigned_date', today)
     .eq('bookings.assigned_ktv_id', user.id)
-    .order('assigned_time', { ascending: true });
+    .order('booking_id', { ascending: true })
+    .order('session_number', { ascending: true });
 
   if (error) {
     console.error('Error fetching upcoming sessions:', error);
     return [];
   }
 
-  return data?.filter((s: any) => s.bookings !== null) || [];
+  if (!data || data.length === 0) return [];
+
+  // Group sessions by booking
+  const sessionsByBooking: Record<string, any[]> = {};
+  data.forEach((s: any) => {
+    if (!s.booking_id) return;
+    if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = [];
+    sessionsByBooking[s.booking_id].push(s);
+  });
+
+  const processedSessionsList: any[] = [];
+
+  for (const [bookingId, bookingSessions] of Object.entries(sessionsByBooking)) {
+    // Sort by session number
+    bookingSessions.sort((a, b) => a.session_number - b.session_number);
+
+    let lastKnownDate: string | null = null;
+    let lastKnownSessionNum = 0;
+
+    for (const s of bookingSessions) {
+      let finalDate = s.assigned_date;
+
+      if (!finalDate) {
+        if (lastKnownDate) {
+          const [y, m, d] = lastKnownDate.split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          date.setDate(date.getDate() + (s.session_number - lastKnownSessionNum));
+          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        } else if (s.bookings?.start_date) {
+          const [y, m, d] = s.bookings.start_date.split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          date.setDate(date.getDate() + (s.session_number - 1));
+          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+      }
+
+      if (finalDate) {
+        lastKnownDate = finalDate;
+        lastKnownSessionNum = s.session_number;
+      }
+
+      // We only care about scheduled sessions for the upcoming list
+      if (s.status === 'scheduled' && finalDate === today) {
+        processedSessionsList.push({
+          ...s,
+          assigned_date: finalDate,
+          assigned_time: s.assigned_time || s.bookings?.preferred_time || '09:00 - 11:00',
+          bookings: s.bookings ? {
+            ...s.bookings,
+            package_name: resolvePackageName(s.bookings)
+          } : null
+        });
+      }
+    }
+  }
+
+  // Sort by assigned_time
+  processedSessionsList.sort((a, b) => {
+    const timeA = a.assigned_time || '';
+    const timeB = b.assigned_time || '';
+    return timeA.localeCompare(timeB);
+  });
+
+  return processedSessionsList;
 }
 
 /**
