@@ -16,10 +16,13 @@ export function parseCurrency(value: string) {
 }
 
 export function formatNumberWithSeparator(value: number | string) {
+  if (value === null || value === undefined) return '';
   const str = typeof value === 'number' ? value.toString() : value;
+  const isNegative = str.startsWith('-');
   const digits = str.replace(/\D/g, '');
   if (!digits) return '';
-  return new Intl.NumberFormat('vi-VN').format(parseInt(digits));
+  const formatted = new Intl.NumberFormat('vi-VN').format(parseInt(digits));
+  return isNegative ? `-${formatted}` : formatted;
 }
 
 
