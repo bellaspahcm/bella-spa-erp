@@ -32,9 +32,9 @@ Status: 🟢 Standardization Complete | 🟡 Phase 1 Starting
 - [x] **Automated Rating System**: Post-session feedback triggers linked to KTV performance bonuses.
 - [x] **Loyalty Points**: Reward system for repeat bookings and referrals.
 
-## ⚪ Phase 4: Inventory & Supply Chain
-- [ ] **Material Consumption Logic**: Auto-deduct supplies (oils, towels, etc.) upon session completion.
-- [ ] **Low Stock Alerts**: Automated notifications for reordering.
+## 🟢 Phase 4: Inventory & Supply Chain (Completed)
+- [x] **Material Consumption Logic**: Auto-deduct supplies (oils, towels, etc.) upon session completion.
+- [x] **Low Stock Alerts**: Automated notifications for reordering.
 
 ## ⚪ Phase 5: CRM & Zalo Integration
 - [ ] **Automated Reminders**: Appointment alerts 2 hours before session.
