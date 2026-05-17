@@ -132,10 +132,10 @@ export async function completeKTVSession(sessionId: string, notes: string = '') 
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') throw new Error('Unauthorized');
 
-  // 1. Lấy thông tin session để tìm booking_id
+  // 1. Lấy thông tin session để tìm booking_id và package_id
   const { data: session } = await supabase
     .from('session_logs')
-    .select('booking_id')
+    .select('booking_id, bookings(package_id)')
     .eq('id', sessionId)
     .single();
 
@@ -153,6 +153,18 @@ export async function completeKTVSession(sessionId: string, notes: string = '') 
     .eq('id', sessionId);
 
   if (sessionError) throw new Error('Failed to complete session');
+
+  // 2.5 Tự động trừ kho vật tư tiêu hao nếu có định mức
+  const packageId = (session as any)?.bookings?.package_id;
+  if (packageId) {
+    try {
+      const { autoConsumeForSession } = await import('./inventory-actions');
+      await autoConsumeForSession(packageId, sessionId);
+      console.log(`[completeKTVSession] Successfully auto-consumed materials for package ${packageId} and session ${sessionId}`);
+    } catch (consumeErr) {
+      console.error('[completeKTVSession] Error in autoConsumeForSession:', consumeErr);
+    }
+  }
 
   // 3. Cập nhật số buổi đã hoàn thành trong booking
   const { data: booking } = await supabase

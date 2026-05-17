@@ -335,10 +335,10 @@ export async function completeSession(sessionId: string, bookingId: string) {
     return { error: `DEBUG: ID: ${currentUser?.id || 'null'}, Role: ${currentUser?.role || 'null'}, Email: ${currentUser?.email || 'null'}` };
   }
 
-  // 1. Get current booking to check assigned KTV
+  // 1. Get current booking to check assigned KTV and package
   const { data: bookingData, error: bookingError } = await supabase
     .from('bookings')
-    .select('assigned_ktv_id')
+    .select('assigned_ktv_id, package_id')
     .eq('id', bookingId)
     .single();
 
@@ -363,6 +363,17 @@ export async function completeSession(sessionId: string, bookingId: string) {
   if (sessionError) {
     console.error('Error completing session:', sessionError);
     return { error: sessionError.message };
+  }
+
+  // 2.5 Tự động trừ kho vật tư tiêu hao nếu có định mức
+  if (bookingData?.package_id) {
+    try {
+      const { autoConsumeForSession } = await import('./inventory-actions');
+      await autoConsumeForSession(bookingData.package_id, sessionId);
+      console.log(`[completeSession] Successfully auto-consumed materials for package ${bookingData.package_id} and session ${sessionId}`);
+    } catch (consumeErr) {
+      console.error('[completeSession] Error in autoConsumeForSession:', consumeErr);
+    }
   }
 
   const today = new Date().toISOString().split('T')[0];
