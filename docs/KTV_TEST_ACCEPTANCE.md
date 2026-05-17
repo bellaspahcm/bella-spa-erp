@@ -100,11 +100,34 @@ Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) 
 
 ---
 
-## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
-* **Độ ổn định hệ thống**: Cực kỳ tốt. Toàn bộ các lỗi liên quan đến vi phạm ràng buộc kiểm tra trạng thái (`bookings_status_check`) và lỗi thiếu cột `start_time` / `end_time` của các phiên bản trước đã được khắc phục triệt để.
-* **Trải nghiệm người dùng**: Phản hồi tức thì. Giao diện KTV trên thiết bị di động chuyển trạng thái mượt mà, Admin Dashboard đồng bộ cờ `is_in_care` ngay lập tức để hiển thị badge nhấp nháy báo hiệu chăm sóc mà không cần F5.
+### KỊCH BẢN 5: Hệ thống Thời gian Thực, Chuông Thông báo và Hồ sơ cá nhân của KTV
+* **Mục tiêu**: Bổ sung ngày giờ hệ thống thực tế (live ticking), kích hoạt chuông thông báo từ database (có huy hiệu đếm chưa đọc), lọc bảo mật tuyệt đối không gửi thông tin đánh giá/sao từ khách cho KTV, hỗ trợ đầy đủ 4 loại thông báo: Lịch ca mới (`booking`), Đối soát ca làm/lương (`salary`), Thông báo chung toàn hệ thống (`system`), và Thông báo cá nhân (`personal`), đi kèm hoạt họa Profile Drawer cá nhân và tính năng đăng xuất.
+* **Thời gian thực tế chạy test**: `2026-05-17`
 
-**Kết luận**: Phân hệ Quản lý Ca trị liệu KTV và tính đồng bộ dữ liệu Admin đã **ĐẠT YÊU CẦU NGHIỆM THU** và sẵn sàng bàn giao vận hành thực tế.
+#### Các bước thực hiện:
+1. Đăng nhập với tư cách KTV `Nguyễn Thị Hoa` và truy cập `/ktv/dashboard`.
+2. Kiểm tra đồng hồ hệ thống góc trên bên trái: Tự động đếm giây chuẩn xác (`Chủ Nhật, 17/5/2026`).
+3. Kiểm tra chuông thông báo góc trên bên phải: Đọc dữ liệu thông báo từ database. Xác minh huy hiệu màu đỏ đếm tin chưa đọc.
+4. Click chuông thông báo:
+   - Hiển thị popover với các thông báo được phân loại rõ ràng đi kèm biểu tượng và nhãn màu (LỊCH CA MỚI - màu Indigo/Lịch, ĐỐI SOÁT LƯƠNG - màu Emerald/Dollar, HỆ THỐNG - màu Amber/Megaphone, CÁ NHÂN - màu Rose/User).
+   - **Xác minh bảo mật**: Đảm bảo không có bất kỳ thông tin nào liên quan đến đánh giá sao (review) của khách hàng được tải lên (được lọc sạch ở cả lớp câu lệnh Supabase `neq('type', 'review')` lẫn bộ lọc từ khoá bộ nhớ máy chủ ứng dụng).
+5. Click vào nút Profile Settings ở góc phải: Trượt lên Bottom Sheet sang trọng, hiển thị đầy đủ thông tin cá nhân, KPI ca làm và thu nhập thực tế trong tháng.
+
+#### Kết quả kiểm thử:
+- **Đồng hồ hệ thống**: Cập nhật trực tiếp mỗi giây chính xác. **=> ĐẠT**
+- **Bảo mật đánh giá sao**: Thành công tuyệt đối. Thông tin sao/đánh giá của khách được ẩn hoàn toàn để bảo mật với KTV. **=> ĐẠT**
+- **Phân loại thông báo**: Hiển thị chính xác các loại ca mới, đối soát lương chuẩn bị tính lương, thông báo hệ thống và cá nhân với icon sắc nét. **=> ĐẠT**
+- **Hồ sơ cá nhân & Thống kê Drawer**: Thiết kế Premium bằng Framer Motion, hiển thị đầy đủ KPI tài chính và hoạt động của KTV. **=> ĐẠT**
+- **Quy trình Đăng xuất từ Drawer**: Bấm nút Đăng xuất sẽ xoá cookie mock, huỷ session và chuyển hướng an toàn về `/login`. **=> ĐẠT**
+
+---
+
+## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
+* **Độ ổn định hệ thống**: Cực kỳ tốt. Toàn bộ các phân hệ phụ trợ (ngày giờ, thông báo, hồ sơ cá nhân và phân quyền bảo mật) hoạt động đồng bộ hoàn hảo với Next.js và Supabase Database.
+* **Trải nghiệm người dùng**: Phản hồi tức thì. Giao diện KTV trên thiết bị di động chuyển trạng thái mượt mà, Admin Dashboard đồng bộ nhanh chóng, và trải nghiệm Drawer di động tạo cảm giác vô cùng cao cấp và chuyên nghiệp.
+
+**Kết luận**: Phân hệ Di động KTV bao gồm Quản lý Ca trị liệu, Hệ thống thông báo, Ngày giờ và Hồ sơ thiết lập cá nhân đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và sẵn sàng đưa vào vận hành chính thức.
 
 ---
 *Biên bản được lập tự động và lưu trữ tại [KTV_TEST_ACCEPTANCE.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/KTV_TEST_ACCEPTANCE.md).*
+

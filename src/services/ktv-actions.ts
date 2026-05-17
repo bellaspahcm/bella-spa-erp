@@ -249,3 +249,60 @@ export async function getKTVLeaderboard(month: string) {
 
   return data || [];
 }
+
+/**
+ * Lấy danh sách thông báo của KTV hiện tại (Đã lọc bỏ thông tin đánh giá/sao để bảo mật)
+ */
+export async function getKTVNotifications() {
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  if (!user) return [];
+
+  // Truy vấn từ DB: Loại bỏ trực tiếp các thông báo có type là 'review' để bảo mật
+  const { data, error } = await supabase
+    .from('Notification')
+    .select('*')
+    .eq('userId', user.id)
+    .neq('type', 'review')
+    .order('createdAt', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching KTV notifications:', error);
+    return [];
+  }
+
+  if (!data) return [];
+
+  // Lọc thêm một lớp tại Application logic để phòng ngừa các thông báo chứa từ khoá nhạy cảm liên quan đến đánh giá sao
+  const secureNotifications = data.filter((notif: any) => {
+    const titleLower = (notif.title || '').toLowerCase();
+    const messageLower = (notif.message || '').toLowerCase();
+    const isReview = titleLower.includes('đánh giá') || 
+                     titleLower.includes('review') || 
+                     titleLower.includes('sao') ||
+                     messageLower.includes('đánh giá') ||
+                     messageLower.includes('sao');
+    return !isReview;
+  });
+
+  return secureNotifications;
+}
+
+/**
+ * Đánh dấu một thông báo là đã đọc
+ */
+export async function markNotificationAsRead(id: string) {
+  const supabase = (await createClient()) as any;
+  const { error } = await supabase
+    .from('Notification')
+    .update({ isRead: true } as any)
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error marking notification as read:', error);
+    throw new Error('Không thể cập nhật thông báo');
+  }
+
+  return { success: true };
+}
+
