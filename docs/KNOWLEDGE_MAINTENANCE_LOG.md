@@ -107,7 +107,9 @@
     - Upgraded `getMonthlyPnL` in `src/services/finance-actions.ts` to query completed KTV sessions using `completed_by_ktv_id` from the `session_logs` table.
     - Computes real-time KTV accrued salaries dynamically (Base Salary + Commissions + Ratings Bonus - Advances) when the month is not locked (i.e. no finalized salary record in the `expenses` table).
     - Designed a premium UI experience in `src/components/features/FinancePnLSummary.tsx` featuring an animated, pulsing `Real-time (Tạm tính)` badge and a detailed, highlighted warning block explaining that KTV salaries are calculated based on actual completed sessions/shifts and not a fixed monthly overhead.
-    - Verified full compilation with 0 Next.js build errors.
-
-
-
+    - Verified full compilation with 0 Next.js build errors.### 13. Financial Transaction Confirmation Date Logic Fix (Reconciliation Date)
+- **Issue**: When an Admin confirmed a pending transaction (deposit or remaining payment) created on a past date, the transaction's `received_date` or `expense_date` remained unchanged, causing it to hide in the deep history of "Giao dịch gần đây" instead of showing up on the confirmation date.
+- **Solution**:
+  - Updated `confirmTransaction` in `src/services/finance-actions.ts` to automatically update the `received_date` (for revenue) or `expense_date` (for expenses) to the current system date (`today`) upon confirmation.
+  - Executed an SQL update directly in Supabase to correct the transaction date of customer **Lê Diệu 2**'s remaining payment of `13.200.000đ` (originally dated `10/05/2026`) to **`17/05/2026`** (today).
+  - Verified that the transaction now instantly and correctly displays at the very top of the **"Giao dịch gần đây"** dashboard.
