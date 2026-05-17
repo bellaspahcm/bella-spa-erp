@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
+import { resolvePackageName } from '@/lib/utils';
 
 /**
  * Truy xuất thông tin booking qua Share Token (Dành cho khách hàng)
@@ -18,6 +19,9 @@ export async function getCustomerBookingByToken(token?: string) {
         name_mother,
         phone,
         loyalty_points
+      ),
+      packages!bookings_package_id_fkey (
+        name
       ),
       assigned_ktv:users!bookings_assigned_ktv_id_fkey (
         id,
@@ -58,6 +62,9 @@ export async function getCustomerBookingByToken(token?: string) {
   if (data.session_logs) {
     data.session_logs.sort((a: any, b: any) => a.session_number - b.session_number);
   }
+
+  // Resolve package_name correctly using resolvePackageName helper
+  data.package_name = resolvePackageName(data);
 
   return data;
 }
