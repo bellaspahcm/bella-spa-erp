@@ -90,6 +90,20 @@ export default function CustomerDetailPage() {
     gender_baby: 'unknown'
   });
 
+  const [isEditBookingModalOpen, setIsEditBookingModalOpen] = useState(false);
+  const [isSavingBooking, setIsSavingBooking] = useState(false);
+  const [editBookingData, setEditBookingData] = useState({
+    package_name: '',
+    full_price: 0,
+    deposit_amount: 0,
+    discount_percent: 0,
+    total_sessions: 0,
+    completed_sessions: 0,
+    preferred_time: '08:00',
+    start_date: '',
+    status: 'in_progress'
+  });
+
   const loadData = useCallback(async () => {
     if (!id) return;
     try {
@@ -232,6 +246,34 @@ export default function CustomerDetailPage() {
       toast.error('Lỗi: ' + error.message);
     } finally {
       setIsUpdatingCustomer(false);
+    }
+  };
+
+  const handleSaveBooking = async () => {
+    if (!activeBooking) return;
+    setIsSavingBooking(true);
+    try {
+      const result = await updateBooking(activeBooking.id, {
+        package_name: editBookingData.package_name || null,
+        full_price: Number(editBookingData.full_price) || 0,
+        deposit_amount: Number(editBookingData.deposit_amount) || 0,
+        discount_percent: Number(editBookingData.discount_percent) || 0,
+        total_sessions: Number(editBookingData.total_sessions) || 0,
+        completed_sessions: Number(editBookingData.completed_sessions) || 0,
+        preferred_time: editBookingData.preferred_time || '08:00',
+        start_date: editBookingData.start_date || null,
+        status: editBookingData.status
+      });
+
+      if (result.error) throw new Error(result.error);
+      
+      toast.success('Cập nhật gói dịch vụ thành công!');
+      setIsEditBookingModalOpen(false);
+      loadData();
+    } catch (error: any) {
+      toast.error('Lỗi cập nhật gói: ' + error.message);
+    } finally {
+      setIsSavingBooking(false);
     }
   };
 
@@ -667,19 +709,42 @@ export default function CustomerDetailPage() {
                       </button>
 
                       {userRole === 'admin' && (
-                        <button 
-                          disabled={activeBooking?.deposit_amount < (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)}
-                          onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
-                          className={cn(
-                            "flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl font-black transition-all uppercase tracking-widest text-[11px]",
-                            activeBooking?.deposit_amount >= (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)
-                              ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20"
-                              : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
-                          )}
-                        >
-                          <FileText className="w-4 h-4" />
-                          Xuất hợp đồng
-                        </button>
+                        <>
+                          <button 
+                            disabled={activeBooking?.deposit_amount < (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)}
+                            onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
+                            className={cn(
+                              "flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl font-black transition-all uppercase tracking-widest text-[11px]",
+                              activeBooking?.deposit_amount >= (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)
+                                ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20"
+                                : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
+                            )}
+                          >
+                            <FileText className="w-4 h-4" />
+                            Xuất hợp đồng
+                          </button>
+
+                          <button 
+                            onClick={() => {
+                              setEditBookingData({
+                                package_name: activeBooking.package_name || activeBooking.packages?.name || '',
+                                full_price: activeBooking.full_price || 0,
+                                deposit_amount: activeBooking.deposit_amount || 0,
+                                discount_percent: activeBooking.discount_percent || 0,
+                                total_sessions: activeBooking.total_sessions || 0,
+                                completed_sessions: activeBooking.completed_sessions || 0,
+                                preferred_time: activeBooking.preferred_time || '08:00',
+                                start_date: activeBooking.start_date || '',
+                                status: activeBooking.status || 'in_progress'
+                              });
+                              setIsEditBookingModalOpen(true);
+                            }}
+                            className="flex items-center justify-center gap-3 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3.5 rounded-2xl font-black transition-all uppercase tracking-widest text-[11px] shadow-lg shadow-amber-500/20 active:scale-95 hover:scale-105"
+                          >
+                            <Sparkles className="w-4 h-4" />
+                            Sửa gói dịch vụ
+                          </button>
+                        </>
                       )}
                     </>
                   )}
@@ -864,6 +929,15 @@ export default function CustomerDetailPage() {
         file={paymentFile}
         setFile={setPaymentFile}
         customerName={customer?.name_mother}
+      />
+
+      <EditBookingModal
+        isOpen={isEditBookingModalOpen}
+        onClose={() => setIsEditBookingModalOpen(false)}
+        onConfirm={handleSaveBooking}
+        isSubmitting={isSavingBooking}
+        data={editBookingData}
+        setData={setEditBookingData}
       />
     </div>
   );
@@ -1168,6 +1242,172 @@ function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, s
           >
             {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             Xác nhận thu tiền
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function EditBookingModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData }: any) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-[#1A0A0E]/80 backdrop-blur-md"
+      />
+      
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden"
+      >
+        <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-200">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Sửa gói dịch vụ</h2>
+              <p className="text-xs text-slate-500 font-bold italic">Điều chỉnh chi tiết gói liệu trình của khách</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-3 hover:bg-rose-50 rounded-2xl text-slate-400 hover:text-rose-500 transition-all">
+            <PlusCircle className="w-6 h-6 rotate-45" />
+          </button>
+        </div>
+
+        <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tên gói dịch vụ</label>
+            <input 
+              type="text" 
+              value={data.package_name}
+              onChange={(e) => setData({ ...data, package_name: e.target.value })}
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              placeholder="Nhập tên gói dịch vụ..."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tổng cộng (Giá gốc)</label>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={formatNumberWithSeparator(data.full_price)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^\d]/g, '');
+                    setData({ ...data, full_price: val ? parseInt(val) : 0 });
+                  }}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+                />
+                <span className="absolute right-6 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">VNĐ</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Chiết khấu (%)</label>
+              <div className="relative">
+                <input 
+                  type="number" 
+                  min="0"
+                  max="100"
+                  value={data.discount_percent}
+                  onChange={(e) => setData({ ...data, discount_percent: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+                />
+                <span className="absolute right-6 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">%</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Đã thanh toán / Cọc</label>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={formatNumberWithSeparator(data.deposit_amount)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^\d]/g, '');
+                    setData({ ...data, deposit_amount: val ? parseInt(val) : 0 });
+                  }}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+                />
+                <span className="absolute right-6 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">VNĐ</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tổng số buổi</label>
+              <input 
+                type="number" 
+                value={data.total_sessions}
+                onChange={(e) => setData({ ...data, total_sessions: parseInt(e.target.value) || 0 })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Buổi đã hoàn thành</label>
+              <input 
+                type="number" 
+                value={data.completed_sessions}
+                onChange={(e) => setData({ ...data, completed_sessions: parseInt(e.target.value) || 0 })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Giờ chăm sóc mặc định</label>
+              <input 
+                type="text" 
+                placeholder="Ví dụ: 08:00, 09:00"
+                value={data.preferred_time}
+                onChange={(e) => setData({ ...data, preferred_time: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ngày bắt đầu liệu trình</label>
+              <input 
+                type="date" 
+                value={data.start_date}
+                onChange={(e) => setData({ ...data, start_date: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Trạng thái gói</label>
+              <select 
+                value={data.status}
+                onChange={(e) => setData({ ...data, status: e.target.value })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700 appearance-none"
+              >
+                <option value="in_progress">Đang thực hiện</option>
+                <option value="completed">Đã hoàn thành</option>
+                <option value="cancelled">Đã hủy</option>
+                <option value="deposit_pending">Chờ đặt cọc / Phiếu cọc</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex gap-4">
+          <button onClick={onClose} className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-50 transition-all">Hủy</button>
+          <button 
+            disabled={isSubmitting}
+            onClick={onConfirm}
+            className="flex-1 py-4 bg-amber-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            Lưu thay đổi
           </button>
         </div>
       </motion.div>
