@@ -285,7 +285,7 @@ export async function getMonthlyPnL(month?: string) {
         .eq('tenant_id', tenantId),
       supabase
         .from('session_logs')
-        .select('id, status, completed_date, booking_id, bookings!inner(tenant_id, ktv_commission)')
+        .select('id, completed_by_ktv_id, status, completed_date, booking_id, bookings!inner(tenant_id, ktv_commission)')
         .eq('bookings.tenant_id', tenantId)
         .eq('status', 'completed')
         .gte('completed_date', startDate)
@@ -307,13 +307,70 @@ export async function getMonthlyPnL(month?: string) {
       .filter((e: any) => e.category !== 'salary')
       .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
-    // Salary expenses
-    const totalKtvSalaries = expenses
+    // Salary expenses (dynamic real-time calculation if not locked / no salary expenses in DB yet)
+    let totalKtvSalaries = expenses
       .filter((e: any) => e.category === 'salary')
       .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
 
+    if (totalKtvSalaries === 0) {
+      // 1. Fetch KTVs
+      const { data: ktvs } = await supabase
+        .from('users')
+        .select('id, base_salary')
+        .eq('role', 'ktv')
+        .eq('tenant_id', tenantId);
+
+      // 2. Fetch salary records for adjustments (KPI, deductions, advances)
+      const { data: salaryRecords } = await supabase
+        .from('salary_records')
+        .select('*')
+        .eq('month_year', startDate)
+        .eq('tenant_id', tenantId);
+
+      // 3. Fetch reviews for rating bonus calculation
+      const { data: reviews } = await supabase
+        .from('session_reviews')
+        .select('ktv_id, rating')
+        .eq('status', 'approved')
+        .eq('tenant_id', tenantId);
+
+      // 4. Calculate accrued salaries dynamically
+      let accruedSalaries = 0;
+      (ktvs || []).forEach((ktv: any) => {
+        const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
+        
+        // Sum commission for completed sessions by this KTV in target month
+        const sessionCommissions = sessions
+          .filter((s: any) => s.completed_by_ktv_id === ktv.id)
+          .reduce((sum: number, s: any) => sum + (Number(s.bookings?.ktv_commission) || 150000), 0);
+
+        const baseVal = record?.base_salary ?? ktv.base_salary ?? 6000000;
+        const sessionsCount = sessions.filter((s: any) => s.completed_by_ktv_id === ktv.id).length;
+
+        // Rating bonus
+        const ktvReviews = reviews?.filter((r: any) => r.ktv_id === ktv.id) || [];
+        const avgRating = ktvReviews.length > 0 
+          ? ktvReviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / ktvReviews.length 
+          : 5.0; 
+        let bonusPerSession = 0;
+        if (avgRating === 5.0) bonusPerSession = 50000;
+        else if (avgRating >= 4.5) bonusPerSession = 30000;
+        else if (avgRating >= 4.0) bonusPerSession = 10000;
+        const ratingBonus = sessionsCount * bonusPerSession;
+
+        const kpiBonus = record?.kpi_bonus ?? (sessionsCount > 30 ? 1000000 : 0);
+        const deductions = record?.violations_deduction ?? 0;
+        const advances = record?.service_percentage_bonus ?? 0;
+
+        const ktvTotal = baseVal + sessionCommissions + kpiBonus + ratingBonus - deductions - advances;
+        accruedSalaries += ktvTotal;
+      });
+
+      totalKtvSalaries = accruedSalaries;
+    }
+
     // Net profit = revenue - all expenses
-    const totalExpenses = expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+    const totalExpenses = totalOperatingExpenses + totalKtvSalaries;
     const netProfit = totalRevenue - totalExpenses;
 
     const totalBookings = bookings.filter((b: any) =>

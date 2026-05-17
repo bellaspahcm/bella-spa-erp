@@ -101,5 +101,13 @@
     - Pushed changes to GitHub repository `main` branch.
     - Deployed live to Vercel production: [https://bella-spa-erp-swart.vercel.app](https://bella-spa-erp-swart.vercel.app).
 
+### 12. Real-time KTV Salary Dynamic P&L Accrual
+- **Status**: Implemented & Verified.
+- **Workflow**:
+    - Upgraded `getMonthlyPnL` in `src/services/finance-actions.ts` to query completed KTV sessions using `completed_by_ktv_id` from the `session_logs` table.
+    - Computes real-time KTV accrued salaries dynamically (Base Salary + Commissions + Ratings Bonus - Advances) when the month is not locked (i.e. no finalized salary record in the `expenses` table).
+    - Designed a premium UI experience in `src/components/features/FinancePnLSummary.tsx` featuring an animated, pulsing `Real-time (Tạm tính)` badge and a detailed, highlighted warning block explaining that KTV salaries are calculated based on actual completed sessions/shifts and not a fixed monthly overhead.
+    - Verified full compilation with 0 Next.js build errors.
+
 
 
