@@ -150,6 +150,24 @@ export default function KTVEarningsPage() {
   const confirmedSalary = salaryData?.record && ['confirmed', 'finalized', 'approved'].includes(salaryData.record.status);
   const rec = salaryData?.record;
 
+  const packageSummary = details.reduce((acc: any[], session: any) => {
+    const packageName = session.bookings?.package_name || 'Dịch vụ khác / Khác';
+    const commission = session.bookings?.ktv_commission || 0;
+    
+    const existing = acc.find(item => item.name === packageName);
+    if (existing) {
+      existing.count += 1;
+      existing.totalCommission += commission;
+    } else {
+      acc.push({
+        name: packageName,
+        count: 1,
+        totalCommission: commission
+      });
+    }
+    return acc;
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
 
@@ -312,6 +330,37 @@ export default function KTVEarningsPage() {
             )}
           </div>
         )}
+
+        {/* Package Reconciliation Summary */}
+        <section className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Đối soát theo gói dịch vụ</h3>
+            <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
+              {packageSummary.length} gói
+            </span>
+          </div>
+          
+          {packageSummary.length === 0 ? (
+            <p className="text-slate-400 text-xs text-center py-4">Chưa ghi nhận ca làm việc nào trong tháng này</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-2.5">
+              {packageSummary.map((pkg) => (
+                <div key={pkg.name} className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100/80 flex items-center justify-between hover:border-primary/20 transition-all active:scale-[0.98]">
+                  <div className="space-y-1">
+                    <p className="text-xs font-black text-slate-800 line-clamp-1">{pkg.name}</p>
+                    <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border border-emerald-100">
+                      {pkg.count} ca thực tế
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-black text-emerald-600">+{formatCurrency(pkg.totalCommission)}</p>
+                    <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Tạm tính</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Session list */}
         <section>
