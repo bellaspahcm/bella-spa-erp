@@ -19,7 +19,19 @@ export async function getCustomerBookingByToken(token?: string) {
         phone,
         loyalty_points
       ),
-      session_logs (*)
+      assigned_ktv:users!bookings_assigned_ktv_id_fkey (
+        id,
+        full_name,
+        phone
+      ),
+      session_logs (
+        *,
+        completed_by_ktv:users!session_logs_completed_by_ktv_id_fkey (
+          id,
+          full_name,
+          avatar_url
+        )
+      )
     `);
 
   if (token) {
