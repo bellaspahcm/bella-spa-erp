@@ -153,4 +153,13 @@
   - Converted the container `<p>` to `<div>` to eliminate HTML DOM validation mismatch warnings.
   - Verified 100% clean build using `npx tsc --noEmit`.
 
+### 18. Admin-Only Active Service Package (Booking) Edit Feature
+- **Issue**: There was no feature in the ERP interface allowing Spa Administrators to correct clerical mistakes in active bookings/packages (e.g. wrong package names, price mismatches, incorrect completed sessions, wrong discount rate, start dates, preferred care times, or statuses). Once a booking was created, it could only have its KTV assigned, with no other fields editable from the UI.
+- **Solution**:
+  - Refactored `src/app/dashboard/customers/[id]/page.tsx` to add an elegant, premium **"Sửa gói dịch vụ"** (Edit Service Package) button inside the customer's treatment card, restricted strictly to `userRole === 'admin'`.
+  - Implemented `isEditBookingModalOpen` state and `editBookingData` form state to hold editable package draft details.
+  - Developed a highly aesthetic, responsive two-column **`EditBookingModal`** component with premium gold/amber tones, HSL color styling, smooth micro-animations, and full support for formatted numeric input, dropdown selections, date pickers, and text inputs.
+  - Implemented `handleSaveBooking` that calls the database-syncing `updateBooking` action to update the `bookings` table dynamically and refresh the dashboard states.
+  - Verified 100% successful Next.js production build with zero TypeScript or route compilation errors.
+
 
