@@ -102,7 +102,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-80 bg-white/40 backdrop-blur-2xl border-r border-rose-100/50 flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.1)]">
+      <aside className="w-80 bg-white/40 backdrop-blur-2xl border-r border-rose-100/50 flex flex-col h-[calc(100vh/0.9)] sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.1)]">
         {/* Soft decorative glows */}
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-rose-200/20 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/10 rounded-full blur-[100px] pointer-events-none" />
@@ -168,19 +168,19 @@ export function Sidebar() {
         </nav>
 
         {/* ── User Profile & Logout — pinned at bottom ── */}
-        <div className="mt-auto shrink-0 relative z-10 border-t border-rose-100/40 bg-white/60 backdrop-blur-md px-6 pt-3 pb-3">
+        <div className="mt-auto shrink-0 relative z-10 border-t border-rose-100/40 bg-white/60 backdrop-blur-md px-6 pt-2 pb-1.5">
           {/* Admin card */}
-          <div className="bg-white p-3 rounded-[1.5rem] shadow-sm border border-rose-50 mb-3 group cursor-pointer hover:border-rose-200 transition-all">
+          <div className="bg-white p-2.5 rounded-[1.25rem] shadow-sm border border-rose-50 mb-1.5 group cursor-pointer hover:border-rose-200 transition-all">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-9 h-9 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-sm shadow-md group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-xs shadow-md group-hover:scale-105 transition-transform">
                   {user?.full_name?.charAt(0) || 'B'}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
               </div>
-              <div className="min-w-0">
-                <p className="text-[13px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'admin'}</p>
-                <p className="text-[10px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{roleLabel}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] font-black text-slate-800 truncate leading-tight">{user?.full_name || 'admin'}</p>
+                <p className="text-[9px] text-rose-500 font-black uppercase tracking-widest mt-0.5">{roleLabel}</p>
               </div>
             </div>
           </div>
@@ -188,10 +188,10 @@ export function Sidebar() {
           {/* Logout */}
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 text-slate-400 hover:text-rose-600 transition-all font-black text-[11px] uppercase tracking-[0.2em] group"
+            className="flex items-center gap-2.5 w-full px-2.5 py-1.5 text-slate-400 hover:text-rose-600 transition-all font-black text-[10px] uppercase tracking-[0.2em] group"
           >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
-              <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-50 group-hover:bg-rose-50 group-hover:text-rose-600 transition-colors">
+              <LogOut className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
             </div>
             ĐĂNG XUẤT
           </button>
