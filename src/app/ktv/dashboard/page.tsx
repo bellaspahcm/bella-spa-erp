@@ -25,6 +25,7 @@ import {
 import { getCurrentUser } from '@/services/user-actions';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function KTVDashboard() {
   const [user, setUser] = useState<any>(null);
@@ -227,20 +228,20 @@ export default function KTVDashboard() {
         </section>
       </div>
 
-      {/* Mobile Bottom Nav (Placeholder for now) */}
+      {/* Mobile Bottom Nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-8 py-4 flex justify-between items-center z-50">
-        <button className="text-primary flex flex-col items-center gap-1">
+        <Link href="/ktv/dashboard" className="text-primary flex flex-col items-center gap-1">
           <Clock className="w-6 h-6" />
           <span className="text-[10px] font-black uppercase">Lịch ca</span>
-        </button>
-        <button className="text-slate-300 flex flex-col items-center gap-1">
+        </Link>
+        <Link href="/ktv/earnings" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
           <DollarSign className="w-6 h-6" />
           <span className="text-[10px] font-black uppercase">Thu nhập</span>
-        </button>
-        <button className="text-slate-300 flex flex-col items-center gap-1">
+        </Link>
+        <Link href="/ktv/leaderboard" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
           <CalendarIcon className="w-6 h-6" />
           <span className="text-[10px] font-black uppercase">Cá nhân</span>
-        </button>
+        </Link>
       </div>
     </div>
   );

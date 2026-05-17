@@ -83,6 +83,9 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        document.cookie = 'mock_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+      }
       const supabase = createClient();
       await supabase.auth.signOut();
       router.push('/login');
