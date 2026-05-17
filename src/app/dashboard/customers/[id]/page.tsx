@@ -1181,8 +1181,11 @@ function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, s
                 type="text" 
                 value={formatNumberWithSeparator(data.amount)}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/[^\d]/g, '');
-                  setData({ ...data, amount: val ? parseInt(val) : 0 });
+                  const raw = e.target.value;
+                  const isNegative = raw.includes('-');
+                  const val = raw.replace(/[^\d]/g, '');
+                  const parsed = val ? parseInt(val) : 0;
+                  setData({ ...data, amount: isNegative ? -parsed : parsed });
                 }}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-black text-lg text-primary"
               />
