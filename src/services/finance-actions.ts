@@ -148,10 +148,12 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
 
+  const today = new Date().toISOString().split('T')[0];
+
   // For expense: status = 'approved'; for revenue: status = 'confirmed'
   const updatePayload = type === 'revenue'
-    ? { status: 'confirmed' }
-    : { status: 'approved' };
+    ? { status: 'confirmed', received_date: today }
+    : { status: 'approved', expense_date: today };
 
   const table = type === 'revenue' ? 'revenue' : 'expenses';
   const { error } = await supabase.from(table).update(updatePayload).eq('id', id);
