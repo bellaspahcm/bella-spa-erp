@@ -263,9 +263,9 @@ A: Có. Hệ thống có tính năng "Export dữ liệu" ra Excel bất kỳ l�
 
 ---
 
-**Document Version:** 1.5 — Executive Summary  
-**Cập nhật:** 17/05/2026 (Maintenance & E2E Validation Update)
-**Trạng thái:** Đã hoàn thành hệ thống Tài chính, KTV Mobile, Quản lý Kho & Vật tư tiêu hao (Phase 4 Tự động trừ kho), Bảng lương & Hoa hồng đối soát E2E, Tối ưu hóa Luồng duyệt Lương và Trung tâm Tin nhắn. Đã dọn dẹp dữ liệu rác (TEST data), sửa lỗi Đăng nhập KTV và tối ưu giao diện Sidebar.
+**Document Version:** 1.6 — Executive Summary  
+**Cập nhật:** 17/05/2026 (Real-time Finance & KTV Salary P&L Accrual)
+**Trạng thái:** Đã hoàn thành hệ thống Tài chính, KTV Mobile, Quản lý Kho & Vật tư tiêu hao (Phase 4 Tự động trừ kho), Bảng lương & Hoa hồng đối soát E2E, Tối ưu hóa Luồng duyệt Lương và Trung tâm Tin nhắn. Đã dọn dẹp dữ liệu rác (TEST data), sửa lỗi Đăng nhập KTV, tối ưu giao diện Sidebar và tích hợp cơ chế tính lương KTV Real-time (Tạm tính tích lũy ca hoàn thành) vào báo cáo tài chính P&L tổng thể.
 **Tiếp theo:** Tích hợp CRM, Zalo OA và các công cụ nhắc lịch tự động (Phase 5).
 
 ---

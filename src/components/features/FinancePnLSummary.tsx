@@ -180,16 +180,34 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm"
+          className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col justify-between"
         >
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-              <Activity className="w-5 h-5 text-amber-600" />
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                <Activity className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quỹ lương KTV</span>
+                {!pnl.is_locked && (
+                  <span className="text-[8px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full w-fit mt-0.5 animate-pulse border border-amber-100">
+                    Real-time (Tạm tính)
+                  </span>
+                )}
+              </div>
             </div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quỹ lương KTV</span>
+            <h4 className="text-2xl font-black text-slate-900">{Number(pnl.total_ktv_salaries).toLocaleString()}đ</h4>
+            <p className="text-[10px] font-bold text-slate-500 mt-2">
+              {!pnl.is_locked 
+                ? "Cộng dồn hoa hồng ca + lương cứng đến nay" 
+                : "Lương cứng + Hoa hồng + Thưởng (Đã chốt)"}
+            </p>
           </div>
-          <h4 className="text-2xl font-black text-slate-900">{Number(pnl.total_ktv_salaries).toLocaleString()}đ</h4>
-          <p className="text-[10px] font-bold text-slate-500 mt-2">Lương cứng + Hoa hồng + Thưởng</p>
+          {!pnl.is_locked && (
+            <div className="mt-3 text-[9px] text-amber-700 bg-amber-50/30 p-2.5 rounded-xl border border-amber-100/50 leading-relaxed font-semibold">
+              ⚠️ Đây là quỹ lương tạm tính tích lũy theo số ca dịch vụ hoàn thành thực tế hàng ngày, không phải mức chi cố định.
+            </div>
+          )}
         </motion.div>
 
         <motion.div 
