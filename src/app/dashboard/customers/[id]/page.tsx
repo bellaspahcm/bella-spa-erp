@@ -450,8 +450,32 @@ export default function CustomerDetailPage() {
             {[
               { label: 'Tiến độ', value: activeBooking ? `${activeBooking.completed_sessions || 0}/${activeBooking.total_sessions || 0}` : '0/0', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
               ...(userRole === 'admin' ? [{ 
-                label: activeBooking && ((activeBooking.full_price || 0) > 0 || (activeBooking.deposit_amount || 0) > 0) && activeBooking.deposit_amount >= (activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100) ? 'Đã thanh toán thành công' : 'Đã cọc', 
-                value: activeBooking ? formatNumberWithSeparator(activeBooking.deposit_amount || 0) + 'đ' : '0đ', 
+                label: activeBooking && ((activeBooking.full_price || 0) > 0 || (activeBooking.deposit_amount || 0) > 0) && activeBooking.deposit_amount >= (activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100) ? 'Đã thanh toán đủ' : 'Đã cọc', 
+                value: activeBooking ? (
+                  <div className="flex flex-col gap-1 leading-tight mt-0.5">
+                    <span className="text-xl font-black text-slate-900">
+                      {formatNumberWithSeparator(activeBooking.deposit_amount || 0)}đ
+                    </span>
+                    {activeBooking.full_price && activeBooking.full_price > 0 && (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-bold text-slate-400">
+                          Giá gốc: <span className="line-through">{formatNumberWithSeparator(activeBooking.full_price)}đ</span>
+                        </span>
+                        {activeBooking.discount_percent && activeBooking.discount_percent > 0 ? (
+                          <span className="text-[9px] font-black text-rose-500 uppercase tracking-wider">
+                            Đã giảm {activeBooking.discount_percent}%
+                          </span>
+                        ) : null}
+                        {/* Remaining balance if not fully paid */}
+                        {activeBooking.deposit_amount < Math.round((activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100)) && (
+                          <span className="text-[9px] font-black text-rose-600 uppercase tracking-wider">
+                            Còn nợ: {formatNumberWithSeparator(Math.max(0, Math.round(activeBooking.full_price * (1 - (activeBooking.discount_percent || 0)/100) - activeBooking.deposit_amount)))}đ
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : '0đ', 
                 icon: DollarSign, 
                 color: 'text-primary', 
                 bg: 'bg-rose-50' 
@@ -467,7 +491,7 @@ export default function CustomerDetailPage() {
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                  <p className="text-xl font-black text-slate-900">{stat.value}</p>
+                  <div className="text-xl font-black text-slate-900 leading-tight">{stat.value}</div>
                 </div>
               </div>
             ))}
