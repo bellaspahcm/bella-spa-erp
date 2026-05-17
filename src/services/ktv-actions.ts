@@ -66,7 +66,7 @@ export async function getKTVUpcomingSessions() {
     .from('session_logs')
     .select(`
       *,
-      bookings (
+      bookings!inner (
         id,
         booking_number,
         package_name,
@@ -75,6 +75,7 @@ export async function getKTVUpcomingSessions() {
         completed_sessions,
         preferred_time,
         customer_id,
+        assigned_ktv_id,
         packages (
           name
         ),
@@ -97,10 +98,10 @@ export async function getKTVUpcomingSessions() {
 
   if (!data || data.length === 0) return [];
 
-  // Group sessions by booking
+  // Group sessions by booking - strictly keeping only matching KTV sessions
   const sessionsByBooking: Record<string, any[]> = {};
   data.forEach((s: any) => {
-    if (!s.booking_id) return;
+    if (!s.booking_id || !s.bookings || s.bookings.assigned_ktv_id !== user.id) return;
     if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = [];
     sessionsByBooking[s.booking_id].push(s);
   });
