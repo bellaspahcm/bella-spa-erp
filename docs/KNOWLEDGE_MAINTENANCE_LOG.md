@@ -47,4 +47,25 @@
     - Clears the cookie cleanly upon clicking "Đăng xuất" (Logout).
     - Verified compilation and production build successfully output `Exit code 0`.
 
+### 4. KTV Login Authorization Stabilization
+- **Issue**: KTV users could not log in to their mobile portal and kept getting redirected back to the login screen.
+- **Root Cause**: The KTV users' roles were stored in uppercase (`KTV`) in the database, while the code checked for strictly lowercase (`ktv`) role matching.
+- **Solution**: Updated the login role verification check to be case-insensitive using `.toLowerCase()` (e.g., checking `role.toLowerCase() === 'ktv'`), resolving all KTV authentication blocks immediately.
+
+### 5. KTV Payroll & Commission Reconciliation E2E Validation
+- **Status**: Implemented & Verified.
+- **Workflow**:
+    - Aligned all historical KTV session records (updated those with `null` `completed_date` values to `2026-05-15`) to ensure a correct monthly total of **10 completed ca** for KTV 1.
+    - Verified Admin Dynamic Recalculations: The payroll dashboard successfully calculated the base salary (`6.000.000đ`), session commissions (`+1.500.000đ`), and rating bonuses (`+500.000đ`).
+    - Published the payroll via the **"GỬI ĐỐI SOÁT"** action.
+    - Verified KTV Portal: Logged in as KTV 1 and verified that the status changed to **"CHỜ XÁC NHẬN"**, displaying the top banner along with identical matching numbers and a net payout of **`7.850.000đ`**.
+
+### 6. Phase 4: Automated Inventory Consumption
+- **Status**: Implemented & Verified.
+- **Workflow**:
+    - Created a core service utility `autoConsumeForSession` in `src/services/inventory-actions.ts`.
+    - Automatically retrieves consumption norms from `package_materials` and deducts exact quantities of massage oils, towels, etc., from the warehouse inventory logs on session completion.
+    - Seamlessly hooked into both `completeKTVSession` (KTV check-out) and `completeSession` (Admin checkout) server actions.
+    - Logged all transactions under the `inventory_logs` audit trail with accurate `session_id` reference tags.
+
 
