@@ -779,7 +779,7 @@ export default function CustomerDetailPage() {
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 flex-wrap mt-1">
                           <span>KTV: <strong className="text-slate-700">{session.completed_by_ktv?.full_name || activeBooking?.assigned_ktv?.full_name || 'Chưa phân công'}</strong>{session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone ? ` (${session.completed_by_ktv?.phone || activeBooking?.assigned_ktv?.phone})` : ''}</span>
                           <span>•</span>
-                          <span>Hotline: <strong className="text-rose-500 font-black">0905 123 456</strong></span>
+                          <span>Hotline: <strong className="text-rose-500 font-black">0865 701 493</strong></span>
                           <span>•</span>
                           <span>{session.completed_date || session.assigned_date || 'Chưa cập nhật'}</span>
                         </p>

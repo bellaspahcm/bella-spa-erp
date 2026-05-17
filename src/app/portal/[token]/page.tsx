@@ -109,9 +109,19 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                Liệu trình <br/>
                <span className="text-primary">{booking.package_name || 'Gói dịch vụ'}</span>
             </h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 bg-slate-50 border border-slate-100/50 inline-block px-3 py-1.5 rounded-full">
-              Mã dịch vụ: <span className="text-slate-800 font-black">#{booking.id.substring(0, 8).toUpperCase()}</span> • Đăng ký ngày: <span className="text-slate-800 font-black">{booking.created_at ? new Date(booking.created_at).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</span>
-            </p>
+            <div className="mt-2 flex flex-col gap-2">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 border border-slate-100/50 inline-block px-3 py-1.5 rounded-full">
+                  Mã dịch vụ: <span className="text-slate-800 font-black">#{booking.id.substring(0, 8).toUpperCase()}</span> • Đăng ký ngày: <span className="text-slate-800 font-black">{booking.created_at ? new Date(booking.created_at).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</span>
+                </p>
+              </div>
+              <div>
+                <a href="tel:0865701493" className="inline-flex items-center gap-1.5 text-[10px] font-black text-rose-500 uppercase tracking-wider bg-rose-50 border border-rose-100/60 px-3 py-1.5 rounded-full hover:bg-rose-100 transition-all active:scale-95 shadow-sm shadow-rose-50/50">
+                  <Phone className="w-3 h-3 fill-current" />
+                  <span>Hotline hỗ trợ: <strong className="font-black">0865 701 493</strong></span>
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Progress Card */}
@@ -225,17 +235,11 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50 w-fit">
                         <span>KTV thực hiện:</span>
                         <span className="text-primary font-black">{session.completed_by_ktv?.full_name || 'Bella Spa'}</span>
-                        <span className="text-slate-300 font-normal">|</span>
-                        <span>Hotline:</span>
-                        <a href="tel:0905123456" className="text-rose-500 hover:text-rose-600 font-black transition-colors underline decoration-dotted">0905 123 456</a>
                       </div>
                     ) : (
                       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50 w-fit">
                         <span>KTV phụ trách:</span>
                         <span className="text-slate-800 font-black">{booking.assigned_ktv?.full_name || 'Đang sắp xếp KTV'}</span>
-                        <span className="text-slate-300 font-normal">|</span>
-                        <span>Hotline:</span>
-                        <a href="tel:0905123456" className="text-rose-500 hover:text-rose-600 font-black transition-colors underline decoration-dotted">0905 123 456</a>
                       </div>
                     )}
                     
@@ -268,10 +272,6 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                  <MapPin className="w-4 h-4 text-primary/60" />
                  <span>Khu vực TP. Hồ Chí Minh</span>
               </div>
-              <a href="tel:0905123456" className="flex items-center justify-center gap-2 text-slate-500 text-xs hover:text-primary transition-colors">
-                 <Phone className="w-4 h-4 text-primary/60" />
-                 <span>0905 123 456</span>
-              </a>
               <a href="https://www.facebook.com/bellaspahcm" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 text-slate-500 text-xs hover:text-primary transition-colors">
                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-primary/60"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
                  <span>facebook.com/bellaspahcm</span>
@@ -342,7 +342,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
       {/* Floating CTA */}
       <div className="fixed bottom-6 left-6 right-6 z-50">
          <a 
-           href="tel:0905123456"
+           href="tel:0865701493"
            className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 shadow-xl border border-white/10 active:scale-95 transition-all"
          >
             <Phone className="w-4 h-4" />
