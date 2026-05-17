@@ -490,7 +490,7 @@ export default function FinancialReconciliationPage() {
                       </span>
                     </td>
                     <td className="px-8 py-6 text-center">
-                      <Link href={`/dashboard/bookings?booking_id=${item.booking_id}`}
+                      <Link href={`/dashboard/customers/${item.customer_id}?bookingId=${item.booking_id}`}
                         className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
                         <ExternalLink className="w-3 h-3" />
                         Điều Tra
