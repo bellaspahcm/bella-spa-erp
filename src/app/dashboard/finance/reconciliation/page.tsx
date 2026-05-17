@@ -48,6 +48,7 @@ export default function FinancialReconciliationPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<any>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'cash'>('bank_transfer');
   const [isPaying, setIsPaying] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -192,14 +193,18 @@ export default function FinancialReconciliationPage() {
         throw new Error('Bạn không có quyền thu tiền');
       }
 
+      const customerStr = selectedDebt.customer_name || 'Khách hàng';
+      const packageStr = selectedDebt.package_name || 'Gói Dịch Vụ';
+      const shortBookingId = selectedDebt.booking_id?.split('-')[0]?.toUpperCase() || 'N/A';
+
       const { error } = await supabase.from('revenue').insert({
         tenant_id: profile.tenant_id,
         booking_id: selectedDebt.booking_id,
         amount: cleanAmount,
         revenue_type: 'additional',
-        notes: 'Thu nợ từ đối soát',
+        notes: `Thu nợ đối soát - KH: ${customerStr} - Gói: ${packageStr} (Booking: ${shortBookingId})`,
         status: 'confirmed',
-        payment_method: 'bank_transfer',
+        payment_method: paymentMethod,
         received_date: new Date().toISOString().split('T')[0],
         recorded_by_id: session.user.id
       });
@@ -431,6 +436,7 @@ export default function FinancialReconciliationPage() {
                         onClick={() => {
                           setSelectedDebt(item);
                           setPaymentAmount(item.debt?.toString() || '');
+                          setPaymentMethod('bank_transfer');
                           setShowPaymentModal(true);
                         }}
                         className="inline-flex items-center gap-2 bg-slate-100 hover:bg-primary hover:text-white text-slate-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
@@ -659,6 +665,38 @@ export default function FinancialReconciliationPage() {
                   <p className="text-[10px] text-slate-400 mt-2">
                     Mặc định là số tiền khách còn nợ: <strong className="text-rose-500">{formatCurrency(selectedDebt.debt)}</strong>
                   </p>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                    Phương thức thanh toán
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('bank_transfer')}
+                      className={cn(
+                        "py-3.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all text-center",
+                        paymentMethod === 'bank_transfer'
+                          ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      Chuyển khoản
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('cash')}
+                      className={cn(
+                        "py-3.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all text-center",
+                        paymentMethod === 'cash'
+                          ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      Tiền mặt
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-2">

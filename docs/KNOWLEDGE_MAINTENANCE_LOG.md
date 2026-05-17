@@ -113,3 +113,12 @@
   - Updated `confirmTransaction` in `src/services/finance-actions.ts` to automatically update the `received_date` (for revenue) or `expense_date` (for expenses) to the current system date (`today`) upon confirmation.
   - Executed an SQL update directly in Supabase to correct the transaction date of customer **Lê Diệu 2**'s remaining payment of `13.200.000đ` (originally dated `10/05/2026`) to **`17/05/2026`** (today).
   - Verified that the transaction now instantly and correctly displays at the very top of the **"Giao dịch gần đây"** dashboard.
+
+### 14. Auditable Debt Collection Notes & Payment Method Selector
+- **Issue**: Debt collections submitted from the Financial Reconciliation module (`revenue_type === 'additional'`) only recorded a generic note `"Thu nợ từ đối soát"`, with no customer name, package details, or booking ID. This made it difficult for accountants and spa admins to trace which customer or package the payment originated from. Furthermore, the payment method was hardcoded to Bank Transfer (`bank_transfer`), preventing cash tracking.
+- **Solution**:
+  - Refactored `src/app/dashboard/finance/reconciliation/page.tsx` to add a dynamic `paymentMethod` state variable.
+  - Replaced the hardcoded static `notes` with a dynamic, highly descriptive string: ``Thu nợ đối soát - KH: ${customerStr} - Gói: ${packageStr} (Booking: ${shortBookingId})``.
+  - Integrated a premium, interactive payment method selector (Bank Transfer / Cash) directly inside the **"Thu Nợ Khách Hàng"** modal using sleek, modern CSS styles.
+  - Linked the selected payment method dynamically into the database submission.
+  - Verified code compiles perfectly with zero build issues.
