@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Standardization Complete | 🟡 Phase 1 Starting
+Status: 🟢 Phases 1-4 & 6-7 Complete | 🟡 Phase 5 CRM/Zalo Integration Starting
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -44,3 +44,12 @@ Status: 🟢 Standardization Complete | 🟡 Phase 1 Starting
 - [x] **Internal & Customer Chat**: Built and stabilized the real-time chat module for administrative coordination.
 - [x] **Customer Portal UI/UX**: Enhanced the customer treatment tracking portal with improved styling and official social media integrations.
 - [x] **Client-side Fetching Optimization**: Refactored real-time connections to bypass server-action bottlenecks.
+
+## 🟢 Phase 7: UI/UX Refinement & Financial Transparency (Completed)
+- [x] **Customer Profile List Optimization**: Cleaned up the main customer listing cards by removing redundant/transactional financial statuses. The card is now strictly a personal identity card, catering to the reality that customers purchase multiple distinct therapy packages.
+- [x] **Detailed Therapy/Payment Card**: Redesigned the main financial card in Customer Details `/dashboard/customers/[id]` to show:
+  - Custom label (`Đã thanh toán đủ` vs `Đã cọc`).
+  - Active amount paid.
+  - Original package price (`Giá gốc` with line-through).
+  - Discount details (`Đã giảm [Phần trăm]%`).
+  - Real-time remaining balance owed (`Còn nợ: [Số tiền]đ`) computed dynamically for transparent reconciliation.
