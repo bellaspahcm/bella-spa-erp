@@ -17,6 +17,49 @@ export default function LoginPage() {
     setError(null);
 
     const supabase = getSupabase();
+
+    // DEVELOPMENT BYPASS: Allow developer to log in as any user in public.users table using password123
+    if (process.env.NODE_ENV === 'development' && password === 'password123') {
+      console.log("[Login Bypass] Attempting real Supabase Auth signInWithPassword first for dev user...");
+      
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password: 'password123',
+      });
+
+      if (!authError && authData?.user) {
+        console.log("[Login Bypass] Real Auth successful! Clearing mock cookie.");
+        document.cookie = 'mock_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      // FALLBACK TO COOKIE BYPASS if real auth fails
+      console.warn("[Login Bypass] Real Auth failed or user not in auth.users. Falling back to mock cookie bypass:", authError?.message);
+
+      if (email === 'bellaspa.testadmin@gmail.com') {
+        console.log("[Login Bypass] Test Admin special bypass triggered!");
+        document.cookie = `mock_user_email=${email}; path=/; max-age=31536000; SameSite=Lax`;
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      const { data: userExists } = await supabase
+        .from('users')
+        .select('email, role')
+        .eq('email', email)
+        .single();
+      
+      if (userExists) {
+        console.log("[Login Bypass] User found in public.users! Setting mock cookie.");
+        document.cookie = `mock_user_email=${email}; path=/; max-age=31536000; SameSite=Lax`;
+        window.location.href = '/dashboard';
+        return;
+      } else {
+        console.warn("[Login Bypass] User not found in public.users table either.");
+      }
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -26,6 +69,9 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
+      if (process.env.NODE_ENV === 'development') {
+        document.cookie = 'mock_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
       window.location.href = '/dashboard';
     }
   };

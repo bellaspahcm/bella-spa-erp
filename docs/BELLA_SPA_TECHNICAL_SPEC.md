@@ -22,6 +22,7 @@
    - **Server Components (RSC)**: Mặc định cho toàn bộ trang để tối ưu SEO và bảo mật dữ liệu nhạy cảm.
    - **Client Components**: Chỉ sử dụng cho các thành phần cần tương tác (Form, Animation, Real-time Chat).
 4. **Design Driven**: Giao diện phải tuân thủ triết lý "Premium & Modern" — sử dụng Tailwind v4 cho styling và Framer Motion cho micro-interactions.
+5. **Modular Design**: Kiến trúc phân tách theo tính năng (Feature-based), giúp hệ thống dễ dàng mở rộng và bảo mật theo từng domain (Customers, Bookings, Finance, Salary, Inventory).
 
 ---
 

@@ -169,7 +169,7 @@ export async function ktvConfirmSalary(salaryRecordId: string) {
     .update({ status: 'confirmed', ktv_confirmed_at: new Date().toISOString() })
     .eq('id', salaryRecordId)
     .eq('ktv_id', currentUser.id)
-    .in('status', ['published', 'disputed']);
+    .in('status', ['published', 'pending_approval', 'disputed']);
 
   if (error) return { success: false, error: error.message };
 
@@ -192,7 +192,7 @@ export async function ktvDisputeSalary(salaryRecordId: string, reason: string) {
     .update({ status: 'disputed', dispute_reason: reason })
     .eq('id', salaryRecordId)
     .eq('ktv_id', currentUser.id)
-    .eq('status', 'published');
+    .in('status', ['published', 'pending_approval']);
 
   if (updateError) return { success: false, error: updateError.message };
 

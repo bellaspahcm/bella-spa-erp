@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
@@ -74,6 +75,7 @@ const item = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
   const [topKTVs, setTopKTVs] = useState<any[]>([]);
@@ -95,24 +97,27 @@ export default function DashboardPage() {
   useEffect(() => {
     async function checkRole() {
       try {
-        const supabase = createClient() as any;
-        // Use client-side auth — always available without cookie forwarding issues
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { setUserRole('ktv'); return; }
-
-        const { data: profile } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        setUserRole((profile?.role?.toLowerCase() as any) || 'ktv');
-      } catch {
+        const { getCurrentUser } = await import('@/services/user-actions');
+        const profile = await getCurrentUser();
+        if (!profile) {
+          setUserRole('ktv');
+          router.replace('/ktv/dashboard');
+          return;
+        }
+        const role = profile.role?.toLowerCase();
+        if (role === 'ktv') {
+          router.replace('/ktv/dashboard');
+          return;
+        }
+        setUserRole((role as any) || 'ktv');
+      } catch (error) {
+        console.error('Error checking user role:', error);
         setUserRole('ktv');
+        router.replace('/ktv/dashboard');
       }
     }
     checkRole();
-  }, []);
+  }, [router]);
 
   const getMonthRange = (month: number, year: number) => {
     // Manually construct YYYY-MM-DD to avoid timezone shifts from .toISOString()

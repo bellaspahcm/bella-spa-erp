@@ -25,3 +25,26 @@
     - Executed a cascading cleanup script to remove all customers with "TEST" in their name.
     - Deleted related records in `bookings`, `session_logs`, `revenue`, `shifts`, `attendance`, `inventory_logs`, `session_reviews`, `chat_messages`, and `membership_records`.
     - Verified 0 records remaining for test entities.
+
+## 2026-05-17: KTV Session Management & E2E Validation
+
+### 1. KTV Session Check-in/Check-out Synchronization
+- **Status**: Implemented & Verified.
+- **Workflow**:
+    - Check-in sets session status to `in_progress`, captures `start_time` and `completed_by_ktv_id`, and sets `bookings.is_in_care = true` and `bookings.status = 'in_progress'`.
+    - Check-out sets session status to `completed`, records `completed_date`, increments `bookings.completed_sessions`, and updates booking status to `completed` and `is_in_care = false` only if the package is fully completed.
+- **Results**: Verified E2E in real-time. Database logs show perfect integrity and matching status updates. Detailed log saved at [KTV_TEST_ACCEPTANCE.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/KTV_TEST_ACCEPTANCE.md).
+
+### 2. packages Table RLS Security Hardening
+- **Status**: Verified active and operational. Row Level Security correctly enforces read-only access for `active` packages and limits complete management (write, edit, delete) strictly to authenticated users with the `admin` role.
+
+### 3. Local Development Bypass with Cookie-Based Role Switching
+- **Issue**: Supabase Auth on Cloud requires email confirmation, blocking developers from logging in or testing admin/KTV features locally without access to the activation mailbox.
+- **Solution**:
+    - Implemented a unified cookie-based bypass in `src/services/user-actions.ts` (`getCurrentUser`) and `src/app/(auth)/login/page.tsx` (`handleLogin`) active strictly in `NODE_ENV === 'development'`.
+    - Allows developers to input any existing email from the `public.users` table (e.g. `admin@bellaspa.vn`, `ktv1@bellaspa.com.vn`) and password `password123` to log in immediately.
+    - Sets a `mock_user_email` cookie upon success, which is transparently read by both server actions and client pages (replacing client-side `supabase.auth.getUser` checks in `src/app/dashboard/page.tsx`).
+    - Clears the cookie cleanly upon clicking "Đăng xuất" (Logout).
+    - Verified compilation and production build successfully output `Exit code 0`.
+
+

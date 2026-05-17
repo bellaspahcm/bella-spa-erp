@@ -45,7 +45,19 @@ Hệ thống ERP toàn diện cho Bella Spa, quản lý:
 
 ---
 
-## 🏗️ Kiến Trúc Kỹ Thuật
+## 🏗️ Kiến Trúc Kỹ Thuật & Cấu Trúc Mô-đun (Modular Architecture)
+
+Hệ thống được thiết kế theo kiến trúc **Mô-đun (Modular)** rạch ròi, giúp dễ dàng mở rộng, bảo trì và đảm bảo tính bảo mật dữ liệu giữa các phòng ban.
+
+### 🧩 Các Mô-đun Chính
+Hệ thống được chia thành 7 phân hệ chính (Modules):
+1. **Mô-đun Khách hàng (Customer Module):** Quản lý hồ sơ mẹ & bé, lịch sử dịch vụ và chăm sóc.
+2. **Mô-đun Đặt lịch (Booking Module):** Quy trình từ tiếp nhận, đặt cọc đến khởi tạo thẻ liệu trình.
+3. **Mô-đun Liệu trình (Sessions Module):** Quản lý thực thi dịch vụ hằng ngày, tích buổi và đánh giá.
+4. **Mô-đun Tài chính (Finance Module):** Thu chi, đối soát công nợ và báo cáo lãi lỗ (P&L).
+5. **Mô-đun Nhân sự & Lương (Salary/HR Module):** Chấm công, KPI, hoa hồng và bảng lương tự động.
+6. **Mô-đun Kho vận (Inventory Module):** Quản lý tồn kho và định mức tiêu hao vật tư theo liệu trình.
+7. **Hệ thống Tin nhắn (Messaging Center):** Giao tiếp nội bộ và chăm sóc khách hàng thời gian thực.
 
 ### Stack Công Nghệ Đề Xuất
 

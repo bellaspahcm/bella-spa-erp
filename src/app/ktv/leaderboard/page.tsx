@@ -146,18 +146,18 @@ export default function KTVLeaderboardPage() {
 
       {/* Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-8 py-4 flex justify-between items-center z-50">
-        <Link href="/ktv/dashboard" className="text-slate-300 flex flex-col items-center gap-1">
+        <Link href="/ktv/dashboard" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
           <Clock className="w-6 h-6" />
           <span className="text-[10px] font-black uppercase">Lịch ca</span>
         </Link>
-        <Link href="/ktv/earnings" className="text-slate-300 flex flex-col items-center gap-1">
+        <Link href="/ktv/earnings" className="text-slate-300 hover:text-primary flex flex-col items-center gap-1 transition-colors">
           <DollarSign className="w-6 h-6" />
           <span className="text-[10px] font-black uppercase">Thu nhập</span>
         </Link>
-        <button className="text-primary flex flex-col items-center gap-1">
+        <Link href="/ktv/leaderboard" className="text-primary flex flex-col items-center gap-1">
           <CalendarIcon className="w-6 h-6" />
           <span className="text-[10px] font-black uppercase">Cá nhân</span>
-        </button>
+        </Link>
       </div>
     </div>
   );

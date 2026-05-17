@@ -87,6 +87,16 @@ export async function startSession(sessionId: string) {
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') throw new Error('Unauthorized');
 
+  // 1. Lấy thông tin session để tìm booking_id
+  const { data: session } = await supabase
+    .from('session_logs')
+    .select('booking_id')
+    .eq('id', sessionId)
+    .single();
+
+  if (!session) throw new Error('Session not found');
+
+  // 2. Cập nhật session log
   const { error } = await supabase
     .from('session_logs')
     .update({
@@ -100,6 +110,15 @@ export async function startSession(sessionId: string) {
     console.error('Error starting session:', error);
     throw new Error('Không thể bắt đầu buổi trị liệu');
   }
+
+  // 3. Cập nhật booking: set is_in_care = true và status = in_progress
+  await supabase
+    .from('bookings')
+    .update({ 
+      is_in_care: true,
+      status: 'in_progress'
+    })
+    .eq('id', session.booking_id);
 
   revalidatePath('/ktv/dashboard');
   return { success: true };
@@ -144,13 +163,21 @@ export async function completeKTVSession(sessionId: string, notes: string = '') 
 
   if (booking) {
     const newCount = (booking.completed_sessions || 0) + 1;
-    await supabase
+    const isFinished = newCount >= booking.total_sessions;
+    const { error: bookingError } = await supabase
       .from('bookings')
       .update({ 
         completed_sessions: newCount,
-        status: newCount >= booking.total_sessions ? 'completed' : 'in_care'
+        status: isFinished ? 'completed' : 'in_progress',
+        is_in_care: !isFinished // Set false if finished, otherwise keep it or set true (should be true anyway if not finished)
       })
       .eq('id', session.booking_id);
+
+    if (bookingError) {
+      console.error('Error updating booking status:', bookingError);
+      // Optional: you might want to rollback the session_log update, 
+      // but for now let's at least log it.
+    }
   }
 
   revalidatePath('/ktv/dashboard');
