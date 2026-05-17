@@ -122,3 +122,13 @@
   - Integrated a premium, interactive payment method selector (Bank Transfer / Cash) directly inside the **"Thu Nợ Khách Hàng"** modal using sleek, modern CSS styles.
   - Linked the selected payment method dynamically into the database submission.
   - Verified code compiles perfectly with zero build issues.
+
+### 15. Audit Trail Table UX Enhancements (At-a-Glance Changes & Friendly Translations)
+- **Issue**: The main Audit Trail log table (`/dashboard/audit`) only displayed standard system information such as timestamps, raw table names, raw actions, and a detail view icon. In order to see what actually changed or what was added/deleted, the Administrator had to manually click the "Eye" icon to open the detailed modal every single time, which was highly inefficient.
+- **Solution**:
+  - Refactored `src/app/dashboard/audit/page.tsx` to add a new **"Chi tiết thay đổi"** (Changes Detail) column directly to the main table.
+  - Rendered `renderReadableChanges(log)` inside the new column to display friendly, human-readable Vietnamese change summaries immediately without needing a click.
+  - Added full translation tables for Database table names (`TABLE_TRANSLATIONS` covering `revenue`, `expenses`, `bookings`, `inventory_items`, `users`, `salary_records`, `session_logs`) and Actions (`Thêm mới`, `Cập nhật`, `Xóa`).
+  - Added dozens of missing property translation mappings in `FIELD_TRANSLATIONS` and `VALUE_TRANSLATIONS` to guarantee that all system mutations are described clearly and professionally.
+  - Corrected table grid `colSpan` variables for loading and empty state layouts.
+  - Verified 100% production build stability.
