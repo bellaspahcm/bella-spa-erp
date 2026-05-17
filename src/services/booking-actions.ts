@@ -66,6 +66,10 @@ export async function getBookingsByCustomerId(customerId: string) {
       session_logs(
         *,
         completed_by_ktv:users!session_logs_completed_by_ktv_id_fkey(full_name, phone)
+      ),
+      revenue(
+        *,
+        recorded_by:users!revenue_recorded_by_id_fkey(full_name)
       )
     `)
     .eq('customer_id', customerId)
