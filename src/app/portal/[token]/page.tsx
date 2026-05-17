@@ -283,7 +283,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
       {/* Rating Modal */}
       <AnimatePresence>
         {selectedSession && (
-          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 sm:p-6 pb-0 sm:pb-6">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -292,10 +292,10 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
             <motion.div 
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              className="bg-white w-full max-w-md rounded-t-[32px] sm:rounded-[32px] p-6 sm:p-8 pb-8 sm:pb-8 relative z-10 shadow-2xl max-h-[92vh] overflow-y-auto flex flex-col"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-md rounded-[32px] p-6 sm:p-8 relative z-10 shadow-2xl max-h-[85vh] overflow-y-auto flex flex-col"
             >
               <div className="text-center mb-5 sm:mb-6">
                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
