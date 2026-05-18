@@ -96,16 +96,41 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
     throw new Error('Không thể gửi đánh giá');
   }
 
-  // 3. Tạo bản ghi review chính thức (Analytics source)
+  // 3. Tạo/Cập nhật bản ghi review chính thức (Analytics source)
   if (session) {
-    await supabase.from('session_reviews').insert({
-      session_id: sessionId,
+    // Check if a placeholder review already exists for this session log
+    const { data: existingReview } = await supabase
+      .from('session_reviews')
+      .select('id')
+      .eq('session_log_id', sessionId)
+      .maybeSingle();
+
+    const reviewPayload = {
+      session_log_id: sessionId,
       ktv_id: session.completed_by_ktv_id,
-      customer_id: session.bookings?.customer_id,
+      reviewer_id: session.bookings?.customer_id || null,
       rating: rating,
-      comment: comment,
+      note: comment,
+      status: 'approved',
       tenant_id: session.tenant_id
-    });
+    };
+
+    if (existingReview) {
+      const { error: reviewError } = await supabase
+        .from('session_reviews')
+        .update(reviewPayload)
+        .eq('id', existingReview.id);
+      if (reviewError) {
+        console.error('Error updating session review:', reviewError);
+      }
+    } else {
+      const { error: reviewError } = await supabase
+        .from('session_reviews')
+        .insert([reviewPayload]);
+      if (reviewError) {
+        console.error('Error inserting session review:', reviewError);
+      }
+    }
   }
 
   // 4. Kích hoạt tính toán thưởng cho KTV qua RPC

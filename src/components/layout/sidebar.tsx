@@ -126,7 +126,7 @@ export function Sidebar() {
         </div>
 
         {/* ── Nav (scrollable) ── */}
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto relative z-10 pb-2
+        <nav className="flex-1 min-h-0 px-4 space-y-1.5 overflow-y-auto relative z-10 pb-2
                         [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent
                         [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-rose-200/60">
           <div className="px-4 mb-3 mt-2">
