@@ -250,6 +250,7 @@ export async function getImportantAlerts() {
         id, 
         end_time, 
         completed_date,
+        assigned_date,
         session_number,
         completed_by_ktv_id,
         booking_id,
@@ -324,6 +325,15 @@ export async function getImportantAlerts() {
       const dObj = endTimeVal ? parsePostgresTimestamp(endTimeVal) : null;
       const isValid = dObj && !isNaN(dObj.getTime());
 
+      let finalTimestamp = 0;
+      if (isValid && dObj) {
+        finalTimestamp = dObj.getTime();
+      } else if (s.completed_date) {
+        finalTimestamp = new Date(s.completed_date + 'T00:00:00').getTime();
+      } else if (s.assigned_date) {
+        finalTimestamp = new Date(s.assigned_date + 'T00:00:00').getTime();
+      }
+
       alerts.push({
         type: 'success',
         icon: 'checkCircle',
@@ -331,7 +341,7 @@ export async function getImportantAlerts() {
         message: msgStr,
         severity: 'success',
         link: `/dashboard/sessions?bookingId=${s.booking_id}`,
-        timestamp: isValid ? dObj.getTime() : Date.now()
+        timestamp: finalTimestamp
       });
     }
 
