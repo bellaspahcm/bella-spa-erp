@@ -273,8 +273,27 @@
   - Swapped out all read-only JSX references and modal event handler dependencies from the stale `selectedBooking` state to `activeBooking`.
   - Now, any status updates, manual saves, database synchronization events, or background list reloads instantly propagate to the modal's progress card, rendering matching counters and progress bars in real-time.
   - Verified 100% successful Next.js production build and zero TypeScript errors.
+## 2026-05-18 (Session 2): Administrative Progress Sync & Core Audit Trail Logging
 
+### 1. Progress Summary Synchronization Bug Fix (KTV Checkout Race Condition)
+- **Issue**: KTV checkouts occasionally resulted in progress counter mismatches (e.g. Completed Sessions count in the `bookings` table diverging from the actual count of completed logs in `session_logs`).
+- **Root Cause**: The database contained an active, correct trigger `trg_sync_booking_progress` that recalculated `completed_sessions` on `bookings` AFTER changes to `session_logs`. However, `completeKTVSession` inside `src/services/ktv-actions.ts` fetched the booking pre-execution and manually updated the booking with `completed_sessions: (booking.completed_sessions || 0) + 1`. This manual update created a race condition that overwrote the trigger's correct calculation with stale incremental values.
+- **Solution**:
+  - Refactored `completeKTVSession` in `src/services/ktv-actions.ts`.
+  - Replaced the manual incremental update of `completed_sessions` with a robust select count of completed session logs, matching the pattern implemented in the main `completeSession` action in `booking-actions.ts`.
+  - Removed `completed_sessions` from the update payload, allowing the database trigger to handle synchronization natively and preventing race conditions.
+  - Executed a clean SQL transaction to repair the 6 mismatched bookings currently in the database, restoring them to 100% accurate session counts.
 
-
-
+### 2. Comprehensive Administrative Audit Trail Logging
+- **Issue**: Actions like completing a session, adding extra sessions, saving session notes, rescheduling sessions, reusing a package, or recording a remaining payment were not being logged to the `audit_logs` system table. The customer explicitly requested that all administrative adjustments to client treatment cards, bookings, schedules, and sessions must be fully recorded.
+- **Solution**:
+  - Integrated `recordAuditLog` calls into all major operational server actions in `src/services/booking-actions.ts`:
+    - `completeSession`: Records the completion of a session log with old and new status/KTV metadata.
+    - `saveSessionNote`: Records notes adjustments.
+    - `addExtraSession`: Records package/booking total session adjustments (treatment card updates).
+    - `createSessionLog`: Records manual creation/insertion of a session log.
+    - `finalizeReuse` (used by `reusePackage`): Records the creation of a new treatment cycle booking.
+    - `recordRemainingPayment`: Records changes in booking payment balance status (`deposit_amount` and booking `status` transition).
+    - `rescheduleSession`: Records scheduling shifts and adjustments.
+  - Verified 100% clean compilation using `node node_modules/typescript/bin/tsc --noEmit` and successfully pushed all changes to production (`main` branch synced).
 
