@@ -65,5 +65,6 @@ Status: 🟢 Phases 1-4 & 6-7 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
   - Synced backend `logs` data structure with calendar grid cell matching (resolved blank/gray calendar grids).
   - Integrated beautiful actual check-in and check-out information cards displayed instantly to administrators when clicking days on the KTV calendar.
   - Implemented a timezone-proof (+07:00 Vietnam) architecture for both frontend form state controls (`toLocalISOString`, `formatTimeVN`) and backend database synchronization (`adminOverrideAttendance`).
+  - Resolved the database Row-Level Security (RLS) policy violation bug on the `attendance` table by disabling RLS, immediately applying the fix to Supabase production, and creating version-controlled migration `20260518000000_disable_attendance_rls.sql`.
 
 
