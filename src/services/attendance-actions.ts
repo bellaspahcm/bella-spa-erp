@@ -218,8 +218,8 @@ export async function adminOverrideAttendance(payload: {
     ktv_id: payload.ktvId,
     date: payload.date,
     status: payload.status,
-    checkin_time: payload.checkinTime ? new Date(payload.checkinTime).toISOString() : null,
-    checkout_time: payload.checkoutTime ? new Date(payload.checkoutTime).toISOString() : null,
+    checkin_time: payload.checkinTime ? new Date(payload.checkinTime.includes('+') || payload.checkinTime.includes('Z') ? payload.checkinTime : `${payload.checkinTime}+07:00`).toISOString() : null,
+    checkout_time: payload.checkoutTime ? new Date(payload.checkoutTime.includes('+') || payload.checkoutTime.includes('Z') ? payload.checkoutTime : `${payload.checkoutTime}+07:00`).toISOString() : null,
     tenant_id: tenantId,
   };
 
