@@ -383,5 +383,17 @@
     - If checked out historically (where only completion date is recorded): `Ca KH Ngọc do KTV Lê Thu Hà đã hoàn thành ngày 18/05/2026` (smooth grammar, removing the awkward "lúc" prefix for simple dates).
   - Pushed the code changes cleanly to the repository and compiled with Next.js type-safety checks successfully.
 
+### 2. Notification Sort Order Bug Resolution (Date.now() Fallback Fix)
+- **Issue**: Although active check-out sessions had precise GMT+7 times, historical completed sessions (which have no specific check-out hour/minute stored in the database, only `completed_date`) were incorrectly boosted to the absolute top of the administrative notifications list on every dashboard refresh.
+- **Root Cause**:
+  - The alert timestamp generator inside `getImportantAlerts` evaluated the check-out timestamp `dObj.getTime()`.
+  - For historical sessions where `end_time` is `null` or missing, the code fell back to `Date.now()` to set the notification `timestamp`.
+  - Because `Date.now()` evaluates to the absolute current time at the moment the API is called, it gave all historical sessions a massive artificial timestamp, sorting them straight to the top and pushing the real, recently checked out sessions with valid hours underneath them.
+- **Solution**:
+  - Corrected the timestamp calculation logic in `src/services/dashboard-actions.ts` to query `assigned_date` alongside `completed_date`.
+  - If a session lacks a valid `end_time`, it now constructs a correct local midnight timestamp (e.g. `s.completed_date + 'T00:00:00'`) instead of `Date.now()`.
+  - This preserves the exact chronological order of sessions: recent checkouts with specific times are kept correctly at the absolute top, while historical sessions are neatly ordered below them based on their exact day.
+  - Successfully verified the layout and ordering via automated browser tests, capturing the dropdown displaying all times and dates perfectly.
+
 
 
