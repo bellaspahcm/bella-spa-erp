@@ -16,6 +16,7 @@ import {
 import { getKTVLeaderboard } from '@/services/ktv-actions';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase-client';
 
 export default function KTVLeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
@@ -39,6 +40,28 @@ export default function KTVLeaderboardPage() {
 
   useEffect(() => {
     fetchData();
+
+    // Set up realtime listener to fetch fresh data instantly when session changes occur
+    const supabaseClient = createClient();
+    const channel = supabaseClient
+      .channel(`leaderboard-realtime-${selectedMonth}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'session_logs'
+        },
+        (payload: any) => {
+          console.log('Realtime session log update, refetching leaderboard:', payload);
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabaseClient.removeChannel(channel);
+    };
   }, [selectedMonth]);
 
   return (
