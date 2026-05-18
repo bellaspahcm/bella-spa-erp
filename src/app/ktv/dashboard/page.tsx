@@ -36,6 +36,7 @@ import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 
 export default function KTVDashboard() {
   const [user, setUser] = useState<any>(null);
@@ -57,6 +58,7 @@ export default function KTVDashboard() {
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
 
   const router = useRouter();
+  const { executeAction } = useOfflineSync();
 
   const handleLogout = async () => {
     try {
@@ -149,37 +151,69 @@ export default function KTVDashboard() {
 
   const handleCheckIn = async () => {
     setIsAttendanceLoading(true);
-    const res = await ktvCheckIn();
-    if (res.success) {
-      toast.success(res.data?.status === 'late' ? 'Check-in thành công (Trễ giờ)!' : 'Check-in thành công!');
-      fetchAttendance();
-    } else {
-      toast.error(res.error || 'Check-in thất bại');
+    try {
+      const res = await executeAction('KTV_SHIFT_CHECKIN', {}, () => ktvCheckIn());
+      if (res && res.offline) {
+        setTodayAttendance({
+          checkin_time: new Date().toISOString(),
+          status: 'present'
+        });
+      } else if (res && res.success) {
+        toast.success(res.data?.status === 'late' ? 'Check-in thành công (Trễ giờ)!' : 'Check-in thành công!');
+        fetchAttendance();
+      } else {
+        toast.error((res && res.error) || 'Check-in thất bại');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Check-in thất bại');
+    } finally {
+      setIsAttendanceLoading(false);
     }
-    setIsAttendanceLoading(false);
   };
 
   const handleCheckOut = async () => {
     if (!window.confirm('Bạn có chắc chắn muốn Check-out ca làm việc hôm nay?')) return;
     setIsAttendanceLoading(true);
-    const res = await ktvCheckOut();
-    if (res.success) {
-      toast.success('Check-out thành công!');
-      fetchAttendance();
-    } else {
-      toast.error(res.error || 'Check-out thất bại');
+    try {
+      const res = await executeAction('KTV_SHIFT_CHECKOUT', {}, () => ktvCheckOut());
+      if (res && res.offline) {
+        setTodayAttendance((prev: any) => ({
+          ...prev,
+          checkout_time: new Date().toISOString()
+        }));
+      } else if (res && res.success) {
+        toast.success('Check-out thành công!');
+        fetchAttendance();
+      } else {
+        toast.error((res && res.error) || 'Check-out thất bại');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Check-out thất bại');
+    } finally {
+      setIsAttendanceLoading(false);
     }
-    setIsAttendanceLoading(false);
   };
 
   const handleStart = async (sessionId: string) => {
     setIsActionLoading(sessionId);
     try {
-      await startSession(sessionId);
-      toast.success('Đã bắt đầu buổi trị liệu!');
-      fetchData();
-    } catch (error) {
-      toast.error('Không thể bắt đầu buổi trị liệu');
+      const res = await executeAction('CHECKIN', { sessionId }, () => startSession(sessionId));
+      if (res && res.offline) {
+        setActiveSessions(prev => [
+          ...prev,
+          ...upcomingSessions.filter(s => s.id === sessionId).map(s => ({
+            ...s,
+            status: 'in_progress',
+            start_time: new Date().toISOString()
+          }))
+        ]);
+        setUpcomingSessions(prev => prev.filter(s => s.id !== sessionId));
+      } else {
+        toast.success('Đã bắt đầu buổi trị liệu!');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Không thể bắt đầu buổi trị liệu');
     } finally {
       setIsActionLoading(null);
     }
@@ -190,14 +224,25 @@ export default function KTVDashboard() {
   const handleComplete = async (sessionId: string, notes: string, checkoutNoteVal: string = '') => {
     setIsActionLoading(sessionId);
     try {
-      await completeKTVSession(sessionId, notes, checkoutNoteVal);
-      toast.success('Đã hoàn thành buổi trị liệu!');
-      setCheckoutSession(null);
-      setCheckoutNotes('');
-      setKtvCheckoutNote('');
-      fetchData();
-    } catch (error) {
-      toast.error('Không thể hoàn tất buổi trị liệu');
+      const res = await executeAction(
+        'CHECKOUT',
+        { sessionId, notes, ktvCheckoutNote: checkoutNoteVal },
+        () => completeKTVSession(sessionId, notes, checkoutNoteVal)
+      );
+      if (res && res.offline) {
+        setCheckoutSession(null);
+        setCheckoutNotes('');
+        setKtvCheckoutNote('');
+        setActiveSessions(prev => prev.filter(s => s.id !== sessionId));
+      } else {
+        toast.success('Đã hoàn thành buổi trị liệu!');
+        setCheckoutSession(null);
+        setCheckoutNotes('');
+        setKtvCheckoutNote('');
+        fetchData();
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Không thể hoàn tất buổi trị liệu');
     } finally {
       setIsActionLoading(null);
     }

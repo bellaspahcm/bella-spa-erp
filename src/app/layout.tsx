@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "sonner";
+import OfflineIndicator from "@/components/common/offline-indicator";
 
 export default function RootLayout({
   children,
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en" className={`h-full antialiased ${corinthia.variable}`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
+        <OfflineIndicator />
         <Toaster position="top-center" richColors />
       </body>
     </html>
