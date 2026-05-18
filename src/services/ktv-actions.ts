@@ -296,7 +296,12 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     .update({
       status: 'completed',
       end_time: endTime.toISOString(),
-      completed_date: endTime.toISOString(),
+      completed_date: new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(endTime),
       notes: notes,
       standard_duration: standardDuration,
       actual_duration: actualDuration,
