@@ -32,6 +32,7 @@ import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { getLocalDateString } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -244,7 +245,7 @@ function BookingsContent() {
       // 3. Update the rest of the fields (date, time, notes, and status if not handled above)
       // If we rescheduled above, we don't need to update the date here again, but it's safe to do so.
       const result = await updateSessionLog(modalData.id, {
-        assigned_date: modalData.dateString || modalData.date.toISOString().split('T')[0],
+        assigned_date: modalData.dateString || getLocalDateString(modalData.date),
         assigned_time: modalData.time,
         notes: modalData.contractDetail,
         status: modalData.status
@@ -878,7 +879,7 @@ function BookingsContent() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Ngày thực hiện</label>
-                      <input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" />
+                      <input name="date" type="date" defaultValue={getLocalDateString()} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" />
                     </div>
                     <div>
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Giờ bắt đầu</label>

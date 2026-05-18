@@ -10,7 +10,7 @@ import {
 import { getKTVEarnings, getKTVLeaderboard } from '@/services/ktv-actions';
 import { getKtvSalaryForConfirmation, ktvConfirmSalary, ktvDisputeSalary } from '@/services/salary-actions';
 import { createClient } from '@/lib/supabase-client';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getLocalDateString } from '@/lib/utils';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -71,7 +71,7 @@ export default function KTVEarningsPage() {
 
       if (user) {
         const startOfMonth = `${selectedMonth}-01`;
-        const nextMonth = new Date(new Date(startOfMonth).setMonth(new Date(startOfMonth).getMonth() + 1)).toISOString().split('T')[0];
+        const nextMonth = getLocalDateString(new Date(new Date(startOfMonth).setMonth(new Date(startOfMonth).getMonth() + 1)));
 
         const { data: sessions } = await supabase
           .from('session_logs')

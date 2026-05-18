@@ -22,7 +22,7 @@ import { getCustomers, createCustomer } from '@/services/customer-actions';
 import { createBooking, getDraftBooking } from '@/services/booking-actions';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { formatNumberWithSeparator, cn } from '@/lib/utils';
+import { formatNumberWithSeparator, cn, getLocalDateString } from '@/lib/utils';
 
 
 interface BookingModalProps {
@@ -60,7 +60,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     full_price: 0,
     deposit_amount: 0,
     total_sessions: 21,
-    start_date: new Date().toISOString().split('T')[0],
+    start_date: getLocalDateString(),
     preferred_time: '08:00',
     assigned_ktv_id: '',
   });
@@ -156,7 +156,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
               full_price: 0,
               deposit_amount: 0,
               total_sessions: 21,
-              start_date: new Date().toISOString().split('T')[0],
+              start_date: getLocalDateString(),
               preferred_time: '08:00',
               assigned_ktv_id: '',
             });
@@ -527,7 +527,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     <input 
                       type="date" 
                       value={formData.start_date}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={getLocalDateString()}
                       onChange={(e) => setFormData({...formData, start_date: e.target.value})}
                       className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
                     />

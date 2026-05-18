@@ -1,6 +1,6 @@
 'use server';
 
-import { resolvePackageName } from '@/lib/utils';
+import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 
 
 import { safeRevalidatePath } from '@/lib/revalidate';
@@ -282,7 +282,7 @@ export async function createBooking(formData: any) {
         amount: validatedData.deposit_amount,
         revenue_type: 'deposit',
         payment_method: 'bank_transfer',
-        received_date: new Date().toISOString().split('T')[0],
+        received_date: getLocalDateString(),
         status: 'confirmed', // Always confirm initial deposit if recorded
         notes: `Cọc gói ${resolvePackageName(booking)}`,
         tenant_id: tenantId
@@ -452,7 +452,7 @@ export async function completeSession(sessionId: string, bookingId: string) {
     }
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
 
   // 3. Re-calculate actual completed sessions to avoid race conditions
   const { count, error: countError } = await supabase
@@ -804,7 +804,7 @@ export async function updateSessionLog(id: string, payload: any) {
 
   if (!countError) {
     const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id').eq('id', bookingId).single();
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     const bUpdates: any = { 
       completed_sessions: count || 0,
       last_updated_date: today,
@@ -1336,7 +1336,7 @@ export async function reusePackage(bookingId: string) {
     deposit_amount: 0, // Reset deposit for new cycle
     total_sessions: original.total_sessions,
     completed_sessions: 0,
-    start_date: new Date().toISOString().split('T')[0],
+    start_date: getLocalDateString(),
   };
 
   // Only include package_name if it exists in the original record
@@ -1448,7 +1448,7 @@ export async function recordRemainingPayment(params: {
         amount: params.amount,
         revenue_type: 'remaining_payment',
         payment_method: params.payment_method,
-        received_date: new Date().toISOString().split('T')[0],
+        received_date: getLocalDateString(),
         status: params.status || 'pending', // Use provided status
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
         receipt_url: params.receipt_url || null
@@ -1561,7 +1561,7 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
     if (booking?.start_date) {
       const bDate = new Date(booking.start_date);
       bDate.setDate(bDate.getDate() + (session.session_number - 1));
-      effectiveOldDateStr = bDate.toISOString().split('T')[0];
+      effectiveOldDateStr = getLocalDateString(bDate);
     } else {
       effectiveOldDateStr = newDate;
     }
@@ -1601,7 +1601,7 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
     if (!currentAssignedDate) {
       const baseDate = new Date(effectiveOldDateStr);
       baseDate.setDate(baseDate.getDate() + (s.session_number - session.session_number));
-      currentAssignedDate = baseDate.toISOString().split('T')[0];
+      currentAssignedDate = getLocalDateString(baseDate);
     }
 
     const baseDate = new Date(currentAssignedDate);

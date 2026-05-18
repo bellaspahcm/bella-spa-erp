@@ -18,7 +18,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getLocalDateString } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 export default function FinancialReconciliationPage() {
@@ -205,7 +205,7 @@ export default function FinancialReconciliationPage() {
         notes: `Thu nợ đối soát - KH: ${customerStr} - Gói: ${packageStr} (Booking: ${shortBookingId})`,
         status: 'confirmed',
         payment_method: paymentMethod,
-        received_date: new Date().toISOString().split('T')[0],
+        received_date: getLocalDateString(),
         recorded_by_id: session.user.id
       });
 

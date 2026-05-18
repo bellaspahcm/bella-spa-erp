@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
-import { resolvePackageName } from '@/lib/utils';
+import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 
 /**
  * Lấy các buổi trị liệu đang thực hiện của KTV hiện tại
@@ -383,7 +383,7 @@ export async function getKTVEarnings(month: string) {
   if (!user || user.role !== 'ktv') return { total: 0, sessions: 0 };
 
   const startOfMonth = `${month}-01`;
-  const nextMonth = new Date(new Date(startOfMonth).setMonth(new Date(startOfMonth).getMonth() + 1)).toISOString().split('T')[0];
+  const nextMonth = getLocalDateString(new Date(new Date(startOfMonth).setMonth(new Date(startOfMonth).getMonth() + 1)));
 
   const { data, error } = await supabase
     .from('session_logs')

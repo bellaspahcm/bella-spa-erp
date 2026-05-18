@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 import { revalidatePath } from 'next/cache';
 import { recordAuditLog } from './audit-actions';
+import { getLocalDateString } from '@/lib/utils';
 
 /** Fetch today's local date string in YYYY-MM-DD format (Vietnam Timezone) */
 export async function getVNTodayString(): Promise<string> {
@@ -136,7 +137,7 @@ export async function ktvCheckOut() {
 export async function getMonthlyAttendanceSummary(monthStr: string) {
   const supabase = await createClient();
   const startOfMonth = `${monthStr}-01`;
-  const endOfMonth = new Date(new Date(startOfMonth).getFullYear(), new Date(startOfMonth).getMonth() + 1, 1).toISOString().split('T')[0];
+  const endOfMonth = getLocalDateString(new Date(new Date(startOfMonth).getFullYear(), new Date(startOfMonth).getMonth() + 1, 1));
 
   // 1. Fetch all KTVs
   const { data: ktvs } = await supabase

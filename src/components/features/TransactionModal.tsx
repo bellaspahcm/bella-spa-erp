@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { useEffect } from 'react';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { User } from 'lucide-react';
+import { getLocalDateString } from '@/lib/utils';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -92,7 +93,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
           category: dbCategory,
           description: notesValue,
           status: dbStatus,
-          expense_date: new Date().toISOString().split('T')[0],
+          expense_date: getLocalDateString(),
           tenant_id: tenantId,
           submitted_by_id: user.id,
           approved_by_id: autoConfirm ? user.id : null
@@ -111,7 +112,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
           revenue_type: dbRevenueType,
           payment_method: 'bank_transfer',
           status: dbStatus,
-          received_date: new Date().toISOString().split('T')[0],
+          received_date: getLocalDateString(),
           tenant_id: tenantId,
           recorded_by_id: user.id
         });
