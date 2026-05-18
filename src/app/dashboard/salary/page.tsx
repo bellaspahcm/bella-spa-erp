@@ -48,6 +48,52 @@ export default function SalaryPage() {
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'payroll' | 'attendance' | 'hr_profile'>('payroll');
+
+  // Centered Confirmation Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void | Promise<void>;
+    confirmText?: string;
+    cancelText?: string;
+    isDanger?: boolean;
+    isLoading?: boolean;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const showConfirm = (options: {
+    title: string;
+    message: string;
+    onConfirm: () => void | Promise<void>;
+    confirmText?: string;
+    cancelText?: string;
+    isDanger?: boolean;
+  }) => {
+    setConfirmModal({
+      isOpen: true,
+      title: options.title,
+      message: options.message,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isLoading: true }));
+        try {
+          await options.onConfirm();
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
+        }
+      },
+      confirmText: options.confirmText || 'Xác nhận',
+      cancelText: options.cancelText || 'Hủy bỏ',
+      isDanger: options.isDanger || false,
+      isLoading: false
+    });
+  };
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
 
   // Attendance Override Calendar States
@@ -104,15 +150,21 @@ export default function SalaryPage() {
     fetchData();
   }, []);
 
-  const handleApprove = async (id: string) => {
-    const result = await approveSalary(id);
-    if (result.success) {
-      toast.success('Đã phê duyệt lương thành công');
-      // Update local state
-      setKtvSalaries(prev => prev.map(s => s.id === id ? { ...s, status: 'approved' } : s));
-    } else {
-      toast.error('Lỗi khi phê duyệt lương');
-    }
+  const handleApprove = (id: string, name: string) => {
+    showConfirm({
+      title: 'Phê duyệt lương',
+      message: `Bạn có chắc chắn muốn phê duyệt bảng lương tháng này cho kỹ thuật viên ${name}? Bảng lương sau khi duyệt sẽ chuyển sang trạng thái đã phê duyệt.`,
+      confirmText: 'Phê duyệt',
+      onConfirm: async () => {
+        const result = await approveSalary(id);
+        if (result.success) {
+          toast.success('Đã phê duyệt lương thành công');
+          setKtvSalaries(prev => prev.map(s => s.id === id ? { ...s, status: 'approved' } : s));
+        } else {
+          toast.error('Lỗi khi phê duyệt lương');
+        }
+      }
+    });
   };
 
   const openEditModal = (s: any) => {
@@ -152,47 +204,65 @@ export default function SalaryPage() {
     setIsSaving(false);
   };
 
-  const handleApproveAll = async () => {
-    if (!window.confirm('Bạn có chắc chắn muốn chốt lương cho tất cả nhân viên trong danh sách này không?')) return;
-    setIsLoading(true);
-    let successCount = 0;
-    for (const s of filteredSalaries) {
-      if (s.status !== 'approved') {
-        const result = await approveSalary(s.id);
-        if (result.success) successCount++;
+  const handleApproveAll = () => {
+    showConfirm({
+      title: 'Phê duyệt tất cả',
+      message: 'Bạn có chắc chắn muốn chốt và phê duyệt lương cho tất cả nhân viên trong danh sách này không?',
+      confirmText: 'Phê duyệt tất cả',
+      onConfirm: async () => {
+        setIsLoading(true);
+        let successCount = 0;
+        for (const s of filteredSalaries) {
+          if (s.status !== 'approved') {
+            const result = await approveSalary(s.id);
+            if (result.success) successCount++;
+          }
+        }
+        if (successCount > 0) {
+          toast.success(`Đã chốt lương thành công cho ${successCount} nhân viên`);
+          const data = await getSalaryData();
+          setKtvSalaries(data);
+        } else {
+          toast.info('Không có bản ghi nào cần chốt lương.');
+        }
+        setIsLoading(false);
       }
-    }
-    if (successCount > 0) {
-      toast.success(`Đã chốt lương thành công cho ${successCount} nhân viên`);
-      const data = await getSalaryData();
-      setKtvSalaries(data);
-    } else {
-      toast.info('Không có bản ghi nào cần chốt lương.');
-    }
-    setIsLoading(false);
+    });
   };
 
-  const handlePublishAll = async () => {
-    if (!window.confirm('Gửi bảng lương dự thảo đến TẤT CẢ KTV để xác nhận?')) return;
-    setIsLoading(true);
-    const res = await publishAllSalaryRecords();
-    if (res.success) {
-      toast.success(`Đã gửi đối soát cho ${res.count} KTV`);
-      const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
-      setKtvSalaries(salary); setMatrixData(matrix);
-    } else toast.error('Lỗi khi gửi đối soát');
-    setIsLoading(false);
+  const handlePublishAll = () => {
+    showConfirm({
+      title: 'Gửi đối soát tất cả',
+      message: 'Bạn có chắc chắn muốn gửi bảng lương dự thảo đến tất cả Kỹ thuật viên để họ xác nhận không?',
+      confirmText: 'Gửi tất cả',
+      onConfirm: async () => {
+        setIsLoading(true);
+        const res = await publishAllSalaryRecords();
+        if (res.success) {
+          toast.success(`Đã gửi đối soát cho ${res.count} KTV`);
+          const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
+          setKtvSalaries(salary); setMatrixData(matrix);
+        } else toast.error('Lỗi khi gửi đối soát');
+        setIsLoading(false);
+      }
+    });
   };
 
-  const handleFinalizeAll = async () => {
-    if (!window.confirm('Chốt sổ tất cả bảng lương đã được KTV xác nhận?')) return;
-    setIsLoading(true);
-    const res = await finalizeAllSalaryRecords();
-    if (res.success) {
-      toast.success(`Đã chốt sổ ${res.count} bảng lương`);
-      const data = await getSalaryData(); setKtvSalaries(data);
-    } else toast.error('Lỗi khi chốt sổ');
-    setIsLoading(false);
+  const handleFinalizeAll = () => {
+    showConfirm({
+      title: 'Chốt sổ tất cả',
+      message: 'Bạn có chắc chắn muốn chốt sổ và khóa toàn bộ bảng lương đã được Kỹ thuật viên xác nhận không?',
+      confirmText: 'Chốt sổ tất cả',
+      onConfirm: async () => {
+        setIsLoading(true);
+        const res = await finalizeAllSalaryRecords();
+        if (res.success) {
+          toast.success(`Đã chốt sổ ${res.count} bảng lương`);
+          const data = await getSalaryData(); setKtvSalaries(data);
+        } else toast.error('Lỗi khi chốt sổ');
+        setIsLoading(false);
+      }
+    });
   };
 
   const handlePublishOne = async (ktvId: string, ktvName: string) => {
@@ -204,23 +274,35 @@ export default function SalaryPage() {
     } else toast.error('Lỗi: ' + res.error);
   };
 
-  const handleConfirmOnBehalf = async (ktvId: string, ktvName: string) => {
-    if (!window.confirm(`Xác nhận thay cho KTV ${ktvName}?`)) return;
-    const res = await adminConfirmOnBehalf(ktvId);
-    if (res.success) {
-      toast.success(`Đã xác nhận thay cho ${ktvName}`);
-      const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
-      setKtvSalaries(salary); setMatrixData(matrix);
-    } else toast.error('Lỗi: ' + res.error);
+  const handleConfirmOnBehalf = (ktvId: string, ktvName: string) => {
+    showConfirm({
+      title: 'Xác nhận đối soát thay',
+      message: `Bạn có chắc chắn muốn thay mặt Kỹ thuật viên ${ktvName} để xác nhận bảng đối soát này không?`,
+      confirmText: 'Xác nhận thay',
+      onConfirm: async () => {
+        const res = await adminConfirmOnBehalf(ktvId);
+        if (res.success) {
+          toast.success(`Đã xác nhận thay cho ${ktvName}`);
+          const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
+          setKtvSalaries(salary); setMatrixData(matrix);
+        } else toast.error('Lỗi: ' + res.error);
+      }
+    });
   };
 
-  const handleFinalizeOne = async (ktvId: string, ktvName: string) => {
-    if (!window.confirm(`Chốt sổ lương cho ${ktvName}?`)) return;
-    const res = await finalizeSalaryRecord(ktvId);
-    if (res.success) {
-      toast.success(`Đã chốt sổ lương cho ${ktvName}`);
-      const data = await getSalaryData(); setKtvSalaries(data);
-    } else toast.error(res.error || 'Lỗi khi chốt sổ');
+  const handleFinalizeOne = (ktvId: string, ktvName: string) => {
+    showConfirm({
+      title: 'Chốt sổ lương KTV',
+      message: `Bạn có chắc chắn muốn khóa và chốt sổ bảng lương của kỹ thuật viên ${ktvName}? Sau khi chốt sổ, các thông tin này sẽ không thể sửa đổi.`,
+      confirmText: 'Chốt sổ',
+      onConfirm: async () => {
+        const res = await finalizeSalaryRecord(ktvId);
+        if (res.success) {
+          toast.success(`Đã chốt sổ lương cho ${ktvName}`);
+          const data = await getSalaryData(); setKtvSalaries(data);
+        } else toast.error(res.error || 'Lỗi khi chốt sổ');
+      }
+    });
   };
 
   const handleExport = async (s: any) => {
@@ -644,7 +726,7 @@ export default function SalaryPage() {
                           </svg>
                         </button>
                         <button 
-                          onClick={() => handleApprove(s.id)}
+                          onClick={() => handleApprove(s.id, s.name)}
                           className="p-3 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all shadow-sm"
                           title="Phê duyệt"
                         >
@@ -1255,6 +1337,63 @@ export default function SalaryPage() {
                 className="flex-1 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-hover shadow-lg shadow-pink-100 transition-all disabled:opacity-50"
               >
                 {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Centered Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl border border-slate-100"
+          >
+            <div className="p-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div className={cn(
+                  "w-12 h-12 rounded-2xl flex items-center justify-center",
+                  confirmModal.isDanger ? "bg-rose-50 text-rose-600" : "bg-primary/10 text-primary"
+                )}>
+                  {confirmModal.isDanger ? (
+                    <AlertCircle className="w-6 h-6" />
+                  ) : (
+                    <ShieldCheck className="w-6 h-6" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 leading-none">{confirmModal.title}</h3>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mt-1.5">Yêu cầu xác nhận</span>
+                </div>
+              </div>
+              <p className="text-slate-600 text-sm font-bold leading-relaxed">{confirmModal.message}</p>
+            </div>
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                disabled={confirmModal.isLoading}
+                className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all text-xs uppercase tracking-wider"
+              >
+                {confirmModal.cancelText}
+              </button>
+              <button
+                onClick={confirmModal.onConfirm}
+                disabled={confirmModal.isLoading}
+                className={cn(
+                  "flex-1 py-4 text-white font-black rounded-2xl transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2",
+                  confirmModal.isDanger 
+                    ? "bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-100" 
+                    : "bg-primary hover:bg-primary-hover shadow-lg shadow-pink-100"
+                )}
+              >
+                {confirmModal.isLoading ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  confirmModal.confirmText
+                )}
               </button>
             </div>
           </motion.div>
