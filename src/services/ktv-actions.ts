@@ -22,11 +22,14 @@ export async function getKTVActiveSessions() {
         booking_number,
         package_name,
         customer_id,
+        total_sessions,
+        completed_sessions,
         packages (
           name
         ),
         customers (
           name_mother,
+          name_baby,
           phone,
           address
         )
