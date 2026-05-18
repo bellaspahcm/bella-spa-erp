@@ -62,6 +62,10 @@ function SessionsContent() {
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [sessionLogs, setSessionLogs] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const activeBooking = useMemo(() => {
+    if (!selectedBooking) return null;
+    return sessions.find((s: any) => s.id === selectedBooking.id) || selectedBooking;
+  }, [sessions, selectedBooking]);
   const [quickNoteBookingId, setQuickNoteBookingId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');
   const [originalDateString, setOriginalDateString] = useState<string | null>(null);
@@ -304,7 +308,7 @@ function SessionsContent() {
   }, [selectedSessionLog]);
 
   const handleSaveFullUpdate = async (forcedStatus?: string) => {
-    if (!selectedSessionLog || !selectedBooking) return;
+    if (!selectedSessionLog || !activeBooking) return;
     
     const finalStatus = forcedStatus || selectedStatus;
     
@@ -358,12 +362,12 @@ function SessionsContent() {
         if (selectedSessionLog.status !== finalStatus) {
           const diff = finalStatus === 'completed' ? 1 : (selectedSessionLog.status === 'completed' ? -1 : 0);
           if (diff !== 0) {
-            const currentBookingCount = selectedBooking.completed_sessions || 0;
+            const currentBookingCount = activeBooking.completed_sessions || 0;
             const newCount = Math.max(0, currentBookingCount + diff);
             
             // Update the main sessions list locally to trigger immediate isNextToRun update
             setSessions(prev => prev.map(b => 
-              b.id === selectedBooking.id ? { ...b, completed_sessions: newCount } : b
+              b.id === activeBooking.id ? { ...b, completed_sessions: newCount } : b
             ));
           }
         }
@@ -391,7 +395,7 @@ function SessionsContent() {
 
   // Dedicated handler for Restore/Cancel - ONLY changes status & completed_date
   const handleStatusChange = async (newStatus: 'scheduled' | 'cancelled') => {
-    if (!selectedSessionLog || !selectedBooking) return;
+    if (!selectedSessionLog || !activeBooking) return;
     if (userRole !== 'admin') return;
 
     setIsSavingNote(true);
@@ -418,9 +422,9 @@ function SessionsContent() {
 
         // Adjust booking count
         if (selectedSessionLog.status === 'completed') {
-          const newCount = Math.max(0, (selectedBooking.completed_sessions || 0) - 1);
+          const newCount = Math.max(0, (activeBooking.completed_sessions || 0) - 1);
           setSessions(prev => prev.map(b =>
-            b.id === selectedBooking.id ? { ...b, completed_sessions: newCount } : b
+            b.id === activeBooking.id ? { ...b, completed_sessions: newCount } : b
           ));
         }
 
@@ -430,8 +434,8 @@ function SessionsContent() {
 
         // Refresh from server
         await loadSessions();
-        if (selectedBooking?.id) {
-          await fetchSessionLogs(selectedBooking.id);
+        if (activeBooking?.id) {
+          await fetchSessionLogs(activeBooking.id);
         }
       } else if (result.error) {
         setToastMessage('Lỗi: ' + result.error);
@@ -835,7 +839,7 @@ function SessionsContent() {
       
       {/* Detail Modal */}
       <AnimatePresence>
-        {selectedBooking && (
+        {activeBooking && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
             <motion.div 
               initial={{ opacity: 0 }}
@@ -858,14 +862,14 @@ function SessionsContent() {
                   </div>
                   <div>
                     <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
-                      Thẻ liệu trình: Mẹ {selectedBooking.customers?.name_mother} {selectedBooking.customers?.name_baby ? `& Bé ${selectedBooking.customers.name_baby}` : ''}
+                      Thẻ liệu trình: Mẹ {activeBooking.customers?.name_mother} {activeBooking.customers?.name_baby ? `& Bé ${activeBooking.customers.name_baby}` : ''}
                     </h2>
                     <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] flex items-center gap-3">
-                      <span className="text-primary">{selectedBooking.package_name}</span>
+                      <span className="text-primary">{activeBooking.package_name}</span>
                       <span className="text-slate-300">•</span>
-                      <span>KTV: {selectedBooking.assigned_ktv_name}</span>
+                      <span>KTV: {activeBooking.assigned_ktv_name}</span>
                       <span className="text-slate-300">•</span>
-                      <span>Tiến độ: {selectedBooking.completed_sessions || 0}/{selectedBooking.total_sessions || 15}</span>
+                      <span>Tiến độ: {activeBooking.completed_sessions || 0}/{activeBooking.total_sessions || 15}</span>
                     </p>
                   </div>
                 </div>
@@ -878,7 +882,7 @@ function SessionsContent() {
                     Quyền: {userRole}
                   </div>
                   <Link
-                    href={`/dashboard/customers/${selectedBooking.customers?.id}?bookingId=${selectedBooking.id}`}
+                    href={`/dashboard/customers/${activeBooking.customers?.id}?bookingId=${activeBooking.id}`}
                     className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-pink-100 active:scale-95 flex items-center gap-2"
                   >
                     <UserCircle className="w-3.5 h-3.5" /> Hồ sơ
@@ -900,7 +904,7 @@ function SessionsContent() {
                     <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
                         <FileEdit className="w-4 h-4 text-primary" /> 
-                        {selectedSessionLog ? `Cập nhật buổi ${selectedSessionLog.session_number}/${selectedBooking.total_sessions || 21}` : 'Hành trình chăm sóc'}
+                        {selectedSessionLog ? `Cập nhật buổi ${selectedSessionLog.session_number}/${activeBooking.total_sessions || 21}` : 'Hành trình chăm sóc'}
                       </h3>
                       
                       <div className="space-y-4">
@@ -910,7 +914,7 @@ function SessionsContent() {
                               <History className="w-10 h-10 text-amber-400 mb-4 opacity-50" />
                               <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-2">Thông tin buổi trước</h4>
                               {(() => {
-                                const completedLogs = (selectedBooking.session_logs || [])
+                                const completedLogs = (activeBooking.session_logs || [])
                                   .filter((l: any) => l.status === 'completed')
                                   .sort((a: any, b2: any) => (b2.session_number || 0) - (a.session_number || 0));
                                 const lastLog = completedLogs[0];
@@ -1154,7 +1158,7 @@ function SessionsContent() {
                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16" />
                       <div className="flex items-center justify-between mb-4 relative z-10">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Tóm tắt tiến độ</h3>
-                        {selectedBooking.completed_sessions >= (selectedBooking.total_sessions || 21) && (
+                        {activeBooking.completed_sessions >= (activeBooking.total_sessions || 21) && (
                           <span className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Done</span>
                         )}
                       </div>
@@ -1162,14 +1166,14 @@ function SessionsContent() {
                       <div className="grid grid-cols-2 gap-6 relative z-10">
                         <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm">
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Hoàn thành</p>
-                          <p className="text-3xl font-black text-slate-900">{selectedBooking.completed_sessions || 0}</p>
+                          <p className="text-3xl font-black text-slate-900">{activeBooking.completed_sessions || 0}</p>
                         </div>
                         <div className="bg-white/40 backdrop-blur-sm p-4 rounded-2xl border border-white/50 shadow-sm relative group">
                           <p className="text-[9px] opacity-60 font-black uppercase tracking-widest mb-1">Tổng cộng</p>
-                          <p className="text-3xl font-black text-slate-900">{selectedBooking.total_sessions || 15}</p>
+                          <p className="text-3xl font-black text-slate-900">{activeBooking.total_sessions || 15}</p>
                           {userRole === 'admin' && (
                             <button 
-                              onClick={() => handleAddExtraSession(selectedBooking.id)}
+                              onClick={() => handleAddExtraSession(activeBooking.id)}
                               className="absolute top-1 right-1 p-1 bg-white/80 rounded-lg text-primary hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
                               title="Thêm buổi bổ sung"
                             >
@@ -1183,18 +1187,18 @@ function SessionsContent() {
                         <div className="w-full bg-white/30 h-1.5 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-primary" 
-                            style={{ width: `${((selectedBooking.completed_sessions || 0) / (selectedBooking.total_sessions || 15)) * 100}%` }}
+                            style={{ width: `${((activeBooking.completed_sessions || 0) / (activeBooking.total_sessions || 15)) * 100}%` }}
                           />
                         </div>
                       </div>
 
-                      {selectedBooking.completed_sessions >= (selectedBooking.total_sessions || 21) && (
+                      {activeBooking.completed_sessions >= (activeBooking.total_sessions || 21) && (
                          <button 
-                         onClick={() => handleReusePackage(selectedBooking.id, `Mẹ ${selectedBooking.customers?.name_mother || ''}${selectedBooking.customers?.name_baby ? ` & Bé ${selectedBooking.customers.name_baby}` : ''}` || 'Khách hàng')}
-                         disabled={isReusingId === selectedBooking.id}
+                         onClick={() => handleReusePackage(activeBooking.id, `Mẹ ${activeBooking.customers?.name_mother || ''}${activeBooking.customers?.name_baby ? ` & Bé ${activeBooking.customers.name_baby}` : ''}` || 'Khách hàng')}
+                         disabled={isReusingId === activeBooking.id}
                          className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[9px] shadow-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all relative z-10"
                        >
-                         {isReusingId === selectedBooking.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />} 
+                         {isReusingId === activeBooking.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />} 
                          Tái sử dụng gói nhanh
                        </button>
                       )}

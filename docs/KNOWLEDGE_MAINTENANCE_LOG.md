@@ -259,6 +259,22 @@
   - Built the HR Profiles config drawer to directly edit each KTV's base salary contract, active status, hire date, and resignation date.
   - Bypassed PowerShell scripts execution restrictions locally, completed strict TypeScript validation checks with ZERO type errors across the entire project repository, and successfully verified Next.js production builds (`Exit Code: 0`).
 
+### 10. Real-time Progress Summary & Modal Synchronization
+- **Issue**: When updating a booking's session progress to completed status or when the background `syncBookingProgress` completed on modal open, the progress summary ("Tóm tắt tiến độ") card in the detail modal remained stale (e.g. showing `HOÀN THÀNH: 2` instead of `3/3`).
+- **Root Cause**: The detail modal directly referenced the static `selectedBooking` state, which held the original snapshot of the booking data from when the modal was first opened. Even though backend hooks and the main client `sessions` state list were updated, the modal UI never pulled the updated details.
+- **Solution**:
+  - Refactored `src/app/dashboard/sessions/page.tsx` to declare a dynamically derived `activeBooking` state utilizing a `useMemo` selector:
+    ```typescript
+    const activeBooking = useMemo(() => {
+      if (!selectedBooking) return null;
+      return sessions.find((s: any) => s.id === selectedBooking.id) || selectedBooking;
+    }, [sessions, selectedBooking]);
+    ```
+  - Swapped out all read-only JSX references and modal event handler dependencies from the stale `selectedBooking` state to `activeBooking`.
+  - Now, any status updates, manual saves, database synchronization events, or background list reloads instantly propagate to the modal's progress card, rendering matching counters and progress bars in real-time.
+  - Verified 100% successful Next.js production build and zero TypeScript errors.
+
+
 
 
 
