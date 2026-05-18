@@ -85,6 +85,10 @@ Status: 🟢 Phases 1-4 & 6-8 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
   - [x] Tính điểm đánh giá khách hàng (60%): Quy đổi từ Rating trung bình tháng.
   - [x] Tính điểm kỷ luật Spa (40%): Trừ điểm từ lịch sử đi muộn, về sớm, thiếu giờ, quên check-in/out.
   - [x] Áp dụng hệ số sản lượng $F_{vol}$ (Ca thực tế / Ca chỉ tiêu) vào Base KPI để tính thưởng tháng tự động.
+- [x] **Precise Timezone-Aware Check-out Notifications**:
+  - [x] Tích hợp bộ định dạng múi giờ `'Asia/Ho_Chi_Minh'` (GMT+7) cho mốc thời gian check-out của KTV trong hệ thống thông báo Admin.
+  - [x] Hiển thị chi tiết giờ/phút và ngày hoàn thành (ví dụ: `lúc 15:13 ngày 18/05/2026`) trên giao diện quản trị, đồng thời tự động chuẩn hóa văn bản thông báo cho các ca hoàn thành lịch sử không có mốc thời gian cụ thể (lược bỏ chữ "lúc" bị lỗi ngữ pháp trước đó).
+
 
 
 
