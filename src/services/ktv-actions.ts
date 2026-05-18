@@ -25,7 +25,8 @@ export async function getKTVActiveSessions() {
         total_sessions,
         completed_sessions,
         packages (
-          name
+          name,
+          duration
         ),
         customers (
           name_mother,
@@ -234,28 +235,74 @@ export async function startSession(sessionId: string) {
 /**
  * Hoàn thành một buổi trị liệu (Check-out)
  */
-export async function completeKTVSession(sessionId: string, notes: string = '') {
+export async function completeKTVSession(sessionId: string, notes: string = '', ktvCheckoutNote: string = '') {
   const supabase = (await createClient()) as any;
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') throw new Error('Unauthorized');
 
-  // 1. Lấy thông tin session để tìm booking_id và package_id
+  // 1. Lấy thông tin session để tìm booking_id, start_time và package_id
   const { data: session } = await supabase
     .from('session_logs')
-    .select('booking_id, bookings(package_id)')
+    .select(`
+      booking_id, 
+      start_time,
+      bookings (
+        package_id,
+        packages (
+          duration
+        )
+      )
+    `)
     .eq('id', sessionId)
     .single();
 
   if (!session) throw new Error('Session not found');
+
+  // Tính toán thời lượng quy định và thực tế
+  let standardDuration = 60; // Mặc định là 60 phút
+  const durationStr = (session as any)?.bookings?.packages?.duration;
+  if (durationStr) {
+    const match = durationStr.match(/(\d+)/);
+    if (match) {
+      standardDuration = parseInt(match[1], 10);
+    }
+  }
+
+  const startTime = session.start_time ? new Date(session.start_time) : null;
+  const endTime = new Date();
+  let actualDuration = 0;
+  let timeDeviation = 0;
+  let durationWarningType = 'normal';
+
+  if (startTime) {
+    const diffMs = endTime.getTime() - startTime.getTime();
+    actualDuration = Math.round(diffMs / 60000); // Đổi từ ms sang phút
+    timeDeviation = actualDuration - standardDuration;
+    
+    if (timeDeviation < 0) {
+      // Làm thiếu giờ
+      if (Math.abs(timeDeviation) > 5) {
+        durationWarningType = 'under_time';
+      }
+    } else if (timeDeviation > 0) {
+      // Làm lố giờ
+      durationWarningType = 'over_time';
+    }
+  }
 
   // 2. Cập nhật session log
   const { error: sessionError } = await supabase
     .from('session_logs')
     .update({
       status: 'completed',
-      end_time: new Date().toISOString(),
-      completed_date: new Date().toISOString(),
-      notes: notes
+      end_time: endTime.toISOString(),
+      completed_date: endTime.toISOString(),
+      notes: notes,
+      standard_duration: standardDuration,
+      actual_duration: actualDuration,
+      time_deviation: timeDeviation,
+      duration_warning_type: durationWarningType,
+      ktv_checkout_note: ktvCheckoutNote
     })
     .eq('id', sessionId);
 
