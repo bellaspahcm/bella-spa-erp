@@ -25,7 +25,8 @@ import {
   RotateCcw,
   XCircle,
   PlusCircle,
-  History
+  History,
+  Star
 } from 'lucide-react';
 import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession, rescheduleSession, syncBookingProgress } from '@/services/booking-actions';
 import { toast } from 'sonner';
@@ -1038,6 +1039,64 @@ function SessionsContent() {
                                       })()}
                                     </span>
                                   </div>
+                                )}
+                              </div>
+                            )}
+
+                            {selectedSessionLog.status === 'completed' && (
+                              <div className={cn(
+                                "p-5 rounded-2xl border shadow-sm space-y-3.5 mb-2 transition-all duration-300",
+                                selectedSessionLog.rating && selectedSessionLog.rating > 0 
+                                  ? "bg-gradient-to-br from-amber-50/80 via-orange-50/50 to-yellow-50/30 border-amber-100/60 shadow-amber-50/50" 
+                                  : "bg-slate-50 border-slate-100"
+                              )}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                      "w-8 h-8 rounded-lg flex items-center justify-center shadow-sm",
+                                      selectedSessionLog.rating && selectedSessionLog.rating > 0 
+                                        ? "bg-amber-100/70 text-amber-600 animate-pulse" 
+                                        : "bg-slate-200/70 text-slate-400"
+                                    )}>
+                                      <Star className={cn("w-4 h-4", selectedSessionLog.rating && selectedSessionLog.rating > 0 && "fill-current")} />
+                                    </div>
+                                    <div>
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none mb-1">Đánh giá từ khách hàng</p>
+                                      <h4 className="text-xs font-black text-slate-800">
+                                        {selectedSessionLog.rating && selectedSessionLog.rating > 0 
+                                          ? "Đã gửi qua Portal" 
+                                          : "Chưa gửi đánh giá"}
+                                      </h4>
+                                    </div>
+                                  </div>
+
+                                  {selectedSessionLog.rating && selectedSessionLog.rating > 0 && (
+                                    <div className="flex gap-0.5">
+                                      {Array.from({ length: 5 }).map((_, idx) => (
+                                        <Star 
+                                          key={idx} 
+                                          className={cn(
+                                            "w-3.5 h-3.5",
+                                            idx < (selectedSessionLog.rating || 0) 
+                                              ? "text-amber-500 fill-amber-500" 
+                                              : "text-slate-200"
+                                          )} 
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {selectedSessionLog.rating && selectedSessionLog.rating > 0 ? (
+                                  <div className="bg-white/80 p-3.5 rounded-xl border border-amber-100/40 shadow-inner">
+                                    <p className="text-xs font-bold text-slate-700 italic leading-relaxed">
+                                      "{selectedSessionLog.rating_comment || 'Không có ý kiến đóng góp thêm'}"
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <p className="text-[10px] font-semibold text-slate-400 italic">
+                                    Khách hàng chưa thực hiện đánh giá qua Portal liên kết của buổi trị liệu này.
+                                  </p>
                                 )}
                               </div>
                             )}

@@ -456,7 +456,7 @@ export async function getSessionsWithDetails() {
       customers(id, name_mother, name_baby, phone), 
       assigned_ktv:users!bookings_assigned_ktv_id_fkey(full_name),
       packages!bookings_package_id_fkey(name),
-      session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, start_time, end_time, status, notes, ktv:users!session_logs_completed_by_ktv_id_fkey(full_name))
+      session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, start_time, end_time, status, notes, rating, rating_comment, ktv:users!session_logs_completed_by_ktv_id_fkey(full_name))
     `)
     .order('created_at', { ascending: false });
 
