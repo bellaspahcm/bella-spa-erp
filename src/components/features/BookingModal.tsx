@@ -242,29 +242,23 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
     setIsSubmitting(true);
     try {
-      let customerId = selectedCustomer?.id;
-
-      // 1. If new customer, create them first
-      if (mode === 'new') {
-        const customerResult = await createCustomer({
-          ...newCustomer,
-          address: newCustomer.address || 'Chưa cập nhật'
-        });
-
-        if (customerResult.error) {
-          toast.error('Lỗi khi tạo khách hàng: ' + customerResult.error);
-          setIsSubmitting(false);
-          return;
-        }
-        customerId = customerResult.data.id;
-      }
-
-      // 2. Create the booking
-      const result = await createBooking({
+      const payload: any = {
         ...formData,
         discount_percent: discountPercent ? Number(discountPercent) : 0,
-        customer_id: customerId
-      });
+      };
+
+      if (mode === 'new') {
+        payload.customer_id = 'new';
+        payload.newCustomer = {
+          ...newCustomer,
+          address: newCustomer.address || 'Chưa cập nhật'
+        };
+      } else {
+        payload.customer_id = selectedCustomer?.id;
+      }
+
+      // Create the booking (atomic customer + booking if mode === 'new')
+      const result = await createBooking(payload);
 
       console.log('[BookingModal] createBooking result:', result);
 
