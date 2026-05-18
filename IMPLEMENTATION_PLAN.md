@@ -53,3 +53,7 @@ Status: 🟢 Phases 1-4 & 6-7 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
   - Original package price (`Giá gốc` with line-through).
   - Discount details (`Đã giảm [Phần trăm]%`).
   - Real-time remaining balance owed (`Còn nợ: [Số tiền]đ`) computed dynamically for transparent reconciliation.
+- [x] **KTV Dashboard Active Session Card Overhaul**: Added Mother's name, Baby's name, dynamic progress counter (e.g., `Buổi X/Y`), and precise address fetched from customer profiles; resolved the black-on-black text contrast legibility bug on the slate background.
+- [x] **Global Hotline Privacy Masking**: Masked spa hotlines (`0865701493` or `84865701493`) from being displayed to KTVs for staff/customer privacy boundaries.
+- [x] **Notification Click Popovers**: Configured rich, customized popover modals to trigger instantly when a KTV clicks on dashboard notifications.
+- [x] **Premium Checkout Modal Integration**: Replaced standard browser `window.prompt` boxes with a premium, custom React slide-up confirmation modal with full session metrics and a beautiful custom textarea for capturing therapeutic notes.

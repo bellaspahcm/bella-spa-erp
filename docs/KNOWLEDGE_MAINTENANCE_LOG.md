@@ -178,4 +178,30 @@
   - Verified that recording a negative payment (refund) dynamically recalculates the booking's `deposit_amount` correctly, balancing the ledger and automatically causing the reconciliation mismatch warning to **disappear** immediately.
   - Verified 100% successful Next.js production build and synced changes to Git.
 
+## 2026-05-18: KTV Mobile Dashboard & Premium Checkout Modal Overhaul
+
+### 1. Active Session Card Metadata Enrichment
+- **Issue**: The active session card under "Đang thực hiện" lacked crucial diagnostic details. It did not show the Baby's name or session progress count, and the customer's phone number was displayed indiscriminately, exposing private spa hotlines. Additionally, the Mother's name was completely invisible (black text on a slate-900 background).
+- **Solution**:
+  - Refactored `src/app/ktv/dashboard/page.tsx`.
+  - Added dedicated iconography for the Mother's name, Baby's name (`Bé`), and Session Counter (e.g., `Buổi 6/30`).
+  - Synced and displayed the exact customer address stored in the database instead of falling back to empty fields.
+  - Implemented phone privacy masking: filtered out spa hotlines (`0865701493` or `84865701493`) from being displayed to KTVs.
+  - **Legibility Fix**: Changed the Mother's name element from an `<h3>` heading to a native `<div>` styled with Tailwind's `text-white font-bold` classes. This successfully bypassed a global `h3` black-text CSS rule in `globals.css` that was rendering the name in black-on-black, restoring 100% readability.
+
+### 2. Custom Notification Detail Popovers
+- **Issue**: Clicking on a dashboard notification card did nothing or triggered raw system messages, failing to let the KTV read appointment/rescheduling notes.
+- **Solution**:
+  - Implemented interactive popovers utilizing Framer Motion's smooth transitions.
+  - Clicking on any notification card now opens a beautiful visual popover showing full schedule dates, custom reasons, and detailed logs.
+
+### 3. Emerald-Themed Premium Checkout Modal
+- **Issue**: The check-out confirmation flow relied on the browser-default `window.prompt` dialog, which felt cheap, unpolished, and ruined the premium spa brand identity.
+- **Solution**:
+  - Replaced `window.prompt` entirely with a customized, elegant slide-up modal wrapped in `<AnimatePresence>`.
+  - Displays clear service stats, Mother and Baby details, start times, and progress badges before checkout.
+  - Features a beautifully custom-styled textarea matching the spa's emerald palette for entering therapeutic notes/milestones.
+  - Displays dynamic loading spinners and disables actions during transaction execution to prevent double checkouts.
+  - Successfully verified in local environment (`Exit Code: 0`) and deployed live to production!
+
 
