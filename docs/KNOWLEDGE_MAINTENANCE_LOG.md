@@ -339,4 +339,35 @@
   - Replaced the CTE reference alias dynamically inside the final SELECT to query `ks.avg_rating::numeric as average_rating` to resolve compilation/execution errors.
   - Tested the RPC directly inside the Supabase execution engine, successfully validating that Nguyễn Thị Hoa's rating is restored to a perfect **`5.0⭐`** with `12 sessions` and `1.800.000đ` of commissions, matching the Admin interface exactly.
 
+## 2026-05-19: Timezone Stability Update & Global Date Refactoring
+
+### 1. Timezone-Safe Date Calculation Overhaul (`getLocalDateString`)
+- **Issue**: The date values generated in client components and server actions suffered from timezone offsets (timezone shifts). When computing dates or filtering queries using `new Date().toISOString().split('T')[0]`, it converted local times to UTC. For users in GMT+7, if a session was completed or a booking was made between 00:00 and 07:00 local time, the database recorded it as the *previous* calendar day, resulting in severe accounting and booking calendar synchronization mismatches.
+- **Solution**:
+  - Implemented and centralized a robust, timezone-stable utility `getLocalDateString` inside `src/lib/utils.ts`. It formats JavaScript `Date` objects dynamically using `Intl.DateTimeFormat` configured with `'en-CA'` and the local timezone parameter to guarantee output in the format `YYYY-MM-DD` without any UTC conversions.
+  - Refactored **13 critical files** across the ERP to use `getLocalDateString()` instead of raw `.toISOString().split('T')[0]` or `.slice(0, 10)` splits:
+    - **Shared Utilities**: [src/lib/utils.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/lib/utils.ts)
+    - **Server Actions (Business Logic Layer)**:
+      - `src/services/attendance-actions.ts`: Aligned daily attendance check-in/out timestamps and day string keys.
+      - `src/services/booking-actions.ts`: Aligned appointment dates and scheduling filters.
+      - `src/services/finance-actions.ts`: Aligned monthly P&L calculations and transaction recordings.
+      - `src/services/ktv-actions.ts`: Aligned KTV checkout dates and log synchronizations.
+      - `src/services/salary-actions.ts`: Aligned monthly salary period dates and boundaries.
+    - **UI Modals & Triggers**:
+      - `src/components/features/BookingModal.tsx`
+      - `src/components/features/TransactionModal.tsx`
+    - **Page Modules**:
+      - `src/app/ktv/earnings/page.tsx`
+      - `src/app/dashboard/finance/reconciliation/page.tsx`
+      - `src/app/dashboard/customers/page.tsx`
+      - `src/app/dashboard/bookings/page.tsx`
+      - `src/app/dashboard/inventory/page.tsx`
+
+### 2. Next.js Production Build Verification & Compilation
+- **Status**: Implemented & E2E Verified.
+- **Workflow**:
+  - Executed a Next.js production compilation (`npm run build`) locally to ensure the absolute safety and correctness of the codebase.
+  - The build completed with **`Exit Code: 0`**, compiling all 24 static and dynamic routes flawlessly.
+  - Pushed the code changes cleanly to the `main` branch of the GitHub repository `bellaspahcm/bella-spa-erp` to trigger Vercel's automated CI/CD pipeline and release the timezone stability update to production immediately.
+
 
