@@ -395,5 +395,24 @@
   - This preserves the exact chronological order of sessions: recent checkouts with specific times are kept correctly at the absolute top, while historical sessions are neatly ordered below them based on their exact day.
   - Successfully verified the layout and ordering via automated browser tests, capturing the dropdown displaying all times and dates perfectly.
 
+## 2026-05-19: Offline-First Data Strategy & Local Database Synchronization (Dexie.js / IndexedDB)
+
+### 1. Offline Connectivity Monitoring & Synchronization Queue (Dexie.js)
+- **Objective**: Establish a complete "Offline-First" capability to handle sudden internet losses from KTV mobile devices or Admin dashboards. Ensures zero data loss and prevents records duplication.
+- **Solution**:
+  - **IndexedDB Client Integration**: Installed `dexie` as a client-side wrapper around IndexedDB (`src/lib/offline-db.ts`). Defined a strongly typed schema for `offlineQueue` to store pending actions when offline.
+  - **Auto-Sync Hook (`src/hooks/useOfflineSync.ts`)**: Built a React hook that:
+    - Listens to window `online`/`offline` network events.
+    - Captures operational actions (shift checkin, shift checkout, session treatment start/complete) when offline, saving them locally into Dexie DB with standard GMT+7 local timestamps and client-generated UUIDs.
+    - Auto-synchronizes the queue sequentially in First-In-First-Out (FIFO) order when network connection is re-established.
+  - **Execution Orchestrator (`src/services/sync-actions.ts`)**: Designed a central synchronization orchestrator that processes each queued item by dynamically invoking standard Server Actions (`startSession`, `completeKTVSession`, `ktvCheckIn`, `ktvCheckOut`) and handles failures gracefully with retries.
+
+### 2. Client-Side State Management & Root Layout Registration
+- **Offline UI Interceptors**: Refactored `src/app/ktv/dashboard/page.tsx` handlers to pass shift checkins/checkouts and session actions through the offline interceptor hook. 
+- **Immediate Local UI Feedback**: If offline, the KTV dashboard directly simulates successful completion in the state variables (`todayAttendance`, `activeSessions`, `upcomingSessions`) to make the interface responsive and accurate without requiring a network load.
+- **Global Layout Integration**: Added `<OfflineIndicator />` in the root layout `src/app/layout.tsx` so that a gorgeous glassmorphic network connection banner floats globally. The component displays live synchronization status, pending counts, and offers a manually triggered "Đồng bộ ngay" (Sync Now) bypass.
+- **Type-Safety Verification**: Validated the entire project compilation via `npx tsc --noEmit`. The code compiled cleanly with **`Exit Code: 0`** and zero type warnings.
+
+
 
 
