@@ -17,7 +17,8 @@ import {
   Bell,
   X,
   Mail,
-  Megaphone
+  Megaphone,
+  Baby
 } from 'lucide-react';
 import { 
   getKTVActiveSessions, 
@@ -336,41 +337,56 @@ export default function KTVDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {activeSessions.map((session) => (
-                <motion.div 
-                  layoutId={session.id}
-                  key={session.id} 
-                  className="bg-slate-900 p-6 rounded-[32px] text-white shadow-xl shadow-slate-200"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <span className="bg-white/10 text-white/60 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 inline-block">
-                        {session.bookings?.package_name}
-                      </span>
-                      <h3 className="text-xl font-black">{session.bookings?.customers?.name_mother}</h3>
-                    </div>
-                    <div className="flex flex-col items-end">
-                       <p className="text-[10px] font-black text-white/40 uppercase">Bắt đầu lúc</p>
-                       <p className="font-black">{new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2 mb-6 opacity-60">
-                    <div className="flex items-center gap-2 text-xs">
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span className="truncate">{session.bookings?.customers?.address}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>{session.bookings?.customers?.phone}</span>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => handleComplete(session.id)}
-                    disabled={isActionLoading === session.id}
-                    className="w-full bg-emerald-500 hover:bg-emerald-600 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+              {activeSessions.map((session) => {
+                const cleanPhone = session.bookings?.customers?.phone?.replace(/[^\d]/g, '') || '';
+                const isHotline = cleanPhone === '0865701493' || cleanPhone === '84865701493';
+                
+                return (
+                  <motion.div 
+                    layoutId={session.id}
+                    key={session.id} 
+                    className="bg-slate-900 p-6 rounded-[32px] text-white shadow-xl shadow-slate-200"
                   >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className="bg-white/10 text-white/80 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest inline-block">
+                            {session.bookings?.package_name}
+                          </span>
+                          <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest inline-block animate-pulse">
+                            Buổi {session.session_number}/{session.bookings?.total_sessions || '--'}
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-black text-white">{session.bookings?.customers?.name_mother}</h3>
+                        <p className="text-xs text-rose-300 font-bold mt-1.5 flex items-center gap-1.5">
+                          <Baby className="w-4 h-4 shrink-0 text-rose-300" />
+                          <span>Bé: {session.bookings?.customers?.name_baby || 'Chưa sinh/Chưa có'}</span>
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end">
+                         <p className="text-[10px] font-black text-white/40 uppercase">Bắt đầu lúc</p>
+                         <p className="font-black">{new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 mb-6 opacity-80">
+                      <div className="flex items-center gap-2 text-xs">
+                        <MapPin className="w-3.5 h-3.5 text-rose-300 shrink-0" />
+                        <span className="truncate">{session.bookings?.customers?.address || session.address || 'Chưa cập nhật địa chỉ'}</span>
+                      </div>
+                      {session.bookings?.customers?.phone && !isHotline && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <Phone className="w-3.5 h-3.5 text-rose-300 shrink-0" />
+                          <span>{session.bookings?.customers?.phone}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <button 
+                      onClick={() => handleComplete(session.id)}
+                      disabled={isActionLoading === session.id}
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+                    >
                     {isActionLoading === session.id ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
                     ) : (
@@ -381,7 +397,8 @@ export default function KTVDashboard() {
                     )}
                   </button>
                 </motion.div>
-              ))}
+              );
+            })}
             </div>
           )}
         </section>
