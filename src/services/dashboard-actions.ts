@@ -39,9 +39,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
       console.warn('[getDashboardStats] No tenantId — querying without tenant filter');
     }
 
-    const now = new Date();
-    const today = todayDate
-      || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const today = todayDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
     const monthStart = startDate || (today.substring(0, 7) + '-01');
     const { end: monthEnd, prevStart } = monthRange(monthStart);
 
@@ -96,11 +94,7 @@ export async function getUpcomingSessions(date?: string) {
     const { getCalendarSessions } = await import('./booking-actions');
     const allSessions = await getCalendarSessions();
 
-    let todayStr = date;
-    if (!todayStr) {
-      const now = new Date();
-      todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    }
+    const todayStr = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     const todaySessions = allSessions.filter((s: any) =>
       s.assigned_date === todayStr && s.status !== 'completed'
@@ -237,12 +231,11 @@ export async function getImportantAlerts() {
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
 
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     const alerts: any[] = [];
 
-    // 1. Fetch completed sessions (KTV checkout)
+    // 1. Fetch completed sessions (KTV checkout) - sorted by date then end_time DESC with nulls last
     let completedQ = supabase.from('session_logs')
       .select(`
         id, 
@@ -263,7 +256,8 @@ export async function getImportantAlerts() {
         )
       `)
       .eq('status', 'completed')
-      .order('end_time', { ascending: false })
+      .order('completed_date', { ascending: false })
+      .order('end_time', { ascending: false, nullsFirst: false })
       .limit(30);
     if (tenantId) completedQ = completedQ.eq('tenant_id', tenantId);
     const { data: completedSessions } = await completedQ;
@@ -275,14 +269,14 @@ export async function getImportantAlerts() {
       let msgStr = '';
 
       if (endTimeVal) {
-        const d = new Date(endTimeVal);
-        const diffMs = Date.now() - d.getTime();
-        const diffMinutes = Math.floor(diffMs / 60000);
+        const normalized = endTimeVal.replace(' ', 'T');
+        const d = new Date(normalized);
+        const isValidDate = !isNaN(d.getTime());
         
-        if (diffMinutes < 5 && diffMinutes >= 0) {
-          msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành vừa xong`;
-        } else {
-          // Format timezone-safely in Asia/Ho_Chi_Minh (GMT+7)
+        if (isValidDate) {
+          const diffMs = Date.now() - d.getTime();
+          const diffMinutes = Math.floor(Math.max(0, diffMs) / 60000);
+          
           const timeFormatter = new Intl.DateTimeFormat('vi-VN', {
             timeZone: 'Asia/Ho_Chi_Minh',
             hour: '2-digit',
@@ -299,14 +293,28 @@ export async function getImportantAlerts() {
           });
           const datePart = dateFormatter.format(d);
           
-          msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành lúc ${timePart} ngày ${datePart}`;
+          if (diffMinutes < 5) {
+            msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành lúc ${timePart} ngày ${datePart} (vừa xong)`;
+          } else {
+            msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành lúc ${timePart} ngày ${datePart}`;
+          }
+        } else {
+          if (s.completed_date) {
+            const [y, m, dVal] = s.completed_date.split('-');
+            msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã hoàn thành ngày ${dVal}/${m}/${y}`;
+          } else {
+            msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành vừa xong`;
+          }
         }
       } else if (s.completed_date) {
-        const [y, m, d] = s.completed_date.split('-');
-        msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã hoàn thành ngày ${d}/${m}/${y}`;
+        const [y, m, dVal] = s.completed_date.split('-');
+        msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã hoàn thành ngày ${dVal}/${m}/${y}`;
       } else {
         msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành vừa xong`;
       }
+
+      const dObj = endTimeVal ? new Date(endTimeVal.replace(' ', 'T')) : null;
+      const isValid = dObj && !isNaN(dObj.getTime());
 
       alerts.push({
         type: 'success',
@@ -315,7 +323,7 @@ export async function getImportantAlerts() {
         message: msgStr,
         severity: 'success',
         link: `/dashboard/sessions?bookingId=${s.booking_id}`,
-        timestamp: endTimeVal ? new Date(endTimeVal).getTime() : Date.now()
+        timestamp: isValid ? dObj.getTime() : Date.now()
       });
     }
 
