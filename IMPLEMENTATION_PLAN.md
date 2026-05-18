@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Phases 1-4 & 6-7 Complete | 🟡 Phase 5 CRM/Zalo Integration Starting
+Status: 🟢 Phases 1-4 & 6-8 Complete | 🟡 Phase 5 CRM/Zalo Integration Starting
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -60,12 +60,12 @@ Status: 🟢 Phases 1-4 & 6-7 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
 - [x] **Real-time Leaderboard WebSocket Integration**: Enrolled the `session_logs` table in Supabase's realtime publication and implemented a dynamic client-side WebSocket subscription on `/ktv/leaderboard` to auto-recalculate KTV rankings instantly in real-time when any session checks out.
 - [x] **Actual Check-in/out Session Chronology**: Modified the core session queries in `booking-actions.ts` to retrieve actual check-in (`start_time`) and check-out (`end_time`) times for completed sessions. Redesigned the completed session details card in the admin interface (`/dashboard/sessions`) to elegantly display the KTV, formatted real-time check-in and check-out timestamps, and computed therapeutic duration in minutes under a premium, glassmorphic layout.
 - [x] **Session Counting Logic & Multi-session Sync**: Fixed the session discrepancy bug where editing a booking's `total_sessions` left redundant scheduled logs in the database. Added a reactive sync engine in `updateBooking` to delete excess scheduled sessions or generate missing ones dynamically, implemented strict check-in guards in KTV actions, and ran a comprehensive database query to clean up all mismatched historical sessions.
-- [x] **Actual Attendance Management & Timezone Alignment**:
-  - Fixed the attendance sheet React rendering crash (TypeError for `ktv.summary`).
-  - Synced backend `logs` data structure with calendar grid cell matching (resolved blank/gray calendar grids).
-  - Integrated beautiful actual check-in and check-out information cards displayed instantly to administrators when clicking days on the KTV calendar.
-  - Implemented a timezone-proof (+07:00 Vietnam) architecture for both frontend form state controls (`toLocalISOString`, `formatTimeVN`) and backend database synchronization (`adminOverrideAttendance`).
-  - Resolved the database Row-Level Security (RLS) policy violation bug on the `attendance` table by disabling RLS, immediately applying the fix to Supabase production, and creating version-controlled migration `20260518000000_disable_attendance_rls.sql`.
+  - [x] **Actual Attendance Management & Timezone Alignment**:
+    - Fixed the attendance sheet React rendering crash (TypeError for `ktv.summary`).
+    - Synced backend `logs` data structure with calendar grid cell matching (resolved blank/gray calendar grids).
+    - Integrated beautiful actual check-in and check-out information cards displayed instantly to administrators when clicking days on the KTV calendar.
+    - Implemented a timezone-proof (+07:00 Vietnam) architecture for both frontend form state controls (`toLocalISOString`, `formatTimeVN`) and backend database synchronization (`adminOverrideAttendance`).
+    - Resolved the database Row-Level Security (RLS) policy violation bug on the `attendance` table by disabling RLS, immediately applying the fix to Supabase production, creating a robust permissive `Public Insert Update` policy, and saving it inside version-controlled migration `20260518000000_disable_attendance_rls.sql`.
 - [x] **Customer Portal Rating Display & Dynamic Integration**:
   - Integrated `rating` and `rating_comment` into `getSessionsWithDetails` for unified, pre-loaded logs representation.
   - Implemented a premium, custom evaluation card (`Đánh giá từ khách hàng`) under the text notes area in the administrative treatment logs panel.
@@ -74,17 +74,17 @@ Status: 🟢 Phases 1-4 & 6-7 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
   - Optimized database triggers (`fn_sync_booking_progress` on `session_logs` and `fn_sync_booking_finance` on `revenue`) to prevent high-frequency, redundant sequential `UPDATE bookings` queries, bypassing them for unconfirmed or scheduled inserts/updates.
   - Parallelized Next.js page revalidations using `Promise.all` inside `booking-actions.ts` for all core booking/session services (`createBooking`, `updateSessionLog`, `saveSessionNote`, etc.), reducing saving latency from ~10s to under 500ms (20x speedup).
 
-## ⚪ Phase 8: Hệ thống Đánh giá Thời lượng & KPI KTV (60/40 Split)
-- [ ] **Database Migration**: Bổ sung các trường `standard_duration`, `actual_duration`, `time_deviation`, `duration_warning_type`, và `ktv_checkout_note` vào bảng `shifts`/`session_logs`.
-- [ ] **KTV Mobile Checkout Warnings**:
-  - [ ] Logic tính toán thực tế tại check-out, sai lệch dưới 5 phút bỏ qua cảnh báo.
-  - [ ] Popup cảnh báo làm thiếu giờ (> 5 phút) yêu cầu nhập lý do.
-  - [ ] Popup nhắc nhở làm lố giờ quá hạn để kịp ca sau.
-- [ ] **Admin Sessions Dashboard Integration**: Hiển thị badge trạng thái thời lượng làm việc (Xanh/Cam/Đỏ) kèm tooltip lý do của KTV.
-- [ ] **Automated Monthly KPI Engine (60/40 Split)**:
-  - [ ] Tính điểm đánh giá khách hàng (60%): Quy đổi từ Rating trung bình tháng.
-  - [ ] Tính điểm kỷ luật Spa (40%): Trừ điểm từ lịch sử đi muộn, về sớm, thiếu giờ, quên check-in/out.
-  - [ ] Áp dụng hệ số sản lượng $F_{vol}$ (Ca thực tế / Ca chỉ tiêu) vào Base KPI để tính thưởng tháng tự động.
+## 🟢 Phase 8: Hệ thống Đánh giá Thời lượng & KPI KTV (60/40 Split) (Completed)
+- [x] **Database Migration**: Bổ sung các trường `standard_duration`, `actual_duration`, `time_deviation`, `duration_warning_type`, và `ktv_checkout_note` vào bảng `session_logs` thông qua migration `20260519000000_ktv_duration_kpi_system.sql`.
+- [x] **KTV Mobile Checkout Warnings**:
+  - [x] Logic tính toán thực tế tại check-out, sai lệch dưới 5 phút bỏ qua cảnh báo.
+  - [x] Popup cảnh báo làm thiếu giờ (> 5 phút) yêu cầu nhập lý do.
+  - [x] Popup nhắc nhở làm lố giờ quá hạn để kịp ca sau.
+- [x] **Admin Sessions Dashboard Integration**: Hiển thị badge trạng thái thời lượng làm việc (Xanh/Cam/Đỏ) kèm tooltip lý do của KTV.
+- [x] **Automated Monthly KPI Engine (60/40 Split)**:
+  - [x] Tính điểm đánh giá khách hàng (60%): Quy đổi từ Rating trung bình tháng.
+  - [x] Tính điểm kỷ luật Spa (40%): Trừ điểm từ lịch sử đi muộn, về sớm, thiếu giờ, quên check-in/out.
+  - [x] Áp dụng hệ số sản lượng $F_{vol}$ (Ca thực tế / Ca chỉ tiêu) vào Base KPI để tính thưởng tháng tự động.
 
 
 
