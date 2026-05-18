@@ -262,10 +262,6 @@ export async function createBooking(formData: any) {
     if (revError) console.error('Error recording initial deposit revenue:', revError);
   }
 
-  // 3. Revalidate paths
-  await safeRevalidatePath(`/dashboard/customers/${validatedData.customer_id}`);
-  await safeRevalidatePath('/dashboard/finance');
-
   // 2. Automation: Generate session logs (only if they don't exist yet for this booking)
   const { count: existingLogsCount } = await supabase
     .from('session_logs')
@@ -312,12 +308,17 @@ export async function createBooking(formData: any) {
     }
   }
 
-  await safeRevalidatePath('/dashboard/bookings');
-  await safeRevalidatePath('/dashboard/sessions');
-  await safeRevalidatePath('/dashboard/customers');
-  await safeRevalidatePath(`/dashboard/customers/${validatedData.customer_id}`);
-  await safeRevalidatePath('/dashboard');
-  await safeRevalidatePath('/dashboard/finance');
+  // 3. Revalidate paths in parallel to maximize performance
+  const revalPaths = [
+    '/dashboard/bookings',
+    '/dashboard/sessions',
+    '/dashboard/customers',
+    `/dashboard/customers/${validatedData.customer_id}`,
+    '/dashboard',
+    '/dashboard/finance'
+  ];
+  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
+
   return { data: booking };
 }
 
@@ -868,13 +869,15 @@ export async function updateSessionLog(id: string, payload: any) {
     .eq('id', bookingId)
     .single();
 
-  await safeRevalidatePath('/dashboard/bookings');
-  await safeRevalidatePath('/dashboard/sessions');
-  await safeRevalidatePath('/dashboard/customers');
-  
+  const revalPaths = [
+    '/dashboard/bookings',
+    '/dashboard/sessions',
+    '/dashboard/customers'
+  ];
   if (customerData?.customer_id) {
-    await safeRevalidatePath(`/dashboard/customers/${customerData.customer_id}`);
+    revalPaths.push(`/dashboard/customers/${customerData.customer_id}`);
   }
+  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
 
   return { data };
 }
@@ -920,13 +923,15 @@ export async function saveSessionNote(sessionId: string, note: string) {
       .eq('id', logData.booking_id)
       .single();
 
+    const revalPaths = ['/dashboard/sessions', '/dashboard/customers'];
     if (bookingData?.customer_id) {
-      await safeRevalidatePath(`/dashboard/customers/${bookingData.customer_id}`);
+      revalPaths.push(`/dashboard/customers/${bookingData.customer_id}`);
     }
+    await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
+  } else {
+    const revalPaths = ['/dashboard/sessions', '/dashboard/customers'];
+    await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
   }
-
-  await safeRevalidatePath('/dashboard/sessions');
-  await safeRevalidatePath('/dashboard/customers');
 
   // Audit log
   try {
@@ -991,10 +996,11 @@ export async function addExtraSession(bookingId: string) {
     .eq('id', bookingId)
     .single();
 
-  await safeRevalidatePath('/dashboard/sessions');
+  const revalPaths = ['/dashboard/sessions'];
   if (bookingData?.customer_id) {
-    await safeRevalidatePath(`/dashboard/customers/${bookingData.customer_id}`);
+    revalPaths.push(`/dashboard/customers/${bookingData.customer_id}`);
   }
+  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
   
   return { success: true };
 }
@@ -1214,14 +1220,16 @@ export async function updateBooking(id: string, payload: any) {
     }
   }
 
-  await safeRevalidatePath('/dashboard/bookings');
-  await safeRevalidatePath('/dashboard/customers');
-  
   // Also revalidate the specific customer page to ensure the treatment card updates
   const { data: bookingData } = await supabase.from('bookings').select('customer_id').eq('id', id).single();
+  const revalPaths = [
+    '/dashboard/bookings',
+    '/dashboard/customers'
+  ];
   if (bookingData?.customer_id) {
-    await safeRevalidatePath(`/dashboard/customers/${bookingData.customer_id}`);
+    revalPaths.push(`/dashboard/customers/${bookingData.customer_id}`);
   }
+  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
 
   return { data };
 }
@@ -1366,9 +1374,12 @@ async function finalizeReuse(newBooking: any, total: number, supabase: any) {
     console.warn('Failed to record reusePackage/finalizeReuse audit log:', auditErr);
   }
 
-  await safeRevalidatePath('/dashboard/sessions');
-  await safeRevalidatePath('/dashboard/bookings');
-  await safeRevalidatePath(`/dashboard/customers/${newBooking.customer_id}`);
+  const revalPaths = [
+    '/dashboard/sessions',
+    '/dashboard/bookings',
+    `/dashboard/customers/${newBooking.customer_id}`
+  ];
+  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
   return { data: newBooking };
 }
 
@@ -1464,9 +1475,12 @@ export async function recordRemainingPayment(params: {
       }
     }
 
-    // 3. Revalidate the customer page
-    await safeRevalidatePath(`/dashboard/customers/${params.customer_id}`);
-    await safeRevalidatePath('/dashboard/finance');
+    // 3. Revalidate the customer page in parallel
+    const revalPaths = [
+      `/dashboard/customers/${params.customer_id}`,
+      '/dashboard/finance'
+    ];
+    await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
 
     return { success: true };
   } catch (error: any) {
@@ -1567,14 +1581,16 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
     return { error: 'Có lỗi xảy ra khi cập nhật một số buổi học.' };
   }
 
-  // 5. Revalidate paths
+  // 5. Revalidate paths in parallel
   const { data: bookingData } = await supabase.from('bookings').select('customer_id').eq('id', bookingId).single();
-  
-  await safeRevalidatePath('/dashboard/bookings');
-  await safeRevalidatePath('/dashboard/sessions');
+  const revalPaths = [
+    '/dashboard/bookings',
+    '/dashboard/sessions'
+  ];
   if (bookingData?.customer_id) {
-    await safeRevalidatePath(`/dashboard/customers/${bookingData.customer_id}`);
+    revalPaths.push(`/dashboard/customers/${bookingData.customer_id}`);
   }
+  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
 
   // Audit log
   try {
@@ -1613,10 +1629,11 @@ export async function generateShareToken(bookingId: string) {
   
   const tokenData = data?.[0];
   
-  await safeRevalidatePath('/dashboard/customers');
+  const revalPaths = ['/dashboard/customers'];
   if (tokenData?.customer_id) {
-    await safeRevalidatePath(`/dashboard/customers/${tokenData.customer_id}`);
+    revalPaths.push(`/dashboard/customers/${tokenData.customer_id}`);
   }
+  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
   
   return { data: tokenData };
 }
