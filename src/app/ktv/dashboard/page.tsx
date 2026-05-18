@@ -48,6 +48,8 @@ export default function KTVDashboard() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [checkoutSession, setCheckoutSession] = useState<any | null>(null);
+  const [checkoutNotes, setCheckoutNotes] = useState<string>('');
 
   const router = useRouter();
 
@@ -143,12 +145,12 @@ export default function KTVDashboard() {
     }
   };
 
-  const handleComplete = async (sessionId: string) => {
-    const notes = window.prompt('Ghi chú buổi trị liệu (không bắt buộc):') || '';
+  const handleComplete = async (sessionId: string, notes: string) => {
     setIsActionLoading(sessionId);
     try {
       await completeKTVSession(sessionId, notes);
       toast.success('Đã hoàn thành buổi trị liệu!');
+      setCheckoutSession(null);
       fetchData();
     } catch (error) {
       toast.error('Không thể hoàn tất buổi trị liệu');
@@ -359,7 +361,8 @@ export default function KTVDashboard() {
                             Buổi {session.session_number}/{session.bookings?.total_sessions || '--'}
                           </span>
                         </div>
-                        <h3 className="text-xl font-black text-white">{session.bookings?.customers?.name_mother}</h3>
+                        {/* Mother name changed from h3 to div to prevent color overriding by global styles */}
+                        <div className="text-xl font-black text-white">{session.bookings?.customers?.name_mother}</div>
                         <p className="text-xs text-rose-300 font-bold mt-1.5 flex items-center gap-1.5">
                           <Baby className="w-4 h-4 shrink-0 text-rose-300" />
                           <span>Bé: {session.bookings?.customers?.name_baby || 'Chưa sinh/Chưa có'}</span>
@@ -385,22 +388,19 @@ export default function KTVDashboard() {
                     </div>
 
                     <button 
-                      onClick={() => handleComplete(session.id)}
-                      disabled={isActionLoading === session.id}
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95"
+                      onClick={() => {
+                        setCheckoutSession(session);
+                        setCheckoutNotes('');
+                      }}
+                      disabled={isActionLoading !== null}
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                     >
-                    {isActionLoading === session.id ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        Kết thúc & Check-out
-                      </>
-                    )}
-                  </button>
-                </motion.div>
-              );
-            })}
+                      <CheckCircle2 className="w-4 h-4" />
+                      Kết thúc & Check-out
+                    </button>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </section>
@@ -663,6 +663,132 @@ export default function KTVDashboard() {
                     className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black text-xs py-3.5 rounded-2xl uppercase tracking-wider transition-all active:scale-95 shadow-lg shadow-slate-200"
                   >
                     Đã hiểu
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Checkout Confirmation Modal */}
+      <AnimatePresence>
+        {checkoutSession && (
+          <>
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                if (isActionLoading === null) setCheckoutSession(null);
+              }}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100]"
+            />
+            {/* Modal Box */}
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-[101] pointer-events-none">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                className="bg-white rounded-[32px] p-6 w-full max-w-sm shadow-2xl border border-slate-100 pointer-events-auto flex flex-col relative overflow-hidden"
+              >
+                {/* Decorative emerald header line */}
+                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500" />
+                
+                {/* Close Button */}
+                <button 
+                  onClick={() => {
+                    if (isActionLoading === null) setCheckoutSession(null);
+                  }}
+                  disabled={isActionLoading !== null}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors disabled:opacity-50"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                {/* Content */}
+                <div className="mt-4 flex flex-col items-center text-center">
+                  {/* Large Check circle icon */}
+                  <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-md shadow-emerald-50 flex items-center justify-center mb-4">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+
+                  {/* Badge */}
+                  <span className="text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest mb-3 bg-emerald-50 text-emerald-600 border border-emerald-100">
+                    Xác nhận hoàn thành
+                  </span>
+
+                  {/* Title */}
+                  <h3 className="text-lg font-black text-slate-900 leading-tight mb-4 px-2">
+                    Hoàn thành buổi trị liệu?
+                  </h3>
+
+                  {/* Session Summary Card */}
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 w-full text-left space-y-3 mb-5">
+                    <div className="flex justify-between items-start">
+                      <div className="min-w-0 flex-1">
+                        <span className="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider inline-block mb-1">
+                          {checkoutSession.bookings?.package_name}
+                        </span>
+                        <div className="font-black text-sm text-slate-800 truncate">{checkoutSession.bookings?.customers?.name_mother}</div>
+                        <div className="text-xs text-rose-500 font-bold mt-0.5 flex items-center gap-1">
+                          <Baby className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">Bé: {checkoutSession.bookings?.customers?.name_baby || 'Chưa sinh/Chưa có'}</span>
+                        </div>
+                      </div>
+                      <span className="bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 ml-2">
+                        Buổi {checkoutSession.session_number}/{checkoutSession.bookings?.total_sessions || '--'}
+                      </span>
+                    </div>
+                    
+                    <div className="pt-2 border-t border-slate-200/60 flex justify-between items-center text-[10px] text-slate-400 font-bold">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                        Bắt đầu: {new Date(checkoutSession.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <span>Hôm nay</span>
+                    </div>
+                  </div>
+
+                  {/* Notes input */}
+                  <div className="w-full text-left mb-6">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
+                      Ghi chú trị liệu (không bắt buộc)
+                    </label>
+                    <textarea
+                      value={checkoutNotes}
+                      onChange={(e) => setCheckoutNotes(e.target.value)}
+                      placeholder="Nhập tình trạng của bé, sữa bé uống, lưu ý cho buổi sau..."
+                      disabled={isActionLoading !== null}
+                      className="w-full border border-slate-200 rounded-2xl p-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all min-h-[80px] resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Footer CTA Actions */}
+                <div className="flex flex-col gap-2">
+                  <button 
+                    onClick={() => handleComplete(checkoutSession.id, checkoutNotes)}
+                    disabled={isActionLoading !== null}
+                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs py-3.5 rounded-2xl uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-emerald-100 disabled:opacity-50"
+                  >
+                    {isActionLoading !== null ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        Xác nhận & Check-out
+                      </>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => setCheckoutSession(null)}
+                    disabled={isActionLoading !== null}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-black text-xs py-3.5 rounded-2xl uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    Quay lại
                   </button>
                 </div>
               </motion.div>
