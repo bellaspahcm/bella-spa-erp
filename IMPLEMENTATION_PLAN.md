@@ -66,5 +66,9 @@ Status: 🟢 Phases 1-4 & 6-7 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
   - Integrated beautiful actual check-in and check-out information cards displayed instantly to administrators when clicking days on the KTV calendar.
   - Implemented a timezone-proof (+07:00 Vietnam) architecture for both frontend form state controls (`toLocalISOString`, `formatTimeVN`) and backend database synchronization (`adminOverrideAttendance`).
   - Resolved the database Row-Level Security (RLS) policy violation bug on the `attendance` table by disabling RLS, immediately applying the fix to Supabase production, and creating version-controlled migration `20260518000000_disable_attendance_rls.sql`.
+- [x] **Customer Portal Rating Display & Dynamic Integration**:
+  - Integrated `rating` and `rating_comment` into `getSessionsWithDetails` for unified, pre-loaded logs representation.
+  - Implemented a premium, custom evaluation card (`Đánh giá từ khách hàng`) under the text notes area in the administrative treatment logs panel.
+  - Features real-time responsive styling (warm amber gradient for rated sessions vs neutral gray for pending), dynamic five-star rendering, and an elegant italicized customer feedback box.
 
 
