@@ -413,6 +413,29 @@
 - **Global Layout Integration**: Added `<OfflineIndicator />` in the root layout `src/app/layout.tsx` so that a gorgeous glassmorphic network connection banner floats globally. The component displays live synchronization status, pending counts, and offers a manually triggered "Đồng bộ ngay" (Sync Now) bypass.
 - **Type-Safety Verification**: Validated the entire project compilation via `npx tsc --noEmit`. The code compiled cleanly with **`Exit Code: 0`** and zero type warnings.
 
+## 2026-05-19 (Session 2): Premium Centered Confirmation Modals & User Consent Overhaul
+
+### 1. Unified Centered React Confirmation Modals
+- **Issue**: Actions like "đối soát thay" (confirming checkout on behalf of a KTV) and "xác nhận lương" (approving/finalizing salaries) relied on browser-default `window.confirm()` prompts, which lacked brand-aligned styling and looked unpolished. The user explicitly requested that all confirmation prompts appear as beautifully styled, centered modals on the active viewport.
+- **Solution**:
+  - Replaced all raw browser `window.confirm()` calls in the Admin Salary Dashboard (`src/app/dashboard/salary/page.tsx`) with a custom, highly responsive centered React Modal.
+  - Implemented the modal with premium glassmorphic styling, utilizing `<AnimatePresence>` and `motion.div` from `framer-motion` for smooth scale-in and fade-in transitions.
+  - Styled with a dark glass backdrop (`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100]`) and custom alert badges:
+    - **ShieldCheck (Emerald/Indigo themed)**: For positive operations like payroll approval or publishing.
+    - **AlertCircle (Rose/Red themed)**: For destructive/finalizing operations like chốt sổ lương.
+  - Added an integrated loading state (`isSaving` spinners) within the modal confirmation button. This provides micro-feedback and disables actions during request execution to prevent duplicate transactions.
+
+### 2. Full Integration across Administrative Actions
+- Integrated the new centered popup modal seamlessly with all interactive salary and audit buttons on the Salary Page:
+  - **Phê duyệt lương KTV** (`handleApprove`): Custom modal prompts before approving individual monthly payroll.
+  - **Chốt sổ lương KTV** (`handleFinalizeOne`): Custom modal prompts before locking individual records.
+  - **Xác nhận đối soát thay** (`handleConfirmOnBehalf`): Centered popover prompts before verifying checkouts on behalf of technicians.
+  - **Hành động hàng loạt (Bulk Actions)**: Added beautiful centered modals for *Phê duyệt tất cả* (`handleApproveAll`), *Gửi đối soát tất cả* (`handlePublishAll`), and *Chốt sổ tất cả* (`handleFinalizeAll`).
+
+### 3. Production Compilation & Git Deployment
+- Executed Next.js production builds with zero warnings or compiler errors.
+- Pushed changes cleanly to the `main` branch of the GitHub repository `bellaspahcm/bella-spa-erp` and deployed to production.
+
 
 
 
