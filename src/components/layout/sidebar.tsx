@@ -102,7 +102,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-80 bg-white/40 backdrop-blur-2xl border-r border-rose-100/50 flex flex-col h-[calc(100vh/0.9)] sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.1)]">
+      <aside className="w-80 bg-white/40 backdrop-blur-2xl border-r border-rose-100/50 flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.1)]">
         {/* Soft decorative glows */}
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-rose-200/20 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/10 rounded-full blur-[100px] pointer-events-none" />
