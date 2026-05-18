@@ -44,13 +44,20 @@ export async function getKTVActiveSessions() {
     return [];
   }
 
-  return (data || []).map((s: any) => ({
-    ...s,
-    bookings: s.bookings ? {
-      ...s.bookings,
-      package_name: resolvePackageName(s.bookings)
-    } : null
-  }));
+  return (data || [])
+    .filter((s: any) => {
+      if (!s.bookings) return true;
+      const bookingTotal = s.bookings.total_sessions || 0;
+      const isBookingCompleted = s.bookings.status === 'completed';
+      return s.session_number <= bookingTotal && !isBookingCompleted;
+    })
+    .map((s: any) => ({
+      ...s,
+      bookings: s.bookings ? {
+        ...s.bookings,
+        package_name: resolvePackageName(s.bookings)
+      } : null
+    }));
 }
 
 /**
@@ -141,7 +148,10 @@ export async function getKTVUpcomingSessions() {
       }
 
       // We only care about scheduled sessions for the upcoming list
-      if (s.status === 'scheduled' && finalDate === today) {
+      const bookingTotal = s.bookings?.total_sessions || 0;
+      const isBookingCompleted = s.bookings?.status === 'completed';
+
+      if (s.status === 'scheduled' && finalDate === today && s.session_number <= bookingTotal && !isBookingCompleted) {
         processedSessionsList.push({
           ...s,
           assigned_date: finalDate,
@@ -176,11 +186,22 @@ export async function startSession(sessionId: string) {
   // 1. Lấy thông tin session để tìm booking_id
   const { data: session } = await supabase
     .from('session_logs')
-    .select('booking_id')
+    .select('booking_id, session_number, bookings(total_sessions, completed_sessions, status)')
     .eq('id', sessionId)
     .single();
 
   if (!session) throw new Error('Session not found');
+
+  // Guard: check that the booking is not completed and the session number is within the booking's total_sessions
+  const booking = session.bookings as any;
+  if (booking) {
+    if (booking.status === 'completed' || (booking.completed_sessions || 0) >= (booking.total_sessions || 0)) {
+      throw new Error('Liệu trình này đã hoàn thành toàn bộ số buổi. Không thể bắt đầu buổi mới.');
+    }
+    if (session.session_number > (booking.total_sessions || 0)) {
+      throw new Error('Buổi này vượt quá tổng số buổi của liệu trình.');
+    }
+  }
 
   // 2. Cập nhật session log
   const { error } = await supabase
@@ -275,6 +296,16 @@ export async function completeKTVSession(sessionId: string, notes: string = '') 
       console.error('Error updating booking status:', bookingError);
       // Optional: you might want to rollback the session_log update, 
       // but for now let's at least log it.
+    }
+
+    if (isFinished) {
+      // Clean up any remaining scheduled logs that exceed the total sessions
+      await supabase
+        .from('session_logs')
+        .delete()
+        .eq('booking_id', session.booking_id)
+        .gt('session_number', booking.total_sessions)
+        .eq('status', 'scheduled');
     }
   }
 
