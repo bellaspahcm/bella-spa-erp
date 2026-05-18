@@ -985,12 +985,60 @@ function SessionsContent() {
                             </div>
                             
                             {selectedSessionLog.status === 'completed' && (
-                              <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 flex items-center gap-3 mb-2">
-                                <UserCircle className="w-5 h-5 text-emerald-500" />
-                                <div>
-                                  <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Kỹ thuật viên thực hiện</p>
-                                  <p className="text-xs font-bold text-emerald-900">{selectedSessionLog.ktv?.full_name || 'KTV hệ thống'}</p>
+                              <div className="bg-gradient-to-br from-emerald-50/70 to-teal-50/40 p-5 rounded-2xl border border-emerald-100/60 shadow-sm space-y-4 mb-2">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-lg bg-emerald-100/70 flex items-center justify-center text-emerald-600 shadow-sm">
+                                    <UserCircle className="w-5 h-5" />
+                                  </div>
+                                  <div>
+                                    <p className="text-[8px] font-black text-emerald-600 uppercase tracking-[0.15em] leading-none mb-1">Kỹ thuật viên thực hiện</p>
+                                    <p className="text-xs font-black text-slate-800">{selectedSessionLog.ktv?.full_name || 'KTV hệ thống'}</p>
+                                  </div>
                                 </div>
+                                
+                                <div className="border-t border-emerald-100/50 pt-3.5 grid grid-cols-2 gap-4">
+                                  <div className="bg-white/60 p-2.5 rounded-xl border border-emerald-100/40">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5 flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                      Giờ Check-in thực tế
+                                    </p>
+                                    <p className="text-xs font-black text-slate-700">
+                                      {selectedSessionLog.start_time ? (
+                                        (() => {
+                                          const d = new Date(selectedSessionLog.start_time);
+                                          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} - ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+                                        })()
+                                      ) : 'Không ghi nhận (admin cập nhật)'}
+                                    </p>
+                                  </div>
+                                  <div className="bg-white/60 p-2.5 rounded-xl border border-emerald-100/40">
+                                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5 flex items-center gap-1">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                      Giờ Check-out thực tế
+                                    </p>
+                                    <p className="text-xs font-black text-slate-700">
+                                      {selectedSessionLog.end_time ? (
+                                        (() => {
+                                          const d = new Date(selectedSessionLog.end_time);
+                                          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} - ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+                                        })()
+                                      ) : 'Không ghi nhận (admin cập nhật)'}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {selectedSessionLog.start_time && selectedSessionLog.end_time && (
+                                  <div className="bg-emerald-500/10 rounded-xl px-4 py-3 flex items-center justify-between border border-emerald-500/10 shadow-inner">
+                                    <span className="text-[9px] font-black uppercase text-emerald-700 tracking-wider">Thời lượng thực tế:</span>
+                                    <span className="text-xs font-black text-emerald-800 bg-white/80 px-2 py-0.5 rounded-md shadow-sm border border-emerald-100">
+                                      {(() => {
+                                        const diff = new Date(selectedSessionLog.end_time).getTime() - new Date(selectedSessionLog.start_time).getTime();
+                                        const minutes = Math.max(1, Math.floor(diff / 60000));
+                                        return `${minutes} phút`;
+                                      })()}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </>
