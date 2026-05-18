@@ -9,7 +9,7 @@ import { twMerge } from 'tailwind-merge';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
-import { cn, formatNumberWithSeparator } from '@/lib/utils';
+import { cn, formatNumberWithSeparator, getLocalDateString } from '@/lib/utils';
 
 import { 
   Search, 
@@ -257,7 +257,7 @@ export default function CustomersPage() {
     setIsModalOpen(true);
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
 
   const toggleMenu = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();

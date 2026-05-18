@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { getLocalDateString } from '@/lib/utils';
 
 const KNOWN_TENANT_ID = '0e66365b-42b0-420e-acca-f7d7692e125e';
 
@@ -148,7 +149,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
 
   // For expense: status = 'approved'; for revenue: status = 'confirmed'
   const updatePayload = type === 'revenue'
@@ -201,7 +202,7 @@ export async function recordTransaction(data: {
           category: dbCategory,
           description: data.notes,
           status: dbStatus,                           // ✓ 'approved' | 'pending'
-          expense_date: new Date().toISOString().split('T')[0],
+          expense_date: getLocalDateString(),
           tenant_id: tenantId
           // No: expense_number, payment_status (don't exist in schema)
         })
@@ -232,7 +233,7 @@ export async function recordTransaction(data: {
           revenue_type: dbRevenueType,
           payment_method: 'bank_transfer',
           status: dbStatus,
-          received_date: new Date().toISOString().split('T')[0],
+          received_date: getLocalDateString(),
           tenant_id: tenantId
         })
         .select()

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase-client';
 import { toast } from 'sonner';
-import { cn, formatNumberWithSeparator } from '@/lib/utils';
+import { cn, formatNumberWithSeparator, getLocalDateString } from '@/lib/utils';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
@@ -30,7 +30,7 @@ export default function InventoryPage() {
 
   // Derived date range
   const dateFrom = `${logYear}-${String(logMonth + 1).padStart(2,'0')}-01`;
-  const dateTo   = new Date(logYear, logMonth + 1, 0).toISOString().slice(0, 10);
+  const dateTo   = getLocalDateString(new Date(logYear, logMonth + 1, 0));
 
   // Restock modal
   const [restockTarget, setRestockTarget] = useState<any>(null);

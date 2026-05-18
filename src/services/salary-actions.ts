@@ -1,6 +1,6 @@
 'use server';
 
-import { resolvePackageName } from '@/lib/utils';
+import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
@@ -45,7 +45,7 @@ export async function publishSalaryRecord(ktvId: string) {
 
     // 1.1 Fetch actual attendance records this month for pro-rata calculation
     const startOfMonthStr = monthYear;
-    const endOfMonthStr = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+    const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
 
     const { data: attendanceList } = await supabase
       .from('attendance')
@@ -68,7 +68,7 @@ export async function publishSalaryRecord(ktvId: string) {
 
     // 2. Fetch completed sessions this month
     const startOfMonth = monthYear;
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+    const endOfMonth = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
     const { data: sessions } = await supabase
       .from('session_logs')
       .select('id, bookings(ktv_commission)')
@@ -357,7 +357,7 @@ export async function getKtvSalaryForConfirmation(month?: string) {
   const now = new Date();
   const monthStr = month || getMonthStart(now);
   const startOfMonth = monthStr;
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+  const endOfMonth = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
 
   // Get salary record
   const { data: record } = await supabase
@@ -424,7 +424,7 @@ export async function getSalaryData() {
 
     // Fetch all attendance logs this month
     const startOfMonthStr = currentMonthYear;
-    const endOfMonthStr = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+    const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
     const { data: attendanceLogs } = await supabase
       .from('attendance')
       .select('*')
