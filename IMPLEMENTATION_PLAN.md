@@ -60,4 +60,10 @@ Status: 🟢 Phases 1-4 & 6-7 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
 - [x] **Real-time Leaderboard WebSocket Integration**: Enrolled the `session_logs` table in Supabase's realtime publication and implemented a dynamic client-side WebSocket subscription on `/ktv/leaderboard` to auto-recalculate KTV rankings instantly in real-time when any session checks out.
 - [x] **Actual Check-in/out Session Chronology**: Modified the core session queries in `booking-actions.ts` to retrieve actual check-in (`start_time`) and check-out (`end_time`) times for completed sessions. Redesigned the completed session details card in the admin interface (`/dashboard/sessions`) to elegantly display the KTV, formatted real-time check-in and check-out timestamps, and computed therapeutic duration in minutes under a premium, glassmorphic layout.
 - [x] **Session Counting Logic & Multi-session Sync**: Fixed the session discrepancy bug where editing a booking's `total_sessions` left redundant scheduled logs in the database. Added a reactive sync engine in `updateBooking` to delete excess scheduled sessions or generate missing ones dynamically, implemented strict check-in guards in KTV actions, and ran a comprehensive database query to clean up all mismatched historical sessions.
+- [x] **Actual Attendance Management & Timezone Alignment**:
+  - Fixed the attendance sheet React rendering crash (TypeError for `ktv.summary`).
+  - Synced backend `logs` data structure with calendar grid cell matching (resolved blank/gray calendar grids).
+  - Integrated beautiful actual check-in and check-out information cards displayed instantly to administrators when clicking days on the KTV calendar.
+  - Implemented a timezone-proof (+07:00 Vietnam) architecture for both frontend form state controls (`toLocalISOString`, `formatTimeVN`) and backend database synchronization (`adminOverrideAttendance`).
+
 

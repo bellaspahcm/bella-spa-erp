@@ -270,6 +270,26 @@ export default function SalaryPage() {
     }
   };
 
+  // Vietnam Timezone helper functions
+  const toLocalISOString = (dateInput: string | Date | null | undefined): string => {
+    if (!dateInput) return '';
+    const date = new Date(dateInput);
+    const tzOffset = 7 * 60; // Vietnam +7 hours in minutes
+    const localTime = new Date(date.getTime() + tzOffset * 60 * 1000);
+    return localTime.toISOString().substring(0, 16);
+  };
+
+  const formatTimeVN = (dateInput: string | Date | null | undefined): string => {
+    if (!dateInput) return 'Chưa ghi nhận';
+    const date = new Date(dateInput);
+    return date.toLocaleTimeString('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
   // Calendar Override Handlers
   const openKtvCalendar = (ktv: any) => {
     setSelectedKtv(ktv);
@@ -282,8 +302,8 @@ export default function SalaryPage() {
       log: log || null
     });
     setOverrideStatus(log?.status || 'present');
-    setOverrideCheckin(log?.checkin_time ? new Date(log.checkin_time).toISOString().substring(0, 16) : '');
-    setOverrideCheckout(log?.checkout_time ? new Date(log.checkout_time).toISOString().substring(0, 16) : '');
+    setOverrideCheckin(log?.checkin_time ? toLocalISOString(log.checkin_time) : '');
+    setOverrideCheckout(log?.checkout_time ? toLocalISOString(log.checkout_time) : '');
   };
 
   const handleSaveOverride = async () => {
@@ -848,11 +868,11 @@ export default function SalaryPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-slate-700">{ktv.summary.totalDays}</td>
-                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-emerald-600">+{ktv.summary.present}</td>
-                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-amber-600">+{ktv.summary.late}</td>
-                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-rose-500">-{ktv.summary.absent}</td>
-                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-blue-500">+{ktv.summary.halfDay}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-slate-700">{ktv.totalDays}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-emerald-600">+{ktv.present}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-amber-600">+{ktv.late}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-rose-500">-{ktv.absent}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-blue-500">+{ktv.halfDay}</td>
                       <td className="px-8 py-6 text-center whitespace-nowrap font-black text-slate-900">
                         {ktv.baseSalary ? `${ktv.baseSalary.toLocaleString()}đ` : 'Chưa thiết lập'}
                       </td>
@@ -974,7 +994,7 @@ export default function SalaryPage() {
 
                   for (let day = 1; day <= daysInMonth; day++) {
                     const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const log = selectedKtv.attendance?.find((a: any) => a.date === dateStr);
+                    const log = selectedKtv.logs?.find((a: any) => a.date === dateStr);
                     
                     let bgClass = "bg-slate-50 hover:bg-slate-100 text-slate-700";
                     let dotColor = "";
@@ -1024,6 +1044,22 @@ export default function SalaryPage() {
                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Ngày</p>
                       <p className="text-sm font-bold text-slate-800">{new Date(selectedDayLog.date).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                     </div>
+
+                    {selectedDayLog.log && (
+                      <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 space-y-2">
+                        <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">Thời gian KTV đã kích hoạt</p>
+                        <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700">
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Thực tế vào:</span>
+                            <span className="text-slate-800">{formatTimeVN(selectedDayLog.log.checkin_time)}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[9px] uppercase tracking-wider">Thực tế ra:</span>
+                            <span className="text-slate-800">{formatTimeVN(selectedDayLog.log.checkout_time)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Trạng thái chấm công</label>
