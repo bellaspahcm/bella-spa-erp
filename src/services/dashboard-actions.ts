@@ -247,6 +247,7 @@ export async function getImportantAlerts() {
       .select(`
         id, 
         end_time, 
+        completed_date,
         session_number,
         completed_by_ktv_id,
         booking_id,
@@ -274,12 +275,21 @@ export async function getImportantAlerts() {
       let timeStr = '';
       if (endTimeVal) {
         const d = new Date(endTimeVal);
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        timeStr = `${hours}:${minutes} ngày ${day}/${month}/${year}`;
+        const diffMs = Date.now() - d.getTime();
+        const diffMinutes = Math.floor(diffMs / 60000);
+        if (diffMinutes < 5 && diffMinutes >= 0) {
+          timeStr = 'vừa xong';
+        } else {
+          const hours = String(d.getHours()).padStart(2, '0');
+          const minutes = String(d.getMinutes()).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const year = d.getFullYear();
+          timeStr = `${hours}:${minutes} ngày ${day}/${month}/${year}`;
+        }
+      } else if (s.completed_date) {
+        const [y, m, d] = s.completed_date.split('-');
+        timeStr = `ngày ${d}/${m}/${y}`;
       } else {
         timeStr = 'vừa xong';
       }
