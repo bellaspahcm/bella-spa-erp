@@ -43,6 +43,29 @@ export async function publishSalaryRecord(ktvId: string) {
       .eq('id', ktvId)
       .single();
 
+    // 1.1 Fetch actual attendance records this month for pro-rata calculation
+    const startOfMonthStr = monthYear;
+    const endOfMonthStr = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+
+    const { data: attendanceList } = await supabase
+      .from('attendance')
+      .select('status, date')
+      .eq('ktv_id', ktvId)
+      .gte('date', startOfMonthStr)
+      .lt('date', endOfMonthStr);
+
+    let actualDays = 0;
+    if (attendanceList && attendanceList.length > 0) {
+      attendanceList.forEach((att: any) => {
+        if (att.status === 'present' || att.status === 'late') {
+          actualDays += 1.0;
+        } else if (att.status === 'half_day') {
+          actualDays += 0.5;
+        }
+        // 'absent' adds 0
+      });
+    }
+
     // 2. Fetch completed sessions this month
     const startOfMonth = monthYear;
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
@@ -90,16 +113,29 @@ export async function publishSalaryRecord(ktvId: string) {
     let finalRatingBonus = ratingBonus;
     let proRataNote = '';
 
+    if (attendanceList && attendanceList.length > 0) {
+      // Pro-rata based on actual working days (Target = 26 days)
+      finalBaseSalary = Math.round((rawBaseSalary / 26) * actualDays);
+      proRataNote = `📊 Công thực tế: ${actualDays}/26 ngày. `;
+    } else {
+      // Fallback safeguard: if exactly 0 attendance records, pay full base salary
+      finalBaseSalary = rawBaseSalary;
+      proRataNote = `ℹ️ Áp dụng lương cứng mặc định (Chưa có dữ liệu chấm công). `;
+    }
+
     if (ktv?.resignation_date) {
       const resignDate = new Date(ktv.resignation_date);
       const monthDate = new Date(monthYear);
       if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
-        finalBaseSalary = calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
+        const resignCap = calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
+        if (finalBaseSalary > resignCap) {
+          finalBaseSalary = resignCap;
+        }
         finalKpiBonus = 0;
         finalRatingBonus = 0;
         const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
         const daysWorked = resignDate.getDate();
-        proRataNote = `⚠️ KTV nghỉ ngày ${resignDate.toLocaleDateString('vi-VN')} — Lương cứng tính ${daysWorked}/${daysInMonth} ngày`;
+        proRataNote += `⚠️ KTV nghỉ việc từ ngày ${resignDate.toLocaleDateString('vi-VN')} (Giới hạn tối đa ${daysWorked}/${daysInMonth} ngày)`;
       }
     }
 
@@ -357,7 +393,7 @@ export async function getSalaryData() {
     // Fetch KTVs
     const ktvQuery = supabase
       .from('users')
-      .select('id, full_name, role')
+      .select('id, full_name, role, base_salary, hire_date, resignation_date, status')
       .eq('role', 'ktv');
 
     // If current user is KTV, they can only see their own data
@@ -386,6 +422,15 @@ export async function getSalaryData() {
       .select('ktv_id, rating')
       .eq('status', 'approved');
 
+    // Fetch all attendance logs this month
+    const startOfMonthStr = currentMonthYear;
+    const endOfMonthStr = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0];
+    const { data: attendanceLogs } = await supabase
+      .from('attendance')
+      .select('*')
+      .gte('date', startOfMonthStr)
+      .lt('date', endOfMonthStr);
+
     const ktvSalaries = realKtvs.map((ktv: any) => {
         const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
         
@@ -412,7 +457,39 @@ export async function getSalaryData() {
           return acc + (s.bookings?.ktv_commission || 150000);
         }, 0);
 
-        const baseSalary = record?.base_salary || 6000000;
+        // Attendance tracking
+        const ktvAttendance = attendanceLogs?.filter((a: any) => a.ktv_id === ktv.id) || [];
+        let actualDays = 0;
+        ktvAttendance.forEach((att: any) => {
+          if (att.status === 'present' || att.status === 'late') {
+            actualDays += 1.0;
+          } else if (att.status === 'half_day') {
+            actualDays += 0.5;
+          }
+        });
+
+        const rawBaseSalary = record?.base_salary ?? ktv.base_salary ?? 6000000;
+        let baseSalary = rawBaseSalary;
+        if (record?.base_salary !== undefined) {
+          baseSalary = record.base_salary;
+        } else if (ktvAttendance.length > 0) {
+          baseSalary = Math.round((rawBaseSalary / 26) * actualDays);
+        } else {
+          baseSalary = rawBaseSalary;
+        }
+
+        // Cap by resignation date in draft if resignation is active
+        if (!record?.base_salary && ktv.resignation_date) {
+          const resignDate = new Date(ktv.resignation_date);
+          const monthDate = new Date(currentMonthYear);
+          if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
+            const resignCap = calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
+            if (baseSalary > resignCap) {
+              baseSalary = resignCap;
+            }
+          }
+        }
+
         const kpiBonus = record?.kpi_bonus || (ktvSessionsCount > 30 ? 1000000 : 0);
         const deductions = record?.violations_deduction || 0;
         const advances = record?.service_percentage_bonus || 0; 
@@ -430,7 +507,11 @@ export async function getSalaryData() {
           deductions,
           advances,
           totalSalary,
-          status
+          status,
+          hireDate: ktv.hire_date,
+          resignationDate: ktv.resignation_date,
+          ktvStatus: ktv.status,
+          actualDays: ktvAttendance.length > 0 ? actualDays : 26,
         };
     });
 

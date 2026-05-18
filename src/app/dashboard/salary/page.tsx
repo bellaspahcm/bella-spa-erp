@@ -1,15 +1,39 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { DollarSign, Download, TrendingUp, Search, Filter, Edit2, CheckCircle2, ChevronRight, User, Calendar as CalendarIcon, Briefcase, Award, AlertCircle, ShieldCheck, Star, Zap } from 'lucide-react';
+import { 
+  DollarSign, 
+  Download, 
+  TrendingUp, 
+  Search, 
+  Filter, 
+  Edit2, 
+  CheckCircle2, 
+  ChevronRight, 
+  User, 
+  Calendar as CalendarIcon, 
+  Briefcase, 
+  Award, 
+  AlertCircle, 
+  ShieldCheck, 
+  Star, 
+  Zap,
+  UserCog, 
+  CalendarDays,
+  FileSpreadsheet, 
+  Send, 
+  Lock, 
+  UserCheck, 
+  Clock
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { useState, useEffect } from 'react';
 import { getSalaryData, approveSalary, updateSalaryConfig, getKtvSessionMatrix, confirmKtvSessions, publishSalaryRecord, publishAllSalaryRecords, adminConfirmOnBehalf, finalizeSalaryRecord, finalizeAllSalaryRecords, checkAndAutoConfirm } from '@/services/salary-actions';
+import { getMonthlyAttendanceSummary, adminOverrideAttendance, adminUpdateKtvHrProfile } from '@/services/attendance-actions';
 import { exportSalaryToExcel, exportSessionMatrixToExcel } from '@/services/export-actions';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
-import { FileSpreadsheet, Send, Lock, UserCheck, Clock } from 'lucide-react';
 
 export default function SalaryPage() {
   const [ktvSalaries, setKtvSalaries] = useState<any[]>([]);
@@ -21,11 +45,31 @@ export default function SalaryPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [matrixData, setMatrixData] = useState<{ ktvs: any[], packageNames: string[] } | null>(null);
   const [isExportingMatrix, setIsExportingMatrix] = useState(false);
+
+  // Tab State
+  const [activeTab, setActiveTab] = useState<'payroll' | 'attendance' | 'hr_profile'>('payroll');
+  const [attendanceData, setAttendanceData] = useState<any[]>([]);
+
+  // Attendance Override Calendar States
+  const [selectedKtv, setSelectedKtv] = useState<any>(null);
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [selectedDayLog, setSelectedDayLog] = useState<any>(null);
+  const [overrideStatus, setOverrideStatus] = useState<'present' | 'late' | 'absent' | 'half_day'>('present');
+  const [overrideCheckin, setOverrideCheckin] = useState('');
+  const [overrideCheckout, setOverrideCheckout] = useState('');
+
+  // HR Profile Editor States
+  const [isHrModalOpen, setIsHrModalOpen] = useState(false);
+  const [hrKtvProfile, setHrKtvProfile] = useState<any>(null);
+  const [hrBaseSalary, setHrBaseSalary] = useState(0);
+  const [hrHireDate, setHrHireDate] = useState('');
+  const [hrResignDate, setHrResignDate] = useState('');
+  const [hrStatus, setHrStatus] = useState('active');
+  const [isHrSaving, setIsHrSaving] = useState(false);
   
   const now = new Date();
   const currentMonthYear = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
   const prevMonthYear = now.getMonth() === 0 ? `12/${now.getFullYear() - 1}` : `${String(now.getMonth()).padStart(2, '0')}/${now.getFullYear()}`;
-
 
   useEffect(() => {
     async function fetchUser() {
@@ -42,12 +86,15 @@ export default function SalaryPage() {
         const autoRes = await checkAndAutoConfirm();
         if (autoRes.count > 0) toast.info(`Đã tự động xác nhận ${autoRes.count} bảng lương quá hạn 48h`);
 
-        const [salaryData, matrix] = await Promise.all([
+        const currentMonthStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).substring(0, 7);
+        const [salaryData, matrix, attData] = await Promise.all([
           getSalaryData(),
-          getKtvSessionMatrix()
+          getKtvSessionMatrix(),
+          getMonthlyAttendanceSummary(currentMonthStr)
         ]);
         setKtvSalaries(salaryData);
         setMatrixData(matrix);
+        setAttendanceData(attData || []);
       } catch (error) {
         console.error('Fetch data error:', error);
       } finally {
@@ -223,6 +270,86 @@ export default function SalaryPage() {
     }
   };
 
+  // Calendar Override Handlers
+  const openKtvCalendar = (ktv: any) => {
+    setSelectedKtv(ktv);
+    setIsCalendarModalOpen(true);
+  };
+
+  const handleDayClick = (dateStr: string, log: any) => {
+    setSelectedDayLog({
+      date: dateStr,
+      log: log || null
+    });
+    setOverrideStatus(log?.status || 'present');
+    setOverrideCheckin(log?.checkin_time ? new Date(log.checkin_time).toISOString().substring(0, 16) : '');
+    setOverrideCheckout(log?.checkout_time ? new Date(log.checkout_time).toISOString().substring(0, 16) : '');
+  };
+
+  const handleSaveOverride = async () => {
+    if (!selectedKtv || !selectedDayLog) return;
+    const res = await adminOverrideAttendance({
+      ktvId: selectedKtv.id,
+      date: selectedDayLog.date,
+      status: overrideStatus,
+      checkinTime: overrideCheckin || undefined,
+      checkoutTime: overrideCheckout || undefined
+    });
+
+    if (res.success) {
+      toast.success('Cập nhật chấm công thành công!');
+      // Reload attendance & salaries
+      const currentMonthStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).substring(0, 7);
+      const [salaries, attSummary] = await Promise.all([
+        getSalaryData(),
+        getMonthlyAttendanceSummary(currentMonthStr)
+      ]);
+      setKtvSalaries(salaries);
+      setAttendanceData(attSummary || []);
+      
+      // Update selected KTV to reflect changed day
+      const updatedKtv = attSummary?.find(k => k.id === selectedKtv.id);
+      if (updatedKtv) {
+        setSelectedKtv(updatedKtv);
+      }
+      setSelectedDayLog(null);
+    } else {
+      toast.error('Lỗi: ' + res.error);
+    }
+  };
+
+  // HR Profile Editor Handlers
+  const openHrEditModal = (ktv: any) => {
+    setHrKtvProfile(ktv);
+    setHrBaseSalary(ktv.baseSalary);
+    setHrHireDate(ktv.hireDate || '');
+    setHrResignDate(ktv.resignationDate || '');
+    setHrStatus(ktv.status || 'active');
+    setIsHrModalOpen(true);
+  };
+
+  const handleSaveHrProfile = async () => {
+    if (!hrKtvProfile) return;
+    setIsHrSaving(true);
+    const res = await adminUpdateKtvHrProfile(hrKtvProfile.id, {
+      base_salary: hrBaseSalary,
+      hire_date: hrHireDate || null,
+      resignation_date: hrResignDate || null,
+      status: hrStatus
+    });
+
+    if (res.success) {
+      toast.success('Cập nhật thông tin nhân sự thành công!');
+      // Reload salary data
+      const data = await getSalaryData();
+      setKtvSalaries(data);
+      setIsHrModalOpen(false);
+    } else {
+      toast.error('Lỗi: ' + res.error);
+    }
+    setIsHrSaving(false);
+  };
+
   if (isLoading) {
     return (
       <div className="flex-1 p-10 flex items-center justify-center">
@@ -333,8 +460,52 @@ export default function SalaryPage() {
         </motion.div>
       </div>
 
-      {/* Salary Table */}
-      <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden mb-10">
+      {/* Premium Tab Selector (Visible only to Admin/Owner, or KTV sees the standard layout) */}
+      {currentUser?.role?.toLowerCase() !== 'ktv' && (
+        <div className="flex bg-white/60 p-2 rounded-2xl border border-slate-100 gap-2 mb-10 w-fit backdrop-blur-md">
+          <button
+            onClick={() => setActiveTab('payroll')}
+            className={cn(
+              "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
+              activeTab === 'payroll'
+                ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
+                : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
+            )}
+          >
+            <DollarSign className="w-4 h-4" />
+            Bảng Lương realtime
+          </button>
+          <button
+            onClick={() => setActiveTab('attendance')}
+            className={cn(
+              "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
+              activeTab === 'attendance'
+                ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
+                : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
+            )}
+          >
+            <CalendarDays className="w-4 h-4" />
+            Chấm Công Thực Tế
+          </button>
+          <button
+            onClick={() => setActiveTab('hr_profile')}
+            className={cn(
+              "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
+              activeTab === 'hr_profile'
+                ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
+                : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
+            )}
+          >
+            <UserCog className="w-4 h-4" />
+            Hồ Sơ Nhân Sự (HR)
+          </button>
+        </div>
+      )}
+
+      {/* Salary Table (Realtime Payroll) */}
+      {(activeTab === 'payroll' || currentUser?.role?.toLowerCase() === 'ktv') && (
+        <>
+          <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden mb-10">
         <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
             <ShieldCheck className="w-8 h-8 text-primary" />
@@ -626,7 +797,370 @@ export default function SalaryPage() {
           </table>
         </div>
       </div>
-      
+    </>
+    )}
+
+      {/* Attendance Tab */}
+      {activeTab === 'attendance' && currentUser?.role?.toLowerCase() !== 'ktv' && (
+        <div className="space-y-10">
+          <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
+                  <CalendarDays className="w-8 h-8 text-primary" />
+                  Bảng tổng hợp công thực tế
+                </h2>
+                <p className="text-slate-500 font-medium text-sm mt-1">Giám sát chuyên cần, đi muộn, nghỉ phép và số ca hoàn thành</p>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50/80 backdrop-blur-md">
+                    <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px]">Nhân viên</th>
+                    <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Tổng công</th>
+                    <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center text-emerald-600">Đúng giờ</th>
+                    <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center text-amber-600">Đi muộn</th>
+                    <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center text-rose-600">Nghỉ</th>
+                    <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Nửa ngày</th>
+                    <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Lương cơ bản</th>
+                    <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {attendanceData.map((ktv: any, idx: number) => (
+                    <motion.tr
+                      key={ktv.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="hover:bg-slate-50/50 transition-colors"
+                    >
+                      <td className="px-8 py-6 whitespace-nowrap">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-black">
+                            {ktv.name.charAt(0)}
+                          </div>
+                          <div>
+                            <span className="font-bold text-slate-900 block">{ktv.name}</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">{ktv.role}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-slate-700">{ktv.summary.totalDays}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-emerald-600">+{ktv.summary.present}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-amber-600">+{ktv.summary.late}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-rose-500">-{ktv.summary.absent}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-blue-500">+{ktv.summary.halfDay}</td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap font-black text-slate-900">
+                        {ktv.baseSalary ? `${ktv.baseSalary.toLocaleString()}đ` : 'Chưa thiết lập'}
+                      </td>
+                      <td className="px-8 py-6 text-center whitespace-nowrap">
+                        <button
+                          onClick={() => openKtvCalendar(ktv)}
+                          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                        >
+                          Chi tiết & Sửa
+                        </button>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HR Profile Tab */}
+      {activeTab === 'hr_profile' && currentUser?.role?.toLowerCase() !== 'ktv' && (
+        <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
+                <UserCog className="w-8 h-8 text-primary" />
+                Quản lý hồ sơ nhân sự (HR)
+              </h2>
+              <p className="text-slate-500 font-medium text-sm mt-1">Cấu hình lương cứng cơ bản, ngày nhận việc, ngày thôi việc và trạng thái hoạt động</p>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50/80 backdrop-blur-md">
+                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px]">Kỹ thuật viên</th>
+                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Lương cơ bản (Cứng)</th>
+                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ngày nhận việc</th>
+                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ngày thôi việc</th>
+                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Trạng thái</th>
+                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {ktvSalaries.map((s: any, idx: number) => (
+                  <motion.tr
+                    key={s.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="hover:bg-slate-50/50 transition-colors"
+                  >
+                    <td className="px-8 py-6 whitespace-nowrap">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-black">
+                          {s.name.charAt(0)}
+                        </div>
+                        <span className="font-bold text-slate-900">{s.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 whitespace-nowrap font-black text-slate-700">{s.baseSalary?.toLocaleString()}đ</td>
+                    <td className="px-8 py-6 whitespace-nowrap text-sm font-bold text-slate-500">{s.hireDate ? new Date(s.hireDate).toLocaleDateString('vi-VN') : '—'}</td>
+                    <td className="px-8 py-6 whitespace-nowrap text-sm font-bold text-slate-500">{s.resignationDate ? new Date(s.resignationDate).toLocaleDateString('vi-VN') : '—'}</td>
+                    <td className="px-8 py-6 whitespace-nowrap text-center">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        s.status !== 'inactive' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        {s.status !== 'inactive' ? 'Đang hoạt động' : 'Đã nghỉ việc'}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6 text-center whitespace-nowrap">
+                      <button
+                        onClick={() => openHrEditModal(s)}
+                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                      >
+                        Thiết lập HR
+                      </button>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Calendar Override Modal */}
+      {isCalendarModalOpen && selectedKtv && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-[32px] w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[600px]"
+          >
+            {/* Left Panel: Calendar Grid */}
+            <div className="flex-1 p-8 overflow-y-auto border-r border-slate-100">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-black text-slate-900">Chấm công: {selectedKtv.name}</h3>
+                <span className="text-xs font-black bg-primary/10 text-primary px-3 py-1 rounded-full uppercase tracking-widest">{currentMonthYear}</span>
+              </div>
+
+              <div className="grid grid-cols-7 gap-3">
+                {/* Headers */}
+                {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(h => (
+                  <div key={h} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest py-2">{h}</div>
+                ))}
+                
+                {/* Generate Calendar Days */}
+                {(() => {
+                  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                  const firstDayIndex = (new Date(now.getFullYear(), now.getMonth(), 1).getDay() + 6) % 7; // Align Monday as 0
+                  
+                  const cells = [];
+                  for (let i = 0; i < firstDayIndex; i++) {
+                    cells.push(<div key={`empty-${i}`} className="aspect-square bg-slate-50/50 rounded-xl"></div>);
+                  }
+
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const log = selectedKtv.attendance?.find((a: any) => a.date === dateStr);
+                    
+                    let bgClass = "bg-slate-50 hover:bg-slate-100 text-slate-700";
+                    let dotColor = "";
+                    
+                    if (log?.status === 'present') { bgClass = "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"; dotColor = "bg-emerald-500"; }
+                    else if (log?.status === 'late') { bgClass = "bg-amber-50 text-amber-700 hover:bg-amber-100"; dotColor = "bg-amber-500"; }
+                    else if (log?.status === 'absent') { bgClass = "bg-rose-50 text-rose-700 hover:bg-rose-100"; dotColor = "bg-rose-500"; }
+                    else if (log?.status === 'half_day') { bgClass = "bg-blue-50 text-blue-700 hover:bg-blue-100"; dotColor = "bg-blue-500"; }
+
+                    const isToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }) === dateStr;
+
+                    cells.push(
+                      <button
+                        key={day}
+                        onClick={() => handleDayClick(dateStr, log)}
+                        className={cn(
+                          "aspect-square rounded-2xl flex flex-col justify-between p-3 transition-all relative font-black",
+                          bgClass,
+                          isToday && "ring-2 ring-primary"
+                        )}
+                      >
+                        <span className="text-xs">{day}</span>
+                        {log?.status && (
+                          <div className="flex items-center gap-1">
+                            <span className={cn("w-1.5 h-1.5 rounded-full", dotColor)}></span>
+                            <span className="text-[8px] uppercase tracking-tighter hidden md:inline">
+                              {log.status === 'present' ? 'Đúng giờ' : log.status === 'late' ? 'Muộn' : log.status === 'half_day' ? 'Nửa ngày' : 'Nghỉ'}
+                            </span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  }
+                  return cells;
+                })()}
+              </div>
+            </div>
+
+            {/* Right Panel: Detail & Override Form */}
+            <div className="w-full md:w-80 bg-slate-50 p-8 flex flex-col justify-between">
+              <div>
+                <h4 className="text-lg font-black text-slate-900 mb-6 uppercase tracking-wider text-xs text-slate-400">Chi tiết ngày chọn</h4>
+                
+                {selectedDayLog ? (
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Ngày</p>
+                      <p className="text-sm font-bold text-slate-800">{new Date(selectedDayLog.date).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Trạng thái chấm công</label>
+                      <select
+                        value={overrideStatus}
+                        onChange={e => setOverrideStatus(e.target.value as any)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none"
+                      >
+                        <option value="present">Đúng giờ (Có mặt)</option>
+                        <option value="late">Đi muộn</option>
+                        <option value="absent">Vắng mặt (Nghỉ)</option>
+                        <option value="half_day">Nửa ngày</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Thời gian vào ca</label>
+                      <input
+                        type="datetime-local"
+                        value={overrideCheckin}
+                        onChange={e => setOverrideCheckin(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Thời gian ra ca</label>
+                      <input
+                        type="datetime-local"
+                        value={overrideCheckout}
+                        onChange={e => setOverrideCheckout(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-900 outline-none"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400 font-medium italic">Chọn một ngày trong lịch để xem chi tiết hoặc thay đổi dữ liệu chấm công</p>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => setIsCalendarModalOpen(false)}
+                  className="flex-1 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-slate-100 transition-all"
+                >
+                  Đóng
+                </button>
+                {selectedDayLog && (
+                  <button
+                    onClick={handleSaveOverride}
+                    className="flex-1 py-3 bg-primary text-white font-black rounded-xl text-xs uppercase tracking-wider hover:bg-primary-hover transition-all"
+                  >
+                    Lưu công
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* HR Profile Editor Modal */}
+      {isHrModalOpen && hrKtvProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl"
+          >
+            <div className="p-8">
+              <h3 className="text-2xl font-black text-slate-900 mb-6">Thiết lập nhân sự (HR)</h3>
+              <p className="text-slate-500 font-bold text-sm mb-6">Hồ sơ kỹ thuật viên: <span className="text-primary font-black">{hrKtvProfile.name}</span></p>
+              
+              <div className="space-y-5">
+                <div>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">Lương cứng cơ bản (Cố định)</label>
+                  <input
+                    type="number"
+                    value={hrBaseSalary}
+                    onChange={e => setHrBaseSalary(Number(e.target.value))}
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">Ngày nhận việc chính thức</label>
+                  <input
+                    type="date"
+                    value={hrHireDate}
+                    onChange={e => setHrHireDate(e.target.value)}
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">Ngày thôi việc</label>
+                  <input
+                    type="date"
+                    value={hrResignDate}
+                    onChange={e => setHrResignDate(e.target.value)}
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 block">Trạng thái nhân sự</label>
+                  <select
+                    value={hrStatus}
+                    onChange={e => setHrStatus(e.target.value)}
+                    className="w-full bg-slate-50 border-none rounded-xl px-4 py-3 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 outline-none"
+                  >
+                    <option value="active">Đang làm việc (Active)</option>
+                    <option value="inactive">Đã nghỉ việc (Inactive)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setIsHrModalOpen(false)}
+                className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all text-sm"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleSaveHrProfile}
+                disabled={isHrSaving}
+                className="flex-1 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-hover shadow-lg shadow-pink-100 transition-all disabled:opacity-50 text-sm"
+              >
+                {isHrSaving ? 'Đang lưu...' : 'Lưu thông tin'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Edit Salary Modal */}
       {isEditModalOpen && editingSalary && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">

@@ -29,6 +29,7 @@ import {
   getKTVNotifications,
   markNotificationAsRead
 } from '@/services/ktv-actions';
+import { getKTVTodayAttendance, ktvCheckIn, ktvCheckOut } from '@/services/attendance-actions';
 import { getCurrentUser } from '@/services/user-actions';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
@@ -50,6 +51,10 @@ export default function KTVDashboard() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [checkoutSession, setCheckoutSession] = useState<any | null>(null);
   const [checkoutNotes, setCheckoutNotes] = useState<string>('');
+  
+  // Attendance States
+  const [todayAttendance, setTodayAttendance] = useState<any>(null);
+  const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
 
   const router = useRouter();
 
@@ -98,6 +103,15 @@ export default function KTVDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  const fetchAttendance = async () => {
+    try {
+      const att = await getKTVTodayAttendance();
+      setTodayAttendance(att);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -116,7 +130,8 @@ export default function KTVDashboard() {
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         const [earn, notifs] = await Promise.all([
           getKTVEarnings(monthStr),
-          getKTVNotifications()
+          getKTVNotifications(),
+          fetchAttendance()
         ]);
         setEarnings(earn);
         setNotifications(notifs);
@@ -131,6 +146,31 @@ export default function KTVDashboard() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleCheckIn = async () => {
+    setIsAttendanceLoading(true);
+    const res = await ktvCheckIn();
+    if (res.success) {
+      toast.success(res.data?.status === 'late' ? 'Check-in thành công (Trễ giờ)!' : 'Check-in thành công!');
+      fetchAttendance();
+    } else {
+      toast.error(res.error || 'Check-in thất bại');
+    }
+    setIsAttendanceLoading(false);
+  };
+
+  const handleCheckOut = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn Check-out ca làm việc hôm nay?')) return;
+    setIsAttendanceLoading(true);
+    const res = await ktvCheckOut();
+    if (res.success) {
+      toast.success('Check-out thành công!');
+      fetchAttendance();
+    } else {
+      toast.error(res.error || 'Check-out thất bại');
+    }
+    setIsAttendanceLoading(false);
+  };
 
   const handleStart = async (sessionId: string) => {
     setIsActionLoading(sessionId);
@@ -323,6 +363,75 @@ export default function KTVDashboard() {
           <div className="bg-rose-500 p-4 rounded-3xl text-white">
             <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Số ca đã xong</p>
             <p className="text-lg font-black">{earnings.sessions} ca</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Attendance Clock Card */}
+      <div className="px-6 mt-6">
+        <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100/50 relative overflow-hidden">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Điểm danh hôm nay</h4>
+              <p className="text-sm font-bold text-slate-500 mt-0.5">Thời gian vào ca tiêu chuẩn: 08:30 sáng</p>
+            </div>
+            
+            {todayAttendance && (
+              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                todayAttendance.status === 'present' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                todayAttendance.status === 'late' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                todayAttendance.status === 'half_day' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                'bg-rose-50 text-rose-600 border border-rose-100'
+              }`}>
+                {todayAttendance.status === 'present' ? 'Đúng giờ' :
+                 todayAttendance.status === 'late' ? 'Đi trễ' :
+                 todayAttendance.status === 'half_day' ? 'Nửa ngày' :
+                 'Vắng mặt'}
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-slate-50 rounded-2xl p-4 text-center">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Giờ Check-in</span>
+              <span className="text-lg font-black text-slate-700">
+                {todayAttendance?.checkin_time 
+                  ? new Date(todayAttendance.checkin_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                  : '--:--'}
+              </span>
+            </div>
+            <div className="bg-slate-50 rounded-2xl p-4 text-center">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Giờ Check-out</span>
+              <span className="text-lg font-black text-slate-700">
+                {todayAttendance?.checkout_time 
+                  ? new Date(todayAttendance.checkout_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                  : '--:--'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            {!todayAttendance ? (
+              <button
+                onClick={handleCheckIn}
+                disabled={isAttendanceLoading}
+                className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-rose-100 text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isAttendanceLoading ? 'Đang gửi...' : 'Đầu ca: CHECK-IN'}
+              </button>
+            ) : !todayAttendance.checkout_time ? (
+              <button
+                onClick={handleCheckOut}
+                disabled={isAttendanceLoading}
+                className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all shadow-lg shadow-slate-100 text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isAttendanceLoading ? 'Đang gửi...' : 'Cuối ca: CHECK-OUT'}
+              </button>
+            ) : (
+              <div className="flex-1 py-4 bg-emerald-50 text-emerald-700 border border-emerald-100 font-black rounded-2xl text-xs uppercase tracking-widest text-center">
+                🎉 Bạn đã hoàn thành chấm công hôm nay
+              </div>
+            )}
           </div>
         </div>
       </div>
