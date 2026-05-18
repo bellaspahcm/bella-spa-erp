@@ -29,7 +29,8 @@ import {
   MessageSquare,
   Sparkles as SparklesIcon,
   Wallet,
-  Package
+  Package,
+  X
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -93,6 +94,9 @@ export default function DashboardPage() {
   const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');
   const [userRole, setUserRole] = useState<'admin' | 'ktv' | null>(null);
+  const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
+  const [notifSearch, setNotifSearch] = useState('');
+  const [notifTab, setNotifTab] = useState('all');
 
   useEffect(() => {
     async function checkRole() {
@@ -321,22 +325,34 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                       {alerts.length > 0 ? (
-                        alerts.map((alert: any, idx: number) => (
+                        alerts.slice(0, 5).map((alert: any, idx: number) => (
                           <div 
                             key={idx}
+                            onClick={() => {
+                              if (alert.link) {
+                                router.push(alert.link);
+                                setIsNotificationsOpen(false);
+                              }
+                            }}
                             className={`p-4 rounded-2xl border transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer ${
-                              alert.type === 'warning' ? 'bg-amber-50/50 border-amber-100' : 'bg-blue-50/50 border-blue-100'
+                              alert.type === 'warning' ? 'bg-amber-50/50 border-amber-100' :
+                              alert.type === 'success' ? 'bg-emerald-50/50 border-emerald-100' :
+                              'bg-blue-50/50 border-blue-100'
                             }`}
                           >
                             <div className="flex gap-4">
                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                                alert.type === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
+                                alert.type === 'warning' ? 'bg-amber-100 text-amber-600' :
+                                alert.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                                'bg-blue-100 text-blue-600'
                               }`}>
-                                {alert.icon === 'alert' ? <AlertTriangle className="w-5 h-5" /> : <Lightbulb className="w-5 h-5" />}
+                                {alert.icon === 'alert' ? <AlertTriangle className="w-5 h-5" /> :
+                                 alert.icon === 'checkCircle' ? <CheckCircle2 className="w-5 h-5" /> :
+                                 <Lightbulb className="w-5 h-5" />}
                               </div>
-                              <div>
-                                <h4 className="font-bold text-sm text-foreground mb-1">{alert.title}</h4>
-                                <p className="text-xs text-muted-foreground leading-relaxed">{alert.message}</p>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-sm text-foreground mb-1 truncate">{alert.title}</h4>
+                                <p className="text-xs text-muted-foreground leading-relaxed font-semibold">{alert.message}</p>
                               </div>
                             </div>
                           </div>
@@ -348,7 +364,13 @@ export default function DashboardPage() {
                         </div>
                       )}
                     </div>
-                    <button className="w-full mt-6 py-3 text-xs font-black uppercase text-primary hover:bg-primary/5 rounded-xl transition-all tracking-widest">
+                    <button 
+                      onClick={() => {
+                        setIsNotificationsOpen(false);
+                        setIsAllNotificationsOpen(true);
+                      }}
+                      className="w-full mt-6 py-3 text-xs font-black uppercase text-primary hover:bg-primary/5 rounded-xl transition-all tracking-widest"
+                    >
                       Xem tất cả thông báo
                     </button>
                   </motion.div>
@@ -883,25 +905,42 @@ export default function DashboardPage() {
           </div>
           
           <div className="space-y-4">
-            {alerts.map((alert: any, idx: number) => (
+            {alerts.slice(0, 5).map((alert: any, idx: number) => (
               <div 
                 key={idx} 
-                className={`p-6 rounded-3xl flex items-center gap-6 border ${
-                  alert.type === 'warning' 
-                    ? 'bg-amber-50 border-amber-200' 
-                    : 'bg-blue-50 border-blue-200'
+                onClick={() => {
+                  if (alert.link) {
+                    router.push(alert.link);
+                  }
+                }}
+                className={`p-6 rounded-3xl flex items-center gap-6 border cursor-pointer hover:scale-[1.01] transition-all hover:shadow-md ${
+                  alert.type === 'warning' ? 'bg-amber-50 border-amber-200' :
+                  alert.type === 'success' ? 'bg-emerald-50 border-emerald-200' :
+                  'bg-blue-50 border-blue-200'
                 }`}
               >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${
-                  alert.type === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm shrink-0 ${
+                  alert.type === 'warning' ? 'bg-amber-100 text-amber-600' :
+                  alert.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                  'bg-blue-100 text-blue-600'
                 }`}>
-                  {alert.icon === 'alert' ? <AlertTriangle className="w-6 h-6" /> : <Lightbulb className="w-6 h-6" />}
+                  {alert.icon === 'alert' ? <AlertTriangle className="w-6 h-6" /> :
+                   alert.icon === 'checkCircle' ? <CheckCircle2 className="w-6 h-6" /> :
+                   <Lightbulb className="w-6 h-6" />}
                 </div>
-                <div className="flex-1">
-                  <h3 className={`font-bold text-lg ${alert.type === 'warning' ? 'text-amber-900' : 'text-blue-900'}`}>
+                <div className="flex-1 min-w-0">
+                  <h3 className={`font-bold text-lg ${
+                    alert.type === 'warning' ? 'text-amber-900' :
+                    alert.type === 'success' ? 'text-emerald-900' :
+                    'text-blue-900'
+                  }`}>
                     {alert.title}
                   </h3>
-                  <p className={`font-semibold opacity-80 ${alert.type === 'warning' ? 'text-amber-800' : 'text-blue-800'}`}>
+                  <p className={`font-semibold opacity-80 ${
+                    alert.type === 'warning' ? 'text-amber-800' :
+                    alert.type === 'success' ? 'text-emerald-800' :
+                    'text-blue-800'
+                  }`}>
                     {alert.message}
                   </p>
                 </div>
@@ -970,6 +1009,143 @@ export default function DashboardPage() {
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}
       />
+
+      {/* Xem tất cả thông báo Modal */}
+      <AnimatePresence>
+        {isAllNotificationsOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAllNotificationsOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-md"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[2.5rem] shadow-2xl border border-pink-100 p-8 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden relative z-10"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                    <Bell className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Tất cả thông báo</h2>
+                    <p className="text-xs text-muted-foreground font-semibold mt-0.5">Tìm kiếm và đối soát nhanh các sự kiện</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsAllNotificationsOpen(false)}
+                  className="w-10 h-10 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors flex items-center justify-center active:scale-95"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Search Bar & Tabs */}
+              <div className="space-y-4 mb-6 shrink-0">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                  <input 
+                    type="text" 
+                    placeholder="Tìm kiếm nội dung thông báo..." 
+                    value={notifSearch}
+                    onChange={(e) => setNotifSearch(e.target.value)}
+                    className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'all', label: 'Tất cả' },
+                    { id: 'success', label: 'Hoàn thành ca' },
+                    { id: 'warning', label: 'Buổi quá hạn' },
+                    { id: 'info', label: 'Gói sắp hết' },
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setNotifTab(tab.id)}
+                      className={cn(
+                        "px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all active:scale-95 border",
+                        notifTab === tab.id 
+                          ? "bg-primary text-white border-primary shadow-lg shadow-pink-100" 
+                          : "bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100"
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notification list (Scrollable) */}
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 pb-2">
+                {alerts.filter(alert => {
+                  const matchesSearch = (alert.title + ' ' + alert.message).toLowerCase().includes(notifSearch.toLowerCase());
+                  const matchesTab = notifTab === 'all' || alert.type === notifTab;
+                  return matchesSearch && matchesTab;
+                }).length > 0 ? (
+                  alerts.filter(alert => {
+                    const matchesSearch = (alert.title + ' ' + alert.message).toLowerCase().includes(notifSearch.toLowerCase());
+                    const matchesTab = notifTab === 'all' || alert.type === notifTab;
+                    return matchesSearch && matchesTab;
+                  }).map((alert: any, idx: number) => (
+                    <div 
+                      key={idx}
+                      onClick={() => {
+                        if (alert.link) {
+                          router.push(alert.link);
+                          setIsAllNotificationsOpen(false);
+                        }
+                      }}
+                      className={cn(
+                        "p-5 rounded-3xl border transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer flex gap-4 hover:shadow-md",
+                        alert.type === 'warning' ? 'bg-amber-50/50 border-amber-100 hover:border-amber-200' :
+                        alert.type === 'success' ? 'bg-emerald-50/50 border-emerald-100 hover:border-emerald-200' :
+                        'bg-blue-50/50 border-blue-100 hover:border-blue-200'
+                      )}
+                    >
+                      <div className={cn(
+                        "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm",
+                        alert.type === 'warning' ? 'bg-amber-100 text-amber-600' :
+                        alert.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                        'bg-blue-100 text-blue-600'
+                      )}>
+                        {alert.icon === 'alert' ? <AlertTriangle className="w-6 h-6" /> :
+                         alert.icon === 'checkCircle' ? <CheckCircle2 className="w-6 h-6" /> :
+                         <Lightbulb className="w-6 h-6" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-4 mb-1">
+                          <h4 className="font-extrabold text-sm text-foreground truncate">{alert.title}</h4>
+                          {alert.timestamp && alert.timestamp > 0 && (
+                            <span className="text-[10px] text-muted-foreground shrink-0 font-bold italic">
+                              {new Date(alert.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}{' '}
+                              {new Date(alert.timestamp).toLocaleDateString('vi-VN')}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed font-semibold">{alert.message}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-16 text-center">
+                    <Bell className="w-16 h-16 text-slate-200 mx-auto mb-4 animate-bounce" />
+                    <p className="text-slate-400 font-extrabold italic text-sm">Không tìm thấy thông báo nào</p>
+                    <p className="text-slate-300 text-xs mt-1">Vui lòng thay đổi từ khóa hoặc bộ lọc</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

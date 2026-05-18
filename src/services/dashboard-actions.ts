@@ -240,32 +240,99 @@ export async function getImportantAlerts() {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    // Overdue sessions (past date, not completed)
+    const alerts: any[] = [];
+
+    // 1. Fetch completed sessions (KTV checkout)
+    let completedQ = supabase.from('session_logs')
+      .select(`
+        id, 
+        end_time, 
+        session_number,
+        completed_by_ktv_id,
+        booking_id,
+        users!session_logs_completed_by_ktv_id_fkey(
+          full_name
+        ),
+        bookings(
+          package_name,
+          customer_id,
+          customers!bookings_customer_id_fkey(
+            name_mother
+          )
+        )
+      `)
+      .eq('status', 'completed')
+      .order('end_time', { ascending: false })
+      .limit(30);
+    if (tenantId) completedQ = completedQ.eq('tenant_id', tenantId);
+    const { data: completedSessions } = await completedQ;
+
+    for (const s of (completedSessions || [])) {
+      const ktvName = (s.users as any)?.full_name || 'KTV';
+      const motherName = (s.bookings as any)?.customers?.name_mother || 'Khách hàng';
+      const endTimeVal = s.end_time;
+      let timeStr = '';
+      if (endTimeVal) {
+        const d = new Date(endTimeVal);
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        timeStr = `${hours}:${minutes} ngày ${day}/${month}/${year}`;
+      } else {
+        timeStr = 'vừa xong';
+      }
+
+      alerts.push({
+        type: 'success',
+        icon: 'checkCircle',
+        title: 'KTV hoàn thành ca',
+        message: `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành lúc ${timeStr}`,
+        severity: 'success',
+        link: `/dashboard/sessions?bookingId=${s.booking_id}`,
+        timestamp: endTimeVal ? new Date(endTimeVal).getTime() : Date.now()
+      });
+    }
+
+    // 2. Overdue sessions (past date, not completed)
     let overdueQ = supabase.from('session_logs')
-      .select('id, assigned_date, booking_id')
+      .select(`
+        id, 
+        assigned_date, 
+        booking_id,
+        bookings(
+          package_name,
+          customer_id,
+          customers!bookings_customer_id_fkey(
+            name_mother
+          )
+        )
+      `)
       .lt('assigned_date', today)
       .not('status', 'eq', 'completed')
-      .limit(5);
+      .limit(20);
     if (tenantId) overdueQ = overdueQ.eq('tenant_id', tenantId);
     const { data: overdue } = await overdueQ;
 
-    const alerts: any[] = [];
     for (const s of (overdue || [])) {
+      const motherName = (s.bookings as any)?.customers?.name_mother || 'Khách hàng';
       alerts.push({
         type: 'warning',
         icon: 'alert',
         title: 'Buổi chưa hoàn thành',
-        message: `Buổi ngày ${new Date(s.assigned_date + 'T00:00:00').toLocaleDateString('vi-VN')} còn ở trạng thái chưa hoàn thành`,
+        message: `Buổi ngày ${new Date(s.assigned_date + 'T00:00:00').toLocaleDateString('vi-VN')} của KH ${motherName} còn ở trạng thái chưa hoàn thành`,
         severity: 'warning',
-        link: `/dashboard/sessions`
+        link: `/dashboard/sessions?bookingId=${s.booking_id}`,
+        timestamp: new Date(s.assigned_date + 'T00:00:00').getTime()
       });
     }
 
-    // Bookings nearing completion (< 3 sessions left)
+    // 3. Bookings nearing completion (< 3 sessions left)
     let bookingQ = supabase.from('bookings')
       .select('id, package_name, completed_sessions, total_sessions, customers!bookings_customer_id_fkey(name_mother)')
       .eq('status', 'in_progress')
-      .limit(10);
+      .limit(20);
     if (tenantId) bookingQ = bookingQ.eq('tenant_id', tenantId);
     const { data: nearEnd } = await bookingQ;
 
@@ -273,17 +340,21 @@ export async function getImportantAlerts() {
       const remaining = Number(b.total_sessions || 0) - Number(b.completed_sessions || 0);
       if (remaining <= 3 && remaining >= 0) {
         alerts.push({
-          type: 'info',                     // UI: else → blue styling
-          icon: 'lightbulb',               // UI: else → Lightbulb icon
+          type: 'info',
+          icon: 'lightbulb',
           title: 'Gói sắp kết thúc',
           message: `KH ${b.customers?.name_mother || 'Không rõ'} còn ${remaining} buổi trong gói ${b.package_name || 'liệu trình'}`,
           severity: 'info',
-          link: `/dashboard/sessions`
+          link: `/dashboard/sessions?bookingId=${b.id}`,
+          timestamp: 0
         });
       }
     }
 
-    return alerts.slice(0, 5);
+    // Sort by timestamp descending so newer alerts/completed sessions are at the top
+    alerts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    return alerts;
   } catch (e) {
     console.error('[getImportantAlerts]', e);
     return [];
