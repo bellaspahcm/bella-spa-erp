@@ -297,3 +297,28 @@
     - `rescheduleSession`: Records scheduling shifts and adjustments.
   - Verified 100% clean compilation using `node node_modules/typescript/bin/tsc --noEmit` and successfully pushed all changes to production (`main` branch synced).
 
+## 2026-05-18 (Session 3): Sidebar UI Pinned Layout, Rating System Schema Mismatch Fix & Database Test Data Purge
+
+### 1. Sidebar UI Layout Optimization (Pinned Footer)
+- **Issue**: On smaller vertical viewports (e.g. 580px or 600px), the sidebar list would not shrink dynamically. The user profile card and logout button at the bottom would get pushed off-screen, causing layout overflow. Additionally, the layout parent had an artificial height setting of `min-h-[calc(100vh/0.9)]` which expanded it to 111.11% of the viewport and generated unnecessary main scrollbars.
+- **Solution**:
+  - Modified `src/app/dashboard/layout.tsx` to replace `min-h-[calc(100vh/0.9)]` with a standard `min-h-screen` viewport container.
+  - Updated `src/components/layout/sidebar.tsx` by adding the `min-h-0` class to the scrollable `<nav>` element. This standard CSS flexbox property allows the navigation list to shrink dynamically to fit the remaining vertical space.
+  - The user profile card and logout buttons are now perfectly pinned and visible at the bottom of the sidebar under all viewport heights, and the main page scrolling is clean and seamless.
+
+### 2. KTV Rating System Corrections & Historical Reviews Synchronization
+- **Issue**: All KTV ratings on the salary calculation table displayed as a default fallback of `⭐ 5.0` regardless of actual customer reviews.
+- **Root Cause**: The rating submission handler `submitCustomerRating` in `src/services/customer-actions.ts` had a database schema mismatch. It tried to write to the `session_reviews` table using incorrect column names (channelling `session_id`, `customer_id`, and `comment` instead of `session_log_id`, `reviewer_id`, and `note`). This mismatch triggered silent database insertion failures, resulting in empty reviews and forcing the salary calculation to default to 5.0.
+- **Solution**:
+  - Corrected `submitCustomerRating` in `customer-actions.ts` to write to the correct columns (`session_log_id`, `reviewer_id`, `note`, `status: 'approved'`).
+  - Added an upsert check: if a placeholder review record already exists for the session log, it updates it and sets the status to `'approved'`; otherwise, it inserts a new review.
+  - Executed a live database migration and synchronization script to update existing placeholder records based on the historical ratings in `session_logs`, and inserted missing review records.
+  - Instantly restored accurate KTV average ratings on the Dashboard and Salary grids (e.g. Lê Thu Hà updated to `4.8`, Trần Thị Thanh updated to `4.0`), automatically adjusting their salary quality bonuses according to the correct business logic.
+
+### 3. Database Purge of Generated Test Data
+- **Issue**: The database contained 20 generated test customers (names like 'Trần Thu 1', 'Nguyễn Thị 5' with phone numbers starting with '09000000') and their large volume of related mock records (23 bookings, 64 session logs, 30 revenue logs, 20 membership records, and 4 reviews), causing dashboard noise and accounting distortions.
+- **Solution**:
+  - Traced foreign key relationships to establish a clean deletion tree.
+  - Executed an atomic transaction in Supabase to delete all mock records across all tables (reviews, shifts, chat messages, membership records, revenue, session logs, bookings, and customers) without breaking constraints.
+  - Successfully left exactly 4 active real customers intact for continuous production testing.
+
