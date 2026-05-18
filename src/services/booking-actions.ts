@@ -995,6 +995,76 @@ export async function updateBooking(id: string, payload: any) {
     return { error: error.message };
   }
 
+  // Synchronize session_logs when total_sessions changes
+  if (payload.total_sessions !== undefined) {
+    try {
+      const newTotal = Number(payload.total_sessions);
+      const { data: existingLogs } = await supabase
+        .from('session_logs')
+        .select('session_number, assigned_date, status')
+        .eq('booking_id', id)
+        .order('session_number', { ascending: true });
+
+      const logs = existingLogs || [];
+      const maxSessionNumber = logs.length > 0 ? Math.max(...logs.map((l: any) => l.session_number || 0)) : 0;
+
+      if (newTotal < maxSessionNumber) {
+        // Delete scheduled sessions beyond the new total
+        await supabase
+          .from('session_logs')
+          .delete()
+          .eq('booking_id', id)
+          .gt('session_number', newTotal)
+          .eq('status', 'scheduled');
+      } else if (newTotal > maxSessionNumber) {
+        // Generate missing session logs
+        const newLogs = [];
+        let baseDateStr = payload.start_date || data?.[0]?.start_date;
+        if (!baseDateStr) {
+          const { data: b } = await supabase
+            .from('bookings')
+            .select('start_date')
+            .eq('id', id)
+            .single();
+          baseDateStr = b?.start_date;
+        }
+
+        const lastLogWithDate = [...logs].reverse().find((l: any) => l.assigned_date);
+        let lastAssignedDate = lastLogWithDate?.assigned_date || baseDateStr;
+
+        if (!lastAssignedDate) {
+          const now = new Date();
+          lastAssignedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+
+        for (let i = maxSessionNumber + 1; i <= newTotal; i++) {
+          const [y, m, d] = lastAssignedDate.split('-').map(Number);
+          const date = new Date(y, m - 1, d);
+          date.setDate(date.getDate() + (i - maxSessionNumber));
+          const assignedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+          newLogs.push({
+            booking_id: id,
+            session_number: i,
+            status: 'scheduled',
+            assigned_date: assignedDate,
+            assigned_time: payload.preferred_time || data?.[0]?.preferred_time || null,
+            tenant_id: data?.[0]?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e'
+          });
+        }
+
+        if (newLogs.length > 0) {
+          await supabase.from('session_logs').insert(newLogs);
+        }
+      }
+
+      // Sync booking completed_sessions progress count
+      await syncBookingProgress(id);
+    } catch (syncErr) {
+      console.error('Error synchronizing session logs inside updateBooking:', syncErr);
+    }
+  }
+
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath('/dashboard/customers');
   

@@ -217,8 +217,21 @@
 - **Solution**:
   - Modified the core select query in `getSessionsWithDetails` inside `src/services/booking-actions.ts` to retrieve `start_time` (check-in) and `end_time` (check-out) from the `session_logs` table.
   - Redesigned the completed session information card in `src/app/dashboard/sessions/page.tsx` with a premium glassmorphic dashboard component.
-  - Displays the assigned KTV, formatted local check-in and check-out timestamps (`HH:MM - DD/MM/YYYY`), and automatically calculates and displays the session's active therapeutic duration in minutes (e.g. `90 phút`).
-  - Successfully verified TypeScript compatibility and synced the production repository.
+  - Displays the assigned KTV, formatted local check-in and check-out timestamps (`HH:MM - DD/MM/YYYY`), and automatically calculates and displays the session's active therapeutic duration in minutes (e.g. `90 phút`).### 6. Session Counting Logic & Database Synchronization
+- **Issue**: When an Administrator updated a booking's `total_sessions` (e.g. from 21 sessions down to 3), the extra scheduled logs remained in the database `session_logs` table. This allowed KTVs to check in to unauthorized sessions (e.g., Session 4 of a 3-session booking) without restriction.
+- **Solution**:
+  - **Level 1 Defense (Admin CRUD Sync)**: Modified `updateBooking` inside `src/services/booking-actions.ts`. When `total_sessions` changes:
+    - If the new total is smaller than the current maximum session log number, all `scheduled` logs with a `session_number` greater than the new total are automatically deleted.
+    - If the new total is larger, missing scheduled logs are dynamically generated starting from the next session number, sequentially incrementing dates from the last session's assigned date.
+    - Triggers `syncBookingProgress` to keep the booking's `completed_sessions` in lockstep.
+  - **Level 2 Defense (KTV Guards)**:
+    - Updated `getKTVUpcomingSessions` and `getKTVActiveSessions` in `src/services/ktv-actions.ts` to automatically filter out logs exceeding the booking's `total_sessions` or belonging to completed bookings.
+    - Modified check-in `startSession` in `src/services/ktv-actions.ts` with strict database guards. It checks the live booking stats and throws an explicit error if the booking is completed or the session number exceeds `total_sessions`.
+    - Added a post-checkout cleanup hook in `completeKTVSession` that deletes any remaining scheduled logs exceeding the limit when a booking transitions to the `completed` state.
+  - **Manual Database Remediation**: Executed raw database cleanups via the Supabase client:
+    - Purged all redundant scheduled logs exceeding `total_sessions` for existing bookings.
+    - Realigned completed therapy bookings that had more completed logs than total sessions to maintain perfect accounting.
+  - Verified 100% successful Next.js production build and synced all changes.
 
 
 
