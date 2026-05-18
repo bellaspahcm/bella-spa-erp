@@ -370,4 +370,18 @@
   - The build completed with **`Exit Code: 0`**, compiling all 24 static and dynamic routes flawlessly.
   - Pushed the code changes cleanly to the `main` branch of the GitHub repository `bellaspahcm/bella-spa-erp` to trigger Vercel's automated CI/CD pipeline and release the timezone stability update to production immediately.
 
+## 2026-05-19: Real-time Checkout Time & Precise Timezone-Aware Completed Notifications
+
+### 1. High-Precision Timezone-Aware Checkout Notifications
+- **Issue**: Administrative notifications for completed sessions originally displayed simple relative dates or plain dates (e.g. `lúc ngày 18/05/2026`) when fallbacks were triggered or when timezone offsets occurred. Admins needed precise local hour/minute checkout times alongside the corresponding completion dates for accurate real-time tracking.
+- **Solution**:
+  - Refactored `getImportantAlerts` in `src/services/dashboard-actions.ts`.
+  - Introduced timezone-safe conversion using `Intl.DateTimeFormat` explicitly targeted at `Asia/Ho_Chi_Minh` (GMT+7) to format the exact `end_time` (check-out time) for all completed sessions.
+  - Dynamically formats notifications based on data availability:
+    - If checked out within 5 minutes: `Ca KH Ngọc do KTV Lê Thu Hà đã checkout hoàn thành vừa xong` (real-time).
+    - If checked out earlier with a valid timestamp: `Ca KH Ngọc do KTV Lê Thu Hà đã checkout hoàn thành lúc 15:13 ngày 18/05/2026` (showing precise GMT+7 local hour, minutes, and date).
+    - If checked out historically (where only completion date is recorded): `Ca KH Ngọc do KTV Lê Thu Hà đã hoàn thành ngày 18/05/2026` (smooth grammar, removing the awkward "lúc" prefix for simple dates).
+  - Pushed the code changes cleanly to the repository and compiled with Next.js type-safety checks successfully.
+
+
 

@@ -272,33 +272,47 @@ export async function getImportantAlerts() {
       const ktvName = (s.users as any)?.full_name || 'KTV';
       const motherName = (s.bookings as any)?.customers?.name_mother || 'Khách hàng';
       const endTimeVal = s.end_time;
-      let timeStr = '';
+      let msgStr = '';
+
       if (endTimeVal) {
         const d = new Date(endTimeVal);
         const diffMs = Date.now() - d.getTime();
         const diffMinutes = Math.floor(diffMs / 60000);
+        
         if (diffMinutes < 5 && diffMinutes >= 0) {
-          timeStr = 'vừa xong';
+          msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành vừa xong`;
         } else {
-          const hours = String(d.getHours()).padStart(2, '0');
-          const minutes = String(d.getMinutes()).padStart(2, '0');
-          const day = String(d.getDate()).padStart(2, '0');
-          const month = String(d.getMonth() + 1).padStart(2, '0');
-          const year = d.getFullYear();
-          timeStr = `${hours}:${minutes} ngày ${day}/${month}/${year}`;
+          // Format timezone-safely in Asia/Ho_Chi_Minh (GMT+7)
+          const timeFormatter = new Intl.DateTimeFormat('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+          const timePart = timeFormatter.format(d);
+          
+          const dateFormatter = new Intl.DateTimeFormat('vi-VN', {
+            timeZone: 'Asia/Ho_Chi_Minh',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          });
+          const datePart = dateFormatter.format(d);
+          
+          msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành lúc ${timePart} ngày ${datePart}`;
         }
       } else if (s.completed_date) {
         const [y, m, d] = s.completed_date.split('-');
-        timeStr = `ngày ${d}/${m}/${y}`;
+        msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã hoàn thành ngày ${d}/${m}/${y}`;
       } else {
-        timeStr = 'vừa xong';
+        msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành vừa xong`;
       }
 
       alerts.push({
         type: 'success',
         icon: 'checkCircle',
         title: 'KTV hoàn thành ca',
-        message: `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành lúc ${timeStr}`,
+        message: msgStr,
         severity: 'success',
         link: `/dashboard/sessions?bookingId=${s.booking_id}`,
         timestamp: endTimeVal ? new Date(endTimeVal).getTime() : Date.now()
