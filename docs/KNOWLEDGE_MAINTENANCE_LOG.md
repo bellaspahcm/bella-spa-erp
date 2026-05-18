@@ -204,4 +204,13 @@
   - Displays dynamic loading spinners and disables actions during transaction execution to prevent double checkouts.
   - Successfully verified in local environment (`Exit Code: 0`) and deployed live to production!
 
+### 4. Real-time Leaderboard WebSocket Integration
+- **Issue**: The KTV performance leaderboard (`/ktv/leaderboard`) operated strictly on an on-demand dynamic query model, requiring KTVs to manually tap the refresh icon or reload the page to see updated rankings when other staff checked out.
+- **Solution**:
+  - Registered the `session_logs` table into Supabase's `supabase_realtime` publication database-side to enable live transaction broadcasting.
+  - Integrated the client-side `supabaseClient` into `src/app/ktv/leaderboard/page.tsx` and configured a real-time `postgres_changes` WebSocket subscription.
+  - Listens to any updates (inserts, status completions, changes) on the `session_logs` table and instantly triggers a background `fetchData()` ranking recalculation, causing the leaderboard to dynamically re-sort in real-time.
+  - Properly cleaned up the subscription channel inside the `useEffect` return handler to prevent memory leaks.
+
+
 
