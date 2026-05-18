@@ -199,6 +199,21 @@ export async function createBooking(formData: any) {
       .single();
     booking = updated;
     bookingError = error;
+
+    if (!error && updated) {
+      try {
+        const { recordAuditLog } = await import('./audit-actions');
+        await recordAuditLog({
+          action: 'UPDATE',
+          table_name: 'bookings',
+          record_id: existingBooking.id,
+          old_data: existingBooking,
+          new_data: bookingPayload
+        });
+      } catch (auditErr) {
+        console.warn('Failed to record createBooking update audit log:', auditErr);
+      }
+    }
   } else {
     // Insert new
     const { data: inserted, error } = await supabase
@@ -208,6 +223,20 @@ export async function createBooking(formData: any) {
       .single();
     booking = inserted;
     bookingError = error;
+
+    if (!error && inserted) {
+      try {
+        const { recordAuditLog } = await import('./audit-actions');
+        await recordAuditLog({
+          action: 'INSERT',
+          table_name: 'bookings',
+          record_id: inserted.id,
+          new_data: inserted
+        });
+      } catch (auditErr) {
+        console.warn('Failed to record createBooking insert audit log:', auditErr);
+      }
+    }
   }
 
   if (bookingError) {
@@ -339,7 +368,7 @@ export async function completeSession(sessionId: string, bookingId: string) {
   // 0. Security Check
   const { data: existingLog } = await supabase
     .from('session_logs')
-    .select('status')
+    .select('*')
     .eq('id', sessionId)
     .single();
 
@@ -437,6 +466,24 @@ export async function completeSession(sessionId: string, bookingId: string) {
   } catch (reviewErr) {
     console.error('Error creating pending review:', reviewErr);
     // Non-blocking error
+  }
+
+  // Audit log
+  try {
+    const { recordAuditLog } = await import('./audit-actions');
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'session_logs',
+      record_id: sessionId,
+      old_data: existingLog,
+      new_data: {
+        status: 'completed',
+        completed_date: new Date().toISOString(),
+        completed_by_ktv_id: bookingData.assigned_ktv_id
+      }
+    });
+  } catch (auditErr) {
+    console.warn('Failed to record completeSession audit log:', auditErr);
   }
 
   return { success: true };
@@ -633,7 +680,7 @@ export async function updateSessionLog(id: string, payload: any) {
   // 0. Security & Role Check
   const { data: existingLog } = await supabase
     .from('session_logs')
-    .select('status')
+    .select('*')
     .eq('id', id)
     .single();
 
@@ -690,6 +737,21 @@ export async function updateSessionLog(id: string, payload: any) {
   if (error) {
     console.error('Error updating session log:', error);
     return { error: error.message };
+  }
+
+  if (data?.[0]) {
+    try {
+      const { recordAuditLog } = await import('./audit-actions');
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'session_logs',
+        record_id: id,
+        old_data: existingLog,
+        new_data: safeUpdates
+      });
+    } catch (auditErr) {
+      console.warn('Failed to record updateSessionLog audit log:', auditErr);
+    }
   }
 
 
@@ -826,7 +888,7 @@ export async function saveSessionNote(sessionId: string, note: string) {
   // 0. Security Check
   const { data: existingLog } = await supabase
     .from('session_logs')
-    .select('status')
+    .select('*')
     .eq('id', sessionId)
     .single();
 
@@ -865,6 +927,21 @@ export async function saveSessionNote(sessionId: string, note: string) {
 
   await safeRevalidatePath('/dashboard/sessions');
   await safeRevalidatePath('/dashboard/customers');
+
+  // Audit log
+  try {
+    const { recordAuditLog } = await import('./audit-actions');
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'session_logs',
+      record_id: sessionId,
+      old_data: existingLog,
+      new_data: { notes: note }
+    });
+  } catch (auditErr) {
+    console.warn('Failed to record saveSessionNote audit log:', auditErr);
+  }
+
   return { success: true };
 }
 
@@ -872,19 +949,33 @@ export async function addExtraSession(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
-  // 1. Get current sessions count
-  const { data, error: fetchError } = await supabase
+  // 1. Get current booking
+  const { data: booking, error: fetchError } = await supabase
     .from('bookings')
-    .select('total_sessions')
+    .select('*')
     .eq('id', bookingId)
     .single();
 
-  if (fetchError) return { error: fetchError.message };
+  if (fetchError || !booking) return { error: fetchError?.message || 'Không tìm thấy booking' };
   
-  const newTotal = (data.total_sessions || 0) + 1;
+  const newTotal = (booking.total_sessions || 0) + 1;
   
   // 2. Update booking total
   await supabase.from('bookings').update({ total_sessions: newTotal } as any).eq('id', bookingId);
+
+  // Audit log for booking adjustment
+  try {
+    const { recordAuditLog } = await import('./audit-actions');
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'bookings',
+      record_id: bookingId,
+      old_data: booking,
+      new_data: { total_sessions: newTotal, notes: 'Thêm 01 buổi liệu trình phát sinh' }
+    });
+  } catch (auditErr) {
+    console.warn('Failed to record addExtraSession audit log:', auditErr);
+  }
   
   // 3. Insert new log
   await supabase.from('session_logs').insert({
@@ -960,6 +1051,21 @@ export async function createSessionLog(data: any) {
     return { error: error.message };
   }
 
+  // Audit log
+  try {
+    const { recordAuditLog } = await import('./audit-actions');
+    if (session && session.length > 0) {
+      await recordAuditLog({
+        action: 'INSERT',
+        table_name: 'session_logs',
+        record_id: session[0].id,
+        new_data: session[0]
+      });
+    }
+  } catch (auditErr) {
+    console.warn('Failed to record createSessionLog audit log:', auditErr);
+  }
+
   await safeRevalidatePath('/dashboard/bookings');
   return { data: session };
 }
@@ -968,6 +1074,19 @@ export async function updateBooking(id: string, payload: any) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
+  // Fetch existing booking before update for audit trail
+  let oldBooking = null;
+  try {
+    const { data: existing } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('id', id)
+      .single();
+    oldBooking = existing;
+  } catch (err) {
+    console.warn('Failed to fetch old booking for audit trail:', err);
+  }
+
   const { data, error } = await supabase
     .from('bookings')
     .update(payload)
@@ -988,11 +1107,41 @@ export async function updateBooking(id: string, payload: any) {
         console.error('Error updating booking (retry):', retryError);
         return { error: retryError.message };
       }
+      
+      if (retryData?.[0]) {
+        try {
+          const { recordAuditLog } = await import('./audit-actions');
+          await recordAuditLog({
+            action: 'UPDATE',
+            table_name: 'bookings',
+            record_id: id,
+            old_data: oldBooking,
+            new_data: retryPayload
+          });
+        } catch (auditErr) {
+          console.warn('Failed to record updateBooking retry audit log:', auditErr);
+        }
+      }
       return { data: retryData };
     }
 
     console.error('Error updating booking:', error);
     return { error: error.message };
+  }
+
+  if (data?.[0]) {
+    try {
+      const { recordAuditLog } = await import('./audit-actions');
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'bookings',
+        record_id: id,
+        old_data: oldBooking,
+        new_data: payload
+      });
+    } catch (auditErr) {
+      console.warn('Failed to record updateBooking audit log:', auditErr);
+    }
   }
 
   // Synchronize session_logs when total_sessions changes
@@ -1204,6 +1353,19 @@ async function finalizeReuse(newBooking: any, total: number, supabase: any) {
     return { error: 'Đã tạo gói mới nhưng lỗi khởi tạo lịch trình: ' + sessionsError.message };
   }
 
+  // Audit log
+  try {
+    const { recordAuditLog } = await import('./audit-actions');
+    await recordAuditLog({
+      action: 'INSERT',
+      table_name: 'bookings',
+      record_id: newBooking.id,
+      new_data: newBooking
+    });
+  } catch (auditErr) {
+    console.warn('Failed to record reusePackage/finalizeReuse audit log:', auditErr);
+  }
+
   await safeRevalidatePath('/dashboard/sessions');
   await safeRevalidatePath('/dashboard/bookings');
   await safeRevalidatePath(`/dashboard/customers/${newBooking.customer_id}`);
@@ -1249,11 +1411,11 @@ export async function recordRemainingPayment(params: {
     // 2. Update the booking's deposit_amount (summing it up)
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')
-      .select('deposit_amount, full_price, discount_percent, status')
+      .select('*')
       .eq('id', params.booking_id)
       .single();
 
-    if (fetchError) throw fetchError;
+    if (fetchError || !booking) throw fetchError || new Error('Không tìm thấy booking');
 
     const newTotalPaid = (booking.deposit_amount || 0) + params.amount;
     
@@ -1273,6 +1435,20 @@ export async function recordRemainingPayment(params: {
       .eq('id', params.booking_id);
 
     if (updateError) throw updateError;
+
+    // Audit log
+    try {
+      const { recordAuditLog } = await import('./audit-actions');
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'bookings',
+        record_id: params.booking_id,
+        old_data: booking,
+        new_data: { deposit_amount: newTotalPaid, status: newStatus }
+      });
+    } catch (auditErr) {
+      console.warn('Failed to record recordRemainingPayment audit log:', auditErr);
+    }
 
     // 2.5 Logic: Sync Revenue Status
     // If auto_confirm is true OR the booking is now fully paid, confirm relevant records
@@ -1398,6 +1574,20 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
   await safeRevalidatePath('/dashboard/sessions');
   if (bookingData?.customer_id) {
     await safeRevalidatePath(`/dashboard/customers/${bookingData.customer_id}`);
+  }
+
+  // Audit log
+  try {
+    const { recordAuditLog } = await import('./audit-actions');
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'session_logs',
+      record_id: sessionId,
+      old_data: session,
+      new_data: { assigned_date: newDate, notes: `Dời lịch các buổi từ buổi ${session.session_number} thêm ${diffDays} ngày.` }
+    });
+  } catch (auditErr) {
+    console.warn('Failed to record rescheduleSession audit log:', auditErr);
   }
 
   return { success: true };

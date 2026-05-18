@@ -42,12 +42,39 @@ export async function createPackage(packageData: any) {
     return { error: error.message };
   }
 
+  if (data?.[0]) {
+    try {
+      const { recordAuditLog } = await import('./audit-actions');
+      await recordAuditLog({
+        action: 'INSERT',
+        table_name: 'packages',
+        record_id: data[0].id,
+        new_data: data[0]
+      });
+    } catch (auditErr) {
+      console.warn('Failed to record createPackage audit log:', auditErr);
+    }
+  }
+
   safeRevalidatePath('/dashboard/services');
   return { data: data?.[0] };
 }
 
 export async function updatePackage(id: string, packageData: any) {
   const supabase = (await createClient()) as any;
+
+  // Fetch existing package before update for audit trail
+  let oldPackage = null;
+  try {
+    const { data: existing } = await supabase
+      .from('packages')
+      .select('*')
+      .eq('id', id)
+      .single();
+    oldPackage = existing;
+  } catch (err) {
+    console.warn('Failed to fetch old package for audit trail:', err);
+  }
   
   // Format data for DB
   const dbData = {
@@ -72,12 +99,41 @@ export async function updatePackage(id: string, packageData: any) {
     return { error: error.message };
   }
 
+  if (data?.[0]) {
+    try {
+      const { recordAuditLog } = await import('./audit-actions');
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'packages',
+        record_id: id,
+        old_data: oldPackage,
+        new_data: dbData
+      });
+    } catch (auditErr) {
+      console.warn('Failed to record updatePackage audit log:', auditErr);
+    }
+  }
+
   safeRevalidatePath('/dashboard/services');
   return { data: data?.[0] };
 }
 
 export async function deletePackage(id: string) {
   const supabase = (await createClient()) as any;
+
+  // Fetch existing package before delete for audit trail
+  let oldPackage = null;
+  try {
+    const { data: existing } = await supabase
+      .from('packages')
+      .select('*')
+      .eq('id', id)
+      .single();
+    oldPackage = existing;
+  } catch (err) {
+    console.warn('Failed to fetch old package for delete audit trail:', err);
+  }
+
   const { error } = await supabase
     .from('packages')
     .delete()
@@ -86,6 +142,18 @@ export async function deletePackage(id: string) {
   if (error) {
     console.error('Error deleting package:', error);
     return { error: error.message };
+  }
+
+  try {
+    const { recordAuditLog } = await import('./audit-actions');
+    await recordAuditLog({
+      action: 'DELETE',
+      table_name: 'packages',
+      record_id: id,
+      old_data: oldPackage
+    });
+  } catch (auditErr) {
+    console.warn('Failed to record deletePackage audit log:', auditErr);
   }
 
   safeRevalidatePath('/dashboard/services');

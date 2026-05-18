@@ -193,6 +193,20 @@ export async function createCustomer(customerData: any) {
     return { data: null, error: error.message, warning: null };
   }
   
+  if (data?.[0]) {
+    try {
+      const { recordAuditLog } = await import('./audit-actions');
+      await recordAuditLog({
+        action: 'INSERT',
+        table_name: 'customers',
+        record_id: data[0].id,
+        new_data: data[0]
+      });
+    } catch (auditErr) {
+      console.warn('Failed to record createCustomer audit log:', auditErr);
+    }
+  }
+
   revalidatePath('/dashboard/customers');
   return { data: data?.[0] || null, error: null, warning: null };
 }
@@ -202,6 +216,20 @@ export async function createCustomer(customerData: any) {
  */
 export async function updateCustomer(id: string, customerData: any) {
   const supabase = (await createClient()) as any;
+  
+  // Fetch existing customer before update for audit trail
+  let oldCustomer = null;
+  try {
+    const { data: existing } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('id', id)
+      .single();
+    oldCustomer = existing;
+  } catch (err) {
+    console.warn('Failed to fetch old customer for audit trail:', err);
+  }
+
   const { data, error } = await supabase
     .from('customers')
     .update(customerData)
@@ -211,6 +239,21 @@ export async function updateCustomer(id: string, customerData: any) {
   if (error) {
     console.error('Error updating customer:', error);
     return { data: null, error: error.message, warning: null };
+  }
+
+  if (data?.[0]) {
+    try {
+      const { recordAuditLog } = await import('./audit-actions');
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'customers',
+        record_id: id,
+        old_data: oldCustomer,
+        new_data: customerData
+      });
+    } catch (auditErr) {
+      console.warn('Failed to record updateCustomer audit log:', auditErr);
+    }
   }
   
   revalidatePath('/dashboard/customers');
@@ -223,6 +266,20 @@ export async function updateCustomer(id: string, customerData: any) {
  */
 export async function deleteCustomer(id: string) {
   const supabase = (await createClient()) as any;
+
+  // Fetch existing customer before delete for audit trail
+  let oldCustomer = null;
+  try {
+    const { data: existing } = await supabase
+      .from('customers')
+      .select('*')
+      .eq('id', id)
+      .single();
+    oldCustomer = existing;
+  } catch (err) {
+    console.warn('Failed to fetch old customer for delete audit trail:', err);
+  }
+
   const { error } = await supabase
     .from('customers')
     .delete()
@@ -231,6 +288,18 @@ export async function deleteCustomer(id: string) {
   if (error) {
     console.error('Error deleting customer:', error);
     return { error: error.message };
+  }
+
+  try {
+    const { recordAuditLog } = await import('./audit-actions');
+    await recordAuditLog({
+      action: 'DELETE',
+      table_name: 'customers',
+      record_id: id,
+      old_data: oldCustomer
+    });
+  } catch (auditErr) {
+    console.warn('Failed to record deleteCustomer audit log:', auditErr);
   }
   
   revalidatePath('/dashboard/customers');

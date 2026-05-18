@@ -273,29 +273,37 @@ export async function completeKTVSession(sessionId: string, notes: string = '') 
     }
   }
 
-  // 3. Cập nhật số buổi đã hoàn thành trong booking
+  // 3. Re-calculate actual completed sessions to avoid race conditions
+  const { count, error: countError } = await supabase
+    .from('session_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('booking_id', session.booking_id)
+    .eq('status', 'completed');
+
+  if (countError) {
+    console.error('Error counting completed sessions:', countError);
+  }
+
   const { data: booking } = await supabase
     .from('bookings')
-    .select('completed_sessions, total_sessions')
+    .select('total_sessions')
     .eq('id', session.booking_id)
     .single();
 
   if (booking) {
-    const newCount = (booking.completed_sessions || 0) + 1;
-    const isFinished = newCount >= booking.total_sessions;
+    const actualCompletedCount = count || 0;
+    const isFinished = actualCompletedCount >= (booking.total_sessions || 0);
     const { error: bookingError } = await supabase
       .from('bookings')
       .update({ 
-        completed_sessions: newCount,
         status: isFinished ? 'completed' : 'in_progress',
-        is_in_care: !isFinished // Set false if finished, otherwise keep it or set true (should be true anyway if not finished)
+        is_in_care: !isFinished,
+        updated_at: new Date().toISOString()
       })
       .eq('id', session.booking_id);
 
     if (bookingError) {
       console.error('Error updating booking status:', bookingError);
-      // Optional: you might want to rollback the session_log update, 
-      // but for now let's at least log it.
     }
 
     if (isFinished) {
