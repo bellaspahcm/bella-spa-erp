@@ -246,6 +246,25 @@ Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) 
 
 ---
 
+### KỊCH BẢN 13: Kiểm thử Tính năng Tự động cập nhật Bảng vinh danh Real-time qua WebSocket (Real-time Leaderboard WebSocket Integration)
+* **Mục tiêu**: Đảm bảo bảng vinh danh KTV (`/ktv/leaderboard`) tự động cập nhật xếp hạng và số ca hoàn thành ngay lập tức (real-time) thông qua cơ chế kết nối trực tiếp WebSocket (Supabase Realtime Channel) khi có bất kỳ KTV nào hoàn thành ca trị liệu mới mà không cần reload trang hay thao tác thủ công.
+* **Thời gian kiểm thử**: 18/05/2026
+
+#### Quy trình thực hiện:
+1. **Mở kết nối và đăng ký Real-time**:
+   * Kỹ thuật viên truy cập vào Bảng vinh danh `/ktv/leaderboard`.
+   * Hệ thống tự động thiết lập một kênh kết nối WebSocket trực tiếp đến bảng `session_logs` trong cơ sở dữ liệu (`supabaseClient.channel`).
+   * Trạng thái kết nối: Hoạt động bình thường. **=> ĐẠT**
+2. **Kích hoạt sự thay đổi ca làm từ xa**:
+   * Tại một thiết bị/trình duyệt khác, một KTV bất kỳ thực hiện Check-out ca làm việc để hoàn thành buổi trị liệu mới (hoặc Admin xác nhận hoàn thành ca).
+   * Cơ sở dữ liệu chèn (`INSERT`) hoặc cập nhật (`UPDATE`) bản ghi trong bảng `session_logs`.
+3. **Phản hồi và Xếp hạng tức thời**:
+   * WebSocket lập tức truyền tải sự kiện (`postgres_changes`) tới thiết bị của KTV đang mở Bảng vinh danh.
+   * Giao diện nhận tín hiệu cập nhật và lập tức chạy ngầm hàm `fetchData()`.
+   * Bảng xếp hạng trượt xếp lại thứ tự KTV và cập nhật tức thì số ca làm việc tương ứng của KTV đó mà không cần bất kỳ tương tác thủ công nào từ phía người dùng. **=> ĐẠT**
+
+---
+
 ## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
 * **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline, tích hợp bộ đối soát gói dịch vụ KTV, tính năng chỉnh sửa gói dịch vụ chủ động của Admin, hệ thống tự động hóa điểm Loyalty Real-time, phân hệ Đối soát giao dịch chi tiết kèm Hoàn tiền thừa âm, và đặc biệt là bộ nâng cấp thẻ ca trị liệu đang chạy cùng Modal Check-out Premium mới đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
 * **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch, Admin dễ dàng điều tra phát hiện lỗi clerical nhập tiền và tự xử lý nhanh chóng nhờ giao dịch hoàn tiền trực quan. Giao diện KTV check-out giờ đây cực kỳ sang trọng, xứng tầm thương hiệu Bella Spa.
