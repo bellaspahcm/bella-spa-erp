@@ -222,6 +222,15 @@ export async function getMonthlyPerformance() {
   }
 }
 
+// Helper function to robustly parse PostgreSQL timestamp strings, handling 2-digit offsets like "+00" or "+07"
+function parsePostgresTimestamp(tsStr: string): Date {
+  let normalized = tsStr.replace(' ', 'T');
+  if (normalized.match(/([+-]\d{2})$/)) {
+    normalized += ':00';
+  }
+  return new Date(normalized);
+}
+
 // ─── getImportantAlerts ───────────────────────────────────────────────────────
 // Replaces missing RPC: get_important_alerts
 export async function getImportantAlerts() {
@@ -269,8 +278,7 @@ export async function getImportantAlerts() {
       let msgStr = '';
 
       if (endTimeVal) {
-        const normalized = endTimeVal.replace(' ', 'T');
-        const d = new Date(normalized);
+        const d = parsePostgresTimestamp(endTimeVal);
         const isValidDate = !isNaN(d.getTime());
         
         if (isValidDate) {
@@ -313,7 +321,7 @@ export async function getImportantAlerts() {
         msgStr = `Ca KH ${motherName} do KTV ${ktvName} đã checkout hoàn thành vừa xong`;
       }
 
-      const dObj = endTimeVal ? new Date(endTimeVal.replace(' ', 'T')) : null;
+      const dObj = endTimeVal ? parsePostgresTimestamp(endTimeVal) : null;
       const isValid = dObj && !isNaN(dObj.getTime());
 
       alerts.push({
