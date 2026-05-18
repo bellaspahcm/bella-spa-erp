@@ -426,7 +426,12 @@ export async function completeSession(sessionId: string, bookingId: string) {
     .from('session_logs')
     .update({ 
       status: 'completed',
-      completed_date: new Date().toISOString(),
+      completed_date: new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(new Date()),
       completed_by_ktv_id: bookingData.assigned_ktv_id // Snapshot the main KTV at the time of completion
     } as any)
     .eq('id', sessionId);
@@ -508,7 +513,12 @@ export async function completeSession(sessionId: string, bookingId: string) {
       old_data: existingLog,
       new_data: {
         status: 'completed',
-        completed_date: new Date().toISOString(),
+        completed_date: new Intl.DateTimeFormat('en-CA', {
+          timeZone: 'Asia/Ho_Chi_Minh',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).format(new Date()),
         completed_by_ktv_id: bookingData.assigned_ktv_id
       }
     });
