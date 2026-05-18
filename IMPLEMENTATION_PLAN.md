@@ -90,7 +90,7 @@ Status: 🟢 Phases 1-4 & 6-8 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
   - [x] Hiển thị chi tiết giờ/phút và ngày hoàn thành (ví dụ: `lúc 15:13 ngày 18/05/2026`) trên giao diện quản trị, đồng thời tự động chuẩn hóa văn bản thông báo cho các ca hoàn thành lịch sử không có mốc thời gian cụ thể (lược bỏ chữ "lúc" bị lỗi ngữ pháp trước đó).
   - [x] Tối ưu hóa truy vấn thông báo Admin: Sắp xếp theo `completed_date` và `end_time` (sử dụng `nullsFirst: false` của Supabase) để tránh lỗi PostgreSQL NULL values đẩy các ca vừa hoàn thành xuống dưới.
   - [x] Đồng bộ hóa định dạng ngày tháng `today` của toàn bộ dashboard theo giờ Việt Nam thông qua `toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })`.
-  - [x] Chuẩn hóa mốc thời gian ISO8601 (thay thế khoảng trắng bằng 'T') giúp đảm bảo việc phân tích cú pháp Date trên mọi trình duyệt/môi trường NodeJS luôn chuẩn xác và không bị trả về `Invalid Date`.
+  - [x] Chuẩn hóa mốc thời gian ISO8601 (thay thế khoảng trắng bằng 'T' và chuẩn hóa phần bù múi giờ 2 chữ số của PostgreSQL từ `+XX` thành `+XX:00`) giúp đảm bảo việc phân tích cú pháp Date trên mọi trình duyệt/môi trường NodeJS/V8 luôn chuẩn xác và không bị trả về `Invalid Date` hoặc `NaN`.
   - [x] Kết hợp đồng thời hiển thị giờ cụ thể lẫn nhãn "(vừa xong)" trong vòng 5 phút đầu tiên sau checkout, mang lại trải nghiệm thời gian thực tuyệt đối.
 
 
