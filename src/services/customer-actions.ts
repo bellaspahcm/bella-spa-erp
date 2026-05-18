@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { revalidatePath } from 'next/cache';
+import { safeRevalidatePath } from '@/lib/revalidate';
 import { getCurrentUser } from './user-actions';
 import { resolvePackageName } from '@/lib/utils';
 
@@ -142,8 +142,10 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
     console.error('Bonus RPC error:', rpcError);
   }
 
-  revalidatePath('/dashboard');
-  revalidatePath('/ktv/earnings');
+  await Promise.all([
+    safeRevalidatePath('/dashboard'),
+    safeRevalidatePath('/ktv/earnings')
+  ]);
   
   return { success: true };
 }
@@ -232,7 +234,7 @@ export async function createCustomer(customerData: any) {
     }
   }
 
-  revalidatePath('/dashboard/customers');
+  await safeRevalidatePath('/dashboard/customers');
   return { data: data?.[0] || null, error: null, warning: null };
 }
 
@@ -281,8 +283,10 @@ export async function updateCustomer(id: string, customerData: any) {
     }
   }
   
-  revalidatePath('/dashboard/customers');
-  revalidatePath(`/dashboard/customers/${id}`);
+  await Promise.all([
+    safeRevalidatePath('/dashboard/customers'),
+    safeRevalidatePath(`/dashboard/customers/${id}`)
+  ]);
   return { data: data?.[0] || null, error: null, warning: null };
 }
 
@@ -327,7 +331,7 @@ export async function deleteCustomer(id: string) {
     console.warn('Failed to record deleteCustomer audit log:', auditErr);
   }
   
-  revalidatePath('/dashboard/customers');
+  await safeRevalidatePath('/dashboard/customers');
   return { success: true, error: null };
 }
 

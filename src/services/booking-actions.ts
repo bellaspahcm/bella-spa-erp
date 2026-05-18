@@ -106,6 +106,35 @@ export async function createBooking(formData: any) {
 
   const validatedData = validatedFields.data;
 
+  // 0.5. Support atomic customer creation for new customers
+  if (validatedData.customer_id === 'new' && formData.newCustomer) {
+    const { data: customer, error: custError } = await supabase
+      .from('customers')
+      .insert([formData.newCustomer])
+      .select()
+      .single();
+      
+    if (custError) {
+      console.error('Error creating customer inside createBooking:', custError);
+      return { error: 'Lỗi khi tạo khách hàng: ' + custError.message };
+    }
+    
+    validatedData.customer_id = customer.id;
+
+    // Log audit for customer
+    try {
+      const { recordAuditLog } = await import('./audit-actions');
+      await recordAuditLog({
+        action: 'INSERT',
+        table_name: 'customers',
+        record_id: customer.id,
+        new_data: customer
+      });
+    } catch (auditErr) {
+      console.warn('Failed to record customer audit log in createBooking:', auditErr);
+    }
+  }
+
   // 1. Check for existing "pending" or "deposit" booking for this customer to avoid duplicates
   const { data: existingBooking } = await supabase
     .from('bookings')
@@ -335,9 +364,9 @@ export async function getDraftBooking(customerId: string) {
 
   if (error || !data || data.length === 0) return null;
   
-  // A "draft" is either deposit_pending or has 0 completed sessions
+  // A "draft" is only a booking that is in 'deposit_pending' or 'lead' status, NOT a fully confirmed 'booked' package.
   const b = data[0];
-  if (b.status === 'deposit_pending' || b.completed_sessions === 0) {
+  if (b.status === 'deposit_pending' || b.status === 'lead') {
     return b;
   }
   
