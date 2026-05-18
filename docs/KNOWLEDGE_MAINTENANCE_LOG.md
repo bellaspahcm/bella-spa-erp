@@ -212,5 +212,13 @@
   - Listens to any updates (inserts, status completions, changes) on the `session_logs` table and instantly triggers a background `fetchData()` ranking recalculation, causing the leaderboard to dynamically re-sort in real-time.
   - Properly cleaned up the subscription channel inside the `useEffect` return handler to prevent memory leaks.
 
+### 5. Actual Check-in & Check-out Session Chronology
+- **Issue**: Clicking on a completed session log in the administrative sessions interface (`/dashboard/sessions`) showed only KTV metadata, but did not display the actual check-in and check-out timestamps that the KTV triggered on their mobile application. Administrators and coordinators could not audit how long sessions actually lasted from the UI.
+- **Solution**:
+  - Modified the core select query in `getSessionsWithDetails` inside `src/services/booking-actions.ts` to retrieve `start_time` (check-in) and `end_time` (check-out) from the `session_logs` table.
+  - Redesigned the completed session information card in `src/app/dashboard/sessions/page.tsx` with a premium glassmorphic dashboard component.
+  - Displays the assigned KTV, formatted local check-in and check-out timestamps (`HH:MM - DD/MM/YYYY`), and automatically calculates and displays the session's active therapeutic duration in minutes (e.g. `90 phút`).
+  - Successfully verified TypeScript compatibility and synced the production repository.
+
 
 
