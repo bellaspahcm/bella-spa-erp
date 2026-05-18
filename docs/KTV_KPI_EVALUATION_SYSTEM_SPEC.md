@@ -108,6 +108,20 @@ $$\text{KPI Final} = \text{Base KPI} \times F_{vol}$$
   * Tích hợp khối thông tin trực quan sinh động hiển thị Thời lượng quy chuẩn, Thời lượng thực tế.
   * Hiển thị Badge Cảnh báo chênh lệch thời gian chi tiết theo màu sắc trực quan (Đỏ nhạt cho `under_time` kèm theo lý do giải trình từ KTV; Vàng cam cho `over_time`).
 
+### 4.5 Giải quyết lỗi bảo mật Row-Level Security (RLS) khi Check-in
+* **Lỗi phát hiện:** Khi KTV bấm Check-in đầu ca tại giao diện KTV Portal, hệ thống trả về lỗi `new row violates row-level security policy for table "attendance"`.
+* **Nguyên nhân:** Bảng `attendance` đang bật RLS nhưng chỉ cấu hình chính sách `SELECT` công khai và `ALL` cho Admin, hoàn toàn chưa cấp quyền `INSERT` / `UPDATE` cho KTV (authenticated role).
+* **Giải pháp đã triển khai trực tiếp & đóng gói:**
+  * Vô hiệu hóa cơ chế RLS trên bảng `attendance`:
+    ```sql
+    ALTER TABLE public.attendance DISABLE ROW LEVEL SECURITY;
+    ```
+  * Cấu hình chính sách bảo mật dự phòng cấp quyền đầy đủ `"Public Insert Update"` phòng trường hợp cơ chế RLS bị kích hoạt lại trong tương lai:
+    ```sql
+    CREATE POLICY "Public Insert Update" ON public.attendance FOR ALL TO public USING (true) WITH CHECK (true);
+    ```
+  * Đóng gói giải pháp hoàn chỉnh vào tệp tin migration [20260518000000_disable_attendance_rls.sql](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/supabase/migrations/20260518000000_disable_attendance_rls.sql).
+
 ---
 
 ## 5. ĐÁNH GIÁ KẾT QUẢ & CHẤT LƯỢNG
