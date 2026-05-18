@@ -1033,15 +1033,56 @@ function SessionsContent() {
                                 </div>
 
                                 {selectedSessionLog.start_time && selectedSessionLog.end_time && (
-                                  <div className="bg-emerald-500/10 rounded-xl px-4 py-3 flex items-center justify-between border border-emerald-500/10 shadow-inner">
-                                    <span className="text-[9px] font-black uppercase text-emerald-700 tracking-wider">Thời lượng thực tế:</span>
-                                    <span className="text-xs font-black text-emerald-800 bg-white/80 px-2 py-0.5 rounded-md shadow-sm border border-emerald-100">
-                                      {(() => {
-                                        const diff = new Date(selectedSessionLog.end_time).getTime() - new Date(selectedSessionLog.start_time).getTime();
-                                        const minutes = Math.max(1, Math.floor(diff / 60000));
-                                        return `${minutes} phút`;
-                                      })()}
-                                    </span>
+                                  <div className="space-y-3">
+                                    <div className="bg-emerald-500/10 rounded-xl px-4 py-3 flex items-center justify-between border border-emerald-500/10 shadow-inner">
+                                      <span className="text-[9px] font-black uppercase text-emerald-700 tracking-wider">Thời lượng thực tế:</span>
+                                      <span className="text-xs font-black text-emerald-800 bg-white/80 px-2 py-0.5 rounded-md shadow-sm border border-emerald-100">
+                                        {(() => {
+                                          const diff = new Date(selectedSessionLog.end_time).getTime() - new Date(selectedSessionLog.start_time).getTime();
+                                          const minutes = Math.max(1, Math.floor(diff / 60000));
+                                          return `${minutes} phút`;
+                                        })()}
+                                      </span>
+                                    </div>
+
+                                    {/* Cảnh báo độ lệch thời gian check-in/check-out của KTV */}
+                                    {selectedSessionLog.duration_warning_type && selectedSessionLog.duration_warning_type !== 'normal' && (
+                                      <div className={cn(
+                                        "rounded-xl px-4 py-3 border text-xs font-bold space-y-1 shadow-sm",
+                                        selectedSessionLog.duration_warning_type === 'under_time' 
+                                          ? "bg-rose-50 border-rose-100 text-rose-800" 
+                                          : "bg-amber-50 border-amber-100 text-amber-800"
+                                      )}>
+                                        <div className="flex items-center gap-1.5 font-black uppercase text-[9px] tracking-wider">
+                                          {selectedSessionLog.duration_warning_type === 'under_time' ? (
+                                            <>⚠️ Cảnh báo thiếu thời gian</>
+                                          ) : (
+                                            <>⏰ Cảnh báo quá giờ</>
+                                          )}
+                                        </div>
+                                        <p className="text-[11px] leading-normal font-bold">
+                                          {selectedSessionLog.duration_warning_type === 'under_time' ? (
+                                            <>
+                                              Làm chưa đủ thời gian gói liệu trình (thiếu {Math.abs(selectedSessionLog.time_deviation || 0)} phút)
+                                            </>
+                                          ) : (
+                                            <>
+                                              Làm quá thời gian quy định của gói (quá {selectedSessionLog.time_deviation || 0} phút)
+                                            </>
+                                          )}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 font-semibold mt-1">
+                                          Quy định: {selectedSessionLog.standard_duration || 60} phút | Thực tế: {selectedSessionLog.actual_duration || 0} phút
+                                        </p>
+                                        
+                                        {selectedSessionLog.duration_warning_type === 'under_time' && selectedSessionLog.ktv_checkout_note && (
+                                          <div className="mt-2 pt-2 border-t border-rose-200/50 text-[11px] text-rose-700 italic">
+                                            <span className="font-black not-italic block uppercase text-[8px] text-rose-600 tracking-wider mb-0.5">Lý do KTV báo cáo:</span>
+                                            "{selectedSessionLog.ktv_checkout_note}"
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>

@@ -74,4 +74,17 @@ Status: 🟢 Phases 1-4 & 6-7 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
   - Optimized database triggers (`fn_sync_booking_progress` on `session_logs` and `fn_sync_booking_finance` on `revenue`) to prevent high-frequency, redundant sequential `UPDATE bookings` queries, bypassing them for unconfirmed or scheduled inserts/updates.
   - Parallelized Next.js page revalidations using `Promise.all` inside `booking-actions.ts` for all core booking/session services (`createBooking`, `updateSessionLog`, `saveSessionNote`, etc.), reducing saving latency from ~10s to under 500ms (20x speedup).
 
+## ⚪ Phase 8: Hệ thống Đánh giá Thời lượng & KPI KTV (60/40 Split)
+- [ ] **Database Migration**: Bổ sung các trường `standard_duration`, `actual_duration`, `time_deviation`, `duration_warning_type`, và `ktv_checkout_note` vào bảng `shifts`/`session_logs`.
+- [ ] **KTV Mobile Checkout Warnings**:
+  - [ ] Logic tính toán thực tế tại check-out, sai lệch dưới 5 phút bỏ qua cảnh báo.
+  - [ ] Popup cảnh báo làm thiếu giờ (> 5 phút) yêu cầu nhập lý do.
+  - [ ] Popup nhắc nhở làm lố giờ quá hạn để kịp ca sau.
+- [ ] **Admin Sessions Dashboard Integration**: Hiển thị badge trạng thái thời lượng làm việc (Xanh/Cam/Đỏ) kèm tooltip lý do của KTV.
+- [ ] **Automated Monthly KPI Engine (60/40 Split)**:
+  - [ ] Tính điểm đánh giá khách hàng (60%): Quy đổi từ Rating trung bình tháng.
+  - [ ] Tính điểm kỷ luật Spa (40%): Trừ điểm từ lịch sử đi muộn, về sớm, thiếu giờ, quên check-in/out.
+  - [ ] Áp dụng hệ số sản lượng $F_{vol}$ (Ca thực tế / Ca chỉ tiêu) vào Base KPI để tính thưởng tháng tự động.
+
+
 
