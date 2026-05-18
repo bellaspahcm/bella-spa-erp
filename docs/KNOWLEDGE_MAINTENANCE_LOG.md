@@ -322,3 +322,21 @@
   - Executed an atomic transaction in Supabase to delete all mock records across all tables (reviews, shifts, chat messages, membership records, revenue, session logs, bookings, and customers) without breaking constraints.
   - Successfully left exactly 4 active real customers intact for continuous production testing.
 
+## 2026-05-18 (Session 4): KTV Leaderboard Rating Discrepancy Resolution & Database RPC Fix
+
+### 1. KTV Leaderboard Average Rating Fix
+- **Issue**: KTV Nguyễn Thị Hoa had an average rating of `5.0⭐` on the Admin Payroll/Salary page, but only `1.0⭐` on the KTV mobile portal's leaderboard.
+- **Root Cause**: 
+  - The Admin's salary view queried `session_reviews` filtering strictly for approved reviews (`status = 'approved'`). 
+  - The KTV leaderboard dynamic RPC function `get_ktv_leaderboard` performed a simple `LEFT JOIN` on the `session_reviews` table without any status validation.
+  - In the database, the KTV had 4 active treatment sessions that had placeholder review records created with status `pending_review` and a default rating of `0.0`. Since the RPC joined these pending reviews, the average rating was computed as `(5.0 + 0 + 0 + 0 + 0) / 5 = 1.0⭐`, pulling down her actual rating of `5.0⭐`.
+- **Solution**:
+  - Wrote and applied a database DDL migration `fix_ktv_leaderboard_approved_reviews_v2` in Supabase.
+  - Corrected the `LEFT JOIN` within `get_ktv_leaderboard` to filter reviews on the join clause:
+    ```sql
+    LEFT JOIN public.session_reviews sr ON sr.session_log_id = sl.id AND sr.status = 'approved'
+    ```
+  - Replaced the CTE reference alias dynamically inside the final SELECT to query `ks.avg_rating::numeric as average_rating` to resolve compilation/execution errors.
+  - Tested the RPC directly inside the Supabase execution engine, successfully validating that Nguyễn Thị Hoa's rating is restored to a perfect **`5.0⭐`** with `12 sessions` and `1.800.000đ` of commissions, matching the Admin interface exactly.
+
+
