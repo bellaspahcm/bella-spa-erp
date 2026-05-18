@@ -218,11 +218,39 @@ Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) 
 
 ---
 
-## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
-* **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline, tích hợp bộ đối soát gói dịch vụ KTV, tính năng chỉnh sửa gói dịch vụ chủ động của Admin, hệ thống tự động hóa điểm Loyalty Real-time, và phân hệ Đối soát giao dịch chi tiết kèm Hoàn tiền thừa âm đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
-* **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch, Admin dễ dàng điều tra phát hiện lỗi clerical nhập tiền và tự xử lý nhanh chóng nhờ giao dịch hoàn tiền trực quan.
+---
 
-**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile, Trang thu nhập đối soát nâng cao cho KTV, Tính năng Chỉnh sửa Gói dịch vụ chủ động của Admin, Tự động hóa Loyalty Point, và Nhật ký Đối soát Giao dịch & Hoàn tiền âm đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
+### KỊCH BẢN 12: Kiểm thử Giao diện Thẻ Trị liệu Đang chạy và Modal Check-out Premium mới (KTV Dashboard & Premium Checkout Modal)
+* **Mục tiêu**: Đảm bảo thẻ ca trị liệu đang chạy hiển thị legibility 100% (không bị ẩn chữ mẹ), hiển thị đầy đủ thông tin Mẹ & Bé, tiến độ buổi trị liệu (`Buổi X/Y`), lấy chính xác địa chỉ khách hàng từ hồ sơ và triệt tiêu hotline spa. Thay thế hộp thoại `window.prompt` xấu xí bằng Modal xác nhận Check-out Premium bằng React/Framer Motion.
+* **Thời gian kiểm thử**: 18/05/2026
+
+#### Quy trình thực hiện:
+1. **Kiểm tra Legibility thẻ "Đang thực hiện"**:
+   * Truy cập `/ktv/dashboard` với tài khoản KTV 1.
+   * Kết quả: 
+     * Tên mẹ **"Phạm Hải 3"** hiển thị sắc nét với màu chữ trắng (`text-white font-bold`) nổi bật trên nền thẻ tối màu. Không còn lỗi đen trên nền đen. **=> ĐẠT**
+     * Tên bé **"Bé 3"** và số buổi liệu trình **"Buổi 6/30"** hiển thị trực quan dưới dạng biểu tượng sắc nét. **=> ĐẠT**
+     * Địa chỉ hiển thị chính xác: **"Quận 4, TP. Hồ Chí Minh"** (được lấy động từ hồ sơ khách hàng thay vì fallback trống). **=> ĐẠT**
+     * Số điện thoại hotline spa bị loại bỏ hoàn toàn khỏi thẻ để bảo mật thông tin. **=> ĐẠT**
+2. **Kiểm tra Modal Xác nhận Check-out Premium**:
+   * Click nút **"Kết thúc & Check-out"** trên thẻ đang chạy.
+   * Kết quả: Hộp thoại `window.prompt` đã biến mất. Một Modal xác nhận check-out trượt lên mượt mà từ phía dưới, hiển thị tông màu ngọc bích (emerald) sang trọng, hiển thị đầy đủ tóm tắt ca trị liệu (Mẹ, Bé, Giờ bắt đầu, Tiến trình buổi tiếp theo). **=> ĐẠT**
+3. **Thực hiện Check-out kèm Ghi chú trị liệu**:
+   * Nhập ghi chú: *"Bé ngoan, bú tốt, mẹ sức khỏe bình thường."* trong textarea thiết kế hiện đại của modal.
+   * Click nút **"Xác nhận & Check-out"**.
+   * Kết quả:
+     * Hệ thống hiển thị hiệu ứng xoay (loading spinner) và vô hiệu hóa nút bấm tránh nhấp đúp. **=> ĐẠT**
+     * Gửi yêu cầu check-out lên cơ sở dữ liệu thành công. Thẻ ca trị liệu đang chạy tự động biến mất và hiển thị thông điệp *"Không có ca nào đang chạy"*. **=> ĐẠT**
+     * Hiển thị Toast thông báo hoàn thành buổi trị liệu tuyệt đẹp ở phía trên màn hình. **=> ĐẠT**
+     * Doanh thu tạm tính của KTV tự động tăng lên **`2.550.000đ`** và tổng số ca hoàn thành tăng lên **`17 ca`** ngay trên dashboard di động. **=> ĐẠT**
+
+---
+
+## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
+* **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline, tích hợp bộ đối soát gói dịch vụ KTV, tính năng chỉnh sửa gói dịch vụ chủ động của Admin, hệ thống tự động hóa điểm Loyalty Real-time, phân hệ Đối soát giao dịch chi tiết kèm Hoàn tiền thừa âm, và đặc biệt là bộ nâng cấp thẻ ca trị liệu đang chạy cùng Modal Check-out Premium mới đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
+* **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch, Admin dễ dàng điều tra phát hiện lỗi clerical nhập tiền và tự xử lý nhanh chóng nhờ giao dịch hoàn tiền trực quan. Giao diện KTV check-out giờ đây cực kỳ sang trọng, xứng tầm thương hiệu Bella Spa.
+
+**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile, Trang thu nhập đối soát nâng cao cho KTV, Tính năng Chỉnh sửa Gói dịch vụ chủ động của Admin, Tự động hóa Loyalty Point, Nhật ký Đối soát Giao dịch & Hoàn tiền âm, cùng Thẻ Ca trị liệu và Modal Check-out Premium đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
 
 ---
 *Biên bản được lập tự động và lưu trữ tại [KTV_TEST_ACCEPTANCE.md](file:///d:/Antigravity/Projects/BELLA SPA ERP/docs/KTV_TEST_ACCEPTANCE.md).*
