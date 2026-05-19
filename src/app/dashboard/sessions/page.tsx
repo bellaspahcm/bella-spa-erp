@@ -1680,21 +1680,19 @@ function SessionsContent() {
                                       </div>
                                       
                                       <div className="pt-1.5 border-t border-slate-100">
-                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">KTV thay thế hôm nay</label>
-                                        <select
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">KTV thay thế hôm nay</label>
+                                        <PremiumSelect
                                           value={reassignmentMapping[session.id] || ''}
-                                          onChange={(e) => setReassignmentMapping(prev => ({ ...prev, [session.id]: e.target.value }))}
-                                          className="w-full mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
-                                        >
-                                          <option value="">-- Chọn KTV thay thế --</option>
-                                          {allKTVs
+                                          options={allKTVs
                                             .filter((u: any) => u.id !== selectedLeave.user_id)
-                                            .map((u: any) => (
-                                              <option key={u.id} value={u.id}>
-                                                {u.full_name}
-                                              </option>
-                                            ))}
-                                        </select>
+                                            .map((u: any) => ({
+                                              value: u.id,
+                                              label: u.full_name,
+                                              icon: <UserCircle className="w-4 h-4" />
+                                            }))}
+                                          onChange={(value) => setReassignmentMapping(prev => ({ ...prev, [session.id]: value }))}
+                                          placeholder="-- Chọn KTV thay thế --"
+                                        />
                                       </div>
                                     </div>
                                   ))}
