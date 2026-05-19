@@ -168,9 +168,9 @@ export function Sidebar() {
         </nav>
 
         {/* ── User Profile & Logout — pinned at bottom ── */}
-        <div className="mt-auto shrink-0 relative z-10 border-t border-rose-100/40 bg-white/60 backdrop-blur-md px-6 pt-2 pb-1.5">
+        <div className="mt-auto shrink-0 relative z-10 px-6 pt-2 pb-4 flex flex-col gap-1">
           {/* Admin card */}
-          <div className="bg-white p-2.5 rounded-[1.25rem] shadow-sm border border-rose-50 mb-1.5 group cursor-pointer hover:border-rose-200 transition-all">
+          <div className="bg-white p-2.5 rounded-[1.25rem] shadow-sm border border-rose-50 group cursor-pointer hover:border-rose-200 transition-all">
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-black text-xs shadow-md group-hover:scale-105 transition-transform">
