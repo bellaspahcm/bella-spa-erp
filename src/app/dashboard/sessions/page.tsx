@@ -120,7 +120,7 @@ function SessionsContent() {
     
     // Fetch conflicts for this KTV
     try {
-      const conflicts = await getKTVConflictSessions(leave.ktv_id, leave.leave_date, leave.leave_type);
+      const conflicts = await getKTVConflictSessions(leave.user_id, leave.leave_date, leave.leave_type);
       setConflictSessions(conflicts);
     } catch (err) {
       console.error("Failed to load conflict sessions:", err);
@@ -1688,7 +1688,7 @@ function SessionsContent() {
                                         >
                                           <option value="">-- Chọn KTV thay thế --</option>
                                           {allKTVs
-                                            .filter((u: any) => u.id !== selectedLeave.ktv_id)
+                                            .filter((u: any) => u.id !== selectedLeave.user_id)
                                             .map((u: any) => (
                                               <option key={u.id} value={u.id}>
                                                 {u.full_name}
