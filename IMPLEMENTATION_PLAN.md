@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Phases 1-4 & 6-8 Complete | 🟡 Phase 5 CRM/Zalo Integration Starting
+Status: 🟢 Phases 1-4 & 6-9 Complete | 🟡 Phase 5 CRM/Zalo Integration Starting
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.

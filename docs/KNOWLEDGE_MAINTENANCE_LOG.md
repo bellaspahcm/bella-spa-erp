@@ -436,6 +436,38 @@
 - Executed Next.js production builds with zero warnings or compiler errors.
 - Pushed changes cleanly to the `main` branch of the GitHub repository `bellaspahcm/bella-spa-erp` and deployed to production.
 
+## 2026-05-19 (Session 3): Multi-View Bookings Dashboard Overhaul (Month Calendar & KTV Timeline View)
+
+### 1. Month Calendar View (`MonthCalendarView`)
+- **Status**: Implemented, Hydrated & E2E Verified.
+- **Workflow**:
+  - Designed an elegant month grid layout displaying a calendar grid of the selected month.
+  - Dynamically displays real-time booking count badges for each day (e.g. `9 Lịch hẹn`) so administrators can audit daily workloads at a glance.
+  - Synchronizes seamlessly with central header date navigation controls, highlighting the active date and today's cell matching standard brand colors.
+
+### 2. KTV Timeline View (`TimelineView`)
+- **Status**: Implemented & Verified.
+- **Workflow**:
+  - Developed a horizontal-vertical 2D scheduling grid where technicians are rendered as columns and vertical time slices (09:00 - 13:00+) act as rows.
+  - Displays dynamic therapy card overlays aligned to the exact technician columns and time slots.
+  - Styled cards using professional micro-animations and status-based colors matching the spa system: Completed (`XONG` - Emerald), In-Progress (`CHẠY` - Sky), and Scheduled (`SẮP` - Rose tint).
+  - Handles scalability: horizontal overflow-x scrolling for large technician pools, and vertical overflow-y scrolling for time slices, keeping the timeline perfectly readable.
+
+### 3. Interactive Swapper & Visual Integration
+- **Status**: Implemented & Verified.
+- **Workflow**:
+  - Constructed a premium view-switcher in the page header with hover micro-interactions and smooth sliding highlight transitions using Framer Motion.
+  - Allowed administrative staff to switch between `Lịch tháng` and `Timeline KTV` views with zero state loss.
+  - Preserved the existing visual design language (delicate amber/pink gradients, glassmorphism card containers, responsive spacing) without introducing raw/generic Tailwind colors.
+
+### 4. Compilation & Deployment Verification
+- **Status**: Fully Deployed.
+- **Workflow**:
+  - Verified 100% strict type safety using `npx tsc --noEmit` (0 errors or warnings).
+  - Pushed all local commits to GitHub `main` branch.
+  - Triggered production build and deployed live to Vercel: [https://bella-spa-erp-swart.vercel.app](https://bella-spa-erp-swart.vercel.app) (Turbopack optimization complete, build succeeded in 31 seconds).
+
+
 
 
 
