@@ -504,9 +504,34 @@
 - Verified type-safety via `node node_modules/typescript/bin/tsc --noEmit` returning zero issues.
 - Pushed updates cleanly to the central repository and deployed live to production.
 
+## 2026-05-19 (Session 6): CRM Zalo Marketing, Staff Leave Request with Auto-Reassignment & Rejection Reason
 
+### 1. CRM & Zalo Marketing Module Integration
+- **Status**: Implemented, Hydrated & E2E Verified.
+- **Workflow**:
+  - **Premium CRM Dashboard (`src/app/dashboard/crm/page.tsx`)**: Created a gorgeous, premium tabbed control panel with 4 distinct work sections:
+    - *Tổng quan Cấu hình*: Controls Zalo OA integration, automatic notification toggles, template configurations, and service status gauges.
+    - *Nhắc hẹn 2.5H*: Shows upcoming client sessions requiring reminder notifications within a 2.5-hour window, with manual scan and batch dispatch triggers.
+    - *Sinh nhật & Chiến dịch*: Tracks upcoming mother and baby birthdays for the current month and automates voucher code generation and dispatch.
+    - *Nhật ký tin gửi*: Provides a complete grid history of past Zalo messages, delivery statuses, timestamps, and customer names.
+  - **Zalo & CRM Server Services (`src/services/crm-actions.ts`)**: Built unified actions supporting Zalo configuration syncing, Zalo notification logs queries, manual ZNS trigger, dynamic GMT+7 appointment notifications scanning, and automated birthday coupon distributions.
+  - **Sidebar Activation**: Enabled and styled the "CRM & Zalo" menu item inside `src/components/layout/sidebar.tsx` linking to `/dashboard/crm`.
 
+### 2. Staff Leave Request & Conflict Reassignment Engine
+- **Status**: Implemented & E2E Verified.
+- **Workflow**:
+  - **Database Schema Expansion**: Created and applied `supabase/migrations/20260519020000_add_rejection_reason_to_staff_leaves.sql` to add the `rejection_reason` column to the `staff_leaves` table.
+  - **Conflict Reassignment & Attendance Handlers (`src/services/attendance-actions.ts`)**:
+    - Upgraded `rejectLeaveRequest` to record the custom rejection text reason directly to the database.
+    - Upgraded `approveLeaveRequest` to accept conflict mapping payloads. Automatically loops through conflicting care sessions on the requested date and performs bulk updates to reassign them to the selected replacement KTV (`completed_by_ktv_id` updated to the replacement KTV's ID) while adding a standard log prefix `[🔄 Thay ca] Làm thay cho KTV chính` for audit trails.
+  - **Admin Sessions Sidebar Drawer (`src/app/dashboard/sessions/page.tsx`)**: Built an elegant drawer component tracking pending leaves. Performs real-time conflict checking against scheduled sessions and renders an intuitive replacement KTV dropdown for each conflict.
+  - **KTV Leaves Modal & History (`src/app/ktv/dashboard/page.tsx`)**: Integrated custom modals allowing KTVs to apply for leave (selecting date, ca/shift, reason) and review past leave status with specialized color coding (Vàng - Chờ duyệt, Xanh - Đã duyệt, Đỏ - Từ chối) showing the admin's rejection reason clearly.
+  - **KTV Earnings "Làm Thay" Commissions (`src/app/ktv/earnings/page.tsx` & `src/services/ktv-actions.ts`)**: Confirmed that the commissions calculation logic dynamically captures completed reassigned sessions and renders them under the KTV portal with the "Làm Thay" label and correct commission credits.
 
-
-
+### 3. Production Compilation & Git Deployment
+- **Status**: Fully Deployed.
+- **Workflow**:
+  - Validated type-safety and structural integrity via `node node_modules/typescript/bin/tsc --noEmit` returning exactly 0 errors.
+  - Staged, committed, and pushed all modifications to branch `main` at `https://github.com/bellaspahcm/bella-spa-erp.git` under commit hash `53499ec`, successfully triggering Vercel production compilation.
+  - Inspected the local development Turbopack server at `http://localhost:3000` to verify 100% operational UI transitions.
 
