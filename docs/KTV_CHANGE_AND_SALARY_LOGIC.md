@@ -124,3 +124,67 @@ Quy trình nghiệp vụ đổi KTV giữa chừng và logic tính toán phân c
 
 * **Người đại diện phê duyệt nghiệp vụ**: Quản lý Hệ thống Bella Spa ERP  
 * **Đơn vị phát triển hệ thống**: Antigravity AI Pair Programmer
+
+---
+
+## 7. QUY TRÌNH XIN NGHỈ PHÉP & ĐIỀU CHUYỂN CA TỰ ĐỘNG (STAFF LEAVE & AUTO-REASSIGNMENT)
+
+Để đáp ứng linh hoạt thực tế vận hành khi KTV nghỉ phép đột xuất hoặc nghỉ phép năm, hệ thống mở rộng tính năng Quản lý nghỉ phép và Tự động rà soát điều chuyển ca.
+
+### 7.1. Kiến trúc Cơ sở dữ liệu mở rộng (`staff_leaves`)
+
+Bảng `staff_leaves` lưu trữ toàn bộ lịch sử xin nghỉ phép của nhân sự:
+
+```sql
+CREATE TABLE staff_leaves (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    leave_date DATE NOT NULL,
+    leave_type VARCHAR(20) NOT NULL, -- 'full_day' | 'morning' | 'afternoon'
+    reason TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- 'pending' | 'approved' | 'rejected'
+    approved_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Bật Row Level Security (RLS)
+ALTER TABLE staff_leaves ENABLE ROW LEVEL SECURITY;
+
+-- Chính sách RLS cho KTV (Chỉ xem và đăng ký đơn của mình)
+CREATE POLICY "KTV leaves policy" ON staff_leaves
+    FOR ALL
+    USING (auth.uid() = user_id);
+
+-- Chính sách RLS cho Admin (Toàn quyền)
+CREATE POLICY "Admin leaves policy" ON staff_leaves
+    FOR ALL
+    USING (
+        EXISTS (
+            SELECT 1 FROM users
+            WHERE users.id = auth.uid() AND users.role IN ('admin', 'manager')
+        )
+    );
+```
+
+### 7.2. Giao diện KTV Portal (`/ktv/leaves`)
+* **Đăng ký nghỉ phép**: Form điền ngày nghỉ, chọn ca nghỉ (Cả ngày, Ca sáng: 08:00 - 12:00, Ca chiều: 13:00 - 17:00), điền lý do và gửi duyệt. Trạng thái khởi tạo là `pending`.
+* **Lịch sử nghỉ phép**: Danh sách các đơn đã gửi kèm thẻ trạng thái màu trực quan (Chờ duyệt: Vàng, Đã duyệt: Xanh lá, Từ chối: Đỏ).
+* **Màn hình Ca làm việc**: Buổi làm thay thế sẽ được hiển thị rõ ràng với badge `🔄 Ca làm thế` và ghi chú rõ *"Làm thay cho [Tên KTV chính]"*.
+
+### 7.3. Giao diện Phê duyệt của Admin (`/dashboard/sessions`)
+* **Nút thông báo (Badge)**: Hiển thị biểu tượng chuông báo hiệu số đơn nghỉ phép đang chờ duyệt `🔔 Đơn nghỉ phép chờ duyệt (N)`.
+* **Slide-over Panel (Bảng trượt)**: Khi nhấp vào, trượt từ phải sang danh sách đơn chờ duyệt. Admin có thể ấn Duyệt hoặc Từ chối nhanh.
+* **Hộp thoại giải quyết xung đột (Conflict Resolution Modal)**: 
+  * Nếu ngày xin nghỉ của KTV có lịch hẹn khách hàng đã được xếp trước đó, hệ thống sẽ chặn cứng nút Duyệt và chuyển thành nút màu vàng **"Xử lý trùng lịch (M ca)"**.
+  * Nhấp vào nút này sẽ mở Modal hiển thị danh sách các ca bị ảnh hưởng kèm gợi ý các KTV rảnh cùng chi nhánh, cùng tay nghề.
+  * Admin chọn KTV thay thế và bấm **"Hoàn tất điều chuyển & Duyệt đơn nghỉ"** để giải phóng lịch chỉ trong 1-click.
+
+### 7.4. Quy tắc Tính Lương & Hoa hồng Phân biệt
+* **KTV Phụ trách chính (Hợp đồng/Gói)**: Vẫn được bảo toàn nguyên vẹn trong suốt liệu trình. Nhận 100% hoa hồng bán gói/chăm sóc tổng quát cuối kỳ.
+* **KTV Thực hiện buổi lẻ (Session/Ca làm)**: Ghi nhận ID của KTV làm thay vào trường `completed_by_ktv_id` trong buổi lẻ hôm đó.
+* **Phân bổ tài chính tự động**:
+  * KTV làm thay nhận **100% Hoa hồng thực hiện ca** (Service commission) của buổi đó.
+  * KTV chính nghỉ nhận **0đ** hoa hồng ca đó.
+  * Cuối tháng, hệ thống tự động cộng dồn lương theo cấu trúc rõ ràng: Ca làm chính thức vs Ca làm thay thế.
+
