@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Corinthia } from 'next/font/google';
+import { Corinthia, Playfair_Display } from 'next/font/google';
 import "./globals.css";
 
 const corinthia = Corinthia({
@@ -8,9 +8,16 @@ const corinthia = Corinthia({
   variable: '--font-handwriting',
 });
 
+const playfair = Playfair_Display({
+  subsets: ['latin', 'vietnamese'],
+  variable: '--font-serif',
+  weight: ['400', '500', '600', '700', '800', '900'],
+  style: ['normal', 'italic'],
+});
+
 export const metadata: Metadata = {
-  title: "Bella Spa ERP",
-  description: "Advanced ERP System for Bella Spa",
+  title: "Bella Spa - Chăm Sóc Mẹ Và Bé | Chăm Sóc Trọn Yêu Thương",
+  description: "Dịch vụ chăm sóc sức khỏe và sắc đẹp chuẩn y khoa cho mẹ bầu, mẹ sau sinh và bé yêu. Trải nghiệm dịch vụ 5 sao nâng niu từng khoảnh khắc.",
 };
 
 import { Toaster } from "sonner";
@@ -22,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`h-full antialiased ${corinthia.variable}`} suppressHydrationWarning>
+    <html lang="vi" className={`h-full antialiased ${corinthia.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
         <OfflineIndicator />
