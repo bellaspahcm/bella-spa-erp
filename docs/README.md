@@ -254,6 +254,7 @@ Bella Spa ERP Documentation/
 | 2.2 | May 18, 2026 | Antigravity | Actual check-in/out session chronology, session progress sync fixes, comprehensive admin audit logs |
 | 2.3 | May 18, 2026 | Antigravity | Pinned sidebar height/shrink fixes, custom payment breakdown cards, refund transaction logs, and review column translations |
 | 2.4 | May 19, 2026 | Antigravity | Timezone-safe Date Overhaul (`getLocalDateString` GMT+7), Offline-First sync queue (Dexie.js), Centered salary modals, and Multi-View (Month Calendar & KTV Timeline) switcher dashboard |
+| 2.5 | May 19, 2026 | Antigravity | Visual sidebar synchronization, premium Landing Page launch with dynamic Playfair Display serif typography, 4-step diagnostic wizard, responsive filters, lead validation forms, and unified Japanese relaxation therapy standard / hotline `0865 701 493` / local branch coordinates |
 
 ---
 
@@ -275,4 +276,4 @@ Bất kỳ câu hỏi nào → Liên hệ PM hoặc Antigravity team.
 ---
 
 **Document Generated:** May 10, 2026
-**Last Updated:** May 19, 2026 (07:50)
+**Last Updated:** May 19, 2026 (09:50)
