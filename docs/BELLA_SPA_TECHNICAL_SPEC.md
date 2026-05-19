@@ -1,7 +1,7 @@
 # Bella Spa ERP - Technical Specification
-**Version:** 2.6  
-**Last Updated:** 2026-05-16 (13:30)  
-**Status:** Implementation Phase (Phase 24: Messaging Center Stabilization & UI Enhancements - Completed)
+**Version:** 2.7  
+**Last Updated:** 2026-05-19 (15:50)  
+**Status:** Implementation Phase (Phase 25: Landing Page Visual Refinements & Mobile Drawer Optimization - Completed)
 
 ---
 
@@ -747,9 +747,15 @@ A: Yes, IF:
 - **Portal UI Enhancement**: Redesigned the Customer Portal (`/portal/[token]`) greeting section (large font, primary brand color) and integrated official social media contact links (Facebook).
 - **Production Deployment**: Verified all changes and successfully deployed to the Vercel production environment.
 
+### PHASE 25: Landing Page Visual Refinements & Mobile Drawer Optimization (Completed - May 19, 2026)
+- **Branding & Logo Refinement**: Removed the `"ERP"` suffix from the public landing page logo text to focus strictly on elegant branding (`"Mẹ & Bé"`).
+- **Hero Banner Scale Correction**: Reduced the large hero overlay text scale by 30% to fit mobile device aspect ratios seamlessly without cluttering screen space.
+- **Responsive Price & Tag Overhaul**: Replaced absolute labels with responsive flex stacking (`flex-col sm:flex-row`), aligning titles next to prices on desktop while stacking them beautifully on mobile.
+- **Mobile Navigation Drawer & Zoom Correction**: Limit desktop-level `zoom: 0.9` styling in `globals.css` to screen widths above `768px` via CSS media queries, enabling a natural `100%` zoom scale on mobile. Optimized mobile drawer menu buttons to capital-case (`ĐĂNG NHẬP`, `DÙNG THỬ NGAY`) and configured header background blur and shadow transition when the mobile drawer is opened.
+
 ---
 
-**Document Version:** 2.6  
-**Last Updated:** 2026-05-16 (13:30)  
-**Status:** Implementation Phase (Phase 24: Completed)  
+**Document Version:** 2.7  
+**Last Updated:** 2026-05-19 (15:50)  
+**Status:** Implementation Phase (Phase 25: Completed)  
 **Contact:** Bella Spa ERP Dev Team

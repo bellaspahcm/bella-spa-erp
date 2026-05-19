@@ -114,5 +114,6 @@ Status: 🟢 Phases 1-4 & 6-10 Complete | 🟡 Phase 5 CRM/Zalo Integration Star
   - Set `shrink-0` and adjusted margins to ensure prices never wrap awkwardly or get hidden on any screen size.
 - [x] **Visual Spacing & Grid Padding Improvements**: Adjusted card padding on mobile from `p-8` to `p-6` to maximize readability and guarantee that the bottom check-out/booking buttons are never truncated.
 - [x] **Promo / Booking Image Update**: Successfully replaced the booking promotion image (`bella_real_1.jpg` next to the appointment booking form) with the brand-approved customer-technician care image.
+- [x] **Mobile Drawer & Zoom Optimization**: Restrained the desktop `zoom: 0.9` layout configuration in `globals.css` using screen-width media queries (`min-width: 768px`) to ensure mobile displays at a natural 100% scale. Synchronized the mobile drawer menu buttons (`ĐĂNG NHẬP` and `DÙNG THỬ NGAY`) with uppercase PC styles, and forced the navigation bar to transition to a premium white frosted glass backdrop with shadow when the mobile drawer is toggled active.
 - [x] **Deployments**: Verified 100% correct Turbopack builds and pushed updates directly to GitHub/Vercel.
 

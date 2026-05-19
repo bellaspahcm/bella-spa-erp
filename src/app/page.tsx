@@ -322,7 +322,7 @@ export default function LandingPage() {
       <div className="absolute bottom-[0%] left-[-10%] w-[40%] h-[30%] rounded-full bg-gradient-to-tr from-rose-200/10 to-pink-300/5 blur-[80px] pointer-events-none -z-10" />
 
       {/* ── HEADER & NAVIGATION ── */}
-      <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-md shadow-md py-3' : 'bg-transparent py-5'}`}>
+      <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${(scrolled || mobileMenuOpen) ? 'bg-white/90 backdrop-blur-md shadow-md py-3 border-b border-rose-100/50' : 'bg-transparent py-5'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -417,17 +417,18 @@ export default function LandingPage() {
                 <div className="pt-4 flex flex-col gap-3">
                   <Link 
                     href="/login" 
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-800 font-black text-xs uppercase tracking-wider"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 w-full py-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-700 hover:text-rose-600 font-black text-xs uppercase tracking-widest transition-all"
                   >
                     <LogIn className="w-4 h-4 text-rose-500" />
-                    Đăng nhập hệ thống
+                    ĐĂNG NHẬP
                   </Link>
                   <a 
                     href="#booking" 
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full text-center py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg shadow-pink-100"
+                    className="w-full text-center py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-pink-200 transition-all"
                   >
-                    Dùng Thử Ngay
+                    DÙNG THỬ NGAY
                   </a>
                 </div>
               </div>
