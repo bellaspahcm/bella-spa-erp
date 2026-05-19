@@ -33,7 +33,10 @@ import {
   getBirthdayCustomers,
   sendBirthdayGreeting,
   getZaloZnsLogs,
-  CRMStats
+  CRMStats,
+  getZaloConfig,
+  saveZaloConfig,
+  type ZaloConfig
 } from '@/services/crm-actions';
 import { formatCurrency } from '@/lib/utils';
 
@@ -52,13 +55,17 @@ export default function CRMPage() {
   const [scanning, setScanning] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Zalo OA Mock Config state
-  const [zaloConfig, setZaloConfig] = useState({
-    oaId: '38192837182738217',
-    secretKey: '••••••••••••••••••••••••',
-    templateReminderId: 'ZNS_REMINDER_V2',
-    templateBirthdayId: 'ZNS_BIRTHDAY_GIFT_V1',
-    autoScan: true
+  // Zalo OA Config state
+  const [zaloConfig, setZaloConfig] = useState<ZaloConfig>({
+    zalo_app_id: '',
+    zalo_secret_key: '',
+    zalo_oa_id: '',
+    zalo_access_token: '',
+    zalo_refresh_token: '',
+    zalo_token_expires_at: '',
+    zalo_template_reminder_id: '',
+    zalo_template_birthday_id: '',
+    zalo_auto_scan: true
   });
 
   // Voucher Campaign Form state
@@ -78,16 +85,18 @@ export default function CRMPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [s, sessions, bdays, logs] = await Promise.all([
+      const [s, sessions, bdays, logs, config] = await Promise.all([
         getCRMStats(),
         getUpcomingSessions(),
         getBirthdayCustomers(),
-        getZaloZnsLogs()
+        getZaloZnsLogs(),
+        getZaloConfig()
       ]);
       setStats(s);
       setUpcomingSessions(sessions);
       setBirthdayCustomers(bdays);
       setZnsLogs(logs);
+      setZaloConfig(config);
     } catch (err) {
       console.error('Error loading CRM data:', err);
     } finally {
@@ -161,6 +170,24 @@ export default function CRMPage() {
     setVouchers(prev => [...prev, { ...newVoucher, usage: 0 }]);
     setShowNewVoucherModal(false);
     setNewVoucher({ code: '', discount: 10, target: 'Bé tròn 1 tuổi', status: 'active' });
+  };
+
+  const handleSaveConfig = async () => {
+    setActionLoading('save_zalo_config');
+    try {
+      const res = await saveZaloConfig(zaloConfig);
+      if (res.error) {
+        alert(res.error);
+      } else {
+        alert('Cập nhật cấu hình kết nối Zalo thành công!');
+        await loadData();
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Lỗi hệ thống khi lưu cấu hình.');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   return (
@@ -335,11 +362,12 @@ export default function CRMPage() {
                 <div className="space-y-4">
                   
                   <div className="space-y-1">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Zalo Official Account ID</label>
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Zalo App ID</label>
                     <input 
                       type="text" 
-                      value={zaloConfig.oaId}
-                      onChange={(e) => setZaloConfig({ ...zaloConfig, oaId: e.target.value })}
+                      value={zaloConfig.zalo_app_id || ''}
+                      onChange={(e) => setZaloConfig({ ...zaloConfig, zalo_app_id: e.target.value })}
+                      placeholder="Nhập Zalo App ID"
                       className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-transparent focus:border-rose-100 focus:outline-none text-sm font-semibold"
                     />
                   </div>
@@ -348,8 +376,42 @@ export default function CRMPage() {
                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Secret Key (Khóa bảo mật)</label>
                     <input 
                       type="password" 
-                      value={zaloConfig.secretKey}
-                      onChange={(e) => setZaloConfig({ ...zaloConfig, secretKey: e.target.value })}
+                      value={zaloConfig.zalo_secret_key || ''}
+                      onChange={(e) => setZaloConfig({ ...zaloConfig, zalo_secret_key: e.target.value })}
+                      placeholder="••••••••••••••••••••••••"
+                      className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-transparent focus:border-rose-100 focus:outline-none text-sm font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Zalo Official Account ID</label>
+                    <input 
+                      type="text" 
+                      value={zaloConfig.zalo_oa_id || ''}
+                      onChange={(e) => setZaloConfig({ ...zaloConfig, zalo_oa_id: e.target.value })}
+                      placeholder="Nhập Zalo OA ID"
+                      className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-transparent focus:border-rose-100 focus:outline-none text-sm font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Access Token</label>
+                    <input 
+                      type="password" 
+                      value={zaloConfig.zalo_access_token || ''}
+                      onChange={(e) => setZaloConfig({ ...zaloConfig, zalo_access_token: e.target.value })}
+                      placeholder="••••••••••••••••••••••••"
+                      className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-transparent focus:border-rose-100 focus:outline-none text-sm font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Refresh Token</label>
+                    <input 
+                      type="password" 
+                      value={zaloConfig.zalo_refresh_token || ''}
+                      onChange={(e) => setZaloConfig({ ...zaloConfig, zalo_refresh_token: e.target.value })}
+                      placeholder="••••••••••••••••••••••••"
                       className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-transparent focus:border-rose-100 focus:outline-none text-sm font-semibold"
                     />
                   </div>
@@ -358,8 +420,9 @@ export default function CRMPage() {
                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Mẫu ZNS nhắc lịch hẹn</label>
                     <input 
                       type="text" 
-                      value={zaloConfig.templateReminderId}
-                      onChange={(e) => setZaloConfig({ ...zaloConfig, templateReminderId: e.target.value })}
+                      value={zaloConfig.zalo_template_reminder_id || ''}
+                      onChange={(e) => setZaloConfig({ ...zaloConfig, zalo_template_reminder_id: e.target.value })}
+                      placeholder="ZNS_REMINDER_V2"
                       className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-transparent focus:border-rose-100 focus:outline-none text-sm font-semibold"
                     />
                   </div>
@@ -368,8 +431,9 @@ export default function CRMPage() {
                     <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Mẫu ZNS chúc mừng sinh nhật</label>
                     <input 
                       type="text" 
-                      value={zaloConfig.templateBirthdayId}
-                      onChange={(e) => setZaloConfig({ ...zaloConfig, templateBirthdayId: e.target.value })}
+                      value={zaloConfig.zalo_template_birthday_id || ''}
+                      onChange={(e) => setZaloConfig({ ...zaloConfig, zalo_template_birthday_id: e.target.value })}
+                      placeholder="ZNS_BIRTHDAY_GIFT_V1"
                       className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-transparent focus:border-rose-100 focus:outline-none text-sm font-semibold"
                     />
                   </div>
@@ -380,17 +444,20 @@ export default function CRMPage() {
                       <p className="text-[10px] text-slate-400 font-medium">Bật quét tự động trước giờ trị liệu</p>
                     </div>
                     <button 
-                      onClick={() => setZaloConfig({ ...zaloConfig, autoScan: !zaloConfig.autoScan })}
-                      className={`w-12 h-6 rounded-full p-1 transition-all ${zaloConfig.autoScan ? 'bg-primary flex justify-end' : 'bg-slate-200 flex justify-start'}`}
+                      type="button"
+                      onClick={() => setZaloConfig({ ...zaloConfig, zalo_auto_scan: !zaloConfig.zalo_auto_scan })}
+                      className={`w-12 h-6 rounded-full p-1 transition-all ${zaloConfig.zalo_auto_scan ? 'bg-primary flex justify-end' : 'bg-slate-200 flex justify-start'}`}
                     >
                       <span className="w-4 h-4 bg-white rounded-full shadow-sm" />
                     </button>
                   </div>
 
                   <button 
-                    onClick={() => alert('Cập nhật cấu hình kết nối Zalo thành công!')}
-                    className="w-full py-3 bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all pt-3.5"
+                    onClick={handleSaveConfig}
+                    disabled={actionLoading === 'save_zalo_config'}
+                    className="w-full py-3 bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all pt-3.5 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
+                    {actionLoading === 'save_zalo_config' && <Loader2 className="w-4 h-4 animate-spin" />}
                     LƯU CẤU HÌNH KẾT NỐI
                   </button>
 
