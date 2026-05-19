@@ -519,7 +519,7 @@ export default function LandingPage() {
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg border border-pink-100 animate-bounce mb-4">
                 <Heart className="w-10 h-10 text-rose-500 fill-rose-100" />
               </div>
-              <h3 className="text-xl md:text-3xl font-serif font-black text-slate-800 mb-2">Trải Nghiệm Thư Giãn Chuẩn Hoàng Gia</h3>
+              <h3 className="text-xl md:text-3xl font-serif font-black text-slate-800 mb-2">Trải nghiệm liệu trình thư giãn chuẩn Nhật Bản</h3>
               <p className="text-xs md:text-sm text-slate-500 font-semibold max-w-lg mb-6">Không gian tinh tế, thảo dược 100% tự nhiên cùng tay nghề y đức nâng niu nâng niu giấc ngủ của mẹ và nụ cười của bé.</p>
               
               <div className="flex flex-wrap items-center justify-center gap-6 text-slate-600 text-[10px] font-black uppercase tracking-widest">
@@ -1109,7 +1109,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Hotline đặt lịch 24/7</span>
-                    <a href="tel:19001234" className="text-slate-800 font-black text-sm hover:text-primary transition-colors">1900 1234 — 0987 654 321</a>
+                    <a href="tel:0865701493" className="text-slate-800 font-black text-sm hover:text-primary transition-colors">0865 701 493</a>
                   </div>
                 </div>
 
@@ -1119,7 +1119,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Địa chỉ cơ sở chính</span>
-                    <p className="text-slate-800 font-black text-sm">Biệt Thự B12, Đường Hoa Lan, Quận Phú Nhuận, TP. HCM</p>
+                    <p className="text-slate-800 font-black text-sm">Vinhomes Grand Park & Quận 7, TPHCM</p>
                   </div>
                 </div>
 
@@ -1339,11 +1339,11 @@ export default function LandingPage() {
               <ul className="space-y-4 text-xs text-slate-400 font-semibold">
                 <li className="flex gap-3">
                   <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
-                  <span>Biệt Thự B12, Đường Hoa Lan, Quận Phú Nhuận, TP. Hồ Chí Minh</span>
+                  <span>Vinhomes Grand Park & Quận 7, TPHCM</span>
                 </li>
                 <li className="flex gap-3">
                   <Phone className="w-4 h-4 text-rose-500 shrink-0" />
-                  <span>Hotline: 1900 1234 - 0987 654 321</span>
+                  <span>Hotline: 0865 701 493</span>
                 </li>
                 <li className="flex gap-3">
                   <Mail className="w-4 h-4 text-rose-500 shrink-0" />
