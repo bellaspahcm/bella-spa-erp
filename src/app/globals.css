@@ -59,19 +59,19 @@ html {
   
   --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
   
-  --text-xs: 12px;
-  --text-sm: 13px;
-  --text-base: 14px;
-  --text-lg: 16px;
-  --text-xl: 18px;
-  --text-2xl: 20px;
-  --text-3xl: 22px;
-  --text-4xl: 24px;
-  --text-5xl: 24px;
-  --text-6xl: 24px;
-  --text-7xl: 24px;
-  --text-8xl: 24px;
-  --text-9xl: 24px;
+  --text-xs: 9.6px;
+  --text-sm: 10.4px;
+  --text-base: 11.2px;
+  --text-lg: 12.8px;
+  --text-xl: 14.4px;
+  --text-2xl: 16px;
+  --text-3xl: 17.6px;
+  --text-4xl: 19.2px;
+  --text-5xl: 19.2px;
+  --text-6xl: 19.2px;
+  --text-7xl: 19.2px;
+  --text-8xl: 19.2px;
+  --text-9xl: 19.2px;
   
   --radius-xl: 1.5rem;
   --radius-2xl: 2rem;
@@ -81,7 +81,7 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 11.2px;
   font-weight: 400;
   line-height: 1.5;
   background-image: 

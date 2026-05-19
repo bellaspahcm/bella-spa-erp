@@ -456,18 +456,29 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="text-[2.5rem] sm:text-[3.5rem] md:text-[4.75rem] font-serif font-bold text-slate-800 tracking-normal leading-[1.25] max-w-5xl mx-auto animate-fade-in"
+            className="text-[2.4rem] sm:text-[3.6rem] md:text-[5.2rem] font-serif font-black text-slate-900 tracking-tight leading-[1.1] max-w-5xl mx-auto animate-fade-in"
           >
-            Quản trị <span className="text-primary font-serif font-bold">Spa Mẹ & Bé</span> toàn diện <br />
-            và thông minh
+            Bella Spa - Chăm Sóc <span className="text-gradient-pink relative">Mẹ & Bé <span className="absolute bottom-2.5 left-0 w-full h-[6px] bg-rose-200/40 rounded-full -z-10" /></span>
           </motion.h1>
+
+          {/* Slogan */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="mt-8 mb-10"
+          >
+            <p className="font-handwriting text-primary text-[2.4rem] sm:text-[3.4rem] md:text-[4.4rem] font-medium tracking-wide drop-shadow-sm select-none">
+              Chăm Sóc Trọn Yêu Thương
+            </p>
+          </motion.div>
 
           {/* Subtitle Description */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-sm sm:text-base md:text-lg text-slate-500 font-medium max-w-3xl mx-auto leading-relaxed mt-8"
+            className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold max-w-3xl mx-auto leading-relaxed"
           >
             Hệ thống chăm sóc và phục hồi sức khỏe chuẩn y khoa chuyên sâu dành cho Mẹ Bầu, Mẹ Sau Sinh và Bé Yêu tại nhà hoặc tại Spa. Đồng hành cùng hàng triệu gia đình nâng niu những khoảnh khắc tuyệt diệu nhất.
           </motion.p>
