@@ -456,9 +456,9 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="text-4xl sm:text-5xl md:text-7xl font-serif font-black text-slate-900 tracking-tight leading-tight max-w-5xl mx-auto"
+            className="text-[3rem] sm:text-[4.5rem] md:text-[6.5rem] font-serif font-black text-slate-900 tracking-tight leading-[1.1] max-w-5xl mx-auto animate-fade-in"
           >
-            Bella Spa - Chăm Sóc <span className="text-gradient-pink relative">Mẹ & Bé <span className="absolute bottom-1.5 left-0 w-full h-[6px] bg-rose-200/40 rounded-full -z-10" /></span>
+            Bella Spa - Chăm Sóc <span className="text-gradient-pink relative">Mẹ & Bé <span className="absolute bottom-2.5 left-0 w-full h-[8px] bg-rose-200/40 rounded-full -z-10" /></span>
           </motion.h1>
 
           {/* Slogan */}
@@ -466,9 +466,9 @@ export default function LandingPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="mt-6 mb-8"
+            className="mt-8 mb-10"
           >
-            <p className="font-handwriting text-primary text-4xl sm:text-5xl md:text-6xl font-medium tracking-wide drop-shadow-sm select-none">
+            <p className="font-handwriting text-primary text-[3rem] sm:text-[4.25rem] md:text-[5.5rem] font-medium tracking-wide drop-shadow-sm select-none">
               Chăm Sóc Trọn Yêu Thương
             </p>
           </motion.div>
