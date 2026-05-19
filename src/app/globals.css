@@ -8,6 +8,10 @@ html {
   font-family: var(--font-handwriting), cursive;
 }
 
+.font-serif {
+  font-family: var(--font-serif), Georgia, serif !important;
+}
+
 :root {
   /* Option C: Deep Rose Luxury (Refined & Softened) */
   --primary: #9D174D;
@@ -54,7 +58,6 @@ html {
   --color-pink-deep: #881337;
   
   --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
-  --font-serif: var(--font-serif), Georgia, serif;
   
   --text-xs: 12px;
   --text-sm: 13px;
