@@ -445,9 +445,9 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: -15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-pink-100 text-primary text-[10px] font-black tracking-widest uppercase mb-6 shadow-sm border border-rose-200/50"
+            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-pink-100/60 text-primary text-[10px] font-black tracking-widest uppercase mb-6 shadow-sm border border-rose-200/50"
           >
-            <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+            <Zap className="w-3.5 h-3.5 text-primary fill-current" />
             PHIÊN BẢN 2.0 ĐÃ SẴN SÀNG
           </motion.div>
 
@@ -456,29 +456,18 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="text-[3rem] sm:text-[4.5rem] md:text-[6.5rem] font-serif font-black text-slate-900 tracking-tight leading-[1.1] max-w-5xl mx-auto animate-fade-in"
+            className="text-[2.5rem] sm:text-[3.5rem] md:text-[4.75rem] font-serif font-bold text-slate-800 tracking-normal leading-[1.25] max-w-5xl mx-auto animate-fade-in"
           >
-            Bella Spa - Chăm Sóc <span className="text-gradient-pink relative">Mẹ & Bé <span className="absolute bottom-2.5 left-0 w-full h-[8px] bg-rose-200/40 rounded-full -z-10" /></span>
+            Quản trị <span className="text-primary font-serif font-bold">Spa Mẹ & Bé</span> toàn diện <br />
+            và thông minh
           </motion.h1>
-
-          {/* Slogan */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="mt-8 mb-10"
-          >
-            <p className="font-handwriting text-primary text-[3rem] sm:text-[4.25rem] md:text-[5.5rem] font-medium tracking-wide drop-shadow-sm select-none">
-              Chăm Sóc Trọn Yêu Thương
-            </p>
-          </motion.div>
 
           {/* Subtitle Description */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-sm sm:text-base md:text-lg text-slate-500 font-medium max-w-3xl mx-auto leading-relaxed"
+            className="text-sm sm:text-base md:text-lg text-slate-500 font-medium max-w-3xl mx-auto leading-relaxed mt-8"
           >
             Hệ thống chăm sóc và phục hồi sức khỏe chuẩn y khoa chuyên sâu dành cho Mẹ Bầu, Mẹ Sau Sinh và Bé Yêu tại nhà hoặc tại Spa. Đồng hành cùng hàng triệu gia đình nâng niu những khoảnh khắc tuyệt diệu nhất.
           </motion.p>
@@ -587,10 +576,11 @@ export default function LandingPage() {
                 <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-square flex items-center justify-center p-8 text-center relative group">
                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/newborn_mother_love.png")' }} />
                   <div className="absolute inset-0 bg-black/40 transition-colors duration-300 group-hover:bg-black/45" />
-                  <div className="relative z-10">
+                  <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
+                  <div className="relative z-10 p-2">
                     <Heart className="w-12 h-12 text-rose-300 mx-auto mb-3 fill-rose-300/30 animate-pulse" />
-                    <h5 className="font-serif font-black text-white text-base">Chăm sóc từ tâm</h5>
-                    <p className="text-[10px] text-rose-100 mt-1.5 font-bold leading-normal">Tận tụy chăm chút từng bữa ăn giấc ngủ của mẹ & bé</p>
+                    <h5 className="font-serif font-black text-white text-[1.2rem]">Chăm sóc từ tâm</h5>
+                    <p className="text-[8px] text-rose-100 mt-1.5 font-bold leading-normal">Tận tụy chăm chút từng bữa ăn giấc ngủ của mẹ & bé</p>
                   </div>
                 </div>
 
@@ -598,13 +588,14 @@ export default function LandingPage() {
                 <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] flex flex-col justify-end p-6 text-white text-left relative group">
                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/newborn_family_happy.png")' }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                  <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
                   <div className="absolute inset-x-0 top-0 p-6 flex justify-between items-start z-10">
                     <Award className="w-8 h-8 text-amber-400" />
                     <span className="text-[9px] bg-white/10 backdrop-blur px-2.5 py-1 rounded-full font-black uppercase tracking-wider">Premium</span>
                   </div>
-                  <div className="relative z-10">
-                    <h5 className="font-serif font-black text-lg mb-1 leading-tight text-white">Hoàng Gia</h5>
-                    <p className="text-[10px] text-rose-100 font-bold leading-normal">Không gian và trang thiết bị chuẩn spa y khoa cao cấp bậc nhất.</p>
+                  <div className="relative z-10 p-2">
+                    <h5 className="font-serif font-black text-[1.4rem] mb-1 leading-tight text-white">Hoàng Gia</h5>
+                    <p className="text-[8px] text-rose-100 font-bold leading-normal">Không gian và trang thiết bị chuẩn spa y khoa cao cấp bậc nhất.</p>
                   </div>
                 </div>
               </div>
@@ -614,10 +605,11 @@ export default function LandingPage() {
                 <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] flex flex-col justify-end p-6 text-left relative group">
                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/home_baby_care.png")' }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent" />
-                  <div className="relative z-10">
+                  <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
+                  <div className="relative z-10 p-2 text-white">
                     <Clock className="w-8 h-8 text-rose-300 mb-4" />
-                    <h5 className="font-serif font-black text-white text-base mb-1">Thời gian linh hoạt</h5>
-                    <p className="text-[10px] text-rose-100 font-bold leading-normal">Đặt lịch 24/7. Điều phối kỹ thuật viên đến tận nhà chăm sóc đúng giờ.</p>
+                    <h5 className="font-serif font-black text-white text-[1.2rem] mb-1">Thời gian linh hoạt</h5>
+                    <p className="text-[8px] text-rose-100 font-bold leading-normal">Đặt lịch 24/7. Điều phối kỹ thuật viên đến tận nhà chăm sóc đúng giờ.</p>
                   </div>
                 </div>
 
@@ -626,10 +618,11 @@ export default function LandingPage() {
                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/newborn_baby_hand.png")' }} />
                   <div className="absolute inset-0 bg-rose-600/75 mix-blend-multiply transition-colors duration-300 group-hover:bg-rose-650/80" />
                   <div className="absolute inset-0 bg-gradient-to-br from-rose-900/40 via-transparent to-black/20" />
-                  <div className="relative z-10 text-white">
-                    <h4 className="text-4xl font-serif font-black mb-1">5★</h4>
+                  <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
+                  <div className="relative z-10 text-white p-2">
+                    <h4 className="text-[3.25rem] font-serif font-black mb-1 leading-none">5★</h4>
                     <span className="text-[9px] font-black uppercase tracking-widest block text-rose-100">Đánh Giá Phản Hồi</span>
-                    <p className="text-[10px] text-white/95 mt-1.5 font-bold leading-normal">99.8% các mẹ cực kỳ hài lòng với chất lượng chăm sóc.</p>
+                    <p className="text-[8px] text-white/95 mt-1.5 font-bold leading-normal">99.8% các mẹ cực kỳ hài lòng với chất lượng chăm sóc.</p>
                   </div>
                 </div>
               </div>
