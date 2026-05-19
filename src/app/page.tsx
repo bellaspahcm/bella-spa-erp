@@ -332,7 +332,7 @@ export default function LandingPage() {
               </div>
               <div className="flex flex-col">
                 <span className="text-base font-black text-slate-800 tracking-wider uppercase leading-none">Bella Spa</span>
-                <span className="text-[10px] text-rose-500 font-extrabold uppercase tracking-widest leading-none mt-1">Mẹ & Bé ERP</span>
+                <span className="text-[10px] text-rose-500 font-extrabold uppercase tracking-widest leading-none mt-1">Mẹ & Bé</span>
               </div>
             </Link>
 
@@ -456,7 +456,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
-            className="text-[2.4rem] sm:text-[3.6rem] md:text-[5.2rem] font-serif font-black text-slate-900 tracking-tight leading-[1.1] max-w-5xl mx-auto animate-fade-in"
+            className="text-[1.7rem] sm:text-[2.5rem] md:text-[3.6rem] font-serif font-black text-slate-900 tracking-tight leading-[1.1] max-w-5xl mx-auto animate-fade-in"
           >
             Bella Spa - Chăm Sóc <span className="text-gradient-pink relative">Mẹ & Bé <span className="absolute bottom-2.5 left-0 w-full h-[6px] bg-rose-200/40 rounded-full -z-10" /></span>
           </motion.h1>
@@ -732,7 +732,7 @@ export default function LandingPage() {
           </p>
 
           {/* Navigation Tabs */}
-          <div className="inline-flex p-1.5 bg-rose-50/50 backdrop-blur rounded-full border border-rose-100/50 mb-16 flex-wrap justify-center">
+          <div className="inline-flex p-1.5 bg-rose-50/50 backdrop-blur rounded-3xl sm:rounded-full border border-rose-100/50 mb-16 flex-wrap justify-center">
             <button
               onClick={() => setActiveTab(' bầu')}
               className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === ' bầu' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
@@ -771,21 +771,21 @@ export default function LandingPage() {
                   transition={{ duration: 0.4 }}
                   className="bg-white rounded-[2.5rem] shadow-xl border border-rose-50 overflow-hidden flex flex-col justify-between hover:border-primary/20 transition-all group hover:shadow-2xl relative"
                 >
-                  {pkg.tag && (
-                    <span className="absolute top-6 right-6 bg-pink-100 text-primary text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-rose-200/50">
-                      {pkg.tag}
-                    </span>
-                  )}
-                  
-                  <div className="p-8 sm:p-10">
-                    <div className="flex justify-between items-start gap-4 mb-4">
+                  <div className="p-6 sm:p-10">
+                    {pkg.tag && (
+                      <span className="inline-block bg-pink-100 text-primary text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-rose-200/50 mb-3 w-fit">
+                        {pkg.tag}
+                      </span>
+                    )}
+                    
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                       <div>
                         <h4 className="text-xl font-serif font-black text-slate-800 tracking-tight group-hover:text-primary transition-colors">{pkg.name}</h4>
                         <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
                           <Clock className="w-3 h-3" /> {pkg.duration} / buổi
                         </span>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0">
                         <span className="text-2xl font-serif font-black text-primary block">{pkg.price}</span>
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Trọn gói</span>
                       </div>
@@ -808,7 +808,7 @@ export default function LandingPage() {
                     </ul>
                   </div>
 
-                  <div className="p-8 sm:p-10 pt-0">
+                  <div className="p-6 sm:p-10 pt-0">
                     <button
                       onClick={() => {
                         setBookingService(pkg.name);
@@ -1002,12 +1002,12 @@ export default function LandingPage() {
                   <h3 className="text-xl font-serif font-black text-slate-800">Bella Spa đề xuất liệu trình dành cho mẹ:</h3>
                   
                   <div className="bg-gradient-to-br from-rose-50/50 to-pink-50/50 border border-rose-100 rounded-3xl p-6 sm:p-8 max-w-xl mx-auto text-left relative">
-                    <div className="flex justify-between items-start gap-4 mb-3">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-3">
                       <div>
                         <span className="text-[9px] bg-primary text-white font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-2 inline-block">ĐỀ XUẤT TỐI ƯU</span>
                         <h4 className="text-lg font-serif font-black text-slate-800">{recommendedPackage.name}</h4>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0">
                         <span className="text-xl font-serif font-black text-primary block">{recommendedPackage.price}</span>
                         <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Trọn gói liệu trình</span>
                       </div>
