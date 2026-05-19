@@ -15,7 +15,11 @@ import {
   MessageSquare,
   Sparkles,
   RefreshCw,
-  X
+  X,
+  Copy,
+  QrCode,
+  CreditCard,
+  AlertCircle
 } from 'lucide-react';
 import { getCustomerBookingByToken, submitCustomerRating } from '@/services/customer-actions';
 import { toast } from 'sonner';
@@ -29,6 +33,12 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentTab, setPaymentTab] = useState<'deposit' | 'full'>('deposit');
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Đã sao chép vào bộ nhớ tạm');
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -152,9 +162,188 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
              </p>
           </div>
         </div>
-      </div>
-
       <div className="px-6 mt-10 space-y-8">
+        {/* Premium VietQR Dynamic Payment Card */}
+        {(() => {
+          const fullPrice = booking.full_price || 0;
+          const discountPercent = booking.discount_percent || 0;
+          const priceAfterDiscount = fullPrice * (1 - discountPercent / 100);
+          
+          const confirmedRevenues = booking.revenue?.filter((r: any) => r.status === 'confirmed') || [];
+          const totalPaid = confirmedRevenues.reduce((sum: number, r: any) => sum + (Number(r.amount) || 0), 0);
+          
+          const remainingDebt = priceAfterDiscount - totalPaid;
+          const hasOutstandingDebt = remainingDebt > 0;
+
+          if (!hasOutstandingDebt) {
+            return (
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-[32px] p-6 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-100 flex-shrink-0">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Đã thanh toán hoàn tất</h4>
+                  <p className="text-xs text-slate-500 font-bold mt-1">
+                    Cảm ơn chị! Lịch hẹn này đã được thanh toán đầy đủ ({formatCurrency(priceAfterDiscount)}).
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
+          // Determine bank info
+          const bankCode = booking.tenants?.qr_bank_code;
+          const accountNumber = booking.tenants?.qr_account_number;
+          const accountName = booking.tenants?.qr_account_name;
+
+          if (!bankCode || !accountNumber) {
+            return (
+              <div className="bg-amber-50 border border-amber-200/60 rounded-[32px] p-6 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 bg-amber-400 text-white rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Thông báo thanh toán</h4>
+                  <p className="text-xs text-slate-600 font-semibold mt-1">
+                    Spa chưa thiết lập tài khoản nhận thanh toán QR Code. Chị vui lòng liên hệ hotline <strong className="text-primary">0865 701 493</strong> để được hỗ trợ chuyển khoản thủ công.
+                  </p>
+                </div>
+              </div>
+            );
+          }
+
+          // Calculate payment amount based on tab
+          const isDepositPending = booking.status === 'deposit_pending';
+          const depositAmount = booking.deposit_amount || 0;
+          
+          let amountToPay = remainingDebt;
+          if (isDepositPending && paymentTab === 'deposit') {
+            amountToPay = depositAmount;
+          }
+
+          const transferMemo = `BELLA ${booking.booking_number}`;
+          const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact.png?amount=${amountToPay}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountName || '')}`;
+
+          return (
+            <div className="bg-white/80 backdrop-blur-md rounded-[32px] p-6 border border-pink-100/50 shadow-lg shadow-pink-50/40 space-y-6">
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+                <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Thanh toán VietQR động</h3>
+                  <p className="text-[10px] text-slate-400 font-bold">Hệ thống gạch nợ tự động trong 30 giây</p>
+                </div>
+              </div>
+
+              {isDepositPending && (
+                <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                  <button
+                    onClick={() => setPaymentTab('deposit')}
+                    className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+                      paymentTab === 'deposit'
+                        ? 'bg-white text-primary shadow-md border border-pink-50'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Đặt cọc ({formatCurrency(depositAmount)})
+                  </button>
+                  <button
+                    onClick={() => setPaymentTab('full')}
+                    className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
+                      paymentTab === 'full'
+                        ? 'bg-white text-primary shadow-md border border-pink-50'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Trọn gói ({formatCurrency(remainingDebt)})
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                {/* QR Code */}
+                <div className="flex flex-col items-center justify-center bg-slate-50/50 border border-slate-100 p-6 rounded-[2rem] relative">
+                  <div className="w-[180px] h-[180px] bg-white rounded-3xl p-3 border border-pink-100 flex items-center justify-center shadow-md shadow-pink-50 relative overflow-hidden group">
+                    <img
+                      src={qrUrl}
+                      alt="VietQR Code"
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
+                      <QrCode className="w-10 h-10 text-primary/35 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center gap-1.5 text-[10px] font-black text-rose-500 bg-rose-50 border border-rose-100/50 px-3 py-1.5 rounded-full uppercase tracking-wider animate-pulse">
+                    <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                    Đang chờ quét mã...
+                  </div>
+                </div>
+
+                {/* Transfer Info */}
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Số tiền thanh toán</span>
+                    <span className="text-2xl font-black text-primary block leading-none">{formatCurrency(amountToPay)}</span>
+                  </div>
+
+                  <div className="bg-slate-50 border border-slate-100/50 rounded-2xl p-4 space-y-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Ngân hàng</span>
+                        <strong className="text-slate-800 font-extrabold">{bankCode}</strong>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-200/50 px-2 py-1 rounded">Chuyển nhanh 24/7</span>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs border-t border-slate-200/40 pt-2.5">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Số tài khoản</span>
+                        <strong className="text-slate-800 font-extrabold tracking-wide">{accountNumber}</strong>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(accountNumber || '')}
+                        className="p-2 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-800 active:scale-95 transition-all"
+                        title="Sao chép số tài khoản"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs border-t border-slate-200/40 pt-2.5">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Chủ tài khoản</span>
+                        <strong className="text-slate-800 font-extrabold">{accountName}</strong>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs border-t border-slate-200/40 pt-2.5 bg-rose-50/40 p-2 rounded-xl border border-rose-100/30">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block text-rose-500/80">Nội dung chuyển khoản</span>
+                        <strong className="text-rose-500 font-black text-sm tracking-wider">{transferMemo}</strong>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(transferMemo)}
+                        className="p-2 hover:bg-rose-100 rounded-lg text-rose-500 active:scale-95 transition-all"
+                        title="Sao chép nội dung chuyển khoản"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-rose-50/30 rounded-2xl border border-rose-100/40 text-[10px] text-slate-500 font-bold leading-relaxed flex gap-2">
+                <span className="text-rose-500 font-black text-xs">💡</span>
+                <span>
+                  <strong>Hướng dẫn:</strong> Quét mã QR trên bằng ứng dụng ngân hàng hoặc chuyển khoản chính xác <strong>Số tài khoản</strong>, <strong>Nội dung</strong> và <strong>Số tiền</strong> ở trên để hệ thống tự động gạch nợ ngay lập tức.
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Review Request Banner - Highly Prominent Call to Action */}
         {pendingReviewSession && (
           <motion.div 
@@ -350,5 +539,6 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
          </a>
       </div>
     </div>
-  );
+  </div>
+);
 }

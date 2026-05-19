@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 All Phases (Phases 1-10) Complete | Real Zalo OA/ZNS & Cron Automation Fully Integrated
+Status: 🟡 Phase 11 - Tích hợp Cổng thanh toán VietQR tự động đối soát (In Progress) | Real Zalo OA/ZNS & Cron Automation Fully Integrated
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -117,4 +117,22 @@ Status: 🟢 All Phases (Phases 1-10) Complete | Real Zalo OA/ZNS & Cron Automat
 - [x] **Promo / Booking Image Update**: Successfully replaced the booking promotion image (`bella_real_1.jpg` next to the appointment booking form) with the brand-approved customer-technician care image.
 - [x] **Mobile Drawer & Zoom Optimization**: Restrained the desktop `zoom: 0.9` layout configuration in `globals.css` using screen-width media queries (`min-width: 768px`) to ensure mobile displays at a natural 100% scale. Synchronized the mobile drawer menu buttons (`ĐĂNG NHẬP` and `DÙNG THỬ NGAY`) with uppercase PC styles, and forced the navigation bar to transition to a premium white frosted glass backdrop with shadow when the mobile drawer is toggled active.
 - [x] **Deployments**: Verified 100% correct Turbopack builds and pushed updates directly to GitHub/Vercel.
+
+## 🟡 Phase 11: Tích hợp Cổng thanh toán VietQR động tự động đối soát (In Progress)
+- [x] **Database Migration**: Bổ sung các cột thông tin ngân hàng của Spa (`qr_bank_code`, `qr_account_number`, `qr_account_name`) vào bảng `tenants` để hỗ trợ cấu hình động từ giao diện Admin (Đã chạy migration `20260520000001_add_bank_details_to_tenants.sql`).
+- [x] **Interactive Admin Settings**: Tích hợp các trường nhập thông tin ngân hàng vào trang **Cấu hình chung** ở `/dashboard/settings` và tạo Server Actions `tenant-actions.ts` để lưu trữ đồng bộ.
+- [/] **Dynamic VietQR Client Generation**: 
+  - Tích hợp sinh mã QR động tự động bằng API `img.vietqr.io` tại các màn hình:
+    - [ ] Khi Admin tạo lịch hẹn mới hoặc xác nhận đặt cọc trên Dashboard Admin.
+    - [x] Trên **Cổng khách hàng (Customer Portal)** để khách hàng có thể quét mã chuyển khoản đặt cọc/thanh toán trực tiếp (đã tích hợp với nút copy tiện dụng).
+  - Mã QR tự điền chính xác: Số tài khoản, Ngân hàng, Tên chủ tài khoản, Số tiền còn nợ (hoặc cọc), và đặc biệt là **Nội dung chuyển khoản tự động** theo mẫu chuẩn (ví dụ: `BELLA [Mã Booking]`).
+- [ ] **Automated Payment Webhook Gateway (`/api/webhooks/payment`)**:
+  - Xây dựng một Next.js Route Webhook để nhận tín hiệu chuyển khoản thành công từ dịch vụ đối soát biến động số dư ngân hàng (như Casso/SePay/PayOS).
+  - Phân tích cú pháp nội dung chuyển khoản để tự động tìm kiếm `booking_number` tương ứng trong bảng `bookings`.
+  - **Tự động đối soát**:
+    - Cập nhật trạng thái booking thành `confirmed` (nếu là tiền cọc).
+    - Tạo bản ghi mới trong bảng `revenue` ghi nhận số tiền thực nhận với phương thức thanh toán là `VietQR`.
+    - Ghi nhật ký vào `audit_logs` và tạo `Notification` cho Admin về giao dịch chuyển khoản thành công.
+- [ ] **Git Synchronization & Vercel Production Build Verification**.
+
 

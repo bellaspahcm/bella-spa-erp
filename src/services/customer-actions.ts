@@ -35,6 +35,16 @@ export async function getCustomerBookingByToken(token?: string) {
           full_name,
           avatar_url
         )
+      ),
+      tenants (
+        id,
+        name,
+        qr_bank_code,
+        qr_account_number,
+        qr_account_name
+      ),
+      revenue (
+        *
       )
     `);
 

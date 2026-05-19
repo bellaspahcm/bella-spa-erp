@@ -19,10 +19,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCustomers, createCustomer } from '@/services/customer-actions';
-import { createBooking, getDraftBooking } from '@/services/booking-actions';
+import { createBooking, getDraftBooking, getBookingDetailsWithPayment } from '@/services/booking-actions';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { formatNumberWithSeparator, cn, getLocalDateString } from '@/lib/utils';
+import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
 
 
 interface BookingModalProps {
@@ -41,6 +42,19 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // VietQR deposit states
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrModalData, setQrModalData] = useState<{ bookingNumber: string; amount: number; tenantInfo: any } | null>(null);
+
+  const handleCloseQrModal = () => {
+    setShowQrModal(false);
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      onClose();
+    }
+  };
 
   const [newCustomer, setNewCustomer] = useState({
     name_mother: '',
@@ -265,6 +279,25 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       if (result?.error) {
         toast.error('Lỗi tạo lịch hẹn: ' + result.error);
       } else {
+        const booking = result?.data;
+        if (booking && booking.status === 'deposit_pending' && Number(booking.deposit_amount || 0) > 0) {
+          toast.success('Tạo lịch hẹn thành công! Đang tải mã QR đặt cọc...');
+          try {
+            const payDetails = await getBookingDetailsWithPayment(booking.id);
+            if (payDetails.data) {
+              setQrModalData({
+                bookingNumber: payDetails.data.booking_number,
+                amount: Number(payDetails.data.deposit_amount || 0),
+                tenantInfo: payDetails.data.tenants || null
+              });
+              setShowQrModal(true);
+              return; // Dừng ở đây để hiển thị modal QR, không đóng BookingModal hay gọi onSuccess ngay lập tức
+            }
+          } catch (err) {
+            console.error("Error loading deposit QR:", err);
+          }
+        }
+
         toast.success('Tạo lịch hẹn thành công!');
         if (onSuccess) {
           await onSuccess();
@@ -283,7 +316,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0 }}
@@ -665,5 +699,17 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
         </motion.div>
       </div>
     </AnimatePresence>
+
+    {/* VietQR Payment Modal for Deposit */}
+    {qrModalData && (
+      <VietQRPaymentModal
+        isOpen={showQrModal}
+        onClose={handleCloseQrModal}
+        bookingNumber={qrModalData.bookingNumber}
+        amount={qrModalData.amount}
+        tenantInfo={qrModalData.tenantInfo}
+      />
+    )}
+  </>
   );
 }

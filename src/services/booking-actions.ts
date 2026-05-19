@@ -1677,6 +1677,36 @@ export async function generateShareToken(bookingId: string) {
   return { data: tokenData };
 }
 
+export async function getBookingDetailsWithPayment(bookingId: string) {
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(`
+      *,
+      tenants (
+        id,
+        name,
+        qr_bank_code,
+        qr_account_number,
+        qr_account_name
+      ),
+      revenue (
+        *
+      )
+    `)
+    .eq('id', bookingId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching booking payment details:', error);
+    return { error: error.message };
+  }
+
+  return { data };
+}
+
 
 
 
