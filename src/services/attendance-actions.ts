@@ -291,3 +291,252 @@ export async function adminUpdateKtvHrProfile(
   revalidatePath('/dashboard/salary');
   return { success: true };
 }
+
+/** KTV Action: Đăng ký nghỉ phép */
+export async function submitKTVLeaveRequest(payload: {
+  leave_date: string;
+  leave_type: 'full_day' | 'morning' | 'afternoon';
+  reason?: string;
+}) {
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ktv') {
+    return { success: false, error: 'Không có quyền thực hiện' };
+  }
+
+  let tenantId = user.tenant_id;
+  if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+  // Check if there is already a request for this date
+  const { data: existing } = await supabase
+    .from('staff_leaves')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('leave_date', payload.leave_date)
+    .maybeSingle();
+
+  if (existing) {
+    return { success: false, error: 'Bạn đã đăng ký nghỉ phép ngày hôm nay rồi!' };
+  }
+
+  const { data, error } = await supabase
+    .from('staff_leaves')
+    .insert({
+      user_id: user.id,
+      leave_date: payload.leave_date,
+      leave_type: payload.leave_type,
+      reason: payload.reason || '',
+      status: 'pending',
+      tenant_id: tenantId
+    })
+    .select()
+    .single();
+
+  if (error) return { success: false, error: error.message };
+
+  await recordAuditLog({
+    action: 'INSERT',
+    table_name: 'staff_leaves',
+    record_id: data.id,
+    new_data: { user_id: user.id, leave_date: payload.leave_date, leave_type: payload.leave_type }
+  });
+
+  revalidatePath('/ktv/dashboard');
+  return { success: true, data };
+}
+
+/** KTV Action: Lấy lịch sử nghỉ phép */
+export async function getKTVLeaveHistory() {
+  const supabase = (await createClient()) as any;
+  const user = await getCurrentUser();
+  if (!user || user.role !== 'ktv') return [];
+
+  const { data, error } = await supabase
+    .from('staff_leaves')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('leave_date', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching leave history:', error);
+    return [];
+  }
+  return data || [];
+}
+
+/** Admin Action: Lấy tất cả đơn nghỉ phép đang chờ duyệt */
+export async function getPendingLeaveRequests() {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  if (!currentUser || currentUser.role === 'ktv') return [];
+
+  const { data, error } = await supabase
+    .from('staff_leaves')
+    .select(`
+      *,
+      users!staff_leaves_user_id_fkey (
+        id,
+        full_name,
+        role
+      )
+    `)
+    .eq('status', 'pending')
+    .order('leave_date', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching pending leave requests:', error);
+    return [];
+  }
+  return data || [];
+}
+
+/** Admin Action: Lấy tất cả các ca bị trùng/xung đột của KTV trong ngày nghỉ */
+export async function getKTVConflictSessions(
+  ktvId: string,
+  dateStr: string,
+  leaveType: 'full_day' | 'morning' | 'afternoon'
+) {
+  const supabase = (await createClient()) as any;
+  
+  // Lấy danh sách các ca trị liệu được đặt trước của KTV này vào ngày đó
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select(`
+      *,
+      bookings!inner (
+        id,
+        booking_number,
+        package_name,
+        customer_id,
+        assigned_ktv_id,
+        preferred_time,
+        customers (
+          name_mother,
+          phone,
+          address
+        )
+      )
+    `)
+    .eq('bookings.assigned_ktv_id', ktvId)
+    .eq('status', 'scheduled')
+    .eq('assigned_date', dateStr);
+
+  if (error) {
+    console.error('Error querying conflict sessions:', error);
+    return [];
+  }
+
+  const sessions = data || [];
+  
+  // Lọc theo ca sáng/chiều nếu loại nghỉ là nửa ngày
+  if (leaveType === 'morning') {
+    return sessions.filter((s: any) => {
+      const time = s.assigned_time || s.bookings?.preferred_time || '09:00';
+      const hour = parseInt(time.split(':')[0], 10);
+      return hour < 13;
+    });
+  } else if (leaveType === 'afternoon') {
+    return sessions.filter((s: any) => {
+      const time = s.assigned_time || s.bookings?.preferred_time || '14:00';
+      const hour = parseInt(time.split(':')[0], 10);
+      return hour >= 13;
+    });
+  }
+
+  return sessions;
+}
+
+/** Admin Action: Phê duyệt đơn nghỉ phép của KTV và xử lý chuyển ca */
+export async function approveLeaveRequest(
+  leaveId: string,
+  reassignments?: { sessionLogId: string; newKtvId: string }[]
+) {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant') {
+    return { success: false, error: 'Không có quyền thực hiện' };
+  }
+
+  // 1. Lấy thông tin đơn nghỉ phép
+  const { data: leave, error: fetchErr } = await supabase
+    .from('staff_leaves')
+    .select('*')
+    .eq('id', leaveId)
+    .single();
+
+  if (fetchErr || !leave) {
+    return { success: false, error: 'Đơn nghỉ phép không tồn tại' };
+  }
+
+  // 2. Thực hiện điều chuyển ca nếu có cấu hình
+  if (reassignments && reassignments.length > 0) {
+    for (const r of reassignments) {
+      const { error: reassignErr } = await supabase
+        .from('session_logs')
+        .update({
+          completed_by_ktv_id: r.newKtvId,
+          notes: `[🔄 Thay ca] Làm thay cho KTV chính`
+        })
+        .eq('id', r.sessionLogId);
+
+      if (reassignErr) {
+        console.error('Error reassigning session:', r.sessionLogId, reassignErr);
+        return { success: false, error: 'Có lỗi xảy ra khi điều chuyển ca làm việc' };
+      }
+    }
+  }
+
+  // 3. Cập nhật trạng thái đơn nghỉ thành approved
+  const { error: updateErr } = await supabase
+    .from('staff_leaves')
+    .update({
+      status: 'approved',
+      approved_by: currentUser.id
+    })
+    .eq('id', leaveId);
+
+  if (updateErr) return { success: false, error: updateErr.message };
+
+  await recordAuditLog({
+    action: 'UPDATE',
+    table_name: 'staff_leaves',
+    record_id: leaveId,
+    new_data: { status: 'approved', approved_by: currentUser.id }
+  });
+
+  revalidatePath('/dashboard/sessions');
+  revalidatePath('/ktv/dashboard');
+  return { success: true };
+}
+
+/** Admin Action: Từ chối đơn nghỉ phép */
+export async function rejectLeaveRequest(leaveId: string, rejectReason?: string) {
+  const supabase = (await createClient()) as any;
+  const currentUser = await getCurrentUser();
+  if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant') {
+    return { success: false, error: 'Không có quyền thực hiện' };
+  }
+
+  const { error } = await supabase
+    .from('staff_leaves')
+    .update({
+      status: 'rejected',
+      approved_by: currentUser.id,
+      reason: rejectReason ? `Từ chối: ${rejectReason}` : 'Từ chối'
+    })
+    .eq('id', leaveId);
+
+  if (error) return { success: false, error: error.message };
+
+  await recordAuditLog({
+    action: 'UPDATE',
+    table_name: 'staff_leaves',
+    record_id: leaveId,
+    new_data: { status: 'rejected', approved_by: currentUser.id, reason: rejectReason }
+  });
+
+  revalidatePath('/dashboard/sessions');
+  revalidatePath('/ktv/dashboard');
+  return { success: true };
+}
+
