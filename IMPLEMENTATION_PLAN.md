@@ -93,7 +93,14 @@ Status: 🟢 Phases 1-4 & 6-8 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
   - [x] Đồng bộ hóa định dạng ngày tháng `today` của toàn bộ dashboard theo giờ Việt Nam thông qua `toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })`.
   - [x] Chuẩn hóa mốc thời gian ISO8601 (thay thế khoảng trắng bằng 'T' và chuẩn hóa phần bù múi giờ 2 chữ số của PostgreSQL từ `+XX` thành `+XX:00`) giúp đảm bảo việc phân tích cú pháp Date trên mọi trình duyệt/môi trường NodeJS/V8 luôn chuẩn xác và không bị trả về `Invalid Date` hoặc `NaN`.
   - [x] Kết hợp đồng thời hiển thị giờ cụ thể lẫn nhãn "(vừa xong)" trong vòng 5 phút đầu tiên sau checkout, mang lại trải nghiệm thời gian thực tuyệt đối.
-
-
-
+## 🟢 Phase 9: Multi-view Admin Bookings Dashboard (Month Calendar & Timeline) (Completed)
+- [x] **Dual-View Architecture**:
+  - [x] **Timeline View (Timeline KTV)**: Designed a premium day-level scheduling layout displaying technicians as columns and hours (09:00 - 13:00+) as rows. Features responsive horizontal scrolling for KTVs and vertical scrolling for timeline hours, with live color-coded status cards (emerald for completed, sky for in-progress, soft rose for scheduled) and active service filters.
+  - [x] **Month Calendar View (Lịch tháng)**: Designed a beautiful month-grid layout displaying daily booking counts (e.g. `1 Lịch hẹn`, `9 Lịch hẹn`) and a highlighted today indicator. Synchronizes perfectly with the date navigation controls.
+- [x] **Interactive Switcher Controls**:
+  - [x] Implemented a smooth, client-side React view switcher in the bookings header, allowing the administrator to swap between `Timeline KTV` and `Lịch tháng` views seamlessly with Framer Motion animations.
+  - [x] Retained the elegant brand styling of the Bella Spa Management System (glassmorphism containers, delicate pink/red gradients, and consistent typography) without introducing generic or mismatched color palettes.
+- [x] **Git & Vercel Continuous Deployment**:
+  - [x] Committed all codebase adjustments and pushed them directly to the `main` branch on GitHub.
+  - [x] Triggered and successfully verified a production build and deployment to Vercel (Live URL: `https://bella-spa-erp-swart.vercel.app`), completing static optimization and Turbopack builds with zero warnings or errors.
 
