@@ -148,10 +148,301 @@ export async function getUpcomingSessions() {
 /**
  * Triggers a Zalo OA / ZNS reminder for a specific session log
  */
-export async function triggerZaloReminder(sessionLogId: string) {
+export interface ZaloConfig {
+  zalo_app_id: string | null;
+  zalo_secret_key: string | null;
+  zalo_oa_id: string | null;
+  zalo_access_token: string | null;
+  zalo_refresh_token: string | null;
+  zalo_token_expires_at: string | null;
+  zalo_template_reminder_id: string | null;
+  zalo_template_birthday_id: string | null;
+  zalo_auto_scan: boolean;
+}
+
+/**
+ * Fetches Zalo configuration for the current tenant
+ */
+export async function getZaloConfig(): Promise<ZaloConfig> {
   const supabase = (await createClient()) as any;
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+  try {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.tenant_id) {
+      tenantId = currentUser.tenant_id;
+    }
+  } catch (e) {
+    // Silent ignore if no active session
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('zalo_app_id, zalo_secret_key, zalo_oa_id, zalo_access_token, zalo_refresh_token, zalo_token_expires_at, zalo_template_reminder_id, zalo_template_birthday_id, zalo_auto_scan')
+      .eq('id', tenantId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching Zalo config:', error);
+      return {
+        zalo_app_id: '',
+        zalo_secret_key: '',
+        zalo_oa_id: '',
+        zalo_access_token: '',
+        zalo_refresh_token: '',
+        zalo_token_expires_at: '',
+        zalo_template_reminder_id: '',
+        zalo_template_birthday_id: '',
+        zalo_auto_scan: true
+      };
+    }
+
+    return {
+      zalo_app_id: data.zalo_app_id || '',
+      zalo_secret_key: data.zalo_secret_key || '',
+      zalo_oa_id: data.zalo_oa_id || '',
+      zalo_access_token: data.zalo_access_token || '',
+      zalo_refresh_token: data.zalo_refresh_token || '',
+      zalo_token_expires_at: data.zalo_token_expires_at || '',
+      zalo_template_reminder_id: data.zalo_template_reminder_id || '',
+      zalo_template_birthday_id: data.zalo_template_birthday_id || '',
+      zalo_auto_scan: data.zalo_auto_scan !== false
+    };
+  } catch (error) {
+    console.error('Error in getZaloConfig:', error);
+    return {
+      zalo_app_id: '',
+      zalo_secret_key: '',
+      zalo_oa_id: '',
+      zalo_access_token: '',
+      zalo_refresh_token: '',
+      zalo_token_expires_at: '',
+      zalo_template_reminder_id: '',
+      zalo_template_birthday_id: '',
+      zalo_auto_scan: true
+    };
+  }
+}
+
+/**
+ * Saves Zalo configuration for the current tenant
+ */
+export async function saveZaloConfig(config: Partial<ZaloConfig>) {
+  const supabase = (await createClient()) as any;
+  let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+  try {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.tenant_id) {
+      tenantId = currentUser.tenant_id;
+    }
+  } catch (e) {
+    // Silent ignore if no active session
+  }
+
+  try {
+    const { error } = await supabase
+      .from('tenants')
+      .update(config)
+      .eq('id', tenantId);
+
+    if (error) {
+      console.error('Error saving Zalo config:', error);
+      return { error: 'Lỗi lưu cấu hình: ' + error.message };
+    }
+
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'tenants',
+      record_id: tenantId,
+      new_data: config
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error in saveZaloConfig:', error);
+    return { error: error.message || 'Lỗi hệ thống khi lưu cấu hình.' };
+  }
+}
+
+/**
+ * Retrieves the current Zalo access token.
+ * Refreshes it automatically if it is expired (or close to expiring).
+ * Falls back to null if Zalo is not fully configured (so the calling code can drop back to Sandbox mode).
+ */
+export async function getOrRefreshZaloToken(tenantId: string): Promise<string | null> {
+  const supabase = (await createClient()) as any;
+  
+  try {
+    const { data: tenant, error } = await supabase
+      .from('tenants')
+      .select('zalo_app_id, zalo_secret_key, zalo_access_token, zalo_refresh_token, zalo_token_expires_at')
+      .eq('id', tenantId)
+      .single();
+
+    if (error || !tenant) {
+      console.error('Error fetching tenant for Zalo token:', error);
+      return null;
+    }
+
+    const { zalo_app_id, zalo_secret_key, zalo_access_token, zalo_refresh_token, zalo_token_expires_at } = tenant;
+
+    // Check if configuration is missing or using mock values
+    if (!zalo_app_id || !zalo_secret_key || !zalo_access_token || !zalo_refresh_token) {
+      return null;
+    }
+    if (zalo_secret_key.includes('••') || zalo_access_token.includes('••') || zalo_refresh_token.includes('••') ||
+        zalo_secret_key === '' || zalo_access_token === '' || zalo_refresh_token === '') {
+      return null;
+    }
+
+    // Check if the current token is still valid (with a 5-minute buffer)
+    const now = new Date();
+    const bufferTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 mins in the future
+    if (zalo_token_expires_at) {
+      const expiresAt = new Date(zalo_token_expires_at);
+      if (expiresAt > bufferTime) {
+        return zalo_access_token;
+      }
+    }
+
+    // Access token has expired or is about to expire, refresh it!
+    console.log(`Zalo access token expired for tenant ${tenantId}. Refreshing...`);
+    
+    const response = await fetch('https://oauth.zaloapp.com/v4/oa/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'secret_key': zalo_secret_key
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: zalo_refresh_token,
+        app_id: zalo_app_id
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`Failed to refresh Zalo token for tenant ${tenantId}. Status: ${response.status}. Error:`, errText);
+      return null;
+    }
+
+    const result = await response.json();
+    if (!result || !result.access_token) {
+      console.error(`Invalid response from Zalo OAuth for tenant ${tenantId}:`, result);
+      return null;
+    }
+
+    const newAccessToken = result.access_token;
+    const newRefreshToken = result.refresh_token || zalo_refresh_token; // Keep old refresh token if not returned
+    const expiresIn = parseInt(result.expires_in) || 86400; // default 24h if missing
+    const newExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+
+    // Save the new tokens to the DB
+    const { error: saveError } = await supabase
+      .from('tenants')
+      .update({
+        zalo_access_token: newAccessToken,
+        zalo_refresh_token: newRefreshToken,
+        zalo_token_expires_at: newExpiresAt
+      })
+      .eq('id', tenantId);
+
+    if (saveError) {
+      console.error(`Error saving refreshed Zalo tokens to DB for tenant ${tenantId}:`, saveError);
+    } else {
+      console.log(`Successfully refreshed Zalo access token for tenant ${tenantId}. Expires at: ${newExpiresAt}`);
+    }
+
+    return newAccessToken;
+  } catch (err) {
+    console.error(`Exception in getOrRefreshZaloToken for tenant ${tenantId}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Sends a real Zalo ZNS (template) message if access token is available.
+ * Cleans phone number to Vietnamese international format: "84XXXXXXXXX".
+ */
+export async function sendZaloZNS(
+  tenantId: string,
+  phone: string,
+  templateId: string,
+  templateData: Record<string, any>
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    // 1. Get or refresh Zalo token
+    const token = await getOrRefreshZaloToken(tenantId);
+    if (!token) {
+      return { success: false, error: 'Cấu hình Zalo chưa đầy đủ hoặc không hợp lệ.' };
+    }
+
+    // 2. Format phone number to 84xxxxxxxxx
+    let cleanedPhone = phone.replace(/\D/g, ''); // Remove non-digits
+    if (cleanedPhone.startsWith('0')) {
+      cleanedPhone = '84' + cleanedPhone.substring(1);
+    } else if (!cleanedPhone.startsWith('84') && cleanedPhone.length > 0) {
+      cleanedPhone = '84' + cleanedPhone;
+    }
+
+    if (cleanedPhone.length < 11 || cleanedPhone.length > 13) {
+      return { success: false, error: `Số điện thoại không hợp lệ để gửi ZNS: ${phone}` };
+    }
+
+    // 3. Make real API request
+    console.log(`Sending Zalo ZNS template message to ${cleanedPhone} using template ${templateId}...`);
+    const response = await fetch('https://business.openapi.zalo.me/message/template', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'access_token': token
+      },
+      body: JSON.stringify({
+        phone: cleanedPhone,
+        template_id: templateId,
+        template_data: templateData
+      })
+    });
+
+    const result = await response.json();
+    if (!response.ok || (result && result.error !== 0)) {
+      const errMsg = result ? `${result.message} (Code: ${result.error})` : `HTTP ${response.status}`;
+      console.error(`Zalo ZNS send failed for phone ${cleanedPhone}:`, errMsg);
+      return { success: false, error: `API Zalo báo lỗi: ${errMsg}`, data: result };
+    }
+
+    console.log(`Zalo ZNS successfully sent to ${cleanedPhone}. Message ID:`, result?.data?.message_id);
+    return { success: true, data: result };
+  } catch (err: any) {
+    console.error(`Exception in sendZaloZNS for tenant ${tenantId}:`, err);
+    return { success: false, error: err.message || 'Lỗi kết nối API Zalo ZNS' };
+  }
+}
+
+/**
+ * Triggers a Zalo OA / ZNS reminder for a specific session log
+ */
+export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride?: string) {
+  const supabase = (await createClient()) as any;
+  
+  let tenantId = tenantIdOverride;
+  let currentUserId = '';
+  
+  try {
+    const currentUser = await getCurrentUser();
+    currentUserId = currentUser?.id || '';
+    if (!tenantId) {
+      tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+    }
+  } catch (e) {
+    // Suppress error if no active session (e.g. Cron job)
+    if (!tenantId) {
+      tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+    }
+  }
 
   try {
     // 1. Fetch details
@@ -191,8 +482,42 @@ export async function triggerZaloReminder(sessionLogId: string) {
     const dateStr = session.assigned_date;
     const ktvName = session.bookings?.assigned_ktv?.full_name || 'KTV Bella Spa';
 
-    // Business standard template
+    // Fetch tenant Zalo Template config
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('zalo_template_reminder_id')
+      .eq('id', tenantId)
+      .single();
+
+    const templateId = tenant?.zalo_template_reminder_id || 'ZNS_REMINDER_V2';
+
+    // Business standard message text for logs / simulated fallback
     const message = `Kính gửi chị ${motherName}, Bella Spa xin nhắc lịch hẹn chăm sóc tại nhà cho ${babyName} vào lúc ${timeStr} hôm nay (${dateStr}). KTV phụ trách: ${ktvName}. Địa chỉ: ${session.address || 'Tại nhà'}. Hotline hỗ trợ: 0865 701 493.`;
+
+    // Attempt real ZNS sending if phone is available
+    let isRealSent = false;
+    let zaloError = '';
+
+    const phoneVal = customer.phone;
+    if (phoneVal) {
+      const templateData = {
+        customer_name: motherName,
+        baby_name: babyName,
+        appointment_time: `${timeStr} ngày ${dateStr}`,
+        ktv_name: ktvName,
+        address: session.address || 'Tại nhà',
+        hotline: '0865 701 493'
+      };
+
+      const znsRes = await sendZaloZNS(tenantId as string, phoneVal as string, templateId, templateData);
+      if (znsRes.success) {
+        isRealSent = true;
+      } else {
+        zaloError = znsRes.error || '';
+      }
+    } else {
+      zaloError = 'Khách hàng không có số điện thoại';
+    }
 
     // 2. Mark session as reminded
     const { error: updateErr } = await supabase
@@ -207,14 +532,18 @@ export async function triggerZaloReminder(sessionLogId: string) {
       return { error: 'Lỗi cập nhật trạng thái nhắc lịch: ' + updateErr.message };
     }
 
+    const logMessage = isRealSent
+      ? `Đã gửi ZNS [Hệ thống Thực] đến số ${customer.phone || 'N/A'}: "${message}"`
+      : `[Mô phỏng] Đã gửi ZNS đến số ${customer.phone || 'N/A'} (Lý do Sandbox: ${zaloError}): "${message}"`;
+
     // 3. Log to public.Notification for UI monitoring
     const { error: notifErr } = await supabase
       .from('Notification')
       .insert({
         id: `zalo_${sessionLogId}_${Date.now()}`,
-        userId: currentUser?.id || session.bookings?.assigned_ktv?.id || '',
-        title: 'Nhắc lịch Zalo ZNS thành công',
-        message: `Đã gửi ZNS đến số ${customer.phone || 'N/A'}: "${message}"`,
+        userId: currentUserId || session.bookings?.assigned_ktv?.id || '',
+        title: isRealSent ? 'Nhắc lịch Zalo ZNS thành công' : 'Nhắc lịch Zalo (Mô phỏng Sandbox)',
+        message: logMessage,
         type: 'zalo_zns',
         tenantId,
         isRead: false
@@ -232,11 +561,13 @@ export async function triggerZaloReminder(sessionLogId: string) {
       new_data: {
         zalo_reminder_sent: true,
         zalo_reminder_time: new Date().toISOString(),
-        message_sent: message
+        message_sent: message,
+        real_zalo_sent: isRealSent,
+        zalo_error: zaloError || null
       }
     });
 
-    return { success: true, message };
+    return { success: true, message: logMessage };
   } catch (error: any) {
     console.error('Error triggering Zalo reminder:', error);
     return { error: error.message || 'Lỗi hệ thống khi gửi Zalo reminder.' };
@@ -244,64 +575,103 @@ export async function triggerZaloReminder(sessionLogId: string) {
 }
 
 /**
- * Automatically scans today's scheduled sessions and triggers alerts for those
- * that start in the next 2.5 hours and haven't been reminded.
+ * Automatically scans today's scheduled sessions for a tenant (or all active tenants)
+ * and triggers alerts for those that start in the next 2.5 hours and haven't been reminded.
  */
-export async function triggerBatchReminders() {
+export async function triggerBatchReminders(specificTenantId?: string) {
   const supabase = (await createClient()) as any;
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
-  const todayStr = getLocalDateString(new Date());
+  let tenantIds: string[] = [];
 
   try {
-    // Fetch today's scheduled sessions that have not been reminded
-    const { data: sessions, error } = await supabase
-      .from('session_logs')
-      .select('id, assigned_time')
-      .eq('tenant_id', tenantId)
-      .eq('assigned_date', todayStr)
-      .eq('status', 'scheduled')
-      .eq('zalo_reminder_sent', false);
+    if (specificTenantId) {
+      tenantIds = [specificTenantId];
+    } else {
+      try {
+        const currentUser = await getCurrentUser();
+        if (currentUser?.tenant_id) {
+          tenantIds = [currentUser.tenant_id];
+        }
+      } catch (e) {
+        // Suppress session check error in cron environment
+      }
 
-    if (error) {
-      return { error: 'Không thể quét danh sách buổi chăm sóc: ' + error.message };
+      if (tenantIds.length === 0) {
+        // Cron job scenario: fetch all active tenants
+        const { data: activeTenants, error: tenantErr } = await supabase
+          .from('tenants')
+          .select('id')
+          .eq('status', 'active');
+        
+        if (tenantErr) {
+          console.error('Error fetching active tenants for cron:', tenantErr);
+          return { error: 'Không thể lấy danh sách chi nhánh: ' + tenantErr.message };
+        }
+        
+        tenantIds = (activeTenants || []).map((t: any) => t.id);
+      }
     }
 
-    if (!sessions || sessions.length === 0) {
-      return { count: 0, messages: [], info: 'Không có lịch hẹn nào cần gửi thông báo nhắc nhở.' };
+    if (tenantIds.length === 0) {
+      tenantIds = ['0e66365b-42b0-420e-acca-f7d7692e125e'];
     }
 
-    // Filter sessions within the next 2.5 hours
-    const now = new Date();
-    // Current minutes since start of day in GMT+7
-    const currentVNMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + 420; // 420 mins offset for GMT+7
-    const dayMinutes = currentVNMinutes % 1440;
-
-    const triggeredList: string[] = [];
+    const todayStr = getLocalDateString(new Date());
+    let totalCount = 0;
     const messagesSent: string[] = [];
+    const errors: string[] = [];
 
-    for (const session of sessions) {
-      if (!session.assigned_time) continue;
-      
-      const parts = session.assigned_time.split(':');
-      const sessionMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    for (const tenantId of tenantIds) {
+      // Fetch today's scheduled sessions for this tenant that have not been reminded
+      const { data: sessions, error } = await supabase
+        .from('session_logs')
+        .select('id, assigned_time')
+        .eq('tenant_id', tenantId)
+        .eq('assigned_date', todayStr)
+        .eq('status', 'scheduled')
+        .eq('zalo_reminder_sent', false);
 
-      // Remind if session starts in the next 150 minutes (2.5 hours)
-      // or if it is already past the scheduled time slightly but not sent yet.
-      const diff = sessionMinutes - dayMinutes;
-      if (diff >= -30 && diff <= 150) {
-        const result = await triggerZaloReminder(session.id);
-        if (result.success && result.message) {
-          triggeredList.push(session.id);
-          messagesSent.push(result.message);
+      if (error) {
+        console.error(`Error scanning sessions for tenant ${tenantId}:`, error);
+        errors.push(`Tenant ${tenantId}: ${error.message}`);
+        continue;
+      }
+
+      if (!sessions || sessions.length === 0) {
+        continue;
+      }
+
+      // Filter sessions within the next 2.5 hours
+      const now = new Date();
+      // Current minutes since start of day in GMT+7
+      const currentVNMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + 420; // 420 mins offset for GMT+7
+      const dayMinutes = currentVNMinutes % 1440;
+
+      for (const session of sessions) {
+        if (!session.assigned_time) continue;
+        
+        const parts = session.assigned_time.split(':');
+        const sessionMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+
+        // Remind if session starts in the next 150 minutes (2.5 hours)
+        // or if it is already past the scheduled time slightly but not sent yet.
+        const diff = sessionMinutes - dayMinutes;
+        if (diff >= -30 && diff <= 150) {
+          const result = await triggerZaloReminder(session.id, tenantId);
+          if (result.success && result.message) {
+            totalCount++;
+            messagesSent.push(result.message);
+          } else if (result.error) {
+            errors.push(`Session ${session.id}: ${result.error}`);
+          }
         }
       }
     }
 
     return {
-      count: triggeredList.length,
+      count: totalCount,
       messages: messagesSent,
-      info: `Đã quét và tự động gửi ${triggeredList.length} thông báo nhắc hẹn qua Zalo.`
+      errors: errors.length > 0 ? errors : undefined,
+      info: `Đã quét và tự động gửi ${totalCount} thông báo nhắc hẹn qua Zalo.`
     };
   } catch (err: any) {
     console.error('Error in triggerBatchReminders:', err);
@@ -314,8 +684,16 @@ export async function triggerBatchReminders() {
  */
 export async function getBirthdayCustomers() {
   const supabase = (await createClient()) as any;
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+  try {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.tenant_id) {
+      tenantId = currentUser.tenant_id;
+    }
+  } catch (e) {
+    // Suppress
+  }
 
   try {
     const { data: customers, error } = await supabase
@@ -367,12 +745,25 @@ export async function getBirthdayCustomers() {
 }
 
 /**
- * Sends a simulated Birthday Greeting & Voucher via Zalo OA
+ * Sends a simulated/real Birthday Greeting & Voucher via Zalo OA
  */
-export async function sendBirthdayGreeting(customerId: string, voucherCode: string) {
+export async function sendBirthdayGreeting(customerId: string, voucherCode: string, tenantIdOverride?: string) {
   const supabase = (await createClient()) as any;
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  
+  let tenantId = tenantIdOverride;
+  let currentUserId = '';
+
+  try {
+    const currentUser = await getCurrentUser();
+    currentUserId = currentUser?.id || '';
+    if (!tenantId) {
+      tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+    }
+  } catch (e) {
+    if (!tenantId) {
+      tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+    }
+  }
 
   try {
     const { data: customer, error: fetchErr } = await supabase
@@ -390,14 +781,51 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
 
     const message = `Bella Spa chúc mừng sinh nhật tròn tuổi mới của bé ${babyName}! Mẹ ${motherName} ơi, nhân dịp đặc biệt này, Bella Spa thân gửi tặng gia đình Voucher giảm giá 10% gói liệu trình chăm sóc tiếp theo: [${voucherCode}]. Chúc bé luôn hay ăn chóng lớn, khỏe mạnh bình an! Hotline liên hệ đặt lịch: 0865 701 493.`;
 
+    // Fetch tenant Zalo Template config
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('zalo_template_birthday_id')
+      .eq('id', tenantId)
+      .single();
+
+    const templateId = tenant?.zalo_template_birthday_id || 'ZNS_BIRTHDAY_GIFT_V1';
+
+    // Attempt real ZNS sending if phone is available
+    let isRealSent = false;
+    let zaloError = '';
+
+    const phoneVal = customer.phone;
+    if (phoneVal) {
+      const templateData = {
+        customer_name: motherName,
+        baby_name: babyName,
+        voucher_code: voucherCode,
+        discount_percent: '10%',
+        hotline: '0865 701 493'
+      };
+
+      const znsRes = await sendZaloZNS(tenantId as string, phoneVal as string, templateId, templateData);
+      if (znsRes.success) {
+        isRealSent = true;
+      } else {
+        zaloError = znsRes.error || '';
+      }
+    } else {
+      zaloError = 'Khách hàng không có số điện thoại';
+    }
+
+    const logMessage = isRealSent
+      ? `Đã gửi tin nhắn quà tặng sinh nhật [Hệ thống Thực] đến số ${customer.phone || 'N/A'}: "${message}"`
+      : `[Mô phỏng] Đã gửi tin nhắn quà tặng sinh nhật đến số ${customer.phone || 'N/A'} (Lý do Sandbox: ${zaloError}): "${message}"`;
+
     // Log to public.Notification for verification
     const { error: notifErr } = await supabase
       .from('Notification')
       .insert({
         id: `bday_${customerId}_${Date.now()}`,
-        userId: currentUser?.id || '',
-        title: 'Gửi Zalo Chúc mừng sinh nhật & Voucher',
-        message: `Đã gửi lời chúc + Voucher ${voucherCode} đến ${customer.phone || 'N/A'}: "${message}"`,
+        userId: currentUserId || '',
+        title: isRealSent ? 'Gửi Zalo Chúc mừng sinh nhật & Voucher thành công' : 'Gửi Zalo Chúc mừng sinh nhật (Mô phỏng Sandbox)',
+        message: logMessage,
         type: 'zalo_birthday',
         tenantId,
         isRead: false
@@ -415,11 +843,13 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
       new_data: {
         birthday_voucher_sent: true,
         voucher_code: voucherCode,
-        message_sent: message
+        message_sent: message,
+        real_zalo_sent: isRealSent,
+        zalo_error: zaloError || null
       }
     });
 
-    return { success: true, message };
+    return { success: true, message: logMessage };
   } catch (error: any) {
     console.error('Error sending birthday greeting:', error);
     return { error: error.message || 'Lỗi hệ thống khi gửi lời chúc.' };
@@ -431,8 +861,16 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
  */
 export async function getZaloZnsLogs() {
   const supabase = (await createClient()) as any;
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+  try {
+    const currentUser = await getCurrentUser();
+    if (currentUser?.tenant_id) {
+      tenantId = currentUser.tenant_id;
+    }
+  } catch (e) {
+    // Suppress
+  }
 
   try {
     const { data, error } = await supabase

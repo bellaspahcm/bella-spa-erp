@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Phases 1-4 & 6-10 Complete | 🟡 Phase 5 CRM/Zalo Integration Starting
+Status: 🟢 All Phases (Phases 1-10) Complete | Real Zalo OA/ZNS & Cron Automation Fully Integrated
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -36,9 +36,10 @@ Status: 🟢 Phases 1-4 & 6-10 Complete | 🟡 Phase 5 CRM/Zalo Integration Star
 - [x] **Material Consumption Logic**: Auto-deduct supplies (oils, towels, etc.) upon session completion.
 - [x] **Low Stock Alerts**: Automated notifications for reordering.
 
-## ⚪ Phase 5: CRM & Zalo Integration
-- [ ] **Automated Reminders**: Appointment alerts 2 hours before session.
-- [ ] **Marketing Automation**: Birthday greetings and targeted voucher campaigns.
+## 🟢 Phase 5: CRM & Zalo Integration (Completed)
+- [x] **Automated Reminders**: Appointment alerts 2.5 hours before session with real Zalo OA/ZNS API integration and automatic access token refresh.
+- [x] **Marketing Automation**: Birthday greetings and targeted voucher campaigns using real Zalo ZNS templates with fallback mock/sandbox system support.
+
 
 ## 🟢 Phase 6: Messaging Center & Communication (Completed)
 - [x] **Internal & Customer Chat**: Built and stabilized the real-time chat module for administrative coordination.
