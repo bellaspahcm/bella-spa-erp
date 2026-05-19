@@ -47,6 +47,12 @@ export async function proxy(request: NextRequest) {
   const { data: { user }, error } = await supabase.auth.getUser();
   console.log("[Proxy] User refresh:", !!user, error?.message);
 
+  // If the user visits the root path '/', redirect them directly to '/login'
+  if (request.nextUrl.pathname === '/') {
+    console.log("[Proxy] Redirecting root path '/' to '/login'");
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   return response;
 }
 
