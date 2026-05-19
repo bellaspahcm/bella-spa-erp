@@ -72,8 +72,8 @@ export async function getKTVUpcomingSessions() {
   // Get current date in Vietnam timezone (YYYY-MM-DD)
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
-  // Fetch all sessions for bookings assigned to this KTV
-  const { data, error } = await supabase
+  // 1. Fetch sessions originally assigned to this KTV
+  const { data: originalData, error: originalError } = await supabase
     .from('session_logs')
     .select(`
       *,
@@ -98,21 +98,57 @@ export async function getKTVUpcomingSessions() {
         )
       )
     `)
-    .eq('bookings.assigned_ktv_id', user.id)
-    .order('booking_id', { ascending: true })
-    .order('session_number', { ascending: true });
+    .eq('bookings.assigned_ktv_id', user.id);
 
-  if (error) {
-    console.error('Error fetching upcoming sessions:', error);
+  // 2. Fetch sessions explicitly reassigned to this KTV
+  const { data: reassignedData, error: reassignedError } = await supabase
+    .from('session_logs')
+    .select(`
+      *,
+      bookings!inner (
+        id,
+        booking_number,
+        package_name,
+        start_date,
+        total_sessions,
+        completed_sessions,
+        preferred_time,
+        customer_id,
+        assigned_ktv_id,
+        packages (
+          name
+        ),
+        customers (
+          name_mother,
+          name_baby,
+          phone,
+          address
+        )
+      )
+    `)
+    .eq('completed_by_ktv_id', user.id)
+    .eq('status', 'scheduled');
+
+  if (originalError && reassignedError) {
+    console.error('Error fetching upcoming sessions:', originalError || reassignedError);
     return [];
   }
 
-  if (!data || data.length === 0) return [];
+  // Merge the two arrays and deduplicate by session log ID
+  const mergedMap = new Map<string, any>();
+  if (originalData) originalData.forEach((s: any) => mergedMap.set(s.id, s));
+  if (reassignedData) reassignedData.forEach((s: any) => mergedMap.set(s.id, s));
+  const data = Array.from(mergedMap.values());
 
-  // Group sessions by booking - strictly keeping only matching KTV sessions
+  if (data.length === 0) return [];
+
+  // Group sessions by booking
   const sessionsByBooking: Record<string, any[]> = {};
   data.forEach((s: any) => {
-    if (!s.booking_id || !s.bookings || s.bookings.assigned_ktv_id !== user.id) return;
+    if (!s.booking_id || !s.bookings) return;
+    // Skip if it was originally for this booking but has been reassigned to SOMEONE ELSE
+    if (s.bookings.assigned_ktv_id === user.id && s.completed_by_ktv_id && s.completed_by_ktv_id !== user.id) return;
+
     if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = [];
     sessionsByBooking[s.booking_id].push(s);
   });
@@ -157,6 +193,7 @@ export async function getKTVUpcomingSessions() {
           ...s,
           assigned_date: finalDate,
           assigned_time: s.assigned_time || s.bookings?.preferred_time || '09:00 - 11:00',
+          is_reassigned: s.bookings?.assigned_ktv_id !== user.id,
           bookings: s.bookings ? {
             ...s.bookings,
             package_name: resolvePackageName(s.bookings)
