@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Phases 1-4 & 6-9 Complete | 🟡 Phase 5 CRM/Zalo Integration Starting
+Status: 🟢 Phases 1-4 & 6-10 Complete | 🟡 Phase 5 CRM/Zalo Integration Starting
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -103,4 +103,16 @@ Status: 🟢 Phases 1-4 & 6-9 Complete | 🟡 Phase 5 CRM/Zalo Integration Start
 - [x] **Git & Vercel Continuous Deployment**:
   - [x] Committed all codebase adjustments and pushed them directly to the `main` branch on GitHub.
   - [x] Triggered and successfully verified a production build and deployment to Vercel (Live URL: `https://bella-spa-erp-swart.vercel.app`), completing static optimization and Turbopack builds with zero warnings or errors.
+
+## 🟢 Phase 10: Landing Page Visual Refinements & Price Stack Optimization (Completed)
+- [x] **Branding Text Correction**: Removed the `"ERP"` suffix from the landing page logo text, changing it from `"Mẹ & Bé ERP"` to `"Mẹ & Bé"` for brand elegance.
+- [x] **Hero Title Font Reduction**: Reduced the scale of the large hero banner overlay title by 30% (`text-[1.7rem] sm:text-[2.5rem] md:text-[3.6rem]`) to align with the desired visual hierarchy of visual components.
+- [x] **Responsive Price & Tag Layout Overhaul**:
+  - Eliminated the absolutely-positioned pink tags (e.g., `Phổ biến nhất`, `Khuyên dùng`) to prevent overlap with pricing elements.
+  - Placed tags inline above the package titles with perfect spacing.
+  - Converted the package card header and wizard recommendation card headers to use a responsive flex layout (`flex flex-col sm:flex-row`), allowing title and price to stack elegantly on mobile while aligning side-by-side on desktop.
+  - Set `shrink-0` and adjusted margins to ensure prices never wrap awkwardly or get hidden on any screen size.
+- [x] **Visual Spacing & Grid Padding Improvements**: Adjusted card padding on mobile from `p-8` to `p-6` to maximize readability and guarantee that the bottom check-out/booking buttons are never truncated.
+- [x] **Promo / Booking Image Update**: Successfully replaced the booking promotion image (`bella_real_1.jpg` next to the appointment booking form) with the brand-approved customer-technician care image.
+- [x] **Deployments**: Verified 100% correct Turbopack builds and pushed updates directly to GitHub/Vercel.
 
