@@ -490,6 +490,21 @@
     - **Portal Integration**: Multiple entry buttons strategically leading back to the official authentication gateway (`/login`).
   - Verified 100% compilation and type-safety check.
 
+## 2026-05-19 (Session 5): Landing Page Content Update & Global Contact Information Standardization
+
+### 1. Headline & Contact Details Localization
+- **Status**: Implemented & Verified.
+- **Workflow**:
+  - **Image 1 Title Update**: Changed the hero showcase title from `"Trải Nghiệm Thư Giãn Chuẩn Hoàng Gia"` to `"Trải nghiệm liệu trình thư giãn chuẩn Nhật Bản"` to align with the refined, high-end oriental service standard.
+  - **Image 2 Hotline Optimization**: Replaced the legacy placeholder hotline `"1900 1234 — 0987 654 321"` in both the booking inquiry section and the footer block with the unified active hotline `"0865 701 493"`.
+  - **Image 2 Address Standardization**: Replaced the old Phu Nhuan placeholder address with the new primary metropolitan coordinates: `"Vinhomes Grand Park & Quận 7, TPHCM"`.
+- **Results**: Fully synced across all static blocks, contact fields, links, and text columns, achieving 100% brand alignment.
+
+### 2. Compilation and Deploy Validation
+- Verified type-safety via `node node_modules/typescript/bin/tsc --noEmit` returning zero issues.
+- Pushed updates cleanly to the central repository and deployed live to production.
+
+
 
 
 
