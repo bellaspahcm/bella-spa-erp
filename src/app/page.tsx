@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import Link from 'next/link';
 import { 
   Heart, 
@@ -212,6 +213,97 @@ export default function LandingPage() {
     }
   };
 
+  const [categories, setCategories] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchActivePackages = async () => {
+      try {
+        const supabase = createBrowserClient();
+        const { data, error } = await supabase
+          .from('packages')
+          .select('*')
+          .eq('status', 'active')
+          .order('name', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching active packages:', error);
+          return;
+        }
+
+        if (data && data.length > 0) {
+          const newCategories: any = {
+            ' bầu': {
+              title: 'Chăm Sóc Mẹ Bầu',
+              description: 'Liệu trình massage bầu chuyên sâu giúp giải tỏa stress, giảm đau nhức lưng hông, cải thiện giấc ngủ và chống rạn nứt da hiệu quả.',
+              packages: []
+            },
+            'sau-sinh': {
+              title: 'Phục Hồi Sau Sinh',
+              description: 'Liệu trình toàn diện giúp đẩy nhanh sản dịch, gọi sữa về dồi dào, thu gọn vòng eo và tái tạo vóc dáng săn chắc cho mẹ bỉm sữa.',
+              packages: []
+            },
+            'baby': {
+              title: 'Tắm & Massage Bé Yêu',
+              description: 'Quy trình tắm chuẩn y khoa, hơ lá trầu truyền thống và massage kích thích giác quan giúp bé ngủ ngon, mau lớn và phát triển trí não vượt trội.',
+              packages: []
+            },
+            'combo': {
+              title: 'Gói Combo Trọn Gói Mẹ & Bé',
+              description: 'Sự kết hợp hoàn hảo từ lúc mang bầu cho đến khi sinh nở và chăm sóc bé yêu. Tiết kiệm tối đa và nhận ngập tràn quà tặng hấp dẫn.',
+              packages: []
+            }
+          };
+
+          data.forEach((pkg: any) => {
+            const nameLower = pkg.name.toLowerCase();
+            let catKey = ' bầu';
+
+            if (nameLower.includes('combo') || nameLower.includes('home-care') || nameLower.includes('signature')) {
+              catKey = 'combo';
+            } else if (nameLower.includes('sau sinh') || nameLower.includes('phục hồi') || nameLower.includes('eo thon') || nameLower.includes('dáng ngọc') || nameLower.includes('tia sữa')) {
+              catKey = 'sau-sinh';
+            } else if (nameLower.includes('bé') || nameLower.includes('tắm') || nameLower.includes('hydrotherapy') || nameLower.includes('con yêu')) {
+              catKey = 'baby';
+            } else if (nameLower.includes('bầu') || nameLower.includes('thai')) {
+              catKey = ' bầu';
+            } else {
+              if (pkg.total_sessions >= 10) {
+                catKey = 'combo';
+              } else {
+                catKey = ' bầu';
+              }
+            }
+
+            const formattedPrice = new Intl.NumberFormat('vi-VN').format(pkg.price || pkg.full_price || 0) + 'đ';
+
+            newCategories[catKey].packages.push({
+              id: pkg.id,
+              name: pkg.name,
+              price: formattedPrice,
+              duration: pkg.duration || '90 phút',
+              description: pkg.description || `Liệu trình ${pkg.total_sessions} buổi chăm sóc chuyên sâu chuẩn y khoa của Bella Spa.`,
+              benefits: Array.isArray(pkg.details) && pkg.details.length > 0 ? pkg.details : ['Liệu trình chuẩn y khoa', 'Kỹ thuật viên tay nghề cao', 'Nguyên liệu thảo dược hữu cơ'],
+              tag: pkg.offer || undefined
+            });
+          });
+
+          const finalCategories: any = { ...serviceCategories };
+          Object.keys(newCategories).forEach((key) => {
+            if (newCategories[key].packages.length > 0) {
+              finalCategories[key].packages = newCategories[key].packages;
+            }
+          });
+          
+          setCategories(finalCategories);
+        }
+      } catch (err) {
+        console.error('Fetch active packages error:', err);
+      }
+    };
+
+    fetchActivePackages();
+  }, []);
+
   const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
     if (!bookingName || !bookingPhone || !bookingService || !bookingDate) {
@@ -267,27 +359,28 @@ export default function LandingPage() {
     
     // Calculate recommendation based on selections
     let pkg: ServicePackage | null = null;
+    const activeCats = categories || serviceCategories;
     
     if (wizardUserType === 'bau') {
       if (wizardConcern === 'dau-nhuc') {
-        pkg = serviceCategories[' bầu'].packages[1]; // Gói Bầu VIP
+        pkg = activeCats[' bầu'].packages[1] || activeCats[' bầu'].packages[0];
       } else {
-        pkg = serviceCategories[' bầu'].packages[0]; // Gói Bầu Thư Giãn
+        pkg = activeCats[' bầu'].packages[0];
       }
     } else if (wizardUserType === 'sau-sinh') {
       if (wizardConcern === 'giam-eo' || wizardConcern === 'toan-dien') {
-        pkg = serviceCategories['sau-sinh'].packages[1]; // Eo thon VIP
+        pkg = activeCats['sau-sinh'].packages[1] || activeCats['sau-sinh'].packages[0];
       } else {
-        pkg = serviceCategories['sau-sinh'].packages[0]; // Phục hồi cơ bản
+        pkg = activeCats['sau-sinh'].packages[0];
       }
     } else if (wizardUserType === 'be') {
       if (wizardConcern === 'boi-thuy-lieu') {
-        pkg = serviceCategories['baby'].packages[1]; // Bé yêu thông minh VIP
+        pkg = activeCats['baby'].packages[1] || activeCats['baby'].packages[0];
       } else {
-        pkg = serviceCategories['baby'].packages[0]; // Tắm bé chuẩn y khoa
+        pkg = activeCats['baby'].packages[0];
       }
     } else {
-      pkg = serviceCategories['combo'].packages[1]; // Hoàng Gia VIP
+      pkg = activeCats['combo'].packages[1] || activeCats['combo'].packages[0];
     }
     
     setRecommendedPackage(pkg);
@@ -511,22 +604,22 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 1.0 }}
-            className="mt-16 relative rounded-[3rem] overflow-hidden max-w-5xl mx-auto border-4 border-white shadow-2xl aspect-[16/9] bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center"
+            className="mt-16 relative rounded-[3rem] overflow-hidden max-w-5xl mx-auto border-4 border-white shadow-2xl aspect-auto py-10 px-4 md:py-0 md:px-8 md:aspect-[16/9] bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center"
           >
             <div className="absolute inset-0 bg-cover bg-center mix-blend-multiply opacity-20 filter saturate-50" style={{ backgroundImage: 'url("/logo.png")' }} />
             <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
             
-            <div className="relative z-10 p-8 text-center flex flex-col items-center">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg border border-pink-100 animate-bounce mb-4">
-                <Heart className="w-10 h-10 text-rose-500 fill-rose-100" />
+            <div className="relative z-10 text-center flex flex-col items-center">
+              <div className="w-14 h-14 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center shadow-lg border border-pink-100 animate-bounce mb-3 md:mb-4">
+                <Heart className="w-7 h-7 md:w-10 md:h-10 text-rose-500 fill-rose-100" />
               </div>
-              <h3 className="text-xl md:text-3xl font-serif font-black text-slate-800 mb-2">Trải nghiệm liệu trình thư giãn chuẩn Nhật Bản</h3>
-              <p className="text-xs md:text-sm text-slate-500 font-semibold max-w-lg mb-6">Không gian tinh tế, thảo dược 100% tự nhiên cùng tay nghề y đức nâng niu nâng niu giấc ngủ của mẹ và nụ cười của bé.</p>
+              <h3 className="text-lg sm:text-xl md:text-3xl font-serif font-black text-slate-800 mb-1.5 md:mb-2 px-2">Trải nghiệm liệu trình thư giãn chuẩn Nhật Bản</h3>
+              <p className="text-[10px] sm:text-xs md:text-sm text-slate-500 font-semibold max-w-lg mb-5 md:mb-6 px-4">Không gian tinh tế, thảo dược 100% tự nhiên cùng tay nghề y đức nâng niu giấc ngủ của mẹ và nụ cười của bé.</p>
               
-              <div className="flex flex-wrap items-center justify-center gap-6 text-slate-600 text-[10px] font-black uppercase tracking-widest">
-                <span className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> 100% Chuẩn Y Khoa</span>
-                <span className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> KTV Cử Nhân Y Điều Dưỡng</span>
-                <span className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Nguyên Liệu Organic Sạch</span>
+              <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-slate-600 text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2">
+                <span className="flex items-center gap-1 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-500" /> 100% Chuẩn Y Khoa</span>
+                <span className="flex items-center gap-1 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-500" /> KTV Cử Nhân Y Điều Dưỡng</span>
+                <span className="flex items-center gap-1 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3 h-3 md:w-3.5 md:h-3.5 text-emerald-500" /> Nguyên Liệu Organic Sạch</span>
               </div>
             </div>
           </motion.div>
@@ -763,7 +856,7 @@ export default function LandingPage() {
           {/* Packages Display with smooth animation */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left max-w-5xl mx-auto">
             <AnimatePresence mode="wait">
-              {serviceCategories[activeTab].packages.map((pkg) => (
+              {(categories || serviceCategories)[activeTab].packages.map((pkg: any) => (
                 <motion.div
                   key={pkg.id}
                   initial={{ opacity: 0, scale: 0.98, y: 10 }}
@@ -798,7 +891,7 @@ export default function LandingPage() {
 
                     <h5 className="text-xs font-bold text-slate-700 uppercase tracking-widest mb-4">Quy trình liệu trình gồm:</h5>
                     <ul className="space-y-3">
-                      {pkg.benefits.map((benefit, i) => (
+                      {pkg.benefits.map((benefit: any, i: number) => (
                         <li key={i} className="flex gap-3 text-slate-600 text-xs font-medium">
                           <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mt-0.5 shrink-0">
                             <Check className="w-2.5 h-2.5" />

@@ -42,6 +42,7 @@ export default function ServicesPage() {
   const [offer, setOffer] = useState('');
   const [details, setDetails] = useState('');
   const [ktvCommission, setKtvCommission] = useState('');
+  const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const resetForm = () => {
@@ -52,6 +53,7 @@ export default function ServicesPage() {
     setOffer('');
     setDetails('');
     setKtvCommission('');
+    setStatus('active');
     setSelectedService(null);
   };
 
@@ -95,6 +97,7 @@ export default function ServicesPage() {
     setOffer('');
     setDetails('');
     setKtvCommission('');
+    setStatus('active');
     setIsModalOpen(true);
   };
 
@@ -108,6 +111,7 @@ export default function ServicesPage() {
     setOffer(service.offer || '');
     setDetails(Array.isArray(service.details) ? service.details.join(', ') : (service.details || ''));
     setKtvCommission(service.ktv_commission?.toString() || '150000');
+    setStatus(service.status === 'active' ? 'active' : 'inactive');
     setIsModalOpen(true);
   };
 
@@ -132,6 +136,158 @@ export default function ServicesPage() {
     } catch (err) {
       console.error('Delete error:', err);
       toast.error('Lỗi hệ thống khi xóa');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleServiceStatus = async (service: any) => {
+    const newStatus = service.status === 'active' ? 'inactive' : 'active';
+    try {
+      const supabase = createBrowserClient();
+      const { error } = await supabase
+        .from('packages')
+        .update({ status: newStatus })
+        .eq('id', service.id);
+
+      if (error) throw error;
+      
+      toast.success(`Đã chuyển trạng thái sang: ${newStatus === 'active' ? 'Đang hoạt động' : 'Tạm ngưng/Bản nháp'} 🌸`);
+      setServices(prev => prev.map(s => s.id === service.id ? { ...s, status: newStatus } : s));
+    } catch (err: any) {
+      console.error('Toggle status error:', err);
+      toast.error('Không thể cập nhật trạng thái: ' + err.message);
+    }
+  };
+
+  const syncDefaultPackages = async () => {
+    setIsLoading(true);
+    try {
+      const supabase = createBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Vui lòng đăng nhập để thực hiện');
+        setIsLoading(false);
+        return;
+      }
+      
+      const { data: profile } = await supabase
+        .from('users')
+        .select('tenant_id')
+        .eq('id', session.user.id)
+        .single();
+      
+      const tenant_id = profile?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+      // Default packages from landing page
+      const defaultPackages = [
+        {
+          name: 'Gói Bầu Thư Giãn Bella',
+          price: 450000,
+          duration: '75 phút/buổi',
+          total_sessions: 1,
+          details: ['Ngâm chân thảo dược thải độc', 'Massage body thảo dược nhẹ nhàng', 'Chăm sóc da mặt cơ bản organic', 'Thư giãn vùng đầu, cổ, vai gáy'],
+          offer: 'Tặng kèm trà sữa hạt organic sau liệu trình',
+          status: 'inactive', // Saved as draft
+          tenant_id
+        },
+        {
+          name: 'Gói Bầu VIP Toàn Diện',
+          price: 690000,
+          duration: '100 phút/buổi',
+          total_sessions: 1,
+          details: ['Rửa chân và xông chân đá muối Himalaya', 'Massage trị liệu thắt lưng, hông chuyên sâu', 'Massage Thụy Điển kết hợp đá nóng bazan', 'Chăm sóc da mặt chuyên sâu sữa ong chúa', 'Gội đầu dưỡng sinh thảo dược tự nhiên'],
+          offer: 'Ưu đãi trải nghiệm buổi đầu giảm 30%',
+          status: 'inactive', // Saved as draft
+          tenant_id
+        },
+        {
+          name: 'Gói Phục Hồi Cơ Bản',
+          price: 650000,
+          duration: '90 phút/buổi',
+          total_sessions: 1,
+          details: ['Xông tắm thảo dược Dao Đỏ tái tạo sinh lực', 'Massage thông tắc tia sữa, gọi sữa về', 'Massage bụng tống sản dịch bằng tinh dầu gừng', 'Quấn muối thảo dược giúp săn cơ bụng'],
+          offer: 'Hỗ trợ tư vấn nuôi con bằng sữa mẹ miễn phí',
+          status: 'inactive', // Saved as draft
+          tenant_id
+        },
+        {
+          name: 'Gói Eo Thon Dáng Ngọc VIP',
+          price: 950000,
+          duration: '120 phút/buổi',
+          total_sessions: 1,
+          details: ['Chăm sóc đầy đủ gói Phục Hồi Cơ Bản', 'Đắp men rượu thuốc Bắc kết hợp chạy máy RF săn cơ', 'Đắp mặt nạ nghệ hạ thổ sáng hồng da', 'Massage body toàn thân giải tỏa trầm cảm sau sinh', 'Chăm sóc và tẩy tế bào chết body thảo mộc'],
+          offer: 'Tặng 01 buổi massage mặt chuyên sâu',
+          status: 'inactive', // Saved as draft
+          tenant_id
+        },
+        {
+          name: 'Tắm Bé Chuẩn Y Khoa',
+          price: 200000,
+          duration: '45 phút/buổi',
+          total_sessions: 1,
+          details: ['Massage kích hoạt giác quan cơ/xương trước khi tắm', 'Tắm chuẩn y khoa, vệ sinh rốn, mắt, mũi, tai kỹ lưỡng', 'Hơ lá trầu giữ ấm ngực, thóp đầu và các khớp', 'Bôi tinh dầu tràm bảo vệ hô hấp'],
+          offer: 'Tặng kèm tưa lưỡi thảo dược',
+          status: 'inactive', // Saved as draft
+          tenant_id
+        },
+        {
+          name: 'Gói Bé Yêu Thông Minh VIP',
+          price: 350000,
+          duration: '60 phút/buổi',
+          total_sessions: 1,
+          details: ['Massage nâng cao kích thích hệ tiêu hóa, chống đầy hơi', 'Tắm rửa sát khuẩn nước thảo dược tự nhiên', 'Hơ lá trầu ấm áp theo phương pháp cung đình', 'Bơi thủy liệu (Hydrotherapy) phát triển thể chất', 'Tập vận động phản xạ sớm nâng cao chỉ số EQ/IQ'],
+          offer: 'Ưu đãi trải nghiệm giảm 20%',
+          status: 'inactive', // Saved as draft
+          tenant_id
+        },
+        {
+          name: 'Gói Bella Home-Care Tiêu Chuẩn',
+          price: 7900000,
+          duration: '90 phút/buổi',
+          total_sessions: 10,
+          details: ['5 buổi Chăm Sóc Phục Hồi cho mẹ sau sinh tại nhà', '5 buổi Tắm Bé & Massage chuẩn y khoa tại nhà', 'KTV là điều dưỡng có chứng chỉ hành nghề y tế'],
+          offer: 'Tặng thêm 01 hũ muối thảo dược quấn bụng trị giá 350k',
+          status: 'inactive', // Saved as draft
+          tenant_id
+        },
+        {
+          name: 'Gói Hoàng Gia Bella Signature',
+          price: 18500000,
+          duration: '120 phút/buổi',
+          total_sessions: 25,
+          details: ['10 buổi Chăm sóc Bầu VIP thư giãn giảm đau nhức', '15 buổi Liệu trình Phục Hồi Eo Thon Dáng Ngọc sau sinh', '15 buổi Tắm Bé & Bơi Thủy Liệu VIP kích thích phát triển', 'Miễn phí tư vấn dinh dưỡng cùng Bác sĩ Sản Nhi trong suốt thai kỳ'],
+          offer: 'Tặng hộp quà Premium gồm 05 tinh dầu cao cấp và 01 túi thảo dược chườm mắt',
+          status: 'inactive', // Saved as draft
+          tenant_id
+        }
+      ];
+
+      // Check existing names to prevent duplicates
+      const { data: existingPackages } = await supabase
+        .from('packages')
+        .select('name');
+      
+      const existingNames = new Set(existingPackages?.map((p: any) => p.name) || []);
+      const toInsert = defaultPackages.filter(p => !existingNames.has(p.name));
+
+      if (toInsert.length === 0) {
+        toast.info('Tất cả các gói mặc định đã tồn tại trong ERP.');
+        setIsLoading(false);
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from('packages')
+        .insert(toInsert);
+
+      if (insertError) throw insertError;
+
+      toast.success(`Đã đồng bộ ${toInsert.length} gói dịch vụ mặc định làm bản nháp thành công! 🎉`);
+      loadData();
+    } catch (err: any) {
+      console.error('Sync error:', err);
+      toast.error('Lỗi đồng bộ gói dịch vụ: ' + (err.message || 'Lỗi không xác định'));
     } finally {
       setIsLoading(false);
     }
@@ -168,7 +324,7 @@ export default function ServicesPage() {
         details: details.split(',').map(d => d.trim()).filter(d => d),
         offer: offer || '',
         ktv_commission: parseInt(ktvCommission.toString().replace(/[^\d]/g, '') || '150000'),
-        status: 'active',
+        status: status,
         tenant_id
       };
 
@@ -212,13 +368,22 @@ export default function ServicesPage() {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Quản lý dịch vụ</h1>
           <p className="text-slate-500 font-medium mt-1">Thiết lập bảng giá và các chương trình ưu đãi</p>
         </div>
-        <button 
-          onClick={openAddModal}
-          className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-rose-200 active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Thêm dịch vụ mới</span>
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={syncDefaultPackages}
+            title="Đồng bộ các gói dịch vụ mặc định của Bella Spa từ Landing Page thành các bản nháp trong ERP"
+            className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-6 py-3 rounded-2xl font-bold transition-all active:scale-95"
+          >
+            <span>Đồng bộ gói mặc định</span>
+          </button>
+          <button 
+            onClick={openAddModal}
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-rose-200 active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Thêm dịch vụ mới</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters & Search */}
@@ -266,13 +431,39 @@ export default function ServicesPage() {
             <div className="flex-1 p-8 flex flex-col">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 mb-1">{service.name}</h3>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h3 className="text-xl font-black text-slate-900">{service.name}</h3>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border",
+                      service.status === 'active' 
+                        ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                        : "bg-slate-100 text-slate-400 border-slate-200"
+                    )}>
+                      {service.status === 'active' ? 'Đang hoạt động' : 'Tạm ngưng / Nháp'}
+                    </span>
+                  </div>
                   <div className="flex items-center gap-2 text-primary font-black text-lg">
                     <DollarSign className="w-4 h-4" />
                     {formatNumberWithSeparator(service.price)}đ
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-3">
+                  {/* Status Toggle Switch */}
+                  <button
+                    onClick={() => toggleServiceStatus(service)}
+                    title={service.status === 'active' ? 'Click để tạm ngưng gói' : 'Click để kích hoạt gói'}
+                    className={cn(
+                      "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/20",
+                      service.status === 'active' ? "bg-emerald-500" : "bg-slate-300"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                        service.status === 'active' ? "translate-x-4" : "translate-x-0"
+                      )}
+                    />
+                  </button>
                   <button 
                     onClick={() => openEditModal(service)}
                     className="p-2 text-slate-400 hover:text-primary hover:bg-rose-50 rounded-xl transition-all"
@@ -431,6 +622,28 @@ export default function ServicesPage() {
                       className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
                       placeholder="VD: Massage body, Chăm sóc da mặt, Xông hơi" 
                     />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                    <div>
+                      <span className="text-sm font-black text-slate-700 block">Kích hoạt gói dịch vụ</span>
+                      <span className="text-xs text-slate-400 font-bold">Kích hoạt để gói hiển thị trực tiếp trên trang chủ Landing Page</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStatus(prev => prev === 'active' ? 'inactive' : 'active')}
+                      className={cn(
+                        "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/20",
+                        status === 'active' ? "bg-emerald-500" : "bg-slate-300"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                          status === 'active' ? "translate-x-5" : "translate-x-0"
+                        )}
+                      />
+                    </button>
                   </div>
 
                   <div className="space-y-2">
