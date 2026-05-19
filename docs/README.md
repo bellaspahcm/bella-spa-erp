@@ -248,6 +248,12 @@ Bella Spa ERP Documentation/
 | 1.6 | May 12, 2026 | Antigravity | Activate Message Center & Luxury Chat Interface |
 | 1.7 | May 12, 2026 | Antigravity | Refine Chat UI: Multi-line Input & Interactive Reactions |
 | 1.8 | May 12, 2026 | Antigravity | Activate Quick Actions & System-wide Data Connectivity (Fixed Build) |
+| 1.9 | May 16, 2026 | Antigravity | Financial & UI Stability: Fixed financial anomalies, pinned sidebar, cascading test data cleanup |
+| 2.0 | May 17, 2026 | Antigravity | KTV Session check-in/out E2E sync, packages RLS security, local mock login role bypass |
+| 2.1 | May 18, 2026 | Antigravity | Mobile dashboard overhaul, visual Emerald modals, KTV Commission Accrual, real-time WebSocket leaderboard |
+| 2.2 | May 18, 2026 | Antigravity | Actual check-in/out session chronology, session progress sync fixes, comprehensive admin audit logs |
+| 2.3 | May 18, 2026 | Antigravity | Pinned sidebar height/shrink fixes, custom payment breakdown cards, refund transaction logs, and review column translations |
+| 2.4 | May 19, 2026 | Antigravity | Timezone-safe Date Overhaul (`getLocalDateString` GMT+7), Offline-First sync queue (Dexie.js), Centered salary modals, and Multi-View (Month Calendar & KTV Timeline) switcher dashboard |
 
 ---
 
@@ -269,4 +275,4 @@ Bất kỳ câu hỏi nào → Liên hệ PM hoặc Antigravity team.
 ---
 
 **Document Generated:** May 10, 2026
-**Last Updated:** May 12, 2026 (09:32)
+**Last Updated:** May 19, 2026 (07:50)
