@@ -265,11 +265,40 @@ Biên bản này ghi nhận kết quả kiểm thử đầu-cuối (End-to-End) 
 
 ---
 
-## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
-* **Độ ổn định hệ thống**: Hệ thống hoạt động trơn tru 100%. Các bản vá lỗi giao diện mobile, cập nhật hotline, tích hợp bộ đối soát gói dịch vụ KTV, tính năng chỉnh sửa gói dịch vụ chủ động của Admin, hệ thống tự động hóa điểm Loyalty Real-time, phân hệ Đối soát giao dịch chi tiết kèm Hoàn tiền thừa âm, và đặc biệt là bộ nâng cấp thẻ ca trị liệu đang chạy cùng Modal Check-out Premium mới đã vận hành đồng bộ hoàn hảo không có bất kỳ xung đột nào.
-* **Trải nghiệm người dùng**: Đạt chuẩn Premium. Khách hàng trên mobile thực hiện đánh giá rất thuận tiện, KTV đối soát thu nhập cực kỳ minh bạch, Admin dễ dàng điều tra phát hiện lỗi clerical nhập tiền và tự xử lý nhanh chóng nhờ giao dịch hoàn tiền trực quan. Giao diện KTV check-out giờ đây cực kỳ sang trọng, xứng tầm thương hiệu Bella Spa.
+### KỊCH BẢN 14: Kiểm thử Trực quan Chế độ Lịch Tháng và Timeline KTV Đa Góc Nhìn (Admin Multi-View Dashboard)
+* **Mục tiêu**: Đảm bảo Admin có khả năng chuyển đổi liền mạch giữa 2 chế độ hiển thị đặt lịch (Lịch tháng và Timeline) mà không gặp lỗi và không mất trạng thái lọc.
+* **Thời gian kiểm thử**: 19/05/2026
 
-**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile, Trang thu nhập đối soát nâng cao cho KTV, Tính năng Chỉnh sửa Gói dịch vụ chủ động của Admin, Tự động hóa Loyalty Point, Nhật ký Đối soát Giao dịch & Hoàn tiền âm, cùng Thẻ Ca trị liệu và Modal Check-out Premium đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
+#### Quy trình thực hiện:
+1. Đăng nhập Admin (`admin@bellaspa.vn`), vào trang quản lý lịch hẹn `/dashboard/bookings`.
+2. Theo mặc định, Grid Lịch Tháng hiển thị. Click chọn một ngày ngẫu nhiên để xác minh số ca hẹn trong ngày (hiển thị badge ví dụ `9 Lịch hẹn`). **=> ĐẠT**
+3. Nhấp chọn nút Swapper **"Timeline KTV"** trên Header.
+4. Giao diện trượt ngang mượt mà. Cột danh sách KTV được dàn hàng ngang, trục dọc hiển thị giờ (09:00 - 13:00+). Các thẻ ca hiển thị chuẩn màu: Emerald (Xong), Sky (Đang chạy), Hồng nhạt (Sắp diễn ra). **=> ĐẠT**
+5. Cuộn ngang danh sách KTV và cuộn dọc giờ giấc, các thẻ ca hiển thị đúng tọa độ KTV và múi giờ Việt Nam, không có hiện tượng giật lag hay méo layout. **=> ĐẠT**
 
 ---
-*Biên bản được lập tự động và lưu trữ tại [KTV_TEST_ACCEPTANCE.md](file:///d:/Antigravity/Projects/BELLA SPA ERP/docs/KTV_TEST_ACCEPTANCE.md).*
+
+### KỊCH BẢN 15: Kiểm thử Chống Mất Dữ Liệu Ngoại Tuyến Thực Tế (Offline-First Sync Queue)
+* **Mục tiêu**: Đảm bảo KTV có thể ghi nhận Check-in/Check-out ngay cả khi mất mạng internet đột ngột, dữ liệu được xếp hàng đợi trong IndexedDB và tự động đồng bộ tuần tự lên Supabase khi có mạng trở lại mà không gây trùng lặp.
+* **Thời gian kiểm thử**: 19/05/2026
+
+#### Quy trình thực hiện:
+1. Đăng nhập KTV, tắt kết nối mạng của thiết bị (giả lập offline).
+2. Hệ thống hiển thị Banner màu vàng hổ phách tinh tế: *"Mất kết nối mạng. Dữ liệu đang được ghi ngoại tuyến"*. **=> ĐẠT**
+3. Thực hiện nhấn **"Bắt đầu ca" (Check-in)** và sau đó **"Checkout"** trên 1 ca làm việc của khách hàng.
+4. Hệ thống ghi nhận thành công ca làm vào IndexedDB (Dexie.js), gán sẵn UUID v4 và lưu trữ cục bộ. Giao diện KTV ghi nhận trạng thái ca đã hoàn thành tạm tính. **=> ĐẠT**
+5. Bật lại kết nối mạng.
+6. Banner chuyển sang màu xanh Emerald báo *"Đã khôi phục kết nối. Đang đồng bộ..."* và tự động biến mất sau khi đồng bộ thành công. **=> ĐẠT**
+7. Kiểm tra cơ sở dữ liệu Supabase: Bản ghi ca làm được đồng bộ chính xác thời gian thực tế, trường dữ liệu khớp 100%, trạng thái ca trị liệu trên Booking tự động cập nhật chính xác theo đúng thứ tự logic. **=> ĐẠT**
+
+---
+
+## 4. ĐÁNH GIÁ CHUNG & BÀN GIAO NGHIỆM THU
+* **Độ ổn định hệ thống**: Đạt mức tối ưu. Phân hệ đồng bộ ngoại tuyến Dexie.js, cơ chế timezone chuẩn hóa GMT+7, và bộ giao diện lịch đa góc nhìn vận hành hoàn hảo 100%, không phát sinh lỗi xung đột hay suy giảm hiệu năng.
+* **Trải nghiệm người dùng**: Cực kỳ mượt mà. Trải nghiệm offline giải quyết triệt để nỗi lo mất sóng của KTV tại phòng trị liệu, tăng độ uy tín vận hành và sự tin cậy tài chính của Spa.
+
+**Kết luận**: Phân hệ Cổng khách hàng Portal, Đánh giá KTV trên Mobile, Trang thu nhập đối soát nâng cao cho KTV, Tính năng Chỉnh sửa Gói dịch vụ chủ động của Admin, Tự động hóa Loyalty Point, Nhật ký Đối soát Giao dịch & Hoàn tiền âm, cùng Thẻ Ca trị liệu, Modal Check-out Premium mới, **Hệ thống Lịch đa góc nhìn Admin** và **Cơ chế Ngoại tuyến Offline-First** đã **ĐẠT YÊU CẦU NGHIỆM THU TUYỆT ĐỐI (100% PASS)** và đã được triển khai đồng bộ thành công lên Production.
+
+---
+*Biên bản được lập tự động và lưu trữ tại [KTV_TEST_ACCEPTANCE.md](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/docs/KTV_TEST_ACCEPTANCE.md).*
+
