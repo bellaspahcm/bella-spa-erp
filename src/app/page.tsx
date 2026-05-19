@@ -839,7 +839,7 @@ export default function LandingPage() {
             Trả lời 3 câu hỏi nhanh dưới đây, thuật toán của Bella Spa sẽ tự động phân tích và chọn ra gói dịch vụ tối ưu, phù hợp nhất với thể trạng của mẹ và bé.
           </p>
 
-          <div className="bg-white/80 backdrop-blur-xl border border-white p-8 sm:p-12 rounded-[3rem] shadow-2xl relative">
+          <div className="bg-white/80 backdrop-blur-xl border border-white p-8 sm:p-12 rounded-[3rem] shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary to-rose-400" />
             
             {/* Step indicators */}
@@ -1213,7 +1213,7 @@ export default function LandingPage() {
             {/* Right Col: Booking Form Card */}
             <div className="lg:col-span-7">
               
-              <div className="bg-white rounded-[3rem] border border-rose-50 p-8 sm:p-10 shadow-2xl relative">
+              <div className="bg-white rounded-[3rem] border border-rose-50 p-8 sm:p-10 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-primary" />
                 
                 <h3 className="text-lg font-black text-slate-800 uppercase tracking-wider mb-6 pb-4 border-b border-rose-50 flex items-center gap-2">
