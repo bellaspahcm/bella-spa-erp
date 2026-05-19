@@ -40,7 +40,9 @@ declare global {
   }
 }
 
-import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog, completeSession, rescheduleSession } from '@/services/booking-actions';
+import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog, completeSession, rescheduleSession, getBookingDetailsWithPayment } from '@/services/booking-actions';
+import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
+import { QrCode } from 'lucide-react';
 import { getUsers } from '@/services/user-actions';
 
 
@@ -67,6 +69,56 @@ function BookingsContent() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [sessionHistory, setSessionHistory] = useState<any[]>([]);
   const [createTimeRange, setCreateTimeRange] = useState({ start: '09:00', end: '11:00' });
+
+  // VietQR Payment States
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [qrModalData, setQrModalData] = useState<{ bookingNumber: string; amount: number; tenantInfo: any } | null>(null);
+  const [isFetchingQrData, setIsFetchingQrData] = useState(false);
+
+  const handleOpenQrModal = async (bookingId: string) => {
+    setIsFetchingQrData(true);
+    try {
+      const result = await getBookingDetailsWithPayment(bookingId);
+      if (result.error || !result.data) {
+        toast.error("Không thể lấy thông tin thanh toán: " + (result.error || "Không có dữ liệu"));
+        return;
+      }
+      
+      const booking = result.data;
+      const fullPrice = Number(booking.full_price || 0);
+      const discountPercent = Number(booking.discount_percent || 0);
+      const discountedPrice = fullPrice * (1 - discountPercent / 100);
+      
+      // Calculate confirmed revenue
+      const confirmedRevenue = (booking.revenue || [])
+        .filter((r: any) => r.status === 'confirmed')
+        .reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0);
+        
+      let debt = discountedPrice - confirmedRevenue;
+      
+      // If debt is 0 or less, and status is deposit_pending, QR amount should be deposit_amount
+      if (debt <= 0 && booking.status === 'deposit_pending') {
+        debt = Number(booking.deposit_amount || 0);
+      }
+      
+      if (debt <= 0) {
+        toast.success("Lịch hẹn này đã hoàn tất thanh toán (không còn dư nợ).");
+        return;
+      }
+
+      setQrModalData({
+        bookingNumber: booking.booking_number,
+        amount: debt,
+        tenantInfo: booking.tenants || null
+      });
+      setShowQrModal(true);
+    } catch (err) {
+      console.error("Error opening QR Modal:", err);
+      toast.error("Có lỗi xảy ra khi tải dữ liệu thanh toán");
+    } finally {
+      setIsFetchingQrData(false);
+    }
+  };
 
   useEffect(() => {
     if (customerName) {
@@ -549,6 +601,17 @@ function BookingsContent() {
                             </div>
                           </div>
                           <div className="flex gap-2">
+                            <button 
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenQrModal(session.booking_id);
+                              }}
+                              className="p-2 bg-rose-50 hover:bg-rose-100 rounded-xl text-rose-500 hover:text-rose-600 transition-colors flex items-center justify-center border border-rose-100/50 active:scale-95"
+                              title="Thanh toán VietQR"
+                            >
+                              <QrCode className="w-4 h-4" />
+                            </button>
                             <button 
                               type="button"
                               onClick={(e) => {
@@ -1223,6 +1286,16 @@ function BookingsContent() {
 
                 <div className="mt-8 flex gap-3">
                   <button 
+                    onClick={() => {
+                      setShowDetailModal(false);
+                      handleOpenQrModal(modalData.bookingId);
+                    }}
+                    className="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 border border-rose-100/50 py-4 rounded-2xl font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    <span>Thanh toán VietQR</span>
+                  </button>
+                  <button 
                     onClick={handleUpdatePlan}
                     disabled={isUpdating}
                     className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 disabled:opacity-50"
@@ -1363,6 +1436,17 @@ function BookingsContent() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* VietQR Payment Modal */}
+      {qrModalData && (
+        <VietQRPaymentModal
+          isOpen={showQrModal}
+          onClose={() => setShowQrModal(false)}
+          bookingNumber={qrModalData.bookingNumber}
+          amount={qrModalData.amount}
+          tenantInfo={qrModalData.tenantInfo}
+        />
+      )}
     </div>
   );
 }
