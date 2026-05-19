@@ -50,6 +50,13 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
+// Next.js 16/Turbopack compatibility exports
+export async function middleware(request: NextRequest) {
+  return proxy(request);
+}
+
+export default proxy;
+
 export const config = {
   matcher: [
     // Run on all routes EXCEPT Next.js internals and static assets
