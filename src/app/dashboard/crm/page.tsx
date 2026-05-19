@@ -191,7 +191,7 @@ export default function CRMPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] p-4 lg:p-8 space-y-8 overflow-y-auto custom-scrollbar bg-slate-50/50">
+    <div className="flex flex-col flex-1 overflow-auto p-4 lg:p-8 space-y-8 custom-scrollbar bg-slate-50/50">
       
       {/* ── Title Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
