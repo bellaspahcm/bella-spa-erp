@@ -75,7 +75,7 @@ export default function KTVEarningsPage() {
 
         const { data: sessions } = await supabase
           .from('session_logs')
-          .select(`id, completed_date, session_number, bookings(package_name, ktv_commission, customers(name_mother))`)
+          .select(`id, completed_date, session_number, completed_by_ktv_id, bookings(package_name, ktv_commission, assigned_ktv_id, customers(name_mother))`)
           .eq('completed_by_ktv_id', user.id)
           .eq('status', 'completed')
           .gte('completed_date', startOfMonth)
@@ -371,24 +371,34 @@ export default function KTVEarningsPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {details.map((session) => (
-                <div key={session.id} className="bg-white p-4 rounded-3xl border border-slate-100 flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-400 border border-slate-100">
-                      <span className="text-[10px] font-black">{new Date(session.completed_date).getDate()}</span>
-                      <span className="text-[8px] font-black uppercase">Th{new Date(session.completed_date).getMonth() + 1}</span>
+              {details.map((session) => {
+                const isReassigned = session.completed_by_ktv_id && session.bookings && session.completed_by_ktv_id !== session.bookings.assigned_ktv_id;
+                return (
+                  <div key={session.id} className="bg-white p-4 rounded-3xl border border-slate-100 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-400 border border-slate-100">
+                        <span className="text-[10px] font-black">{new Date(session.completed_date).getDate()}</span>
+                        <span className="text-[8px] font-black uppercase">Th{new Date(session.completed_date).getMonth() + 1}</span>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-slate-900">{session.bookings?.customers?.name_mother}</h4>
+                        <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1.5">
+                          {session.bookings?.package_name} • Buổi {session.session_number}
+                          {isReassigned && (
+                            <span className="bg-amber-100 text-amber-800 border border-amber-200 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider flex items-center gap-0.5 leading-none">
+                              🔄 Làm thay
+                            </span>
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900">{session.bookings?.customers?.name_mother}</h4>
-                      <p className="text-[10px] text-slate-400 font-medium">{session.bookings?.package_name} • Buổi {session.session_number}</p>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-emerald-500">+{formatCurrency(session.bookings?.ktv_commission || 0)}</p>
+                      <p className="text-[8px] font-black text-slate-300 uppercase">Hoa hồng</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-black text-emerald-500">+{formatCurrency(session.bookings?.ktv_commission || 0)}</p>
-                    <p className="text-[8px] font-black text-slate-300 uppercase">Hoa hồng</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

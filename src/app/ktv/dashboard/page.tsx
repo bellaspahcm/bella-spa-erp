@@ -29,7 +29,7 @@ import {
   getKTVNotifications,
   markNotificationAsRead
 } from '@/services/ktv-actions';
-import { getKTVTodayAttendance, ktvCheckIn, ktvCheckOut } from '@/services/attendance-actions';
+import { getKTVTodayAttendance, ktvCheckIn, ktvCheckOut, submitKTVLeaveRequest, getKTVLeaveHistory } from '@/services/attendance-actions';
 import { getCurrentUser } from '@/services/user-actions';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
@@ -56,6 +56,58 @@ export default function KTVDashboard() {
   // Attendance States
   const [todayAttendance, setTodayAttendance] = useState<any>(null);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
+
+  // Leave Request States
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isLeaveHistoryOpen, setIsLeaveHistoryOpen] = useState(false);
+  const [leaveHistory, setLeaveHistory] = useState<any[]>([]);
+  const [leaveDate, setLeaveDate] = useState<string>('');
+  const [leaveType, setLeaveType] = useState<'full_day' | 'morning' | 'afternoon'>('full_day');
+  const [leaveReason, setLeaveReason] = useState<string>('');
+  const [isLeaveSubmitting, setIsLeaveSubmitting] = useState(false);
+  const [isLeaveHistoryLoading, setIsLeaveHistoryLoading] = useState(false);
+
+  const fetchLeaveHistory = async () => {
+    setIsLeaveHistoryLoading(true);
+    try {
+      const history = await getKTVLeaveHistory();
+      setLeaveHistory(history);
+    } catch (e) {
+      toast.error('Lỗi khi tải lịch sử nghỉ phép');
+    } finally {
+      setIsLeaveHistoryLoading(false);
+    }
+  };
+
+  const handleLeaveSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leaveDate) {
+      toast.error('Vui lòng chọn ngày nghỉ phép');
+      return;
+    }
+    setIsLeaveSubmitting(true);
+    try {
+      const res = await submitKTVLeaveRequest({
+        leave_date: leaveDate,
+        leave_type: leaveType,
+        reason: leaveReason
+      });
+      if (res.success) {
+        toast.success('Gửi đơn xin nghỉ phép thành công, vui lòng chờ duyệt!');
+        setIsLeaveModalOpen(false);
+        setLeaveDate('');
+        setLeaveReason('');
+        setLeaveType('full_day');
+        fetchLeaveHistory();
+      } else {
+        toast.error(res.error || 'Gửi đơn thất bại');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Có lỗi xảy ra');
+    } finally {
+      setIsLeaveSubmitting(false);
+    }
+  };
 
   const router = useRouter();
   const { executeAction } = useOfflineSync();
@@ -482,6 +534,26 @@ export default function KTVDashboard() {
               </div>
             )}
           </div>
+
+          <div className="mt-4 pt-4 border-t border-slate-100 flex gap-3">
+            <button
+              onClick={() => setIsLeaveModalOpen(true)}
+              className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              Đăng ký nghỉ
+            </button>
+            <button
+              onClick={() => {
+                setIsLeaveHistoryOpen(true);
+                fetchLeaveHistory();
+              }}
+              className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              Lịch sử nghỉ
+            </button>
+          </div>
         </div>
       </div>
 
@@ -518,6 +590,11 @@ export default function KTVDashboard() {
                           <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest inline-block animate-pulse">
                             Buổi {session.session_number}/{session.bookings?.total_sessions || '--'}
                           </span>
+                          {session.bookings?.assigned_ktv_id !== user?.id && (
+                            <span className="bg-amber-500/25 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest inline-block animate-pulse">
+                              🔄 Làm thay
+                            </span>
+                          )}
                         </div>
                         {/* Mother name changed from h3 to div to prevent color overriding by global styles */}
                         <div className="text-xl font-black text-white">{session.bookings?.customers?.name_mother}</div>
@@ -575,13 +652,20 @@ export default function KTVDashboard() {
             <div className="space-y-4">
               {upcomingSessions.map((session) => (
                 <div key={session.id} className="bg-white p-5 rounded-[32px] border border-slate-100 flex items-center gap-4">
-                  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100 flex-shrink-0">
+          <div className="w-14 h-14 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100 flex-shrink-0">
                     <span className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Giờ</span>
                     <span className="text-sm font-black text-slate-900 leading-none">{session.assigned_time || '--:--'}</span>
                   </div>
                   
                   <div className="flex-grow min-w-0">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">Buổi {session.session_number}</p>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">Buổi {session.session_number}</span>
+                      {session.is_reassigned && (
+                        <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider flex items-center gap-0.5 leading-none">
+                          🔄 Làm thay
+                        </span>
+                      )}
+                    </div>
                     <h3 className="text-base font-black text-slate-900 truncate">{session.bookings?.customers?.name_mother}</h3>
                     <p className="text-xs text-slate-400 truncate">{session.bookings?.package_name}</p>
                   </div>
@@ -1017,6 +1101,212 @@ export default function KTVDashboard() {
                   </motion.div>
                 );
               })()}
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Leave Request Form Modal */}
+      <AnimatePresence>
+        {isLeaveModalOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsLeaveModalOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100]"
+            />
+            {/* Modal Box */}
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-[101] pointer-events-none">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                className="bg-white rounded-[32px] p-6 w-full max-w-sm shadow-2xl border border-slate-100 pointer-events-auto flex flex-col relative overflow-hidden max-h-[90vh]"
+              >
+                {/* Header pattern / decorative background */}
+                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500" />
+                
+                {/* Close Button */}
+                <button 
+                  onClick={() => setIsLeaveModalOpen(false)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="mt-2 mb-6">
+                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider">Đăng ký nghỉ phép</h3>
+                  <p className="text-xs text-slate-400 font-medium">Gửi yêu cầu nghỉ phép đến Quản trị viên</p>
+                </div>
+
+                <form onSubmit={handleLeaveSubmit} className="space-y-4 flex-grow overflow-y-auto pr-1">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 block">
+                      Chọn ngày nghỉ phép
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={leaveDate}
+                      onChange={(e) => setLeaveDate(e.target.value)}
+                      min={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })}
+                      className="w-full border border-slate-200 focus:ring-rose-500 focus:border-transparent rounded-2xl p-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 block">
+                      Thời gian nghỉ
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['full_day', 'morning', 'afternoon'] as const).map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setLeaveType(t)}
+                          className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${
+                            leaveType === t
+                              ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-100'
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          {t === 'full_day' ? 'Cả ngày' : t === 'morning' ? 'Sáng' : 'Chiều'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5 block">
+                      Lý do xin nghỉ
+                    </label>
+                    <textarea
+                      required
+                      value={leaveReason}
+                      onChange={(e) => setLeaveReason(e.target.value)}
+                      placeholder="Nêu rõ lý do cụ thể để quản lý duyệt..."
+                      rows={3}
+                      className="w-full border border-slate-200 focus:ring-rose-500 focus:border-transparent rounded-2xl p-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLeaveSubmitting}
+                    className="w-full bg-rose-500 hover:bg-rose-600 text-white font-black text-xs py-3.5 rounded-2xl uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100 disabled:opacity-50 mt-4 animate-pulse"
+                  >
+                    {isLeaveSubmitting ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      'Gửi đơn xin nghỉ'
+                    )}
+                  </button>
+                </form>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Leave History Modal */}
+      <AnimatePresence>
+        {isLeaveHistoryOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsLeaveHistoryOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100]"
+            />
+            {/* Modal Box */}
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-[101] pointer-events-none">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                className="bg-white rounded-[32px] p-6 w-full max-w-sm shadow-2xl border border-slate-100 pointer-events-auto flex flex-col relative overflow-hidden max-h-[80vh]"
+              >
+                {/* Header pattern / decorative background */}
+                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900" />
+                
+                {/* Close Button */}
+                <button 
+                  onClick={() => setIsLeaveHistoryOpen(false)}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="mt-2 mb-6">
+                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-wider">Lịch sử nghỉ phép</h3>
+                  <p className="text-xs text-slate-400 font-medium">Danh sách đơn xin nghỉ phép của bạn</p>
+                </div>
+
+                <div className="flex-grow overflow-y-auto space-y-3 pr-1 max-h-[50vh]">
+                  {isLeaveHistoryLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12">
+                      <RefreshCw className="w-8 h-8 text-slate-400 animate-spin mb-2" />
+                      <p className="text-xs text-slate-400 font-bold animate-pulse">Đang tải lịch sử...</p>
+                    </div>
+                  ) : leaveHistory.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <p className="text-xs text-slate-400 font-bold">Bạn chưa gửi đơn xin nghỉ phép nào</p>
+                    </div>
+                  ) : (
+                    leaveHistory.map((leave) => {
+                      const formattedDate = new Date(leave.leave_date).toLocaleDateString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      });
+                      
+                      const statusColor = 
+                        leave.status === 'approved' 
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                          : leave.status === 'rejected' 
+                          ? 'bg-rose-50 text-rose-700 border-rose-100' 
+                          : 'bg-amber-50 text-amber-700 border-amber-100';
+                          
+                      const statusText = 
+                        leave.status === 'approved' 
+                          ? 'Đã duyệt' 
+                          : leave.status === 'rejected' 
+                          ? 'Từ chối' 
+                          : 'Chờ duyệt';
+
+                      return (
+                        <div key={leave.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-black text-slate-800">{formattedDate}</span>
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded border uppercase tracking-wider ${statusColor}`}>
+                              {statusText}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-bold flex gap-3">
+                            <span>Ca: <strong className="text-slate-700 uppercase">{leave.leave_type === 'full_day' ? 'Cả ngày' : leave.leave_type === 'morning' ? 'Sáng' : 'Chiều'}</strong></span>
+                            <span>Gửi ngày: {new Date(leave.created_at).toLocaleDateString('vi-VN')}</span>
+                          </div>
+                          <div className="text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-100 leading-relaxed">
+                            {leave.reason}
+                          </div>
+                          {leave.status === 'rejected' && leave.rejection_reason && (
+                            <div className="text-[10px] text-rose-600 bg-rose-50/50 p-2.5 rounded-xl border border-rose-100/50 leading-relaxed font-medium">
+                              <strong>Lý do từ chối:</strong> {leave.rejection_reason}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </motion.div>
             </div>
           </>
         )}

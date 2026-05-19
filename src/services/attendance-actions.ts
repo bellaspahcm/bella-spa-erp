@@ -522,7 +522,7 @@ export async function rejectLeaveRequest(leaveId: string, rejectReason?: string)
     .update({
       status: 'rejected',
       approved_by: currentUser.id,
-      reason: rejectReason ? `Từ chối: ${rejectReason}` : 'Từ chối'
+      rejection_reason: rejectReason || null
     })
     .eq('id', leaveId);
 
@@ -532,7 +532,7 @@ export async function rejectLeaveRequest(leaveId: string, rejectReason?: string)
     action: 'UPDATE',
     table_name: 'staff_leaves',
     record_id: leaveId,
-    new_data: { status: 'rejected', approved_by: currentUser.id, reason: rejectReason }
+    new_data: { status: 'rejected', approved_by: currentUser.id, rejection_reason: rejectReason }
   });
 
   revalidatePath('/dashboard/sessions');
