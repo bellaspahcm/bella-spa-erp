@@ -505,63 +505,27 @@ export default function LandingPage() {
             </a>
           </motion.div>
 
-          {/* Interactive Split-Grid Gallery featuring real staff & baby */}
+          {/* Image Placeholder Visual */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 1.0 }}
-            className="mt-16 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 relative"
+            className="mt-16 relative rounded-[3rem] overflow-hidden max-w-5xl mx-auto border-4 border-white shadow-2xl aspect-[16/9] bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center"
           >
-            {/* Left Column: Therapist smiling with Baby */}
-            <div className="md:col-span-4 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl aspect-[4/5] relative group bg-rose-50 flex items-center justify-center">
-              <div 
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" 
-                style={{ backgroundImage: 'url("/bella_real_3.jpg")' }} 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-left z-10">
-                <span className="text-[9px] bg-white/20 backdrop-blur-md text-white font-black uppercase tracking-wider px-2.5 py-1 rounded-full mb-1.5 inline-block">Nụ cười bé cưng</span>
-                <p className="text-white text-xs font-bold leading-normal">Chăm sóc chuẩn Y khoa tại nhà</p>
+            <div className="absolute inset-0 bg-cover bg-center mix-blend-multiply opacity-20 filter saturate-50" style={{ backgroundImage: 'url("/logo.png")' }} />
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+            
+            <div className="relative z-10 p-8 text-center flex flex-col items-center">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg border border-pink-100 animate-bounce mb-4">
+                <Heart className="w-10 h-10 text-rose-500 fill-rose-100" />
               </div>
-            </div>
-
-            {/* Center Column: Text & Features (elevated aesthetic) */}
-            <div className="md:col-span-4 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl aspect-[4/5] bg-gradient-to-br from-white via-rose-50/30 to-pink-50/50 p-6 flex flex-col justify-between text-center relative group">
-              <div className="absolute inset-0 bg-cover bg-center mix-blend-multiply opacity-5" style={{ backgroundImage: 'url("/logo.png")' }} />
-              <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+              <h3 className="text-xl md:text-3xl font-serif font-black text-slate-800 mb-2">Trải nghiệm liệu trình thư giãn chuẩn Nhật Bản</h3>
+              <p className="text-xs md:text-sm text-slate-500 font-semibold max-w-lg mb-6">Không gian tinh tế, thảo dược 100% tự nhiên cùng tay nghề y đức nâng niu nâng niu giấc ngủ của mẹ và nụ cười của bé.</p>
               
-              <div className="relative z-10 flex flex-col items-center pt-4">
-                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-pink-100 animate-bounce mb-4 group-hover:rotate-6 transition-transform">
-                  <Heart className="w-7 h-7 text-rose-500 fill-rose-100" />
-                </div>
-                <h3 className="text-lg font-serif font-black text-slate-800 mb-2 leading-tight">Liệu Trình Thư Giãn Chuẩn Nhật Bản</h3>
-                <p className="text-[10px] text-slate-500 font-semibold max-w-xs leading-relaxed">
-                  Không gian tinh tế, thảo dược 100% tự nhiên cùng tay nghề y đức nâng niu giấc ngủ của mẹ và nụ cười của bé.
-                </p>
-              </div>
-              
-              <div className="relative z-10 space-y-2 pb-2">
-                <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50/50 shadow-sm justify-center">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span className="text-[9px] text-slate-600 font-black uppercase tracking-wider">100% Chuẩn Y Khoa</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50/50 shadow-sm justify-center">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span className="text-[9px] text-slate-600 font-black uppercase tracking-wider">KTV Cử Nhân Điều Dưỡng</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Therapist feeding baby */}
-            <div className="md:col-span-4 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl aspect-[4/5] relative group bg-rose-50 flex items-center justify-center">
-              <div 
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" 
-                style={{ backgroundImage: 'url("/bella_real_2.jpg")' }} 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-left z-10">
-                <span className="text-[9px] bg-white/20 backdrop-blur-md text-white font-black uppercase tracking-wider px-2.5 py-1 rounded-full mb-1.5 inline-block">Yêu thương đong đầy</span>
-                <p className="text-white text-xs font-bold leading-normal">Chăm chút trọn vẹn từng bữa ăn</p>
+              <div className="flex flex-wrap items-center justify-center gap-6 text-slate-600 text-[10px] font-black uppercase tracking-widest">
+                <span className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> 100% Chuẩn Y Khoa</span>
+                <span className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> KTV Cử Nhân Y Điều Dưỡng</span>
+                <span className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Nguyên Liệu Organic Sạch</span>
               </div>
             </div>
           </motion.div>
