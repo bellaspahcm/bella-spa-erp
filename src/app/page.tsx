@@ -505,27 +505,63 @@ export default function LandingPage() {
             </a>
           </motion.div>
 
-          {/* Image Placeholder Visual */}
+          {/* Interactive Split-Grid Gallery featuring real staff & baby */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 1.0 }}
-            className="mt-16 relative rounded-[3rem] overflow-hidden max-w-5xl mx-auto border-4 border-white shadow-2xl aspect-[16/9] bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center"
+            className="mt-16 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 relative"
           >
-            <div className="absolute inset-0 bg-cover bg-center mix-blend-multiply opacity-20 filter saturate-50" style={{ backgroundImage: 'url("/logo.png")' }} />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
-            
-            <div className="relative z-10 p-8 text-center flex flex-col items-center">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg border border-pink-100 animate-bounce mb-4">
-                <Heart className="w-10 h-10 text-rose-500 fill-rose-100" />
+            {/* Left Column: Therapist smiling with Baby */}
+            <div className="md:col-span-4 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl aspect-[4/5] relative group bg-rose-50 flex items-center justify-center">
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" 
+                style={{ backgroundImage: 'url("/bella_real_3.jpg")' }} 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              <div className="absolute bottom-6 left-6 text-left z-10">
+                <span className="text-[9px] bg-white/20 backdrop-blur-md text-white font-black uppercase tracking-wider px-2.5 py-1 rounded-full mb-1.5 inline-block">Nụ cười bé cưng</span>
+                <p className="text-white text-xs font-bold leading-normal">Chăm sóc chuẩn Y khoa tại nhà</p>
               </div>
-              <h3 className="text-xl md:text-3xl font-serif font-black text-slate-800 mb-2">Trải nghiệm liệu trình thư giãn chuẩn Nhật Bản</h3>
-              <p className="text-xs md:text-sm text-slate-500 font-semibold max-w-lg mb-6">Không gian tinh tế, thảo dược 100% tự nhiên cùng tay nghề y đức nâng niu nâng niu giấc ngủ của mẹ và nụ cười của bé.</p>
+            </div>
+
+            {/* Center Column: Text & Features (elevated aesthetic) */}
+            <div className="md:col-span-4 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl aspect-[4/5] bg-gradient-to-br from-white via-rose-50/30 to-pink-50/50 p-6 flex flex-col justify-between text-center relative group">
+              <div className="absolute inset-0 bg-cover bg-center mix-blend-multiply opacity-5" style={{ backgroundImage: 'url("/logo.png")' }} />
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
               
-              <div className="flex flex-wrap items-center justify-center gap-6 text-slate-600 text-[10px] font-black uppercase tracking-widest">
-                <span className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> 100% Chuẩn Y Khoa</span>
-                <span className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> KTV Cử Nhân Y Điều Dưỡng</span>
-                <span className="flex items-center gap-1.5 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Nguyên Liệu Organic Sạch</span>
+              <div className="relative z-10 flex flex-col items-center pt-4">
+                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-md border border-pink-100 animate-bounce mb-4 group-hover:rotate-6 transition-transform">
+                  <Heart className="w-7 h-7 text-rose-500 fill-rose-100" />
+                </div>
+                <h3 className="text-lg font-serif font-black text-slate-800 mb-2 leading-tight">Liệu Trình Thư Giãn Chuẩn Nhật Bản</h3>
+                <p className="text-[10px] text-slate-500 font-semibold max-w-xs leading-relaxed">
+                  Không gian tinh tế, thảo dược 100% tự nhiên cùng tay nghề y đức nâng niu giấc ngủ của mẹ và nụ cười của bé.
+                </p>
+              </div>
+              
+              <div className="relative z-10 space-y-2 pb-2">
+                <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50/50 shadow-sm justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span className="text-[9px] text-slate-600 font-black uppercase tracking-wider">100% Chuẩn Y Khoa</span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full border border-rose-50/50 shadow-sm justify-center">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span className="text-[9px] text-slate-600 font-black uppercase tracking-wider">KTV Cử Nhân Điều Dưỡng</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Therapist feeding baby */}
+            <div className="md:col-span-4 rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl aspect-[4/5] relative group bg-rose-50 flex items-center justify-center">
+              <div 
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" 
+                style={{ backgroundImage: 'url("/bella_real_2.jpg")' }} 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              <div className="absolute bottom-6 left-6 text-left z-10">
+                <span className="text-[9px] bg-white/20 backdrop-blur-md text-white font-black uppercase tracking-wider px-2.5 py-1 rounded-full mb-1.5 inline-block">Yêu thương đong đầy</span>
+                <p className="text-white text-xs font-bold leading-normal">Chăm chút trọn vẹn từng bữa ăn</p>
               </div>
             </div>
           </motion.div>
@@ -583,34 +619,53 @@ export default function LandingPage() {
             {/* Left Column: Visual Bento Grid */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
-                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-square bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center p-8 text-center relative group">
-                  <div className="absolute inset-0 bg-cover bg-center mix-blend-multiply opacity-25" style={{ backgroundImage: 'url("/logo.png")' }} />
+                {/* Box 1: Chăm sóc từ tâm */}
+                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-square flex items-center justify-center p-8 text-center relative group">
+                  <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/newborn_mother_love.png")' }} />
+                  <div className="absolute inset-0 bg-black/40 transition-colors duration-300 group-hover:bg-black/45" />
                   <div className="relative z-10">
-                    <Heart className="w-12 h-12 text-rose-600 mx-auto mb-3 fill-rose-200 animate-pulse" />
-                    <h5 className="font-serif font-black text-slate-800 text-sm">Chăm sóc từ tâm</h5>
-                    <p className="text-[10px] text-slate-500 mt-1 font-semibold">Tận tụy chăm chút từng bữa ăn giấc ngủ của mẹ & bé</p>
+                    <Heart className="w-12 h-12 text-rose-300 mx-auto mb-3 fill-rose-300/30 animate-pulse" />
+                    <h5 className="font-serif font-black text-white text-base">Chăm sóc từ tâm</h5>
+                    <p className="text-[10px] text-rose-100 mt-1.5 font-bold leading-normal">Tận tụy chăm chút từng bữa ăn giấc ngủ của mẹ & bé</p>
                   </div>
                 </div>
-                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] bg-slate-900 flex flex-col justify-end p-6 text-white text-left relative group">
-                  <div className="absolute inset-x-0 top-0 p-6 flex justify-between items-start">
+
+                {/* Box 2: Không gian Hoàng Gia */}
+                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] flex flex-col justify-end p-6 text-white text-left relative group">
+                  <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/newborn_family_happy.png")' }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                  <div className="absolute inset-x-0 top-0 p-6 flex justify-between items-start z-10">
                     <Award className="w-8 h-8 text-amber-400" />
                     <span className="text-[9px] bg-white/10 backdrop-blur px-2.5 py-1 rounded-full font-black uppercase tracking-wider">Premium</span>
                   </div>
-                  <h5 className="font-serif font-black text-lg mb-1 leading-tight">Hoàng Gia</h5>
-                  <p className="text-[10px] text-rose-200 font-semibold leading-normal">Không gian và trang thiết bị chuẩn spa y khoa cao cấp bậc nhất.</p>
+                  <div className="relative z-10">
+                    <h5 className="font-serif font-black text-lg mb-1 leading-tight text-white">Hoàng Gia</h5>
+                    <p className="text-[10px] text-rose-100 font-bold leading-normal">Không gian và trang thiết bị chuẩn spa y khoa cao cấp bậc nhất.</p>
+                  </div>
                 </div>
               </div>
+
               <div className="space-y-4 pt-8">
-                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] bg-gradient-to-bl from-pink-50 to-rose-100 border border-white flex flex-col justify-end p-6 text-left group">
-                  <Clock className="w-8 h-8 text-rose-500 mb-4" />
-                  <h5 className="font-serif font-black text-slate-800 text-base mb-1">Thời gian linh hoạt</h5>
-                  <p className="text-[10px] text-slate-500 font-semibold">Đặt lịch 24/7. Điều phối kỹ thuật viên đến tận nhà chăm sóc đúng giờ.</p>
+                {/* Box 3: Thời gian linh hoạt */}
+                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] flex flex-col justify-end p-6 text-left relative group">
+                  <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/home_baby_care.png")' }} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-transparent" />
+                  <div className="relative z-10">
+                    <Clock className="w-8 h-8 text-rose-300 mb-4" />
+                    <h5 className="font-serif font-black text-white text-base mb-1">Thời gian linh hoạt</h5>
+                    <p className="text-[10px] text-rose-100 font-bold leading-normal">Đặt lịch 24/7. Điều phối kỹ thuật viên đến tận nhà chăm sóc đúng giờ.</p>
+                  </div>
                 </div>
-                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-square bg-rose-500 text-white flex items-center justify-center p-8 text-center relative">
-                  <div>
+
+                {/* Box 4: Đánh giá 5★ */}
+                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-square flex items-center justify-center p-8 text-center relative group">
+                  <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/newborn_baby_hand.png")' }} />
+                  <div className="absolute inset-0 bg-rose-600/75 mix-blend-multiply transition-colors duration-300 group-hover:bg-rose-650/80" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-rose-900/40 via-transparent to-black/20" />
+                  <div className="relative z-10 text-white">
                     <h4 className="text-4xl font-serif font-black mb-1">5★</h4>
                     <span className="text-[9px] font-black uppercase tracking-widest block text-rose-100">Đánh Giá Phản Hồi</span>
-                    <p className="text-[10px] text-rose-100/80 mt-1 font-semibold">99.8% các mẹ cực kỳ hài lòng với chất lượng chăm sóc.</p>
+                    <p className="text-[10px] text-white/95 mt-1.5 font-bold leading-normal">99.8% các mẹ cực kỳ hài lòng với chất lượng chăm sóc.</p>
                   </div>
                 </div>
               </div>
@@ -661,6 +716,38 @@ export default function LandingPage() {
             </div>
 
           </div>
+        </div>
+      </section>
+
+      {/* ── SPECIAL PROMOTION BANNER SECTION ── */}
+      <section className="py-12 bg-gradient-to-b from-white to-background relative overflow-hidden">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="rounded-[3rem] overflow-hidden border-4 border-white shadow-2xl relative aspect-[16/9] md:aspect-[2.4/1] bg-rose-50 flex items-center justify-center group cursor-pointer"
+          >
+            {/* Background Image: Image 4 */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.02]" 
+              style={{ backgroundImage: 'url("/bella_real_4.jpg")' }} 
+            />
+            {/* Delicate overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-transparent pointer-events-none" />
+            
+            {/* Call to action element */}
+            <div className="absolute bottom-6 right-6 z-10 hidden sm:block">
+              <a 
+                href="#booking"
+                className="bg-primary hover:bg-primary-hover text-white px-6 py-3.5 rounded-full shadow-lg shadow-pink-200 hover:shadow-pink-300/40 hover:-translate-y-0.5 transition-all text-xs font-black uppercase tracking-wider flex items-center gap-2 group-hover:scale-105"
+              >
+                Đăng ký tắm bé tại nhà ngay
+                <ChevronRight className="w-4 h-4" />
+              </a>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -1133,6 +1220,18 @@ export default function LandingPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Premium Promo Poster (Image 1) */}
+              <motion.div 
+                whileHover={{ y: -5 }}
+                className="rounded-[2.5rem] overflow-hidden border-4 border-white shadow-xl relative aspect-[3/4] group bg-rose-50 flex items-center justify-center"
+              >
+                <div 
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-103" 
+                  style={{ backgroundImage: 'url("/bella_real_1.jpg")' }} 
+                />
+                <div className="absolute inset-0 bg-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </motion.div>
 
               <div className="p-6 bg-pink-50/50 rounded-3xl border border-rose-100 text-left relative overflow-hidden">
                 <div className="absolute right-[-10px] bottom-[-10px] w-20 h-20 opacity-10">
