@@ -478,7 +478,7 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-xs sm:text-sm md:text-base text-slate-500 font-semibold max-w-3xl mx-auto leading-relaxed"
+            className="text-sm sm:text-base md:text-lg text-slate-500 font-medium max-w-3xl mx-auto leading-relaxed mt-8"
           >
             Hệ thống chăm sóc và phục hồi sức khỏe chuẩn y khoa chuyên sâu dành cho Mẹ Bầu, Mẹ Sau Sinh và Bé Yêu tại nhà hoặc tại Spa. Đồng hành cùng hàng triệu gia đình nâng niu những khoảnh khắc tuyệt diệu nhất.
           </motion.p>
