@@ -120,6 +120,9 @@ export async function createUser(formData: any) {
 
   if (error) {
     console.error('Error creating user:', error);
+    if (error.code === '23505' || error.message?.includes('users_email_key')) {
+      return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
+    }
     return { error: error.message };
   }
 
@@ -163,4 +166,58 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   await safeRevalidatePath('/dashboard/settings');
   return { success: true };
 }
+
+export async function updateUser(id: string, formData: any) {
+  const supabase = (await createClient()) as any;
+  
+  const { error } = await supabase
+    .from('users')
+    .update({
+      full_name: formData.full_name,
+      role: formData.role
+    } as any)
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating user:', error);
+    return { error: error.message };
+  }
+
+  // Record Audit Log
+  await recordAuditLog({
+    action: 'UPDATE',
+    table_name: 'users',
+    record_id: id,
+    new_data: { full_name: formData.full_name, role: formData.role }
+  });
+
+  await safeRevalidatePath('/dashboard/settings');
+  return { success: true };
+}
+
+export async function deleteUser(id: string) {
+  const supabase = (await createClient()) as any;
+  
+  const { error } = await supabase
+    .from('users')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting user:', error);
+    return { error: error.message };
+  }
+
+  // Record Audit Log
+  await recordAuditLog({
+    action: 'DELETE',
+    table_name: 'users',
+    record_id: id,
+    new_data: null
+  });
+
+  await safeRevalidatePath('/dashboard/settings');
+  return { success: true };
+}
+
 

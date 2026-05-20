@@ -184,3 +184,8 @@ Status: 🟢 Phase 16 - Triệt để Bảo Mật & Code Quality (Completed) | 1
 - [x] **Phân rã Booking Actions**: Loại bỏ hoàn toàn khối mã cồng kềnh `src/services/booking-actions.ts` (1,713 dòng), tách biệt chúng thành các module riêng biệt tại `src/modules/booking/actions/` (`lifecycle-actions.ts`, `session-actions.ts`, `commission-actions.ts`).
 - [x] **Validation & Type Safety**: Đồng bộ hóa toàn bộ các file import liên đới và khắc phục dứt điểm các lỗi Next.js Server Actions phát sinh khi refactor. Đạt 100% tỷ lệ vượt qua bài Test tự động.
 - [x] **Production Verified**: Quá trình Build tĩnh qua Turbopack hoàn tất mượt mà không vướng bug runtime nào. Hệ thống sẵn sàng mở rộng.
+
+## 🟢 Phase 19: Nâng cấp Quản lý Nhân sự (Staff Management) (Completed)
+- [x] **Xử lý lỗi Backend**: Bắt lỗi trùng lặp Email (PostgreSQL unique constraint `users_email_key`) trong `createUser` và trả về thông báo lỗi thân thiện cho người dùng.
+- [x] **Thao tác dữ liệu (CRUD)**: Bổ sung Server Actions `updateUser` và `deleteUser` vào hệ thống `user-actions.ts`.
+- [x] **Giao diện Quản lý**: Bổ sung tính năng Sửa thông tin nhân sự (Họ tên, Vai trò) và Xóa nhân sự (kèm theo popup cảnh báo an toàn màu đỏ trước khi thực thi) trực tiếp trên giao diện Cài đặt Nhân sự & Quyền. Tích hợp thông báo Toast mượt mà, đồng thời không phá vỡ cấu trúc giao diện chung hiện hữu.

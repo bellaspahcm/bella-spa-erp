@@ -28,12 +28,16 @@ import {
   ArrowRight,
   Coins,
   Lock,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   createUser,
   getUsers,
   updateUserStatus,
+  updateUser,
+  deleteUser,
 } from "@/services/user-actions";
 import { getTenantSettings, saveTenantSettings } from "@/services/tenant-actions";
 import { cn } from "@/lib/utils";
@@ -90,6 +94,22 @@ export default function SettingsPage() {
     full_name: "",
     email: "",
     role: "ktv",
+  });
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editingStaff, setEditingStaff] = useState({
+    id: "",
+    full_name: "",
+    email: "",
+    role: "ktv",
+  });
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingStaff, setDeletingStaff] = useState({
+    id: "",
+    full_name: "",
   });
 
   const [generalSettings, setGeneralSettings] = useState({
@@ -228,6 +248,48 @@ export default function SettingsPage() {
       toast.error("Đã xảy ra lỗi khi thêm nhân sự");
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const handleUpdateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStaff.full_name) {
+      toast.error("Vui lòng nhập họ và tên");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const result = await updateUser(editingStaff.id, editingStaff);
+      if (result.error) {
+        toast.error("Lỗi: " + result.error);
+      } else {
+        toast.success("Đã cập nhật thông tin nhân viên");
+        setIsEditModalOpen(false);
+        fetchUsers();
+      }
+    } catch (error) {
+      toast.error("Đã xảy ra lỗi khi cập nhật");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteStaff = async () => {
+    setIsDeleting(true);
+    try {
+      const result = await deleteUser(deletingStaff.id);
+      if (result.error) {
+        toast.error("Lỗi: " + result.error);
+      } else {
+        toast.success("Đã xóa nhân viên");
+        setIsDeleteModalOpen(false);
+        fetchUsers();
+      }
+    } catch (error) {
+      toast.error("Đã xảy ra lỗi khi xóa");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -648,12 +710,15 @@ export default function SettingsPage() {
                             <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-center">
                               Trạng thái
                             </th>
+                            <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-right">
+                              Thao tác
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/20">
                           {isLoadingUsers ? (
                             <tr>
-                              <td colSpan={5} className="py-20 text-center">
+                              <td colSpan={6} className="py-20 text-center">
                                 <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4" />
                                 <p className="text-muted-foreground font-bold">
                                   Đang tải dữ liệu...
@@ -744,12 +809,44 @@ export default function SettingsPage() {
                                     />
                                   </div>
                                 </td>
+                                <td className="px-8 py-6 text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      onClick={() => {
+                                        setEditingStaff({
+                                          id: user.id,
+                                          full_name: user.full_name,
+                                          email: user.email,
+                                          role: user.role || 'ktv'
+                                        });
+                                        setIsEditModalOpen(true);
+                                      }}
+                                      className="p-2 bg-slate-50 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                                      title="Chỉnh sửa"
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setDeletingStaff({
+                                          id: user.id,
+                                          full_name: user.full_name
+                                        });
+                                        setIsDeleteModalOpen(true);
+                                      }}
+                                      className="p-2 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                                      title="Xóa nhân sự"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
                               </tr>
                             ))
                           ) : (
                             <tr>
                               <td
-                                colSpan={5}
+                                colSpan={6}
                                 className="py-20 text-center text-muted-foreground font-bold italic"
                               >
                                 Chưa có dữ liệu nhân sự
@@ -996,6 +1093,158 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditModalOpen(false)}
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col border border-white"
+            >
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                    <Pencil className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                      Cập nhật nhân sự
+                    </h2>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                      Chỉnh sửa thông tin và vai trò
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateStaff} className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Họ và tên
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingStaff.full_name}
+                    onChange={(e) =>
+                      setEditingStaff({ ...editingStaff, full_name: e.target.value })
+                    }
+                    placeholder="VD: Nguyễn Thị Lan"
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-bold text-slate-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" /> Địa chỉ Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    disabled
+                    value={editingStaff.email}
+                    className="w-full px-6 py-4 bg-slate-100 border-none rounded-2xl outline-none font-bold text-slate-500 cursor-not-allowed"
+                  />
+                  <p className="text-[10px] text-muted-foreground italic ml-2">Không thể thay đổi email sau khi tạo.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <ShieldAlert className="w-3.5 h-3.5" /> Vai trò & Quyền hạn
+                  </label>
+                  <PremiumSelect
+                    value={editingStaff.role}
+                    onChange={(val) => setEditingStaff({ ...editingStaff, role: val })}
+                    options={[
+                      { value: "ktv", label: "Kỹ thuật viên" },
+                      { value: "ktv_lead", label: "KTV Trưởng (Tổ trưởng)" },
+                      { value: "admin_staff", label: "Lễ tân / Nhân viên" },
+                      { value: "admin", label: "Quản trị viên (Admin)" },
+                    ]}
+                    placeholder="Chọn vai trò..."
+                  />
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="w-full bg-primary text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-pink-100 flex items-center justify-center gap-3 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {isUpdating ? (
+                      <Sparkles className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Pencil className="w-5 h-5" />
+                    )}
+                    <span>{isUpdating ? "Đang lưu..." : "Lưu thay đổi"}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col border border-white text-center p-10"
+            >
+              <div className="w-20 h-20 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trash2 className="w-10 h-10" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Xóa nhân sự?</h2>
+              <p className="text-slate-500 mb-8 font-medium">
+                Bạn có chắc chắn muốn xóa nhân sự <strong className="text-slate-900">{deletingStaff.full_name}</strong> khỏi hệ thống? Thao tác này không thể hoàn tác.
+              </p>
+              
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={isDeleting}
+                  className="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleDeleteStaff}
+                  disabled={isDeleting}
+                  className="flex-1 bg-rose-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-rose-200 flex items-center justify-center gap-2 hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <Sparkles className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  <span>Xóa ngay</span>
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
