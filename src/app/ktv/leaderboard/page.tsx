@@ -75,7 +75,7 @@ export default function KTVLeaderboardPage() {
             <Link href="/ktv/dashboard" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md">
               <ChevronLeft className="w-6 h-6" />
             </Link>
-            <h1 className="text-sm font-black uppercase tracking-[0.2em]">Bảng vinh danh</h1>
+            <div className="text-sm font-black uppercase tracking-[0.2em] text-white">Bảng vinh danh</div>
             <button onClick={() => fetchData()} className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md">
               <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -84,7 +84,7 @@ export default function KTVLeaderboardPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-[32px] backdrop-blur-md border border-white/30 mb-4 shadow-xl">
              <Trophy className="w-10 h-10 text-white" />
           </div>
-          <h2 className="text-2xl font-black mb-1">Top Ngôi sao Bella</h2>
+          <div className="text-2xl font-black text-white mb-1">Top Ngôi sao Bella</div>
           <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Tháng {selectedMonth.split('-')[1]} / {selectedMonth.split('-')[0]}</p>
         </div>
       </div>
