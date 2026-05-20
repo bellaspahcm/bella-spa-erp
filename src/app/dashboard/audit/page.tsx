@@ -16,7 +16,7 @@ import {
   Info
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase-client';
+import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
@@ -331,6 +331,7 @@ const renderReadableChanges = (log: AuditLog) => {
 };
 
 export default function AuditPage() {
+  const supabase = createClient();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);

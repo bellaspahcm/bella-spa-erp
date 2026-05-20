@@ -30,7 +30,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
-import { getBookingsByCustomerId, updateBooking, completeSession, reusePackage, recordRemainingPayment, generateShareToken } from '@/services/booking-actions';
+import { getBookingsByCustomerId, updateBooking, reusePackage, recordRemainingPayment, generateShareToken } from '@/modules/booking/actions/lifecycle-actions';
+import { completeSession } from '@/modules/booking/actions/session-actions';
 import { getUsers, getCurrentUser } from '@/services/user-actions';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { useState, useEffect, useCallback } from 'react';

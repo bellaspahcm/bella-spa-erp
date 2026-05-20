@@ -1,4 +1,4 @@
-import { calcProRataBaseSalary } from '../services/salary-actions';
+import { calcProRataBaseSalary } from '../modules/hr-salary/actions/base-salary-actions';
 
 describe('calcProRataBaseSalary', () => {
   it('should calculate pro-rata salary correctly for a resignation mid-month (31 days)', async () => {

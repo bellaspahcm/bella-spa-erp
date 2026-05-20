@@ -29,7 +29,8 @@ import {
   Star,
   Check
 } from 'lucide-react';
-import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, reusePackage, addExtraSession, rescheduleSession, syncBookingProgress } from '@/services/booking-actions';
+import { getSessionsWithDetails, completeSession, getSessionLogs, updateSessionLog, saveSessionNote, addExtraSession, rescheduleSession } from '@/modules/booking/actions/session-actions';
+import { reusePackage, syncBookingProgress } from '@/modules/booking/actions/lifecycle-actions';
 import { getPendingLeaveRequests, getKTVConflictSessions, approveLeaveRequest, rejectLeaveRequest } from '@/services/attendance-actions';
 import { getUsers } from '@/services/user-actions';
 import { toast } from 'sonner';

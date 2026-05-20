@@ -13,7 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { recordTransaction } from '@/services/finance-actions';
-import { getBookings } from '@/services/booking-actions';
+import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';

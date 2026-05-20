@@ -174,3 +174,13 @@ Status: 🟢 Phase 16 - Triệt để Bảo Mật & Code Quality (Completed) | 1
    - Vô hiệu hóa vĩnh viễn backdoor tự động login (Mock User & Test Admin).
 4. **Loại bỏ Placeholder Keys**
    - Ném lỗi Hard Error nếu thiếu `NEXT_PUBLIC_SUPABASE_URL` thay vì âm thầm sử dụng dummy URL.
+
+## 🟢 Phase 17: React Component Architecture Optimization (Completed)
+- [x] **Landing Page Modularization**: Tách rời thành công `HeroSection` và `FeaturesSection` khỏi `src/app/page.tsx` giúp tinh gọn mã UI gốc.
+- [x] **Dashboard UI Refactoring**: Dọn dẹp mã JSX nguyên khối trong `src/app/dashboard/page.tsx`. Tích hợp gọn gàng các component con độc lập như `StatsGrid`, `RevenueChart`, và `KtvPerformanceTable`.
+
+## 🟢 Phase 18: Monolith API Actions Refactoring & Domain-Driven Design (Completed)
+- [x] **Phân rã Salary Actions**: Bóc tách thành công file `src/services/salary-actions.ts` (915 dòng) thành các module phân theo logic tại `src/modules/hr-salary/actions/` (`base-salary-actions.ts`, `admin-salary-actions.ts`, `query-salary-actions.ts`).
+- [x] **Phân rã Booking Actions**: Loại bỏ hoàn toàn khối mã cồng kềnh `src/services/booking-actions.ts` (1,713 dòng), tách biệt chúng thành các module riêng biệt tại `src/modules/booking/actions/` (`lifecycle-actions.ts`, `session-actions.ts`, `commission-actions.ts`).
+- [x] **Validation & Type Safety**: Đồng bộ hóa toàn bộ các file import liên đới và khắc phục dứt điểm các lỗi Next.js Server Actions phát sinh khi refactor. Đạt 100% tỷ lệ vượt qua bài Test tự động.
+- [x] **Production Verified**: Quá trình Build tĩnh qua Turbopack hoàn tất mượt mà không vướng bug runtime nào. Hệ thống sẵn sàng mở rộng.

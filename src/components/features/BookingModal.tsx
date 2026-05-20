@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getCustomers, createCustomer } from '@/services/customer-actions';
-import { createBooking, getDraftBooking, getBookingDetailsWithPayment } from '@/services/booking-actions';
+import { createBooking, getDraftBooking, getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycle-actions';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { formatNumberWithSeparator, cn, getLocalDateString } from '@/lib/utils';

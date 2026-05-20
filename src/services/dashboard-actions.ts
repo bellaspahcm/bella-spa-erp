@@ -91,7 +91,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
 // ─── getUpcomingSessions ──────────────────────────────────────────────────────
 export async function getUpcomingSessions(date?: string) {
   try {
-    const { getCalendarSessions } = await import('./booking-actions');
+    const { getCalendarSessions } = await import('@/modules/booking/actions/session-actions');
     const allSessions = await getCalendarSessions();
 
     const todayStr = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });

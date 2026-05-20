@@ -29,7 +29,8 @@ import {
 import { cn } from '@/lib/utils';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { useState, useEffect } from 'react';
-import { getSalaryData, approveSalary, updateSalaryConfig, getKtvSessionMatrix, confirmKtvSessions, publishSalaryRecord, publishAllSalaryRecords, adminConfirmOnBehalf, finalizeSalaryRecord, finalizeAllSalaryRecords, checkAndAutoConfirm } from '@/services/salary-actions';
+import { getSalaryData, getKtvSessionMatrix } from '@/modules/hr-salary/actions/query-salary-actions';
+import { approveSalary, updateSalaryConfig, confirmKtvSessions, publishSalaryRecord, publishAllSalaryRecords, adminConfirmOnBehalf, finalizeSalaryRecord, finalizeAllSalaryRecords, checkAndAutoConfirm } from '@/modules/hr-salary/actions/admin-salary-actions';
 import { getMonthlyAttendanceSummary, adminOverrideAttendance, adminUpdateKtvHrProfile } from '@/services/attendance-actions';
 import { exportSalaryToExcel, exportSessionMatrixToExcel } from '@/services/export-actions';
 import { toast } from 'sonner';

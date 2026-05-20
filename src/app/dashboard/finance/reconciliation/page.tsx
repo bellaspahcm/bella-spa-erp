@@ -69,7 +69,7 @@ export default function FinancialReconciliationPage() {
         
       if (profileErr || !profile?.tenant_id) {
          // Fallback to profiles table
-         const { data: fallbackProfile } = await supabase
+         const { data: fallbackProfile } = await (supabase as any)
            .from('profiles')
            .select('tenant_id, role')
            .eq('id', session.user.id)
@@ -143,7 +143,7 @@ export default function FinancialReconciliationPage() {
 
       let { data: profile } = await supabase.from('users').select('tenant_id, role').eq('id', session.user.id).single();
       if (!profile?.tenant_id) {
-         const { data: fallbackProfile } = await supabase.from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
+         const { data: fallbackProfile } = await (supabase as any).from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
          profile = fallbackProfile;
       }
       if (!profile || !['admin', 'accountant'].includes(profile.role)) {
@@ -154,7 +154,7 @@ export default function FinancialReconciliationPage() {
         .from('revenue')
         .update({ booking_id: targetBookingId.trim(), status: 'confirmed' })
         .eq('id', selectedOrphan.revenue_id)
-        .eq('tenant_id', profile.tenant_id)
+        .eq('tenant_id', profile.tenant_id as string)
         .is('booking_id', null);
 
       if (error) throw error;
@@ -186,7 +186,7 @@ export default function FinancialReconciliationPage() {
 
       let { data: profile } = await supabase.from('users').select('tenant_id, role').eq('id', session.user.id).single();
       if (!profile?.tenant_id) {
-         const { data: fallbackProfile } = await supabase.from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
+         const { data: fallbackProfile } = await (supabase as any).from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
          profile = fallbackProfile;
       }
       if (!profile || !['admin', 'accountant'].includes(profile.role)) {
@@ -198,7 +198,7 @@ export default function FinancialReconciliationPage() {
       const shortBookingId = selectedDebt.booking_id?.split('-')[0]?.toUpperCase() || 'N/A';
 
       const { error } = await supabase.from('revenue').insert({
-        tenant_id: profile.tenant_id,
+        tenant_id: profile.tenant_id as string,
         booking_id: selectedDebt.booking_id,
         amount: cleanAmount,
         revenue_type: 'additional',

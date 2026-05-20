@@ -45,7 +45,7 @@ export default function ChatPage() {
     async function loadChats() {
       try {
         const supabase = createClient();
-        const { data: customers, error } = await supabase.rpc('get_chat_customers');
+        const { data: customers, error } = await (supabase as any).rpc('get_chat_customers');
         
         if (error) {
           console.error('Error fetching chat customers:', error);
@@ -87,8 +87,7 @@ export default function ChatPage() {
     async function loadMessages() {
       try {
         const supabase = createClient();
-        const { data, error } = await supabase
-          .from('chat_messages')
+        const { data, error } = await (supabase.from('chat_messages') as any)
           .select('*')
           .eq('customer_id', selectedChat.id)
           .order('created_at', { ascending: true });
@@ -109,8 +108,7 @@ export default function ChatPage() {
           setMessages(mappedMessages);
           
           // Mark as read without awaiting to prevent blocking UI
-          supabase
-            .from('chat_messages')
+          (supabase.from('chat_messages') as any)
             .update({ is_read: true } as any)
             .eq('customer_id', selectedChat.id)
             .eq('sender_type', 'customer')
@@ -152,8 +150,7 @@ export default function ChatPage() {
             return [...prev, newMessage];
           });
           if (payload.new.sender_type === 'customer') {
-            supabase
-              .from('chat_messages')
+            (supabase.from('chat_messages') as any)
               .update({ is_read: true } as any)
               .eq('customer_id', selectedChat.id)
               .eq('sender_type', 'customer')
@@ -198,8 +195,7 @@ export default function ChatPage() {
       
       const { data: { user: authUser } } = await supabase.auth.getUser();
 
-      const { data: sentMsg, error } = await supabase
-        .from('chat_messages')
+      const { data: sentMsg, error } = await (supabase.from('chat_messages') as any)
         .insert({
           customer_id: selectedChat.id,
           message: messageText,
