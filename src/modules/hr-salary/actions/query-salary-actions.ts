@@ -50,21 +50,14 @@ export async function getSalaryData() {
       .select('*')
       .eq('month_year', currentMonthYear);
 
-    // Fetch completed sessions with booking details to get the locked commission rate
+    // Fetch completed sessions with booking details + rating fallback
+    // IMPORTANT: include session_reviews joined by session_log_id (mirrors get_ktv_leaderboard RPC)
     const { data: sessions, error: sessionsError } = await supabase
       .from('session_logs')
-      .select('id, completed_by_ktv_id, status, is_confirmed, bookings(ktv_commission)')
+      .select('id, completed_by_ktv_id, status, is_confirmed, rating, bookings(ktv_commission), session_reviews(rating, status)')
       .eq('status', 'completed')
       .gte('completed_date', startOfMonthStr)
       .lt('completed_date', endOfMonthStr);
-
-    // Fetch session reviews for rating bonus calculation
-    const { data: reviews } = await supabase
-      .from('session_reviews')
-      .select('ktv_id, rating')
-      .eq('status', 'approved')
-      .gte('created_at', startOfMonthStr)
-      .lt('created_at', endOfMonthStr);
 
     // Fetch all attendance logs this month
     const { data: attendanceLogs } = await supabase
@@ -80,11 +73,19 @@ export async function getSalaryData() {
         // Use confirmed count from record if available, otherwise use live count
         const ktvSessionsCount = record?.total_sessions || ktvCompletedSessions.length;
         
-        // Calculate Average Rating
-        const ktvReviews = reviews?.filter((r: any) => r.ktv_id === ktv.id) || [];
-        const avgRating = ktvReviews.length > 0 
-          ? ktvReviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / ktvReviews.length 
-          : 5.0; 
+        // Calculate Average Rating — aligned with get_ktv_leaderboard RPC:
+        // COALESCE(AVG(COALESCE(sr.rating, sl.rating)), 5.0)
+        // Join reviews via session_log_id (approved only), fallback to session.rating, then 5.0
+        const ktvSessionsForRating = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
+        const ratingValues: number[] = ktvSessionsForRating.map((s: any) => {
+          const approvedReview = (s.session_reviews as any[])?.find((sr: any) => sr.status === 'approved');
+          if (approvedReview?.rating) return approvedReview.rating as number;
+          if (s.rating) return s.rating as number;
+          return null;
+        }).filter((v: number | null): v is number => v !== null);
+        const avgRating = ratingValues.length > 0
+          ? ratingValues.reduce((acc, v) => acc + v, 0) / ratingValues.length
+          : 5.0;
 
         let bonusPerSession = 0;
         if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;

@@ -61,32 +61,31 @@ export async function publishSalaryRecord(ktvId: string) {
       });
     }
 
-    // 2. Fetch completed sessions this month
+    // 2. Fetch completed sessions this month with nested reviews joined by session_log_id
+    // IMPORTANT: mirrors get_ktv_leaderboard RPC — reviews joined on sl.id, not created_at
     const startOfMonth = monthYear;
     const endOfMonth = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
     const { data: sessions } = await supabase
       .from('session_logs')
-      .select('id, bookings(ktv_commission)')
+      .select('id, rating, bookings(ktv_commission), session_reviews(rating, status)')
       .eq('completed_by_ktv_id', ktvId)
       .eq('status', 'completed')
       .gte('completed_date', startOfMonth)
       .lt('completed_date', endOfMonth);
 
-    // 3. Fetch reviews for rating bonus
-    const { data: reviews } = await supabase
-      .from('session_reviews')
-      .select('rating')
-      .eq('ktv_id', ktvId)
-      .eq('status', 'approved')
-      .gte('created_at', startOfMonthStr)
-      .lt('created_at', endOfMonthStr);
-
     const sessionsCount = sessions?.length || 0;
     const sessionBonus = (sessions || []).reduce((acc: number, s: any) =>
       acc + (s.bookings?.ktv_commission || 150000), 0);
 
-    const avgRating = reviews?.length > 0
-      ? reviews.reduce((a: number, r: any) => a + (r.rating || 0), 0) / reviews.length
+    // 3. Calculate rating — aligned with leaderboard: COALESCE(approved_review, session.rating, 5.0)
+    const ratingValues: number[] = (sessions || []).map((s: any) => {
+      const approvedReview = (s.session_reviews as any[])?.find((sr: any) => sr.status === 'approved');
+      if (approvedReview?.rating) return approvedReview.rating as number;
+      if (s.rating) return s.rating as number;
+      return null;
+    }).filter((v: number | null): v is number => v !== null);
+    const avgRating = ratingValues.length > 0
+      ? ratingValues.reduce((acc, v) => acc + v, 0) / ratingValues.length
       : 5.0;
     const bonusPerSession = avgRating === 5.0 ? salaryConfig.bonus_5_star : avgRating >= 4.5 ? salaryConfig.bonus_4_5_star : avgRating >= 4.0 ? salaryConfig.bonus_4_star : 0;
     const ratingBonus = sessionsCount * bonusPerSession;
