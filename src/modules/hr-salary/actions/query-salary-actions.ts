@@ -42,6 +42,9 @@ export async function getSalaryData() {
 
     const realKtvs = ktvs || [];
 
+    const startOfMonthStr = currentMonthYear;
+    const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
+
     const { data: salaryRecords, error: salaryError } = await supabase
       .from('salary_records')
       .select('*')
@@ -51,17 +54,19 @@ export async function getSalaryData() {
     const { data: sessions, error: sessionsError } = await supabase
       .from('session_logs')
       .select('id, completed_by_ktv_id, status, is_confirmed, bookings(ktv_commission)')
-      .eq('status', 'completed');
+      .eq('status', 'completed')
+      .gte('completed_date', startOfMonthStr)
+      .lt('completed_date', endOfMonthStr);
 
     // Fetch session reviews for rating bonus calculation
     const { data: reviews } = await supabase
       .from('session_reviews')
       .select('ktv_id, rating')
-      .eq('status', 'approved');
+      .eq('status', 'approved')
+      .gte('created_at', startOfMonthStr)
+      .lt('created_at', endOfMonthStr);
 
     // Fetch all attendance logs this month
-    const startOfMonthStr = currentMonthYear;
-    const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
     const { data: attendanceLogs } = await supabase
       .from('attendance')
       .select('*')
@@ -174,6 +179,7 @@ export async function getKtvSessionMatrix() {
 
     const now = new Date();
     const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
 
     // 2. Fetch salary records for confirmation status
     const { data: salaryRecords } = await supabase
@@ -198,7 +204,9 @@ export async function getKtvSessionMatrix() {
           )
         )
       `)
-      .eq('status', 'completed');
+      .eq('status', 'completed')
+      .gte('completed_date', currentMonthYear)
+      .lt('completed_date', endOfMonthStr);
 
     if (sessionsError) console.error('Error fetching sessions:', sessionsError);
 

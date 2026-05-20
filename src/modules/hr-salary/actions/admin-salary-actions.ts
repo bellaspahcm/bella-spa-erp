@@ -77,7 +77,9 @@ export async function publishSalaryRecord(ktvId: string) {
       .from('session_reviews')
       .select('rating')
       .eq('ktv_id', ktvId)
-      .eq('status', 'approved');
+      .eq('status', 'approved')
+      .gte('created_at', startOfMonthStr)
+      .lt('created_at', endOfMonthStr);
 
     const sessionsCount = sessions?.length || 0;
     const sessionBonus = (sessions || []).reduce((acc: number, s: any) =>
@@ -318,12 +320,16 @@ export async function approveSalary(ktvId: string) {
       kpi_bonus_amount: 1000000
     };
 
+    const endOfMonth = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
+
     // 2. Fetch completed sessions with booking details to get the locked commission rate
     const { data: sessions } = await supabase
       .from('session_logs')
       .select('id, bookings(ktv_commission)')
       .eq('completed_by_ktv_id', ktvId)
-      .eq('status', 'completed');
+      .eq('status', 'completed')
+      .gte('completed_date', monthYear)
+      .lt('completed_date', endOfMonth);
     
     const ktvSessionsCount = sessions?.length || 0;
     
@@ -341,9 +347,10 @@ export async function approveSalary(ktvId: string) {
 
     const baseSalary = existing?.base_salary || 6000000;
     const kpiBonus = existing?.kpi_bonus ?? (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
+    const ratingBonus = existing?.rating_bonus || 0;
     const deductions = existing?.violations_deduction || 0;
     const advances = existing?.service_percentage_bonus || 0;
-    const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
+    const totalSalary = baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances;
 
     // 4. Update or Insert salary record
     if (existing) {
