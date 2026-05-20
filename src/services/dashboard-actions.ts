@@ -236,6 +236,7 @@ function parsePostgresTimestamp(tsStr: string): Date {
 export async function getImportantAlerts() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
+    const { getPendingLeaveRequests } = await import('@/services/attendance-actions');
     const supabase = (await createClient()) as any;
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
@@ -399,6 +400,27 @@ export async function getImportantAlerts() {
           timestamp: 0
         });
       }
+    }
+
+    // 4. Pending Leave Requests
+    try {
+      // Only admins should see pending leave alerts in their dashboard
+      if (currentUser?.role === 'admin') {
+        const pendingLeaves = await getPendingLeaveRequests();
+        for (const leave of (pendingLeaves || [])) {
+          alerts.push({
+            type: 'warning',
+            icon: 'alert',
+            title: 'Xin nghỉ phép chờ duyệt',
+            message: `KTV ${leave.users?.full_name || 'Không rõ'} xin nghỉ ngày ${new Date(leave.leave_date).toLocaleDateString('vi-VN')} (${leave.leave_type === 'full' ? 'Cả ngày' : leave.leave_type === 'morning' ? 'Ca sáng' : 'Ca chiều'})`,
+            severity: 'warning',
+            link: `/dashboard/sessions`, // Leads to approval UI
+            timestamp: new Date(leave.created_at).getTime()
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[getImportantAlerts] Error fetching pending leaves:', err);
     }
 
     // Sort by timestamp descending so newer alerts/completed sessions are at the top
