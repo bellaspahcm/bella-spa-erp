@@ -298,7 +298,7 @@ export async function submitKTVLeaveRequest(payload: {
   leave_type: 'full_day' | 'morning' | 'afternoon';
   reason?: string;
 }) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') {
     return { success: false, error: 'Không có quyền thực hiện' };
@@ -347,7 +347,7 @@ export async function submitKTVLeaveRequest(payload: {
 
 /** KTV Action: Lấy lịch sử nghỉ phép */
 export async function getKTVLeaveHistory() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return [];
 
@@ -366,7 +366,7 @@ export async function getKTVLeaveHistory() {
 
 /** Admin Action: Lấy tất cả đơn nghỉ phép đang chờ duyệt */
 export async function getPendingLeaveRequests() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   if (!currentUser || currentUser.role === 'ktv') return [];
 
@@ -396,7 +396,7 @@ export async function getKTVConflictSessions(
   dateStr: string,
   leaveType: 'full_day' | 'morning' | 'afternoon'
 ) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   // Lấy danh sách các ca chăm sóc được đặt trước của KTV này vào ngày đó
   const { data, error } = await supabase
@@ -451,7 +451,7 @@ export async function approveLeaveRequest(
   leaveId: string,
   reassignments?: { sessionLogId: string; newKtvId: string }[]
 ) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant') {
     return { success: false, error: 'Không có quyền thực hiện' };
@@ -552,7 +552,7 @@ export async function approveLeaveRequest(
 
 /** Admin Action: Từ chối đơn nghỉ phép */
 export async function rejectLeaveRequest(leaveId: string, rejectReason?: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant') {
     return { success: false, error: 'Không có quyền thực hiện' };

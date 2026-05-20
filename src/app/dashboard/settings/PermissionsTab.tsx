@@ -80,7 +80,7 @@ export default function PermissionsTab() {
       if (data?.role_permissions) {
         setPermissions((prev: any) => ({
           ...prev,
-          ...data.role_permissions
+          ...(data.role_permissions as any)
         }));
       }
     } catch (error) {

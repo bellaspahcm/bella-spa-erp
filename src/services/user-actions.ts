@@ -5,7 +5,7 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
 
 export async function getCurrentUser() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   // Use getSession() instead of getUser() â€” getSession() validates JWT locally
   // (no extra network round-trip to Supabase Auth server). getUser() can silently
@@ -66,12 +66,13 @@ export async function getCurrentUser() {
     profile.role = profile.role?.toLowerCase();
   }
 
-  return profile || { id: user.id, email: user.email, role: "user" };
+  return profile || { id: user.id, email: user.email, role: "user", tenant_id: null as string | null };
+
 }
 
 
 export async function getUsers() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('users')
     .select(`
@@ -103,7 +104,7 @@ export async function getUsers() {
 }
 
 export async function createUser(formData: any) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   
   const { data, error } = await supabase
@@ -143,7 +144,7 @@ export async function createUser(formData: any) {
 }
 
 export async function updateUserStatus(id: string, status: 'active' | 'inactive') {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { error } = await supabase
     .from('users')
@@ -168,7 +169,7 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
 }
 
 export async function updateUser(id: string, formData: any) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { error } = await supabase
     .from('users')
@@ -196,7 +197,7 @@ export async function updateUser(id: string, formData: any) {
 }
 
 export async function deleteUser(id: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { error } = await supabase
     .from('users')

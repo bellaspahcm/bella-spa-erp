@@ -64,7 +64,7 @@ export function Sidebar() {
         try {
           const settings = await getTenantSettings();
           if (settings?.role_permissions) {
-            setRolePermissions(settings.role_permissions[userData.role] || null);
+            setRolePermissions((settings.role_permissions as any)[userData.role] || null);
           }
         } catch (error) {
           console.error("Failed to load permissions", error);

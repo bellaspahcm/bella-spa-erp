@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 
 export async function getChatCustomers() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   // Directly call the parameterless RPC which uses auth.uid() internally on Postgres
   const { data, error } = await supabase.rpc('get_chat_customers');
@@ -18,7 +18,7 @@ export async function getChatCustomers() {
 }
 
 export async function getChatMessages(customerId: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   // RLS handles tenant isolation
   const { data, error } = await supabase
@@ -36,7 +36,7 @@ export async function getChatMessages(customerId: string) {
 }
 
 export async function sendChatMessage(customerId: string, message: string, senderType: 'customer' | 'staff'): Promise<any> {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { data: customerData } = await supabase.from('customers').select('tenant_id').eq('id', customerId).single();
   const tenantId = customerData?.tenant_id;
@@ -51,7 +51,7 @@ export async function sendChatMessage(customerId: string, message: string, sende
     .from('chat_messages')
     .insert({
       customer_id: customerId,
-      message,
+      message: message,
       sender_type: senderType,
       sender_id: senderType === 'staff' ? (authUser?.id || null) : null,
       tenant_id: tenantId,
@@ -69,7 +69,7 @@ export async function sendChatMessage(customerId: string, message: string, sende
 }
 
 export async function markMessagesAsRead(customerId: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { data: customerData } = await supabase.from('customers').select('tenant_id').eq('id', customerId).single();
   const tenantId = customerData?.tenant_id;
@@ -77,7 +77,7 @@ export async function markMessagesAsRead(customerId: string) {
 
   const { error } = await supabase
     .from('chat_messages')
-    .update({ is_read: true } as any)
+    .update({ is_read: true })
     .eq('customer_id', customerId)
     .eq('sender_type', 'customer')
     .eq('is_read', false)

@@ -144,7 +144,7 @@ export default function SettingsPage() {
             qr_bank_code: data.qr_bank_code || "",
             qr_account_number: data.qr_account_number || "",
             qr_account_name: data.qr_account_name || "",
-            salary_config: data.salary_config || {
+            salary_config: (data.salary_config as any) || {
               bonus_5_star: 50000,
               bonus_4_5_star: 30000,
               bonus_4_star: 10000,

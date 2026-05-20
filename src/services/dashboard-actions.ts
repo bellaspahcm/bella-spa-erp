@@ -30,7 +30,7 @@ function monthRange(monthStart: string) {
 export async function getDashboardStats(startDate?: string, endDate?: string, todayDate?: string) {
   try {
     const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
 
@@ -140,7 +140,7 @@ export async function getUpcomingSessions(date?: string) {
 export async function getTopTechnicians() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
 
@@ -184,7 +184,7 @@ function formatCurrency(val: number) {
 export async function getMonthlyPerformance() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
 
@@ -266,7 +266,7 @@ export async function getImportantAlerts() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
     const { getPendingLeaveRequests } = await import('@/services/attendance-actions');
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
 
@@ -435,7 +435,7 @@ export async function getImportantAlerts() {
     try {
       // Only admins should see pending leave alerts in their dashboard
       if (currentUser?.role === 'admin') {
-        const pendingLeaves = await getPendingLeaveRequests();
+        const pendingLeaves = await getPendingLeaveRequests() as any[];
         for (const leave of (pendingLeaves || [])) {
           alerts.push({
             type: 'warning',

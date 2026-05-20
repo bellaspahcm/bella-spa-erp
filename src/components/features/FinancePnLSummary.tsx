@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3, Calendar, Lock, Unlock, ShieldCheck } from 'lucide-react';
-import { lockMonth } from '@/services/finance-actions';
+import { lockMonth, unlockMonth } from '@/services/finance-actions';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
@@ -37,6 +37,7 @@ interface FinancePnLSummaryProps {
 
 export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChange, onRefresh }: FinancePnLSummaryProps) {
   const [isLocking, setIsLocking] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
 
   const handleLock = async () => {
     if (!window.confirm(`Bạn có chắc chắn muốn CHỐT SỔ tháng ${selectedMonth.substring(0, 7)} không?\nSau khi chốt, toàn bộ giao dịch và lương sẽ được khóa để ngăn chặn thay đổi.`)) {
@@ -49,12 +50,36 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
       if (result.success) {
         toast.success('Tháng đã được chốt sổ thành công!');
         onRefresh();
+      } else {
+        toast.error(result.error || 'Lỗi khi chốt sổ tháng.');
       }
     } catch (error) {
       console.error('Lock error:', error);
       toast.error('Lỗi khi chốt sổ tháng.');
     } finally {
       setIsLocking(false);
+    }
+  };
+
+  const handleUnlock = async () => {
+    if (!window.confirm(`NGUY HIỂM: Bạn có chắc chắn muốn MỞ KHÓA SỔ tháng ${selectedMonth.substring(0, 7)} không?\n(Chỉ dành cho Admin trong trường hợp khẩn cấp)`)) {
+      return;
+    }
+
+    setIsUnlocking(true);
+    try {
+      const result = await unlockMonth(selectedMonth);
+      if (result.success) {
+        toast.success('Tháng đã được mở khóa thành công!');
+        onRefresh();
+      } else {
+        toast.error(result.error || 'Lỗi khi mở khóa sổ tháng.');
+      }
+    } catch (error) {
+      console.error('Unlock error:', error);
+      toast.error('Lỗi khi mở khóa sổ tháng.');
+    } finally {
+      setIsUnlocking(false);
     }
   };
 
@@ -100,10 +125,20 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
         <div className="flex items-center gap-3">
            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Chi tiết báo cáo tháng</h3>
            {pnl.is_locked ? (
-              <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100 animate-in fade-in zoom-in">
-                 <ShieldCheck className="w-3.5 h-3.5" />
-                 Số liệu đã chốt
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100 animate-in fade-in zoom-in">
+                   <ShieldCheck className="w-3.5 h-3.5" />
+                   Số liệu đã chốt
+                </span>
+                <button 
+                  onClick={handleUnlock}
+                  disabled={isUnlocking}
+                  className="flex items-center gap-1.5 bg-rose-50 text-rose-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-rose-100 hover:bg-rose-100 transition-all disabled:opacity-50"
+                >
+                  {isUnlocking ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />}
+                  Mở Khóa (Admin)
+                </button>
+              </div>
            ) : (
               <button 
                 onClick={handleLock}
