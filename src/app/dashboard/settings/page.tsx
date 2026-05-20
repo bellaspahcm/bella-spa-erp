@@ -41,6 +41,7 @@ import { supabase } from "@/lib/supabase-client";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
+import PermissionsTab from "./PermissionsTab";
 
 const container = {
   hidden: { opacity: 0 },
