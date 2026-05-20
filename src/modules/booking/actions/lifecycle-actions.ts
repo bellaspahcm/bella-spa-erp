@@ -1,6 +1,6 @@
 'use server';
 
-import { resolvePackageName, getLocalDateString } from '@/lib/utils';
+import { resolvePackageName, getLocalDateString, sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { bookingSchema } from '@/lib/validations';
 import { resolveKtvCommission } from './commission-actions';
@@ -94,6 +94,9 @@ export async function createBooking(formData: any) {
   }
 
   const validatedData = validatedFields.data;
+  if (validatedData.preferred_time) {
+    validatedData.preferred_time = sanitizeTime(validatedData.preferred_time) || undefined;
+  }
 
   // 0.5. Support atomic customer creation for new customers
   if (validatedData.customer_id === 'new' && formData.newCustomer) {
@@ -353,6 +356,10 @@ export async function getDraftBooking(customerId: string) {
 export async function updateBooking(id: string, payload: any) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
+  
+  if (payload.preferred_time !== undefined) {
+    payload.preferred_time = sanitizeTime(payload.preferred_time);
+  }
   
   let oldBooking = null;
   try {

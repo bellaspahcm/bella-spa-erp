@@ -52,3 +52,16 @@ export function getLocalDateString(date: Date = new Date()): string {
 export function getMonthStart(now = new Date()) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 }
+
+export function sanitizeTime(raw: any): string | null {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
+    const [h, m] = s.split(':');
+    return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
+  }
+  const match = s.match(/(\d{1,2}):(\d{2})/);
+  if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
+  if (/^\d{1,2}$/.test(s)) return `${s.padStart(2, '0')}:00`;
+  return null;
+}

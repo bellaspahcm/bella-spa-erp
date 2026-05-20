@@ -1442,8 +1442,7 @@ function EditBookingModal({ isOpen, onClose, onConfirm, isSubmitting, data, setD
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Giờ chăm sóc mặc định</label>
               <input 
-                type="text" 
-                placeholder="Ví dụ: 08:00, 09:00"
+                type="time"
                 value={data.preferred_time}
                 onChange={(e) => setData({ ...data, preferred_time: e.target.value })}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"

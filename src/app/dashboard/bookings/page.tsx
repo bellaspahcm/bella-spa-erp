@@ -1175,7 +1175,7 @@ function BookingsContent() {
                         <div>
                           <p className="text-xs text-slate-400 font-bold mb-1">Giờ chăm sóc</p>
                           <input 
-                            type="text" 
+                            type="time" 
                             value={modalData.time || ''}
                             onChange={(e) => setModalData({...modalData, time: e.target.value})}
                             className="w-full bg-white border-none rounded-xl px-2 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none text-xs"
@@ -1229,7 +1229,7 @@ function BookingsContent() {
                             { value: 'scheduled', label: 'Sắp tới', icon: <Clock className="w-4 h-4" /> },
                             { value: 'in_progress', label: 'Đang thực hiện', icon: <TrendingUp className="w-4 h-4" /> },
                             { value: 'completed', label: 'Hoàn thành', icon: <CheckCircle2 className="w-4 h-4" /> },
-                            { value: 'canceled', label: 'Đã hủy', icon: <XCircle className="w-4 h-4" /> }
+                            { value: 'cancelled', label: 'Đã hủy', icon: <XCircle className="w-4 h-4" /> }
                           ]}
                           onChange={(value) => setModalData({...modalData, status: value})}
                         />

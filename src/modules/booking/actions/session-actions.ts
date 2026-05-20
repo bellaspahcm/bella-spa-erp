@@ -1,6 +1,6 @@
 'use server';
 
-import { resolvePackageName, getLocalDateString } from '@/lib/utils';
+import { resolvePackageName, getLocalDateString, sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { syncBookingProgress } from './lifecycle-actions';
 
@@ -106,7 +106,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, tenant_id').eq('id', bookingId).single();
   
   if (count && count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
-    await supabase.from('bookings').update({ status: 'active', updated_at: new Date().toISOString() }).eq('id', bookingId);
+    await supabase.from('bookings').update({ status: 'in_progress', updated_at: new Date().toISOString() }).eq('id', bookingId);
   }
   
   if (currentBooking?.total_sessions && count && count >= currentBooking.total_sessions) {
@@ -344,7 +344,11 @@ export async function updateSessionLog(id: string, payload: any) {
   const updates: any = { ...payload };
   
   if (updates.assigned_date === "" || updates.assigned_date === "dd/mm/yyyy") updates.assigned_date = null;
-  if (updates.assigned_time === "" || updates.assigned_time === "--:-- --") updates.assigned_time = null;
+  if (updates.assigned_time === "" || updates.assigned_time === "--:-- --") {
+    updates.assigned_time = null;
+  } else if (updates.assigned_time !== undefined) {
+    updates.assigned_time = sanitizeTime(updates.assigned_time);
+  }
   if (updates.notes === "") updates.notes = null;
 
   const allowedColumns = ['assigned_date', 'completed_date', 'completed_by_ktv_id', 'address', 'status', 'notes', 'assigned_time'];
@@ -418,7 +422,7 @@ export async function updateSessionLog(id: string, payload: any) {
     };
     
     if (count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
-      bUpdates.status = 'active';
+      bUpdates.status = 'in_progress';
     }
     
     if (currentBooking?.total_sessions && count >= currentBooking.total_sessions) {
@@ -639,19 +643,6 @@ export async function createSessionLog(data: any) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   
-  function sanitizeTime(raw: any): string | null {
-    if (!raw) return null;
-    const s = String(raw).trim();
-    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
-      const [h, m] = s.split(':');
-      return `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
-    }
-    const match = s.match(/(\d{1,2}):(\d{2})/);
-    if (match) return `${match[1].padStart(2, '0')}:${match[2]}`;
-    if (/^\d{1,2}$/.test(s)) return `${s.padStart(2, '0')}:00`;
-    return null;
-  }
-
   const { count, error: countError } = await supabase
     .from('session_logs')
     .select('*', { count: 'exact', head: true })
