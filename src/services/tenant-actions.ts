@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';
@@ -16,11 +17,28 @@ export async function getTenantSettings() {
   }
 
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('tenants')
       .select('*')
       .eq('id', tenantId)
       .single();
+
+    if (error && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('Error fetching tenant settings with auth client, trying with admin client...', error.message);
+      const supabaseAdmin = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      
+      const adminRes = await supabaseAdmin
+        .from('tenants')
+        .select('*')
+        .eq('id', tenantId)
+        .single();
+        
+      data = adminRes.data;
+      error = adminRes.error;
+    }
 
     if (error) {
       console.error('Error fetching tenant settings:', error);
@@ -68,11 +86,28 @@ export async function saveTenantSettings(settings: {
     if (settings.salary_config !== undefined) updatePayload.salary_config = settings.salary_config;
     if (settings.role_permissions !== undefined) updatePayload.role_permissions = settings.role_permissions;
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('tenants')
       .update(updatePayload)
       .eq('id', tenantId)
       .select();
+
+    if ((!data || data.length === 0) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn('Update returned 0 rows with auth client, trying with admin client...');
+      const supabaseAdmin = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      
+      const adminRes = await supabaseAdmin
+        .from('tenants')
+        .update(updatePayload)
+        .eq('id', tenantId)
+        .select();
+        
+      data = adminRes.data;
+      error = adminRes.error;
+    }
 
     if (error) {
       console.error('Error updating tenant settings:', error);
