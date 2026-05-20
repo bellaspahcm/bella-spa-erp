@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 import { getLocalDateString } from '@/lib/utils';
 import { recordAuditLog } from './audit-actions';
+import { encrypt, decrypt } from '@/lib/crypto';
 
 /**
  * Interface for CRM Stats
@@ -21,7 +22,16 @@ export interface CRMStats {
 export async function getCRMStats(): Promise<CRMStats> {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    console.warn('[getCRMStats] Không tìm thấy tenantId cho người dùng hiện tại');
+    return {
+      totalRemindersSent: 0,
+      pendingRemindersToday: 0,
+      totalBirthdaysToday: 0,
+      totalBirthdaysMonth: 0
+    };
+  }
   const todayStr = getLocalDateString(new Date());
 
   try {
@@ -101,7 +111,11 @@ export async function getCRMStats(): Promise<CRMStats> {
 export async function getUpcomingSessions() {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    console.warn('[getUpcomingSessions] Không tìm thấy tenantId cho người dùng hiện tại');
+    return [];
+  }
   const todayStr = getLocalDateString(new Date());
 
   const tomorrow = new Date();
@@ -165,15 +179,11 @@ export interface ZaloConfig {
  */
 export async function getZaloConfig(): Promise<ZaloConfig> {
   const supabase = (await createClient()) as any;
-  let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
-
-  try {
-    const currentUser = await getCurrentUser();
-    if (currentUser?.tenant_id) {
-      tenantId = currentUser.tenant_id;
-    }
-  } catch (e) {
-    // Silent ignore if no active session
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  
+  if (!tenantId) {
+    throw new Error('Unauthorized: Tenant ID is required');
   }
 
   try {
@@ -200,10 +210,10 @@ export async function getZaloConfig(): Promise<ZaloConfig> {
 
     return {
       zalo_app_id: data.zalo_app_id || '',
-      zalo_secret_key: data.zalo_secret_key || '',
+      zalo_secret_key: decrypt(data.zalo_secret_key || ''),
       zalo_oa_id: data.zalo_oa_id || '',
-      zalo_access_token: data.zalo_access_token || '',
-      zalo_refresh_token: data.zalo_refresh_token || '',
+      zalo_access_token: decrypt(data.zalo_access_token || ''),
+      zalo_refresh_token: decrypt(data.zalo_refresh_token || ''),
       zalo_token_expires_at: data.zalo_token_expires_at || '',
       zalo_template_reminder_id: data.zalo_template_reminder_id || '',
       zalo_template_birthday_id: data.zalo_template_birthday_id || '',
@@ -226,25 +236,32 @@ export async function getZaloConfig(): Promise<ZaloConfig> {
 }
 
 /**
- * Saves Zalo configuration for the current tenant
- */
+ * Saves Zalo configuration  */
 export async function saveZaloConfig(config: Partial<ZaloConfig>) {
   const supabase = (await createClient()) as any;
-  let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
 
-  try {
-    const currentUser = await getCurrentUser();
-    if (currentUser?.tenant_id) {
-      tenantId = currentUser.tenant_id;
-    }
-  } catch (e) {
-    // Silent ignore if no active session
+  if (!tenantId) {
+    throw new Error('Unauthorized: Tenant ID is required');
   }
 
   try {
+    // Encrypt sensitive credential fields before saving to DB
+    const encryptedConfig = { ...config };
+    if (config.zalo_secret_key) {
+      encryptedConfig.zalo_secret_key = encrypt(config.zalo_secret_key);
+    }
+    if (config.zalo_access_token) {
+      encryptedConfig.zalo_access_token = encrypt(config.zalo_access_token);
+    }
+    if (config.zalo_refresh_token) {
+      encryptedConfig.zalo_refresh_token = encrypt(config.zalo_refresh_token);
+    }
+
     const { error } = await supabase
       .from('tenants')
-      .update(config)
+      .update(encryptedConfig)
       .eq('id', tenantId);
 
     if (error) {
@@ -252,11 +269,17 @@ export async function saveZaloConfig(config: Partial<ZaloConfig>) {
       return { error: 'Lỗi lưu cấu hình: ' + error.message };
     }
 
+    // Mask sensitive keys in audit log
+    const auditConfig = { ...config };
+    if (auditConfig.zalo_secret_key) auditConfig.zalo_secret_key = '••••••••';
+    if (auditConfig.zalo_access_token) auditConfig.zalo_access_token = '••••••••';
+    if (auditConfig.zalo_refresh_token) auditConfig.zalo_refresh_token = '••••••••';
+
     await recordAuditLog({
       action: 'UPDATE',
       table_name: 'tenants',
       record_id: tenantId,
-      new_data: config
+      new_data: auditConfig
     });
 
     return { success: true };
@@ -288,12 +311,17 @@ export async function getOrRefreshZaloToken(tenantId: string): Promise<string | 
 
     const { zalo_app_id, zalo_secret_key, zalo_access_token, zalo_refresh_token, zalo_token_expires_at } = tenant;
 
+    // Decrypt fields
+    const decryptedSecretKey = decrypt(zalo_secret_key || '');
+    const decryptedAccessToken = decrypt(zalo_access_token || '');
+    const decryptedRefreshToken = decrypt(zalo_refresh_token || '');
+
     // Check if configuration is missing or using mock values
-    if (!zalo_app_id || !zalo_secret_key || !zalo_access_token || !zalo_refresh_token) {
+    if (!zalo_app_id || !decryptedSecretKey || !decryptedAccessToken || !decryptedRefreshToken) {
       return null;
     }
-    if (zalo_secret_key.includes('••') || zalo_access_token.includes('••') || zalo_refresh_token.includes('••') ||
-        zalo_secret_key === '' || zalo_access_token === '' || zalo_refresh_token === '') {
+    if (decryptedSecretKey.includes('••') || decryptedAccessToken.includes('••') || decryptedRefreshToken.includes('••') ||
+        decryptedSecretKey === '' || decryptedAccessToken === '' || decryptedRefreshToken === '') {
       return null;
     }
 
@@ -303,7 +331,7 @@ export async function getOrRefreshZaloToken(tenantId: string): Promise<string | 
     if (zalo_token_expires_at) {
       const expiresAt = new Date(zalo_token_expires_at);
       if (expiresAt > bufferTime) {
-        return zalo_access_token;
+        return decryptedAccessToken;
       }
     }
 
@@ -314,11 +342,11 @@ export async function getOrRefreshZaloToken(tenantId: string): Promise<string | 
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'secret_key': zalo_secret_key
+        'secret_key': decryptedSecretKey
       },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
-        refresh_token: zalo_refresh_token,
+        refresh_token: decryptedRefreshToken,
         app_id: zalo_app_id
       })
     });
@@ -336,7 +364,7 @@ export async function getOrRefreshZaloToken(tenantId: string): Promise<string | 
     }
 
     const newAccessToken = result.access_token;
-    const newRefreshToken = result.refresh_token || zalo_refresh_token; // Keep old refresh token if not returned
+    const newRefreshToken = result.refresh_token || decryptedRefreshToken; // Keep old refresh token if not returned
     const expiresIn = parseInt(result.expires_in) || 86400; // default 24h if missing
     const newExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
@@ -344,8 +372,8 @@ export async function getOrRefreshZaloToken(tenantId: string): Promise<string | 
     const { error: saveError } = await supabase
       .from('tenants')
       .update({
-        zalo_access_token: newAccessToken,
-        zalo_refresh_token: newRefreshToken,
+        zalo_access_token: encrypt(newAccessToken),
+        zalo_refresh_token: encrypt(newRefreshToken),
         zalo_token_expires_at: newExpiresAt
       })
       .eq('id', tenantId);
@@ -435,13 +463,14 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
     const currentUser = await getCurrentUser();
     currentUserId = currentUser?.id || '';
     if (!tenantId) {
-      tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+      tenantId = currentUser?.tenant_id;
     }
   } catch (e) {
     // Suppress error if no active session (e.g. Cron job)
-    if (!tenantId) {
-      tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
-    }
+  }
+
+  if (!tenantId) {
+    return { error: 'Không thể xác định chi nhánh (Tenant ID is required).' };
   }
 
   try {
@@ -612,7 +641,11 @@ export async function triggerBatchReminders(specificTenantId?: string) {
     }
 
     if (tenantIds.length === 0) {
-      tenantIds = ['0e66365b-42b0-420e-acca-f7d7692e125e'];
+      return {
+        count: 0,
+        messages: [],
+        info: 'Không tìm thấy chi nhánh hoạt động nào để quét lịch.'
+      };
     }
 
     const todayStr = getLocalDateString(new Date());
@@ -684,15 +717,12 @@ export async function triggerBatchReminders(specificTenantId?: string) {
  */
 export async function getBirthdayCustomers() {
   const supabase = (await createClient()) as any;
-  let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
 
-  try {
-    const currentUser = await getCurrentUser();
-    if (currentUser?.tenant_id) {
-      tenantId = currentUser.tenant_id;
-    }
-  } catch (e) {
-    // Suppress
+  if (!tenantId) {
+    console.warn('[getBirthdayCustomers] Không tìm thấy tenantId cho người dùng hiện tại');
+    return [];
   }
 
   try {
@@ -757,12 +787,14 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
     const currentUser = await getCurrentUser();
     currentUserId = currentUser?.id || '';
     if (!tenantId) {
-      tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+      tenantId = currentUser?.tenant_id;
     }
   } catch (e) {
-    if (!tenantId) {
-      tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
-    }
+    // Suppress
+  }
+
+  if (!tenantId) {
+    return { error: 'Không xác định được chi nhánh (Tenant ID is required).' };
   }
 
   try {
@@ -861,15 +893,12 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
  */
 export async function getZaloZnsLogs() {
   const supabase = (await createClient()) as any;
-  let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
 
-  try {
-    const currentUser = await getCurrentUser();
-    if (currentUser?.tenant_id) {
-      tenantId = currentUser.tenant_id;
-    }
-  } catch (e) {
-    // Suppress
+  if (!tenantId) {
+    console.warn('[getZaloZnsLogs] Không tìm thấy tenantId cho người dùng hiện tại');
+    return [];
   }
 
   try {

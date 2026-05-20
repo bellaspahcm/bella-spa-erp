@@ -177,7 +177,12 @@ export default function ServicesPage() {
         .eq('id', session.user.id)
         .single();
       
-      const tenant_id = profile?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+      if (!profile?.tenant_id) {
+        toast.error('Lỗi hệ thống: Không xác định được Tenant ID');
+        setIsLoading(false);
+        return;
+      }
+      const tenant_id = profile.tenant_id;
 
       // Default packages from landing page
       const defaultPackages = [
@@ -314,7 +319,11 @@ export default function ServicesPage() {
         .eq('id', session.user.id)
         .single();
       
-      const tenant_id = profile?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+      if (!profile?.tenant_id) {
+        toast.error('Lỗi hệ thống: Không xác định được Tenant ID');
+        return;
+      }
+      const tenant_id = profile.tenant_id;
 
       const dbData = {
         name: name,

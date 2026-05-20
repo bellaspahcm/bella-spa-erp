@@ -153,26 +153,30 @@ export async function createBooking(formData: any) {
   // Strategy: resolve tenant_id via 3-level fallback
   // Level 1: getCurrentUser() via session (standard path)
   // Level 2: direct auth.getUser() + DB lookup by email (when session refresh fails)
-  // Level 3: hardcoded known tenant (dev/emergency fallback)
-  const KNOWN_TENANT_ID = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  // Level 3: DEFAULT_TENANT_ID fallback (dev/emergency fallback)
 
   let tenantId: string | null = null;
   let userEmail: string | null = null;
+  let isLoggedIn = false;
 
   // Level 1: Try getCurrentUser() (needs working middleware)
   const currentUser = await getCurrentUser();
-  if (currentUser?.tenant_id) {
-    tenantId = currentUser.tenant_id;
-    userEmail = currentUser.email;
-    console.log('[createBooking] Level1 resolved tenant:', tenantId);
+  if (currentUser) {
+    isLoggedIn = true;
+    if (currentUser.tenant_id) {
+      tenantId = currentUser.tenant_id;
+      userEmail = currentUser.email;
+      console.log('[createBooking] Level1 resolved tenant:', tenantId);
+    }
   }
 
   // Level 2: Direct auth user lookup
   if (!tenantId) {
     const { data: { user: authUser } } = await supabase.auth.getUser();
-    console.log('[createBooking] Level2 authUser:', authUser?.email, '| id:', authUser?.id);
     if (authUser) {
+      isLoggedIn = true;
       userEmail = authUser.email ?? null;
+      console.log('[createBooking] Level2 authUser:', authUser.email, '| id:', authUser.id);
       // Lookup by ID first, then email
       const { data: userProfile } = await supabase
         .from('users')
@@ -187,10 +191,16 @@ export async function createBooking(formData: any) {
     }
   }
 
-  // Level 3: Hardcoded fallback (single-tenant app)
+  // Level 3: Fallback for Guest Bookings (Landing Page)
   if (!tenantId) {
-    tenantId = KNOWN_TENANT_ID;
-    console.warn('[createBooking] Level3 FALLBACK tenant used for user:', userEmail);
+    if (isLoggedIn) {
+      return { error: 'Unauthorized: Tenant ID is required for logged in users.' };
+    }
+    tenantId = process.env.DEFAULT_TENANT_ID || null;
+    if (!tenantId) {
+      return { error: 'System Error: DEFAULT_TENANT_ID is not configured for guest bookings.' };
+    }
+    console.warn('[createBooking] Level3 DEFAULT_TENANT_ID fallback used for guest booking.');
   }
 
   console.log('[createBooking] Final tenantId:', tenantId, '| user:', userEmail);
@@ -403,7 +413,7 @@ export async function completeSession(sessionId: string, bookingId: string) {
     .single();
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
-    return { error: `DEBUG: ID: ${currentUser?.id || 'null'}, Role: ${currentUser?.role || 'null'}, Email: ${currentUser?.email || 'null'}` };
+    return { error: 'Bạn không có quyền thực hiện thao tác này (Unauthorized)' };
   }
 
   // 1. Get current booking to check assigned KTV and package
@@ -725,7 +735,7 @@ export async function updateSessionLog(id: string, payload: any) {
     .single();
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
-    return { error: `DEBUG: ID: ${currentUser?.id || 'null'}, Role: ${currentUser?.role || 'null'}, Email: ${currentUser?.email || 'null'}` };
+    return { error: 'Bạn không có quyền thực hiện thao tác này (Unauthorized)' };
   }
 
   const updates: any = { ...payload };
@@ -1243,7 +1253,7 @@ export async function updateBooking(id: string, payload: any) {
             status: 'scheduled',
             assigned_date: assignedDate,
             assigned_time: payload.preferred_time || data?.[0]?.preferred_time || null,
-            tenant_id: data?.[0]?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e'
+            tenant_id: data?.[0]?.tenant_id || process.env.DEFAULT_TENANT_ID || null
           });
         }
 

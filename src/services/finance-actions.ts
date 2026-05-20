@@ -3,8 +3,6 @@
 import { revalidatePath } from 'next/cache';
 import { getLocalDateString } from '@/lib/utils';
 
-const KNOWN_TENANT_ID = '0e66365b-42b0-420e-acca-f7d7692e125e';
-
 // ─── Tenant Resolution (3-level fallback) ────────────────────────────────────
 async function resolveTenantId(): Promise<string> {
   try {
@@ -27,7 +25,7 @@ async function resolveTenantId(): Promise<string> {
   } catch (e) {
     console.warn('[finance] Tenant resolution error:', e);
   }
-  return KNOWN_TENANT_ID;
+  throw new Error('Unauthorized: Không xác định được chi nhánh hoạt động hợp lệ.');
 }
 
 // ─── Schema reference (verified 2026-05-15) ──────────────────────────────────

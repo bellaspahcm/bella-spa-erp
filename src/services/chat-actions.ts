@@ -38,9 +38,11 @@ export async function getChatMessages(customerId: string) {
 export async function sendChatMessage(customerId: string, message: string, senderType: 'customer' | 'staff'): Promise<any> {
   const supabase = (await createClient()) as any;
   
-  // Determine tenant ID safely by checking the customer
   const { data: customerData } = await supabase.from('customers').select('tenant_id').eq('id', customerId).single();
-  const tenantId = customerData?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = customerData?.tenant_id;
+  if (!tenantId) {
+    throw new Error('Không tìm thấy chi nhánh hợp lệ cho khách hàng này.');
+  }
   
   // Determine auth user safely without crashing
   const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -70,7 +72,8 @@ export async function markMessagesAsRead(customerId: string) {
   const supabase = (await createClient()) as any;
   
   const { data: customerData } = await supabase.from('customers').select('tenant_id').eq('id', customerId).single();
-  const tenantId = customerData?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = customerData?.tenant_id;
+  if (!tenantId) return;
 
   const { error } = await supabase
     .from('chat_messages')

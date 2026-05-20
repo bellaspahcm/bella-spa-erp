@@ -40,7 +40,7 @@ export async function ktvCheckIn() {
   if (!user || user.role !== 'ktv') return { success: false, error: 'Không có quyền truy cập' };
 
   let tenantId = user.tenant_id;
-  if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   const todayStr = await getVNTodayString();
   const now = new Date();
@@ -205,7 +205,7 @@ export async function adminOverrideAttendance(payload: {
   }
 
   let tenantId = currentUser.tenant_id;
-  if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   // Check if existing record
   const { data: existing } = await supabase
@@ -305,7 +305,7 @@ export async function submitKTVLeaveRequest(payload: {
   }
 
   let tenantId = user.tenant_id;
-  if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   // Check if there is already a request for this date
   const { data: existing } = await supabase

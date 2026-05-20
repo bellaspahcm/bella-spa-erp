@@ -7,7 +7,12 @@ import { getCurrentUser } from './user-actions';
 export async function getAuditLogs() {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+
+  if (!tenantId) {
+    console.warn('[getAuditLogs] Không có tenantId cho người dùng hiện tại');
+    return [];
+  }
 
   try {
     // Note: audit_logs.changed_by_id points to auth.users.id. 
@@ -55,7 +60,12 @@ export async function recordAuditLog(payload: {
 }) {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+
+  if (!tenantId) {
+    console.warn('[recordAuditLog] Không tìm thấy tenantId cho người dùng hiện tại, bỏ qua ghi log');
+    return;
+  }
 
   try {
     const { error } = await supabase.from('audit_logs').insert({

@@ -190,7 +190,11 @@ export default function ChatPage() {
       const supabase = createClient();
       
       const { data: customerData } = await supabase.from('customers').select('tenant_id').eq('id', selectedChat.id).single();
-      const tenantId = customerData?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+      if (!customerData?.tenant_id) {
+        alert('Lỗi hệ thống: Không xác định được Tenant ID của khách hàng.');
+        return;
+      }
+      const tenantId = customerData.tenant_id;
       
       const { data: { user: authUser } } = await supabase.auth.getUser();
 

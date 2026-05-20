@@ -73,7 +73,11 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
         .select('tenant_id')
         .eq('id', user.id)
         .single();
-      const tenantId = profile?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+        
+      if (!profile?.tenant_id) {
+        throw new Error('Không xác định được Tenant ID của người dùng. Vui lòng thử lại.');
+      }
+      const tenantId = profile.tenant_id;
 
       const parsedAmount = Number(cleanAmount);
       const notesValue = notes || (type === 'revenue' ? 'Thu nhập' : 'Chi phí');

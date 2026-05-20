@@ -29,8 +29,8 @@ function calcProRataBaseSalary(baseSalary: number, resignationDate: Date, monthY
 export async function publishSalaryRecord(ktvId: string) {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  let tenantId = currentUser?.tenant_id;
-  if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   const now = new Date();
   const monthYear = getMonthStart(now);
@@ -186,8 +186,8 @@ export async function publishSalaryRecord(ktvId: string) {
 export async function publishAllSalaryRecords() {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  let tenantId = currentUser?.tenant_id;
-  if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   const { data: ktvs } = await supabase
     .from('users')
@@ -276,8 +276,8 @@ export async function adminConfirmOnBehalf(ktvId: string) {
 export async function finalizeSalaryRecord(ktvId: string) {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  let tenantId = currentUser?.tenant_id;
-  if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   const now = new Date();
   const monthYear = getMonthStart(now);
@@ -324,8 +324,8 @@ export async function finalizeSalaryRecord(ktvId: string) {
 export async function finalizeAllSalaryRecords() {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  let tenantId = currentUser?.tenant_id;
-  if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   const monthYear = getMonthStart();
   const { data: confirmed } = await supabase
@@ -398,7 +398,11 @@ export async function getSalaryData() {
     const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const supabase = (await createClient()) as any;
     const currentUser = await getCurrentUser();
-    let tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+    const tenantId = currentUser?.tenant_id;
+    if (!tenantId) {
+      console.warn('[getSalaryData] Không tìm thấy tenantId cho người dùng hiện tại');
+      return [];
+    }
 
     const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
     const salaryConfig = tenantData?.salary_config || {
@@ -556,7 +560,10 @@ export async function approveSalary(ktvId: string) {
       .single() as any;
 
     const currentUser = await getCurrentUser();
-    let tenantId = currentUser?.tenant_id || ktv?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+    const tenantId = currentUser?.tenant_id || ktv?.tenant_id;
+    if (!tenantId) {
+      return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+    }
 
     const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
     const salaryConfig = tenantData?.salary_config || {
@@ -677,8 +684,8 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
       .single();
 
     const currentUser = await getCurrentUser();
-    let tenantId = currentUser?.tenant_id;
-    if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+    const tenantId = currentUser?.tenant_id;
+    if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
     if (existing) {
       const { error } = await supabase
@@ -846,8 +853,8 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
   const now = new Date();
   const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const currentUser = await getCurrentUser();
-  let tenantId = currentUser?.tenant_id;
-  if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
   
   console.log(`Confirming sessions for KTV: ${ktvId}, Total: ${totalSessions}`);
   

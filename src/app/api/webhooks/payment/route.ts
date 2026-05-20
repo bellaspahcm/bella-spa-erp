@@ -94,12 +94,28 @@ function extractTransactions(body: any): Transaction[] {
   return txs;
 }
 
+import { timingSafeEqual } from "crypto";
+
+function secureCompare(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
+
 export async function POST(request: NextRequest) {
   console.log("[Payment Webhook] Received request at:", new Date().toISOString());
   
   try {
     // 1. Authenticate the webhook request
     const secret = process.env.PAYMENT_WEBHOOK_SECRET;
+    
+    if (!secret) {
+      console.error("[Payment Webhook] CRITICAL: PAYMENT_WEBHOOK_SECRET is not configured.");
+      return NextResponse.json({ error: "Server Configuration Error" }, { status: 500 });
+    }
+
     const authHeader = request.headers.get("authorization");
     const apiKeyHeader = request.headers.get("x-api-key");
     const { searchParams } = new URL(request.url);
@@ -107,10 +123,10 @@ export async function POST(request: NextRequest) {
 
     const providedSecret = querySecret || 
                            (authHeader ? authHeader.replace("Bearer ", "") : null) || 
-                           apiKeyHeader;
+                           apiKeyHeader || "";
 
-    if (secret && providedSecret !== secret) {
-      console.warn("[Payment Webhook] Unauthorized request. Provided:", providedSecret, "Expected:", secret);
+    if (!secureCompare(secret, providedSecret)) {
+      console.warn("[Payment Webhook] Unauthorized request.");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

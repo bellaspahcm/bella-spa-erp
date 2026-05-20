@@ -348,17 +348,27 @@ export default function AuditPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      let tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('tenant_id')
-          .eq('id', user.id)
-          .single();
-        if (userData?.tenant_id) {
-          tenantId = userData.tenant_id;
-        }
+      if (!user) {
+        toast.error('Vui lòng đăng nhập để xem nhật ký.');
+        setIsLoading(false);
+        setIsRefreshing(false);
+        return;
       }
+      
+      const { data: userData } = await supabase
+        .from('users')
+        .select('tenant_id')
+        .eq('id', user.id)
+        .single();
+        
+      if (!userData?.tenant_id) {
+        toast.error('Lỗi hệ thống: Không xác định được Tenant ID.');
+        setIsLoading(false);
+        setIsRefreshing(false);
+        return;
+      }
+      
+      const tenantId = userData.tenant_id;
 
       const { data, error } = await supabase
         .from('audit_logs')
