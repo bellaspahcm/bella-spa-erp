@@ -42,10 +42,20 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Calling getUser() triggers token refresh if the JWT is expired.
-  // Do NOT remove this — it keeps sessions alive for Server Actions.
   const { data: { user }, error } = await supabase.auth.getUser();
-  console.log("[Proxy] User refresh:", !!user, error?.message);
+  // console.log("[Proxy] User refresh:", !!user, error?.message);
+
+  const isProtectedRoute = 
+    request.nextUrl.pathname.startsWith('/dashboard') || 
+    request.nextUrl.pathname.startsWith('/ktv') || 
+    request.nextUrl.pathname.startsWith('/portal');
+
+  if (isProtectedRoute && !user) {
+    const loginUrl = new URL('/login', request.url);
+    // Optional: save the intended destination to redirect back after login
+    loginUrl.searchParams.set('next', request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
   return response;
 }

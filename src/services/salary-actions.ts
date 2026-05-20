@@ -13,7 +13,7 @@ function getMonthStart(now = new Date()) {
 }
 
 /** Calculate pro-rata base salary for resigned KTVs */
-function calcProRataBaseSalary(baseSalary: number, resignationDate: Date, monthYear: Date): number {
+export async function calcProRataBaseSalary(baseSalary: number, resignationDate: Date, monthYear: Date): Promise<number> {
   const monthStart = new Date(monthYear.getFullYear(), monthYear.getMonth(), 1);
   const daysInMonth = new Date(monthYear.getFullYear(), monthYear.getMonth() + 1, 0).getDate();
   const daysWorked = Math.max(0, Math.floor((resignationDate.getTime() - monthStart.getTime()) / 86400000) + 1);
@@ -136,7 +136,7 @@ export async function publishSalaryRecord(ktvId: string) {
       const resignDate = new Date(ktv.resignation_date);
       const monthDate = new Date(monthYear);
       if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
-        const resignCap = calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
+        const resignCap = await calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
         if (finalBaseSalary > resignCap) {
           finalBaseSalary = resignCap;
         }
@@ -454,7 +454,7 @@ export async function getSalaryData() {
       .gte('date', startOfMonthStr)
       .lt('date', endOfMonthStr);
 
-    const ktvSalaries = realKtvs.map((ktv: any) => {
+    const ktvSalaries = await Promise.all(realKtvs.map(async (ktv: any) => {
         const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
         
         const ktvCompletedSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
@@ -506,7 +506,7 @@ export async function getSalaryData() {
           const resignDate = new Date(ktv.resignation_date);
           const monthDate = new Date(currentMonthYear);
           if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
-            const resignCap = calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
+            const resignCap = await calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
             if (baseSalary > resignCap) {
               baseSalary = resignCap;
             }
@@ -536,7 +536,7 @@ export async function getSalaryData() {
           ktvStatus: ktv.status,
           actualDays: ktvAttendance.length > 0 ? actualDays : 26,
         };
-    });
+    }));
 
     return ktvSalaries;
   } catch (error) {
