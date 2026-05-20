@@ -800,7 +800,7 @@ function BookingsContent() {
             {(() => {
               const specialties = [
                 { id: 'all', label: 'Tất cả KTV', icon: <Users className="w-4 h-4" /> },
-                { id: 'facial', label: 'Trị liệu Da mặt', icon: <Briefcase className="w-4 h-4 text-rose-400" /> },
+                { id: 'facial', label: 'Chăm sóc Da mặt', icon: <Briefcase className="w-4 h-4 text-rose-400" /> },
                 { id: 'nails', label: 'Nails & Mi', icon: <Briefcase className="w-4 h-4 text-purple-400" /> },
                 { id: 'body', label: 'Massage & Body', icon: <Briefcase className="w-4 h-4 text-indigo-400" /> }
               ];

@@ -83,7 +83,7 @@ Cấu trúc phân quyền mới mở rộng phạm vi kiểm soát theo từng t
 | **Super Admin (Tổng công ty - HQ)** | Toàn hệ thống (Mọi Tenant) | - Xem báo cáo doanh thu P&L hợp nhất toàn quốc.<br>- Phê duyệt tạo chi nhánh mới, điều chỉnh tỷ lệ phí nhượng quyền.<br>- Quản lý danh mục gói dịch vụ gốc (`packages`).<br>- Định cấu hình quy trình tiêu hao nguyên vật liệu chuẩn. |
 | **Branch Admin / Franchisee (Chủ chi nhánh)** | Chỉ trong phạm vi Chi nhánh (`tenant_id` của mình) | - Quản lý nhân viên, kỹ thuật viên thuộc cơ sở.<br>- Xem báo cáo tài chính P&L riêng của chi nhánh.<br>- Duyệt đối soát lương và KPI thưởng KTV của chi nhánh.<br>- Tạo yêu cầu nhập kho vật tư từ HQ. |
 | **Branch Accountant / Staff (Lễ tân, kế toán)** | Chỉ trong phạm vi Chi nhánh (`tenant_id` của mình) | - Thực hiện đặt lịch hẹn, check-in/out, thu tiền mặt/chuyển khoản của khách tại cơ sở.<br>- Ghi nhận các phiếu chi chi phí vận hành cơ sở.<br>- Kiểm kho thực tế tại cơ sở hằng tuần. |
-| **Kỹ thuật viên (KTV)** | Chỉ cá nhân KTV | - Xem lịch làm việc cá nhân được phân bổ.<br>- Thực hiện check-in/out và điền nhật ký trị liệu cho ca làm việc.<br>- Theo dõi hoa hồng tích lũy và bảng xếp hạng thi đua cá nhân. |
+| **Kỹ thuật viên (KTV)** | Chỉ cá nhân KTV | - Xem lịch làm việc cá nhân được phân bổ.<br>- Thực hiện check-in/out và điền nhật ký chăm sóc cho ca làm việc.<br>- Theo dõi hoa hồng tích lũy và bảng xếp hạng thi đua cá nhân. |
 
 ---
 
