@@ -111,10 +111,18 @@ export function useOfflineSync() {
     return await serverAction();
   };
 
+  const refreshQueue = async () => {
+    if (offlineDB) {
+      const count = await offlineDB.offlineQueue.count();
+      setPendingCount(count);
+    }
+  };
+
   return {
     isOnline,
     pendingCount,
     executeAction,
-    triggerSync
+    triggerSync,
+    refreshQueue
   };
 }

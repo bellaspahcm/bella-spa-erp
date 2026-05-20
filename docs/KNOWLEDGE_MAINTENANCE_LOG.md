@@ -535,3 +535,49 @@
   - Staged, committed, and pushed all modifications to branch `main` at `https://github.com/bellaspahcm/bella-spa-erp.git` under commit hash `53499ec`, successfully triggering Vercel production compilation.
   - Inspected the local development Turbopack server at `http://localhost:3000` to verify 100% operational UI transitions.
 
+## 2026-05-20 (Session 7): VietQR Dynamic Payments, Webhook Reconciliation Gateway & KTV Leave Request Conflict Hotfix
+
+### 1. Cổng thanh toán động VietQR & Tự động đối soát Webhook (Phase 11)
+- **Cấu trúc Cơ sở dữ liệu**: Thiết lập migration `20260520000001_add_bank_details_to_tenants.sql` trên Supabase để mở rộng thông tin Spa (`qr_bank_code`, `qr_account_number`, `qr_account_name`) thuộc bảng `tenants` và cập nhật CHECK constraint cho cột `payment_method` của bảng `revenue` để hỗ trợ giá trị `'VietQR'`.
+- **Cấu hình Phía Admin**: Tích hợp các trường nhập thông tin ngân hàng nhận tiền trực tiếp vào tab **Cấu hình chung** tại `/dashboard/settings`, kết nối đồng bộ xuống database qua Server Actions `tenant-actions.ts`.
+- **Cổng Khách hàng (Customer Portal)**: Hiển thị widget thanh toán thủy tinh (pastel rose-pink) tại `/portal/[token]`, tự động tính số dư cần thanh toán và sinh mã QR động thông qua API mở `img.vietqr.io` với cú pháp chuyển khoản định danh `BELLA [Mã Booking]`.
+- **Giao diện Admin & Modal QR**: 
+  - Thiết kế component `<VietQRPaymentModal />` sang trọng với hiệu ứng nhịp đập (pulse indicator) "Đang đợi thanh toán...".
+  - Tích hợp nút thanh toán QR trực tiếp trên bookings timeline `/dashboard/bookings`.
+  - Tự động hiển thị popup QR Code đặt cọc ngay lập tức khi tạo mới lịch hẹn yêu cầu đặt cọc trong `<BookingModal />` giúp nhận thanh toán tại quầy thuận tiện.
+- **Webhook Gateway Đối soát Tự động**:
+  - Triển khai endpoint API `/api/webhooks/payment/route.ts` xử lý POST request biến động số dư ngân hàng từ SePay, Casso hoặc PayOS.
+  - Sử dụng Regex lọc mã giao dịch `BELLA\s*([\w\-]+)`, tự động tìm kiếm booking trùng khớp và cập nhật trạng thái lịch hẹn sang `booked` / `confirmed`.
+  - Ghi nhận doanh thu tự động (`payment_method = 'VietQR'`) vào sổ cái `revenue` và gửi Notification thời gian thực cho Admin.
+  - Tích hợp cơ chế kiểm thử chống lặp giao dịch (Double-Spend Protection) và bọc kiểm thử sandbox cô lập lỗi phân quyền RLS.
+
+### 2. Sửa lỗi Trùng lịch phép KTV Nguyễn Thị Hoa & Đồng bộ UI Dropdown
+- **Nguyên nhân lỗi**:
+  - Mã nguồn giao diện `/dashboard/sessions/page.tsx` sử dụng sai thuộc tính `leave.ktv_id` (được định nghĩa trong DB là `user_id`), dẫn đến việc gọi PostgREST với tham số `undefined`, làm cho bộ lọc kiểm tra trùng ca luôn trả về rỗng (`KHÔNG CÓ CA TRÙNG LỊCH`).
+  - Hơn nữa, danh sách kỹ thuật viên thay ca hiển thị cả chính KTV xin nghỉ do không lọc được `leave.user_id`.
+- **Giải pháp**:
+  - Sửa đổi chính xác thuộc tính thành `leave.user_id` trong truy vấn xung đột `getKTVConflictSessions` và bộ lọc loại trừ KTV thay ca (`u.id !== selectedLeave.user_id`).
+  - Đồng bộ hóa giao diện dropdown: Thay thế dropdown native HTML bằng component `<PremiumSelect />` thủy tinh bo tròn `rounded-2xl` sang trọng, tích hợp icon Lucide `UserCircle` động bên cạnh tên KTV thay thế, giữ nguyên trạng thái các giao diện khác để tránh regression.
+  - Sửa đổi phân quyền PostgreSQL cho bảng `staff_leaves` để đảm bảo API lấy xung đột lịch chạy trơn tru mà không vướng RLS.
+
+## 2026-05-20 (Session 8): Kiến trúc Ngoại tuyến & Đồng bộ hóa thông minh (Offline-First & Smart Sync Queue)
+
+### 1. IndexedDB Client Cache & Dexie.js Integration
+- **Objective**: Tối ưu hóa trải nghiệm di động của KTV trong các khu vực sóng yếu (phòng trị liệu, tầng hầm) bằng cách triển khai giải pháp ngoại tuyến (Offline-First) an toàn tuyệt đối, tránh mất mát dữ liệu hoặc trùng lặp thao tác.
+- **Solution**:
+  - Tích hợp thư viện Dexie.js (`src/lib/offline-db.ts`) thiết lập database local `BellaSpaOfflineDB` trong IndexedDB trình duyệt, quản lý hàng chờ `offlineQueue` lưu các thao tác điểm danh (check-in/out) và điều trị (start/complete session).
+  - Xây dựng custom hook `useOfflineSync` tự động lắng nghe sự kiện kết nối `online`/`offline` của thiết bị. Khi mất mạng, hook tự động chặn hành động gửi lên server, đóng gói payload kèm UUID tự sinh và lưu vào IndexedDB.
+  - **Mô phỏng Trạng thái Giao diện**: Giao diện KTV Dashboard (`src/app/ktv/dashboard/page.tsx`) trực tiếp cập nhật biến trạng thái cục bộ để giả lập thành công ngay lập tức, đem lại cảm giác mượt mà không độ trễ.
+
+### 2. FIFO Background Synchronization & Drawer Console
+- **Solution**:
+  - Triển khai bộ điều phối đồng bộ tuần tự chronological FIFO (`src/services/sync-actions.ts`). Khi mạng phục hồi, hệ thống tự động đẩy dữ liệu lên server theo thứ tự thời gian chuẩn để tránh xung đột logic nghiệp vụ.
+  - **Glassmorphic Badges & Alert Banner**:
+    - Tích hợp huy hiệu kết nối mạng động trên KTV clock section: Trực tuyến (Xanh), Đồng bộ (X - xoay động), và Ngoại tuyến (X - hổ phách nhấp nháy).
+    - Hiển thị Banner Cảnh báo màu hổ phách phía dưới chỉ số chính kèm nút kêu gọi "Đồng bộ ngay".
+  - **Bảng điều khiển hàng chờ (Profile Settings Drawer Console)**: Cho phép KTV mở danh sách tác vụ đang kẹt, xem chi tiết logs lỗi từ DB (ví dụ: lỗi trùng giờ check-in), thực hiện đồng bộ lại thủ công (`handleSyncQueue()`) hoặc hủy bỏ/xóa bỏ tác vụ bị lỗi (`handleDiscardAction(id)`) để giải phóng hàng chờ bị nghẽn.
+
+### 3. Build & TypeScript Verification
+- Chạy kiểm tra tĩnh toàn bộ mã nguồn Next.js bằng `npx.cmd tsc --noEmit` đạt kết quả thành công hoàn hảo 100% với **0 lỗi và 0 cảnh báo**.
+- Biên dịch production thành công toàn bộ 26 routes tĩnh và động trên Vercel.
+

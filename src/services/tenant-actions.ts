@@ -37,6 +37,7 @@ export async function saveTenantSettings(settings: {
   qr_bank_code?: string;
   qr_account_number?: string;
   qr_account_name?: string;
+  salary_config?: any;
 }) {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
@@ -56,6 +57,7 @@ export async function saveTenantSettings(settings: {
         qr_bank_code: settings.qr_bank_code,
         qr_account_number: settings.qr_account_number,
         qr_account_name: settings.qr_account_name,
+        salary_config: settings.salary_config,
         updated_at: new Date().toISOString()
       })
       .eq('id', tenantId)
