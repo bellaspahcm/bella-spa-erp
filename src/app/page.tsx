@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import Link from 'next/link';
 import { 
   Heart, 
@@ -59,6 +60,17 @@ export default function LandingPage() {
   const [wizardConcern, setWizardConcern] = useState<string>('');
   const [wizardLocation, setWizardLocation] = useState<string>('');
   const [recommendedPackage, setRecommendedPackage] = useState<ServicePackage | null>(null);
+
+  const serviceOptions = [
+    { value: "Gói Bầu Thư Giãn Bella", label: "Gói Bầu Thư Giãn Bella (450k)", group: "Chăm sóc Mẹ Bầu" },
+    { value: "Gói Bầu VIP Toàn Diện", label: "Gói Bầu VIP Toàn Diện (690k)", group: "Chăm sóc Mẹ Bầu" },
+    { value: "Gói Phục Hồi Cơ Bản", label: "Gói Phục Hồi Cơ Bản (650k)", group: "Phục Hồi Sau Sinh" },
+    { value: "Gói Eo Thon Dáng Ngọc VIP", label: "Gói Eo Thon Dáng Ngọc VIP (950k)", group: "Phục Hồi Sau Sinh" },
+    { value: "Tắm Bé Chuẩn Y Khoa", label: "Tắm Bé Chuẩn Y Khoa (200k)", group: "Tắm & Massage Bé" },
+    { value: "Gói Bé Yêu Thông Minh VIP", label: "Gói Bé Yêu Thông Minh VIP (350k)", group: "Tắm & Massage Bé" },
+    { value: "Gói Bella Home-Care Tiêu Chuẩn", label: "Bella Home-Care (7.9M)", group: "Gói Combo" },
+    { value: "Gói Hoàng Gia Bella Signature", label: "Hoàng Gia Signature (18.5M)", group: "Gói Combo" },
+  ];
 
   // Change navbar background on scroll
   useEffect(() => {
@@ -1354,30 +1366,13 @@ export default function LandingPage() {
                     {/* Package selection */}
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dịch vụ quan tâm *</label>
-                      <select
-                        required
+                      <PremiumSelect
+                        options={serviceOptions}
                         value={bookingService}
-                        onChange={(e) => setBookingService(e.target.value)}
-                        className="block w-full px-4 py-3.5 bg-slate-50 border border-rose-100/50 rounded-xl focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none font-semibold text-slate-800 text-xs cursor-pointer"
-                      >
-                        <option value="">-- Chọn gói chăm sóc --</option>
-                        <optgroup label="Chăm sóc Mẹ Bầu">
-                          <option value="Gói Bầu Thư Giãn Bella">Gói Bầu Thư Giãn Bella (450k)</option>
-                          <option value="Gói Bầu VIP Toàn Diện">Gói Bầu VIP Toàn Diện (690k)</option>
-                        </optgroup>
-                        <optgroup label="Phục Hồi Sau Sinh">
-                          <option value="Gói Phục Hồi Cơ Bản">Gói Phục Hồi Cơ Bản (650k)</option>
-                          <option value="Gói Eo Thon Dáng Ngọc VIP">Gói Eo Thon Dáng Ngọc VIP (950k)</option>
-                        </optgroup>
-                        <optgroup label="Tắm & Massage Bé">
-                          <option value="Tắm Bé Chuẩn Y Khoa">Tắm Bé Chuẩn Y Khoa (200k)</option>
-                          <option value="Gói Bé Yêu Thông Minh VIP">Gói Bé Yêu Thông Minh VIP (350k)</option>
-                        </optgroup>
-                        <optgroup label="Gói Combo">
-                          <option value="Gói Bella Home-Care Tiêu Chuẩn">Bella Home-Care (7.9M)</option>
-                          <option value="Gói Hoàng Gia Bella Signature">Hoàng Gia Signature (18.5M)</option>
-                        </optgroup>
-                      </select>
+                        onChange={setBookingService}
+                        placeholder="-- Chọn gói chăm sóc --"
+                        buttonClassName="w-full flex items-center justify-between px-4 py-3.5 bg-slate-50 border border-rose-100/50 rounded-xl focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none font-semibold text-slate-800 text-xs"
+                      />
                     </div>
 
                     {/* Date */}
@@ -1388,7 +1383,7 @@ export default function LandingPage() {
                         required
                         value={bookingDate}
                         onChange={(e) => setBookingDate(e.target.value)}
-                        className="block w-full px-4 py-3 bg-slate-50 border border-rose-100/50 rounded-xl focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none font-semibold text-slate-800 text-xs"
+                        className="block w-full px-4 py-3.5 bg-slate-50 border border-rose-100/50 rounded-xl focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none font-semibold text-slate-800 text-xs"
                       />
                     </div>
                   </div>
