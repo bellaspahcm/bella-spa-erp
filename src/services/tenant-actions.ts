@@ -43,6 +43,7 @@ export async function saveTenantSettings(settings: {
   qr_account_number?: string;
   qr_account_name?: string;
   salary_config?: any;
+  role_permissions?: any;
 }) {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
@@ -56,19 +57,20 @@ export async function saveTenantSettings(settings: {
     // Load old data for audit logs
     const oldSettings = await getTenantSettings();
 
+    const updatePayload: any = { updated_at: new Date().toISOString() };
+    if (settings.name !== undefined) updatePayload.name = settings.name;
+    if (settings.phone !== undefined) updatePayload.contact_phone = settings.phone;
+    if (settings.email !== undefined) updatePayload.email = settings.email;
+    if (settings.address !== undefined) updatePayload.address = settings.address;
+    if (settings.qr_bank_code !== undefined) updatePayload.qr_bank_code = settings.qr_bank_code;
+    if (settings.qr_account_number !== undefined) updatePayload.qr_account_number = settings.qr_account_number;
+    if (settings.qr_account_name !== undefined) updatePayload.qr_account_name = settings.qr_account_name;
+    if (settings.salary_config !== undefined) updatePayload.salary_config = settings.salary_config;
+    if (settings.role_permissions !== undefined) updatePayload.role_permissions = settings.role_permissions;
+
     const { data, error } = await supabase
       .from('tenants')
-      .update({
-        name: settings.name,
-        phone: settings.phone,
-        email: settings.email,
-        address: settings.address,
-        qr_bank_code: settings.qr_bank_code,
-        qr_account_number: settings.qr_account_number,
-        qr_account_name: settings.qr_account_name,
-        salary_config: settings.salary_config,
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', tenantId)
       .select()
       .single();

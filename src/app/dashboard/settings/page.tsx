@@ -138,7 +138,7 @@ export default function SettingsPage() {
         if (data) {
           setGeneralSettings({
             name: data.name || "",
-            phone: data.phone || "",
+            phone: data.contact_phone || "",
             email: data.email || "",
             address: data.address || "",
             qr_bank_code: data.qr_bank_code || "",
