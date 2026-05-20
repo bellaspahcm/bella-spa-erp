@@ -692,7 +692,8 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="overflow-hidden rounded-[2rem] border border-white bg-white/40 shadow-sm">
-                      <table className="w-full text-left">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left whitespace-nowrap">
                         <thead>
                           <tr className="border-b border-white/50">
                             <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
@@ -710,7 +711,7 @@ export default function SettingsPage() {
                             <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-center">
                               Trạng thái
                             </th>
-                            <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-right">
+                            <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-right min-w-[150px]">
                               Thao tác
                             </th>
                           </tr>
@@ -855,6 +856,7 @@ export default function SettingsPage() {
                           )}
                         </tbody>
                       </table>
+                      </div>
                     </div>
                   </div>
                 )}
