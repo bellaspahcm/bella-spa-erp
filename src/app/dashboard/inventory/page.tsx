@@ -137,7 +137,7 @@ export default function InventoryPage() {
         change_amount: restockAmt,
         reason:        'restock',
         notes:         `Nhập kho: +${restockAmt} ${restockTarget.unit}`,
-        tenant_id:     tenantId,
+        tenant_id:     tenantId as string,
       });
 
       toast.success(`Đã nhập ${restockAmt} ${restockTarget.unit} — ${restockTarget.name}`);
@@ -155,7 +155,7 @@ export default function InventoryPage() {
       const sb = getSupabase();
       const { error } = await sb.from('inventory_items').insert({
         ...newItem,
-        tenant_id: tenantId,
+        tenant_id: tenantId as string,
       });
       if (error) throw error;
 
@@ -169,7 +169,7 @@ export default function InventoryPage() {
             change_amount: newItem.stock_level,
             reason:        'initial',
             notes:         'Tồn kho ban đầu',
-            tenant_id:     tenantId,
+            tenant_id:     tenantId as string,
           });
         }
       }

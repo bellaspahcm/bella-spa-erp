@@ -45,7 +45,7 @@ export async function getCurrentUser() {
 
   // Fallback 2: 'profiles' table
   if (!profile) {
-    const { data: fallbackProfile } = await supabase
+    const { data: fallbackProfile } = await (supabase as any)
       .from('profiles')
       .select('*')
       .eq('id', user.id)

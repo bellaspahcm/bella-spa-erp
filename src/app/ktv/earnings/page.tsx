@@ -8,7 +8,7 @@ import {
   Clock, CheckCircle2, AlertCircle, Send, ChevronDown, X
 } from 'lucide-react';
 import { getKTVEarnings, getKTVLeaderboard } from '@/services/ktv-actions';
-import { getKtvSalaryForConfirmation, ktvConfirmSalary, ktvDisputeSalary } from '@/services/salary-actions';
+import { getKtvSalaryForConfirmation, ktvConfirmSalary, ktvDisputeSalary } from '@/modules/hr-salary/actions/base-salary-actions';
 import { createClient } from '@/lib/supabase-client';
 import { formatCurrency, getLocalDateString } from '@/lib/utils';
 import { toast } from 'sonner';

@@ -40,7 +40,8 @@ declare global {
   }
 }
 
-import { getCalendarSessions, updateSessionLog, getBookings, createSessionLog, completeSession, rescheduleSession, getBookingDetailsWithPayment } from '@/services/booking-actions';
+import { getCalendarSessions, updateSessionLog, createSessionLog, completeSession, rescheduleSession } from '@/modules/booking/actions/session-actions';
+import { getBookings, getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycle-actions';
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
 import { QrCode } from 'lucide-react';
 import { getUsers } from '@/services/user-actions';

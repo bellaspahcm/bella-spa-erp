@@ -48,3 +48,7 @@ export function getLocalDateString(date: Date = new Date()): string {
     day: '2-digit'
   }).format(date);
 }
+
+export function getMonthStart(now = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+}

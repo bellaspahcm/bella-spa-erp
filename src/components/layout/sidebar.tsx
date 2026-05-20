@@ -20,15 +20,11 @@ import {
   History,
   Megaphone
 } from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '@/lib/utils';
+
 import { getCurrentUser } from '@/services/user-actions';
 import { getTenantSettings } from '@/services/tenant-actions';
 import { createClient } from '@/lib/supabase-client';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard',      href: '/dashboard' },

@@ -37,7 +37,7 @@ import {
 } from "@/services/user-actions";
 import { getTenantSettings, saveTenantSettings } from "@/services/tenant-actions";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/lib/supabase-client";
+import { getSupabase } from "@/lib/supabase-client";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
@@ -147,8 +147,9 @@ export default function SettingsPage() {
     if (activeTab === "staff") {
       fetchUsers();
 
+      const sb = getSupabase();
       // Realtime subscription
-      const channel = supabase
+      const channel = sb
         .channel("users-changes")
         .on(
           "postgres_changes",
@@ -160,7 +161,7 @@ export default function SettingsPage() {
         .subscribe();
 
       return () => {
-        supabase.removeChannel(channel);
+        sb.removeChannel(channel);
       };
     }
   }, [activeTab]);
