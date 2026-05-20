@@ -545,7 +545,7 @@ export async function approveSalary(ktvId: string) {
   const now = new Date();
   const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-  const supabase = await createClient();
+  const supabase = (await createClient()) as any;
 
   try {
     // 1. Get KTV info for description
