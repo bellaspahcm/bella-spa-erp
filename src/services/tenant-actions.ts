@@ -8,7 +8,12 @@ import { revalidatePath } from 'next/cache';
 export async function getTenantSettings() {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+
+  if (!tenantId) {
+    console.warn('[getTenantSettings] Không có tenantId cho người dùng hiện tại');
+    return null;
+  }
 
   try {
     const { data, error } = await supabase
@@ -41,7 +46,11 @@ export async function saveTenantSettings(settings: {
 }) {
   const supabase = (await createClient()) as any;
   const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+  const tenantId = currentUser?.tenant_id;
+
+  if (!tenantId) {
+    return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+  }
 
   try {
     // Load old data for audit logs

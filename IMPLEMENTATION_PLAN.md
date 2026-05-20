@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Phase 14 - Phân quyền động & Giới hạn KTV LEAD (Completed) | 100% Build Compiled
+Status: 🟢 Phase 16 - Triệt để Bảo Mật & Code Quality (Completed) | 100% Build Compiled
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -155,3 +155,22 @@ Status: 🟢 Phase 14 - Phân quyền động & Giới hạn KTV LEAD (Completed
 - [x] **Module-based Dynamic RBAC**: Tích hợp logic phân quyền động vào `Sidebar.tsx`, dựa trên thiết lập của Admin để chặn/cho phép các module đối với các role ngoài admin (như Lễ tân, KTV Trưởng).
 - [x] **KTV_LEAD Restrictions**: Thiết lập Role `ktv_lead` (KTV Trưởng) mới thông qua `<PremiumSelect>` và ẩn mặc định các trang nhạy cảm: `Tài chính`, `Bảng lương`, `Cài đặt`, `Nhật ký`, `Kho hàng`.
 - [x] **Dashboard UI Protection**: Ẩn triệt để các số liệu Doanh Thu Tháng và Biểu đồ Tài Chính trên trang chủ Dashboard đối với KTV Trưởng và các nhân sự không phải Quản trị viên.
+
+## 🟢 Phase 15: Nâng cấp Kiến trúc Bảo mật Tổng thể (Security Overhaul) (Completed)
+- [x] **Database Security**: Tạo migration dọn sạch cột `password_hash` khỏi bảng `users` ở Public Schema, ngăn chặn hoàn toàn rủi ro rò rỉ hash.
+- [x] **Tenant ID Hardening**: Gỡ bỏ toàn bộ Tenant ID mặc định được hardcode rác trong toàn hệ thống. Xác thực động thông qua session user và trả về lỗi `Unauthorized` nếu phát hiện bất thường.
+- [x] **Zalo Credentials Encryption**: Viết lại module `crypto.ts` mã hóa AES-256-GCM. Tự động mã hóa Access Token và Secret Key của Zalo trên database, giấu kín nội dung hiển thị trong log Audit.
+- [x] **Webhook Security (Timing Attack Prevention)**: Tích hợp `crypto.timingSafeEqual` cho cổng webhook Payment, yêu cầu bắt buộc cấu hình `PAYMENT_WEBHOOK_SECRET`.
+- [x] **Rate Limiting Engine**: Tích hợp thuật toán Token Bucket (`rate-limit.ts`) nhằm chống DDOS và Spam request hệ thống.
+- [x] **Data Input Validation**: Xác nhận triển khai kiến trúc Zod Validation bảo vệ các Server Actions (ví dụ: Booking Data) khỏi mã độc và payload lỗi từ client.
+
+## 🟢 Phase 16 - Triệt để Bảo Mật & Code Quality (Completed)
+1. **Row-Level Security (RLS)**
+   - Kích hoạt RLS cho toàn bộ bảng cốt lõi (`bookings`, `revenue`, `expenses`, `session_logs`).
+   - Thiết lập Data Access Policy nghiêm ngặt (Admin quản lý chi nhánh, KTV quản lý session cá nhân, Guest chỉ được Insert).
+2. **Loại bỏ Lỗi rò rỉ thông tin (Information Leakage)**
+   - Xóa bỏ chuỗi trả về `DEBUG:` chứa ID, Email và Role tại các hàm chặn quyền.
+3. **Loại bỏ Dev Mock User Bypass**
+   - Vô hiệu hóa vĩnh viễn backdoor tự động login (Mock User & Test Admin).
+4. **Loại bỏ Placeholder Keys**
+   - Ném lỗi Hard Error nếu thiếu `NEXT_PUBLIC_SUPABASE_URL` thay vì âm thầm sử dụng dummy URL.

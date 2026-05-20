@@ -18,46 +18,6 @@ export async function getCurrentUser() {
   }
   
   if (!user) {
-    // DEVELOPMENT FALLBACK: If on localhost and no session, return a mock user for testing
-    if (process.env.NODE_ENV === 'development') {
-      console.log("[getCurrentUser] NO SESSION - MOCKING USER FOR DEV");
-      
-      let mockEmail = 'ktv1@bellaspa.com.vn';
-      try {
-        const { cookies } = await import('next/headers');
-        const cookieStore = await cookies();
-        const cookieVal = cookieStore.get('mock_user_email')?.value;
-        if (cookieVal) {
-          mockEmail = cookieVal;
-        }
-      } catch (err) {
-        console.warn("[getCurrentUser] Failed to read cookies, using default mock KTV:", err);
-      }
-
-      console.log("[getCurrentUser] Fetching profile for mock email:", mockEmail);
-      
-      if (mockEmail === 'bellaspa.testadmin@gmail.com') {
-        console.log("[getCurrentUser] Test Admin bypass active!");
-        return {
-          id: 'c1015361-8ed7-4c44-93b4-9c9d57b2f471',
-          email: 'bellaspa.testadmin@gmail.com',
-          full_name: 'Test Admin Full Chức Năng',
-          role: 'admin',
-          status: 'active',
-          tenant_id: '0e66365b-42b0-420e-acca-f7d7692e125e',
-          created_at: new Date().toISOString()
-        };
-      }
-      
-      const { data: mockUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', mockEmail)
-        .single();
-      
-      if (mockUser) return mockUser;
-    }
-
     console.warn('[getCurrentUser] No active session found');
     return null;
   }
@@ -138,23 +98,6 @@ export async function getUsers() {
     };
   });
 
-  // Append mock test admin so it shows up in the personnel table in settings
-  if (process.env.NODE_ENV === 'development') {
-    const hasTestAdmin = processedData.some((u: any) => u.email === 'bellaspa.testadmin@gmail.com');
-    if (!hasTestAdmin) {
-      processedData.unshift({
-        id: 'c1015361-8ed7-4c44-93b4-9c9d57b2f471',
-        email: 'bellaspa.testadmin@gmail.com',
-        full_name: 'Test Admin Full Chức Năng',
-        role: 'admin',
-        status: 'active',
-        tenant_id: '0e66365b-42b0-420e-acca-f7d7692e125e',
-        created_at: new Date().toISOString(),
-        sessions_count: 0,
-        avg_rating: '5.0'
-      });
-    }
-  }
 
   return processedData;
 }
