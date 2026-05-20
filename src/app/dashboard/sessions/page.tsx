@@ -1279,7 +1279,7 @@ function SessionsContent() {
                                   </div>
                                 ) : (
                                   <p className="text-[10px] font-semibold text-slate-400 italic">
-                                    Khách hàng chưa thực hiện đánh giá qua Portal liên kết của buổi trị liệu này.
+                                    Khách hàng chưa thực hiện đánh giá qua Portal liên kết của buổi chăm sóc này.
                                   </p>
                                 )}
                               </div>

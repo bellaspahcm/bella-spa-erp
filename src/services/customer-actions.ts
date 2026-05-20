@@ -80,7 +80,7 @@ export async function getCustomerBookingByToken(token?: string) {
 }
 
 /**
- * Khách hàng gửi đánh giá cho một buổi trị liệu
+ * Khách hàng gửi đánh giá cho một buổi chăm sóc
  */
 export async function submitCustomerRating(sessionId: string, rating: number, comment: string = '') {
   const supabase = (await createClient()) as any;

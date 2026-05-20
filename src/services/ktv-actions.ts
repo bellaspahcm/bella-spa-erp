@@ -6,7 +6,7 @@ import { getCurrentUser } from './user-actions';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 
 /**
- * Lấy các buổi trị liệu đang thực hiện của KTV hiện tại
+ * Lấy các buổi chăm sóc đang thực hiện của KTV hiện tại
  */
 export async function getKTVActiveSessions() {
   const supabase = (await createClient()) as any;
@@ -62,7 +62,7 @@ export async function getKTVActiveSessions() {
 }
 
 /**
- * Lấy các buổi trị liệu được phân công hôm nay
+ * Lấy các buổi chăm sóc được phân công hôm nay
  */
 export async function getKTVUpcomingSessions() {
   const supabase = (await createClient()) as any;
@@ -214,7 +214,7 @@ export async function getKTVUpcomingSessions() {
 }
 
 /**
- * Bắt đầu một buổi trị liệu (Check-in)
+ * Bắt đầu một buổi chăm sóc (Check-in)
  */
 export async function startSession(sessionId: string) {
   const supabase = (await createClient()) as any;
@@ -253,7 +253,7 @@ export async function startSession(sessionId: string) {
 
   if (error) {
     console.error('Error starting session:', error);
-    throw new Error('Không thể bắt đầu buổi trị liệu');
+    throw new Error('Không thể bắt đầu buổi chăm sóc');
   }
 
   // 3. Cập nhật booking: set is_in_care = true và status = in_progress
@@ -270,7 +270,7 @@ export async function startSession(sessionId: string) {
 }
 
 /**
- * Hoàn thành một buổi trị liệu (Check-out)
+ * Hoàn thành một buổi chăm sóc (Check-out)
  */
 export async function completeKTVSession(sessionId: string, notes: string = '', ktvCheckoutNote: string = '') {
   const supabase = (await createClient()) as any;

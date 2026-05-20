@@ -287,11 +287,11 @@ export default function KTVDashboard() {
         ]);
         setUpcomingSessions(prev => prev.filter(s => s.id !== sessionId));
       } else {
-        toast.success('Đã bắt đầu buổi trị liệu!');
+        toast.success('Đã bắt đầu buổi chăm sóc!');
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error?.message || 'Không thể bắt đầu buổi trị liệu');
+      toast.error(error?.message || 'Không thể bắt đầu buổi chăm sóc');
     } finally {
       setIsActionLoading(null);
     }
@@ -313,14 +313,14 @@ export default function KTVDashboard() {
         setKtvCheckoutNote('');
         setActiveSessions(prev => prev.filter(s => s.id !== sessionId));
       } else {
-        toast.success('Đã hoàn thành buổi trị liệu!');
+        toast.success('Đã hoàn thành buổi chăm sóc!');
         setCheckoutSession(null);
         setCheckoutNotes('');
         setKtvCheckoutNote('');
         fetchData();
       }
     } catch (error: any) {
-      toast.error(error?.message || 'Không thể hoàn tất buổi trị liệu');
+      toast.error(error?.message || 'Không thể hoàn tất buổi chăm sóc');
     } finally {
       setIsActionLoading(null);
     }
@@ -893,10 +893,10 @@ export default function KTVDashboard() {
                       let actionName = 'Thao tác không xác định';
                       switch (action.actionType) {
                         case 'CHECKIN':
-                          actionName = 'Bắt đầu ca trị liệu';
+                          actionName = 'Bắt đầu ca chăm sóc';
                           break;
                         case 'CHECKOUT':
-                          actionName = 'Hoàn thành ca trị liệu';
+                          actionName = 'Hoàn thành ca chăm sóc';
                           break;
                         case 'KTV_SHIFT_CHECKIN':
                           actionName = 'Điểm danh đầu ca';
@@ -1162,7 +1162,7 @@ export default function KTVDashboard() {
 
                       {/* Title */}
                       <h3 className="text-lg font-black text-slate-900 leading-tight mb-4 px-2">
-                        Hoàn thành buổi trị liệu?
+                        Hoàn thành buổi chăm sóc?
                       </h3>
 
                       {/* Session Summary Card */}
@@ -1233,7 +1233,7 @@ export default function KTVDashboard() {
                       {/* Notes input */}
                       <div className="w-full text-left mb-6">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2 block">
-                          Ghi chú trị liệu (không bắt buộc)
+                          Ghi chú chăm sóc (không bắt buộc)
                         </label>
                         <textarea
                           value={checkoutNotes}
@@ -1316,7 +1316,7 @@ export default function KTVDashboard() {
                 {/* Info row */}
                 <div className="px-6 py-4">
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Bạn xác nhận bắt đầu buổi trị liệu này? Hệ thống sẽ ghi nhận giờ check-in ngay bây giờ.
+                    Bạn xác nhận bắt đầu buổi chăm sóc này? Hệ thống sẽ ghi nhận giờ check-in ngay bây giờ.
                   </p>
                 </div>
 
@@ -1336,7 +1336,7 @@ export default function KTVDashboard() {
                     ) : (
                       <>
                         <Play className="w-4 h-4 fill-current" />
-                        Bắt đầu buổi trị liệu
+                        Bắt đầu buổi chăm sóc
                       </>
                     )}
                   </button>

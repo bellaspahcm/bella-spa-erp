@@ -108,10 +108,10 @@ export default function LandingPage() {
           name: 'Gói Bầu VIP Toàn Diện',
           price: '690.000đ',
           duration: '100 phút',
-          description: 'Liệu pháp tối ưu giúp trị liệu các cơn đau mỏi nặng, kết hợp massage mặt chuyên sâu đá nóng.',
+          description: 'Liệu pháp tối ưu giúp chăm sóc các cơn đau mỏi nặng, kết hợp massage mặt chuyên sâu đá nóng.',
           benefits: [
             'Rửa chân và xông chân đá muối Himalaya',
-            'Massage trị liệu thắt lưng, hông chuyên sâu',
+            'Massage chuyên sâu thắt lưng, hông',
             'Massage Thụy Điển kết hợp đá nóng bazan',
             'Chăm sóc da mặt chuyên sâu sữa ong chúa',
             'Gội đầu dưỡng sinh thảo dược tự nhiên',

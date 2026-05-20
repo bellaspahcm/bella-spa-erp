@@ -94,7 +94,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
   const completedSessions = booking.session_logs.filter((s: any) => s.status === 'completed').length;
   const progress = (completedSessions / booking.total_sessions) * 100;
 
-  // Tìm buổi trị liệu đã hoàn thành gần nhất chưa được đánh giá
+  // Tìm buổi chăm sóc đã hoàn thành gần nhất chưa được đánh giá
   const pendingReviewSession = booking.session_logs.find((s: any) => s.status === 'completed' && !s.rating);
 
   return (
@@ -380,7 +380,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
         {/* Session History */}
         <section>
           <div className="flex items-center justify-between mb-4 px-2">
-             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Nhật ký trị liệu</h3>
+             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Nhật ký chăm sóc</h3>
              <span className="text-[10px] font-black text-primary uppercase tracking-widest">Chi tiết</span>
           </div>
           

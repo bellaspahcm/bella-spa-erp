@@ -201,7 +201,7 @@ export default function ServicesPage() {
           price: 690000,
           duration: '100 phút/buổi',
           total_sessions: 1,
-          details: ['Rửa chân và xông chân đá muối Himalaya', 'Massage trị liệu thắt lưng, hông chuyên sâu', 'Massage Thụy Điển kết hợp đá nóng bazan', 'Chăm sóc da mặt chuyên sâu sữa ong chúa', 'Gội đầu dưỡng sinh thảo dược tự nhiên'],
+          details: ['Rửa chân và xông chân đá muối Himalaya', 'Massage chuyên sâu thắt lưng, hông', 'Massage Thụy Điển kết hợp đá nóng bazan', 'Chăm sóc da mặt chuyên sâu sữa ong chúa', 'Gội đầu dưỡng sinh thảo dược tự nhiên'],
           offer: 'Ưu đãi trải nghiệm buổi đầu giảm 30%',
           status: 'inactive', // Saved as draft
           tenant_id
