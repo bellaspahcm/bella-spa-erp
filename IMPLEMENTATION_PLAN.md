@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Phase 13 - Cấu hình linh hoạt Lương & Thưởng (Completed) | 100% Build Compiled
+Status: 🟢 Phase 14 - Phân quyền động & Giới hạn KTV LEAD (Completed) | 100% Build Compiled
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -148,3 +148,10 @@ Status: 🟢 Phase 13 - Cấu hình linh hoạt Lương & Thưởng (Completed) 
   - Chỉ tiêu số ca KPI.
   - Số tiền thưởng khi đạt KPI.
 - [x] **Logic Lương động**: Refactor API tính lương (`salary-actions.ts`) để đọc dữ liệu thiết lập từ `tenants.salary_config` thay vì sử dụng fix cứng, tự động fallback an toàn nếu chưa cấu hình.
+
+## 🟢 Phase 14: Phân quyền động (Dynamic RBAC) & Giới hạn KTV_LEAD (Completed)
+- [x] **Database Schema**: Tạo migration `20260520000004_add_role_permissions.sql` bổ sung trường `role_permissions` (JSONB) vào bảng `tenants` để hỗ trợ cơ chế đa chi nhánh (multi-tenant) cho phân quyền linh hoạt.
+- [x] **Bảo mật Xác thực 2 Lớp (Re-auth)**: Triển khai Tab **Phân quyền** trong giao diện Cài đặt với cơ chế yêu cầu quản trị viên nhập lại mật khẩu truy cập trước khi hiển thị bảng phân quyền.
+- [x] **Module-based Dynamic RBAC**: Tích hợp logic phân quyền động vào `Sidebar.tsx`, dựa trên thiết lập của Admin để chặn/cho phép các module đối với các role ngoài admin (như Lễ tân, KTV Trưởng).
+- [x] **KTV_LEAD Restrictions**: Thiết lập Role `ktv_lead` (KTV Trưởng) mới thông qua `<PremiumSelect>` và ẩn mặc định các trang nhạy cảm: `Tài chính`, `Bảng lương`, `Cài đặt`, `Nhật ký`, `Kho hàng`.
+- [x] **Dashboard UI Protection**: Ẩn triệt để các số liệu Doanh Thu Tháng và Biểu đồ Tài Chính trên trang chủ Dashboard đối với KTV Trưởng và các nhân sự không phải Quản trị viên.

@@ -27,6 +27,7 @@ import {
   BadgeCheck,
   ArrowRight,
   Coins,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -60,6 +61,7 @@ const TABS = [
   { id: "general", label: "Thông tin chung", icon: Store },
   { id: "salary", label: "Lương & Thưởng", icon: Coins },
   { id: "staff", label: "Nhân sự & Quyền", icon: Shield },
+  { id: "permissions", label: "Phân quyền", icon: Lock },
   { id: "notifications", label: "Thông báo", icon: Bell },
   { id: "appearance", label: "Giao diện", icon: Palette },
 ];
@@ -872,6 +874,10 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
+
+                {activeTab === "permissions" && (
+                  <PermissionsTab />
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -956,69 +962,17 @@ export default function SettingsPage() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                     <ShieldAlert className="w-3.5 h-3.5" /> Vai trò & Quyền hạn
                   </label>
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      {
-                        id: "ktv",
-                        label: "Kỹ thuật viên",
-                        icon: BadgeCheck,
-                        desc: "Thực hiện liệu trình",
-                      },
-                      {
-                        id: "admin",
-                        label: "Quản trị viên",
-                        icon: Shield,
-                        desc: "Toàn quyền hệ thống",
-                      },
-                    ].map((role) => (
-                      <div
-                        key={role.id}
-                        onClick={() =>
-                          setNewStaff({ ...newStaff, role: role.id })
-                        }
-                        className={cn(
-                          "p-4 rounded-2xl border-2 cursor-pointer transition-all relative group",
-                          newStaff.role === role.id
-                            ? "bg-primary/5 border-primary shadow-sm"
-                            : "border-slate-100 hover:border-primary/30",
-                        )}
-                      >
-                        <div className="flex items-center gap-3 mb-1">
-                          <role.icon
-                            className={cn(
-                              "w-4 h-4",
-                              newStaff.role === role.id
-                                ? "text-primary"
-                                : "text-slate-400",
-                            )}
-                          />
-                          <span
-                            className={cn(
-                              "text-xs font-black uppercase tracking-tighter",
-                              newStaff.role === role.id
-                                ? "text-primary"
-                                : "text-slate-600",
-                            )}
-                          >
-                            {role.label}
-                          </span>
-                        </div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase">
-                          {role.desc}
-                        </p>
-                        {newStaff.role === role.id && (
-                          <motion.div
-                            layoutId="role-check"
-                            className="absolute top-2 right-2"
-                          >
-                            <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                              <BadgeCheck className="w-3 h-3 text-white" />
-                            </div>
-                          </motion.div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <PremiumSelect
+                    value={newStaff.role}
+                    onChange={(val) => setNewStaff({ ...newStaff, role: val })}
+                    options={[
+                      { value: "ktv", label: "Kỹ thuật viên" },
+                      { value: "ktv_lead", label: "KTV Trưởng (Tổ trưởng)" },
+                      { value: "admin_staff", label: "Lễ tân / Nhân viên" },
+                      { value: "admin", label: "Quản trị viên (Admin)" },
+                    ]}
+                    placeholder="Chọn vai trò..."
+                  />
                 </div>
 
                 <div className="pt-4">

@@ -23,6 +23,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { getCurrentUser } from '@/services/user-actions';
+import { getTenantSettings } from '@/services/tenant-actions';
 import { createClient } from '@/lib/supabase-client';
 
 function cn(...inputs: ClassValue[]) {
@@ -56,21 +57,63 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [rolePermissions, setRolePermissions] = useState<any>(null);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       const userData = await getCurrentUser();
       setUser(userData);
+      
+      if (userData?.role && userData.role !== 'admin' && userData.role !== 'customer') {
+        try {
+          const settings = await getTenantSettings();
+          if (settings?.role_permissions) {
+            setRolePermissions(settings.role_permissions[userData.role] || null);
+          }
+        } catch (error) {
+          console.error("Failed to load permissions", error);
+        }
+      }
     };
-    fetchUser();
+    fetchData();
   }, []);
 
   const filteredMenuItems = user?.role?.toLowerCase() === 'customer'
     ? customerMenuItems
     : menuItems.filter(item => {
-        if (user?.role?.toLowerCase() === 'ktv') {
-          // KTV cannot see Finance, Settings, Salary management, Reconciliation, or Audit Trail
-          return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống'].includes(item.label);
+        if (user && user.role !== 'admin' && user.role !== 'customer') {
+          if (rolePermissions) {
+            const moduleMap: Record<string, string> = {
+              'Dashboard': 'dashboard',
+              'Khách hàng': 'customers',
+              'Lịch hẹn': 'bookings',
+              'Thẻ liệu trình': 'sessions',
+              'Tin nhắn': 'chat',
+              'CRM & Zalo': 'crm',
+              'Dịch vụ': 'services',
+              'Tài chính': 'finance',
+              'Đối soát': 'reconciliation',
+              'Kho hàng': 'inventory',
+              'Bảng lương': 'salary',
+              'Nhật ký hệ thống': 'audit',
+              'Cài đặt': 'settings'
+            };
+            const moduleId = moduleMap[item.label];
+            if (moduleId && rolePermissions[moduleId] === false) {
+              return false;
+            }
+          } else {
+            // Default fallbacks while loading or if no custom permissions set
+            if (user.role === 'ktv') {
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng'].includes(item.label);
+            }
+            if (user.role === 'ktv_lead') {
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng'].includes(item.label);
+            }
+            if (user.role === 'admin_staff') {
+              return !['Đối soát', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt'].includes(item.label);
+            }
+          }
         }
         return true;
       });
@@ -99,6 +142,8 @@ export function Sidebar() {
 
   const roleLabel =
     user?.role?.toLowerCase() === 'ktv' ? 'Kỹ thuật viên'
+    : user?.role?.toLowerCase() === 'ktv_lead' ? 'KTV Trưởng'
+    : user?.role?.toLowerCase() === 'admin_staff' ? 'Lễ tân / Staff'
     : user?.role?.toLowerCase() === 'customer' ? 'Khách hàng'
     : 'Quản trị viên';
 
