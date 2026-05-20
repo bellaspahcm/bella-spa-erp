@@ -1600,11 +1600,19 @@ function SessionsContent() {
                                     Chờ duyệt
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-dashed border-slate-100/10">
-                                  <Calendar className="w-3.5 h-3.5 text-rose-500" />
-                                  <span className="text-xs font-black">
-                                    {new Date(leave.leave_date).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' })}
-                                  </span>
+                                <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-dashed border-slate-100/10">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="w-3.5 h-3.5 text-rose-500" />
+                                    <span className="text-xs font-black">
+                                      {new Date(leave.leave_date).toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' })}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="w-3 h-3 text-slate-400" />
+                                    <span className="text-[10px] font-semibold text-slate-500 italic">
+                                      Gửi lúc: {new Date(leave.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ({new Date(leave.created_at).toLocaleDateString('vi-VN')})
+                                    </span>
+                                  </div>
                                 </div>
                                 <div className="text-[11px] italic opacity-90 mt-1 line-clamp-2">
                                   Lý do: {leave.reason || 'Không có lý do'}
@@ -1629,6 +1637,12 @@ function SessionsContent() {
                               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Ngày xin nghỉ</span>
                               <span className="text-xs font-black text-rose-600">
                                 {new Date(selectedLeave.leave_date).toLocaleDateString('vi-VN', { year: 'numeric', month: 'numeric', day: 'numeric' })}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Thời gian gửi đơn</span>
+                              <span className="text-xs font-black text-slate-800">
+                                {new Date(selectedLeave.created_at).toLocaleString('vi-VN', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
                             {selectedLeave.leave_type && (
