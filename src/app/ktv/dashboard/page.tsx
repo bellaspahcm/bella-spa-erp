@@ -1324,7 +1324,7 @@ export default function KTVDashboard() {
                       value={leaveDate}
                       onChange={(e) => setLeaveDate(e.target.value)}
                       min={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' })}
-                      className="w-full border border-slate-200 focus:ring-rose-500 focus:border-transparent rounded-2xl p-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all"
+                      className="w-full border border-slate-200 focus:ring-rose-500 focus:border-transparent rounded-2xl p-4 min-h-[56px] text-[16px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all"
                     />
                   </div>
 
@@ -1360,7 +1360,7 @@ export default function KTVDashboard() {
                       onChange={(e) => setLeaveReason(e.target.value)}
                       placeholder="Nêu rõ lý do cụ thể để quản lý duyệt..."
                       rows={3}
-                      className="w-full border border-slate-200 focus:ring-rose-500 focus:border-transparent rounded-2xl p-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all resize-none"
+                      className="w-full border border-slate-200 focus:ring-rose-500 focus:border-transparent rounded-2xl p-4 text-[16px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all resize-none"
                     />
                   </div>
 
