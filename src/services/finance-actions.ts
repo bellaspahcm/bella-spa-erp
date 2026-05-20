@@ -288,7 +288,7 @@ export async function getMonthlyPnL(month?: string) {
         .eq('tenant_id', tenantId),
       supabase
         .from('session_logs')
-        .select('id, completed_by_ktv_id, status, completed_date, booking_id, bookings!inner(tenant_id, ktv_commission)')
+        .select('id, completed_by_ktv_id, status, completed_date, rating, booking_id, bookings!inner(tenant_id, ktv_commission), session_reviews(rating, status)')
         .eq('bookings.tenant_id', tenantId)
         .eq('status', 'completed')
         .gte('completed_date', startDate)
@@ -330,31 +330,32 @@ export async function getMonthlyPnL(month?: string) {
         .eq('month_year', startDate)
         .eq('tenant_id', tenantId);
 
-      // 3. Fetch reviews for rating bonus calculation
-      const { data: reviews } = await supabase
-        .from('session_reviews')
-        .select('ktv_id, rating')
-        .eq('status', 'approved')
-        .eq('tenant_id', tenantId);
+      // NOTE: Reviews are now nested in session_logs query above (no separate fetch by created_at)
+      // This mirrors get_ktv_leaderboard RPC: reviews joined on sl.id, not created_at
 
-      // 4. Calculate accrued salaries dynamically
+      // 3. Calculate accrued salaries dynamically
       let accruedSalaries = 0;
       (ktvs || []).forEach((ktv: any) => {
         const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
         
         // Sum commission for completed sessions by this KTV in target month
-        const sessionCommissions = sessions
-          .filter((s: any) => s.completed_by_ktv_id === ktv.id)
+        const ktvSessions = sessions.filter((s: any) => s.completed_by_ktv_id === ktv.id);
+        const sessionCommissions = ktvSessions
           .reduce((sum: number, s: any) => sum + (Number(s.bookings?.ktv_commission) || 150000), 0);
 
         const baseVal = record?.base_salary ?? ktv.base_salary ?? 6000000;
-        const sessionsCount = sessions.filter((s: any) => s.completed_by_ktv_id === ktv.id).length;
+        const sessionsCount = ktvSessions.length;
 
-        // Rating bonus
-        const ktvReviews = reviews?.filter((r: any) => r.ktv_id === ktv.id) || [];
-        const avgRating = ktvReviews.length > 0 
-          ? ktvReviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / ktvReviews.length 
-          : 5.0; 
+        // Rating bonus — COALESCE(approved_review.rating, session.rating, 5.0)
+        const ratingValues: number[] = ktvSessions.map((s: any) => {
+          const approvedReview = (s.session_reviews as any[])?.find((sr: any) => sr.status === 'approved');
+          if (approvedReview?.rating) return approvedReview.rating as number;
+          if (s.rating) return s.rating as number;
+          return null;
+        }).filter((v: number | null): v is number => v !== null);
+        const avgRating = ratingValues.length > 0
+          ? ratingValues.reduce((acc, v) => acc + v, 0) / ratingValues.length
+          : 5.0;
         let bonusPerSession = 0;
         if (avgRating === 5.0) bonusPerSession = 50000;
         else if (avgRating >= 4.5) bonusPerSession = 30000;
