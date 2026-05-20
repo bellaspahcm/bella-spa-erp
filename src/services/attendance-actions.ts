@@ -497,6 +497,46 @@ export async function approveLeaveRequest(
 
   if (updateErr) return { success: false, error: updateErr.message };
 
+  // 4. Tự động ghi/cập nhật bản ghi chấm công theo loại nghỉ phép
+  // - Nghỉ buổi sáng (morning) hoặc buổi chiều (afternoon) → half_day (0.5 ngày công)
+  // - Nghỉ cả ngày (full / full_day) → absent (0 ngày công)
+  try {
+    const leaveAttendanceStatus = (leave.leave_type === 'morning' || leave.leave_type === 'afternoon')
+      ? 'half_day'
+      : 'absent';
+
+    const { data: existingAtt } = await supabase
+      .from('attendance')
+      .select('id, status')
+      .eq('ktv_id', leave.user_id)
+      .eq('date', leave.leave_date)
+      .maybeSingle();
+
+    if (existingAtt) {
+      // Chỉ ghi đè nếu chưa được chấm (present/late không bị ghi đè)
+      if (existingAtt.status === 'absent' || existingAtt.status === 'half_day') {
+        await supabase
+          .from('attendance')
+          .update({ status: leaveAttendanceStatus })
+          .eq('id', existingAtt.id);
+      }
+    } else {
+      // Chưa có bản ghi chấm công → tạo mới
+      await supabase
+        .from('attendance')
+        .insert({
+          ktv_id: leave.user_id,
+          date: leave.leave_date,
+          status: leaveAttendanceStatus,
+          tenant_id: leave.tenant_id,
+          notes: `Nghỉ phép được duyệt (${leave.leave_type === 'morning' ? 'Ca sáng' : leave.leave_type === 'afternoon' ? 'Ca chiều' : 'Cả ngày'})`
+        });
+    }
+  } catch (attErr) {
+    console.error('[approveLeaveRequest] Error writing attendance record:', attErr);
+    // Không trả về lỗi ở đây — phê duyệt vẫn thành công, chỉ log cảnh báo
+  }
+
   await recordAuditLog({
     action: 'UPDATE',
     table_name: 'staff_leaves',
@@ -506,6 +546,7 @@ export async function approveLeaveRequest(
 
   revalidatePath('/dashboard/sessions');
   revalidatePath('/ktv/dashboard');
+  revalidatePath('/dashboard/salary');
   return { success: true };
 }
 
