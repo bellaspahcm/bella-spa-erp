@@ -99,7 +99,7 @@
 - **Workflow**:
     - Executed Next.js production builds with zero warnings or compilation errors.
     - Pushed changes to GitHub repository `main` branch.
-    - Deployed live to Vercel production: [https://bella-spa-erp-swart.vercel.app](https://bella-spa-erp-swart.vercel.app).
+    - Deployed live to Vercel production: [https://bella-spa-erp.vercel.app](https://bella-spa-erp.vercel.app).
 
 ### 12. Real-time KTV Salary Dynamic P&L Accrual
 - **Status**: Implemented & Verified.
@@ -465,7 +465,7 @@
 - **Workflow**:
   - Verified 100% strict type safety using `npx tsc --noEmit` (0 errors or warnings).
   - Pushed all local commits to GitHub `main` branch.
-  - Triggered production build and deployed live to Vercel: [https://bella-spa-erp-swart.vercel.app](https://bella-spa-erp-swart.vercel.app) (Turbopack optimization complete, build succeeded in 31 seconds).
+  - Triggered production build and deployed live to Vercel: [https://bella-spa-erp.vercel.app](https://bella-spa-erp.vercel.app) (Turbopack optimization complete, build succeeded in 31 seconds).
 
 ## 2026-05-19 (Session 4): Bella Spa Premium Landing Page & Sidebar Sync Update
 

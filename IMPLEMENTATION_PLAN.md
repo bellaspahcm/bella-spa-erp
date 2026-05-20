@@ -103,7 +103,7 @@ Status: 🟢 Phase 16 - Triệt để Bảo Mật & Code Quality (Completed) | 1
   - [x] Retained the elegant brand styling of the Bella Spa Management System (glassmorphism containers, delicate pink/red gradients, and consistent typography) without introducing generic or mismatched color palettes.
 - [x] **Git & Vercel Continuous Deployment**:
   - [x] Committed all codebase adjustments and pushed them directly to the `main` branch on GitHub.
-  - [x] Triggered and successfully verified a production build and deployment to Vercel (Live URL: `https://bella-spa-erp-swart.vercel.app`), completing static optimization and Turbopack builds with zero warnings or errors.
+  - [x] Triggered and successfully verified a production build and deployment to Vercel (Live URL: `https://bella-spa-erp.vercel.app`), completing static optimization and Turbopack builds with zero warnings or errors.
 
 ## 🟢 Phase 10: Landing Page Visual Refinements & Price Stack Optimization (Completed)
 - [x] **Branding Text Correction**: Removed the `"ERP"` suffix from the landing page logo text, changing it from `"Mẹ & Bé ERP"` to `"Mẹ & Bé"` for brand elegance.
