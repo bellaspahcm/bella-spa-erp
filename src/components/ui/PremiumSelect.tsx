@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface Option {
   value: string;
   label: string;
+  group?: string;
   icon?: React.ReactNode;
 }
 
@@ -18,6 +19,7 @@ interface PremiumSelectProps {
   placeholder?: string;
   label?: string;
   className?: string;
+  buttonClassName?: string;
   disabled?: boolean;
 }
 
@@ -28,11 +30,20 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
   placeholder = "Chọn một tùy chọn...",
   label,
   className,
+  buttonClassName,
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectedOption = options.find(opt => opt.value === value);
+
+  const groupedOptions = options.reduce((acc, option) => {
+    const group = option.group || '';
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(option);
+    return acc;
+  }, {} as Record<string, Option[]>);
+  const hasGroups = Object.keys(groupedOptions).some(key => key !== '');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -56,7 +67,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={cn(
+        className={buttonClassName || cn(
           "w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300",
           "bg-white shadow-sm hover:shadow-md active:scale-[0.98]",
           isOpen 
@@ -98,6 +109,47 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                 <div className="px-5 py-4 text-sm text-slate-400 text-center italic">
                   Không có tùy chọn nào
                 </div>
+              ) : hasGroups ? (
+                Object.entries(groupedOptions).map(([group, groupOptions]) => (
+                  <div key={group} className="mb-1 last:mb-0">
+                    {group && (
+                      <div className="px-5 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10 border-y border-slate-100">
+                        {group}
+                      </div>
+                    )}
+                    {groupOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          onChange(option.value);
+                          setIsOpen(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center justify-between px-5 py-3 text-sm transition-colors",
+                          value === option.value 
+                            ? "bg-rose-50 text-rose-700 font-bold" 
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          {option.icon && (
+                            <div className={cn(
+                              "transition-colors",
+                              value === option.value ? "text-rose-500" : "text-slate-400"
+                            )}>
+                              {option.icon}
+                            </div>
+                          )}
+                          <span>{option.label}</span>
+                        </div>
+                        {value === option.value && (
+                          <Check className="w-4 h-4 text-rose-500" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ))
               ) : (
                 options.map((option) => (
                   <button
