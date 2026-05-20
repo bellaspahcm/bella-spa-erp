@@ -231,7 +231,7 @@ export default function KTVEarningsPage() {
             <Link href="/ktv/dashboard" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md">
               <ChevronLeft className="w-6 h-6" />
             </Link>
-            <h1 className="text-sm font-black uppercase tracking-[0.2em]">Thu nhập & Thưởng</h1>
+            <div className="text-sm font-black uppercase tracking-[0.2em] text-white">Thu nhập & Thưởng</div>
             <button onClick={fetchData} className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md">
               <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -251,7 +251,7 @@ export default function KTVEarningsPage() {
           </div>
           <div className="text-center">
             <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-2">Tổng hoa hồng nhận</p>
-            <h2 className="text-5xl font-black mb-2">{formatCurrency(earnings?.total || 0)}</h2>
+            <div className="text-5xl font-black text-white mb-2">{formatCurrency(earnings?.total || 0)}</div>
             <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/30">
               <TrendingUp className="w-3.5 h-3.5" />
               +{earnings?.sessions || 0} ca hoàn thành
