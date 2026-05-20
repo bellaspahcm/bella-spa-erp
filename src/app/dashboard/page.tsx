@@ -160,10 +160,10 @@ export default function DashboardPage() {
       };
 
       const newStats = [
-        { label: 'Tổng khách hàng', value: statsData.totalCustomers?.value || '0', trend: statsData.totalCustomers?.trend || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings?.value || '0', trend: statsData.todayBookings?.trend || 0, icon: Calendar, color: 'text-rose-600', bg: 'bg-rose-50' },
-        ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: statsData.totalRevenue?.value || '0M', trend: statsData.totalRevenue?.trend || 0, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
-        { label: 'Đánh giá KTV', value: statsData.avgRating?.value || '5.0', trend: statsData.avgRating?.trend || 0, icon: Star, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Tổng khách hàng', value: statsData.totalCustomers?.value || '0', trend: statsData.totalCustomers?.trend || 0, iconName: 'Users' as const, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings?.value || '0', trend: statsData.todayBookings?.trend || 0, iconName: 'Calendar' as const, color: 'text-rose-600', bg: 'bg-rose-50' },
+        ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: statsData.totalRevenue?.value || '0M', trend: statsData.totalRevenue?.trend || 0, iconName: 'DollarSign' as const, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
+        { label: 'Đánh giá KTV', value: statsData.avgRating?.value || '5.0', trend: statsData.avgRating?.trend || 0, iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
       ];
       
       setStats(newStats);
@@ -393,7 +393,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <StatsGrid stats={stats.map(s => ({...s, iconName: s.icon?.render?.name || 'Users'})) as any} />
+      <StatsGrid stats={stats} />
 
       {/* Bento Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -40,6 +40,12 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     }
 
     const today = todayDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    
+    // Compute yesterday Date in Asia/Ho_Chi_Minh context
+    const todayD = new Date(today + 'T00:00:00');
+    todayD.setDate(todayD.getDate() - 1);
+    const yesterday = `${todayD.getFullYear()}-${String(todayD.getMonth() + 1).padStart(2, '0')}-${String(todayD.getDate()).padStart(2, '0')}`;
+
     const monthStart = startDate || (today.substring(0, 7) + '-01');
     const { end: monthEnd, prevStart } = monthRange(monthStart);
 
@@ -48,7 +54,9 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     let prevCustQ = supabase.from('customers').select('id', { count: 'exact', head: true }).lt('created_at', monthStart);
     let revQ     = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', monthStart).lt('received_date', monthEnd);
     let prevRevQ = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', prevStart).lt('received_date', monthStart);
-    let ratQ     = supabase.from('session_logs').select('rating').not('rating', 'is', null); 
+    let ratQ     = supabase.from('session_logs').select('rating, completed_date').not('rating', 'is', null); 
+    let todayBookingsQ = supabase.from('session_logs').select('id', { count: 'exact', head: true }).eq('assigned_date', today);
+    let yesterdayBookingsQ = supabase.from('session_logs').select('id', { count: 'exact', head: true }).eq('assigned_date', yesterday);
 
     if (tenantId) {
       custQ    = custQ.eq('tenant_id', tenantId);
@@ -56,26 +64,47 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
       revQ     = revQ.eq('tenant_id', tenantId);
       prevRevQ = prevRevQ.eq('tenant_id', tenantId);
       ratQ     = ratQ.eq('tenant_id', tenantId);
+      todayBookingsQ = todayBookingsQ.eq('tenant_id', tenantId);
+      yesterdayBookingsQ = yesterdayBookingsQ.eq('tenant_id', tenantId);
     }
 
-    const [custRes, prevCustRes, revRes, prevRevRes, ratingRes] = await Promise.all([
-      custQ, prevCustQ, revQ, prevRevQ, ratQ
+    const [custRes, prevCustRes, revRes, prevRevRes, ratingRes, todayBookingsRes, yesterdayBookingsRes] = await Promise.all([
+      custQ, prevCustQ, revQ, prevRevQ, ratQ, todayBookingsQ, yesterdayBookingsQ
     ]);
 
     const totalCustomers = custRes.count ?? 0;
     const prevCustomers = prevCustRes.count ?? 0;
     const totalRevenue = (revRes.data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
     const prevRevenue = (prevRevRes.data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+    
+    // Ratings & Rating Trend Calculation
     const ratings = ratingRes.data || [];
     const avgRating = ratings.length
       ? ratings.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / ratings.length
       : 5.0;
 
+    const curMonthRatings = ratings.filter((r: any) => r.completed_date >= monthStart && r.completed_date < monthEnd);
+    const prevMonthRatings = ratings.filter((r: any) => r.completed_date >= prevStart && r.completed_date < monthStart);
+
+    const curAvgRating = curMonthRatings.length
+      ? curMonthRatings.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / curMonthRatings.length
+      : avgRating;
+
+    const prevAvgRating = prevMonthRatings.length
+      ? prevMonthRatings.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / prevMonthRatings.length
+      : avgRating;
+
+    const ratingTrend = calcTrend(curAvgRating, prevAvgRating);
+
+    const todayBookingsCount = todayBookingsRes.count ?? 0;
+    const yesterdayBookingsCount = yesterdayBookingsRes.count ?? 0;
+    const todayBookingsTrend = calcTrend(todayBookingsCount, yesterdayBookingsCount);
+
     return {
       totalCustomers: { value: totalCustomers.toLocaleString(), trend: calcTrend(totalCustomers, prevCustomers) },
-      todayBookings:  { value: '0', trend: 0 }, // overridden below in getFullDashboardData
+      todayBookings:  { value: todayBookingsCount.toString(), trend: todayBookingsTrend },
       totalRevenue:   { value: totalRevenue > 0 ? (totalRevenue / 1_000_000).toFixed(1) + 'M' : '0M', trend: calcTrend(totalRevenue, prevRevenue) },
-      avgRating:      { value: avgRating.toFixed(1), trend: 0 }
+      avgRating:      { value: avgRating.toFixed(1), trend: ratingTrend }
     };
   } catch (e) {
     console.error('[getDashboardStats]', e);
