@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase-client";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
 
 const container = {
   hidden: { opacity: 0 },
@@ -406,18 +407,12 @@ export default function SettingsPage() {
                               <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                 Ngân hàng thụ hưởng
                               </label>
-                              <select
-                                value={generalSettings.qr_bank_code}
-                                onChange={(e) => setGeneralSettings({ ...generalSettings, qr_bank_code: e.target.value })}
-                                className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700"
-                              >
-                                <option value="">-- Chọn ngân hàng --</option>
-                                {POPULAR_BANKS.map((bank) => (
-                                  <option key={bank.code} value={bank.code}>
-                                    {bank.name}
-                                  </option>
-                                ))}
-                              </select>
+                              <PremiumSelect
+                                value={generalSettings.qr_bank_code || ""}
+                                onChange={(value) => setGeneralSettings({ ...generalSettings, qr_bank_code: value })}
+                                options={POPULAR_BANKS.map((bank) => ({ value: bank.code, label: bank.name }))}
+                                placeholder="-- Chọn ngân hàng --"
+                              />
                             </div>
 
                             <div className="space-y-2">
@@ -486,12 +481,15 @@ export default function SettingsPage() {
                             </label>
                             <div className="relative">
                               <input
-                                type="number"
-                                value={generalSettings.salary_config?.bonus_5_star ?? 0}
-                                onChange={(e) => setGeneralSettings({
-                                  ...generalSettings,
-                                  salary_config: { ...generalSettings.salary_config, bonus_5_star: parseInt(e.target.value) || 0 }
-                                })}
+                                type="text"
+                                value={(generalSettings.salary_config?.bonus_5_star || 0).toLocaleString('vi-VN')}
+                                onChange={(e) => {
+                                  const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
+                                  setGeneralSettings({
+                                    ...generalSettings,
+                                    salary_config: { ...generalSettings.salary_config, bonus_5_star: isNaN(numericValue) ? 0 : numericValue }
+                                  });
+                                }}
                                 className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
                               />
                               <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">₫</span>
@@ -504,12 +502,15 @@ export default function SettingsPage() {
                             </label>
                             <div className="relative">
                               <input
-                                type="number"
-                                value={generalSettings.salary_config?.bonus_4_5_star ?? 0}
-                                onChange={(e) => setGeneralSettings({
-                                  ...generalSettings,
-                                  salary_config: { ...generalSettings.salary_config, bonus_4_5_star: parseInt(e.target.value) || 0 }
-                                })}
+                                type="text"
+                                value={(generalSettings.salary_config?.bonus_4_5_star || 0).toLocaleString('vi-VN')}
+                                onChange={(e) => {
+                                  const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
+                                  setGeneralSettings({
+                                    ...generalSettings,
+                                    salary_config: { ...generalSettings.salary_config, bonus_4_5_star: isNaN(numericValue) ? 0 : numericValue }
+                                  });
+                                }}
                                 className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
                               />
                               <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">₫</span>
@@ -522,12 +523,15 @@ export default function SettingsPage() {
                             </label>
                             <div className="relative">
                               <input
-                                type="number"
-                                value={generalSettings.salary_config?.bonus_4_star ?? 0}
-                                onChange={(e) => setGeneralSettings({
-                                  ...generalSettings,
-                                  salary_config: { ...generalSettings.salary_config, bonus_4_star: parseInt(e.target.value) || 0 }
-                                })}
+                                type="text"
+                                value={(generalSettings.salary_config?.bonus_4_star || 0).toLocaleString('vi-VN')}
+                                onChange={(e) => {
+                                  const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
+                                  setGeneralSettings({
+                                    ...generalSettings,
+                                    salary_config: { ...generalSettings.salary_config, bonus_4_star: isNaN(numericValue) ? 0 : numericValue }
+                                  });
+                                }}
                                 className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
                               />
                               <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">₫</span>
@@ -571,12 +575,15 @@ export default function SettingsPage() {
                             </label>
                             <div className="relative">
                               <input
-                                type="number"
-                                value={generalSettings.salary_config?.kpi_bonus_amount ?? 0}
-                                onChange={(e) => setGeneralSettings({
-                                  ...generalSettings,
-                                  salary_config: { ...generalSettings.salary_config, kpi_bonus_amount: parseInt(e.target.value) || 0 }
-                                })}
+                                type="text"
+                                value={(generalSettings.salary_config?.kpi_bonus_amount || 0).toLocaleString('vi-VN')}
+                                onChange={(e) => {
+                                  const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
+                                  setGeneralSettings({
+                                    ...generalSettings,
+                                    salary_config: { ...generalSettings.salary_config, kpi_bonus_amount: isNaN(numericValue) ? 0 : numericValue }
+                                  });
+                                }}
                                 className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
                               />
                               <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">₫</span>
