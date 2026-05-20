@@ -72,13 +72,19 @@ export async function saveTenantSettings(settings: {
       .from('tenants')
       .update(updatePayload)
       .eq('id', tenantId)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error('Error updating tenant settings:', error);
       return { success: false, error: error.message };
     }
+
+    if (!data || data.length === 0) {
+      console.error('Update returned 0 rows for tenant_id:', tenantId);
+      return { success: false, error: 'Không thể cập nhật cấu hình, chi nhánh không tồn tại hoặc bị chặn bởi quyền truy cập.' };
+    }
+
+    const updatedTenant = data[0];
 
     // Record audit log
     await recordAuditLog({
@@ -86,11 +92,11 @@ export async function saveTenantSettings(settings: {
       table_name: 'tenants',
       record_id: tenantId,
       old_data: oldSettings,
-      new_data: data
+      new_data: updatedTenant
     });
 
     revalidatePath('/dashboard/settings');
-    return { success: true, data };
+    return { success: true, data: updatedTenant };
   } catch (error: any) {
     console.error('Exception saving tenant settings:', error);
     return { success: false, error: error.message || 'Lỗi không xác định' };
