@@ -1002,7 +1002,7 @@ export default function SettingsPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col border border-white"
+              className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl relative z-10 overflow-visible flex flex-col border border-white"
             >
               <div className="p-8 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -1112,7 +1112,7 @@ export default function SettingsPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col border border-white"
+              className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl relative z-10 overflow-visible flex flex-col border border-white"
             >
               <div className="p-8 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-4">
