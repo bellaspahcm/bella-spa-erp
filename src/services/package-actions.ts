@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 
 export async function getPackages() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('packages')
     .select('*')
@@ -18,7 +18,7 @@ export async function getPackages() {
 }
 
 export async function createPackage(packageData: any) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   // Format data for DB
   const dbData = {
@@ -61,7 +61,7 @@ export async function createPackage(packageData: any) {
 }
 
 export async function updatePackage(id: string, packageData: any) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   // Fetch existing package before update for audit trail
   let oldPackage = null;
@@ -119,7 +119,7 @@ export async function updatePackage(id: string, packageData: any) {
 }
 
 export async function deletePackage(id: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   // Fetch existing package before delete for audit trail
   let oldPackage = null;

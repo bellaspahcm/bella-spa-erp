@@ -9,7 +9,7 @@ import { resolvePackageName, getLocalDateString } from '@/lib/utils';
  * Lấy các buổi chăm sóc đang thực hiện của KTV hiện tại
  */
 export async function getKTVActiveSessions() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return [];
 
@@ -65,7 +65,7 @@ export async function getKTVActiveSessions() {
  * Lấy các buổi chăm sóc được phân công hôm nay
  */
 export async function getKTVUpcomingSessions() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return [];
 
@@ -216,8 +216,8 @@ export async function getKTVUpcomingSessions() {
 /**
  * Bắt đầu một buổi chăm sóc (Check-in)
  */
-export async function startSession(sessionId: string) {
-  const supabase = (await createClient()) as any;
+export async function startSession(sessionId: string, lat?: number, lon?: number) {
+  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') throw new Error('Unauthorized');
 
@@ -231,7 +231,7 @@ export async function startSession(sessionId: string) {
   if (!session) throw new Error('Session not found');
 
   // Guard: check that the booking is not completed and the session number is within the booking's total_sessions
-  const booking = session.bookings as any;
+  const booking = session.bookings as { status?: string; completed_sessions?: number; total_sessions?: number } | null;
   if (booking) {
     if (booking.status === 'completed' || (booking.completed_sessions || 0) >= (booking.total_sessions || 0)) {
       throw new Error('Liệu trình này đã hoàn thành toàn bộ số buổi. Không thể bắt đầu buổi mới.');
@@ -242,13 +242,16 @@ export async function startSession(sessionId: string) {
   }
 
   // 2. Cập nhật session log
+  const updatePayload = {
+    status: 'in_progress' as const,
+    start_time: new Date().toISOString(),
+    completed_by_ktv_id: user.id,
+    ...(lat !== undefined && lon !== undefined ? { checkin_lat: lat, checkin_lon: lon } : {})
+  };
+
   const { error } = await supabase
     .from('session_logs')
-    .update({
-      status: 'in_progress',
-      start_time: new Date().toISOString(),
-      completed_by_ktv_id: user.id
-    })
+    .update(updatePayload)
     .eq('id', sessionId);
 
   if (error) {
@@ -273,7 +276,7 @@ export async function startSession(sessionId: string) {
  * Hoàn thành một buổi chăm sóc (Check-out)
  */
 export async function completeKTVSession(sessionId: string, notes: string = '', ktvCheckoutNote: string = '') {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') throw new Error('Unauthorized');
 
@@ -297,7 +300,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
 
   // Tính toán thời lượng quy định và thực tế
   let standardDuration = 60; // Mặc định là 60 phút
-  const durationStr = (session as any)?.bookings?.packages?.duration;
+  const durationStr = (session.bookings as any)?.packages?.duration as string | undefined;
   if (durationStr) {
     const match = durationStr.match(/(\d+)/);
     if (match) {
@@ -328,30 +331,33 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   }
 
   // 2. Cập nhật session log
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sessionUpdatePayload: any = {
+    status: 'completed',
+    end_time: endTime.toISOString(),
+    completed_date: new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(endTime),
+    notes: notes,
+    standard_duration: standardDuration,
+    actual_duration: actualDuration,
+    time_deviation: timeDeviation,
+    duration_warning_type: durationWarningType,
+    ktv_checkout_note: ktvCheckoutNote
+  };
+
   const { error: sessionError } = await supabase
     .from('session_logs')
-    .update({
-      status: 'completed',
-      end_time: endTime.toISOString(),
-      completed_date: new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'Asia/Ho_Chi_Minh',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(endTime),
-      notes: notes,
-      standard_duration: standardDuration,
-      actual_duration: actualDuration,
-      time_deviation: timeDeviation,
-      duration_warning_type: durationWarningType,
-      ktv_checkout_note: ktvCheckoutNote
-    })
+    .update(sessionUpdatePayload)
     .eq('id', sessionId);
 
   if (sessionError) throw new Error('Failed to complete session');
 
   // 2.5 Tự động trừ kho vật tư tiêu hao nếu có định mức
-  const packageId = (session as any)?.bookings?.package_id;
+  const packageId = (session.bookings as any)?.package_id as string | undefined;
   if (packageId) {
     try {
       const { autoConsumeForSession } = await import('./inventory-actions');
@@ -415,7 +421,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
  * Lấy thu nhập hoa hồng của KTV trong tháng
  */
 export async function getKTVEarnings(month: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { total: 0, sessions: 0 };
 
@@ -446,7 +452,7 @@ export async function getKTVEarnings(month: string) {
 }
 
 export async function getKTVLeaderboard(month: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const user = await getCurrentUser();
   const tenantId = user?.tenant_id;
   if (!tenantId) return [];
@@ -468,7 +474,7 @@ export async function getKTVLeaderboard(month: string) {
  * Lấy danh sách thông báo của KTV hiện tại (Đã lọc bỏ thông tin đánh giá/sao để bảo mật)
  */
 export async function getKTVNotifications() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user) return [];
 
@@ -506,10 +512,10 @@ export async function getKTVNotifications() {
  * Đánh dấu một thông báo là đã đọc
  */
 export async function markNotificationAsRead(id: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { error } = await supabase
     .from('Notification')
-    .update({ isRead: true } as any)
+    .update({ isRead: true })
     .eq('id', id);
 
   if (error) {

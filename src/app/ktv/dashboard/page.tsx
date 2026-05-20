@@ -275,7 +275,26 @@ export default function KTVDashboard() {
   const handleStart = async (sessionId: string) => {
     setIsActionLoading(sessionId);
     try {
-      const res = await executeAction('CHECKIN', { sessionId }, () => startSession(sessionId));
+      let lat: number | undefined;
+      let lon: number | undefined;
+
+      try {
+        if ('geolocation' in navigator) {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 10000,
+              enableHighAccuracy: true
+            });
+          });
+          lat = position.coords.latitude;
+          lon = position.coords.longitude;
+        }
+      } catch (geoError) {
+        console.warn('Geolocation failed:', geoError);
+        toast.warning('Không thể xác định vị trí GPS. Ca làm việc vẫn được bắt đầu.');
+      }
+
+      const res = await executeAction('CHECKIN', { sessionId, lat, lon }, () => startSession(sessionId, lat, lon));
       if (res && res.offline) {
         setActiveSessions(prev => [
           ...prev,

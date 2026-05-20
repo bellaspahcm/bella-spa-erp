@@ -20,7 +20,7 @@ export interface CRMStats {
  * Fetches stats for the CRM Dashboard
  */
 export async function getCRMStats(): Promise<CRMStats> {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) {
@@ -109,7 +109,7 @@ export async function getCRMStats(): Promise<CRMStats> {
  * Fetches upcoming sessions for today and tomorrow
  */
 export async function getUpcomingSessions() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) {
@@ -178,7 +178,7 @@ export interface ZaloConfig {
  * Fetches Zalo configuration for the current tenant
  */
 export async function getZaloConfig(): Promise<ZaloConfig> {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   
@@ -238,7 +238,7 @@ export async function getZaloConfig(): Promise<ZaloConfig> {
 /**
  * Saves Zalo configuration  */
 export async function saveZaloConfig(config: Partial<ZaloConfig>) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 
@@ -295,7 +295,7 @@ export async function saveZaloConfig(config: Partial<ZaloConfig>) {
  * Falls back to null if Zalo is not fully configured (so the calling code can drop back to Sandbox mode).
  */
 export async function getOrRefreshZaloToken(tenantId: string): Promise<string | null> {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   try {
     const { data: tenant, error } = await supabase
@@ -454,7 +454,7 @@ export async function sendZaloZNS(
  * Triggers a Zalo OA / ZNS reminder for a specific session log
  */
 export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride?: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   let tenantId = tenantIdOverride;
   let currentUserId = '';
@@ -463,7 +463,7 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
     const currentUser = await getCurrentUser();
     currentUserId = currentUser?.id || '';
     if (!tenantId) {
-      tenantId = currentUser?.tenant_id;
+      tenantId = currentUser?.tenant_id || undefined;
     }
   } catch (e) {
     // Suppress error if no active session (e.g. Cron job)
@@ -575,7 +575,8 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
         message: logMessage,
         type: 'zalo_zns',
         tenantId,
-        isRead: false
+        isRead: false,
+        updatedAt: new Date().toISOString()
       });
 
     if (notifErr) {
@@ -608,7 +609,7 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
  * and triggers alerts for those that start in the next 2.5 hours and haven't been reminded.
  */
 export async function triggerBatchReminders(specificTenantId?: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   let tenantIds: string[] = [];
 
   try {
@@ -716,7 +717,7 @@ export async function triggerBatchReminders(specificTenantId?: string) {
  * Fetches birthday list for baby birthday milestones
  */
 export async function getBirthdayCustomers() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 
@@ -778,7 +779,7 @@ export async function getBirthdayCustomers() {
  * Sends a simulated/real Birthday Greeting & Voucher via Zalo OA
  */
 export async function sendBirthdayGreeting(customerId: string, voucherCode: string, tenantIdOverride?: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   let tenantId = tenantIdOverride;
   let currentUserId = '';
@@ -787,7 +788,7 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
     const currentUser = await getCurrentUser();
     currentUserId = currentUser?.id || '';
     if (!tenantId) {
-      tenantId = currentUser?.tenant_id;
+      tenantId = currentUser?.tenant_id || undefined;
     }
   } catch (e) {
     // Suppress
@@ -860,7 +861,8 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
         message: logMessage,
         type: 'zalo_birthday',
         tenantId,
-        isRead: false
+        isRead: false,
+        updatedAt: new Date().toISOString()
       });
 
     if (notifErr) {
@@ -892,7 +894,7 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
  * Fetch recently sent Zalo ZNS logs
  */
 export async function getZaloZnsLogs() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 

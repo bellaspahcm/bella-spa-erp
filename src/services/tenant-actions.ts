@@ -7,7 +7,7 @@ import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';
 
 export async function getTenantSettings() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 
@@ -63,7 +63,7 @@ export async function saveTenantSettings(settings: {
   salary_config?: any;
   role_permissions?: any;
 }) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 

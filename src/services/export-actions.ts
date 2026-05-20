@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase-server';
 
 export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthYear: string = '2026-05-01') {
   try {
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
 
     // 1. Fetch completed sessions for this KTV in this month
     const { data: sessions, error: sessionsError } = await supabase

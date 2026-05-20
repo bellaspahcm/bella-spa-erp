@@ -1,13 +1,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import * as Sentry from '@sentry/nextjs';
 import { getLocalDateString } from '@/lib/utils';
 
 // ─── Tenant Resolution (3-level fallback) ────────────────────────────────────
 async function resolveTenantId(): Promise<string> {
   try {
     const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const { getCurrentUser } = await import('./user-actions');
     const currentUser = await getCurrentUser();
     if (currentUser?.tenant_id) return currentUser.tenant_id;
@@ -39,7 +40,7 @@ async function resolveTenantId(): Promise<string> {
 // ─── getFinancialOverview ─────────────────────────────────────────────────────
 export async function getFinancialOverview() {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   const { getCurrentUser } = await import('./user-actions');
   const currentUser = await getCurrentUser();
@@ -145,21 +146,22 @@ export async function getFinancialOverview() {
 // ─── confirmTransaction ───────────────────────────────────────────────────────
 export async function confirmTransaction(id: string, type: 'revenue' | 'expense') {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   const today = getLocalDateString();
 
-  // For expense: status = 'approved'; for revenue: status = 'confirmed'
-  const updatePayload = type === 'revenue'
-    ? { status: 'confirmed', received_date: today }
-    : { status: 'approved', expense_date: today };
-
-  const table = type === 'revenue' ? 'revenue' : 'expenses';
-  const { error } = await supabase.from(table).update(updatePayload).eq('id', id);
-
-  if (error) {
-    console.error(`Error confirming ${type}:`, error);
-    throw new Error(`Failed to confirm ${type}: ${error.message}`);
+  if (type === 'revenue') {
+    const { error } = await supabase.from('revenue').update({ status: 'confirmed', received_date: today }).eq('id', id);
+    if (error) {
+      console.error(`Error confirming revenue:`, error);
+      throw new Error(`Failed to confirm revenue: ${error.message}`);
+    }
+  } else {
+    const { error } = await supabase.from('expenses').update({ status: 'approved', expense_date: today }).eq('id', id);
+    if (error) {
+      console.error(`Error confirming expense:`, error);
+      throw new Error(`Failed to confirm expense: ${error.message}`);
+    }
   }
 
   revalidatePath('/dashboard/finance');
@@ -176,7 +178,7 @@ export async function recordTransaction(data: {
   booking_id?: string;
 }) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const tenantId = await resolveTenantId();
 
   try {
@@ -256,7 +258,7 @@ export async function recordTransaction(data: {
 export async function getMonthlyPnL(month?: string) {
   try {
     const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const tenantId = await resolveTenantId();
 
     const now = new Date();
@@ -401,7 +403,7 @@ export async function getMonthlyPnL(month?: string) {
 export async function getServicePerformance() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const tenantId = await resolveTenantId();
 
     const { data: bookings, error } = await supabase
@@ -471,7 +473,76 @@ export async function getServicePerformance() {
 
 // ─── lockMonth (stub) ─────────────────────────────────────────────────────────
 export async function lockMonth(month: string) {
-  console.warn('[lockMonth] Not fully implemented for month:', month);
-  revalidatePath('/dashboard/finance');
-  return { success: true };
+  try {
+    const { createClient } = await import('@/lib/supabase-server');
+    const supabase = await createClient();
+    
+    const { getCurrentUser } = await import('./user-actions');
+    const user = await getCurrentUser();
+    
+    if (!user) return { success: false, error: 'Chưa đăng nhập' };
+    if (user.role !== 'admin') {
+      return { success: false, error: 'Chỉ Admin mới có thể khóa sổ tháng' };
+    }
+    
+    if (!user.tenant_id) return { success: false, error: 'Không tìm thấy tenant_id' };
+
+    const { error } = await supabase.rpc('lock_monthly_records', {
+      p_tenant_id: user.tenant_id,
+      p_month: month
+    });
+
+    if (error) {
+      console.error('[lockMonth] RPC error:', error);
+      return { success: false, error: 'Lỗi khóa sổ: ' + error.message };
+    }
+
+    revalidatePath('/dashboard/finance');
+    return { success: true, month };
+  } catch (e: any) {
+    console.error('[lockMonth]', e);
+    Sentry.captureException(e);
+    return { success: false, error: 'Lỗi hệ thống' };
+  }
+}
+
+// ─── unlockMonth ────────────────────────────────────────────────────────────────
+export async function unlockMonth(month: string) {
+  try {
+    const { createClient } = await import('@/lib/supabase-server');
+    const supabase = await createClient();
+    
+    const { getCurrentUser } = await import('./user-actions');
+    const user = await getCurrentUser();
+    
+    if (!user) return { success: false, error: 'Chưa đăng nhập' };
+    if (user.role !== 'admin') {
+      return { success: false, error: 'Chỉ Admin mới có thể mở khóa sổ tháng' };
+    }
+    
+    if (!user.tenant_id) return { success: false, error: 'Không tìm thấy tenant_id' };
+
+    // Update manually to unlock
+    const startDate = new Date(month);
+    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+    
+    const startDateStr = startDate.toISOString().split('T')[0];
+    const endDateStr = endDate.toISOString().split('T')[0] + 'T23:59:59';
+
+    await Promise.all([
+      supabase.from('revenue').update({ is_locked: false })
+        .eq('tenant_id', user.tenant_id).gte('received_date', startDateStr).lte('received_date', endDateStr),
+      supabase.from('expenses').update({ is_locked: false })
+        .eq('tenant_id', user.tenant_id).gte('expense_date', startDateStr).lte('expense_date', endDateStr),
+      supabase.from('salary_records').update({ is_locked: false })
+        .eq('tenant_id', user.tenant_id).eq('month_year', startDateStr)
+    ]);
+
+    revalidatePath('/dashboard/finance');
+    return { success: true, month };
+  } catch (e: any) {
+    console.error('[unlockMonth]', e);
+    Sentry.captureException(e);
+    return { success: false, error: 'Lỗi hệ thống' };
+  }
 }

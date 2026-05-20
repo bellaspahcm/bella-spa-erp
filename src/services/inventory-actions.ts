@@ -15,7 +15,7 @@ import { getCurrentUser } from './user-actions';
 // ─── Helper: get supabase client + optional tenant_id ─────────────────────────
 async function getSupabaseWithTenant() {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const user = await getCurrentUser();
   return { supabase, tenantId: user?.tenant_id || null, userId: user?.id || null };
 }

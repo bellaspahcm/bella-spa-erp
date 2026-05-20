@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 
 export async function getAuditLogs() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 
@@ -58,7 +58,7 @@ export async function recordAuditLog(payload: {
   old_data?: any;
   new_data?: any;
 }) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 

@@ -121,7 +121,7 @@ export default function CustomerDetailPage() {
                     data.gender_baby === 'girl' ? 'Bé Gái' : 
                     'Chưa xác định'
           },
-          sessions: data.sessions || [],
+          sessions: (data as any).sessions || [],
           allBookings: bookings || []
         });
         

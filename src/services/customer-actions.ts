@@ -9,7 +9,7 @@ import { resolvePackageName } from '@/lib/utils';
  * Truy xuất thông tin booking qua Share Token (Dành cho khách hàng)
  */
 export async function getCustomerBookingByToken(token?: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   let query = supabase
     .from('bookings')
@@ -83,7 +83,7 @@ export async function getCustomerBookingByToken(token?: string) {
  * Khách hàng gửi đánh giá cho một buổi chăm sóc
  */
 export async function submitCustomerRating(sessionId: string, rating: number, comment: string = '') {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   // 1. Lấy thông tin session để đồng bộ hóa
   const { data: session } = await supabase
@@ -165,7 +165,7 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
  * (Hàm này nên được gọi từ finance-actions khi confirm revenue)
  */
 export async function addLoyaltyPoints(customerId: string, amount: number) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   // Logic: 100k = 1 điểm
   const pointsToAdd = Math.floor(amount / 100000);
@@ -184,7 +184,7 @@ export async function addLoyaltyPoints(customerId: string, amount: number) {
  * Lấy danh sách khách hàng
  */
 export async function getCustomers() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('customers')
     .select('*')
@@ -201,7 +201,7 @@ export async function getCustomers() {
  * Lấy chi tiết khách hàng
  */
 export async function getCustomerById(id: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('customers')
     .select('*')
@@ -219,7 +219,7 @@ export async function getCustomerById(id: string) {
  * Tạo mới khách hàng
  */
 export async function createCustomer(customerData: any) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('customers')
     .insert([customerData])
@@ -252,7 +252,7 @@ export async function createCustomer(customerData: any) {
  * Cập nhật khách hàng
  */
 export async function updateCustomer(id: string, customerData: any) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   // Fetch existing customer before update for audit trail
   let oldCustomer = null;
@@ -304,7 +304,7 @@ export async function updateCustomer(id: string, customerData: any) {
  * Xóa khách hàng
  */
 export async function deleteCustomer(id: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   // Fetch existing customer before delete for audit trail
   let oldCustomer = null;

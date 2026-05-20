@@ -57,6 +57,7 @@ export type Database = {
           shift_id: string | null
           status: string | null
           tenant_id: string | null
+          notes: string | null
         }
         Insert: {
           checkin_time?: string | null
@@ -67,6 +68,7 @@ export type Database = {
           shift_id?: string | null
           status?: string | null
           tenant_id?: string | null
+          notes?: string | null
         }
         Update: {
           checkin_time?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           shift_id?: string | null
           status?: string | null
           tenant_id?: string | null
+          notes?: string | null
         }
         Relationships: [
           {
@@ -173,6 +176,7 @@ export type Database = {
           tenant_id: string | null
           total_sessions: number | null
           updated_at: string | null
+          zalo_reminder_sent: boolean | null
         }
         Insert: {
           assigned_ktv_id?: string | null
@@ -200,6 +204,7 @@ export type Database = {
           tenant_id?: string | null
           total_sessions?: number | null
           updated_at?: string | null
+          zalo_reminder_sent?: boolean | null
         }
         Update: {
           assigned_ktv_id?: string | null
@@ -227,6 +232,7 @@ export type Database = {
           tenant_id?: string | null
           total_sessions?: number | null
           updated_at?: string | null
+          zalo_reminder_sent?: boolean | null
         }
         Relationships: [
           {
@@ -261,40 +267,34 @@ export type Database = {
       }
       chat_messages: {
         Row: {
-          content: string | null
           created_at: string | null
-          deleted_at: string | null
-          edited_at: string | null
-          file_url: string | null
+          customer_id: string | null
           id: string
-          message_type: string | null
+          is_read: boolean | null
+          message: string
           sender_id: string | null
+          sender_type: string
           tenant_id: string | null
-          thread_id: string
         }
         Insert: {
-          content?: string | null
           created_at?: string | null
-          deleted_at?: string | null
-          edited_at?: string | null
-          file_url?: string | null
+          customer_id?: string | null
           id?: string
-          message_type?: string | null
+          is_read?: boolean | null
+          message: string
           sender_id?: string | null
+          sender_type: string
           tenant_id?: string | null
-          thread_id: string
         }
         Update: {
-          content?: string | null
           created_at?: string | null
-          deleted_at?: string | null
-          edited_at?: string | null
-          file_url?: string | null
+          customer_id?: string | null
           id?: string
-          message_type?: string | null
+          is_read?: boolean | null
+          message?: string
           sender_id?: string | null
+          sender_type?: string
           tenant_id?: string | null
-          thread_id?: string
         }
         Relationships: [
           {
@@ -312,12 +312,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "chat_messages_thread_id_fkey"
-            columns: ["thread_id"]
+            foreignKeyName: "chat_messages_customer_id_fkey"
+            columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "chat_threads"
+            referencedRelation: "customers"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       chat_threads: {
@@ -461,6 +461,7 @@ export type Database = {
           description: string | null
           expense_date: string
           id: string
+          is_locked: boolean | null
           receipt_url: string | null
           status: string | null
           submitted_by_id: string | null
@@ -473,6 +474,7 @@ export type Database = {
           description?: string | null
           expense_date: string
           id?: string
+          is_locked?: boolean | null
           receipt_url?: string | null
           status?: string | null
           submitted_by_id?: string | null
@@ -485,6 +487,7 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          is_locked?: boolean | null
           receipt_url?: string | null
           status?: string | null
           submitted_by_id?: string | null
@@ -935,6 +938,7 @@ export type Database = {
           amount: number
           booking_id: string | null
           id: string
+          is_locked: boolean | null
           notes: string | null
           payment_method: string | null
           received_date: string
@@ -947,6 +951,7 @@ export type Database = {
           amount: number
           booking_id?: string | null
           id?: string
+          is_locked?: boolean | null
           notes?: string | null
           payment_method?: string | null
           received_date: string
@@ -959,6 +964,7 @@ export type Database = {
           amount?: number
           booking_id?: string | null
           id?: string
+          is_locked?: boolean | null
           notes?: string | null
           payment_method?: string | null
           received_date?: string
@@ -1057,6 +1063,7 @@ export type Database = {
           dispute_resolved_at: string | null
           finalized_at: string | null
           id: string
+          is_locked: boolean | null
           kpi_bonus: number | null
           ktv_confirmed_at: string | null
           ktv_id: string
@@ -1081,6 +1088,7 @@ export type Database = {
           dispute_resolved_at?: string | null
           finalized_at?: string | null
           id?: string
+          is_locked?: boolean | null
           kpi_bonus?: number | null
           ktv_confirmed_at?: string | null
           ktv_id: string
@@ -1105,6 +1113,7 @@ export type Database = {
           dispute_resolved_at?: string | null
           finalized_at?: string | null
           id?: string
+          is_locked?: boolean | null
           kpi_bonus?: number | null
           ktv_confirmed_at?: string | null
           ktv_id?: string
@@ -1145,51 +1154,69 @@ export type Database = {
           assigned_date: string | null
           assigned_time: string | null
           booking_id: string
+          checkin_lat: number | null
+          checkin_lon: number | null
           completed_by_ktv_id: string | null
           completed_date: string | null
           created_at: string | null
+          end_time: string | null
           id: string
           is_confirmed: boolean | null
           notes: string | null
           rating: number | null
           rating_comment: string | null
           session_number: number
+          start_time: string | null
           status: string | null
           tenant_id: string | null
+          zalo_reminder_sent: boolean | null
+          zalo_reminder_time: string | null
         }
         Insert: {
           address?: string | null
           assigned_date?: string | null
           assigned_time?: string | null
           booking_id: string
+          checkin_lat?: number | null
+          checkin_lon?: number | null
           completed_by_ktv_id?: string | null
           completed_date?: string | null
           created_at?: string | null
+          end_time?: string | null
           id?: string
           is_confirmed?: boolean | null
           notes?: string | null
           rating?: number | null
           rating_comment?: string | null
           session_number: number
+          start_time?: string | null
           status?: string | null
           tenant_id?: string | null
+          zalo_reminder_sent?: boolean | null
+          zalo_reminder_time?: string | null
         }
         Update: {
           address?: string | null
           assigned_date?: string | null
           assigned_time?: string | null
           booking_id?: string
+          checkin_lat?: number | null
+          checkin_lon?: number | null
           completed_by_ktv_id?: string | null
           completed_date?: string | null
           created_at?: string | null
+          end_time?: string | null
           id?: string
           is_confirmed?: boolean | null
           notes?: string | null
           rating?: number | null
           rating_comment?: string | null
           session_number?: number
+          start_time?: string | null
           status?: string | null
           tenant_id?: string | null
+          zalo_reminder_sent?: boolean | null
+          zalo_reminder_time?: string | null
         }
         Relationships: [
           {
@@ -1372,6 +1399,67 @@ export type Database = {
           },
         ]
       }
+      staff_leaves: {
+        Row: {
+          id: string
+          user_id: string
+          tenant_id: string | null
+          status: string
+          leave_date: string
+          leave_type: string
+          reason: string | null
+          created_at: string
+          approved_by: string | null
+          rejection_reason: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          tenant_id?: string | null
+          status?: string
+          leave_date: string
+          leave_type: string
+          reason?: string | null
+          created_at?: string
+          approved_by?: string | null
+          rejection_reason?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          tenant_id?: string | null
+          status?: string
+          leave_date?: string
+          leave_type?: string
+          reason?: string | null
+          created_at?: string
+          approved_by?: string | null
+          rejection_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_leaves_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_leaves_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_leaves_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       tenants: {
         Row: {
           address: string | null
@@ -1385,6 +1473,21 @@ export type Database = {
           royalty_rate: number | null
           status: string | null
           updated_at: string | null
+          zalo_template_birthday_id: string | null
+          zalo_template_reminder_id: string | null
+          zalo_app_id: string | null
+          zalo_secret_key: string | null
+          zalo_oa_id: string | null
+          zalo_access_token: string | null
+          zalo_refresh_token: string | null
+          zalo_token_expires_at: string | null
+          zalo_auto_scan: boolean | null
+          email: string | null
+          qr_bank_code: string | null
+          qr_account_number: string | null
+          qr_account_name: string | null
+          salary_config: Json | null
+          role_permissions: Json | null
         }
         Insert: {
           address?: string | null
@@ -1398,6 +1501,21 @@ export type Database = {
           royalty_rate?: number | null
           status?: string | null
           updated_at?: string | null
+          zalo_template_birthday_id?: string | null
+          zalo_template_reminder_id?: string | null
+          zalo_app_id?: string | null
+          zalo_secret_key?: string | null
+          zalo_oa_id?: string | null
+          zalo_access_token?: string | null
+          zalo_refresh_token?: string | null
+          zalo_token_expires_at?: string | null
+          zalo_auto_scan?: boolean | null
+          email?: string | null
+          qr_bank_code?: string | null
+          qr_account_number?: string | null
+          qr_account_name?: string | null
+          salary_config?: Json | null
+          role_permissions?: Json | null
         }
         Update: {
           address?: string | null
@@ -1411,6 +1529,21 @@ export type Database = {
           royalty_rate?: number | null
           status?: string | null
           updated_at?: string | null
+          zalo_template_birthday_id?: string | null
+          zalo_template_reminder_id?: string | null
+          zalo_app_id?: string | null
+          zalo_secret_key?: string | null
+          zalo_oa_id?: string | null
+          zalo_access_token?: string | null
+          zalo_refresh_token?: string | null
+          zalo_token_expires_at?: string | null
+          zalo_auto_scan?: boolean | null
+          email?: string | null
+          qr_bank_code?: string | null
+          qr_account_number?: string | null
+          qr_account_name?: string | null
+          salary_config?: Json | null
+          role_permissions?: Json | null
         }
         Relationships: [
           {
@@ -1495,6 +1628,18 @@ export type Database = {
       current_user_role: { Args: never; Returns: string }
       get_dashboard_summary: { Args: { p_tenant_id: string }; Returns: Json }
       get_financial_anomalies: { Args: { p_tenant_id: string }; Returns: Json }
+      get_chat_customers: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          id: string
+          name: string
+          name_mother: string
+          phone: string
+          unread_count: number
+          last_message: string
+          last_message_at: string
+        }[]
+      }
       get_ktv_leaderboard: {
         Args: { p_month: string; p_tenant_id: string }
         Returns: {
@@ -1529,6 +1674,10 @@ export type Database = {
       get_my_tenant_id: { Args: never; Returns: string }
       increment_loyalty_points: {
         Args: { p_customer_id: string; p_points: number }
+        Returns: undefined
+      }
+      lock_monthly_records: {
+        Args: { p_tenant_id: string; p_month: string }
         Returns: undefined
       }
     }
