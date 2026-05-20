@@ -497,7 +497,7 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
       .single();
 
     if (fetchErr || !session) {
-      return { error: 'Không tìm thấy thông tin buổi trị liệu: ' + (fetchErr?.message || '') };
+      return { error: 'Không tìm thấy thông tin buổi chăm sóc: ' + (fetchErr?.message || '') };
     }
 
     const customer = session.bookings?.customers;

@@ -441,7 +441,7 @@ export default function CRMPage() {
                   <div className="pt-2 flex items-center justify-between border-t border-slate-100">
                     <div>
                       <p className="text-xs font-bold text-slate-700">Tự động gửi tin (Cronjob)</p>
-                      <p className="text-[10px] text-slate-400 font-medium">Bật quét tự động trước giờ trị liệu</p>
+                      <p className="text-[10px] text-slate-400 font-medium">Bật quét tự động trước giờ chăm sóc</p>
                     </div>
                     <button 
                       type="button"
@@ -498,7 +498,7 @@ export default function CRMPage() {
                     {upcomingSessions.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="text-center py-12 text-slate-400 font-medium italic">
-                          Không tìm thấy buổi trị liệu nào hôm nay và ngày mai.
+                          Không tìm thấy buổi chăm sóc nào hôm nay và ngày mai.
                         </td>
                       </tr>
                     ) : (

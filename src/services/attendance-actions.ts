@@ -398,7 +398,7 @@ export async function getKTVConflictSessions(
 ) {
   const supabase = (await createClient()) as any;
   
-  // Lấy danh sách các ca trị liệu được đặt trước của KTV này vào ngày đó
+  // Lấy danh sách các ca chăm sóc được đặt trước của KTV này vào ngày đó
   const { data, error } = await supabase
     .from('session_logs')
     .select(`
