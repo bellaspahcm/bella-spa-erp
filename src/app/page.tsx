@@ -806,7 +806,7 @@ export default function LandingPage() {
             {/* Background Image: Image 4 */}
             <div 
               className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.02]" 
-              style={{ backgroundImage: 'url("/banner_tam_be.png")' }} 
+              style={{ backgroundImage: 'url("/bella_real_4.jpg")' }} 
             />
             {/* Delicate overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-transparent pointer-events-none" />
@@ -1302,7 +1302,7 @@ export default function LandingPage() {
               >
                 <div 
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-103" 
-                  style={{ backgroundImage: 'url("/bella_real_1.jpg")' }} 
+                  style={{ backgroundImage: 'url("/banner_tam_be.png")' }} 
                 />
                 <div className="absolute inset-0 bg-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </motion.div>
