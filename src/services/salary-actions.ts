@@ -43,6 +43,15 @@ export async function publishSalaryRecord(ktvId: string) {
       .eq('id', ktvId)
       .single();
 
+    const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
+    const salaryConfig = tenantData?.salary_config || {
+      bonus_5_star: 50000,
+      bonus_4_5_star: 30000,
+      bonus_4_star: 10000,
+      kpi_target_sessions: 30,
+      kpi_bonus_amount: 1000000
+    };
+
     // 1.1 Fetch actual attendance records this month for pro-rata calculation
     const startOfMonthStr = monthYear;
     const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
@@ -91,7 +100,7 @@ export async function publishSalaryRecord(ktvId: string) {
     const avgRating = reviews?.length > 0
       ? reviews.reduce((a: number, r: any) => a + (r.rating || 0), 0) / reviews.length
       : 5.0;
-    const bonusPerSession = avgRating === 5.0 ? 50000 : avgRating >= 4.5 ? 30000 : avgRating >= 4.0 ? 10000 : 0;
+    const bonusPerSession = avgRating === 5.0 ? salaryConfig.bonus_5_star : avgRating >= 4.5 ? salaryConfig.bonus_4_5_star : avgRating >= 4.0 ? salaryConfig.bonus_4_star : 0;
     const ratingBonus = sessionsCount * bonusPerSession;
 
     // 4. Get or init salary record for adjustments
@@ -103,7 +112,7 @@ export async function publishSalaryRecord(ktvId: string) {
       .maybeSingle();
 
     const rawBaseSalary = existing?.base_salary ?? ktv?.base_salary ?? 6000000;
-    const kpiBonus = existing?.kpi_bonus ?? (sessionsCount > 30 ? 1000000 : 0);
+    const kpiBonus = existing?.kpi_bonus ?? (sessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
     const deductions = existing?.violations_deduction ?? 0;
     const advances = existing?.service_percentage_bonus ?? 0;
 
@@ -389,6 +398,16 @@ export async function getSalaryData() {
     const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const supabase = (await createClient()) as any;
     const currentUser = await getCurrentUser();
+    let tenantId = currentUser?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+    const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
+    const salaryConfig = tenantData?.salary_config || {
+      bonus_5_star: 50000,
+      bonus_4_5_star: 30000,
+      bonus_4_star: 10000,
+      kpi_target_sessions: 30,
+      kpi_bonus_amount: 1000000
+    };
 
     // Fetch KTVs
     const ktvQuery = supabase
@@ -445,9 +464,9 @@ export async function getSalaryData() {
           : 5.0; 
 
         let bonusPerSession = 0;
-        if (avgRating === 5.0) bonusPerSession = 50000;
-        else if (avgRating >= 4.5) bonusPerSession = 30000;
-        else if (avgRating >= 4.0) bonusPerSession = 10000;
+        if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
+        else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
+        else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
 
         const ratingBonus = ktvSessionsCount * bonusPerSession;
 
@@ -490,7 +509,7 @@ export async function getSalaryData() {
           }
         }
 
-        const kpiBonus = record?.kpi_bonus || (ktvSessionsCount > 30 ? 1000000 : 0);
+        const kpiBonus = record?.kpi_bonus ?? (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
         const deductions = record?.violations_deduction || 0;
         const advances = record?.service_percentage_bonus || 0; 
         const totalSalary = baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances;
@@ -536,6 +555,15 @@ export async function approveSalary(ktvId: string) {
       .eq('id', ktvId)
       .single() as any;
 
+    const currentUser = await getCurrentUser();
+    let tenantId = currentUser?.tenant_id || ktv?.tenant_id || '0e66365b-42b0-420e-acca-f7d7692e125e';
+
+    const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
+    const salaryConfig = tenantData?.salary_config || {
+      kpi_target_sessions: 30,
+      kpi_bonus_amount: 1000000
+    };
+
     // 2. Fetch completed sessions with booking details to get the locked commission rate
     const { data: sessions } = await supabase
       .from('session_logs')
@@ -558,14 +586,12 @@ export async function approveSalary(ktvId: string) {
       .single() as any);
 
     const baseSalary = existing?.base_salary || 6000000;
-    const kpiBonus = existing?.kpi_bonus || (ktvSessionsCount > 30 ? 1000000 : 0);
+    const kpiBonus = existing?.kpi_bonus ?? (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
     const deductions = existing?.violations_deduction || 0;
     const advances = existing?.service_percentage_bonus || 0;
     const totalSalary = baseSalary + sessionBonus + kpiBonus - deductions - advances;
 
-    const currentUser = await getCurrentUser();
-    let tenantId = currentUser?.tenant_id;
-    if (!tenantId) tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e';
+
 
     // 4. Update or Insert salary record
     if (existing) {

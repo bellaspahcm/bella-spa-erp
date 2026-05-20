@@ -110,7 +110,32 @@ export default function KTVDashboard() {
   };
 
   const router = useRouter();
-  const { executeAction } = useOfflineSync();
+  const { isOnline, pendingCount, executeAction, triggerSync, refreshQueue } = useOfflineSync();
+  const [offlineActions, setOfflineActions] = useState<any[]>([]);
+
+  const fetchOfflineActions = async () => {
+    const { offlineDB } = await import('@/lib/offline-db');
+    if (offlineDB) {
+      const actions = await offlineDB.offlineQueue.toArray();
+      setOfflineActions(actions);
+    }
+  };
+
+  const handleDiscardAction = async (id: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy bỏ thao tác ngoại tuyến này? Thao tác bị hủy sẽ không thể khôi phục.')) return;
+    const { offlineDB } = await import('@/lib/offline-db');
+    if (offlineDB) {
+      await offlineDB.offlineQueue.delete(id);
+      toast.success('Đã hủy bỏ thao tác ngoại tuyến thành công!');
+      await refreshQueue();
+      await fetchOfflineActions();
+    }
+  };
+
+
+  useEffect(() => {
+    fetchOfflineActions();
+  }, [pendingCount, isProfileOpen]);
 
   const handleLogout = async () => {
     try {
@@ -316,9 +341,39 @@ export default function KTVDashboard() {
       {/* Header */}
       <div className="bg-white px-6 pt-8 pb-6 rounded-b-[40px] shadow-sm border-b border-slate-100">
         <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2 bg-rose-50 px-3 py-1.5 rounded-full border border-rose-100/50">
-            <Clock className="w-3.5 h-3.5 text-primary animate-pulse" />
-            <span className="text-[10px] font-black text-primary uppercase tracking-wider">{systemTime}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 bg-rose-50 px-3 py-1.5 rounded-full border border-rose-100/50">
+              <Clock className="w-3.5 h-3.5 text-primary animate-pulse" />
+              <span className="text-[10px] font-black text-primary uppercase tracking-wider">{systemTime}</span>
+            </div>
+
+            {/* Connection Status Badge */}
+            {isOnline ? (
+              pendingCount > 0 ? (
+                <button 
+                  onClick={() => triggerSync()}
+                  className="flex items-center gap-1.5 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100/50 hover:bg-blue-100 transition-all active:scale-95 animate-pulse"
+                  title="Nhấp để đồng bộ thủ công"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-spin" />
+                  <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider">Đồng bộ ({pendingCount})</span>
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100/50">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-[9px] font-black text-emerald-600 uppercase tracking-wider">Trực tuyến</span>
+                </div>
+              )
+            ) : (
+              <button 
+                onClick={() => triggerSync()}
+                className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100/50 hover:bg-amber-100 transition-all active:scale-95"
+                title="Đang lưu ngoại tuyến. Nhấp để thử đồng bộ lại"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                <span className="text-[9px] font-black text-amber-600 uppercase tracking-wider">Ngoại tuyến ({pendingCount})</span>
+              </button>
+            )}
           </div>
           
           <div className="flex items-center gap-3">
@@ -467,6 +522,37 @@ export default function KTVDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Offline Actions Alert Banner */}
+      {(!isOnline || pendingCount > 0) && (
+        <div className="px-6 mt-4">
+          <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-pink-500/10 border border-amber-200/50 backdrop-blur-md rounded-[32px] p-5 shadow-sm flex gap-4 items-start relative overflow-hidden animate-pulse">
+            <div className="absolute top-[-20%] right-[-10%] w-24 h-24 bg-amber-500/10 rounded-full blur-2xl"></div>
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-600 shrink-0 relative z-10">
+              <span className="text-lg">⚡</span>
+            </div>
+            <div className="space-y-1 relative z-10 flex-grow">
+              <h4 className="text-xs font-black text-amber-800 uppercase tracking-wider">
+                {!isOnline ? 'Đang hoạt động Ngoại tuyến' : 'Đang chờ đồng bộ'}
+              </h4>
+              <p className="text-[11px] text-amber-700/80 leading-normal font-bold">
+                {!isOnline 
+                  ? `Đang lưu tạm ${pendingCount} thao tác (Check-in/Start/Complete ca). Mọi hoạt động của bạn được lưu an toàn cục bộ và sẽ tự đồng bộ khi có mạng lại.`
+                  : `Có ${pendingCount} thao tác đang chờ đẩy lên hệ thống. Đang tự động kết nối và đồng bộ...`
+                }
+              </p>
+              {pendingCount > 0 && isOnline && (
+                <button 
+                  onClick={() => triggerSync()}
+                  className="mt-2 text-[10px] font-black text-primary uppercase tracking-wider flex items-center gap-1 bg-white/60 hover:bg-white px-3 py-1 rounded-full border border-pink-100 transition-all active:scale-95 cursor-pointer"
+                >
+                  <span>🔄 Đồng bộ ngay lập tức</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Attendance Clock Card */}
       <div className="px-6 mt-6">
@@ -783,6 +869,90 @@ export default function KTVDashboard() {
                     Xuất sắc
                   </span>
                 </div>
+              </div>
+
+              {/* Offline Sync Queue Dashboard */}
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Hàng chờ đồng bộ ngoại tuyến</h4>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                    offlineActions.length > 0 ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {offlineActions.length} Bản ghi
+                  </span>
+                </div>
+
+                {offlineActions.length === 0 ? (
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 text-center">
+                    <p className="text-slate-400 text-[11px] font-bold italic">Không có thao tác nào đang chờ đồng bộ</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                    {offlineActions.map((action) => {
+                      let actionName = 'Thao tác không xác định';
+                      switch (action.actionType) {
+                        case 'CHECKIN':
+                          actionName = 'Bắt đầu ca trị liệu';
+                          break;
+                        case 'CHECKOUT':
+                          actionName = 'Hoàn thành ca trị liệu';
+                          break;
+                        case 'KTV_SHIFT_CHECKIN':
+                          actionName = 'Điểm danh đầu ca';
+                          break;
+                        case 'KTV_SHIFT_CHECKOUT':
+                          actionName = 'Điểm danh cuối ca';
+                          break;
+                      }
+
+                      return (
+                        <div key={action.id} className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 flex flex-col gap-3">
+                          <div className="flex justify-between items-start">
+                            <div className="min-w-0 flex-1 pr-2">
+                              <h5 className="text-xs font-black text-slate-800 truncate">{actionName}</h5>
+                              <span className="text-[9px] text-slate-400 font-bold block mt-0.5">
+                                {new Date(action.localTimestamp).toLocaleString('vi-VN')}
+                              </span>
+                            </div>
+                            
+                            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider shrink-0 ${
+                              action.status === 'pending' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
+                              action.status === 'syncing' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                              'bg-rose-50 text-rose-600 border border-rose-100'
+                            }`}>
+                              {action.status === 'pending' ? 'Chờ đồng bộ' :
+                               action.status === 'syncing' ? 'Đang đồng bộ' :
+                               'Thất bại'}
+                            </span>
+                          </div>
+
+                          {action.errorMessage && (
+                            <div className="bg-rose-50 border border-rose-100 text-rose-700 p-2.5 rounded-xl text-[10px] font-bold leading-normal break-words">
+                              ⚠️ {action.errorMessage}
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => handleDiscardAction(action.id)}
+                              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 hover:border-rose-200 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>🗑️ Hủy bỏ</span>
+                            </button>
+                            {isOnline && (action.status === 'pending' || action.status === 'failed') && (
+                              <button
+                                onClick={() => triggerSync()}
+                                className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-pink-100 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>🔄 Đồng bộ</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
