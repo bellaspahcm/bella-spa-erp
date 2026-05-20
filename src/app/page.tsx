@@ -564,7 +564,7 @@ export default function LandingPage() {
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="text-[1.7rem] sm:text-[2.5rem] md:text-[3.6rem] font-serif font-black text-slate-900 tracking-tight leading-[1.1] max-w-5xl mx-auto animate-fade-in"
           >
-            Bella Spa - Chăm Sóc <span className="text-gradient-pink relative">Mẹ & Bé <span className="absolute bottom-2.5 left-0 w-full h-[6px] bg-rose-200/40 rounded-full -z-10" /></span>
+            Bella Spa - Chăm Sóc <span className="text-gradient-pink relative whitespace-nowrap">Mẹ & Bé <span className="absolute bottom-2.5 left-0 w-full h-[6px] bg-rose-200/40 rounded-full -z-10" /></span>
           </motion.h1>
 
           {/* Slogan */}
@@ -696,7 +696,7 @@ export default function LandingPage() {
                   <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
                   <div className="relative z-10 p-2">
                     <Heart className="w-12 h-12 text-rose-300 mx-auto mb-3 fill-rose-300/30 animate-pulse" />
-                    <h5 className="font-serif font-black !text-white text-[1.25rem] tracking-tight">Chăm sóc từ tâm</h5>
+                    <h5 className="font-serif font-black !text-white text-base sm:text-lg tracking-tight">Chăm sóc từ tâm</h5>
                     <p className="text-[10px] !text-rose-100/90 mt-2 font-bold leading-relaxed px-2">Tận tụy chăm chút từng bữa ăn giấc ngủ của mẹ & bé</p>
                   </div>
                 </div>
@@ -711,7 +711,7 @@ export default function LandingPage() {
                     <span className="text-[9px] bg-white/10 backdrop-blur px-2.5 py-1 rounded-full font-black uppercase tracking-wider">Premium</span>
                   </div>
                   <div className="relative z-10 p-2">
-                    <h5 className="font-serif font-black text-[1.4rem] mb-1 leading-tight !text-white">Hoàng Gia</h5>
+                    <h5 className="font-serif font-black text-lg sm:text-xl mb-1 leading-tight !text-white">Hoàng Gia</h5>
                     <p className="text-[10px] !text-rose-100/90 font-bold leading-relaxed mt-1.5">Không gian và trang thiết bị chuẩn spa y khoa cao cấp bậc nhất.</p>
                   </div>
                 </div>
@@ -725,7 +725,7 @@ export default function LandingPage() {
                   <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
                   <div className="relative z-10 p-2 text-white">
                     <Clock className="w-8 h-8 text-rose-300 mb-4" />
-                    <h5 className="font-serif font-black !text-white text-[1.25rem] mb-1">Thời gian linh hoạt</h5>
+                    <h5 className="font-serif font-black !text-white text-base sm:text-lg mb-1">Thời gian linh hoạt</h5>
                     <p className="text-[10px] !text-rose-100/90 font-bold leading-relaxed mt-1.5">Đặt lịch 24/7. Điều phối kỹ thuật viên đến tận nhà chăm sóc đúng giờ.</p>
                   </div>
                 </div>
@@ -737,7 +737,7 @@ export default function LandingPage() {
                   <div className="absolute inset-0 bg-gradient-to-br from-[#831843]/45 via-transparent to-black/35" />
                   <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
                   <div className="relative z-10 text-white p-2">
-                    <h4 className="text-[3.25rem] font-serif font-black mb-1 leading-none !text-white">5★</h4>
+                    <h4 className="text-4xl sm:text-5xl font-serif font-black mb-1 leading-none !text-white">5★</h4>
                     <span className="text-[9px] font-black uppercase tracking-widest block !text-rose-100/90">Đánh Giá Phản Hồi</span>
                     <p className="text-[10px] !text-white/95 mt-2 font-bold leading-relaxed px-2">99.8% các mẹ cực kỳ hài lòng với chất lượng chăm sóc.</p>
                   </div>
@@ -806,7 +806,7 @@ export default function LandingPage() {
             {/* Background Image: Image 4 */}
             <div 
               className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.02]" 
-              style={{ backgroundImage: 'url("/bella_real_4.jpg")' }} 
+              style={{ backgroundImage: 'url("/banner_tam_be.png")' }} 
             />
             {/* Delicate overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-transparent pointer-events-none" />
