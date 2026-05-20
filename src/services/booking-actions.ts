@@ -24,7 +24,7 @@ export async function getPackages() {
   return data || [];
 }
 
-function resolveKtvCommission(booking: any): number {
+export async function resolveKtvCommission(booking: any): Promise<number> {
   if (booking?.ktv_commission) return Number(booking.ktv_commission);
   if (booking?.packages?.ktv_commission) return Number(booking.packages.ktv_commission);
   return 150000; // Default fallback
@@ -209,7 +209,7 @@ export async function createBooking(formData: any) {
   const isFullBooking = validatedData.full_price > 0 || !!validatedData.package_name;
   
   // Resolve commission at time of booking to "lock" it
-  const lockedCommission = validatedData.ktv_commission || resolveKtvCommission(validatedData);
+  const lockedCommission = validatedData.ktv_commission || await resolveKtvCommission(validatedData);
   
   const bookingPayload: any = {
     customer_id: validatedData.customer_id,
