@@ -138,18 +138,32 @@ export async function getKTVUpcomingSessions() {
   const mergedMap = new Map<string, any>();
   if (originalData) originalData.forEach((s: any) => mergedMap.set(s.id, s));
   if (reassignedData) reassignedData.forEach((s: any) => mergedMap.set(s.id, s));
-  const data = Array.from(mergedMap.values());
+  const sessions = Array.from(mergedMap.values());
+  console.log("getKTVUpcomingSessions sessions length:", sessions?.length);
+  const bookingIds = [...new Set(sessions?.map((s: any) => s.booking_id) || [])];
 
-  if (data.length === 0) return [];
+  if (bookingIds.length === 0) return [];
 
-  // Group sessions by booking
+  const { data: allSessionsForBookings } = await supabase
+    .from('session_logs')
+    .select('*, bookings!inner(id, status, completed_sessions, total_sessions, assigned_ktv_id, package_id, start_date, preferred_time)')
+    .in('booking_id', bookingIds)
+    .order('session_number', { ascending: true });
+
+  console.log("allSessionsForBookings length:", allSessionsForBookings?.length);
   const sessionsByBooking: Record<string, any[]> = {};
-  data.forEach((s: any) => {
-    if (!s.booking_id || !s.bookings) return;
-    // Skip if it was originally for this booking but has been reassigned to SOMEONE ELSE
-    if (s.bookings.assigned_ktv_id === user.id && s.completed_by_ktv_id && s.completed_by_ktv_id !== user.id) return;
+  allSessionsForBookings?.forEach((s: any) => {
+    const booking = Array.isArray(s.bookings) ? s.bookings[0] : s.bookings;
+    if (!booking) return;
+
+    // KTV can see sessions where they are the primary assigned_ktv_id OR they are specifically assigned as completed_by_ktv_id
+    if (booking.assigned_ktv_id !== user.id && s.completed_by_ktv_id !== user.id) return;
+    
+    // If they are primary KTV, but someone else completed it, they don't see it
+    if (booking.assigned_ktv_id === user.id && s.completed_by_ktv_id && s.completed_by_ktv_id !== user.id) return;
 
     if (!sessionsByBooking[s.booking_id]) sessionsByBooking[s.booking_id] = [];
+    s.bookings = booking;
     sessionsByBooking[s.booking_id].push(s);
   });
 
@@ -188,6 +202,7 @@ export async function getKTVUpcomingSessions() {
       const bookingTotal = s.bookings?.total_sessions || 0;
       const isBookingCompleted = s.bookings?.status === 'completed';
 
+      console.log(`Processing session ${s.id}, status: ${s.status}, finalDate: ${finalDate}, today: ${today}, sessionNum: ${s.session_number}, total: ${bookingTotal}`);
       if (s.status === 'scheduled' && finalDate === today && s.session_number <= bookingTotal && !isBookingCompleted) {
         processedSessionsList.push({
           ...s,
@@ -210,6 +225,7 @@ export async function getKTVUpcomingSessions() {
     return timeA.localeCompare(timeB);
   });
 
+  console.log("Processed sessions:", processedSessionsList.length);
   return processedSessionsList;
 }
 
@@ -231,7 +247,8 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
   if (!session) return { success: false, error: 'Session not found' };
 
   // Guard: check that the booking is not completed and the session number is within the booking's total_sessions
-  const booking = session.bookings as { status?: string; completed_sessions?: number; total_sessions?: number } | null;
+  const bookingData = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+  const booking = bookingData as { status?: string; completed_sessions?: number; total_sessions?: number } | null;
   if (booking) {
     if (booking.status === 'completed' || (booking.completed_sessions || 0) >= (booking.total_sessions || 0)) {
       return { success: false, error: 'Liệu trình này đã hoàn thành toàn bộ số buổi. Không thể bắt đầu buổi mới.' };
