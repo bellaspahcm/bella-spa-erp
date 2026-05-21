@@ -56,8 +56,8 @@ import {
   getImportantAlerts,
   getMonthlyPerformance,
   getFullDashboardData
-} from '@/services/dashboard-actions';
 import { completeSession, saveSessionNote } from '@/modules/booking/actions/session-actions';
+import { markNotificationAsRead } from '@/services/notification-actions';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 
@@ -202,6 +202,9 @@ export default function DashboardPage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_reviews' }, () => {
         fetchData();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_notifications' }, () => {
+        fetchData();
+      })
       .subscribe();
 
     return () => {
@@ -331,7 +334,10 @@ export default function DashboardPage() {
                         alerts.slice(0, 5).map((alert: any, idx: number) => (
                           <div 
                             key={idx}
-                            onClick={() => {
+                            onClick={async () => {
+                              if (alert.isAppNotification && alert.id) {
+                                await markNotificationAsRead(alert.id);
+                              }
                               if (alert.link) {
                                 router.push(alert.link);
                                 setIsNotificationsOpen(false);
@@ -646,7 +652,10 @@ export default function DashboardPage() {
             {alerts.slice(0, 5).map((alert: any, idx: number) => (
               <div 
                 key={idx} 
-                onClick={() => {
+                onClick={async () => {
+                  if (alert.isAppNotification && alert.id) {
+                    await markNotificationAsRead(alert.id);
+                  }
                   if (alert.link) {
                     router.push(alert.link);
                   }

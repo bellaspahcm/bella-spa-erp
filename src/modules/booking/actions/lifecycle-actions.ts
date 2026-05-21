@@ -947,6 +947,22 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
   } catch (auditErr) {
     console.warn('[submitOnlineBooking] Audit log (booking) failed:', auditErr);
   }
+  // Create notification
+  try {
+    await supabase.from('app_notifications').insert([{
+      tenant_id: tenantId,
+      type: 'new_booking',
+      title: 'Khách hàng đặt lịch mới',
+      message: `${formData.name_mother} vừa đặt lịch hẹn online.`,
+      data: {
+        customer_id: customerId,
+        booking_id: booking.id,
+        booking_number: bookingNumber
+      }
+    }]);
+  } catch (notifErr) {
+    console.warn('[submitOnlineBooking] Failed to create notification:', notifErr);
+  }
 
   // Revalidate admin pages
   const revalPaths = [
