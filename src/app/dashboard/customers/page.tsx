@@ -269,6 +269,7 @@ export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [monthFilter, setMonthFilter]  = useState('all');
   const [yearFilter,  setYearFilter]   = useState(String(new Date().getFullYear()));
+  const [sortBy, setSortBy] = useState('date_desc');
 
   const currentYear = new Date().getFullYear();
   const monthOptions = [
@@ -276,39 +277,61 @@ export default function CustomersPage() {
     ...Array.from({length:12}, (_,i) => ({ value: String(i+1).padStart(2,'0'), label: `Tháng ${i+1}` }))
   ];
   const yearOptions = Array.from({length:4}, (_,i) => String(currentYear - i));
+  const sortOptions = [
+    { value: 'date_desc', label: 'Ngày tạo mới nhất' },
+    { value: 'date_asc', label: 'Ngày tạo cũ nhất' },
+    { value: 'name_asc', label: 'Tên A-Z' },
+    { value: 'name_desc', label: 'Tên Z-A' },
+  ];
 
   // Reset pagination when any filter changes
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter, monthFilter, yearFilter]);
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter, monthFilter, yearFilter, sortBy]);
 
-  const filteredCustomers = useMemo(() => customers.filter(customer => {
-    const q = searchQuery.toLowerCase().trim();
-    const matchesSearch = !q || [
-      customer.name_mother,
-      customer.phone,
-      customer.name_baby,
-      customer.dob_expected,
-      customer.dob_baby,
-      customer.address,
-      customer.notes,
-      customer.zalo_oa_id,
-      customer.gender_baby === 'boy' ? 'bé trai' : customer.gender_baby === 'girl' ? 'bé gái' : '',
-    ].some(f => (f || '').toLowerCase().includes(q));
+  const filteredCustomers = useMemo(() => {
+    let result = customers.filter(customer => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch = !q || [
+        customer.name_mother,
+        customer.phone,
+        customer.name_baby,
+        customer.dob_expected,
+        customer.dob_baby,
+        customer.address,
+        customer.notes,
+        customer.zalo_oa_id,
+        customer.gender_baby === 'boy' ? 'bé trai' : customer.gender_baby === 'girl' ? 'bé gái' : '',
+      ].some(f => (f || '').toLowerCase().includes(q));
 
-    let matchesStatus = true;
-    if (statusFilter !== 'Tất cả trạng thái') {
-      if (statusFilter === 'Đang chăm sóc') matchesStatus = customer.status === 'active';
-      else if (statusFilter === 'Chờ sinh')  matchesStatus = customer.status === 'deposit';
-      else if (statusFilter === 'Tiềm năng') matchesStatus = customer.status === 'lead';
-      else if (statusFilter === 'Đã kết thúc') matchesStatus = customer.status === 'paid';
-    }
+      let matchesStatus = true;
+      if (statusFilter !== 'Tất cả trạng thái') {
+        if (statusFilter === 'Đang chăm sóc') matchesStatus = customer.status === 'active';
+        else if (statusFilter === 'Chờ sinh')  matchesStatus = customer.status === 'deposit';
+        else if (statusFilter === 'Tiềm năng') matchesStatus = customer.status === 'lead';
+        else if (statusFilter === 'Đã kết thúc') matchesStatus = customer.status === 'paid';
+      }
 
-    let matchesDate = true;
-    const ref = customer.dob_expected || customer.created_at || '';
-    if (monthFilter !== 'all') matchesDate = matchesDate && ref.slice(5,7) === monthFilter;
-    if (yearFilter)            matchesDate = matchesDate && ref.slice(0,4) === yearFilter;
+      let matchesDate = true;
+      const ref = customer.dob_expected || customer.created_at || '';
+      if (monthFilter !== 'all') matchesDate = matchesDate && ref.slice(5,7) === monthFilter;
+      if (yearFilter)            matchesDate = matchesDate && ref.slice(0,4) === yearFilter;
 
-    return matchesSearch && matchesStatus && matchesDate;
-  }), [customers, searchQuery, statusFilter, monthFilter, yearFilter]);
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+
+    result.sort((a, b) => {
+      if (sortBy === 'name_asc') {
+        return (a.name_mother || '').localeCompare(b.name_mother || '');
+      } else if (sortBy === 'name_desc') {
+        return (b.name_mother || '').localeCompare(a.name_mother || '');
+      } else if (sortBy === 'date_asc') {
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      } else { // default date_desc
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      }
+    });
+
+    return result;
+  }, [customers, searchQuery, statusFilter, monthFilter, yearFilter, sortBy]);
 
   const totalPages = Math.ceil(filteredCustomers.length / pageSize);
   const paginatedCustomers = filteredCustomers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -395,6 +418,15 @@ export default function CustomersPage() {
             options={yearOptions.map(y => ({ value: y, label: y }))}
             onChange={val => setYearFilter(val)}
             placeholder="Năm..."
+          />
+        </div>
+        {/* Sort dropdown */}
+        <div className="w-full md:w-48">
+          <PremiumSelect
+            value={sortBy}
+            options={sortOptions}
+            onChange={val => setSortBy(val)}
+            placeholder="Sắp xếp..."
           />
         </div>
       </div>
