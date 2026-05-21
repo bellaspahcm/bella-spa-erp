@@ -469,6 +469,15 @@ export async function getImportantAlerts() {
             link = `/dashboard/customers/${(notif.data as any).customer_id}`;
           }
           
+          let finalTimestamp = Date.now();
+          if (notif.created_at) {
+            try {
+              finalTimestamp = parsePostgresTimestamp(notif.created_at).getTime();
+            } catch (e) {
+              // fallback
+            }
+          }
+
           alerts.push({
             id: notif.id,
             isAppNotification: true,
@@ -478,7 +487,7 @@ export async function getImportantAlerts() {
             message: notif.message,
             severity: 'info',
             link: link,
-            timestamp: new Date(notif.created_at).getTime()
+            timestamp: finalTimestamp
           });
         }
       }
