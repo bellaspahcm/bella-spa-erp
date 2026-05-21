@@ -56,6 +56,7 @@ import {
   getImportantAlerts,
   getMonthlyPerformance,
   getFullDashboardData
+} from '@/services/dashboard-actions';
 import { completeSession, saveSessionNote } from '@/modules/booking/actions/session-actions';
 import { markNotificationAsRead } from '@/services/notification-actions';
 import { createClient } from '@/lib/supabase-client';

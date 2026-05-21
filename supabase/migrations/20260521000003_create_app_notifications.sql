@@ -44,9 +44,5 @@ CREATE POLICY "Users can delete notifications for their tenant"
         tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid())
     );
 
--- Add the table to publication for realtime
-BEGIN;
-  DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime;
-COMMIT;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.app_notifications;
+-- Note: supabase_realtime publication is already set to FOR ALL TABLES,
+-- so app_notifications is automatically included in Realtime. No need to ALTER PUBLICATION.
