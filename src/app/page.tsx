@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { HeroSection } from '@/components/features/landing/HeroSection';
 import { ServiceWizard } from '@/components/features/landing/ServiceWizard';
 import { FeedbackCarousel } from '@/components/features/landing/FeedbackCarousel';
+import { submitOnlineBooking } from '@/modules/booking/actions/lifecycle-actions';
 
 
 // Types for packages
@@ -315,7 +316,7 @@ export default function LandingPage() {
     fetchActivePackages();
   }, []);
 
-  const handleBooking = (e: React.FormEvent) => {
+  const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bookingName || !bookingPhone || !bookingService || !bookingDate) {
       toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc 🌸');
@@ -324,34 +325,32 @@ export default function LandingPage() {
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      
-      // Save locally to show active operation
-      const currentBookings = JSON.parse(localStorage.getItem('bella_bookings') || '[]');
-      const newBooking = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: bookingName,
+    try {
+      const result = await submitOnlineBooking({
+        name_mother: bookingName,
         phone: bookingPhone,
-        service: bookingService,
-        date: bookingDate,
-        notes: bookingNotes,
-        createdAt: new Date().toISOString(),
-        status: 'pending'
-      };
-      currentBookings.push(newBooking);
-      localStorage.setItem('bella_bookings', JSON.stringify(currentBookings));
-      
-      toast.success(`Đặt lịch thành công! Bella Spa sẽ liên hệ với mẹ ${bookingName} qua SĐT ${bookingPhone} sớm nhất để xác nhận lịch hẹn 💖`);
-      
-      // Reset form
-      setBookingName('');
-      setBookingPhone('');
-      setBookingService('');
-      setBookingDate('');
-      setBookingNotes('');
-    }, 1200);
+        start_date: bookingDate,
+        package_name: bookingService,
+        notes: bookingNotes
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(`Đặt lịch thành công! Bella Spa sẽ liên hệ với mẹ ${bookingName} qua SĐT ${bookingPhone} sớm nhất để xác nhận lịch hẹn 💖`);
+        // Reset form
+        setBookingName('');
+        setBookingPhone('');
+        setBookingService('');
+        setBookingDate('');
+        setBookingNotes('');
+      }
+    } catch (err) {
+      toast.error('Có lỗi xảy ra, vui lòng thử lại sau.');
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
