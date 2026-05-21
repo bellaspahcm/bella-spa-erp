@@ -108,8 +108,9 @@ export default function HqDashboardClient({
     }
   };
 
-  // Filtered tenants
+  // Filtered tenants (excluding Headquarter itself)
   const filteredTenants = tenants.filter(t => {
+    if (t.name === 'Bella Spa Headquarter') return false;
     const matchSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         (t.contact_phone && t.contact_phone.includes(searchTerm)) ||
                         (t.email && t.email.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -137,7 +138,7 @@ export default function HqDashboardClient({
               Bella Spa Headquarter 
               <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">HQ Portal</span>
             </h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Hệ thống Quản trị Tối cao</p>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Hệ thống Quản trị Cấp cao</p>
           </div>
         </div>
 
@@ -149,7 +150,7 @@ export default function HqDashboardClient({
             </div>
             <div className="text-left leading-none">
               <p className="text-[11px] font-black text-slate-800">{currentUser.full_name || 'Super Admin'}</p>
-              <span className="text-[8px] font-black text-primary uppercase tracking-widest">Tối cao</span>
+              <span className="text-[8px] font-black text-primary uppercase tracking-widest">Cấp cao</span>
             </div>
           </div>
 
@@ -194,11 +195,11 @@ export default function HqDashboardClient({
             <span className="bg-primary/20 text-rose-300 border border-primary/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest inline-block animate-pulse">
               HỆ THỐNG ĐIỀU HÀNH HOẠT ĐỘNG TOÀN SÀN
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-none">
+            <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-none text-white">
               Xin chào, {currentUser.full_name || 'Super Admin'}
             </h2>
             <p className="text-slate-300 text-sm leading-relaxed font-medium">
-              Chào mừng bạn đến với Tổng bộ Quản trị Tối cao Bella HQ. Nơi bạn giám sát doanh số, quản lý mở/khóa hoạt động của các chi nhánh, và tối ưu hóa tài nguyên hệ thống ERP trên quy mô toàn sàn.
+              Chào mừng bạn đến với Tổng bộ Quản trị Cấp cao Bella HQ. Nơi bạn giám sát doanh số, quản lý mở/khóa hoạt động của các chi nhánh, và tối ưu hóa tài nguyên hệ thống ERP trên quy mô toàn sàn.
             </p>
           </div>
         </section>
@@ -240,9 +241,9 @@ export default function HqDashboardClient({
               <Activity size={26} />
             </div>
             <div className="min-w-0 flex-1 text-left">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tổng ca điều trị</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tổng ca liệu trình</p>
               <h3 className="text-2xl font-black text-slate-900 leading-none mb-1">{stats.totalSessions} Ca</h3>
-              <p className="text-[10px] text-slate-500 font-bold">Lưu lượng điều trị thực tế</p>
+              <p className="text-[10px] text-slate-500 font-bold">Lưu lượng liệu trình thực tế</p>
             </div>
           </div>
 
