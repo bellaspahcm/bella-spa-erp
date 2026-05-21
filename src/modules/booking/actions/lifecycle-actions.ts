@@ -823,8 +823,11 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
 }> {
   'use server';
 
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  ) as any;
 
   // 1. Basic validation
   if (!formData.phone || formData.phone.trim().length < 9) {
@@ -949,13 +952,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
   }
   // Create notification
   try {
-    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-    const supabaseAdmin = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const { error: notifErr } = await supabaseAdmin.from('app_notifications').insert([{
+    const { error: notifErr } = await supabase.from('app_notifications').insert([{
       tenant_id: tenantId,
       type: 'new_booking',
       title: 'Khách hàng đặt lịch mới',
