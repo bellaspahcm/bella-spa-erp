@@ -1055,11 +1055,11 @@ export type Database = {
           created_at?: string | null
           dispute_reason: string
           id?: string
-          new_data?: Json | null
-          old_data?: Json | null
-          record_id: string
-          table_name: string
-          tenant_id: string
+          ktv_id: string
+          resolved_at?: string | null
+          salary_record_id: string
+          status?: string | null
+          tenant_id?: string | null
         }
         Update: {
           admin_response?: string | null

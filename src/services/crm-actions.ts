@@ -473,6 +473,12 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
     return { error: 'Không thể xác định chi nhánh (Tenant ID is required).' };
   }
 
+  const { checkSubscriptionLimit, incrementSmsCount } = await import('@/lib/subscription');
+  const smsLimit = await checkSubscriptionLimit(tenantId, 'sms');
+  if (smsLimit.isBlocked) {
+    return { error: 'Vượt quá hạn mức gửi tin nhắn Zalo ZNS của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.' };
+  }
+
   try {
     // 1. Fetch details
     const { data: session, error: fetchErr } = await supabase
@@ -596,6 +602,9 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
         zalo_error: zaloError || null
       }
     });
+
+    // 5. Increment SMS Count
+    await incrementSmsCount(tenantId);
 
     return { success: true, message: logMessage };
   } catch (error: any) {
@@ -798,6 +807,12 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
     return { error: 'Không xác định được chi nhánh (Tenant ID is required).' };
   }
 
+  const { checkSubscriptionLimit, incrementSmsCount } = await import('@/lib/subscription');
+  const smsLimit = await checkSubscriptionLimit(tenantId, 'sms');
+  if (smsLimit.isBlocked) {
+    return { error: 'Vượt quá hạn mức gửi tin nhắn Zalo ZNS của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.' };
+  }
+
   try {
     const { data: customer, error: fetchErr } = await supabase
       .from('customers')
@@ -882,6 +897,9 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
         zalo_error: zaloError || null
       }
     });
+
+    // Increment the SMS allotment count
+    await incrementSmsCount(tenantId);
 
     return { success: true, message: logMessage };
   } catch (error: any) {

@@ -176,6 +176,7 @@ export async function getMonthlyAttendanceSummary(monthStr: string) {
     return {
       id: ktv.id,
       name: ktv.full_name,
+      role: 'ktv',
       baseSalary: ktv.base_salary || 6000000,
       hireDate: ktv.hire_date,
       resignationDate: ktv.resignation_date,
@@ -185,7 +186,12 @@ export async function getMonthlyAttendanceSummary(monthStr: string) {
       halfDay: halfDayCount,
       totalDays: totalDaysWorked,
       status: ktv.status,
-      logs: ktvLogs,
+      logs: ktvLogs.map((l: any) => ({
+        date: l.date,
+        status: (l.status === 'present' || l.status === 'late' || l.status === 'absent' || l.status === 'half_day') ? l.status : 'present',
+        checkin_time: l.checkin_time,
+        checkout_time: l.checkout_time
+      })),
     };
   });
 }
@@ -377,6 +383,7 @@ export async function getPendingLeaveRequests() {
       users!staff_leaves_user_id_fkey (
         id,
         full_name,
+        email,
         role
       )
     `)

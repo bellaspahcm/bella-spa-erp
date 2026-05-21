@@ -1,0 +1,88 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import { AlertCircle, ShieldCheck } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface ConfirmModalProps {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  isDanger?: boolean;
+  isLoading?: boolean;
+  onClose: () => void;
+  onConfirm: () => void | Promise<void>;
+}
+
+export default function ConfirmModal({
+  isOpen,
+  title,
+  message,
+  confirmText = 'Xác nhận',
+  cancelText = 'Hủy bỏ',
+  isDanger = false,
+  isLoading = false,
+  onClose,
+  onConfirm,
+}: ConfirmModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl border border-slate-100"
+      >
+        <div className="p-8">
+          <div className="flex items-center gap-4 mb-6">
+            <div className={cn(
+              "w-12 h-12 rounded-2xl flex items-center justify-center",
+              isDanger ? "bg-rose-50 text-rose-600" : "bg-primary/10 text-primary"
+            )}>
+              {isDanger ? (
+                <AlertCircle className="w-6 h-6" />
+              ) : (
+                <ShieldCheck className="w-6 h-6" />
+              )}
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 leading-none">{title}</h3>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mt-1.5">
+                Yêu cầu xác nhận
+              </span>
+            </div>
+          </div>
+          <p className="text-slate-600 text-sm font-bold leading-relaxed">{message}</p>
+        </div>
+        <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all text-xs uppercase tracking-wider"
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className={cn(
+              "flex-1 py-4 text-white font-black rounded-2xl transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2",
+              isDanger 
+                ? "bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-100" 
+                : "bg-primary hover:bg-primary-hover shadow-lg shadow-pink-100"
+            )}
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              confirmText
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}

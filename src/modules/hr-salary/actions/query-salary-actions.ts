@@ -4,13 +4,86 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/services/user-actions';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import { calcProRataBaseSalary } from './base-salary-actions';
-import { getMonthStart } from '@/lib/utils';
+import { KtvSalaryRecord, KtvSessionMatrix, KtvSessionMatrixRecord, TenantSalaryConfig } from '@/types/domain';
 
-export async function getSalaryData() {
+// Interfaces for Database Records
+interface KtvUserData {
+  id: string;
+  full_name: string | null;
+  role: string | null;
+  base_salary: number | null;
+  hire_date: string | null;
+  resignation_date: string | null;
+  status: string | null;
+}
+
+interface SalaryRecordDb {
+  id: string;
+  ktv_id: string;
+  month_year: string;
+  total_sessions: number | null;
+  base_salary: number | null;
+  kpi_bonus: number | null;
+  violations_deduction: number | null;
+  service_percentage_bonus: number | null;
+  status: string | null;
+}
+
+interface SessionReviewDb {
+  rating: number | null;
+  status: string | null;
+}
+
+interface BookingDb {
+  ktv_commission: number | null;
+}
+
+interface SessionLogDb {
+  id: string;
+  completed_by_ktv_id: string | null;
+  status: string | null;
+  is_confirmed: boolean | null;
+  rating: number | null;
+  bookings: BookingDb | null;
+  session_reviews: SessionReviewDb[];
+}
+
+interface AttendanceLogDb {
+  id: string;
+  ktv_id: string;
+  date: string;
+  status: 'present' | 'late' | 'absent' | 'half_day';
+}
+
+interface PackageNameDb {
+  name: string | null;
+}
+
+interface MatrixBookingDb {
+  id: string;
+  package_name: string | null;
+  full_price: number | null;
+  packages: { name: string | null } | null;
+}
+
+interface MatrixSessionLogDb {
+  id: string;
+  completed_by_ktv_id: string | null;
+  status: string | null;
+  is_confirmed: boolean | null;
+  bookings: MatrixBookingDb | null;
+}
+
+interface MatrixKtvUser {
+  id: string;
+  full_name: string | null;
+}
+
+export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
   try {
     const now = new Date();
     const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    const supabase = (await createClient()) as any;
+    const supabase = await createClient();
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
     if (!tenantId) {
@@ -19,7 +92,7 @@ export async function getSalaryData() {
     }
 
     const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
-    const salaryConfig = tenantData?.salary_config || {
+    const salaryConfig = (tenantData?.salary_config as unknown as TenantSalaryConfig) || {
       bonus_5_star: 50000,
       bonus_4_5_star: 30000,
       bonus_4_star: 10000,
@@ -38,26 +111,28 @@ export async function getSalaryData() {
       ktvQuery.eq('id', currentUser.id);
     }
 
-    const { data: ktvs, error: ktvError } = await ktvQuery;
-
-    const realKtvs = ktvs || [];
+    const { data: ktvs } = await ktvQuery;
+    const realKtvs = (ktvs || []) as KtvUserData[];
 
     const startOfMonthStr = currentMonthYear;
     const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
 
-    const { data: salaryRecords, error: salaryError } = await supabase
+    const { data: salaryRecordsData } = await supabase
       .from('salary_records')
       .select('*')
       .eq('month_year', currentMonthYear);
+    
+    const salaryRecords = (salaryRecordsData || []) as SalaryRecordDb[];
 
     // Fetch completed sessions with booking details + rating fallback
-    // IMPORTANT: include session_reviews joined by session_log_id (mirrors get_ktv_leaderboard RPC)
-    const { data: sessions, error: sessionsError } = await supabase
+    const { data: sessionsData } = await supabase
       .from('session_logs')
       .select('id, completed_by_ktv_id, status, is_confirmed, rating, bookings(ktv_commission), session_reviews(rating, status)')
       .eq('status', 'completed')
       .gte('completed_date', startOfMonthStr)
       .lt('completed_date', endOfMonthStr);
+
+    const sessions = (sessionsData || []) as unknown as SessionLogDb[];
 
     // Fetch all attendance logs this month
     const { data: attendanceLogs } = await supabase
@@ -66,23 +141,24 @@ export async function getSalaryData() {
       .gte('date', startOfMonthStr)
       .lt('date', endOfMonthStr);
 
-    const ktvSalaries = await Promise.all(realKtvs.map(async (ktv: any) => {
-        const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
+    const attendanceLogsTyped = (attendanceLogs || []) as unknown as AttendanceLogDb[];
+
+    const ktvSalaries = await Promise.all(realKtvs.map(async (ktv) => {
+        const record = salaryRecords.find((r) => r.ktv_id === ktv.id);
         
-        const ktvCompletedSessions = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
+        const ktvCompletedSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
         // Use confirmed count from record if available, otherwise use live count
         const ktvSessionsCount = record?.total_sessions || ktvCompletedSessions.length;
         
-        // Calculate Average Rating — aligned with get_ktv_leaderboard RPC:
-        // COALESCE(AVG(COALESCE(sr.rating, sl.rating)), 5.0)
-        // Join reviews via session_log_id (approved only), fallback to session.rating, then 5.0
-        const ktvSessionsForRating = sessions?.filter((s: any) => s.completed_by_ktv_id === ktv.id) || [];
-        const ratingValues: number[] = ktvSessionsForRating.map((s: any) => {
-          const approvedReview = (s.session_reviews as any[])?.find((sr: any) => sr.status === 'approved');
-          if (approvedReview?.rating) return approvedReview.rating as number;
-          if (s.rating) return s.rating as number;
+        // Calculate Average Rating — aligned with get_ktv_leaderboard RPC
+        const ktvSessionsForRating = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
+        const ratingValues: number[] = ktvSessionsForRating.map((s) => {
+          const approvedReview = s.session_reviews?.find((sr) => sr.status === 'approved');
+          if (approvedReview?.rating) return approvedReview.rating;
+          if (s.rating) return s.rating;
           return null;
         }).filter((v: number | null): v is number => v !== null);
+        
         const avgRating = ratingValues.length > 0
           ? ratingValues.reduce((acc, v) => acc + v, 0) / ratingValues.length
           : 5.0;
@@ -93,17 +169,16 @@ export async function getSalaryData() {
         else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
 
         const ratingBonus = ktvSessionsCount * bonusPerSession;
+        const status = record?.status || 'draft';
 
-        let status = record?.status || 'draft';
-
-        const sessionBonus = ktvCompletedSessions.reduce((acc: number, s: any) => {
+        const sessionBonus = ktvCompletedSessions.reduce((acc: number, s) => {
           return acc + (s.bookings?.ktv_commission || 150000);
         }, 0);
 
         // Attendance tracking
-        const ktvAttendance = attendanceLogs?.filter((a: any) => a.ktv_id === ktv.id) || [];
+        const ktvAttendance = attendanceLogsTyped.filter((a) => a.ktv_id === ktv.id);
         let actualDays = 0;
-        ktvAttendance.forEach((att: any) => {
+        ktvAttendance.forEach((att) => {
           if (att.status === 'present' || att.status === 'late') {
             actualDays += 1.0;
           } else if (att.status === 'half_day') {
@@ -113,7 +188,7 @@ export async function getSalaryData() {
 
         const rawBaseSalary = record?.base_salary ?? ktv.base_salary ?? 6000000;
         let baseSalary = rawBaseSalary;
-        if (record?.base_salary !== undefined) {
+        if (record?.base_salary !== undefined && record.base_salary !== null) {
           baseSalary = record.base_salary;
         } else if (ktvAttendance.length > 0) {
           baseSalary = Math.round((rawBaseSalary / 26) * actualDays);
@@ -122,7 +197,7 @@ export async function getSalaryData() {
         }
 
         // Cap by resignation date in draft if resignation is active
-        if (!record?.base_salary && ktv.resignation_date) {
+        if ((record?.base_salary === undefined || record?.base_salary === null) && ktv.resignation_date) {
           const resignDate = new Date(ktv.resignation_date);
           const monthDate = new Date(currentMonthYear);
           if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
@@ -140,8 +215,9 @@ export async function getSalaryData() {
 
         return {
           id: ktv.id,
-          name: ktv.full_name,
+          name: ktv.full_name || '',
           sessions: ktvSessionsCount,
+          isConfirmed: status === 'confirmed' || status === 'finalized',
           avgRating,
           baseSalary,
           sessionBonus,
@@ -153,7 +229,7 @@ export async function getSalaryData() {
           status,
           hireDate: ktv.hire_date,
           resignationDate: ktv.resignation_date,
-          ktvStatus: ktv.status,
+          ktvStatus: ktv.status || 'active',
           actualDays: ktvAttendance.length > 0 ? actualDays : 26,
         };
     }));
@@ -165,11 +241,11 @@ export async function getSalaryData() {
   }
 }
 
-export async function getKtvSessionMatrix() {
+export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
   const { unstable_noStore: noStore } = await import('next/cache');
   noStore();
   
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   try {
     // 1. Fetch all KTVs
@@ -178,15 +254,19 @@ export async function getKtvSessionMatrix() {
       .select('id, full_name')
       .eq('role', 'ktv');
 
+    const realKtvs = (ktvs || []) as MatrixKtvUser[];
+
     const now = new Date();
     const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
 
     // 2. Fetch salary records for confirmation status
-    const { data: salaryRecords } = await supabase
+    const { data: salaryRecordsData } = await supabase
       .from('salary_records')
       .select('ktv_id, total_sessions, status')
       .eq('month_year', currentMonthYear);
+
+    const salaryRecords = (salaryRecordsData || []) as SalaryRecordDb[];
 
     // 3. Fetch completed sessions with booking details
     const { data: sessions, error: sessionsError } = await supabase
@@ -211,50 +291,53 @@ export async function getKtvSessionMatrix() {
 
     if (sessionsError) console.error('Error fetching sessions:', sessionsError);
 
+    const sessionsTyped = (sessions || []) as unknown as MatrixSessionLogDb[];
+
     // 4. Group sessions by KTV and package
     const matrix: Record<string, Record<string, number>> = {};
     
     // Fetch all available packages from the database to ensure all columns are shown
-    const { data: allPackages, error: allPackagesError } = await supabase.from('packages').select('name');
+    const { data: allPackages } = await supabase.from('packages').select('name');
+    const packagesTyped = (allPackages || []) as PackageNameDb[];
     
     // Build list of package names from sessions AND available packages
     const dynamicPackageNames = new Set<string>();
     
     // Add all existing packages to the columns list
-    if (allPackages) {
-      allPackages.forEach((pkg: any) => {
+    if (packagesTyped) {
+      packagesTyped.forEach((pkg) => {
         if (pkg.name) dynamicPackageNames.add(pkg.name);
       });
     }
 
-    if (sessions) {
-      sessions.forEach((s: any) => {
-        const pkgName = s.bookings ? resolvePackageName(s.bookings) : 'Dịch vụ lẻ';
+    if (sessionsTyped) {
+      sessionsTyped.forEach((s) => {
+        const pkgName = s.bookings ? resolvePackageName(s.bookings as any) : 'Dịch vụ lẻ';
         dynamicPackageNames.add(pkgName);
       });
     }
     const packageNames = Array.from(dynamicPackageNames);
     if (!packageNames.includes('Dịch vụ lẻ')) packageNames.push('Dịch vụ lẻ');
     
-    if (sessions && sessions.length > 0) {
-      sessions.forEach((s: any) => {
+    if (sessionsTyped && sessionsTyped.length > 0) {
+      sessionsTyped.forEach((s) => {
         const ktvId = s.completed_by_ktv_id;
         if (!ktvId) return;
 
-        const pkgName = s.bookings ? resolvePackageName(s.bookings) : 'Dịch vụ lẻ';
+        const pkgName = s.bookings ? resolvePackageName(s.bookings as any) : 'Dịch vụ lẻ';
         
         if (!matrix[ktvId]) matrix[ktvId] = {};
         matrix[ktvId][pkgName] = (matrix[ktvId][pkgName] || 0) + 1;
       });
     }
 
-    const hasAnyRealData = sessions && sessions.length > 0;
+    const hasAnyRealData = sessionsTyped && sessionsTyped.length > 0;
     
-    const rows = (ktvs || []).map((ktv: any) => {
-      const row: any = { id: ktv.id, name: ktv.full_name, isConfirmed: false };
+    const rows = realKtvs.map((ktv) => {
+      const row: KtvSessionMatrixRecord = { id: ktv.id, name: ktv.full_name || '', isConfirmed: false };
       
       // Determine if this KTV's sessions are confirmed
-      const salaryRecord = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
+      const salaryRecord = salaryRecords.find((r) => r.ktv_id === ktv.id);
       
       // Confirmed ONLY if status is explicitly pending_approval or approved
       row.isConfirmed = !!(salaryRecord && 

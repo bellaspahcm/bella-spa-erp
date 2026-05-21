@@ -82,6 +82,32 @@ export async function getBookingsByCustomerId(customerId: string) {
 }
 
 export async function createBooking(formData: any) {
+  // 0. Rate limiting by Client IP (Token Bucket: 5 requests / 10 minutes)
+  let rateLimitAllowed = true;
+  try {
+    const { headers } = await import('next/headers');
+    const headersList = await headers();
+    const forwardedFor = headersList.get('x-forwarded-for');
+    const realIp = headersList.get('x-real-ip');
+    let clientIp = '127.0.0.1';
+    
+    if (forwardedFor) {
+      clientIp = forwardedFor.split(',')[0].trim();
+    } else if (realIp) {
+      clientIp = realIp.trim();
+    }
+
+    const { rateLimit } = await import('@/lib/rate-limit');
+    // 5 requests / 10 minutes = 5 tokens capacity, refill rate of 5/600 per second (approx 0.008333)
+    rateLimitAllowed = rateLimit(`booking_ip:${clientIp}`, 5, 5 / 600);
+  } catch (err) {
+    console.warn('[createBooking] Safe rate-limiting bypass due to unexpected error:', err);
+  }
+
+  if (!rateLimitAllowed) {
+    return { error: 'Bạn đã thực hiện quá nhiều yêu cầu đặt lịch. Vui lòng thử lại sau ít phút.' };
+  }
+
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
   

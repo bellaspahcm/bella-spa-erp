@@ -189,3 +189,44 @@ Status: 🟢 Phase 16 - Triệt để Bảo Mật & Code Quality (Completed) | 1
 - [x] **Xử lý lỗi Backend**: Bắt lỗi trùng lặp Email (PostgreSQL unique constraint `users_email_key`) trong `createUser` và trả về thông báo lỗi thân thiện cho người dùng.
 - [x] **Thao tác dữ liệu (CRUD)**: Bổ sung Server Actions `updateUser` và `deleteUser` vào hệ thống `user-actions.ts`.
 - [x] **Giao diện Quản lý**: Bổ sung tính năng Sửa thông tin nhân sự (Họ tên, Vai trò) và Xóa nhân sự (kèm theo popup cảnh báo an toàn màu đỏ trước khi thực thi) trực tiếp trên giao diện Cài đặt Nhân sự & Quyền. Tích hợp thông báo Toast mượt mà, đồng thời không phá vỡ cấu trúc giao diện chung hiện hữu.
+
+---
+
+## 🟢 Phase 20: Tái cấu trúc God Components & Chuẩn hóa TypeScript (Type Safety & Refactoring) (Completed)
+- [x] **Bóc tách Giao diện Lớn (Component Isolation)**:
+  - Phân rã file giao diện bảng lương `/dashboard/salary/page.tsx` và `/dashboard/settings/page.tsx` thành các component nhỏ hơn (ví dụ: `SalaryTable`, `SalaryConfigForm`, `RolePermissionConfig`).
+  - Đảm bảo tính đóng gói tốt và dễ dàng bảo trì quy trình nghiệp vụ trong tương lai.
+- [x] **Triệt tiêu kiểu dữ liệu `any` (TypeScript Hardening)**:
+  - Tạo các interface dữ liệu (Domain interfaces) chặt chẽ cho toàn bộ các đối tượng: `Booking`, `KtvSession`, `SalaryRecord`, `InventoryLog`.
+  - Thay thế 100% các từ khóa `any` còn sót lại bằng các kiểu dữ liệu rõ ràng để phát hiện lỗi ngay trong thời gian thực tại IDE.
+
+## 🟢 Phase 21: Tự động hóa Onboarding SaaS & Trang Quản trị tối cao Bella HQ (Completed)
+- [x] **Luồng Đăng ký Tự phục vụ (Self-Service Tenant Signup Flow)**:
+  - Thiết kế trang wizard đăng ký tài khoản cho chủ Spa mới. 
+  - Tự động tạo bản ghi `tenant` mới, cấu hình namespace cô lập, thiết lập bộ khung phân quyền mặc định và phân bổ các giá trị cấu hình cơ bản (lương, ngân hàng, thời gian hoạt động).
+- [x] **Bảng điều khiển Trung tâm Bella HQ (Super Admin Dashboard)**:
+  - Xây dựng giao diện đặc quyền dành riêng cho quản trị viên Bella Spa HQ để theo dõi hoạt động toàn hệ thống.
+  - Thống kê thời gian thực: số lượng tenant đang kích hoạt, tình trạng đăng ký gói cước, tổng doanh thu xử lý toàn sàn, số lượng Zalo SMS đã tiêu thụ và giám sát sức khỏe của database.
+
+## 🟡 Phase 22: Tích hợp Cổng thanh toán Gia hạn SaaS & Subscription Engine
+- [ ] **Hệ thống Quản lý Gói cước (Subscription Engine)**:
+  - Thiết kế các gói cước dịch vụ (Basic, Pro, Enterprise nhượng quyền) tương ứng với các giới hạn về số lượng chi nhánh, nhân sự và hạn mức tin nhắn Zalo.
+  - Tự động khóa các tính năng nâng cao hoặc gửi cảnh báo hết hạn tài khoản.
+- [ ] **Đối soát Tự động Phí gia hạn (VietQR/Cổng thanh toán)**:
+  - Sử dụng VietQR động hoặc tích hợp cổng thanh toán (VNPAY/MoMo/Stripe) cho hóa đơn gia hạn phần mềm hàng tháng của các chủ Spa.
+  - Tự động kích hoạt lại dịch vụ ngay sau khi nhận tín hiệu chuyển khoản thành công từ Payment Webhook.
+
+## 🟡 Phase 23: Trải nghiệm UX/UI Phép thuật (UX Magic & Visual Delights)
+- [ ] **Chế độ Giao diện tối (Dark Mode)**:
+  - Hỗ trợ chế độ Dark Mode chuẩn phong cách Spa sang trọng huyền bí cho cả giao diện Admin và KTV Mobile Dashboard sử dụng Tailwind CSS CSS-variables.
+- [ ] **Bộ tải biểu diễn dữ liệu (Skeleton Loaders)**:
+  - Bổ sung các Skeleton Loading mượt mà khi tải dữ liệu tài chính P&L, bảng lương hoặc biểu đồ doanh thu để cải thiện cảm nhận tốc độ phản hồi của người dùng.
+- [ ] **Hướng dẫn Người dùng mới (Interactive Onboarding Tour)**:
+  - Tích hợp thư viện hướng dẫn (như React Joyride) đưa chủ Spa đi qua 4 bước cơ bản thiết lập chi nhánh, tạo dịch vụ, thêm KTV và chạy ca thử nghiệm đầu tiên.
+
+## 🟡 Phase 24: Kiểm thử Hệ thống Đầy đủ (E2E Testing & RLS Verification)
+- [ ] **Kiểm thử Luồng người dùng toàn diện (End-to-End Testing)**:
+  - Sử dụng Playwright viết các kịch bản E2E: Khách đặt lịch ở Landing Page -> Đối soát VietQR cọc -> Admin duyệt -> KTV nhận ca ngoại tuyến -> Checkout nhập lý do sai lệch giờ -> P&L cập nhật -> Lương tự động tính.
+- [ ] **Kiểm thử Chính sách Cô lập dữ liệu (RLS Compliance Tests)**:
+  - Tạo các bài test tự động chạy dưới danh nghĩa tài khoản của Tenant A để chứng minh tính tuyệt đối của Row-Level Security: Không bao giờ truy xuất được dữ liệu của Tenant B ngay cả khi thực hiện các phép truy vấn thô.
+

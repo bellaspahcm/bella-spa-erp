@@ -18,7 +18,7 @@ export async function calcProRataBaseSalary(baseSalary: number, resignationDate:
 
 /** KTV: Confirm their own salary record */
 export async function ktvConfirmSalary(salaryRecordId: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   if (!currentUser) return { success: false, error: 'Chưa đăng nhập' };
 
@@ -39,7 +39,7 @@ export async function ktvConfirmSalary(salaryRecordId: string) {
 
 /** KTV: Dispute their salary with a reason */
 export async function ktvDisputeSalary(salaryRecordId: string, reason: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   if (!currentUser) return { success: false, error: 'Chưa đăng nhập' };
 
@@ -69,7 +69,7 @@ export async function ktvDisputeSalary(salaryRecordId: string, reason: string) {
 
 /** KTV: Get their own salary record for the confirmation screen */
 export async function getKtvSalaryForConfirmation(month?: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   if (!currentUser) return null;
 

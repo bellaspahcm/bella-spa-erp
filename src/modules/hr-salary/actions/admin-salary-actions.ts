@@ -7,13 +7,56 @@ import { recordAuditLog } from '@/services/audit-actions';
 import { getLocalDateString } from '@/lib/utils';
 import { calcProRataBaseSalary } from './base-salary-actions';
 import { getMonthStart } from '@/lib/utils';
+import { TenantSalaryConfig } from '@/types/domain';
+
+// Interfaces for Database Records
+interface KtvUserDataAdmin {
+  id: string;
+  full_name: string | null;
+  base_salary: number | null;
+  resignation_date: string | null;
+  tenant_id?: string | null;
+}
+
+interface AttendanceLogAdmin {
+  id: string;
+  ktv_id: string;
+  date: string;
+  status: 'present' | 'late' | 'absent' | 'half_day';
+}
+
+interface SessionLogAdmin {
+  id: string;
+  rating: number | null;
+  bookings: { ktv_commission: number | null } | null;
+  session_reviews: { rating: number | null; status: string | null }[];
+}
+
+interface SalaryRecordDbAdmin {
+  id: string;
+  ktv_id: string;
+  month_year: string;
+  base_salary: number | null;
+  session_bonus: number | null;
+  rating_bonus: number | null;
+  kpi_bonus: number | null;
+  violations_deduction: number | null;
+  service_percentage_bonus: number | null;
+  total_sessions: number | null;
+  total_salary: number | null;
+  status: string | null;
+  published_at?: string | null;
+  notes?: string | null;
+  tenant_id: string;
+  users?: { full_name: string | null } | null;
+}
 
 /**
  * ADMIN: Publish salary record to KTV for confirmation.
  * Calculates final salary breakdown and sets status to 'published'.
  */
 export async function publishSalaryRecord(ktvId: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
@@ -23,14 +66,16 @@ export async function publishSalaryRecord(ktvId: string) {
 
   try {
     // 1. Get KTV info (base_salary, resignation_date)
-    const { data: ktv } = await supabase
+    const { data: ktvData } = await supabase
       .from('users')
       .select('id, full_name, base_salary, resignation_date')
       .eq('id', ktvId)
       .single();
 
+    const ktv = ktvData as KtvUserDataAdmin | null;
+
     const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
-    const salaryConfig = tenantData?.salary_config || {
+    const salaryConfig = (tenantData?.salary_config as unknown as TenantSalaryConfig) || {
       bonus_5_star: 50000,
       bonus_4_5_star: 30000,
       bonus_4_star: 10000,
@@ -49,20 +94,20 @@ export async function publishSalaryRecord(ktvId: string) {
       .gte('date', startOfMonthStr)
       .lt('date', endOfMonthStr);
 
+    const attendanceListTyped = (attendanceList || []) as unknown as AttendanceLogAdmin[];
+
     let actualDays = 0;
-    if (attendanceList && attendanceList.length > 0) {
-      attendanceList.forEach((att: any) => {
+    if (attendanceListTyped.length > 0) {
+      attendanceListTyped.forEach((att) => {
         if (att.status === 'present' || att.status === 'late') {
           actualDays += 1.0;
         } else if (att.status === 'half_day') {
           actualDays += 0.5;
         }
-        // 'absent' adds 0
       });
     }
 
     // 2. Fetch completed sessions this month with nested reviews joined by session_log_id
-    // IMPORTANT: mirrors get_ktv_leaderboard RPC — reviews joined on sl.id, not created_at
     const startOfMonth = monthYear;
     const endOfMonth = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
     const { data: sessions } = await supabase
@@ -73,30 +118,36 @@ export async function publishSalaryRecord(ktvId: string) {
       .gte('completed_date', startOfMonth)
       .lt('completed_date', endOfMonth);
 
-    const sessionsCount = sessions?.length || 0;
-    const sessionBonus = (sessions || []).reduce((acc: number, s: any) =>
+    const sessionsTyped = (sessions || []) as unknown as SessionLogAdmin[];
+
+    const sessionsCount = sessionsTyped.length;
+    const sessionBonus = sessionsTyped.reduce((acc: number, s) =>
       acc + (s.bookings?.ktv_commission || 150000), 0);
 
     // 3. Calculate rating — aligned with leaderboard: COALESCE(approved_review, session.rating, 5.0)
-    const ratingValues: number[] = (sessions || []).map((s: any) => {
-      const approvedReview = (s.session_reviews as any[])?.find((sr: any) => sr.status === 'approved');
-      if (approvedReview?.rating) return approvedReview.rating as number;
-      if (s.rating) return s.rating as number;
+    const ratingValues: number[] = sessionsTyped.map((s) => {
+      const approvedReview = s.session_reviews?.find((sr) => sr.status === 'approved');
+      if (approvedReview?.rating) return approvedReview.rating;
+      if (s.rating) return s.rating;
       return null;
     }).filter((v: number | null): v is number => v !== null);
+    
     const avgRating = ratingValues.length > 0
       ? ratingValues.reduce((acc, v) => acc + v, 0) / ratingValues.length
       : 5.0;
+    
     const bonusPerSession = avgRating === 5.0 ? salaryConfig.bonus_5_star : avgRating >= 4.5 ? salaryConfig.bonus_4_5_star : avgRating >= 4.0 ? salaryConfig.bonus_4_star : 0;
     const ratingBonus = sessionsCount * bonusPerSession;
 
     // 4. Get or init salary record for adjustments
-    const { data: existing } = await supabase
+    const { data: existingData } = await supabase
       .from('salary_records')
       .select('*')
       .eq('ktv_id', ktvId)
       .eq('month_year', monthYear)
       .maybeSingle();
+
+    const existing = existingData as SalaryRecordDbAdmin | null;
 
     const rawBaseSalary = existing?.base_salary ?? ktv?.base_salary ?? 6000000;
     const kpiBonus = existing?.kpi_bonus ?? (sessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
@@ -109,7 +160,7 @@ export async function publishSalaryRecord(ktvId: string) {
     let finalRatingBonus = ratingBonus;
     let proRataNote = '';
 
-    if (attendanceList && attendanceList.length > 0) {
+    if (attendanceListTyped.length > 0) {
       // Pro-rata based on actual working days (Target = 26 days)
       finalBaseSalary = Math.round((rawBaseSalary / 26) * actualDays);
       proRataNote = `📊 Công thực tế: ${actualDays}/26 ngày. `;
@@ -164,14 +215,15 @@ export async function publishSalaryRecord(ktvId: string) {
     await recordAuditLog({ action: 'UPDATE', table_name: 'salary_records', record_id: ktvId, new_data: { status: 'published', totalSalary } });
     revalidatePath('/dashboard/salary');
     return { success: true };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  } catch (e: unknown) {
+    const err = e as Error;
+    return { success: false, error: err.message || 'Lỗi không xác định' };
   }
 }
 
 /** ADMIN: Publish ALL draft salary records in current period */
 export async function publishAllSalaryRecords() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
@@ -192,7 +244,7 @@ export async function publishAllSalaryRecords() {
 
 /** ADMIN: Confirm salary on behalf of KTV (no-smartphone case) */
 export async function adminConfirmOnBehalf(ktvId: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const monthYear = getMonthStart();
 
   const { error } = await supabase
@@ -210,7 +262,7 @@ export async function adminConfirmOnBehalf(ktvId: string) {
 
 /** ADMIN: Finalize salary record — locks and creates expense entry */
 export async function finalizeSalaryRecord(ktvId: string) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
@@ -219,13 +271,15 @@ export async function finalizeSalaryRecord(ktvId: string) {
   const monthYear = getMonthStart(now);
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
 
-  const { data: record } = await supabase
+  const { data: recordData } = await supabase
     .from('salary_records')
     .select('*, users(full_name)')
     .eq('ktv_id', ktvId)
     .eq('month_year', monthYear)
     .eq('status', 'confirmed')
     .single();
+
+  const record = recordData as unknown as SalaryRecordDbAdmin | null;
 
   if (!record) return { success: false, error: 'Không tìm thấy bản ghi đã được xác nhận' };
 
@@ -242,7 +296,7 @@ export async function finalizeSalaryRecord(ktvId: string) {
 
   // Create expense for Finance
   await supabase.from('expenses').insert({
-    amount: record.total_salary,
+    amount: record.total_salary || 0,
     category: 'salary',
     description: `Lương T${monthLabel} - ${record.users?.full_name || 'KTV'}`,
     status: 'submitted',
@@ -258,7 +312,7 @@ export async function finalizeSalaryRecord(ktvId: string) {
 
 /** ADMIN: Finalize ALL confirmed records */
 export async function finalizeAllSalaryRecords() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
@@ -281,7 +335,7 @@ export async function finalizeAllSalaryRecords() {
 
 /** ADMIN: Trigger auto-confirm for records published > 48h ago */
 export async function checkAndAutoConfirm() {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   if (!currentUser?.tenant_id) return { count: 0 };
 
@@ -289,23 +343,27 @@ export async function checkAndAutoConfirm() {
     p_tenant_id: currentUser.tenant_id,
   });
 
-  if (data > 0) revalidatePath('/dashboard/salary');
-  return { count: data ?? 0 };
+  const count = data as number | null;
+
+  if (count && count > 0) revalidatePath('/dashboard/salary');
+  return { count: count ?? 0 };
 }
 
 export async function approveSalary(ktvId: string) {
   const now = new Date();
   const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   try {
     // 1. Get KTV info for description
-    const { data: ktv } = await supabase
+    const { data: ktvData } = await supabase
       .from('users')
       .select('full_name, tenant_id')
       .eq('id', ktvId)
-      .single() as any;
+      .single();
+
+    const ktv = ktvData as KtvUserDataAdmin | null;
 
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id || ktv?.tenant_id;
@@ -314,7 +372,10 @@ export async function approveSalary(ktvId: string) {
     }
 
     const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
-    const salaryConfig = tenantData?.salary_config || {
+    const salaryConfig = (tenantData?.salary_config as unknown as TenantSalaryConfig) || {
+      bonus_5_star: 50000,
+      bonus_4_5_star: 30000,
+      bonus_4_star: 10000,
       kpi_target_sessions: 30,
       kpi_bonus_amount: 1000000
     };
@@ -330,19 +391,23 @@ export async function approveSalary(ktvId: string) {
       .gte('completed_date', monthYear)
       .lt('completed_date', endOfMonth);
     
-    const ktvSessionsCount = sessions?.length || 0;
+    const sessionsTyped = (sessions || []) as unknown as SessionLogAdmin[];
     
-    const sessionBonus = (sessions || []).reduce((acc: number, s: any) => {
+    const ktvSessionsCount = sessionsTyped.length;
+    
+    const sessionBonus = sessionsTyped.reduce((acc: number, s) => {
       return acc + (s.bookings?.ktv_commission || 150000);
     }, 0);
 
     // 3. Get/Calculate salary details
-    const { data: existing } = await (supabase
+    const { data: existingData } = await supabase
       .from('salary_records')
       .select('*')
       .eq('ktv_id', ktvId)
       .eq('month_year', monthYear)
-      .single() as any);
+      .single();
+
+    const existing = existingData as SalaryRecordDbAdmin | null;
 
     const baseSalary = existing?.base_salary || 6000000;
     const kpiBonus = existing?.kpi_bonus ?? (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
@@ -353,15 +418,15 @@ export async function approveSalary(ktvId: string) {
 
     // 4. Update or Insert salary record
     if (existing) {
-      const { error: updateError } = await (supabase
-        .from('salary_records') as any)
+      const { error: updateError } = await supabase
+        .from('salary_records')
         .update({ status: 'approved' })
         .eq('id', existing.id);
       
       if (updateError) throw updateError;
     } else {
-      const { error: insertError } = await (supabase
-        .from('salary_records') as any)
+      const { error: insertError } = await supabase
+        .from('salary_records')
         .insert([{
           ktv_id: ktvId,
           month_year: monthYear,
@@ -377,8 +442,8 @@ export async function approveSalary(ktvId: string) {
     }
 
     // 5. Create expense record in Finance dashboard
-    const { error: expenseError } = await (supabase
-      .from('expenses') as any)
+    const { error: expenseError } = await supabase
+      .from('expenses')
       .insert({
         amount: totalSalary,
         category: 'salary',
@@ -410,16 +475,17 @@ export async function approveSalary(ktvId: string) {
     revalidatePath('/', 'layout');
 
     return { success: true };
-  } catch (error: any) {
-    console.error('Error in approveSalary:', error);
-    return { success: false, error: error.message || error };
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Error in approveSalary:', err);
+    return { success: false, error: err.message || 'Lỗi không xác định' };
   }
 }
 
 export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: number, kpiBonus: number, deductions: number, advances: number }) {
   const now = new Date();
   const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   try {
     // Check if record exists
@@ -475,14 +541,15 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
 
     revalidatePath('/dashboard/salary');
     return { success: true };
-  } catch (err: any) {
-    console.error('updateSalaryConfig error:', err);
-    return { success: false, error: err.message || err };
+  } catch (err: unknown) {
+    const errorObj = err as Error;
+    console.error('updateSalaryConfig error:', errorObj);
+    return { success: false, error: errorObj.message || 'Lỗi không xác định' };
   }
 }
 
 export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const now = new Date();
   const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const currentUser = await getCurrentUser();
@@ -547,8 +614,9 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
     console.log('Session confirmation successful');
     revalidatePath('/dashboard/salary');
     return { success: true };
-  } catch (error) {
-    console.error('Failed to confirm sessions (exception):', error);
-    return { success: false, error: (error as any).message };
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error('Failed to confirm sessions (exception):', err);
+    return { success: false, error: err.message || 'Lỗi không xác định' };
   }
 }
