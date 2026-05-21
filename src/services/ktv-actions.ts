@@ -219,7 +219,7 @@ export async function getKTVUpcomingSessions() {
 export async function startSession(sessionId: string, lat?: number, lon?: number) {
   const supabase = await createClient();
   const user = await getCurrentUser();
-  if (!user || user.role !== 'ktv') throw new Error('Unauthorized');
+  if (!user || user.role !== 'ktv') return { success: false, error: 'Unauthorized' };
 
   // 1. Lấy thông tin session để tìm booking_id
   const { data: session } = await supabase
@@ -228,16 +228,16 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
     .eq('id', sessionId)
     .single();
 
-  if (!session) throw new Error('Session not found');
+  if (!session) return { success: false, error: 'Session not found' };
 
   // Guard: check that the booking is not completed and the session number is within the booking's total_sessions
   const booking = session.bookings as { status?: string; completed_sessions?: number; total_sessions?: number } | null;
   if (booking) {
     if (booking.status === 'completed' || (booking.completed_sessions || 0) >= (booking.total_sessions || 0)) {
-      throw new Error('Liệu trình này đã hoàn thành toàn bộ số buổi. Không thể bắt đầu buổi mới.');
+      return { success: false, error: 'Liệu trình này đã hoàn thành toàn bộ số buổi. Không thể bắt đầu buổi mới.' };
     }
     if (session.session_number > (booking.total_sessions || 0)) {
-      throw new Error('Buổi này vượt quá tổng số buổi của liệu trình.');
+      return { success: false, error: 'Buổi này vượt quá tổng số buổi của liệu trình.' };
     }
   }
 
@@ -256,7 +256,7 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
 
   if (error) {
     console.error('Error starting session:', error);
-    throw new Error('Không thể bắt đầu buổi chăm sóc');
+    return { success: false, error: 'Không thể bắt đầu buổi chăm sóc' };
   }
 
   // 3. Cập nhật booking: set is_in_care = true và status = in_progress
@@ -278,7 +278,7 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
 export async function completeKTVSession(sessionId: string, notes: string = '', ktvCheckoutNote: string = '') {
   const supabase = await createClient();
   const user = await getCurrentUser();
-  if (!user || user.role !== 'ktv') throw new Error('Unauthorized');
+  if (!user || user.role !== 'ktv') return { success: false, error: 'Unauthorized' };
 
   // 1. Lấy thông tin session để tìm booking_id, start_time và package_id
   const { data: session } = await supabase
@@ -296,7 +296,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     .eq('id', sessionId)
     .single();
 
-  if (!session) throw new Error('Session not found');
+  if (!session) return { success: false, error: 'Session not found' };
 
   // Tính toán thời lượng quy định và thực tế
   let standardDuration = 60; // Mặc định là 60 phút
@@ -354,7 +354,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     .update(sessionUpdatePayload)
     .eq('id', sessionId);
 
-  if (sessionError) throw new Error('Failed to complete session');
+  if (sessionError) return { success: false, error: 'Failed to complete session' };
 
   // 2.5 Tự động trừ kho vật tư tiêu hao nếu có định mức
   const packageId = (session.bookings as any)?.package_id as string | undefined;
