@@ -146,7 +146,30 @@ export async function getKTVUpcomingSessions() {
 
   const { data: allSessionsForBookings } = await supabase
     .from('session_logs')
-    .select('*, bookings!inner(id, status, completed_sessions, total_sessions, assigned_ktv_id, package_id, start_date, preferred_time)')
+    .select(`
+      *,
+      bookings!inner (
+        id,
+        booking_number,
+        package_name,
+        status,
+        completed_sessions,
+        total_sessions,
+        assigned_ktv_id,
+        package_id,
+        start_date,
+        preferred_time,
+        packages (
+          name
+        ),
+        customers (
+          name_mother,
+          name_baby,
+          phone,
+          address
+        )
+      )
+    `)
     .in('booking_id', bookingIds)
     .order('session_number', { ascending: true });
 
