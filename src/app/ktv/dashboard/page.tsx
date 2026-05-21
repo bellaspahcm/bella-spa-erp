@@ -760,35 +760,83 @@ export default function KTVDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {upcomingSessions.map((session) => (
-                <div key={session.id} className="bg-white p-5 rounded-[32px] border border-slate-100 flex items-center gap-4">
-          <div className="w-14 h-14 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100 flex-shrink-0">
-                    <span className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Giờ</span>
-                    <span className="text-sm font-black text-slate-900 leading-none">{session.assigned_time || '--:--'}</span>
-                  </div>
-                  
-                  <div className="flex-grow min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">Buổi {session.session_number}</span>
-                      {session.is_reassigned && (
-                        <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider flex items-center gap-0.5 leading-none">
-                          🔄 Làm thay
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-base font-black text-slate-900 truncate">{session.bookings?.customers?.name_mother}</h3>
-                    <p className="text-xs text-slate-400 truncate">{session.bookings?.package_name}</p>
-                  </div>
+              {upcomingSessions.map((session) => {
+                const cleanPhone = session.bookings?.customers?.phone?.replace(/[^\d]/g, '') || '';
+                const isHotline = cleanPhone === '0865701493' || cleanPhone === '84865701493';
+                
+                return (
+                  <div key={session.id} className="bg-white p-6 rounded-[32px] border border-slate-100 space-y-4">
+                    {/* Top Row: Time, Session Info, and Play button */}
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100 flex-shrink-0">
+                          <span className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Giờ</span>
+                          <span className="text-sm font-black text-slate-900 leading-none">{session.assigned_time || '--:--'}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            <span className="bg-rose-50 text-primary px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider">
+                              Buổi {session.session_number}/{session.bookings?.total_sessions || '--'}
+                            </span>
+                            {session.is_reassigned && (
+                              <span className="bg-amber-50 text-amber-600 border border-amber-100 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-0.5">
+                                🔄 Làm thay
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-bold text-slate-500 truncate">{session.bookings?.package_name}</p>
+                        </div>
+                      </div>
 
-                  <button 
-                    onClick={() => setCheckinSession(session)}
-                    disabled={isActionLoading !== null}
-                    className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center hover:bg-primary hover:text-white transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    <Play className="w-5 h-5 fill-current" />
-                  </button>
-                </div>
-              ))}
+                      <button 
+                        onClick={() => setCheckinSession(session)}
+                        disabled={isActionLoading !== null}
+                        className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center hover:bg-primary hover:text-white transition-all active:scale-95 disabled:opacity-50 shrink-0"
+                      >
+                        <Play className="w-5 h-5 fill-current" />
+                      </button>
+                    </div>
+
+                    {/* Replacement Shift Banner if reassigned */}
+                    {session.is_reassigned && (
+                      <div className="bg-amber-50/50 border border-amber-200/60 rounded-2xl p-3 flex gap-2 items-center">
+                        <span className="text-base shrink-0">⚠️</span>
+                        <p className="text-[11px] text-amber-800 font-bold leading-normal">
+                          Đây là ca làm thay được phân công. Vui lòng kiểm tra kỹ thông tin khách hàng và dịch vụ trước khi bắt đầu.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Customer Details Block */}
+                    <div className="pt-3 border-t border-slate-100 space-y-3">
+                      <div>
+                        <h4 className="text-base font-black text-slate-800">{session.bookings?.customers?.name_mother}</h4>
+                        {session.bookings?.customers?.name_baby && (
+                          <p className="text-[11px] text-rose-500 font-bold mt-0.5 flex items-center gap-1">
+                            <Baby className="w-3.5 h-3.5 shrink-0" />
+                            <span>Bé: {session.bookings?.customers?.name_baby}</span>
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5 text-xs text-slate-500">
+                        <div className="flex items-start gap-2">
+                          <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                          <span className="leading-relaxed font-medium">{session.bookings?.customers?.address || session.address || 'Chưa cập nhật địa chỉ'}</span>
+                        </div>
+                        {session.bookings?.customers?.phone && !isHotline && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                            <a href={`tel:${session.bookings?.customers?.phone}`} className="hover:text-primary font-bold transition-colors">
+                              {session.bookings?.customers?.phone}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
