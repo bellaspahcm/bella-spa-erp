@@ -823,11 +823,8 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
 }> {
   'use server';
 
-  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-  const supabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  ) as any;
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = (await createClient()) as any;
 
   // 1. Basic validation
   if (!formData.phone || formData.phone.trim().length < 9) {
@@ -841,11 +838,16 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
   }
 
   const phone = formData.phone.trim();
-  const tenantId = process.env.DEFAULT_TENANT_ID;
+  let tenantId = process.env.DEFAULT_TENANT_ID;
 
   if (!tenantId) {
-    console.error('[submitOnlineBooking] DEFAULT_TENANT_ID is not configured!');
-    return { error: 'Hệ thống chưa được cấu hình. Vui lòng liên hệ trực tiếp qua hotline.' };
+    const { data: tenantData } = await supabase.from('tenants').select('id').limit(1).single();
+    if (tenantData) {
+      tenantId = tenantData.id;
+    } else {
+      console.error('[submitOnlineBooking] No tenant found in database!');
+      return { error: 'Hệ thống chưa được cấu hình. Vui lòng liên hệ trực tiếp qua hotline.' };
+    }
   }
 
   // 2. Look up existing customer by phone
