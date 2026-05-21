@@ -876,7 +876,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
       phone,
       address: formData.address?.trim() || null,
       status: 'lead',
-      tenant_id: tenantId,
+      tenant_id: tenantId || null,
       notes: formData.notes?.trim() || null,
     };
 
@@ -926,7 +926,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
     start_date: formData.start_date,
     preferred_time: formData.preferred_time || null,
     expected_birth_date: formData.expected_birth_date || null,
-    tenant_id: tenantId,
+    tenant_id: tenantId || null,
   };
 
   const { data: booking, error: bookingError } = await supabase
@@ -955,7 +955,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
   // Create notification
   try {
     const { error: notifErr } = await supabase.from('app_notifications').insert([{
-      tenant_id: tenantId,
+      tenant_id: tenantId || null,
       type: 'new_booking',
       title: 'Khách hàng đặt lịch mới',
       message: `${formData.name_mother} vừa đặt lịch hẹn online.`,
