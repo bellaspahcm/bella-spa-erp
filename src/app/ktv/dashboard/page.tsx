@@ -305,9 +305,11 @@ export default function KTVDashboard() {
           }))
         ]);
         setUpcomingSessions(prev => prev.filter(s => s.id !== sessionId));
-      } else {
+      } else if (res && res.success) {
         toast.success('Đã bắt đầu buổi chăm sóc!');
         fetchData();
+      } else {
+        toast.error((res && res.error) || 'Không thể bắt đầu buổi chăm sóc');
       }
     } catch (error: any) {
       toast.error(error?.message || 'Không thể bắt đầu buổi chăm sóc');
@@ -331,12 +333,14 @@ export default function KTVDashboard() {
         setCheckoutNotes('');
         setKtvCheckoutNote('');
         setActiveSessions(prev => prev.filter(s => s.id !== sessionId));
-      } else {
+      } else if (res && res.success) {
         toast.success('Đã hoàn thành buổi chăm sóc!');
         setCheckoutSession(null);
         setCheckoutNotes('');
         setKtvCheckoutNote('');
         fetchData();
+      } else {
+        toast.error((res && res.error) || 'Không thể hoàn tất buổi chăm sóc');
       }
     } catch (error: any) {
       toast.error(error?.message || 'Không thể hoàn tất buổi chăm sóc');
