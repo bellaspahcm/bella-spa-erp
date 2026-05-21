@@ -949,7 +949,13 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
   }
   // Create notification
   try {
-    await supabase.from('app_notifications').insert([{
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+    const supabaseAdmin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { error: notifErr } = await supabaseAdmin.from('app_notifications').insert([{
       tenant_id: tenantId,
       type: 'new_booking',
       title: 'Khách hàng đặt lịch mới',
@@ -960,8 +966,12 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
         booking_number: bookingNumber
       }
     }]);
+
+    if (notifErr) {
+      console.error('[submitOnlineBooking] Supabase insert error for notification:', notifErr);
+    }
   } catch (notifErr) {
-    console.warn('[submitOnlineBooking] Failed to create notification:', notifErr);
+    console.warn('[submitOnlineBooking] Exception while creating notification:', notifErr);
   }
 
   // Revalidate admin pages
