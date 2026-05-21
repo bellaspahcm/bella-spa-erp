@@ -465,8 +465,8 @@ export async function getImportantAlerts() {
         const { data: appNotifs } = await notifQ;
         for (const notif of (appNotifs || [])) {
           let link = '/dashboard';
-          if (notif.type === 'new_booking' && notif.data?.customer_id) {
-            link = `/dashboard/customers/${notif.data.customer_id}`;
+          if (notif.type === 'new_booking' && (notif.data as any)?.customer_id) {
+            link = `/dashboard/customers/${(notif.data as any).customer_id}`;
           }
           
           alerts.push({
