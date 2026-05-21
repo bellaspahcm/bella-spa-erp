@@ -452,6 +452,40 @@ export async function getImportantAlerts() {
       console.error('[getImportantAlerts] Error fetching pending leaves:', err);
     }
 
+    // 5. App Notifications (e.g. online bookings)
+    try {
+      if (currentUser?.role === 'admin' || currentUser?.role === 'admin_staff') {
+        let notifQ = supabase.from('app_notifications')
+          .select('*')
+          .eq('is_read', false)
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (tenantId) notifQ = notifQ.eq('tenant_id', tenantId);
+        
+        const { data: appNotifs } = await notifQ;
+        for (const notif of (appNotifs || [])) {
+          let link = '/dashboard';
+          if (notif.type === 'new_booking' && notif.data?.customer_id) {
+            link = `/dashboard/customers/${notif.data.customer_id}`;
+          }
+          
+          alerts.push({
+            id: notif.id,
+            isAppNotification: true,
+            type: 'info',
+            icon: 'bell',
+            title: notif.title,
+            message: notif.message,
+            severity: 'info',
+            link: link,
+            timestamp: new Date(notif.created_at).getTime()
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[getImportantAlerts] Error fetching app notifications:', err);
+    }
+
     // Sort by timestamp descending so newer alerts/completed sessions are at the top
     alerts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
