@@ -919,7 +919,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
     booking_number: bookingNumber,
     package_id: formData.package_id || null,
     package_name: formData.package_name || null,
-    status: 'lead',
+    status: 'inquiry',
     full_price: 0,
     deposit_amount: 0,
     total_sessions: 1,
