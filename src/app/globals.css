@@ -42,6 +42,31 @@
   --radius: 1.5rem;
 }
 
+.dark {
+  --primary: #ffb7c5;
+  --primary-hover: #ff9eaa;
+  --primary-foreground: #0d080c;
+  
+  --secondary: #2d1f27;
+  --secondary-foreground: #f5f0f3;
+  
+  --accent: #ff8fa3;
+  --accent-foreground: #ffffff;
+  
+  --background: #0d080c;
+  --foreground: #f5f0f3;
+  
+  --card: #140d12;
+  --card-foreground: #f5f0f3;
+  
+  --muted: #1f141b;
+  --muted-foreground: #a6959f;
+  
+  --border: #2d1f27;
+  --input: #2d1f27;
+  --ring: #ffb7c5;
+}
+
 @theme inline {
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
@@ -204,4 +229,48 @@ input[type="date"]::-webkit-datetime-edit-month-field,
 input[type="date"]::-webkit-datetime-edit-day-field,
 input[type="time"]::-webkit-datetime-edit-ampm-field {
   padding: 0 1px;
+}
+
+/* Dark Mode Overrides */
+.dark body {
+  background-image: 
+    radial-gradient(circle at 0% 0%, rgba(255, 183, 197, 0.015) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(255, 143, 163, 0.015) 0%, transparent 40%);
+}
+
+.dark .glass {
+  background: rgba(20, 13, 18, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .glass-pink {
+  background: rgba(20, 13, 18, 0.55);
+  border: 1px solid rgba(255, 183, 197, 0.06);
+}
+
+.dark .luxury-card-white {
+  background: #140d12;
+  border: 1px solid #1f141b;
+}
+
+.dark .luxury-card-white:hover {
+  box-shadow: 0 20px 30px -10px rgba(255, 183, 197, 0.03);
+  border-color: rgba(255, 183, 197, 0.1);
+}
+
+.dark .luxury-box-hover:hover {
+  box-shadow: 0 20px 30px -10px rgba(255, 183, 197, 0.03);
+  border-color: rgba(255, 183, 197, 0.1);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 183, 197, 0.01);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 183, 197, 0.1);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 183, 197, 0.2);
 }

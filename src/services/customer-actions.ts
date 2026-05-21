@@ -220,6 +220,17 @@ export async function getCustomerById(id: string) {
  */
 export async function createCustomer(customerData: any) {
   const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+
+  if (currentUser?.tenant_id) {
+    const { checkSubscriptionLimit } = await import('@/lib/subscription');
+    const customerLimit = await checkSubscriptionLimit(currentUser.tenant_id, 'customer');
+    if (customerLimit.isBlocked) {
+      return { data: null, error: 'Vượt quá giới hạn khách hàng của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.', warning: null };
+    }
+    customerData.tenant_id = currentUser.tenant_id;
+  }
+
   const { data, error } = await supabase
     .from('customers')
     .insert([customerData])

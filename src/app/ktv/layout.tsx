@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sidebar } from '@/components/layout/sidebar';
 import { getCurrentUser } from '@/services/user-actions';
 import { Loader2 } from 'lucide-react';
 
-export default function DashboardLayout({
+export default function KtvLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -28,13 +27,9 @@ export default function DashboardLayout({
           setIsAuthorized(false);
           return;
         }
-        if (user.role?.toLowerCase() === 'ktv') {
-          router.replace('/ktv/dashboard');
-          return;
-        }
         setIsAuthorized(true);
       } catch (err) {
-        console.error('Auth error in dashboard layout:', err);
+        console.error('Auth error in KTV layout:', err);
         router.replace('/login');
       }
     }
@@ -84,13 +79,5 @@ export default function DashboardLayout({
     );
   }
 
-  return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 flex flex-col min-w-0">
-        {children}
-      </main>
-    </div>
-  );
+  return <>{children}</>;
 }
-

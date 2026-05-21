@@ -1,6 +1,84 @@
 'use server';
 import { getCurrentUser } from './user-actions';
 
+export interface DashboardAlert {
+  id?: string;
+  isAppNotification?: boolean;
+  type: 'warning' | 'info' | 'success' | 'danger';
+  icon: string;
+  title: string;
+  message: string;
+  severity: string;
+  link: string;
+  timestamp: number;
+}
+
+export interface CompletedSessionDBRow {
+  id: string;
+  end_time: string | null;
+  completed_date: string | null;
+  assigned_date: string | null;
+  session_number: number;
+  completed_by_ktv_id: string | null;
+  booking_id: string | null;
+  users: {
+    full_name: string;
+  } | null;
+  bookings: {
+    package_name: string;
+    customer_id: string;
+    customers: {
+      name_mother: string;
+    } | null;
+  } | null;
+}
+
+export interface OverdueSessionDBRow {
+  id: string;
+  assigned_date: string;
+  booking_id: string | null;
+  bookings: {
+    package_name: string;
+    customer_id: string;
+    customers: {
+      name_mother: string;
+    } | null;
+  } | null;
+}
+
+export interface NearEndBookingDBRow {
+  id: string;
+  package_name: string;
+  completed_sessions: number;
+  total_sessions: number;
+  customers: {
+    name_mother: string;
+  } | null;
+}
+
+export interface PendingLeaveRequest {
+  id: string;
+  leave_date: string;
+  leave_type: string;
+  created_at: string;
+  users: {
+    full_name: string;
+  } | null;
+}
+
+export interface AppNotificationDBRow {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string | null;
+  data: {
+    customer_id?: string;
+  } | null;
+}
+
+
 // ─── Schema notes (verified 2026-05-15) ──────────────────────────────────────
 // session_logs.completed_by_ktv_id → users   (FK: session_logs_completed_by_ktv_id_fkey)
 // session_reviews.ktv_id           → users   (FK: session_reviews_ktv_id_fkey)
@@ -27,6 +105,15 @@ function monthRange(monthStart: string) {
 
 // ─── getDashboardStats ────────────────────────────────────────────────────────
 // Replaces missing RPC: get_dashboard_summary
+interface RevenueStatRow {
+  amount: number | null;
+}
+
+interface RatingItem {
+  rating: number | null;
+  completed_date: string | null;
+}
+
 export async function getDashboardStats(startDate?: string, endDate?: string, todayDate?: string) {
   try {
     const { createClient } = await import('@/lib/supabase-server');
@@ -74,24 +161,28 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
 
     const totalCustomers = custRes.count ?? 0;
     const prevCustomers = prevCustRes.count ?? 0;
-    const totalRevenue = (revRes.data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
-    const prevRevenue = (prevRevRes.data || []).reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+
+    const revenueData = (revRes.data as unknown as RevenueStatRow[]) || [];
+    const totalRevenue = revenueData.reduce((sum: number, r) => sum + Number(r.amount || 0), 0);
+
+    const prevRevenueData = (prevRevRes.data as unknown as RevenueStatRow[]) || [];
+    const prevRevenue = prevRevenueData.reduce((sum: number, r) => sum + Number(r.amount || 0), 0);
     
     // Ratings & Rating Trend Calculation
-    const ratings = ratingRes.data || [];
-    const avgRating = ratings.length
-      ? ratings.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / ratings.length
+    const ratingData = (ratingRes.data as unknown as RatingItem[]) || [];
+    const avgRating = ratingData.length
+      ? ratingData.reduce((sum: number, r) => sum + Number(r.rating || 0), 0) / ratingData.length
       : 5.0;
 
-    const curMonthRatings = ratings.filter((r: any) => r.completed_date >= monthStart && r.completed_date < monthEnd);
-    const prevMonthRatings = ratings.filter((r: any) => r.completed_date >= prevStart && r.completed_date < monthStart);
+    const curMonthRatings = ratingData.filter((r) => r.completed_date && r.completed_date >= monthStart && r.completed_date < monthEnd);
+    const prevMonthRatings = ratingData.filter((r) => r.completed_date && r.completed_date >= prevStart && r.completed_date < monthStart);
 
     const curAvgRating = curMonthRatings.length
-      ? curMonthRatings.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / curMonthRatings.length
+      ? curMonthRatings.reduce((sum: number, r) => sum + Number(r.rating || 0), 0) / curMonthRatings.length
       : avgRating;
 
     const prevAvgRating = prevMonthRatings.length
-      ? prevMonthRatings.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / prevMonthRatings.length
+      ? prevMonthRatings.reduce((sum: number, r) => sum + Number(r.rating || 0), 0) / prevMonthRatings.length
       : avgRating;
 
     const ratingTrend = calcTrend(curAvgRating, prevAvgRating);
@@ -118,6 +209,12 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
 }
 
 // ─── getUpcomingSessions ──────────────────────────────────────────────────────
+interface UpcomingSession {
+  assigned_date: string | null;
+  status: string | null;
+  assigned_time: string | null;
+}
+
 export async function getUpcomingSessions(date?: string) {
   try {
     const { getCalendarSessions } = await import('@/modules/booking/actions/session-actions');
@@ -125,10 +222,12 @@ export async function getUpcomingSessions(date?: string) {
 
     const todayStr = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
-    const todaySessions = allSessions.filter((s: any) =>
+    const typedSessions = allSessions as unknown as UpcomingSession[];
+
+    const todaySessions = typedSessions.filter((s) =>
       s.assigned_date === todayStr && s.status !== 'completed'
     );
-    return todaySessions.sort((a: any, b: any) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
+    return todaySessions.sort((a, b) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
   } catch (e) {
     console.error('[getUpcomingSessions]', e);
     return [];
@@ -136,7 +235,13 @@ export async function getUpcomingSessions(date?: string) {
 }
 
 // ─── getTopTechnicians ────────────────────────────────────────────────────────
-// Uses separate queries then aggregates (avoids ambiguous FK join)
+interface KtvLeaderboardRow {
+  full_name: string;
+  sessions: number;
+  average_rating: number;
+  total_kpi_bonus: number;
+}
+
 export async function getTopTechnicians() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
@@ -159,7 +264,9 @@ export async function getTopTechnicians() {
       return [];
     }
 
-    return (data || []).slice(0, 3).map((u: any) => ({
+    const leaderData = (data as unknown as KtvLeaderboardRow[]) || [];
+
+    return leaderData.slice(0, 3).map((u) => ({
       name: u.full_name,
       sessions: Number(u.sessions || 0),
       rating: Number(u.average_rating || 0).toFixed(1),
@@ -180,7 +287,26 @@ function formatCurrency(val: number) {
 }
 
 // ─── getMonthlyPerformance ────────────────────────────────────────────────────
-// Replaces missing RPC: get_monthly_performance_v2
+interface RevenuePerformanceRow {
+  amount: number | null;
+  received_date: string | null;
+}
+
+interface ExpensePerformanceRow {
+  amount: number | null;
+  expense_date: string | null;
+}
+
+interface LogPerformanceRow {
+  rating: number | null;
+  completed_date: string | null;
+}
+
+interface CustomerPerformanceRow {
+  id: string;
+  created_at: string | null;
+}
+
 export async function getMonthlyPerformance() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
@@ -224,19 +350,24 @@ export async function getMonthlyPerformance() {
       })()
     ]);
 
+    const revTyped = (revData.data as unknown as RevenuePerformanceRow[]) || [];
+    const expTyped = (expData.data as unknown as ExpensePerformanceRow[]) || [];
+    const reviewTyped = (reviewData.data as unknown as LogPerformanceRow[]) || [];
+    const customerTyped = (customerData.data as unknown as CustomerPerformanceRow[]) || [];
+
     return months.map(mo => {
-      const rev = (revData.data || [])
-        .filter((r: any) => r.received_date >= mo.start && r.received_date < mo.end)
-        .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
-      const exp = (expData.data || [])
-        .filter((e: any) => e.expense_date >= mo.start && e.expense_date < mo.end)
-        .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
-      const monthRatings = (reviewData.data || []).filter((r: any) => r.completed_date >= mo.start && r.completed_date < mo.end);
+      const rev = revTyped
+        .filter((r) => r.received_date && r.received_date >= mo.start && r.received_date < mo.end)
+        .reduce((sum: number, r) => sum + Number(r.amount || 0), 0);
+      const exp = expTyped
+        .filter((e) => e.expense_date && e.expense_date >= mo.start && e.expense_date < mo.end)
+        .reduce((sum: number, e) => sum + Number(e.amount || 0), 0);
+      const monthRatings = reviewTyped.filter((r) => r.completed_date && r.completed_date >= mo.start && r.completed_date < mo.end);
       const avg = monthRatings.length
-        ? monthRatings.reduce((s: number, r: any) => s + Number(r.rating || 0), 0) / monthRatings.length
+        ? monthRatings.reduce((sum: number, r) => sum + Number(r.rating || 0), 0) / monthRatings.length
         : 5.0;
-      const newCustomers = (customerData.data || [])
-        .filter((c: any) => c.created_at >= mo.start && c.created_at < mo.end).length;
+      const newCustomers = customerTyped
+        .filter((c) => c.created_at && c.created_at >= mo.start && c.created_at < mo.end).length;
       return {
         name: mo.label,
         customers: newCustomers,
@@ -272,7 +403,7 @@ export async function getImportantAlerts() {
 
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
-    const alerts: any[] = [];
+    const alerts: DashboardAlert[] = [];
 
     // 1. Fetch completed sessions (KTV checkout) - sorted by date then end_time DESC with nulls last
     let completedQ = supabase.from('session_logs')
@@ -302,9 +433,11 @@ export async function getImportantAlerts() {
     if (tenantId) completedQ = completedQ.eq('tenant_id', tenantId);
     const { data: completedSessions } = await completedQ;
 
-    for (const s of (completedSessions || [])) {
-      const ktvName = (s.users as any)?.full_name || 'KTV';
-      const motherName = (s.bookings as any)?.customers?.name_mother || 'Khách hàng';
+    const completedSessionsData = (completedSessions as unknown as CompletedSessionDBRow[]) || [];
+
+    for (const s of completedSessionsData) {
+      const ktvName = s.users?.full_name || 'KTV';
+      const motherName = s.bookings?.customers?.name_mother || 'Khách hàng';
       const endTimeVal = s.end_time;
       let msgStr = '';
 
@@ -395,8 +528,10 @@ export async function getImportantAlerts() {
     if (tenantId) overdueQ = overdueQ.eq('tenant_id', tenantId);
     const { data: overdue } = await overdueQ;
 
-    for (const s of (overdue || [])) {
-      const motherName = (s.bookings as any)?.customers?.name_mother || 'Khách hàng';
+    const overdueData = (overdue as unknown as OverdueSessionDBRow[]) || [];
+
+    for (const s of overdueData) {
+      const motherName = s.bookings?.customers?.name_mother || 'Khách hàng';
       alerts.push({
         type: 'warning',
         icon: 'alert',
@@ -416,7 +551,9 @@ export async function getImportantAlerts() {
     if (tenantId) bookingQ = bookingQ.eq('tenant_id', tenantId);
     const { data: nearEnd } = await bookingQ;
 
-    for (const b of (nearEnd || [])) {
+    const nearEndData = (nearEnd as unknown as NearEndBookingDBRow[]) || [];
+
+    for (const b of nearEndData) {
       const remaining = Number(b.total_sessions || 0) - Number(b.completed_sessions || 0);
       if (remaining <= 3 && remaining >= 0) {
         alerts.push({
@@ -435,8 +572,8 @@ export async function getImportantAlerts() {
     try {
       // Only admins should see pending leave alerts in their dashboard
       if (currentUser?.role === 'admin') {
-        const pendingLeaves = await getPendingLeaveRequests() as any[];
-        for (const leave of (pendingLeaves || [])) {
+        const pendingLeaves = (await getPendingLeaveRequests() as unknown as PendingLeaveRequest[]) || [];
+        for (const leave of pendingLeaves) {
           alerts.push({
             type: 'warning',
             icon: 'alert',
@@ -463,10 +600,12 @@ export async function getImportantAlerts() {
         if (tenantId) notifQ = notifQ.eq('tenant_id', tenantId);
         
         const { data: appNotifs } = await notifQ;
-        for (const notif of (appNotifs || [])) {
+        const appNotifsData = (appNotifs as unknown as AppNotificationDBRow[]) || [];
+        
+        for (const notif of appNotifsData) {
           let link = '/dashboard';
-          if (notif.type === 'new_booking' && (notif.data as any)?.customer_id) {
-            link = `/dashboard/customers/${(notif.data as any).customer_id}`;
+          if (notif.type === 'new_booking' && notif.data?.customer_id) {
+            link = `/dashboard/customers/${notif.data.customer_id}`;
           }
           
           let finalTimestamp = Date.now();

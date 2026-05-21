@@ -1,0 +1,624 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Shield,
+  UserPlus,
+  Trash2,
+  Pencil,
+  Zap,
+  Star,
+  X,
+  Mail,
+  User,
+  ShieldAlert,
+  Sparkles,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  createUser,
+  getUsers,
+  updateUserStatus,
+  updateUser,
+  deleteUser,
+} from "@/services/user-actions";
+import { getSupabase } from "@/lib/supabase-client";
+import { PremiumSelect } from "@/components/ui/PremiumSelect";
+import { StaffRecord } from "@/types/domain";
+import { cn } from "@/lib/utils";
+
+export default function StaffManagementTab() {
+  const [users, setUsers] = useState<StaffRecord[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const [newStaff, setNewStaff] = useState({
+    full_name: "",
+    email: "",
+    role: "ktv",
+  });
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editingStaff, setEditingStaff] = useState({
+    id: "",
+    full_name: "",
+    email: "",
+    role: "ktv",
+  });
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletingStaff, setDeletingStaff] = useState({
+    id: "",
+    full_name: "",
+  });
+
+  async function fetchUsers() {
+    setIsLoadingUsers(true);
+    try {
+      const data = await getUsers();
+      setUsers(data as StaffRecord[]);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast.error("Không thể tải danh sách nhân sự");
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers();
+
+    const sb = getSupabase();
+    // Realtime subscription
+    const channel = sb
+      .channel("users-changes-tab")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "users" },
+        () => {
+          fetchUsers();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, []);
+
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    const result = await updateUserStatus(id, newStatus);
+    if (result.success) {
+      toast.success("Đã cập nhật trạng thái nhân sự");
+      fetchUsers();
+    } else {
+      toast.error("Lỗi khi cập nhật: " + result.error);
+    }
+  };
+
+  const handleAddStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStaff.full_name || !newStaff.email) {
+      toast.error("Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      const result = await createUser(newStaff);
+      if (result.error) {
+        toast.error("Lỗi: " + result.error);
+      } else {
+        toast.success("Đã thêm nhân viên " + newStaff.full_name);
+        setIsAddModalOpen(false);
+        setNewStaff({ full_name: "", email: "", role: "ktv" });
+        fetchUsers();
+      }
+    } catch (error) {
+      toast.error("Đã xảy ra lỗi khi thêm nhân sự");
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const handleUpdateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingStaff.full_name) {
+      toast.error("Vui lòng nhập họ và tên");
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const result = await updateUser(editingStaff.id, editingStaff);
+      if (result.error) {
+        toast.error("Lỗi: " + result.error);
+      } else {
+        toast.success("Đã cập nhật thông tin nhân viên");
+        setIsEditModalOpen(false);
+        fetchUsers();
+      }
+    } catch (error) {
+      toast.error("Đã xảy ra lỗi khi cập nhật");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteStaff = async () => {
+    setIsDeleting(true);
+    try {
+      const result = await deleteUser(deletingStaff.id);
+      if (result.error) {
+        toast.error("Lỗi: " + result.error);
+      } else {
+        toast.success("Đã xóa nhân viên");
+        setIsDeleteModalOpen(false);
+        fetchUsers();
+      }
+    } catch (error) {
+      toast.error("Đã xảy ra lỗi khi xóa");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+            <Shield className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              Nhân sự & Quyền
+            </h2>
+            <p className="text-sm text-muted-foreground font-semibold">
+              Quản lý danh sách nhân viên và phân quyền hệ thống
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="px-6 py-3 bg-primary/10 text-primary rounded-xl font-black text-sm uppercase tracking-widest hover:bg-primary hover:text-white transition-all flex items-center gap-2"
+        >
+          <UserPlus className="w-4 h-4" /> Thêm nhân sự
+        </button>
+      </div>
+
+      <div className="overflow-hidden rounded-[2rem] border border-white bg-white/40 shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left whitespace-nowrap">
+            <thead>
+              <tr className="border-b border-white/50">
+                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                  Họ và tên
+                </th>
+                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                  Vai trò
+                </th>
+                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                  Hiệu suất
+                </th>
+                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                  Email
+                </th>
+                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-center">
+                  Trạng thái
+                </th>
+                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-right min-w-[150px]">
+                  Thao tác
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/20">
+              {isLoadingUsers ? (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center">
+                    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground font-bold">
+                      Đang tải dữ liệu...
+                    </p>
+                  </td>
+                </tr>
+              ) : users.length > 0 ? (
+                users.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="group hover:bg-white/60 transition-colors"
+                  >
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl flex items-center justify-center text-primary font-black text-sm border-2 border-white relative">
+                          {user.full_name?.substring(0, 2).toUpperCase()}
+                          {user.avg_rating && parseFloat(user.avg_rating.toString()) >= 4.9 && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center border border-white">
+                              <Star className="w-2 h-2 text-white fill-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-black text-slate-900">
+                            {user.full_name}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                            Mã NV: {user.id.substring(0, 5).toUpperCase()}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span
+                        className={cn(
+                          "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                          user.role?.toLowerCase() === "admin"
+                            ? "bg-rose-50 text-rose-600 border-rose-100"
+                            : user.role?.toLowerCase() === "ktv"
+                              ? "bg-blue-50 text-blue-600 border-blue-100"
+                              : "bg-slate-50 text-slate-600 border-slate-100",
+                        )}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                          <span className="text-xs font-black text-slate-700">
+                            {user.sessions_count || 0} buổi
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Star className="w-3 h-3 text-rose-400 fill-rose-400" />
+                          <span className="text-xs font-black text-slate-700">
+                            {user.avg_rating || "5.0"}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 font-bold text-slate-500 text-sm italic">
+                      {user.email}
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                      <div
+                        onClick={() => handleToggleStatus(user.id, user.status)}
+                        className={cn(
+                          "w-12 h-6 rounded-full p-1 transition-all cursor-pointer mx-auto",
+                          user.status === "active" ? "bg-emerald-500" : "bg-slate-200",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "w-4 h-4 bg-white rounded-full shadow-sm transition-all",
+                            user.status === "active" ? "ml-6" : "ml-0",
+                          )}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingStaff({
+                              id: user.id,
+                              full_name: user.full_name,
+                              email: user.email,
+                              role: user.role || "ktv",
+                            });
+                            setIsEditModalOpen(true);
+                          }}
+                          className="p-2 bg-slate-50 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                          title="Chỉnh sửa"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeletingStaff({
+                              id: user.id,
+                              full_name: user.full_name,
+                            });
+                            setIsDeleteModalOpen(true);
+                          }}
+                          className="p-2 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                          title="Xóa nhân sự"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="py-20 text-center text-muted-foreground font-bold italic"
+                  >
+                    Chưa có dữ liệu nhân sự
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add Staff Modal */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddModalOpen(false)}
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl relative z-10 overflow-visible flex flex-col border border-white"
+            >
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                    <UserPlus className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                      Thêm nhân sự mới
+                    </h2>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                      Thiết lập tài khoản & vai trò
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddStaff} className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Họ và tên
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newStaff.full_name}
+                    onChange={(e) =>
+                      setNewStaff({ ...newStaff, full_name: e.target.value })
+                    }
+                    placeholder="VD: Nguyễn Thị Lan"
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-bold text-slate-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" /> Địa chỉ Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={newStaff.email}
+                    onChange={(e) =>
+                      setNewStaff({ ...newStaff, email: e.target.value })
+                    }
+                    placeholder="lan.nt@bellaspa.vn"
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-bold text-slate-700"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <ShieldAlert className="w-3.5 h-3.5" /> Vai trò & Quyền hạn
+                  </label>
+                  <PremiumSelect
+                    value={newStaff.role}
+                    onChange={(val) => setNewStaff({ ...newStaff, role: val })}
+                    options={[
+                      { value: "ktv", label: "Kỹ thuật viên" },
+                      { value: "ktv_lead", label: "KTV Trưởng (Tổ trưởng)" },
+                      { value: "admin_staff", label: "Lễ tân / Nhân viên" },
+                      { value: "admin", label: "Quản trị viên (Admin)" },
+                    ]}
+                    placeholder="Chọn vai trò..."
+                  />
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={isAdding}
+                    className="w-full bg-primary text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-pink-100 flex items-center justify-center gap-3 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {isAdding ? (
+                      <Sparkles className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <UserPlus className="w-5 h-5" />
+                    )}
+                    <span>{isAdding ? "Đang khởi tạo..." : "Xác nhận thêm nhân sự"}</span>
+                  </button>
+                  <p className="text-center text-[10px] text-slate-400 font-bold uppercase mt-4">
+                    Nhân viên mới sẽ nhận được email hướng dẫn kích hoạt tài khoản
+                  </p>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Staff Modal */}
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditModalOpen(false)}
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-xl rounded-[3rem] shadow-2xl relative z-10 overflow-visible flex flex-col border border-white"
+            >
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                    <Pencil className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                      Cập nhật nhân sự
+                    </h2>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                      Chỉnh sửa thông tin và vai trò
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateStaff} className="p-8 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Họ và tên
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingStaff.full_name}
+                    onChange={(e) =>
+                      setEditingStaff({ ...editingStaff, full_name: e.target.value })
+                    }
+                    placeholder="VD: Nguyễn Thị Lan"
+                    className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none transition-all font-bold text-slate-700"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" /> Địa chỉ Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    disabled
+                    value={editingStaff.email}
+                    className="w-full px-6 py-4 bg-slate-100 border-none rounded-2xl outline-none font-bold text-slate-500 cursor-not-allowed"
+                  />
+                  <p className="text-[10px] text-muted-foreground italic ml-2">Không thể thay đổi email sau khi tạo.</p>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <ShieldAlert className="w-3.5 h-3.5" /> Vai trò & Quyền hạn
+                  </label>
+                  <PremiumSelect
+                    value={editingStaff.role}
+                    onChange={(val) => setEditingStaff({ ...editingStaff, role: val })}
+                    options={[
+                      { value: "ktv", label: "Kỹ thuật viên" },
+                      { value: "ktv_lead", label: "KTV Trưởng (Tổ trưởng)" },
+                      { value: "admin_staff", label: "Lễ tân / Nhân viên" },
+                      { value: "admin", label: "Quản trị viên (Admin)" },
+                    ]}
+                    placeholder="Chọn vai trò..."
+                  />
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={isUpdating}
+                    className="w-full bg-primary text-white py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-pink-100 flex items-center justify-center gap-3 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    {isUpdating ? (
+                      <Sparkles className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Pencil className="w-5 h-5" />
+                    )}
+                    <span>{isUpdating ? "Đang lưu..." : "Lưu thay đổi"}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Staff Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl relative z-10 overflow-hidden flex flex-col border border-white text-center p-10"
+            >
+              <div className="w-20 h-20 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trash2 className="w-10 h-10" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Xóa nhân sự?</h2>
+              <p className="text-slate-500 mb-8 font-medium">
+                Bạn có chắc chắn muốn xóa nhân sự <strong className="text-slate-900">{deletingStaff.full_name}</strong> khỏi hệ thống? Thao tác này không thể hoàn tác.
+              </p>
+              
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={isDeleting}
+                  className="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleDeleteStaff}
+                  disabled={isDeleting}
+                  className="flex-1 bg-rose-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-rose-200 flex items-center justify-center gap-2 hover:bg-rose-600 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <Sparkles className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  <span>Xóa ngay</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

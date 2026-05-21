@@ -3,11 +3,30 @@
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
+import { CurrentUser, StaffRecord } from '@/types/domain';
 
-export async function getCurrentUser() {
+interface UserWithLogsAndReviews {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  status: string;
+  created_at: string | null;
+  tenant_id: string | null;
+  session_logs: { count: number }[];
+  session_reviews: { rating: number }[];
+}
+
+export interface CreateUserInput {
+  email: string;
+  full_name: string;
+  role: string;
+}
+
+export async function getCurrentUser(): Promise<CurrentUser | null> {
   const supabase = await createClient();
   
-  // Use getSession() instead of getUser() â€” getSession() validates JWT locally
+  // Use getSession() instead of getUser() — getSession() validates JWT locally
   // (no extra network round-trip to Supabase Auth server). getUser() can silently
   // return null in server action contexts if the auth verification network call fails.
   let { data: { user } } = await supabase.auth.getUser(); 
@@ -24,11 +43,16 @@ export async function getCurrentUser() {
 
 
   // Try fetching from 'users' table by ID (primary path)
-  let { data: profile } = await supabase
+  let profile: CurrentUser | null = null;
+  const { data: mainProfile } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)
     .single();
+  
+  if (mainProfile) {
+    profile = mainProfile as unknown as CurrentUser;
+  }
 
   // Fallback 1: lookup by email (handles auth users created separately from public.users)
   if (!profile && user.email) {
@@ -39,39 +63,45 @@ export async function getCurrentUser() {
       .single();
     
     if (emailProfile) {
-      profile = emailProfile;
+      profile = emailProfile as unknown as CurrentUser;
     }
   }
 
-  // Fallback 2: 'profiles' table
-  if (!profile) {
-    const { data: fallbackProfile } = await (supabase as any)
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    
-    if (fallbackProfile) {
-      profile = {
-        ...fallbackProfile,
-        role: fallbackProfile.role?.toLowerCase() === 'admin' ? 'admin' : fallbackProfile.role
-      };
-    }
-  }
+
 
   if (!profile) {
     console.error('[getCurrentUser] No profile found for auth user:', user.email, '| auth_id:', user.id);
   } else {
     // Standardize role to lowercase to avoid case-sensitivity issues across the app
     profile.role = profile.role?.toLowerCase();
+
+    // Check if the tenant is suspended
+    if (profile.tenant_id) {
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('status, name')
+        .eq('id', profile.tenant_id)
+        .single();
+      
+      if (tenant && tenant.status === 'suspended') {
+        console.warn(`[getCurrentUser] Tenant ${tenant.name} (${profile.tenant_id}) is suspended. Blocking user.`);
+        profile.isSuspended = true;
+      }
+    }
   }
 
-  return profile || { id: user.id, email: user.email, role: "user", tenant_id: null as string | null };
-
+  return profile || { 
+    id: user.id, 
+    email: user.email || '', 
+    role: "user", 
+    tenant_id: null,
+    full_name: "",
+    avatar_url: null
+  };
 }
 
 
-export async function getUsers() {
+export async function getUsers(): Promise<StaffRecord[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('users')
@@ -86,14 +116,18 @@ export async function getUsers() {
     console.error('Error fetching users:', error);
   }
 
-  const processedData = (data || []).map((user: any) => {
+  const processedData: StaffRecord[] = (data as unknown as UserWithLogsAndReviews[] || []).map((user) => {
     const reviews = user.session_reviews || [];
     const avgRating = reviews.length 
-      ? reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviews.length 
+      ? reviews.reduce((acc: number, r) => acc + r.rating, 0) / reviews.length 
       : 5.0;
     
     return {
-      ...user,
+      id: user.id,
+      full_name: user.full_name || '',
+      email: user.email,
+      role: user.role,
+      status: user.status,
       sessions_count: user.session_logs?.[0]?.count || 0,
       avg_rating: avgRating.toFixed(1)
     };
@@ -103,19 +137,30 @@ export async function getUsers() {
   return processedData;
 }
 
-export async function createUser(formData: any) {
+import { checkSubscriptionLimit } from '@/lib/subscription';
+
+export async function createUser(formData: CreateUserInput) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
+
+  const targetRole = formData.role || 'ktv';
+  
+  if (targetRole === 'ktv' && currentUser?.tenant_id) {
+    const ktvLimit = await checkSubscriptionLimit(currentUser.tenant_id, 'ktv');
+    if (ktvLimit.isBlocked) {
+      return { error: 'Vượt quá giới hạn nhân sự kỹ thuật viên của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.' };
+    }
+  }
   
   const { data, error } = await supabase
     .from('users')
     .insert([{
-      email: formData.email,
-      full_name: formData.full_name,
-      role: formData.role || 'ktv',
+      email: formData.email as string,
+      full_name: formData.full_name as string,
+      role: targetRole as string,
       status: 'active',
       tenant_id: currentUser?.tenant_id
-    } as any])
+    }])
     .select()
     .single();
 
@@ -135,7 +180,7 @@ export async function createUser(formData: any) {
     new_data: { 
       full_name: formData.full_name, 
       email: formData.email, 
-      role: formData.role || 'ktv' 
+      role: targetRole
     }
   });
 
@@ -148,7 +193,7 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   
   const { error } = await supabase
     .from('users')
-    .update({ status } as any)
+    .update({ status })
     .eq('id', id);
 
   if (error) {
@@ -168,7 +213,7 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   return { success: true };
 }
 
-export async function updateUser(id: string, formData: any) {
+export async function updateUser(id: string, formData: { full_name: string; role: string }) {
   const supabase = await createClient();
   
   const { error } = await supabase
@@ -176,7 +221,7 @@ export async function updateUser(id: string, formData: any) {
     .update({
       full_name: formData.full_name,
       role: formData.role
-    } as any)
+    })
     .eq('id', id);
 
   if (error) {

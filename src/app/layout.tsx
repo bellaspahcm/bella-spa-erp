@@ -22,14 +22,18 @@ export const metadata: Metadata = {
 
 import { Toaster } from "sonner";
 import OfflineIndicator from "@/components/common/offline-indicator";
+import { cookies } from "next/headers";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const theme = cookieStore.get("theme")?.value || "light";
+
   return (
-    <html lang="vi" className={`h-full antialiased ${corinthia.variable} ${playfair.variable}`} suppressHydrationWarning>
+    <html lang="vi" className={`h-full antialiased ${theme === "dark" ? "dark" : ""} ${corinthia.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
         <OfflineIndicator />

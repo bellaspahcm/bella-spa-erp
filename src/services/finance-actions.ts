@@ -4,6 +4,99 @@ import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import { getLocalDateString } from '@/lib/utils';
 
+export interface MappedTransaction {
+  id: string;
+  dbId: string;
+  type: 'revenue' | 'expense';
+  category: string;
+  amountNum: number;
+  amount: string;
+  date: string;
+  method: string;
+  status: string;
+  details: string;
+  timestamp: number;
+}
+
+export interface RevenueDBRow {
+  id: string;
+  booking_id: string | null;
+  amount: number | string;
+  revenue_type: string;
+  payment_method: string;
+  received_date: string;
+  status: string;
+  notes: string | null;
+  bookings: {
+    package_name: string;
+    customers: {
+      name_mother: string;
+      name_baby: string | null;
+    } | null;
+  } | null;
+}
+
+export interface ExpenseDBRow {
+  id: string;
+  category: string;
+  amount: number | string;
+  description: string | null;
+  expense_date: string;
+  status: string;
+}
+
+export interface KtvDBRow {
+  id: string;
+  base_salary?: number;
+}
+
+export interface SalaryRecordDBRow {
+  id: string;
+  ktv_id: string;
+  base_salary?: number | null;
+  kpi_bonus?: number | null;
+  violations_deduction?: number | null;
+  service_percentage_bonus?: number | null;
+}
+
+export interface SessionReviewDBRow {
+  rating: number | null;
+  status: string;
+}
+
+export interface SessionLogDBRow {
+  id: string;
+  completed_by_ktv_id: string | null;
+  status: string;
+  completed_date: string;
+  rating: number | null;
+  booking_id: string | null;
+  bookings: {
+    tenant_id: string;
+    ktv_commission: number | null;
+  } | null;
+  session_reviews: SessionReviewDBRow[] | null;
+}
+
+export interface BookingDBRow {
+  id: string;
+  status: string;
+  full_price?: number;
+  completed_sessions?: number;
+  total_sessions?: number;
+  ktv_commission?: number;
+}
+
+export interface ServiceBookingDBRow {
+  package_name: string;
+  full_price: number;
+  discount_percent: number;
+  completed_sessions: number;
+  total_sessions: number;
+  ktv_commission: number;
+  status: string;
+}
+
 // ─── Tenant Resolution (3-level fallback) ────────────────────────────────────
 async function resolveTenantId(): Promise<string> {
   try {
@@ -68,22 +161,22 @@ export async function getFinancialOverview() {
     console.error('[getFinancialOverview] expenses error:', expensesResponse.error);
   }
 
-  const revenueData = revenueResponse.data || [];
-  const expensesData = expensesResponse.data || [];
+  const revenueData = (revenueResponse.data as unknown as RevenueDBRow[]) || [];
+  const expensesData = (expensesResponse.data as unknown as ExpenseDBRow[]) || [];
 
   // revenue.status === 'confirmed' (verified from DB)
   const dbRevenue = revenueData
-    .filter((r: any) => r.status === 'confirmed')
-    .reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
+    .filter((r) => r.status === 'confirmed')
+    .reduce((acc: number, curr) => acc + (Number(curr.amount) || 0), 0);
 
   // expenses.status === 'approved' (verified from DB)
   const dbExpense = expensesData
-    .filter((e: any) => e.status === 'approved' || e.status === 'paid')
-    .reduce((acc: number, curr: any) => acc + (Number(curr.amount) || 0), 0);
+    .filter((e) => e.status === 'approved' || e.status === 'paid')
+    .reduce((acc: number, curr) => acc + (Number(curr.amount) || 0), 0);
 
   const totalBalance = dbRevenue - dbExpense;
 
-  const mappedRevenues = revenueData.map((r: any) => {
+  const mappedRevenues: MappedTransaction[] = revenueData.map((r) => {
     const customer = r.bookings?.customers;
     const customerName = customer
       ? `Mẹ ${customer.name_mother}${customer.name_baby ? ` & Bé ${customer.name_baby}` : ''}`
@@ -118,7 +211,7 @@ export async function getFinancialOverview() {
     'maintenance': 'Bảo trì'
   };
 
-  const mappedExpenses = expensesData.map((e: any) => ({
+  const mappedExpenses: MappedTransaction[] = expensesData.map((e) => ({
     id: `exp-${e.id}`,
     dbId: e.id,
     type: 'expense',
@@ -132,8 +225,8 @@ export async function getFinancialOverview() {
     timestamp: new Date(e.expense_date || new Date()).getTime()
   }));
 
-  const allTransactions = [...mappedRevenues, ...mappedExpenses]
-    .sort((a, b) => ((b as any).timestamp || 0) - ((a as any).timestamp || 0));
+  const allTransactions: MappedTransaction[] = [...mappedRevenues, ...mappedExpenses]
+    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
   return {
     totalBalance,
@@ -295,25 +388,25 @@ export async function getMonthlyPnL(month?: string) {
         .lt('completed_date', endDate)
     ]);
 
-    const revenues = revRes.data || [];
-    const expenses = expRes.data || [];
-    const bookings = bookingRes.data || [];
-    const sessions = sessionRes.data || [];
+    const revenues = (revRes.data as unknown as RevenueDBRow[]) || [];
+    const expenses = (expRes.data as unknown as ExpenseDBRow[]) || [];
+    const bookings = (bookingRes.data as unknown as BookingDBRow[]) || [];
+    const sessions = (sessionRes.data as unknown as SessionLogDBRow[]) || [];
 
     // Revenue: confirmed only
     const totalRevenue = revenues
-      .filter((r: any) => r.status === 'confirmed')
-      .reduce((s: number, r: any) => s + Number(r.amount || 0), 0);
+      .filter((r) => r.status === 'confirmed')
+      .reduce((s: number, r) => s + Number(r.amount || 0), 0);
 
     // Operating expenses: exclude 'salary' category (that's KTV salary)
     const totalOperatingExpenses = expenses
-      .filter((e: any) => e.category !== 'salary')
-      .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+      .filter((e) => e.category !== 'salary')
+      .reduce((s: number, e) => s + Number(e.amount || 0), 0);
 
     // Salary expenses (dynamic real-time calculation if not locked / no salary expenses in DB yet)
     let totalKtvSalaries = expenses
-      .filter((e: any) => e.category === 'salary')
-      .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+      .filter((e) => e.category === 'salary')
+      .reduce((s: number, e) => s + Number(e.amount || 0), 0);
 
     if (totalKtvSalaries === 0) {
       // 1. Fetch KTVs
@@ -323,6 +416,8 @@ export async function getMonthlyPnL(month?: string) {
         .eq('role', 'ktv')
         .eq('tenant_id', tenantId);
 
+      const typedKtvs = (ktvs as unknown as KtvDBRow[]) || [];
+
       // 2. Fetch salary records for adjustments (KPI, deductions, advances)
       const { data: salaryRecords } = await supabase
         .from('salary_records')
@@ -330,25 +425,28 @@ export async function getMonthlyPnL(month?: string) {
         .eq('month_year', startDate)
         .eq('tenant_id', tenantId);
 
+      const typedSalaryRecords = (salaryRecords as unknown as SalaryRecordDBRow[]) || [];
+
       // NOTE: Reviews are now nested in session_logs query above (no separate fetch by created_at)
       // This mirrors get_ktv_leaderboard RPC: reviews joined on sl.id, not created_at
 
       // 3. Calculate accrued salaries dynamically
       let accruedSalaries = 0;
-      (ktvs || []).forEach((ktv: any) => {
-        const record = salaryRecords?.find((r: any) => r.ktv_id === ktv.id);
+      typedKtvs.forEach((ktv) => {
+        const record = typedSalaryRecords.find((r) => r.ktv_id === ktv.id);
         
         // Sum commission for completed sessions by this KTV in target month
-        const ktvSessions = sessions.filter((s: any) => s.completed_by_ktv_id === ktv.id);
+        const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
         const sessionCommissions = ktvSessions
-          .reduce((sum: number, s: any) => sum + (Number(s.bookings?.ktv_commission) || 150000), 0);
+          .reduce((sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || 150000), 0);
 
         const baseVal = record?.base_salary ?? ktv.base_salary ?? 6000000;
         const sessionsCount = ktvSessions.length;
 
         // Rating bonus — COALESCE(approved_review.rating, session.rating, 5.0)
-        const ratingValues: number[] = ktvSessions.map((s: any) => {
-          const approvedReview = (s.session_reviews as any[])?.find((sr: any) => sr.status === 'approved');
+        const ratingValues: number[] = ktvSessions.map((s) => {
+          const reviewsArray = Array.isArray(s.session_reviews) ? s.session_reviews : [];
+          const approvedReview = reviewsArray.find((sr) => sr.status === 'approved');
           if (approvedReview?.rating) return approvedReview.rating as number;
           if (s.rating) return s.rating as number;
           return null;
@@ -377,7 +475,7 @@ export async function getMonthlyPnL(month?: string) {
     const totalExpenses = totalOperatingExpenses + totalKtvSalaries;
     const netProfit = totalRevenue - totalExpenses;
 
-    const totalBookings = bookings.filter((b: any) =>
+    const totalBookings = bookings.filter((b) =>
       ['booked', 'in_progress', 'completed'].includes(b.status)
     ).length;
 
@@ -418,6 +516,8 @@ export async function getServicePerformance() {
       return [];
     }
 
+    const typedBookings = (bookings as unknown as ServiceBookingDBRow[]) || [];
+
     // Aggregate by package_name
     const byPackage: Record<string, {
       package_name: string;
@@ -428,7 +528,7 @@ export async function getServicePerformance() {
       totalSessions: number;
     }> = {};
 
-    (bookings || []).forEach((b: any) => {
+    typedBookings.forEach((b) => {
       const key = b.package_name || 'Dịch vụ lẻ';
       if (!byPackage[key]) {
         byPackage[key] = {

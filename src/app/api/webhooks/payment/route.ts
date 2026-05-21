@@ -146,17 +146,42 @@ export async function POST(request: NextRequest) {
       const { amount, description, transactionId, receivedDate } = tx;
       console.log(`[Payment Webhook] Processing Transaction ID: ${transactionId}, Amount: ${amount}, Desc: "${description}"`);
 
-      // 2. Extract booking number using Regex: BELLA [booking_number] (e.g. BELLA B10029, BELLA BK-10029)
+      // 2a. Check if it's a subscription payment: SUB [invoice_number] (e.g. SUB INV-1002, SUB-1002)
+      const subRegex = /SUB\s*([\w\-]+)/i;
+      const subMatch = description.match(subRegex);
+
+      if (subMatch) {
+        const invoiceNumber = subMatch[1].trim().toUpperCase().replace(/^[-_]+/, "");
+        console.log(`[Payment Webhook] Match found! Subscription Invoice Number: "${invoiceNumber}"`);
+        
+        // Execute the RPC to renew the subscription
+        const { data: renewSuccess, error: renewErr } = await supabase.rpc('renew_tenant_subscription', {
+          p_invoice_number: invoiceNumber,
+          p_payment_method: "VietQR"
+        });
+
+        if (renewErr) {
+          console.error(`[Payment Webhook] Failed to renew subscription for "${invoiceNumber}":`, renewErr);
+          results.push({ transactionId, invoiceNumber, status: "failed", reason: renewErr.message });
+          continue;
+        }
+
+        console.log(`[Payment Webhook] Successfully renewed subscription for invoice: ${invoiceNumber}`);
+        results.push({ transactionId, invoiceNumber, status: "success", type: "subscription" });
+        continue;
+      }
+
+      // 2b. Extract booking number using Regex: BELLA [booking_number] (e.g. BELLA B10029, BELLA BK-10029)
       const regex = /BELLA\s*([\w\-]+)/i;
       const match = description.match(regex);
 
       if (!match) {
-        console.log(`[Payment Webhook] Skip Transaction ${transactionId}: Description does not match BELLA pattern`);
-        results.push({ transactionId, status: "skipped", reason: "Description does not match BELLA pattern" });
+        console.log(`[Payment Webhook] Skip Transaction ${transactionId}: Description does not match BELLA or SUB pattern`);
+        results.push({ transactionId, status: "skipped", reason: "Description does not match BELLA or SUB pattern" });
         continue;
       }
 
-      const bookingNumber = match[1].trim().toUpperCase();
+      const bookingNumber = match[1].trim().toUpperCase().replace(/^[-_]+/, "");
       console.log(`[Payment Webhook] Match found! Booking Number: "${bookingNumber}"`);
 
       // 3. Find booking in database

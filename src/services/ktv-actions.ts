@@ -1,9 +1,103 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
+
+interface SessionLogWithBooking {
+  id: string;
+  booking_id: string | null;
+  session_number: number;
+  status: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  completed_by_ktv_id: string | null;
+  notes: string | null;
+  tenant_id: string | null;
+  bookings: {
+    id: string;
+    booking_number: string | null;
+    package_name: string | null;
+    customer_id: string | null;
+    total_sessions: number | null;
+    completed_sessions: number | null;
+    status?: string | null;
+    packages: {
+      name: string;
+      duration: number | null;
+    } | null;
+    customers: {
+      name_mother: string | null;
+      name_baby: string | null;
+      phone: string | null;
+      address: string | null;
+    } | null;
+  } | null;
+}
+
+interface InnerBooking {
+  id: string;
+  booking_number: string | null;
+  package_name: string | null;
+  start_date: string | null;
+  total_sessions: number | null;
+  completed_sessions: number | null;
+  preferred_time: string | null;
+  customer_id: string | null;
+  assigned_ktv_id: string | null;
+  status?: string | null;
+  package_id?: string | null;
+  packages: {
+    name: string;
+  } | null;
+  customers: {
+    name_mother: string | null;
+    name_baby: string | null;
+    phone: string | null;
+    address: string | null;
+  } | null;
+}
+
+interface SessionLogWithInnerBooking {
+  id: string;
+  booking_id: string;
+  session_number: number;
+  status: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  completed_by_ktv_id: string | null;
+  notes: string | null;
+  tenant_id: string | null;
+  assigned_date?: string | null;
+  assigned_time?: string | null;
+  bookings: InnerBooking | InnerBooking[] | null;
+}
+
+interface ProcessedSession extends Omit<SessionLogWithInnerBooking, 'bookings'> {
+  assigned_date: string;
+  assigned_time: string;
+  is_reassigned: boolean;
+  bookings: (Omit<InnerBooking, 'packages'> & { package_name: string }) | null;
+}
+
+interface SessionLogCommission {
+  id: string;
+  bookings: {
+    ktv_commission: number | null;
+  } | null;
+}
+
+interface NotificationRow {
+  id: string;
+  userId: string;
+  title: string | null;
+  message: string | null;
+  type: string | null;
+  createdAt: string | null;
+  isRead?: boolean | null;
+}
 
 /**
  * Lấy các buổi chăm sóc đang thực hiện của KTV hiện tại
@@ -45,14 +139,14 @@ export async function getKTVActiveSessions() {
     return [];
   }
 
-  return (data || [])
-    .filter((s: any) => {
+  return (data as unknown as SessionLogWithBooking[] || [])
+    .filter((s) => {
       if (!s.bookings) return true;
       const bookingTotal = s.bookings.total_sessions || 0;
       const isBookingCompleted = s.bookings.status === 'completed';
       return s.session_number <= bookingTotal && !isBookingCompleted;
     })
-    .map((s: any) => ({
+    .map((s) => ({
       ...s,
       bookings: s.bookings ? {
         ...s.bookings,
@@ -135,12 +229,12 @@ export async function getKTVUpcomingSessions() {
   }
 
   // Merge the two arrays and deduplicate by session log ID
-  const mergedMap = new Map<string, any>();
-  if (originalData) originalData.forEach((s: any) => mergedMap.set(s.id, s));
-  if (reassignedData) reassignedData.forEach((s: any) => mergedMap.set(s.id, s));
+  const mergedMap = new Map<string, SessionLogWithInnerBooking>();
+  if (originalData) (originalData as unknown as SessionLogWithInnerBooking[]).forEach((s) => mergedMap.set(s.id, s));
+  if (reassignedData) (reassignedData as unknown as SessionLogWithInnerBooking[]).forEach((s) => mergedMap.set(s.id, s));
   const sessions = Array.from(mergedMap.values());
   console.log("getKTVUpcomingSessions sessions length:", sessions?.length);
-  const bookingIds = [...new Set(sessions?.map((s: any) => s.booking_id) || [])];
+  const bookingIds = [...new Set(sessions?.map((s) => s.booking_id) || [])];
 
   if (bookingIds.length === 0) return [];
 
@@ -174,8 +268,9 @@ export async function getKTVUpcomingSessions() {
     .order('session_number', { ascending: true });
 
   console.log("allSessionsForBookings length:", allSessionsForBookings?.length);
-  const sessionsByBooking: Record<string, any[]> = {};
-  allSessionsForBookings?.forEach((s: any) => {
+  const sessionsByBooking: Record<string, SessionLogWithInnerBooking[]> = {};
+  const typedSessions = allSessionsForBookings as unknown as SessionLogWithInnerBooking[];
+  typedSessions?.forEach((s) => {
     const booking = Array.isArray(s.bookings) ? s.bookings[0] : s.bookings;
     if (!booking) return;
 
@@ -190,9 +285,9 @@ export async function getKTVUpcomingSessions() {
     sessionsByBooking[s.booking_id].push(s);
   });
 
-  const processedSessionsList: any[] = [];
+  const processedSessionsList: ProcessedSession[] = [];
 
-  for (const [bookingId, bookingSessions] of Object.entries(sessionsByBooking)) {
+  for (const [, bookingSessions] of Object.entries(sessionsByBooking)) {
     // Sort by session number
     bookingSessions.sort((a, b) => a.session_number - b.session_number);
 
@@ -200,19 +295,26 @@ export async function getKTVUpcomingSessions() {
     let lastKnownSessionNum = 0;
 
     for (const s of bookingSessions) {
+      const booking = (Array.isArray(s.bookings) ? s.bookings[0] : s.bookings) as InnerBooking | null;
       let finalDate = s.assigned_date;
 
       if (!finalDate) {
         if (lastKnownDate) {
-          const [y, m, d] = lastKnownDate.split('-').map(Number);
-          const date = new Date(y, m - 1, d);
-          date.setDate(date.getDate() + (s.session_number - lastKnownSessionNum));
-          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        } else if (s.bookings?.start_date) {
-          const [y, m, d] = s.bookings.start_date.split('-').map(Number);
-          const date = new Date(y, m - 1, d);
-          date.setDate(date.getDate() + (s.session_number - 1));
-          finalDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+          const parts: number[] = lastKnownDate.split('-').map(Number);
+          const yVal: number = parts[0];
+          const mVal: number = parts[1];
+          const dVal: number = parts[2];
+          const calcDate: Date = new Date(yVal, mVal - 1, dVal);
+          calcDate.setDate(calcDate.getDate() + (s.session_number - lastKnownSessionNum));
+          finalDate = `${calcDate.getFullYear()}-${String(calcDate.getMonth() + 1).padStart(2, '0')}-${String(calcDate.getDate()).padStart(2, '0')}`;
+        } else if (booking?.start_date) {
+          const parts: number[] = booking.start_date.split('-').map(Number);
+          const yVal: number = parts[0];
+          const mVal: number = parts[1];
+          const dVal: number = parts[2];
+          const calcDate: Date = new Date(yVal, mVal - 1, dVal);
+          calcDate.setDate(calcDate.getDate() + (s.session_number - 1));
+          finalDate = `${calcDate.getFullYear()}-${String(calcDate.getMonth() + 1).padStart(2, '0')}-${String(calcDate.getDate()).padStart(2, '0')}`;
         }
       }
 
@@ -222,19 +324,19 @@ export async function getKTVUpcomingSessions() {
       }
 
       // We only care about scheduled sessions for the upcoming list
-      const bookingTotal = s.bookings?.total_sessions || 0;
-      const isBookingCompleted = s.bookings?.status === 'completed';
+      const bookingTotal = booking?.total_sessions || 0;
+      const isBookingCompleted = booking?.status === 'completed';
 
       console.log(`Processing session ${s.id}, status: ${s.status}, finalDate: ${finalDate}, today: ${today}, sessionNum: ${s.session_number}, total: ${bookingTotal}`);
       if (s.status === 'scheduled' && finalDate === today && s.session_number <= bookingTotal && !isBookingCompleted) {
         processedSessionsList.push({
           ...s,
           assigned_date: finalDate,
-          assigned_time: s.assigned_time || s.bookings?.preferred_time || '09:00 - 11:00',
-          is_reassigned: s.bookings?.assigned_ktv_id !== user.id,
-          bookings: s.bookings ? {
-            ...s.bookings,
-            package_name: resolvePackageName(s.bookings)
+          assigned_time: s.assigned_time || booking?.preferred_time || '09:00 - 11:00',
+          is_reassigned: booking?.assigned_ktv_id !== user.id,
+          bookings: booking ? {
+            ...booking,
+            package_name: resolvePackageName(booking)
           } : null
         });
       }
@@ -338,9 +440,11 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
 
   if (!session) return { success: false, error: 'Session not found' };
 
+  const bookingsData = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+
   // Tính toán thời lượng quy định và thực tế
   let standardDuration = 60; // Mặc định là 60 phút
-  const durationStr = (session.bookings as any)?.packages?.duration as string | undefined;
+  const durationStr = bookingsData?.packages?.duration;
   if (durationStr) {
     const match = durationStr.match(/(\d+)/);
     if (match) {
@@ -371,8 +475,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   }
 
   // 2. Cập nhật session log
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sessionUpdatePayload: any = {
+  const sessionUpdatePayload = {
     status: 'completed',
     end_time: endTime.toISOString(),
     completed_date: new Intl.DateTimeFormat('en-CA', {
@@ -389,7 +492,8 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     ktv_checkout_note: ktvCheckoutNote
   };
 
-  const { error: sessionError } = await supabase
+  const untypedSupabase = supabase as unknown as SupabaseClient;
+  const { error: sessionError } = await untypedSupabase
     .from('session_logs')
     .update(sessionUpdatePayload)
     .eq('id', sessionId);
@@ -397,7 +501,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   if (sessionError) return { success: false, error: 'Failed to complete session' };
 
   // 2.5 Tự động trừ kho vật tư tiêu hao nếu có định mức
-  const packageId = (session.bookings as any)?.package_id as string | undefined;
+  const packageId = bookingsData?.package_id;
   if (packageId) {
     try {
       const { autoConsumeForSession } = await import('./inventory-actions');
@@ -483,7 +587,7 @@ export async function getKTVEarnings(month: string) {
 
   if (error) return { total: 0, sessions: 0 };
 
-  const total = data.reduce((acc: number, s: any) => acc + (Number(s.bookings?.ktv_commission) || 0), 0);
+  const total = (data as unknown as SessionLogCommission[] || []).reduce((acc: number, s) => acc + (Number(s.bookings?.ktv_commission) || 0), 0);
   
   return {
     total,
@@ -534,7 +638,7 @@ export async function getKTVNotifications() {
   if (!data) return [];
 
   // Lọc thêm một lớp tại Application logic để phòng ngừa các thông báo chứa từ khoá nhạy cảm liên quan đến đánh giá sao
-  const secureNotifications = data.filter((notif: any) => {
+  const secureNotifications = (data as unknown as NotificationRow[]).filter((notif) => {
     const titleLower = (notif.title || '').toLowerCase();
     const messageLower = (notif.message || '').toLowerCase();
     const isReview = titleLower.includes('đánh giá') || 
