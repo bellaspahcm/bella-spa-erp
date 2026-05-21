@@ -56,6 +56,7 @@ function SessionsContent() {
   const [toastMessage, setToastMessage] = useState('Cập nhật thành công!');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
+  const [sortFilter, setSortFilter] = useState('Ngày tạo mới nhất');
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [userRole, setUserRole] = useState<'KTV' | 'admin' | ''>('');
   const [selectedSessionLog, setSelectedSessionLog] = useState<any>(null);
@@ -266,7 +267,7 @@ function SessionsContent() {
     setIsSyncing(true);
     const data = await getSessionsWithDetails();
     setSessions(data || []);
-    applyFilters(data || [], searchQuery, statusFilter);
+    applyFilters(data || [], searchQuery, statusFilter, sortFilter);
     setIsSyncing(false);
     return data;
   };
@@ -291,7 +292,7 @@ function SessionsContent() {
     router.replace(newPath, { scroll: false });
   };
 
-  const applyFilters = (data: any[], query: string, status: string) => {
+  const applyFilters = (data: any[], query: string, status: string, sort: string) => {
     let result = [...data];
     
     if (query) {
@@ -317,13 +318,31 @@ function SessionsContent() {
         result = result.filter(s => (s.completed_sessions || 0) >= (s.total_sessions || 15));
       }
     }
+
+    if (sort === 'Ngày tạo mới nhất') {
+      result.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    } else if (sort === 'Ngày tạo cũ nhất') {
+      result.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+    } else if (sort === 'Tên A-Z') {
+      result.sort((a, b) => {
+        const nameA = a.customers?.name_mother || '';
+        const nameB = b.customers?.name_mother || '';
+        return nameA.localeCompare(nameB);
+      });
+    } else if (sort === 'Tên Z-A') {
+      result.sort((a, b) => {
+        const nameA = a.customers?.name_mother || '';
+        const nameB = b.customers?.name_mother || '';
+        return nameB.localeCompare(nameA);
+      });
+    }
     
     setFilteredSessions(result);
   };
 
   useEffect(() => {
-    applyFilters(sessions, searchQuery, statusFilter);
-  }, [searchQuery, statusFilter, sessions]);
+    applyFilters(sessions, searchQuery, statusFilter, sortFilter);
+  }, [searchQuery, statusFilter, sortFilter, sessions]);
 
   // Date filter applied on top of text+status filter
   const displaySessions = useMemo(() => {
@@ -740,8 +759,16 @@ function SessionsContent() {
             placeholder="Lọc trạng thái..."
           />
         </div>
+        <div className="w-full md:w-48">
+          <PremiumSelect
+            value={sortFilter}
+            options={['Ngày tạo mới nhất', 'Ngày tạo cũ nhất', 'Tên A-Z', 'Tên Z-A'].map(opt => ({ value: opt, label: opt }))}
+            onChange={val => setSortFilter(val)}
+            placeholder="Sắp xếp..."
+          />
+        </div>
         {/* Month dropdown */}
-        <div className="w-full md:w-40">
+        <div className="w-full md:w-36">
           <PremiumSelect
             value={monthFilter}
             options={monthOptions}
