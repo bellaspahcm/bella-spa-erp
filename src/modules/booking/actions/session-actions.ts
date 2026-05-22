@@ -102,15 +102,74 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     console.error('Error counting completed sessions:', countError);
   }
   
-  // 4. Update booking status transition
-  const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, tenant_id').eq('id', bookingId).single();
+  // 4. Update booking status transition and completed sessions count
+  const { data: currentBooking } = await supabase
+    .from('bookings')
+    .select('total_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id')
+    .eq('id', bookingId)
+    .single();
+  
+  const bUpdates: any = { 
+    completed_sessions: count || 0,
+    last_updated_date: today,
+    updated_at: new Date().toISOString()
+  };
   
   if (count && count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
-    await supabase.from('bookings').update({ status: 'in_progress', updated_at: new Date().toISOString() }).eq('id', bookingId);
+    bUpdates.status = 'in_progress';
   }
   
   if (currentBooking?.total_sessions && count && count >= currentBooking.total_sessions) {
-    await supabase.from('bookings').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', bookingId);
+    bUpdates.status = 'completed';
+  }
+
+  await supabase.from('bookings').update(bUpdates).eq('id', bookingId);
+
+  // --- AUTOMATION: Financial Recognition ---
+  const ktvId = bookingData.assigned_ktv_id;
+  const tenantId = currentBooking?.tenant_id || currentUser?.tenant_id;
+
+  if (currentBooking?.package_name?.toLowerCase().includes('lẻ')) {
+    await supabase.from('revenue').insert([{
+      booking_id: bookingId,
+      amount: 350000,
+      revenue_type: 'package_payment',
+      payment_method: 'bank_transfer',
+      received_date: today,
+      status: 'confirmed',
+      notes: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
+      tenant_id: tenantId
+    }]);
+  }
+
+  if (ktvId && tenantId) {
+    const monthYear = `${today.substring(0, 7)}-01`;
+    const commission = Number(currentBooking?.ktv_commission) || 150000;
+
+    const { data: salaryRec } = await supabase
+      .from('salary_records')
+      .select('id, total_sessions, service_percentage_bonus')
+      .eq('ktv_id', ktvId)
+      .eq('month_year', monthYear)
+      .single();
+
+    if (salaryRec) {
+      await supabase.from('salary_records').update({
+        total_sessions: (salaryRec.total_sessions || 0) + 1,
+        service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission,
+        updated_at: new Date().toISOString()
+      }).eq('id', salaryRec.id);
+    } else {
+      await supabase.from('salary_records').insert([{
+        ktv_id: ktvId,
+        month_year: monthYear,
+        total_sessions: 1,
+        service_percentage_bonus: commission,
+        base_salary: 6000000,
+        status: 'draft',
+        tenant_id: tenantId
+      }]);
+    }
   }
 
   // 6. Create a pending review for the customer to fill out

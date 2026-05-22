@@ -214,7 +214,7 @@ export async function createBooking(formData: any) {
 
   console.log('[createBooking] Final tenantId:', tenantId, '| user:', userEmail);
 
-  const isFullBooking = validatedData.full_price > 0 || !!validatedData.package_name;
+  const isFullBooking = validatedData.full_price > 0 && (validatedData.deposit_amount || 0) >= validatedData.full_price;
   const lockedCommission = validatedData.ktv_commission || await resolveKtvCommission(validatedData);
   
   const bookingPayload: any = {
@@ -684,6 +684,16 @@ export async function recordRemainingPayment(params: {
   const supabase = (await createClient()) as any;
 
   try {
+    const { data: booking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('id', params.booking_id)
+      .single();
+
+    if (fetchError || !booking) throw fetchError || new Error('Không tìm thấy booking');
+
+    const tenantId = booking.tenant_id;
+
     const { error: revError } = await supabase
       .from('revenue')
       .insert([{
@@ -694,20 +704,13 @@ export async function recordRemainingPayment(params: {
         received_date: getLocalDateString(),
         status: params.status || 'pending',
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
-        receipt_url: params.receipt_url || null
+        receipt_url: params.receipt_url || null,
+        tenant_id: tenantId
       }]);
 
     if (revError) {
       console.error('Error recording revenue:', revError);
     }
-
-    const { data: booking, error: fetchError } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('id', params.booking_id)
-      .single();
-
-    if (fetchError || !booking) throw fetchError || new Error('Không tìm thấy booking');
 
     const newTotalPaid = (booking.deposit_amount || 0) + params.amount;
     

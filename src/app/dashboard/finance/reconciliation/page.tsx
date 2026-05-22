@@ -13,13 +13,15 @@ import {
   X,
   CheckCircle2,
   RefreshCw,
-  Wallet
+  Wallet,
+  ArrowLeftRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
 import { formatCurrency, getLocalDateString } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { getInterBranchClearingRecords, simulateInterBranchClearing } from '@/services/clearing-actions';
 
 export default function FinancialReconciliationPage() {
   const [data, setData] = useState<{
@@ -34,9 +36,14 @@ export default function FinancialReconciliationPage() {
     collection_history: []
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'debt' | 'orphan' | 'mismatch' | 'history'>('debt');
+  const [activeTab, setActiveTab] = useState<'debt' | 'orphan' | 'mismatch' | 'history' | 'clearing'>('debt');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState(''); // YYYY-MM-DD
+
+  // Inter-branch clearing state
+  const [clearingRecords, setClearingRecords] = useState<any[]>([]);
+  const [isPayingClearing, setIsPayingClearing] = useState<string | null>(null);
+  const [currentTenantId, setCurrentTenantId] = useState<string>('');
 
   // Modal Allocation State
   const [showAllocateModal, setShowAllocateModal] = useState(false);
@@ -79,6 +86,8 @@ export default function FinancialReconciliationPage() {
         
       if (!profile?.tenant_id) throw new Error('Không tìm thấy thông tin cơ sở');
 
+      setCurrentTenantId(profile.tenant_id);
+
       // Fetch anomalies via RPC
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_financial_anomalies', {
         p_tenant_id: profile.tenant_id
@@ -119,6 +128,10 @@ export default function FinancialReconciliationPage() {
           collection_history: historyFormatted
         });
       }
+
+      // Fetch clearing records
+      const clearingData = await getInterBranchClearingRecords(profile.tenant_id);
+      setClearingRecords(clearingData || []);
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || 'Lỗi khi tải dữ liệu đối soát');
@@ -222,6 +235,23 @@ export default function FinancialReconciliationPage() {
     setIsPaying(false);
   };
 
+  const handlePayClearing = async (recordId: string) => {
+    setIsPayingClearing(recordId);
+    try {
+      const res = await simulateInterBranchClearing(recordId);
+      if (res.success) {
+        toast.success('Bù trừ công nợ liên chi nhánh thành công via VietQR Sandbox!');
+        fetchData();
+      } else {
+        toast.error('Lỗi khi đối soát: ' + res.error);
+      }
+    } catch (e: any) {
+      toast.error('Lỗi: ' + e.message);
+    } finally {
+      setIsPayingClearing(null);
+    }
+  };
+
   const totalDebt = data.debt_alerts.reduce((acc, item) => acc + Number(item.debt || 0), 0);
   const totalOrphaned = data.orphaned_revenue.reduce((acc, item) => acc + Number(item.amount || 0), 0);
   const totalMismatches = data.mismatch_alerts.length;
@@ -249,6 +279,18 @@ export default function FinancialReconciliationPage() {
     const matchDate = filterDate ? h.received_date === filterDate : true;
     return matchSearch && matchDate;
   });
+
+  const filteredClearing = clearingRecords.filter(c => {
+    const matchSearch = 
+      c.clearing_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.debtor?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.creditor?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchDate = filterDate ? c.month_year === filterDate.substring(0, 7) : true;
+    return matchSearch && matchDate;
+  });
+
+  const payables = filteredClearing.filter(c => c.debtor_tenant_id === currentTenantId);
+  const receivables = filteredClearing.filter(c => c.creditor_tenant_id === currentTenantId);
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto pb-24">
@@ -330,11 +372,12 @@ export default function FinancialReconciliationPage() {
 
       {/* TABS & SEARCH */}
       <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-2 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex p-1 bg-slate-50 rounded-[24px] w-full md:w-auto">
+        <div className="flex flex-wrap gap-1 p-1 bg-slate-50 rounded-[24px] w-full md:w-auto">
           {[
             { id: 'debt', label: 'Công Nợ Khách Hàng', count: data.debt_alerts.length, color: 'text-rose-500', bg: 'bg-rose-50' },
             { id: 'orphan', label: 'Tiền Treo (Chưa gán)', count: data.orphaned_revenue.length, color: 'text-amber-500', bg: 'bg-amber-50' },
             { id: 'mismatch', label: 'Lệch Doanh Thu', count: data.mismatch_alerts.length, color: 'text-purple-500', bg: 'bg-purple-50' },
+            { id: 'clearing', label: 'Bù trừ Chi nhánh', count: clearingRecords.filter(c => c.status === 'pending').length, color: 'text-indigo-500', bg: 'bg-indigo-50' },
             { id: 'history', label: 'Lịch Sử Thu Nợ', count: data.collection_history.length, color: 'text-emerald-500', bg: 'bg-emerald-50' },
           ].map((tab) => (
             <button
@@ -373,6 +416,172 @@ export default function FinancialReconciliationPage() {
           <div className="p-20 text-center">
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
             <p className="text-slate-500 font-medium">Đang quét hệ thống tài chính...</p>
+          </div>
+        ) : activeTab === 'clearing' ? (
+          <div className="p-4 sm:p-8 space-y-8 bg-slate-50/10">
+            {/* KHOẢN PHẢI TRẢ */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-6 bg-rose-500 rounded-full" />
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Khoản phải trả (Nợ chi nhánh khác)</h2>
+              </div>
+              
+              <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-50/50">
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Mã đối soát</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Chi nhánh chủ nợ</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Tháng</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Số buổi</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Đơn giá</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-rose-500 uppercase tracking-wider">Tổng tiền phải trả</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Trạng thái</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {payables.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-medium">
+                            Không có khoản phải trả nào cần xử lý. Tuyệt vời! 🎉
+                          </td>
+                        </tr>
+                      ) : (
+                        payables.map((rec) => (
+                          <tr key={rec.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600">
+                              {rec.clearing_number}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="font-black text-sm text-slate-800">{rec.creditor?.name || 'Chi nhánh khác'}</span>
+                            </td>
+                            <td className="px-6 py-4 text-center text-xs font-bold text-slate-500">
+                              {rec.month_year}
+                            </td>
+                            <td className="px-6 py-4 text-right font-black text-slate-700">
+                              {rec.session_count} buổi
+                            </td>
+                            <td className="px-6 py-4 text-right font-bold text-slate-500">
+                              {formatCurrency(rec.clearing_rate)}
+                            </td>
+                            <td className="px-6 py-4 text-right font-black text-rose-600 text-sm">
+                              {formatCurrency(rec.calculated_amount)}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={cn(
+                                "inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                                rec.status === 'cleared' 
+                                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
+                                  : "bg-rose-50 text-rose-600 border border-rose-100 animate-pulse"
+                              )}>
+                                {rec.status === 'cleared' ? 'Đã Bù Trừ' : 'Chờ Bù Trừ'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              {rec.status === 'pending' ? (
+                                <button
+                                  onClick={() => handlePayClearing(rec.id)}
+                                  disabled={isPayingClearing === rec.id}
+                                  className="inline-flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm shadow-rose-100 active:scale-95 disabled:opacity-50"
+                                >
+                                  {isPayingClearing === rec.id ? (
+                                    <>
+                                      <RefreshCw className="w-3 h-3 animate-spin" />
+                                      Đang trả...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Wallet className="w-3 h-3" />
+                                      Giả lập VietQR
+                                    </>
+                                  )}
+                                </button>
+                              ) : (
+                                <span className="text-xs text-slate-400 font-medium">N/A</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* KHOẢN PHẢI THU */}
+            <div className="space-y-4 pt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-6 bg-emerald-500 rounded-full" />
+                <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Khoản phải thu (Chi nhánh khác nợ ta)</h2>
+              </div>
+              
+              <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-50/50">
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Mã đối soát</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Chi nhánh con nợ</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Tháng</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Số buổi</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Đơn giá</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-emerald-600 uppercase tracking-wider">Tổng tiền phải thu</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Trạng thái</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {receivables.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-medium">
+                            Không có khoản phải thu nào.
+                          </td>
+                        </tr>
+                      ) : (
+                        receivables.map((rec) => (
+                          <tr key={rec.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600">
+                              {rec.clearing_number}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="font-black text-sm text-slate-800">{rec.debtor?.name || 'Chi nhánh khác'}</span>
+                            </td>
+                            <td className="px-6 py-4 text-center text-xs font-bold text-slate-500">
+                              {rec.month_year}
+                            </td>
+                            <td className="px-6 py-4 text-right font-black text-slate-700">
+                              {rec.session_count} buổi
+                            </td>
+                            <td className="px-6 py-4 text-right font-bold text-slate-500">
+                              {formatCurrency(rec.clearing_rate)}
+                            </td>
+                            <td className="px-6 py-4 text-right font-black text-emerald-600 text-sm">
+                              {formatCurrency(rec.calculated_amount)}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={cn(
+                                "inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                                rec.status === 'cleared' 
+                                  ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
+                                  : "bg-amber-50 text-amber-600 border border-amber-100"
+                              )}>
+                                {rec.status === 'cleared' ? 'Đã Thanh Toán' : 'Chờ Đối Tác Trả'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-left text-xs text-slate-500 max-w-xs truncate">
+                              {rec.notes || <span className="italic text-slate-300">Không có ghi chú</span>}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
