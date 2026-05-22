@@ -843,11 +843,11 @@ export default function HqDashboardClient({
         </section>
 
         {/* Tab Selection Navigation */}
-        <div className="flex justify-center">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:flex bg-white/95 border border-slate-100 backdrop-blur-md rounded-[2rem] md:rounded-3xl p-1.5 shadow-sm max-w-5xl w-full gap-1 lg:gap-0">
+        <div className="flex justify-center w-full px-4 sm:px-6">
+          <div className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-white/95 border border-slate-100 backdrop-blur-md rounded-[2rem] md:rounded-3xl p-1.5 shadow-sm max-w-5xl w-full gap-1.5 whitespace-nowrap">
             <button
               onClick={() => setActiveTab('branches')}
-              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
+              className={`flex-1 shrink-0 py-3 px-3 sm:px-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'branches'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -857,7 +857,7 @@ export default function HqDashboardClient({
             </button>
             <button
               onClick={() => setActiveTab('franchise')}
-              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
+              className={`flex-1 shrink-0 py-3 px-3 sm:px-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'franchise'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -867,7 +867,7 @@ export default function HqDashboardClient({
             </button>
             <button
               onClick={() => setActiveTab('clearing')}
-              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
+              className={`flex-1 shrink-0 py-3 px-3 sm:px-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'clearing'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -877,7 +877,7 @@ export default function HqDashboardClient({
             </button>
             <button
               onClick={() => setActiveTab('transfers')}
-              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
+              className={`flex-1 shrink-0 py-3 px-3 sm:px-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'transfers'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -887,7 +887,7 @@ export default function HqDashboardClient({
             </button>
             <button
               onClick={() => setActiveTab('audit')}
-              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
+              className={`flex-1 shrink-0 py-3 px-3 sm:px-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'audit'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -897,7 +897,7 @@ export default function HqDashboardClient({
             </button>
             <button
               onClick={() => setActiveTab('services')}
-              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
+              className={`flex-1 shrink-0 py-3 px-3 sm:px-5 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'services'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
