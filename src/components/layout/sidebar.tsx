@@ -146,7 +146,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-80 bg-white/40 dark:bg-slate-950/40 backdrop-blur-2xl border-r border-rose-100/50 dark:border-white/5 flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.1)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.3)]">
+      <aside className="w-80 bg-[#FFF9FB] dark:bg-[#140d12] border-r border-rose-100 dark:border-purple-950/30 flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.3)]">
         {/* Soft decorative glows */}
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-rose-200/20 dark:bg-rose-950/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/10 dark:bg-purple-950/10 rounded-full blur-[100px] pointer-events-none" />
@@ -164,7 +164,7 @@ export function Sidebar() {
             </div>
             <div className="text-center">
               <h2 className="text-[3.2rem] font-handwriting text-slate-800 dark:text-rose-100 leading-[0.8] mb-2 drop-shadow-sm">Bella Spa</h2>
-              <span className="text-[12px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.4em] block">Management System</span>
+              <span className="text-[12px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-[0.4em] block">Management System</span>
             </div>
           </Link>
         </div>
@@ -174,7 +174,7 @@ export function Sidebar() {
                         [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent
                         [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-rose-200/60">
           <div className="px-4 mb-3 mt-2">
-            <span className="text-[11px] font-black text-slate-300 dark:text-slate-500 uppercase tracking-[0.2em]">Menu chính</span>
+            <span className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Menu chính</span>
           </div>
 
           {filteredMenuItems.map((item: any) => {
@@ -186,8 +186,8 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group",
                     isActive
-                      ? "bg-white dark:bg-slate-900 text-primary dark:text-primary-foreground shadow-[0_10px_25px_-10px_rgba(225,29,72,0.12)] dark:shadow-[0_10px_25px_-10px_rgba(0,0,0,0.4)] border border-rose-50 dark:border-white/5"
-                      : "text-slate-400 dark:text-slate-500 hover:bg-white/60 hover:text-slate-700 dark:hover:bg-slate-900/60 dark:hover:text-slate-200"
+                      ? "bg-white dark:bg-[#0d080c] text-primary dark:text-primary shadow-[0_8px_20px_-6px_rgba(157,23,77,0.08)] dark:shadow-none border border-rose-100 dark:border-white/5"
+                      : "text-slate-500 dark:text-slate-400 hover:bg-rose-50/50 hover:text-slate-800 dark:hover:bg-slate-900/40 dark:hover:text-slate-200"
                   )}
                 >
                   <item.icon className={cn(
