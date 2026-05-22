@@ -28,7 +28,12 @@ import {
   Calendar,
   ArrowLeftRight,
   Truck,
-  Ban
+  Ban,
+  Crown,
+  Award,
+  Sparkles,
+  Info,
+  ShieldCheck
 } from 'lucide-react';
 import { toggleTenantStatus, getHqDashboardStats, getAllTenants } from '@/services/hq-actions';
 import { 
@@ -70,6 +75,7 @@ export default function HqDashboardClient({
   const [tenants, setTenants] = useState<HqTenantRecord[]>(initialTenants);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'direct' | 'franchise'>('all');
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -396,8 +402,61 @@ export default function HqDashboardClient({
                         (t.contact_phone && t.contact_phone.includes(searchTerm)) ||
                         (t.email && t.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
-    return matchSearch && matchStatus;
+    
+    const isFranchise = t.franchise_agreement_date !== null || t.royalty_type !== null;
+    const matchType = typeFilter === 'all' || 
+                      (typeFilter === 'direct' && !isFranchise) || 
+                      (typeFilter === 'franchise' && isFranchise);
+                      
+    return matchSearch && matchStatus && matchType;
   });
+
+  const getTierBadge = (tier?: string | null) => {
+    const activeTier = tier || 'free_trial';
+    switch (activeTier) {
+      case 'enterprise':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-rose-500 via-purple-600 to-indigo-500 text-white shadow-md shadow-purple-100 border border-white/20 select-none animate-pulse">
+            <Crown size={10} className="text-yellow-300 fill-yellow-300" />
+            Diamond / Franchise
+          </span>
+        );
+      case 'pro':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 shadow-sm shadow-yellow-100 border border-amber-300/30 select-none">
+            <Award size={10} className="fill-amber-950/20 text-amber-950" />
+            Gold / Pro
+          </span>
+        );
+      case 'basic':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-slate-200 to-slate-300 text-slate-800 border border-slate-350 select-none">
+            <Sparkles size={10} className="text-slate-600 fill-slate-600/10" />
+            Silver / Basic
+          </span>
+        );
+      case 'free_trial':
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200/50 select-none">
+            <Info size={10} className="text-slate-400" />
+            Dùng thử
+          </span>
+        );
+    }
+  };
+
+  const getExpirationInfo = (expiryStr?: string | null, tier?: string | null) => {
+    if (tier === 'enterprise') return <span className="text-[9px] text-slate-400 font-bold block mt-0.5 select-none">Không thời hạn</span>;
+    if (!expiryStr) return <span className="text-[9px] text-slate-400 font-bold block mt-0.5 select-none">Không giới hạn</span>;
+    const date = new Date(expiryStr);
+    const isExpired = date < new Date();
+    return (
+      <span className={`text-[9px] font-bold block mt-0.5 select-none ${isExpired ? 'text-rose-500 animate-pulse' : 'text-slate-400'}`}>
+        Hạn: {date.toLocaleDateString('vi-VN')} {isExpired && '(Hết hạn)'}
+      </span>
+    );
+  };
 
   // Calculate dynamic stats for SVG growth chart
   const maxGrowth = Math.max(...(stats.spaGrowthData || []).map((d) => d.spas), 1);
@@ -680,9 +739,119 @@ export default function HqDashboardClient({
               </div>
             </section>
 
+            {/* Subscription packages reference box */}
+            <section className="bg-gradient-to-br from-white to-slate-50 border border-slate-100 rounded-[3rem] p-6 shadow-sm text-left">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-rose-50 text-primary rounded-xl flex items-center justify-center">
+                  <Crown size={18} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest leading-none">
+                    Thông tin Gói dịch vụ & Định mức Hệ thống
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-bold mt-0.5 uppercase tracking-wider">
+                    Mỗi chi nhánh hoạt động theo giới hạn tài nguyên của gói dịch vụ đã đăng ký.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Free Trial */}
+                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 space-y-2 shadow-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
+                      Free Trial
+                    </span>
+                    <span className="text-[10px] font-black text-slate-400">Dùng thử</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800">Tối đa 1 KTV</span>
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Khách hàng:</span> <span className="font-black text-slate-800">Tối đa 15</span>
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Zalo SMS:</span> <span className="font-black text-slate-800">Tối đa 20</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Basic */}
+                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 space-y-2 shadow-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-slate-200 to-slate-300 text-slate-800 border border-slate-350">
+                      Silver / Basic
+                    </span>
+                    <span className="text-[10px] font-black text-slate-500">Cơ bản</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800">Tối đa 3 KTV</span>
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Khách hàng:</span> <span className="font-black text-slate-800">Tối đa 50</span>
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Zalo SMS:</span> <span className="font-black text-slate-800">Tối đa 100</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Pro */}
+                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 space-y-2 shadow-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border border-amber-300/30">
+                      Gold / Pro
+                    </span>
+                    <span className="text-[10px] font-black text-amber-600">Chuyên nghiệp</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800">Tối đa 10 KTV</span>
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Khách hàng:</span> <span className="font-black text-slate-800">Tối đa 500</span>
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Zalo SMS:</span> <span className="font-black text-slate-800">Tối đa 500</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Enterprise */}
+                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 space-y-2 shadow-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-rose-500 via-purple-600 to-indigo-500 text-white border border-white/20 animate-pulse">
+                      Diamond / Enterprise
+                    </span>
+                    <span className="text-[10px] font-black text-rose-500">Nhượng quyền</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Kỹ thuật viên:</span> <span className="font-black text-rose-600">Không giới hạn</span>
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Khách hàng:</span> <span className="font-black text-rose-600">Không giới hạn</span>
+                    </p>
+                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
+                      <span>Zalo SMS:</span> <span className="font-black text-rose-600">Tối đa 2000</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 flex items-start gap-2 bg-indigo-50/50 border border-indigo-100/40 rounded-xl p-3 text-[11px] text-slate-500 font-bold">
+                <Info size={14} className="text-indigo-500 shrink-0 mt-0.5" />
+                <p>
+                  <span className="text-slate-700 font-black">Hướng dẫn kiểm tra:</span> Chủ chi nhánh (Branch Admin) có thể kiểm tra định mức tài nguyên đã dùng, số KTV đang hoạt động, và gia hạn nâng cấp các gói dịch vụ này trực tiếp trong phần <span className="text-slate-900 font-black">"Cấu hình hệ thống" → Tab "Gói dịch vụ"</span> của trang quản lý chi nhánh. Tổng bộ HQ có thể theo dõi phân loại gói của từng chi nhánh ngay tại danh sách bên dưới.
+                </p>
+              </div>
+            </section>
+
             {/* Filters and Search Area */}
-            <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-6 flex flex-col md:flex-row justify-between items-center gap-4 text-left">
-              <div className="relative w-full md:max-w-md group">
+            <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-6 flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-4 text-left">
+              <div className="relative w-full xl:max-w-md group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
                   <Search size={18} />
                 </div>
@@ -695,24 +864,54 @@ export default function HqDashboardClient({
                 />
               </div>
 
-              <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-                {([
-                  { label: 'Tất cả chi nhánh', value: 'all' },
-                  { label: 'Đang hoạt động', value: 'active' },
-                  { label: 'Tạm khóa', value: 'suspended' }
-                ] as const).map((btn) => (
-                  <button
-                    key={btn.value}
-                    onClick={() => setStatusFilter(btn.value)}
-                    className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider shrink-0 transition-all active:scale-95 cursor-pointer ${
-                      statusFilter === btn.value
-                        ? 'bg-primary text-white shadow-lg shadow-pink-100'
-                        : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200/50'
-                    }`}
-                  >
-                    {btn.label}
-                  </button>
-                ))}
+              <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center w-full xl:w-auto">
+                {/* Type Filter */}
+                <div className="flex flex-col gap-1 flex-1 sm:flex-initial">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Phân loại mô hình</span>
+                  <div className="flex bg-slate-50 border border-slate-200/50 rounded-xl p-1 shrink-0">
+                    {([
+                      { label: 'Tất cả', value: 'all' },
+                      { label: 'Trực thuộc', value: 'direct' },
+                      { label: 'Nhượng quyền', value: 'franchise' }
+                    ] as const).map((btn) => (
+                      <button
+                        key={btn.value}
+                        onClick={() => setTypeFilter(btn.value)}
+                        className={`px-4 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
+                          typeFilter === btn.value
+                            ? 'bg-slate-900 text-white shadow-sm'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        {btn.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex flex-col gap-1 flex-1 sm:flex-initial">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Trạng thái vận hành</span>
+                  <div className="flex bg-slate-50 border border-slate-200/50 rounded-xl p-1 shrink-0">
+                    {([
+                      { label: 'Tất cả', value: 'all' },
+                      { label: 'Hoạt động', value: 'active' },
+                      { label: 'Tạm khóa', value: 'suspended' }
+                    ] as const).map((btn) => (
+                      <button
+                        key={btn.value}
+                        onClick={() => setStatusFilter(btn.value)}
+                        className={`px-4 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
+                          statusFilter === btn.value
+                            ? 'bg-primary text-white shadow-sm shadow-pink-100'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        {btn.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -738,6 +937,7 @@ export default function HqDashboardClient({
                     <thead className="text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50 border-b border-slate-100">
                       <tr>
                         <th scope="col" className="px-8 py-5">Tên chi nhánh Spa</th>
+                        <th scope="col" className="px-6 py-5">Phân loại & Gói</th>
                         <th scope="col" className="px-6 py-5">Liên hệ & Địa chỉ</th>
                         <th scope="col" className="px-6 py-5 text-center">Nhân sự</th>
                         <th scope="col" className="px-6 py-5 text-center">Khách hàng</th>
@@ -749,6 +949,7 @@ export default function HqDashboardClient({
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                       {filteredTenants.map((t) => {
                         const isHeadquarter = t.name === 'Bella Spa Headquarter';
+                        const isFranchise = t.franchise_agreement_date !== null || t.royalty_type !== null;
                         return (
                           <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                             {/* Spa Name & Logo Initial */}
@@ -771,6 +972,29 @@ export default function HqDashboardClient({
                                   <span className="text-[9px] text-slate-400 font-bold block mt-0.5">
                                     Ngày tham gia: {t.created_at ? new Date(t.created_at).toLocaleDateString('vi-VN') : 'N/A'}
                                   </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Classification & Subscription package */}
+                            <td className="px-6 py-5">
+                              <div className="flex flex-col gap-1 items-start text-xs">
+                                {isHeadquarter ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-900 text-white border border-slate-700 select-none">
+                                    Trụ sở chính
+                                  </span>
+                                ) : isFranchise ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-100 select-none">
+                                    Nhượng quyền
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-600 border border-indigo-100 select-none">
+                                    Trực thuộc
+                                  </span>
+                                )}
+                                <div className="mt-1 flex flex-col items-start gap-0.5">
+                                  {getTierBadge(t.subscription_tier)}
+                                  {getExpirationInfo(t.subscription_expires_at, t.subscription_tier)}
                                 </div>
                               </div>
                             </td>
