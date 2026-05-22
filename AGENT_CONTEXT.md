@@ -1,6 +1,6 @@
 # 專案上下文 (Agent Context)：BELLA SPA ERP
 
-> **最後更新時間**：2026-05-21 18:38
+> **最後更新時間**：2026-05-22 11:05
 > **自動生成**：由 `prepare_context.py` 產生，供 AI Agent 快速掌握專案全局
 
 ---
@@ -171,10 +171,15 @@ BELLA SPA ERP/
 ├── src
 │   ├── __tests__
 │   │   ├── booking.test.ts
+│   │   ├── e2e-pipeline.test.ts
 │   │   ├── finance.lockMonth.test.ts
 │   │   ├── finance.test.ts
+│   │   ├── franchise-royalty.test.ts
+│   │   ├── inter-branch-clearing.test.ts
+│   │   ├── inventory-transfer.test.ts
 │   │   ├── kpi-calculator.test.ts
 │   │   ├── rate-limit.test.ts
+│   │   ├── rls-compliance.test.ts
 │   │   └── salary.test.ts
 │   ├── app
 │   │   ├── (auth)
@@ -213,12 +218,15 @@ BELLA SPA ERP/
 │   │   ├── attendance-actions.ts
 │   │   ├── audit-actions.ts
 │   │   ├── chat-actions.ts
+│   │   ├── clearing-actions.ts
 │   │   ├── crm-actions.ts
 │   │   ├── customer-actions.ts
 │   │   ├── dashboard-actions.ts
 │   │   ├── export-actions.ts
 │   │   ├── finance-actions.ts
+│   │   ├── franchise-actions.ts
 │   │   ├── inventory-actions.ts
+│   │   ├── inventory-transfer-actions.ts
 │   │   ├── ktv-actions.ts
 │   │   ├── notification-actions.ts
 │   │   ├── package-actions.ts
@@ -273,7 +281,11 @@ BELLA SPA ERP/
 │   │   ├── 20260521000001_fix_rls_security.sql
 │   │   ├── 20260521000002_lock_month_guards.sql
 │   │   ├── 20260521000003_create_app_notifications.sql
-│   │   └── 20260521000004_harden_rls_and_tenant.sql
+│   │   ├── 20260521000004_harden_rls_and_tenant.sql
+│   │   ├── 20260522000000_enable_attendance_rls.sql
+│   │   ├── 20260522010000_franchise_royalty_system.sql
+│   │   ├── 20260522020000_inter_branch_clearing.sql
+│   │   └── 20260522030000_inventory_transfer_orders.sql
 │   ├── seed.sql
 │   └── seed_demo_2026.sql
 ├── test-db-policies.js
@@ -293,9 +305,12 @@ BELLA SPA ERP/
 * _（尚無 `.auto-skill-local.md`，專案踩坑經驗將在開發過程中自動累積）_
 
 ## 🚦 5. 目前進度與待辦 (Current Status & TODO)
-_(自動提取自最近日記 2026-05-21)_
+_(自動提取自最近日記 2026-05-22)_
 
 ### 🚧 待辦事項
-- [ ] Giám sát nhật ký hoạt động hệ thống (Vercel Serverless Logs) để theo dõi các hành vi đặt lịch spam.
-- [ ] Tiếp tục duy trì thói quen bật RLS khi tạo bảng mới chứa thông tin nhạy cảm.
-
+- [x] Hoàn tất Step 1: Franchise Royalty Fee Auto-Billing (Tự động hóa phí nhượng quyền & VietQR sandbox)
+- [x] Hoàn tất Step 2: Inter-branch Redemption & Clearing Engine (Bù đối chéo & VietQR đối soát thanh toán liên chi nhánh)
+- [x] Hoàn tất Step 3: Internal Supply Chain & Inventory Transfer Order (Chuyển kho nội bộ, RLS an toàn & auto-init vật tư chi nhánh)
+- [ ] Theo dõi luồng dữ liệu đồng bộ kho thực tế khi Tổng bộ xuất xưởng lô hàng đầu tiên.
+- [ ] Mở rộng hệ thống cảnh báo qua Zalo/Email cho các chi nhánh khi lệnh chuyển kho được chuyển sang trạng thái "Đang vận chuyển".
+- [ ] Bảo trì định kỳ và theo dõi dung lượng lưu trữ RLS database logs.

@@ -8,7 +8,7 @@
 > Hoàn thành trọn vẹn và xác minh toàn diện 3 giai đoạn nền tảng cốt lõi của Chiến lược mở rộng Chi nhánh & Franchise: Hệ thống tự động tính phí nhượng quyền (Franchise Royalty), Động cơ đối soát bù trừ tài chính liên chi nhánh (Inter-branch Clearing), và Chuỗi cung ứng Nội bộ & Lệnh chuyển kho (Inventory Transfer Order).
 
 ### 🛠️ Execution Details & Changes
-* **Git Commits**: (N/A)
+* **Git Commits**: `fc02c299582e6283ca78067ec7295f2c895abe6f`
 * **Core File Modifications**:
   * 📄 `supabase/migrations/20260522010000_franchise_royalty_system.sql`: Khởi tạo bảng hóa đơn nhượng quyền, cấu hình phí tỷ lệ/cố định, kích hoạt RLS cách ly chi nhánh và phân quyền HQ Super Admin.
   * 📄 `supabase/migrations/20260522020000_inter_branch_clearing.sql`: Khởi tạo bảng bù trừ tài chính liên chi nhánh, mở rộng trường `internal_clearing_rate` ở bảng `tenants` và chính sách RLS an toàn.
