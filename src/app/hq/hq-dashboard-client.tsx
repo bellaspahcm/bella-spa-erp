@@ -89,6 +89,7 @@ export default function HqDashboardClient({
   const [stats, setStats] = useState<HqDashboardStats>(initialStats);
   const [tenants, setTenants] = useState<HqTenantRecord[]>(initialTenants);
   const [isDemoMode, setIsDemoMode] = useState(true);
+  const [compareMetric, setCompareMetric] = useState<'revenue' | 'customers'>('revenue');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'direct' | 'franchise'>('all');
@@ -1629,42 +1630,107 @@ export default function HqDashboardClient({
                 </div>
               </div>
 
-              {/* Quick System Integrity Status */}
-              <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6 text-left">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                  Sức khỏe hệ thống toàn sàn
-                </h4>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                    <div>
-                      <h5 className="text-[11px] font-black text-emerald-950 uppercase tracking-wider">Cơ sở dữ liệu</h5>
-                      <p className="text-[10px] text-slate-500 font-bold mt-0.5">Supabase PostgreSQL 15</p>
+              {/* Branch Analytics Comparison Card */}
+              <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6 text-left flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                      Hiệu năng các chi nhánh
+                    </h4>
+                    
+                    {/* Tiny premium switcher */}
+                    <div className="flex bg-slate-100 border border-slate-200/50 rounded-xl p-0.5">
+                      <button
+                        onClick={() => setCompareMetric('revenue')}
+                        className={`px-2.5 py-1 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all cursor-pointer ${
+                          compareMetric === 'revenue'
+                            ? 'bg-white text-slate-900 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Doanh thu
+                      </button>
+                      <button
+                        onClick={() => setCompareMetric('customers')}
+                        className={`px-2.5 py-1 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all cursor-pointer ${
+                          compareMetric === 'customers'
+                            ? 'bg-white text-slate-900 shadow-xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Khách hàng
+                      </button>
                     </div>
-                    <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase">Tốt</span>
                   </div>
+                  
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-4">
+                    {compareMetric === 'revenue' ? 'So sánh tổng doanh số thực thu tích lũy' : 'Tổng số lượng tệp khách hàng đăng ký'}
+                  </p>
 
-                  <div className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                    <div>
-                      <h5 className="text-[11px] font-black text-emerald-950 uppercase tracking-wider">Zalo OA Gateway</h5>
-                      <p className="text-[10px] text-slate-500 font-bold mt-0.5">ZNS API & Access Token Auto-Refresh</p>
-                    </div>
-                    <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase">Kết nối</span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                    <div>
-                      <h5 className="text-[11px] font-black text-emerald-950 uppercase tracking-wider">VietQR Webhook Gateway</h5>
-                      <p className="text-[10px] text-slate-500 font-bold mt-0.5">Tự động đối soát biến động số dư</p>
-                    </div>
-                    <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-600 text-[9px] font-black rounded-full uppercase">Sẵn sàng</span>
+                  <div className="space-y-4">
+                    {tenants
+                      .filter(t => t.name !== 'Bella Spa Headquarter')
+                      .sort((a, b) => {
+                        if (compareMetric === 'revenue') {
+                          return (b.revenueSum || 0) - (a.revenueSum || 0);
+                        } else {
+                          return (b.customerCount || 0) - (a.customerCount || 0);
+                        }
+                      })
+                      .slice(0, 5) // Top 5
+                      .map((branch, index) => {
+                        const cleanName = branch.name.replace('Bella Spa ', '');
+                        const val = compareMetric === 'revenue' ? (branch.revenueSum || 0) : (branch.customerCount || 0);
+                        const maxVal = compareMetric === 'revenue' 
+                          ? Math.max(...tenants.filter(t => t.name !== 'Bella Spa Headquarter').map(t => t.revenueSum || 0), 1)
+                          : Math.max(...tenants.filter(t => t.name !== 'Bella Spa Headquarter').map(t => t.customerCount || 0), 1);
+                        
+                        const ratio = (val / maxVal) * 100;
+                        const rankColor = index === 0 
+                          ? 'text-yellow-500' 
+                          : index === 1 
+                            ? 'text-slate-400' 
+                            : index === 2 
+                              ? 'text-amber-600' 
+                              : 'text-slate-300';
+                              
+                        return (
+                          <div key={branch.id} className="space-y-1.5 group">
+                            <div className="flex justify-between items-center text-xs font-bold">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className={`font-black text-[11px] ${rankColor}`}>#{index + 1}</span>
+                                <span className="text-slate-800 truncate" title={branch.name}>{cleanName}</span>
+                              </div>
+                              <span className="font-black text-slate-900 shrink-0">
+                                {compareMetric === 'revenue' ? formatCurrency(val) : `${val.toLocaleString('vi-VN')} khách`}
+                              </span>
+                            </div>
+                            
+                            {/* Premium Progress Bar */}
+                            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden relative shadow-inner">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${ratio}%` }}
+                                transition={{ duration: 0.8, ease: 'easeOut' }}
+                                className={`h-full rounded-full bg-gradient-to-r ${
+                                  compareMetric === 'revenue' 
+                                    ? 'from-rose-500 via-purple-600 to-indigo-500 shadow-md shadow-purple-200' 
+                                    : 'from-sky-400 via-blue-500 to-indigo-600 shadow-md shadow-blue-200'
+                                }`}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
 
-                <div className="pt-2">
-                  <p className="text-[10px] text-slate-400 font-bold italic text-center">
-                    * Toàn bộ hệ thống chạy trên nền tảng Serverless Next.js.
-                  </p>
+                <div className="pt-4 border-t border-slate-50 mt-4 flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest select-none">
+                  <span>* Dữ liệu thời gian thực</span>
+                  <span className="text-emerald-500 animate-pulse flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    Đã đồng bộ
+                  </span>
                 </div>
               </div>
             </section>
