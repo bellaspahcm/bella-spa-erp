@@ -18,6 +18,10 @@
       - **Light Mode**: Gradient mềm mại từ `#FFF5F7` sang `#FCE4EC`, viền mờ `#FBCFE8]/60`, các mục điều hướng hoạt động có màu `#BE185D` nổi bật, mục chưa kích hoạt có tông màu xám hồng ấm nhã nhặn `#8A6D7C`.
       - **Dark Mode**: Chuyển từ đen thuần túy sang dải màu Dusky Rose cực kỳ cao cấp từ `#25131A` đến `#1A0C11`, viền mờ đậm `#3D1E2A`, các liên kết hoạt động chuyển sang nền `#3D202E` phối chữ hồng pastel `#FFB7C5`.
     - Chuẩn hóa màu sắc Logo thương hiệu chữ viết tay nghệ thuật `Bella Spa` bằng cách liên kết trực tiếp với biến CSS thương hiệu thông qua thuộc tính inline `style={{ color: 'var(--primary)' }}`. Điều này giúp logo tự động phản hồi ngay lập tức với sự thay đổi của Light/Dark Mode (Hiển thị hồng cánh sen đậm `#9D174D` ở Light Mode và hồng phấn `#FFB7C5` ở Dark Mode), giải quyết triệt để lỗi logo bị chìm màu đen trên nền tối.
+  * 📄 `src/app/hq/hq-dashboard-client.tsx`:
+    - Tạo nút "Đăng ký Chi Nhánh" cực kỳ bóng bẩy ở Header bên cạnh liên kết chuyển đến Hồ sơ Spa Trụ sở.
+    - Tạo thêm nút "Đăng ký Chi Nhánh mới" tại tiêu đề bảng "Danh sách chi nhánh Spa Hệ thống" (ẩn trên màn hình nhỏ di động để tối ưu trải nghiệm người dùng, hiển thị đầy đủ trên màn hình cỡ lớn).
+    - Cả hai nút liên kết trực tiếp đến trang kích hoạt hệ thống `/signup` với tông màu gradient rose-pink cao cấp, tăng trải nghiệm tiện ích cho super admin quản lý chuỗi.
 
 ### 🚨 Troubleshooting
 > 🐛 **Problem Encountered (Chromium Page Zoom Height Bug)**: Do trong file `globals.css` cấu hình thuộc tính `zoom: 0.9` cho thẻ `html` đối với màn hình trung bình trở lên (MD trở lên), các phần tử sử dụng chiều cao toàn màn hình cố định `100vh` thực tế bị thu nhỏ tỷ lệ chỉ còn hiển thị tương đương `90vh`, để lại một khoảng trắng thô cứng khoảng 10% ở chân Sidebar khi cuộn trang.

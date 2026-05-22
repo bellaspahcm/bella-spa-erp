@@ -1396,6 +1396,15 @@ export default function HqDashboardClient({
             </div>
           </div>
 
+          {/* Sign Up Chi Nhánh Button */}
+          <a 
+            href="/signup"
+            className="flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-full shadow-md hover:shadow-rose-100 transition-all active:scale-95 cursor-pointer"
+          >
+            <Plus size={12} />
+            Đăng ký Chi Nhánh
+          </a>
+
           {/* Regular Dashboard Redirect */}
           <a 
             href="/dashboard"
@@ -1917,9 +1926,18 @@ export default function HqDashboardClient({
                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
                   Danh sách chi nhánh Spa Hệ thống ({filteredTenants.length})
                 </h4>
-                <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-black uppercase">
-                  Hệ thống Multi-Tenant
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-black uppercase hidden sm:inline-block">
+                    Hệ thống Multi-Tenant
+                  </span>
+                  <a 
+                    href="/signup"
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-650 hover:from-rose-600 hover:to-pink-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-md hover:shadow-rose-100 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Plus size={12} />
+                    Đăng ký Chi Nhánh mới
+                  </a>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
