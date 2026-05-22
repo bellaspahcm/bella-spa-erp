@@ -88,7 +88,7 @@ export default function HqDashboardClient({
 }: HqDashboardClientProps) {
   const [stats, setStats] = useState<HqDashboardStats>(initialStats);
   const [tenants, setTenants] = useState<HqTenantRecord[]>(initialTenants);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'direct' | 'franchise'>('all');
@@ -1113,6 +1113,10 @@ export default function HqDashboardClient({
       return { key, oldVal, newVal, type };
     }).filter(d => d.type !== 'unchanged');
   };
+
+  useEffect(() => {
+    handleToggleDemo(true);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'franchise') {
