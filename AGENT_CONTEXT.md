@@ -1,6 +1,6 @@
 # 專案上下文 (Agent Context)：BELLA SPA ERP
 
-> **最後更新時間**：2026-05-22 20:22
+> **最後更新時間**：2026-05-23 04:51
 > **自動生成**：由 `prepare_context.py` 產生，供 AI Agent 快速掌握專案全局
 
 ---
@@ -76,6 +76,7 @@ _(💡 AI 讀取守則：請依據此結構尋找對應檔案，勿盲目猜測�
 BELLA SPA ERP/
 ├── 2026-05-21.md
 ├── 2026-05-22.md
+├── 2026-05-23.md
 ├── AGENTS.md
 ├── AGENT_CONTEXT.md
 ├── CLAUDE.md
@@ -324,9 +325,9 @@ BELLA SPA ERP/
 * _（尚無 `.auto-skill-local.md`，專案踩坑經驗將在開發過程中自動累積）_
 
 ## 🚦 5. 目前進度與待辦 (Current Status & TODO)
-_(自動提取自最近日記 2026-05-22)_
+_(自動提取自最近日記 2026-05-23)_
 
 ### 🚧 待辦事項
-- [ ] Theo dõi luồng dữ liệu đồng bộ kho thực tế khi Tổng bộ xuất xưởng lô hàng đầu tiên.
-- [ ] Mở rộng hệ thống cảnh báo qua Zalo/Email cho các chi nhánh khi lệnh chuyển kho được chuyển sang trạng thái "Đang vận chuyển".
+- [ ] Theo dõi phản hồi từ người dùng về trải nghiệm thị giác tổng thể của hệ màu hồng pastel mới trên sidebar.
+- [ ] Bảo trì định kỳ và đồng bộ các yếu tố UX tương tác khác như nút bấm tạo lịch đặt, hiệu ứng chuyển trang để có cùng tông pastel sang trọng.
 
