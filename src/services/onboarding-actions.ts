@@ -63,23 +63,40 @@ export async function registerNewTenant(input: RegisterTenantInput) {
 
       authUser = adminData?.user;
     } else {
-      console.log('[registerNewTenant] SUPABASE_SERVICE_ROLE_KEY not found. Falling back to standard signUp');
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email: input.adminEmail,
-        password: password,
-        options: {
-          data: {
-            full_name: input.adminName,
-          }
-        }
+      console.log('[registerNewTenant] SUPABASE_SERVICE_ROLE_KEY not found. Attempting custom RPC create_onboarding_user to bypass rate limits');
+      const { data: userId, error: rpcErr } = await (supabase.rpc as any)('create_onboarding_user', {
+        p_email: input.adminEmail,
+        p_password: password,
+        p_full_name: input.adminName
       });
 
-      if (signUpError) {
-        console.error('[registerNewTenant] Standard auth signup failed:', signUpError.message);
-        return { success: false, error: signUpError.message };
-      }
+      if (rpcErr) {
+        console.error('[registerNewTenant] Custom RPC signup failed, falling back to standard signUp:', rpcErr.message);
+        
+        // Final fallback to standard signUp if custom RPC fails
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: input.adminEmail,
+          password: password,
+          options: {
+            data: {
+              full_name: input.adminName,
+            }
+          }
+        });
 
-      authUser = signUpData?.user;
+        if (signUpError) {
+          console.error('[registerNewTenant] Standard auth signup failed:', signUpError.message);
+          return { success: false, error: signUpError.message };
+        }
+
+        authUser = signUpData?.user;
+      } else if (!userId) {
+        console.error('[registerNewTenant] Custom RPC returned null user ID');
+        return { success: false, error: 'Không thể tạo tài khoản xác thực qua database.' };
+      } else {
+        console.log('[registerNewTenant] Custom RPC signup succeeded, user ID:', userId);
+        authUser = { id: userId as string };
+      }
     }
 
     if (!authUser) {
