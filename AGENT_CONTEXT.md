@@ -1,19 +1,19 @@
-# 專案上下文 (Agent Context)：BELLA SPA ERP
+# Ngữ cảnh dự án (Agent Context): BELLA SPA ERP
 
-> **最後更新時間**：2026-05-23 04:51
-> **自動生成**：由 `prepare_context.py` 產生，供 AI Agent 快速掌握專案全局
+> **Thời gian cập nhật gần nhất**: 2026-05-23 04:51
+> **Tự động tạo**: Được tạo bởi `prepare_context.py` nhằm giúp AI Agent nhanh chóng nắm bắt bức tranh toàn cảnh dự án
 
 ---
 
-## 🎯 1. 專案目標 (Project Goal)
-* **核心目的**：_（請手動補充，或建立 README.md）_
+## 🎯 1. Mục tiêu dự án (Project Goal)
+* **Mục tiêu cốt lõi**: _(Vui lòng bổ sung thủ công hoặc tạo file README.md)_
 
-## 🛠️ 2. 技術棧與環境 (Tech Stack & Environment)
-* **核心套件**：@sentry/nextjs, @supabase/ssr, @supabase/supabase-js, clsx, date-fns, dexie, framer-motion, lucide-react, next, react
-* **開發套件**：@tailwindcss/postcss, @testing-library/jest-dom, @testing-library/react, @types/jest, @types/node, @types/react, @types/react-dom, eslint
-* **可用指令**：dev, build, start, lint, test
+## 🛠️ 2. Công nghệ & Môi trường (Tech Stack & Environment)
+* **Thư viện cốt lõi**: @sentry/nextjs, @supabase/ssr, @supabase/supabase-js, clsx, date-fns, dexie, framer-motion, lucide-react, next, react
+* **Thư viện phát triển**: @tailwindcss/postcss, @testing-library/jest-dom, @testing-library/react, @types/jest, @types/node, @types/react, @types/react-dom, eslint
+* **Lệnh khả dụng**: dev, build, start, lint, test
 
-### 原始設定檔
+### File cấu hình gốc
 
 <details><summary>package.json</summary>
 
@@ -70,8 +70,8 @@
 ```
 </details>
 
-## 📂 3. 核心目錄結構 (Core Structure)
-_(💡 AI 讀取守則：請依據此結構尋找對應檔案，勿盲目猜測路徑)_
+## 📂 3. Cấu trúc thư mục cốt lõi (Core Structure)
+_(💡 Quy tắc đọc của AI: Vui lòng tìm kiếm các file tương ứng dựa theo cấu trúc này, không tự ý đoán mò đường dẫn)_
 ```text
 BELLA SPA ERP/
 ├── 2026-05-21.md
@@ -321,13 +321,13 @@ BELLA SPA ERP/
 └── tsconfig.tsbuildinfo
 ```
 
-## 🏛️ 4. 架構與設計約定 (Architecture & Conventions)
-* _（尚無 `.auto-skill-local.md`，專案踩坑經驗將在開發過程中自動累積）_
+## 🏛️ 4. Quy ước kiến trúc & Thiết kế (Architecture & Conventions)
+* _(Chưa có file `.auto-skill-local.md`, các kinh nghiệm thực chiến dự án sẽ tự động tích lũy trong quá trình phát triển)_
 
-## 🚦 5. 目前進度與待辦 (Current Status & TODO)
-_(自動提取自最近日記 2026-05-23)_
+## 🚦 5. Tiến độ hiện tại & Việc cần làm (Current Status & TODO)
+_(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-23)_
 
-### 🚧 待辦事項
+### 🚧 Việc cần làm
 - [ ] Theo dõi phản hồi từ người dùng về trải nghiệm thị giác tổng thể của hệ màu hồng pastel mới trên sidebar.
 - [ ] Bảo trì định kỳ và đồng bộ các yếu tố UX tương tác khác như nút bấm tạo lịch đặt, hiệu ứng chuyển trang để có cùng tông pastel sang trọng.
 
