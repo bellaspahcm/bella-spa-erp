@@ -120,6 +120,48 @@ export interface HqTenantRecord {
   subscription_expires_at?: string | null;
   parent_tenant_id?: string | null;
   franchise_agreement_date?: string | null;
+}export interface HqAuditLogRecord {
+  id: string;
+  created_at: string;
+  changed_by_id: string | null;
+  user_name: string;
+  action: 'INSERT' | 'UPDATE' | 'DELETE' | string;
+  table_name: string;
+  record_id: string;
+  old_data: any;
+  new_data: any;
+  tenant_id: string;
+  tenant_name?: string;
 }
 
+export interface HqAuditLogFilters {
+  tenantId?: string;
+  userId?: string;
+  action?: 'INSERT' | 'UPDATE' | 'DELETE' | '';
+  tableName?: string;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+  page?: number;
+}
+
+export interface HqPackageTemplate {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  duration?: string | null;
+  total_sessions: number;
+  details?: string[] | null;
+  ktv_commission?: number | null;
+  offer?: string | null;
+  status?: string | null;
+  is_hq_template: boolean;
+  template_id?: string | null;
+  price_cap?: number | null;
+  price_floor?: number | null;
+  allowed_franchise_override: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
 
