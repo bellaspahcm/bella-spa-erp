@@ -22,6 +22,9 @@
     - Tạo nút "Đăng ký Chi Nhánh" cực kỳ bóng bẩy ở Header bên cạnh liên kết chuyển đến Hồ sơ Spa Trụ sở.
     - Tạo thêm nút "Đăng ký Chi Nhánh mới" tại tiêu đề bảng "Danh sách chi nhánh Spa Hệ thống" (ẩn trên màn hình nhỏ di động để tối ưu trải nghiệm người dùng, hiển thị đầy đủ trên màn hình cỡ lớn).
     - Cả hai nút liên kết trực tiếp đến trang kích hoạt hệ thống `/signup` với tông màu gradient rose-pink cao cấp, tăng trải nghiệm tiện ích cho super admin quản lý chuỗi.
+  * 📄 `src/services/onboarding-actions.ts`:
+    - Nâng cấp Server Action `registerNewTenant` để tự động phát hiện và sử dụng Supabase Admin Client (`supabaseAdmin`) khởi tạo tài khoản khi phát hiện khóa bảo mật `SUPABASE_SERVICE_ROLE_KEY`.
+    - Thiết lập tùy chọn `email_confirm: true` cho `auth.admin.createUser` để tự động kích hoạt tài khoản trực tiếp trong DB mà không kích hoạt trình gửi thư SMTP của Supabase, loại bỏ hoàn toàn lỗi email rate limit.
 
 ### 🚨 Troubleshooting
 > 🐛 **Problem Encountered (Chromium Page Zoom Height Bug)**: Do trong file `globals.css` cấu hình thuộc tính `zoom: 0.9` cho thẻ `html` đối với màn hình trung bình trở lên (MD trở lên), các phần tử sử dụng chiều cao toàn màn hình cố định `100vh` thực tế bị thu nhỏ tỷ lệ chỉ còn hiển thị tương đương `90vh`, để lại một khoảng trắng thô cứng khoảng 10% ở chân Sidebar khi cuộn trang.
@@ -30,6 +33,10 @@
 > 🐛 **Problem Encountered (Logo Color Contrast)**: Khi thay đổi nền Sidebar sang tông màu tối của Dusky Rose ở Dark Mode, chữ Logo `Bella Spa` mặc định màu đen bị hòa lẫn hoàn toàn vào nền tối, khiến thương hiệu bị che khuất.
 > 💡 **Solution**: Sử dụng inline style có độ ưu tiên cao (specificity) gán màu chữ trực tiếp theo biến CSS `--primary` (`style={{ color: 'var(--primary)' }}`), ghi đè các cấu hình CSS mặc định lỗi thời và đảm bảo độ tương phản tuyệt vời ở cả hai chế độ sáng/tối.
 
+> 🐛 **Problem Encountered (Email Rate Limit Exceeded)**: Khi người dùng nhấp chọn đăng ký chi nhánh mới thông qua trang `/signup`, Supabase Auth kích hoạt gửi email xác nhận. Vì tài khoản Supabase thuộc gói miễn phí (Free-tier), tần suất gửi thư bị giới hạn nghiêm ngặt ở mức tối đa 3 email/giờ. Khi tạo liên tục nhiều chi nhánh, hệ thống ngay lập tức báo lỗi `email rate limit exceeded` từ GoTrue và ngắt tiến trình.
+> 💡 **Solution**: Tận dụng khóa bảo mật server-side `SUPABASE_SERVICE_ROLE_KEY` có sẵn trên production để khởi tạo `supabaseAdmin` và tạo người dùng thông qua `auth.admin.createUser` kết hợp tham số `email_confirm: true`. Việc này ghi trực tiếp trạng thái xác thực `email_confirmed_at = NOW()` vào database mà không gửi SMTP, vượt qua giới hạn rate limit thành công.
+
 ### ⏭️ Next Steps
+- [ ] Giám sát tiến trình đăng ký chi nhánh thực tế trên Production, hướng dẫn người dùng kiểm tra nếu có bất kỳ phản hồi nào về tài khoản.
 - [ ] Theo dõi phản hồi từ người dùng về trải nghiệm thị giác tổng thể của hệ màu hồng pastel mới trên sidebar.
 - [ ] Bảo trì định kỳ và đồng bộ các yếu tố UX tương tác khác như nút bấm tạo lịch đặt, hiệu ứng chuyển trang để có cùng tông pastel sang trọng.
