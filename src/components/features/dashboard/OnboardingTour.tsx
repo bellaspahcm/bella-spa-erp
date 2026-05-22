@@ -159,13 +159,13 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
               <div className="flex items-center justify-between shrink-0 mb-8">
                 <div className="flex items-center gap-2.5">
                   <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-pink-300/80">
+                  <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
                     Bắt đầu cùng Bella Spa
                   </span>
                 </div>
                 <button 
                   onClick={handleSkip}
-                  className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors flex items-center justify-center active:scale-95"
+                  className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors flex items-center justify-center active:scale-95"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -203,10 +203,10 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
                     <span className="text-xs font-black uppercase tracking-wider text-primary">
                       Bước {currentStep + 1} / {STEPS.length}
                     </span>
-                    <h2 className="text-3xl font-black text-slate-950 dark:text-white tracking-tight mt-1.5">
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mt-1.5">
                       {STEPS[currentStep].title}
                     </h2>
-                    <h4 className="text-sm font-bold text-slate-400 dark:text-pink-300/80 uppercase tracking-widest mt-1">
+                    <h4 className="text-sm font-bold text-slate-500 dark:text-pink-200/60 uppercase tracking-widest mt-1">
                       {STEPS[currentStep].subtitle}
                     </h4>
                   </div>
@@ -225,7 +225,7 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
               <div className="flex items-center justify-between shrink-0 pt-4 border-t border-slate-100 dark:border-slate-800/60 gap-4">
                 <button
                   onClick={handleSkip}
-                  className="px-6 py-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 text-[10px] font-black uppercase text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-350 transition-colors tracking-widest active:scale-95"
+                  className="px-6 py-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 transition-colors tracking-widest active:scale-95"
                 >
                   Bỏ qua hướng dẫn
                 </button>

@@ -146,7 +146,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-80 bg-background border-r border-rose-100 dark:border-purple-950/30 flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.3)]">
+      <aside className="w-80 bg-[#FFF8FA] dark:bg-[#140d12] border-r border-[#FCE4EC] dark:border-[#2d1f27] flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[4px_0_30px_rgba(157,23,77,0.04)] dark:shadow-[4px_0_30px_rgba(0,0,0,0.5)]">
         {/* Soft decorative glows */}
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-rose-200/20 dark:bg-rose-950/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/10 dark:bg-purple-950/10 rounded-full blur-[100px] pointer-events-none" />
@@ -164,7 +164,7 @@ export function Sidebar() {
             </div>
             <div className="text-center">
               <h2 className="text-[3.2rem] font-handwriting text-slate-800 dark:text-rose-100 leading-[0.8] mb-2 drop-shadow-sm">Bella Spa</h2>
-              <span className="text-[12px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-[0.4em] block">Management System</span>
+              <span className="text-[12px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.4em] block">Management System</span>
             </div>
           </Link>
         </div>
@@ -186,8 +186,8 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group",
                     isActive
-                      ? "bg-white dark:bg-[#140d12] text-primary dark:text-primary shadow-[0_8px_20px_-6px_rgba(157,23,77,0.08)] dark:shadow-none border border-rose-100 dark:border-white/5"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-rose-50/50 hover:text-slate-800 dark:hover:bg-slate-900/40 dark:hover:text-slate-200"
+                      ? "bg-white dark:bg-[#1f141b] text-primary dark:text-pink-350 shadow-[0_10px_25px_-10px_rgba(157,23,77,0.08)] dark:shadow-[0_10px_25px_-10px_rgba(0,0,0,0.4)] border border-[#FCE4EC] dark:border-[#2d1f27]/50"
+                      : "text-slate-500 dark:text-[#a6959f] hover:bg-white/80 hover:text-slate-800 dark:hover:bg-[#1f141b]/60 dark:hover:text-slate-200"
                   )}
                 >
                   <item.icon className={cn(
@@ -219,13 +219,13 @@ export function Sidebar() {
           </div>
 
           {/* Admin card */}
-          <div className="bg-white dark:bg-slate-900 p-2.5 rounded-[1.25rem] shadow-sm border border-rose-50 dark:border-white/5 group cursor-pointer hover:border-rose-200 dark:hover:border-purple-500/20 transition-all">
+          <div className="bg-white dark:bg-[#1c1218] p-2.5 rounded-[1.25rem] shadow-sm border border-[#FCE4EC] dark:border-[#2d1f27] group cursor-pointer hover:border-rose-200 dark:hover:border-[#ff8fa3]/20 transition-all">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-8 h-8 bg-slate-900 dark:bg-purple-950 rounded-full flex items-center justify-center text-white dark:text-rose-100 font-black text-xs shadow-md group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 bg-[#9D174D] dark:bg-[#ffb7c5] rounded-full flex items-center justify-center text-white dark:text-[#0d080c] font-black text-xs shadow-md group-hover:scale-105 transition-transform">
                   {user?.full_name?.charAt(0) || 'B'}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#1c1218] rounded-full" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[12px] font-black text-slate-800 dark:text-slate-200 truncate leading-tight">{user?.full_name || 'admin'}</p>
@@ -239,7 +239,7 @@ export function Sidebar() {
             onClick={handleLogout}
             className="flex items-center gap-2.5 w-full px-2.5 py-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-450 transition-all font-black text-[10px] uppercase tracking-[0.2em] group"
           >
-            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-slate-50 dark:bg-slate-900 group-hover:bg-rose-50 dark:group-hover:bg-slate-800 group-hover:text-rose-600 dark:group-hover:text-[#ff9eaa] transition-colors">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#FFF6F8] dark:bg-[#1f141b] group-hover:bg-rose-50 dark:group-hover:bg-slate-800 group-hover:text-rose-600 dark:group-hover:text-[#ff9eaa] transition-colors">
               <LogOut className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
             </div>
             ĐĂNG XUẤT

@@ -51,7 +51,7 @@ export default function ThemeToggle() {
   }
 
   return (
-    <div className="w-full bg-slate-100/60 dark:bg-slate-900/40 backdrop-blur-md border border-rose-100/20 dark:border-white/5 p-1 rounded-2xl flex items-center justify-between relative shadow-inner">
+    <div className="w-full bg-[#FFF6F8] dark:bg-[#1f141b] border border-[#FCE4EC] dark:border-[#2d1f27] p-1 rounded-2xl flex items-center justify-between relative shadow-inner">
       <div className="absolute inset-0 bg-gradient-to-r from-rose-200/5 to-rose-300/5 pointer-events-none rounded-2xl" />
       
       {/* Light Mode Pill */}
@@ -60,13 +60,13 @@ export default function ThemeToggle() {
         className={`flex-1 relative z-10 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider transition-all duration-300 ${
           theme === 'light'
             ? 'text-primary'
-            : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350'
+            : 'text-slate-500 hover:text-slate-700 dark:text-[#a6959f] dark:hover:text-slate-200'
         }`}
       >
         {theme === 'light' && (
           <motion.div
             layoutId="active-theme-pill"
-            className="absolute inset-0 bg-white shadow-sm border border-rose-50 rounded-xl z-[-1]"
+            className="absolute inset-0 bg-white shadow-sm border border-[#FCE4EC] rounded-xl z-[-1]"
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
           />
         )}
@@ -80,13 +80,13 @@ export default function ThemeToggle() {
         className={`flex-1 relative z-10 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider transition-all duration-300 ${
           theme === 'dark'
             ? 'text-white'
-            : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-350'
+            : 'text-slate-500 hover:text-slate-700 dark:text-[#a6959f] dark:hover:text-slate-200'
         }`}
       >
         {theme === 'dark' && (
           <motion.div
             layoutId="active-theme-pill"
-            className="absolute inset-0 bg-gradient-to-br from-purple-950 to-slate-900 shadow-md border border-purple-500/20 rounded-xl z-[-1]"
+            className="absolute inset-0 bg-gradient-to-br from-[#2d1f27] to-[#140d12] shadow-md border border-[#ffb7c5]/20 rounded-xl z-[-1]"
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
           />
         )}
