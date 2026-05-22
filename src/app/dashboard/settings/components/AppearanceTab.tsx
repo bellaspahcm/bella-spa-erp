@@ -29,6 +29,9 @@ export default function AppearanceTab() {
       document.documentElement.classList.remove('dark');
       toast.success('Đã kích hoạt giao diện Soft Luxury cổ điển!');
     }
+
+    // Dispatch global event for state syncing
+    window.dispatchEvent(new Event('theme-change'));
   };
 
   return (

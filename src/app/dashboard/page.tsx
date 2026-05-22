@@ -48,7 +48,9 @@ import { BookingModal } from '@/components/features/BookingModal';
 import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
 import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
 import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
+import OnboardingTour from '@/components/features/dashboard/OnboardingTour';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { 
   getDashboardStats, 
   getUpcomingSessions, 
@@ -91,7 +93,7 @@ export default function DashboardPage() {
   const [inventorySummary, setInventorySummary] = useState({ totalItems: 0, lowStockCount: 0, totalValue: 0 });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -400,7 +402,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <StatsGrid stats={stats} />
+      <StatsGrid stats={stats} isLoading={isLoading} />
 
       {/* Bento Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -435,7 +437,38 @@ export default function DashboardPage() {
           </div>
           
           <div className="max-h-[1150px] overflow-y-auto pr-4 custom-scrollbar space-y-6">
-            {(() => {
+            {isLoading ? (
+              [1, 2, 3].map((i) => (
+                <div 
+                  key={i}
+                  className="bg-white/30 p-6 md:p-7 rounded-[2.5rem] border border-white/40 shadow-sm relative mb-5 flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 backdrop-blur-md animate-pulse"
+                >
+                  <div className="flex flex-1 items-start gap-5 md:gap-7">
+                    <SkeletonLoader variant="circular" width={80} height={80} className="shrink-0" />
+                    <div className="flex-1 space-y-4">
+                      <div className="space-y-2">
+                        <SkeletonLoader variant="text" width={100} height={12} className="rounded" />
+                        <SkeletonLoader variant="text" width="60%" height={24} className="rounded-md" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <SkeletonLoader variant="text" width={40} height={14} className="rounded" />
+                        <SkeletonLoader variant="text" width={120} height={14} />
+                      </div>
+                      <SkeletonLoader variant="rectangular" width={140} height={24} className="rounded-xl" />
+                      <div className="space-y-2 max-w-[320px]">
+                        <SkeletonLoader variant="text" width={80} height={10} />
+                        <SkeletonLoader variant="rectangular" width="100%" height={10} className="rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3 shrink-0 min-w-[200px] space-y-2">
+                    <SkeletonLoader variant="rectangular" width="100%" height={44} className="rounded-2xl" />
+                    <SkeletonLoader variant="rectangular" width="100%" height={48} className="rounded-[1.25rem]" />
+                    <SkeletonLoader variant="rectangular" width="100%" height={56} className="rounded-[1.25rem]" />
+                  </div>
+                </div>
+              ))
+            ) : (() => {
               const filteredSessions = sessions.filter(session => {
                 const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
                 const customerName = booking?.customers?.name_mother || '';
@@ -626,13 +659,13 @@ export default function DashboardPage() {
         </motion.div>
         
         {/* Sidebar Analytics Stack */}
-        <RevenueChart performanceData={performanceData} userRole={userRole} />
+        <RevenueChart performanceData={performanceData} userRole={userRole} isLoading={isLoading} />
       </div>
 
       {/* New Sections: Top KTV & Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 mt-12">
         {/* Top KTV Xuất Sắc */}
-        <KtvPerformanceTable topKTVs={topKTVs} />
+        <KtvPerformanceTable topKTVs={topKTVs} isLoading={isLoading} />
 
         {/* Cảnh báo quan trọng */}
         <motion.div 
@@ -894,6 +927,9 @@ export default function DashboardPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Premium Interactive Onboarding Tour */}
+      <OnboardingTour />
     </div>
   );
 }
