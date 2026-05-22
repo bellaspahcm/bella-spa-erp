@@ -1489,7 +1489,7 @@ export default function HqDashboardClient({
                                         <p className="font-mono text-[9px] text-slate-400 font-bold uppercase">{item.sku}</p>
                                       </div>
                                       <span className="font-black text-primary bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-lg shrink-0">
-                                        SL: {item.quantity} {item.unit || 'cái'}
+                                        SL: {item.qty} {item.unit || 'cái'}
                                       </span>
                                     </div>
                                   ))}
@@ -1524,7 +1524,7 @@ export default function HqDashboardClient({
                                     <p className="font-black text-[10px] text-slate-700 flex items-center gap-1">
                                       <Ban size={10} className="text-slate-400" /> Lý do hủy:
                                     </p>
-                                    <p className="text-[10px] font-bold italic mt-0.5">{rec.refusal_reason || 'Không nêu lý do'}</p>
+                                    <p className="text-[10px] font-bold italic mt-0.5">{rec.rejection_reason || 'Không nêu lý do'}</p>
                                   </div>
                                 ) : (
                                   <span className="text-slate-400 font-bold italic">Chưa giao hàng</span>
@@ -1574,8 +1574,8 @@ export default function HqDashboardClient({
                                 ) : rec.status === 'completed' ? (
                                   <div className="text-right text-[9px] leading-tight text-slate-400">
                                     <p className="font-bold">Đã nhận hàng</p>
-                                    {rec.received_at && (
-                                      <p className="font-mono text-[8px]">{new Date(rec.received_at).toLocaleDateString('vi-VN')}</p>
+                                    {rec.completed_at && (
+                                      <p className="font-mono text-[8px]">{new Date(rec.completed_at).toLocaleDateString('vi-VN')}</p>
                                     )}
                                   </div>
                                 ) : (
@@ -1807,7 +1807,7 @@ export default function HqDashboardClient({
                           <p className="font-mono text-[9px] text-slate-400 font-bold uppercase">{item.sku}</p>
                         </div>
                         <span className="font-black text-primary bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-lg">
-                          SL: {item.quantity} {item.unit || 'cái'}
+                          SL: {item.qty} {item.unit || 'cái'}
                         </span>
                       </div>
                     ))}

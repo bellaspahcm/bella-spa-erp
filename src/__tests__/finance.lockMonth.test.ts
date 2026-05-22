@@ -30,13 +30,30 @@ beforeEach(() => {
   jest.clearAllMocks();
   // Default: successful RPC
   mockRpc.mockResolvedValue({ error: null });
-  // Default: successful from().update() chain
-  mockFrom.mockReturnValue({
+  // Default: successful chainable query builder
+  const mockQueryChain: any = {
+    select: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
+    insert: jest.fn().mockReturnThis(),
+    single: jest.fn().mockReturnThis(),
+    maybeSingle: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     gte: jest.fn().mockReturnThis(),
-    lte: jest.fn().mockResolvedValue({ error: null }),
+    lte: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+  };
+  
+  // Make the promise itself chainable or return chainable methods
+  const mockResolve = { data: null, error: null };
+  const mockPromise: any = Promise.resolve(mockResolve);
+  Object.assign(mockPromise, mockQueryChain);
+  
+  Object.keys(mockQueryChain).forEach(key => {
+    mockQueryChain[key].mockReturnValue(mockPromise);
   });
+  
+  mockFrom.mockReturnValue(mockQueryChain);
 });
 
 describe('lockMonth', () => {

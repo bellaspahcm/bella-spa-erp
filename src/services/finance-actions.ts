@@ -576,7 +576,7 @@ export async function getServicePerformance() {
 export async function lockMonth(month: string) {
   try {
     const { createClient } = await import('@/lib/supabase-server');
-    const supabase = await createClient();
+    const supabase = await createClient() as any;
     
     const { getCurrentUser } = await import('./user-actions');
     const user = await getCurrentUser();
@@ -627,7 +627,7 @@ export async function lockMonth(month: string) {
         if (revError) {
           console.error('[lockMonth] Failed to fetch revenues for royalty calculation:', revError);
         } else {
-          const grossRevenue = (revenues || []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+          const grossRevenue = (revenues || []).reduce((sum: number, r: any) => sum + (Number(r.amount) || 0), 0);
           
           const royaltyType = tenant.royalty_type || 'percentage';
           let calculatedAmount = 0;
