@@ -27,25 +27,61 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     }
 
     // 2. Auth SignUp
-    // Create the Auth User. Note that in local development/production, 
-    // the password will be stored in auth.users securely.
+    // Create the Auth User. If SUPABASE_SERVICE_ROLE_KEY is available, we use the Admin API
+    // with email_confirm: true to completely bypass email sending and avoid "email rate limit exceeded".
     const password = input.adminPassword || 'Password123!';
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: input.adminEmail,
-      password: password,
-      options: {
-        data: {
+    let authUser;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (serviceRoleKey) {
+      console.log('[registerNewTenant] Creating confirmed user via admin client to bypass email rate limits');
+      const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        serviceRoleKey,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+          }
+        }
+      );
+
+      const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.createUser({
+        email: input.adminEmail,
+        password: password,
+        email_confirm: true,
+        user_metadata: {
           full_name: input.adminName,
         }
-      }
-    });
+      });
 
-    if (signUpError) {
-      console.error('[registerNewTenant] Auth signup failed:', signUpError.message);
-      return { success: false, error: signUpError.message };
+      if (adminError) {
+        console.error('[registerNewTenant] Admin auth signup failed:', adminError.message);
+        return { success: false, error: adminError.message };
+      }
+
+      authUser = adminData?.user;
+    } else {
+      console.log('[registerNewTenant] SUPABASE_SERVICE_ROLE_KEY not found. Falling back to standard signUp');
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: input.adminEmail,
+        password: password,
+        options: {
+          data: {
+            full_name: input.adminName,
+          }
+        }
+      });
+
+      if (signUpError) {
+        console.error('[registerNewTenant] Standard auth signup failed:', signUpError.message);
+        return { success: false, error: signUpError.message };
+      }
+
+      authUser = signUpData?.user;
     }
 
-    const authUser = signUpData?.user;
     if (!authUser) {
       return { success: false, error: 'Không thể tạo tài khoản xác thực. Vui lòng thử lại.' };
     }
