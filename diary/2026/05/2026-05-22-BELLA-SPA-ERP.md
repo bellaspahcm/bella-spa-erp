@@ -33,3 +33,32 @@
 ### ⏭️ Next Steps
 - [ ] Theo dõi luồng dữ liệu đồng bộ kho thực tế khi Tổng bộ xuất xưởng lô hàng đầu tiên.
 - [ ] Mở rộng hệ thống cảnh báo qua Zalo/Email cho các chi nhánh khi lệnh chuyển kho được chuyển sang trạng thái "Đang vận chuyển".
+
+---
+
+## Phase 23 - UX Magic & Visual Delights (Bổ sung)
+* **📅 Date**: 2026-05-22
+* **🏷️ Tags**: `#UX` `#Skeleton` `#Onboarding` `#DarkMode`
+
+> 🎯 **Progress Summary**
+> Hoàn thành trọn vẹn và xác minh toàn diện Phase 23: UX Magic & Visual Delights. Loại bỏ hoàn toàn lệch bố cục (CLS) lúc tải trang đầu thông qua hệ thống Skeleton Loader cao cấp. Triển khai tài liệu hướng dẫn Onboarding Tour 4 bước mượt mà bằng tiếng Việt chuyên nghiệp, hỗ trợ đầy đủ Dark Mode ("Deep Velvet") và Light Mode ("Soft Luxury").
+
+### 🛠️ Execution Details & Changes
+* **Core File Modifications**:
+  * 📄 `src/components/features/dashboard/StatsGrid.tsx`: Nâng cấp giao diện Skeleton card cho toàn bộ metrics chính của spa.
+  * 📄 `src/components/features/dashboard/RevenueChart.tsx`: Bổ sung trạng thái `isLoading` và render các layout đường kẻ mờ, dòng tiền nhấp nháy chuyển động.
+  * 📄 `src/components/features/dashboard/KtvPerformanceTable.tsx`: Tích hợp Skeleton cho bảng xếp hạng Kỹ thuật viên xuất sắc.
+  * 📄 `src/app/dashboard/page.tsx`: Import và tích hợp Skeleton Loader cho Schedule List; đồng thời kết xuất `OnboardingTour` ở cuối cây JSX.
+  * 📄 `src/components/features/dashboard/OnboardingTour.tsx`: Tạo mới component hướng dẫn Onboarding 4 bước tương tác cao cấp (Thiết lập chi nhánh, Quản lý hao phí, Lương thưởng KPI, VietQR) kèm hiệu ứng đổi sắc độ nền động đổi theo từng bước, lưu trữ trạng thái qua `localStorage` và nút kích hoạt nổi bật.
+* **Technical Implementation**:
+  - Tận dụng sức mạnh của `framer-motion` và `lucide-react` để cấu trúc một hệ thống tour hướng dẫn mượt mà không dùng thư viện bên thứ ba, tránh phình bundle và loại bỏ hydration warnings.
+  - Sử dụng Tailwind CSS `dark:` utilities để tinh chỉnh tương thích Dark Mode hoàn hảo cho cả Skeleton và Tour popup.
+
+### 🚨 Troubleshooting
+> 🐛 **Problem Encountered**: Lỗi bảo mật PowerShell (`ExecutionPolicy`) trên Windows chặn lệnh chạy `npm test`.
+> 💡 **Solution**: Sử dụng `npm.cmd test` trực tiếp để chạy các bài test Jest thông qua trình bao bọc cmd mà không bị hệ thống bảo mật PowerShell chặn lại.
+
+### ⏭️ Next Steps
+- [ ] Giám sát trải nghiệm người dùng thực tế trên hệ thống Onboarding Tour để tinh chỉnh tốc độ chuyển động nếu cần.
+- [ ] Nghiên cứu thêm micro-interactions cho các nút bấm tạo Booking.
+

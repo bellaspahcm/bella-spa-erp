@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import { Users, Clock, Star, Trophy, Diamond } from 'lucide-react';
 
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+
 interface KtvItem {
   name: string;
   sessions: number;
@@ -13,9 +15,60 @@ interface KtvItem {
 
 interface KtvPerformanceTableProps {
   topKTVs: KtvItem[];
+  isLoading?: boolean;
 }
 
-export function KtvPerformanceTable({ topKTVs }: KtvPerformanceTableProps) {
+export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableProps) {
+  if (isLoading) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white dark:border-white/5 relative overflow-hidden"
+      >
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
+        <div className="flex items-center gap-3 mb-8">
+          <SkeletonLoader variant="rectangular" width={40} height={40} className="rounded-xl" />
+          <SkeletonLoader variant="text" width={220} height={28} className="rounded-md" />
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="text-left border-b border-pink-100">
+                <th className="pb-4"><SkeletonLoader variant="text" width={100} height={14} /></th>
+                <th className="pb-4"><SkeletonLoader variant="text" width={80} height={14} /></th>
+                <th className="pb-4"><SkeletonLoader variant="text" width={70} height={14} /></th>
+                <th className="pb-4 text-center"><SkeletonLoader variant="text" width={80} height={14} className="mx-auto" /></th>
+                <th className="pb-4 text-right"><SkeletonLoader variant="text" width={80} height={14} className="ml-auto" /></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-pink-50">
+              {[1, 2, 3, 4].map((i) => (
+                <tr key={i}>
+                  <td className="py-6"><SkeletonLoader variant="text" width={140} height={16} /></td>
+                  <td className="py-6"><SkeletonLoader variant="text" width={80} height={16} /></td>
+                  <td className="py-6">
+                    <div className="flex items-center gap-1">
+                      <SkeletonLoader variant="text" width={40} height={16} />
+                      <SkeletonLoader variant="circular" width={16} height={16} />
+                    </div>
+                  </td>
+                  <td className="py-6 text-center">
+                    <SkeletonLoader variant="text" width={90} height={24} className="rounded-full mx-auto" />
+                  </td>
+                  <td className="py-6 text-right">
+                    <SkeletonLoader variant="text" width={70} height={16} className="ml-auto" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
+    );
+  }
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}

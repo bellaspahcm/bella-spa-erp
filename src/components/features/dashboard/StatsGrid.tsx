@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import { Users, Calendar, DollarSign, Star, TrendingUp, TrendingDown } from 'lucide-react';
 
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+
 const ICON_MAP = {
   Users,
   Calendar,
@@ -21,6 +23,7 @@ interface StatItem {
 
 interface StatsGridProps {
   stats: StatItem[];
+  isLoading?: boolean;
 }
 
 const container = {
@@ -38,7 +41,28 @@ const item = {
   show: { y: 0, opacity: 1 }
 };
 
-export function StatsGrid({ stats }: StatsGridProps) {
+export function StatsGrid({ stats, isLoading }: StatsGridProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {[1, 2, 3, 4].map((i) => (
+          <div 
+            key={i}
+            className="glass-pink p-8 rounded-[2.5rem] border border-white/50 dark:border-white/5 shadow-lg h-44 flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <SkeletonLoader variant="rectangular" width={56} height={56} className="rounded-2xl" />
+              <SkeletonLoader variant="text" width={56} height={22} className="rounded-full" />
+            </div>
+            <div className="space-y-3">
+              <SkeletonLoader variant="text" width={100} height={12} className="rounded" />
+              <SkeletonLoader variant="text" width={140} height={36} className="rounded-xl" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <motion.div 
       variants={container}

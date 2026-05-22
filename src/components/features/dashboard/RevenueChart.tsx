@@ -15,6 +15,8 @@ import {
   CartesianGrid
 } from 'recharts';
 
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+
 interface PerformanceDataPoint {
   name: string;
   customers: number;
@@ -26,9 +28,76 @@ interface PerformanceDataPoint {
 interface RevenueChartProps {
   performanceData: PerformanceDataPoint[];
   userRole: 'admin' | 'ktv' | null;
+  isLoading?: boolean;
 }
 
-export function RevenueChart({ performanceData, userRole }: RevenueChartProps) {
+export function RevenueChart({ performanceData, userRole, isLoading }: RevenueChartProps) {
+  if (isLoading) {
+    return (
+      <div className="lg:col-span-1 space-y-8">
+        {/* Performance Chart Skeleton */}
+        <div className="luxury-card-pink rounded-[3rem] p-10 h-[450px] relative overflow-hidden shadow-2xl flex flex-col justify-between">
+          <div className="space-y-4">
+            <SkeletonLoader variant="text" width={120} height={16} className="bg-white/20 dark:bg-white/10" />
+            <div className="flex items-center gap-3">
+              <SkeletonLoader variant="text" width={100} height={36} className="bg-white/20 dark:bg-white/10 rounded-xl" />
+              <SkeletonLoader variant="rectangular" width={28} height={28} className="bg-white/20 dark:bg-white/10 rounded-lg" />
+            </div>
+            <div className="h-40 w-full flex items-end gap-3 pt-6">
+              {[40, 60, 45, 80, 50, 95, 70].map((h, i) => (
+                <SkeletonLoader 
+                  key={i} 
+                  variant="rectangular" 
+                  className="flex-1 bg-white/15 dark:bg-white/5 rounded-t-lg" 
+                  style={{ height: `${h}%` }} 
+                />
+              ))}
+            </div>
+          </div>
+          <SkeletonLoader variant="rectangular" width="100%" height={48} className="bg-white/10 dark:bg-white/5 rounded-2xl border border-white/15" />
+        </div>
+
+        {/* Finance Chart Skeleton */}
+        {userRole === 'admin' && (
+          <div className="glass-pink rounded-[3rem] p-8 h-[400px] border border-white/50 dark:border-white/5 shadow-lg flex flex-col justify-between">
+            <div className="flex items-center gap-3 mb-6">
+              <SkeletonLoader variant="rectangular" width={32} height={32} className="rounded-lg" />
+              <SkeletonLoader variant="text" width={100} height={20} />
+            </div>
+            <div className="h-56 w-full flex items-end gap-4 px-4 pb-4">
+              {[60, 45, 75, 55, 90, 80].map((h, i) => (
+                <div key={i} className="flex-1 flex gap-1.5 items-end h-full">
+                  <SkeletonLoader variant="rectangular" className="w-4 rounded-t bg-emerald-300/40 dark:bg-emerald-800/20" style={{ height: `${h}%` }} />
+                  <SkeletonLoader variant="rectangular" className="w-4 rounded-t bg-rose-300/40 dark:bg-rose-800/20" style={{ height: `${h * 0.7}%` }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Rating Chart Skeleton */}
+        <div className="glass-pink rounded-[3rem] p-8 h-[350px] border border-white/50 dark:border-white/5 shadow-lg flex flex-col justify-between">
+          <div className="flex items-center gap-3 mb-6">
+            <SkeletonLoader variant="rectangular" width={32} height={32} className="rounded-lg" />
+            <SkeletonLoader variant="text" width={80} height={20} />
+          </div>
+          <div className="space-y-3">
+            <SkeletonLoader variant="text" width={60} height={36} className="rounded-xl" />
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <SkeletonLoader key={s} variant="circular" width={12} height={12} />
+              ))}
+            </div>
+          </div>
+          <div className="h-28 w-full flex items-end gap-2 pt-4">
+            {[30, 45, 35, 60, 50, 75, 90].map((h, i) => (
+              <SkeletonLoader key={i} variant="rectangular" className="flex-1 rounded-t-lg bg-amber-200/30 dark:bg-amber-950/10" style={{ height: `${h}%` }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="lg:col-span-1 space-y-8">
       {/* Performance Chart */}
