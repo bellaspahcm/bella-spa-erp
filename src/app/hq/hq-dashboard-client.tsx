@@ -540,7 +540,7 @@ export default function HqDashboardClient({
             <span className="bg-primary/20 text-rose-300 border border-primary/30 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest inline-block animate-pulse">
               HỆ THỐNG ĐIỀU HÀNH HOẠT ĐỘNG TOÀN SÀN
             </span>
-            <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-none text-white">
+            <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight leading-none !text-white" style={{ color: '#ffffff' }}>
               Xin chào, {currentUser.full_name || 'Super Admin'}
             </h2>
             <p className="text-slate-300 text-sm leading-relaxed font-medium">
@@ -551,10 +551,10 @@ export default function HqDashboardClient({
 
         {/* Tab Selection Navigation */}
         <div className="flex justify-center">
-          <div className="flex bg-white/95 border border-slate-100 backdrop-blur-md rounded-3xl p-1.5 shadow-sm max-w-3xl w-full relative overflow-x-auto scrollbar-none">
+          <div className="grid grid-cols-2 md:flex bg-white/95 border border-slate-100 backdrop-blur-md rounded-[2rem] md:rounded-3xl p-1.5 shadow-sm max-w-4xl w-full gap-1 md:gap-0">
             <button
               onClick={() => setActiveTab('branches')}
-              className={`flex-1 py-3 px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'branches'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -564,7 +564,7 @@ export default function HqDashboardClient({
             </button>
             <button
               onClick={() => setActiveTab('franchise')}
-              className={`flex-1 py-3 px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'franchise'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -574,7 +574,7 @@ export default function HqDashboardClient({
             </button>
             <button
               onClick={() => setActiveTab('clearing')}
-              className={`flex-1 py-3 px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'clearing'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
@@ -584,7 +584,7 @@ export default function HqDashboardClient({
             </button>
             <button
               onClick={() => setActiveTab('transfers')}
-              className={`flex-1 py-3 px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex-1 py-3 px-2 sm:px-4 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-wider md:tracking-widest transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === 'transfers'
                   ? 'bg-slate-900 text-white shadow-md'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
