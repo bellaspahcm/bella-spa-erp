@@ -146,10 +146,10 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-80 bg-[#FFF6F8] dark:bg-[#0d080c] border-r border-[#FCE4EC] dark:border-white/5 flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.1)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.3)]">
+      <aside className="w-80 bg-gradient-to-b from-[#FFF5F7] to-[#FCE4EC] dark:from-[#25131A] dark:to-[#1A0C11] border-r border-[#FBCFE8]/60 dark:border-[#3D1E2A] flex flex-col h-screen md:h-[111.2vh] sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.4)]">
         {/* Soft decorative glows */}
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-rose-200/20 dark:bg-rose-950/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/10 dark:bg-purple-950/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-pink-300/30 dark:bg-pink-900/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/20 dark:bg-rose-900/10 rounded-full blur-[100px] pointer-events-none" />
 
         {/* ── Logo ── */}
         <div className="px-8 pt-10 pb-6 shrink-0 relative z-10">
@@ -163,8 +163,8 @@ export function Sidebar() {
               />
             </div>
             <div className="text-center">
-              <h2 className="text-[3.2rem] font-handwriting text-[#1C2A3A] dark:text-rose-100 leading-[0.8] mb-2 drop-shadow-sm">Bella Spa</h2>
-              <span className="text-[10px] font-extrabold text-[#8A99AD] dark:text-slate-500 uppercase tracking-[0.25em] block mt-1">Management System</span>
+              <h2 className="text-[3.2rem] font-handwriting text-[#9D174D] dark:text-[#FFB7C5] leading-[0.8] mb-2 drop-shadow-sm">Bella Spa</h2>
+              <span className="text-[10px] font-extrabold text-[#8A6D7C] dark:text-[#A68393] uppercase tracking-[0.25em] block mt-1">Management System</span>
             </div>
           </Link>
         </div>
@@ -182,27 +182,27 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group cursor-pointer border",
                     isActive
-                      ? "bg-white dark:bg-[#1c1218] text-[#9D174D] dark:text-pink-300 shadow-[0_8px_20px_rgba(157,23,77,0.06)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.4)] border-[#FFF0F3] dark:border-[#2d1f27]/30"
-                      : "text-[#7C8B9E] dark:text-[#a6959f] bg-transparent border-transparent hover:bg-white/80 hover:text-[#9D174D] dark:hover:bg-white/5 dark:hover:text-[#ffb7c5] hover:shadow-[0_4px_12px_rgba(157,23,77,0.03)] hover:border-[#FFF0F3]/40"
+                      ? "bg-white dark:bg-[#3D202E] text-[#BE185D] dark:text-[#FFC0CBD9] shadow-[0_8px_20px_rgba(219,39,119,0.08)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.3)] border-[#FFE4E6] dark:border-[#522B3E]"
+                      : "text-[#8A6D7C] dark:text-[#C5A5B5] bg-transparent border-transparent hover:bg-white/70 hover:text-[#BE185D] dark:hover:bg-[#3D202E]/40 dark:hover:text-[#FFC0CBD9] hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50"
                   )}
                 >
                   <item.icon className={cn(
                     "w-[18px] h-[18px] transition-all duration-300",
                     isActive 
-                      ? "text-[#9D174D] dark:text-pink-300 scale-105" 
-                      : "text-[#7C8B9E] dark:text-[#a6959f] group-hover:text-[#9D174D] dark:group-hover:text-[#ffb7c5]"
+                      ? "text-[#BE185D] dark:text-[#FFB7C5] scale-105" 
+                      : "text-[#A07888] dark:text-[#C5A5B5] group-hover:text-[#BE185D] dark:group-hover:text-[#FFB7C5]"
                   )} />
                   <span className={cn(
                     "text-[14px] tracking-tight transition-all duration-300",
                     isActive 
-                      ? "font-extrabold text-[#9D174D] dark:text-pink-300" 
+                      ? "font-extrabold text-[#BE185D] dark:text-[#FFB7C5]" 
                       : "font-semibold"
                   )}>{item.label}</span>
 
                   {isActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute right-5 w-1.5 h-1.5 bg-[#9D174D] dark:bg-pink-300 rounded-full shadow-[0_0_6px_rgba(157,23,77,0.4)]"
+                      className="absolute right-5 w-1.5 h-1.5 bg-[#BE185D] dark:bg-[#FFB7C5] rounded-full shadow-[0_0_6px_rgba(219,39,119,0.4)]"
                     />
                   )}
                 </motion.div>
@@ -219,17 +219,17 @@ export function Sidebar() {
           </div>
 
           {/* Admin card */}
-          <div className="bg-white dark:bg-[#1c1218] p-3 rounded-[1.5rem] shadow-[0_4px_20px_rgba(157,23,77,0.03)] dark:shadow-none border border-[#FFF0F3] dark:border-[#2d1f27] group cursor-pointer transition-all duration-300 hover:border-rose-200 dark:hover:border-[#ff8fa3]/20">
+          <div className="bg-white dark:bg-[#2D1822] p-3 rounded-[1.5rem] shadow-[0_4px_20px_rgba(219,39,119,0.04)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3D1E2A] group cursor-pointer transition-all duration-300 hover:border-rose-300 dark:hover:border-[#522B3E]">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-8 h-8 bg-[#0d080c] dark:bg-purple-950 rounded-full flex items-center justify-center text-white dark:text-rose-100 font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
+                <div className="w-8 h-8 bg-[#FFE4E6] dark:bg-[#522B3E] rounded-full flex items-center justify-center text-[#BE185D] dark:text-[#FFB7C5] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#1c1218] rounded-full" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-extrabold text-[#1C2A3A] dark:text-slate-200 truncate leading-tight">{user?.full_name || 'Admin Bella Spa'}</p>
-                <p className="text-[9px] text-[#E11D48] dark:text-pink-300 font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
+                <p className="text-[13px] font-extrabold text-[#4C243B] dark:text-rose-100 truncate leading-tight">{user?.full_name || 'Admin Bella Spa'}</p>
+                <p className="text-[9px] text-[#BE185D] dark:text-[#FFB7C5] font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
               </div>
             </div>
           </div>
@@ -237,9 +237,9 @@ export function Sidebar() {
           {/* Logout */}
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 text-[#7C8B9E] dark:text-[#a6959f] hover:text-rose-600 dark:hover:text-rose-450 transition-all font-extrabold text-[10px] uppercase tracking-[0.15em] group"
+            className="flex items-center gap-3 w-full px-3 py-2 text-[#8A6D7C] dark:text-[#C5A5B5] hover:text-[#BE185D] dark:hover:text-[#FFB7C5] transition-all font-extrabold text-[10px] uppercase tracking-[0.15em] group"
           >
-            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#FFF0F3] dark:bg-[#1f141b] group-hover:bg-rose-50 dark:group-hover:bg-slate-800 group-hover:text-rose-600 dark:group-hover:text-[#ff9eaa] transition-colors">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#FFE4E6] dark:bg-[#2D1822] group-hover:bg-[#FFF0F3] dark:group-hover:bg-[#3D202E] group-hover:text-[#BE185D] dark:group-hover:text-[#FFB7C5] transition-colors">
               <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
             </div>
             ĐĂNG XUẤT
