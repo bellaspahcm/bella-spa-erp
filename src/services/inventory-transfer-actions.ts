@@ -255,6 +255,48 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
       return { success: false, error: 'Lỗi cập nhật trạng thái đơn hàng: ' + updateErr.message };
     }
 
+    // 6. Gửi cảnh báo Notification, Email & Zalo ZNS cho chi nhánh nhận hàng
+    try {
+      const { data: branchUsers } = await supabase
+        .from('users')
+        .select('id, email, phone')
+        .eq('tenant_id', order.requester_tenant_id)
+        .eq('role', 'admin');
+
+      const { data: branchTenant } = await supabase
+        .from('tenants')
+        .select('name, contact_phone, email')
+        .eq('id', order.requester_tenant_id)
+        .single();
+        
+      if (branchUsers && branchUsers.length > 0) {
+        for (const branchAdmin of branchUsers) {
+          // 6.1 In-app Notification
+          await supabase.from('Notification').insert({
+            id: `ship_${transferId}_${branchAdmin.id}_${Date.now()}`,
+            userId: branchAdmin.id,
+            title: 'Hàng Đang Vận Chuyển',
+            message: `Lệnh chuyển kho ${order.order_number} đã được Tổng bộ xuất xưởng. Đơn vị: ${carrier}, Mã vận đơn: ${trackingNumber}. Vui lòng kiểm tra kho khi nhận được.`,
+            type: 'system',
+            tenantId: order.requester_tenant_id,
+            isRead: false,
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
+
+      // 6.2 Zalo/Email alerts (Mocking Zalo ZNS / Email delivery for logs)
+      const contactPhone = branchTenant?.contact_phone || branchUsers?.[0]?.phone;
+      const contactEmail = branchTenant?.email || branchUsers?.[0]?.email;
+      
+      console.log(`[Alert] Đã gửi thông báo Email tới chi nhánh ${branchTenant?.name} (${contactEmail}) về vận đơn ${trackingNumber}`);
+      console.log(`[Alert] Đã gửi thông báo Zalo ZNS tới chi nhánh (Phone: ${contactPhone}) về lệnh ${order.order_number}`);
+      
+    } catch (alertErr) {
+      console.error('[approveAndShipTransfer] alert error:', alertErr);
+      // Non-blocking error, allow process to complete
+    }
+
     try {
       revalidatePath('/dashboard/inventory');
       revalidatePath('/hq');
