@@ -102,7 +102,7 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
 
       const bookings = await getBookings();
       expect(bookings).toHaveLength(2);
-      bookings.forEach(b => {
+      bookings.forEach((b: any) => {
         expect(b.tenant_id).toBe('tenant-a');
       });
     });
