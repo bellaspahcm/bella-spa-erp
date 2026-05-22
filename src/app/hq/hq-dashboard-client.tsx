@@ -1244,10 +1244,10 @@ export default function HqDashboardClient({
                               {rec.clearing_number}
                             </td>
                             <td className="px-6 py-5 font-bold text-slate-800">
-                              {rec.debtor_tenants?.name || 'Chi nhánh A'}
+                              {rec.debtor?.name || 'Chi nhánh A'}
                             </td>
                             <td className="px-6 py-5 font-bold text-slate-800">
-                              {rec.creditor_tenants?.name || 'Chi nhánh B'}
+                              {rec.creditor?.name || 'Chi nhánh B'}
                             </td>
                             <td className="px-6 py-5 text-center">
                               <span className="inline-flex items-center gap-1 text-[11px] font-black text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
@@ -1259,7 +1259,7 @@ export default function HqDashboardClient({
                               {rec.session_count} ca
                             </td>
                             <td className="px-6 py-5 text-right text-slate-600">
-                              {formatCurrency(rec.internal_clearing_rate)}
+                              {formatCurrency(rec.clearing_rate)}
                             </td>
                             <td className="px-6 py-5 text-right font-black text-emerald-600 text-sm">
                               {formatCurrency(rec.calculated_amount)}
@@ -1457,7 +1457,7 @@ export default function HqDashboardClient({
                       {transferOrders
                         .filter(rec => {
                           const matchStatus = transferFilterStatus === 'all' || rec.status === transferFilterStatus;
-                          const matchBranch = transferFilterBranch === 'all' || rec.tenant_id === transferFilterBranch;
+                          const matchBranch = transferFilterBranch === 'all' || rec.requester_tenant_id === transferFilterBranch;
                           return matchStatus && matchBranch;
                         })
                         .map((rec) => {
@@ -1476,7 +1476,7 @@ export default function HqDashboardClient({
 
                               {/* Branch Name */}
                               <td className="px-6 py-5 font-black text-slate-800">
-                                {rec.tenants?.name || 'Chi nhánh'}
+                                {rec.requester?.name || 'Chi nhánh'}
                               </td>
 
                               {/* Items Requested */}

@@ -115,5 +115,6 @@ export interface HqTenantRecord {
   royalty_type?: 'fixed' | 'percentage' | null;
   royalty_rate?: number | null;
   royalty_fixed_amount?: number | null;
+  internal_clearing_rate?: number | null;
 }
 
