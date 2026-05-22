@@ -112,5 +112,8 @@ export interface HqTenantRecord {
   staffCount: number;
   customerCount: number;
   revenueSum: number;
+  royalty_type?: 'fixed' | 'percentage' | null;
+  royalty_rate?: number | null;
+  royalty_fixed_amount?: number | null;
 }
 

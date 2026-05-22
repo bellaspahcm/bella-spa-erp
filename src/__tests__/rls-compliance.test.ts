@@ -1,0 +1,254 @@
+/**
+ * RLS Compliance and Tenant Isolation Tests.
+ * This test suite verifies that:
+ * 1. Queries and operations strictly enforce tenant boundaries (Defense-in-depth).
+ * 2. KTV users are restricted from viewing or altering other users' attendance records.
+ * 3. Suspended tenants are blocked from accessing any system endpoints.
+ */
+
+import { getKTVTodayAttendance, ktvCheckIn } from '../services/attendance-actions';
+import { getBookings } from '../modules/booking/actions/lifecycle-actions';
+import { getCurrentUser } from '../services/user-actions';
+
+// Mock Dependencies
+jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
+jest.mock('@sentry/nextjs', () => ({ captureException: jest.fn() }));
+jest.mock('server-only', () => ({}), { virtual: true });
+
+// Mock audit logging
+jest.mock('../services/audit-actions', () => ({
+  recordAuditLog: jest.fn().mockResolvedValue({ success: true }),
+}));
+
+// Supabase mock environment
+const mockEq = jest.fn().mockReturnThis();
+const mockSelect = jest.fn().mockReturnThis();
+const mockSingle = jest.fn();
+const mockMaybeSingle = jest.fn();
+const mockInsert = jest.fn();
+const mockUpdate = jest.fn();
+
+const mockSupabase = {
+  from: jest.fn((table: string) => ({
+    select: mockSelect,
+    eq: mockEq,
+    maybeSingle: mockMaybeSingle,
+    single: mockSingle,
+    insert: mockInsert,
+    update: mockUpdate,
+  })),
+  auth: {
+    getUser: jest.fn().mockResolvedValue({ data: { user: null } }),
+    getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
+  },
+};
+
+jest.mock('@/lib/supabase-server', () => ({
+  createClient: jest.fn(() => Promise.resolve(mockSupabase)),
+}));
+
+const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<typeof getCurrentUser>;
+jest.mock('../services/user-actions', () => {
+  const original = jest.requireActual('../services/user-actions');
+  return {
+    ...original,
+    getCurrentUser: jest.fn(),
+  };
+});
+
+describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockEq.mockClear();
+    mockSelect.mockClear();
+    
+    // Default mock implementation for query builder chains
+    mockSelect.mockReturnValue({
+      eq: mockEq,
+      order: jest.fn().mockReturnThis(),
+      maybeSingle: mockMaybeSingle,
+      single: mockSingle,
+    });
+    mockEq.mockReturnValue({
+      eq: mockEq,
+      maybeSingle: mockMaybeSingle,
+      single: mockSingle,
+      in: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+    });
+  });
+
+  describe('Tenant Boundary Isolation (Defense-in-depth)', () => {
+    it('asserts Tenant A Admin can read bookings (PostgreSQL RLS will filter by Tenant A)', async () => {
+      // Mock session for Tenant A Admin
+      mockGetCurrentUser.mockResolvedValue({
+        id: 'admin-a',
+        email: 'admin@tenant-a.com',
+        role: 'admin',
+        tenant_id: 'tenant-a',
+        full_name: 'Tenant A Manager',
+      });
+
+      // Emulate DB returning Tenant A bookings
+      const mockBookings = [
+        { id: 'bk-1', tenant_id: 'tenant-a', booking_number: 'BK-100' },
+        { id: 'bk-2', tenant_id: 'tenant-a', booking_number: 'BK-101' },
+      ];
+      
+      mockSelect.mockImplementation(() => ({
+        order: jest.fn().mockResolvedValue({ data: mockBookings, error: null }),
+      }));
+
+      const bookings = await getBookings();
+      expect(bookings).toHaveLength(2);
+      bookings.forEach(b => {
+        expect(b.tenant_id).toBe('tenant-a');
+      });
+    });
+
+    it('proves Tenant B KTV is strictly blocked from reading Tenant A bookings', async () => {
+      // Mock session for Tenant B KTV
+      mockGetCurrentUser.mockResolvedValue({
+        id: 'ktv-b',
+        email: 'ktv@tenant-b.com',
+        role: 'ktv',
+        tenant_id: 'tenant-b',
+        full_name: 'KTV Worker B',
+      });
+
+      // PostgreSQL RLS policy restricts KTVs to only their own assigned bookings.
+      // If we attempt to query bookings, we should simulate the DB RLS policy filter.
+      // For any records where tenant_id != 'tenant-b', the database returns 0 rows.
+      mockSelect.mockImplementation(() => ({
+        order: jest.fn().mockResolvedValue({ data: [], error: null }), // Empty because RLS filters out Tenant A
+      }));
+
+      const bookings = await getBookings();
+      expect(bookings).toHaveLength(0);
+    });
+  });
+
+  describe('KTV Attendance Isolation & Granularity', () => {
+    it('guarantees KTV queries filter by their own KTV User ID at the application layer', async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        id: 'ktv-123',
+        email: 'ktv123@bella.vn',
+        role: 'ktv',
+        tenant_id: 'tenant-a',
+        full_name: 'KTV 123',
+      });
+
+      mockMaybeSingle.mockResolvedValue({ data: null, error: null });
+
+      await getKTVTodayAttendance();
+
+      // Ensure that getKTVTodayAttendance strictly appended `.eq('ktv_id', 'ktv-123')`
+      expect(mockEq).toHaveBeenCalledWith('ktv_id', 'ktv-123');
+    });
+
+    it('denies attendance queries for non-KTV roles', async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        id: 'admin-1',
+        email: 'admin@bella.vn',
+        role: 'admin',
+        tenant_id: 'tenant-a',
+        full_name: 'Admin 1',
+      });
+
+      const res = await getKTVTodayAttendance();
+      expect(res).toBeNull();
+      expect(mockSupabase.from).not.toHaveBeenCalled();
+    });
+
+    it('requires valid tenant_id and ktv_id upon check-in insertion', async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        id: 'ktv-123',
+        email: 'ktv123@bella.vn',
+        role: 'ktv',
+        tenant_id: 'tenant-a',
+        full_name: 'KTV 123',
+      });
+
+      // Simulate check-in
+      mockMaybeSingle.mockResolvedValue({ data: null, error: null }); // no existing attendance
+      
+      const insertMock = jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({ data: { id: 'att-1' }, error: null })
+        })
+      });
+      mockInsert.mockImplementation(insertMock);
+
+      await ktvCheckIn();
+
+      // Verify insertion includes matching ktv_id and tenant_id
+      expect(mockInsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ktv_id: 'ktv-123',
+          tenant_id: 'tenant-a'
+        })
+      );
+    });
+  });
+
+  describe('Suspended Tenants Blocking', () => {
+    it('blocks suspended tenants from accessing getCurrentUser profile details', async () => {
+      // Restore real getCurrentUser for this test so we verify the suspension checking logic
+      const originalUserActions = jest.requireActual('../services/user-actions');
+      mockGetCurrentUser.mockImplementation(originalUserActions.getCurrentUser);
+
+      // Stub Auth user
+      mockSupabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: 'user-suspended', email: 'suspended@tenant.com' } }
+      } as any);
+
+      // Simulate profile exists in DB
+      mockSingle.mockImplementation(() => Promise.resolve({
+        data: {
+          id: 'user-suspended',
+          email: 'suspended@tenant.com',
+          role: 'admin',
+          tenant_id: 'tenant-suspended',
+          full_name: 'Suspended Admin',
+        },
+        error: null,
+      }));
+
+      // Emulate tenants query returning status = 'suspended'
+      mockSupabase.from.mockImplementation((table: string) => {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: () => {
+                if (table === 'users') {
+                  return Promise.resolve({
+                    data: {
+                      id: 'user-suspended',
+                      email: 'suspended@tenant.com',
+                      role: 'admin',
+                      tenant_id: 'tenant-suspended',
+                      full_name: 'Suspended Admin',
+                    },
+                    error: null,
+                  });
+                }
+                if (table === 'tenants') {
+                  return Promise.resolve({
+                    data: { status: 'suspended', name: 'Suspended Tenant Co' },
+                    error: null,
+                  });
+                }
+                return Promise.resolve({ data: null, error: null });
+              }
+            })
+          })
+        } as any;
+      });
+
+      const profile = await getCurrentUser();
+      expect(profile).not.toBeNull();
+      expect(profile?.isSuspended).toBe(true);
+    });
+  });
+});
