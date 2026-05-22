@@ -329,6 +329,8 @@ _(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-23)_
 
 ### 🚧 Việc cần làm
 - [x] Tạo nút Sign Up (Đăng ký Chi Nhánh mới) trên trang HQ Bella liên kết tới trang kích hoạt hệ thống `/signup`.
+- [x] Sửa lỗi crash của hàm RPC `create_onboarding_user` do ghi đè cột sinh tự động (`confirmed_at`, `email`).
 - [ ] Theo dõi phản hồi từ người dùng về trải nghiệm thị giác tổng thể của hệ màu hồng pastel mới trên sidebar.
 - [ ] Bảo trì định kỳ và đồng bộ các yếu tố UX tương tác khác như nút bấm tạo lịch đặt, hiệu ứng chuyển trang để có cùng tông pastel sang trọng.
+
 
