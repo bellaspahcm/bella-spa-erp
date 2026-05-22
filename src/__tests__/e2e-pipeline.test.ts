@@ -149,7 +149,7 @@ class MockQueryBuilder {
 
     // Enrichments first so filters can operate on joined fields (e.g. bookings.tenant_id)
     if (this.table === 'bookings') {
-      list = list.map((item) => ({
+      list = list.map((item: any) => ({
         ...item,
         customers: mockStore.users.find((u) => u.id === item.customer_id) || {
           name_mother: 'Mẹ Nguyễn Vy',
@@ -161,7 +161,7 @@ class MockQueryBuilder {
     }
 
     if (this.table === 'session_logs') {
-      list = list.map((item) => ({
+      list = list.map((item: any) => ({
         ...item,
         bookings: mockStore.bookings.find((b) => b.id === item.booking_id) || null,
         session_reviews: mockStore.session_reviews.filter((sr) => sr.session_log_id === item.id),
@@ -169,7 +169,7 @@ class MockQueryBuilder {
     }
 
     if (this.table === 'revenue') {
-      list = list.map((item) => {
+      list = list.map((item: any) => {
         const bk = mockStore.bookings.find((b) => b.id === item.booking_id);
         return {
           ...item,
