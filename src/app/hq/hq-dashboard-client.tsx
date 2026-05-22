@@ -1077,6 +1077,7 @@ export default function HqDashboardClient({
                     </tbody>
                   </table>
                 </div>
+              )}
             </section>
           </div>
         ) : activeTab === 'clearing' ? (
