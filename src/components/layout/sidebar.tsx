@@ -146,7 +146,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-80 bg-[#FFF9FB] dark:bg-[#140d12] border-r border-rose-100 dark:border-purple-950/30 flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.3)]">
+      <aside className="w-80 bg-background border-r border-rose-100 dark:border-purple-950/30 flex flex-col h-screen sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(255,192,203,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.3)]">
         {/* Soft decorative glows */}
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-rose-200/20 dark:bg-rose-950/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/10 dark:bg-purple-950/10 rounded-full blur-[100px] pointer-events-none" />
@@ -186,7 +186,7 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group",
                     isActive
-                      ? "bg-white dark:bg-[#0d080c] text-primary dark:text-primary shadow-[0_8px_20px_-6px_rgba(157,23,77,0.08)] dark:shadow-none border border-rose-100 dark:border-white/5"
+                      ? "bg-white dark:bg-[#140d12] text-primary dark:text-primary shadow-[0_8px_20px_-6px_rgba(157,23,77,0.08)] dark:shadow-none border border-rose-100 dark:border-white/5"
                       : "text-slate-500 dark:text-slate-400 hover:bg-rose-50/50 hover:text-slate-800 dark:hover:bg-slate-900/40 dark:hover:text-slate-200"
                   )}
                 >
