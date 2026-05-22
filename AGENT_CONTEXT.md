@@ -1,6 +1,6 @@
 # Ngữ cảnh dự án (Agent Context): BELLA SPA ERP
 
-> **Thời gian cập nhật gần nhất**: 2026-05-23 04:51
+> **Thời gian cập nhật gần nhất**: 2026-05-23 05:12
 > **Tự động tạo**: Được tạo bởi `prepare_context.py` nhằm giúp AI Agent nhanh chóng nắm bắt bức tranh toàn cảnh dự án
 
 ---
@@ -328,6 +328,7 @@ BELLA SPA ERP/
 _(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-23)_
 
 ### 🚧 Việc cần làm
+- [x] Tạo nút Sign Up (Đăng ký Chi Nhánh mới) trên trang HQ Bella liên kết tới trang kích hoạt hệ thống `/signup`.
 - [ ] Theo dõi phản hồi từ người dùng về trải nghiệm thị giác tổng thể của hệ màu hồng pastel mới trên sidebar.
 - [ ] Bảo trì định kỳ và đồng bộ các yếu tố UX tương tác khác như nút bấm tạo lịch đặt, hiệu ứng chuyển trang để có cùng tông pastel sang trọng.
 
