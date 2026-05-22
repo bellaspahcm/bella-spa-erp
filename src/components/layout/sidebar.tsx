@@ -163,7 +163,7 @@ export function Sidebar() {
               />
             </div>
             <div className="text-center">
-              <h2 className="text-[3.2rem] font-handwriting text-[#9D174D] dark:text-[#FFB7C5] leading-[0.8] mb-2 drop-shadow-sm">Bella Spa</h2>
+              <h2 className="text-[3.2rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm" style={{ color: 'var(--primary)' }}>Bella Spa</h2>
               <span className="text-[10px] font-extrabold text-[#8A6D7C] dark:text-[#A68393] uppercase tracking-[0.25em] block mt-1">Management System</span>
             </div>
           </Link>
