@@ -116,5 +116,10 @@ export interface HqTenantRecord {
   royalty_rate?: number | null;
   royalty_fixed_amount?: number | null;
   internal_clearing_rate?: number | null;
+  subscription_tier?: string | null;
+  subscription_expires_at?: string | null;
+  parent_tenant_id?: string | null;
+  franchise_agreement_date?: string | null;
 }
+
 
