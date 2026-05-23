@@ -43,28 +43,28 @@
 }
 
 .dark {
-  --primary: #ffb7c5;
-  --primary-hover: #ff9eaa;
-  --primary-foreground: #0d080c;
+  --primary: #5D1C34; /* Deep Velvet Burgundy */
+  --primary-hover: #4D1328;
+  --primary-foreground: #EFE9E1; /* Off-white/Cream */
   
-  --secondary: #2d1f27;
-  --secondary-foreground: #f5f0f3;
+  --secondary: #292623;
+  --secondary-foreground: #EFE9E1;
   
-  --accent: #ff8fa3;
-  --accent-foreground: #ffffff;
+  --accent: #A67D44; /* Bronze/Gold */
+  --accent-foreground: #11100F;
   
-  --background: #0d080c;
-  --foreground: #f5f0f3;
+  --background: #11100F; /* Pitch black/charcoal */
+  --foreground: #EFE9E1; /* Off-white/Cream text */
   
-  --card: #140d12;
-  --card-foreground: #f5f0f3;
+  --card: #1C1B19;
+  --card-foreground: #EFE9E1;
   
-  --muted: #1f141b;
-  --muted-foreground: #a6959f;
+  --muted: #292623;
+  --muted-foreground: #CDBCAB; /* Warm beige */
   
-  --border: #2d1f27;
-  --input: #2d1f27;
-  --ring: #ffb7c5;
+  --border: #3E3A35;
+  --input: #3E3A35;
+  --ring: #A67D44;
 }
 
 @theme inline {
@@ -234,43 +234,43 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 /* Dark Mode Overrides */
 .dark body {
   background-image: 
-    radial-gradient(circle at 0% 0%, rgba(255, 183, 197, 0.015) 0%, transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(255, 143, 163, 0.015) 0%, transparent 40%);
+    radial-gradient(circle at 0% 0%, rgba(166, 125, 68, 0.02) 0%, transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(93, 28, 52, 0.02) 0%, transparent 40%);
 }
 
 .dark .glass {
-  background: rgba(20, 13, 18, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(28, 27, 25, 0.7);
+  border: 1px solid rgba(205, 188, 171, 0.08);
 }
 
 .dark .glass-pink {
-  background: rgba(20, 13, 18, 0.55);
-  border: 1px solid rgba(255, 183, 197, 0.06);
+  background: rgba(28, 27, 25, 0.55);
+  border: 1px solid rgba(93, 28, 52, 0.15);
 }
 
 .dark .luxury-card-white {
-  background: #140d12;
-  border: 1px solid #1f141b;
+  background: #1C1B19;
+  border: 1px solid #2E2B27;
 }
 
 .dark .luxury-card-white:hover {
-  box-shadow: 0 20px 30px -10px rgba(255, 183, 197, 0.03);
-  border-color: rgba(255, 183, 197, 0.1);
+  box-shadow: 0 20px 30px -10px rgba(166, 125, 68, 0.05);
+  border-color: rgba(166, 125, 68, 0.2);
 }
 
 .dark .luxury-box-hover:hover {
-  box-shadow: 0 20px 30px -10px rgba(255, 183, 197, 0.03);
-  border-color: rgba(255, 183, 197, 0.1);
+  box-shadow: 0 20px 30px -10px rgba(166, 125, 68, 0.05);
+  border-color: rgba(166, 125, 68, 0.2);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 183, 197, 0.01);
+  background: rgba(205, 188, 171, 0.01);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 183, 197, 0.1);
+  background: rgba(205, 188, 171, 0.1);
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 183, 197, 0.2);
+  background: rgba(166, 125, 68, 0.2);
 }
