@@ -257,78 +257,7 @@ const EXCLUDED_KEYS = [
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatReadableValue(key: string, val: any) {
-  if (val === null || val === undefined) return 'Trống';
-  if (typeof val === 'boolean') return val ? 'Có' : 'Không';
-  if (key === 'amount' || key.includes('salary') || key.includes('price') || key === 'deposit_amount' || key === 'full_price' || key === 'ktv_commission' || key === 'price_per_unit') {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(val));
-  }
-  if (typeof val === 'string' && VALUE_TRANSLATIONS[val]) {
-    return VALUE_TRANSLATIONS[val];
-  }
-  if (typeof val === 'object') return JSON.stringify(val);
-  return String(val);
-}
-
-const renderReadableChanges = (log: AuditLog) => {
-  if (log.action === 'INSERT' && log.new_data) {
-    const fields = Object.entries(log.new_data)
-      .filter(([k, v]) => !EXCLUDED_KEYS.includes(k) && v !== null && v !== '');
-    return (
-      <span>
-        Đã thêm mới bản ghi với các thông tin:{' '}
-        {fields.map(([k, v], i) => (
-          <span key={k}>
-            <strong className="font-semibold">{FIELD_TRANSLATIONS[k] || k}</strong>: {formatReadableValue(k, v)}
-            {i < fields.length - 1 ? ', ' : '.'}
-          </span>
-        ))}
-      </span>
-    );
-  }
-  
-  if (log.action === 'DELETE' && log.old_data) {
-     const fields = Object.entries(log.old_data)
-      .filter(([k, v]) => !EXCLUDED_KEYS.includes(k) && v !== null && v !== '');
-    return (
-      <span>
-        Đã xóa bản ghi. Dữ liệu trước khi xóa:{' '}
-        {fields.map(([k, v], i) => (
-          <span key={k}>
-            <strong className="font-semibold">{FIELD_TRANSLATIONS[k] || k}</strong>: {formatReadableValue(k, v)}
-            {i < fields.length - 1 ? ', ' : '.'}
-          </span>
-        ))}
-      </span>
-    );
-  }
-
-  if (log.action === 'UPDATE' && log.old_data && log.new_data) {
-    const changes = [];
-    for (const key in log.new_data) {
-      if (EXCLUDED_KEYS.includes(key)) continue;
-      const oldVal = log.old_data[key];
-      const newVal = log.new_data[key];
-      if (oldVal !== newVal) {
-        changes.push({ key, oldVal, newVal });
-      }
-    }
-    if (changes.length === 0) return <span>Không có thông tin thay đổi cụ thể.</span>;
-    return (
-      <span>
-        Đã cập nhật:{' '}
-        {changes.map((c, i) => (
-          <span key={c.key}>
-            <strong className="font-semibold">{FIELD_TRANSLATIONS[c.key] || c.key}</strong>: từ <span className="line-through opacity-70">&quot;{formatReadableValue(c.key, c.oldVal)}&quot;</span> thành <span className="text-rose-600 font-medium">&quot;{formatReadableValue(c.key, c.newVal)}&quot;</span>
-            {i < changes.length - 1 ? '; ' : '.'}
-          </span>
-        ))}
-      </span>
-    );
-  }
-  
-  return <span>Không có thông tin chi tiết.</span>;
-};
+let formatReadableValueOuter = (key: string, val: any) => String(val);
 
 export default function AuditPage() {
   const supabase = createClient();
@@ -340,9 +269,240 @@ export default function AuditPage() {
   const [filterAction, setFilterAction] = useState('all');
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
+  // Reference maps to translate IDs
+  const [usersMap, setUsersMap] = useState<Record<string, string>>({});
+  const [packagesMap, setPackagesMap] = useState<Record<string, string>>({});
+  const [customersMap, setCustomersMap] = useState<Record<string, string>>({});
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const formatReadableValue = (key: string, val: any) => {
+    if (val === null || val === undefined || val === '') return 'Trống';
+    if (typeof val === 'boolean') return val ? 'Có' : 'Không';
+    
+    // Format currency
+    if (
+      key === 'amount' || 
+      key.includes('salary') || 
+      key.includes('price') || 
+      key === 'deposit_amount' || 
+      key === 'full_price' || 
+      key === 'ktv_commission' || 
+      key === 'price_per_unit'
+    ) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(val));
+    }
+    
+    // Format reference IDs
+    if (key === 'assigned_ktv_id' || key === 'completed_by_ktv_id' || key === 'ktv_id' || key === 'user_id' || key === 'recorded_by_id' || key === 'approved_by_id' || key === 'submitted_by_id' || key === 'finalized_by_id') {
+      return usersMap[val] || `Nhân viên (${String(val).slice(0, 8)})`;
+    }
+    if (key === 'package_id') {
+      return packagesMap[val] || `Gói dịch vụ (${String(val).slice(0, 8)})`;
+    }
+    if (key === 'customer_id' || key === 'referrer_id') {
+      return customersMap[val] || `Khách hàng (${String(val).slice(0, 8)})`;
+    }
+    
+    // Format standard values translations
+    if (typeof val === 'string' && VALUE_TRANSLATIONS[val]) {
+      return VALUE_TRANSLATIONS[val];
+    }
+    
+    // Format objects
+    if (typeof val === 'object') return JSON.stringify(val);
+    
+    return String(val);
+  };
+
+  const renderReadableChanges = (log: AuditLog) => {
+    if (log.action === 'INSERT' && log.new_data) {
+      // Custom presentation for core tables
+      if (log.table_name === 'revenue') {
+        const amount = formatReadableValue('amount', log.new_data.amount);
+        const method = formatReadableValue('payment_method', log.new_data.payment_method);
+        const type = formatReadableValue('revenue_type', log.new_data.revenue_type);
+        const notes = log.new_data.notes ? ` (${log.new_data.notes})` : '';
+        return (
+          <span>
+            Đã ghi nhận doanh thu <strong className="text-emerald-600 font-semibold">{amount}</strong> (Loại: <span className="font-medium text-slate-700">{type}</span>, Hình thức: <span className="font-medium text-slate-700">{method}</span>){notes}.
+          </span>
+        );
+      }
+      
+      if (log.table_name === 'bookings') {
+        const pkg = formatReadableValue('package_id', log.new_data.package_id);
+        const fullPrice = formatReadableValue('full_price', log.new_data.full_price);
+        const deposit = formatReadableValue('deposit_amount', log.new_data.deposit_amount);
+        return (
+          <span>
+            Đã tạo lịch hẹn mới cho gói <strong className="text-slate-800 font-semibold">{pkg}</strong> (Giá trị: <span className="font-semibold text-slate-700">{fullPrice}</span>, Đã cọc: <span className="font-semibold text-emerald-600">{deposit}</span>).
+          </span>
+        );
+      }
+      
+      if (log.table_name === 'session_logs') {
+        const num = log.new_data.session_number;
+        const date = log.new_data.assigned_date;
+        const time = log.new_data.assigned_time;
+        const ktv = log.new_data.completed_by_ktv_id ? ` cho KTV ${formatReadableValue('completed_by_ktv_id', log.new_data.completed_by_ktv_id)}` : '';
+        return (
+          <span>
+            Đã xếp ca <strong className="text-rose-600 font-semibold">Buổi {num}</strong> vào ngày <span className="font-medium text-slate-700">{date}</span> lúc <span className="font-medium text-slate-700">{time}</span>{ktv}.
+          </span>
+        );
+      }
+
+      if (log.table_name === 'customers') {
+        const mother = log.new_data.name_mother || 'Trống';
+        const baby = log.new_data.name_baby ? ` (Bé: ${log.new_data.name_baby})` : '';
+        const phone = log.new_data.phone ? ` - SĐT: ${log.new_data.phone}` : '';
+        return (
+          <span>
+            Đã đăng ký khách hàng mới: Mẹ <strong className="text-slate-800 font-semibold">{mother}</strong>{baby}{phone}.
+          </span>
+        );
+      }
+
+      if (log.table_name === 'users') {
+        const name = log.new_data.full_name;
+        const role = formatReadableValue('role', log.new_data.role);
+        return (
+          <span>
+            Đã thêm mới nhân sự: <strong className="text-slate-800 font-semibold">{name}</strong> (Chức vụ: <span className="font-medium text-slate-700">{role}</span>).
+          </span>
+        );
+      }
+
+      if (log.table_name === 'expenses') {
+        const amount = formatReadableValue('amount', log.new_data.amount);
+        const cat = formatReadableValue('category', log.new_data.category);
+        const notes = log.new_data.notes ? ` (${log.new_data.notes})` : '';
+        return (
+          <span>
+            Đã ghi nhận chi phí <strong className="text-rose-600 font-semibold">{amount}</strong> cho mục <span className="font-medium text-slate-700">{cat}</span>{notes}.
+          </span>
+        );
+      }
+
+      if (log.table_name === 'tenants') {
+        const name = log.new_data.name;
+        const addr = log.new_data.address ? ` tại ${log.new_data.address}` : '';
+        return (
+          <span>
+            Đã khởi tạo đối tác chi nhánh mới: <strong className="text-slate-800 font-semibold">{name}</strong>{addr}.
+          </span>
+        );
+      }
+
+      // Generic fallback for insert
+      const fields = Object.entries(log.new_data)
+        .filter(([k, v]) => !EXCLUDED_KEYS.includes(k) && v !== null && v !== '');
+      return (
+        <span>
+          Đã thêm mới bản ghi:
+          <span className="inline-flex flex-wrap gap-x-2 gap-y-1 mt-1 text-xs">
+            {fields.map(([k, v]) => (
+              <span key={k} className="bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
+                <span className="text-slate-500">{FIELD_TRANSLATIONS[k] || k}:</span>{' '}
+                <strong className="text-slate-700 font-medium">{formatReadableValue(k, v)}</strong>
+              </span>
+            ))}
+          </span>
+        </span>
+      );
+    }
+    
+    if (log.action === 'DELETE' && log.old_data) {
+      const fields = Object.entries(log.old_data)
+        .filter(([k, v]) => !EXCLUDED_KEYS.includes(k) && v !== null && v !== '');
+      return (
+        <span>
+          Đã xóa bản ghi. Dữ liệu cũ:
+          <span className="inline-flex flex-wrap gap-x-2 gap-y-1 mt-1 text-xs">
+            {fields.map(([k, v]) => (
+              <span key={k} className="bg-slate-50 border border-slate-100 rounded px-1.5 py-0.5">
+                <span className="text-slate-500">{FIELD_TRANSLATIONS[k] || k}:</span>{' '}
+                <span className="text-slate-700 line-through">{formatReadableValue(k, v)}</span>
+              </span>
+            ))}
+          </span>
+        </span>
+      );
+    }
+
+    if (log.action === 'UPDATE' && log.old_data && log.new_data) {
+      const changes = [];
+      for (const key in log.new_data) {
+        if (EXCLUDED_KEYS.includes(key)) continue;
+        const oldVal = log.old_data[key];
+        const newVal = log.new_data[key];
+        if (oldVal !== newVal) {
+          changes.push({ key, oldVal, newVal });
+        }
+      }
+      if (changes.length === 0) return <span className="text-slate-400">Không có thay đổi cụ thể.</span>;
+      
+      // For a single change, render inline for elegance
+      if (changes.length === 1) {
+        const c = changes[0];
+        return (
+          <span>
+            Thay đổi <span className="font-medium text-slate-700">{FIELD_TRANSLATIONS[c.key] || c.key}</span>:{' '}
+            <span className="line-through text-slate-400 bg-slate-50 px-1 rounded">{formatReadableValue(c.key, c.oldVal)}</span>
+            <span className="mx-1.5 text-rose-500">➔</span>
+            <strong className="text-rose-600 font-semibold bg-rose-50 px-1 rounded">{formatReadableValue(c.key, c.newVal)}</strong>
+          </span>
+        );
+      }
+
+      // For multiple changes, render a clean list or stacked format
+      return (
+        <span className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">Đã cập nhật {changes.length} thông tin:</span>
+          <span className="flex flex-col gap-1.5 mt-1.5 pl-3 border-l border-rose-100 text-xs">
+            {changes.map((c) => (
+              <span key={c.key} className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-slate-500 min-w-[120px]">{FIELD_TRANSLATIONS[c.key] || c.key}:</span>
+                <span className="line-through text-slate-400 bg-slate-50 px-1 rounded">{formatReadableValue(c.key, c.oldVal)}</span>
+                <span className="text-rose-500">➔</span>
+                <strong className="text-rose-600 font-semibold bg-rose-50 px-1 rounded">{formatReadableValue(c.key, c.newVal)}</strong>
+              </span>
+            ))}
+          </span>
+        </span>
+      );
+    }
+    
+    return <span>Không có thông tin chi tiết.</span>;
+  };
+
+  const fetchReferenceMaps = async () => {
+    try {
+      const { data: users } = await supabase.from('users').select('id, full_name');
+      const { data: packages } = await supabase.from('packages').select('id, name');
+      const { data: customers } = await supabase.from('customers').select('id, name_mother, name_baby');
+      
+      const uMap: Record<string, string> = {};
+      users?.forEach(u => { uMap[u.id] = u.full_name; });
+      setUsersMap(uMap);
+      
+      const pMap: Record<string, string> = {};
+      packages?.forEach(p => { pMap[p.id] = p.name; });
+      setPackagesMap(pMap);
+      
+      const cMap: Record<string, string> = {};
+      customers?.forEach(c => {
+        cMap[c.id] = c.name_mother ? `Mẹ ${c.name_mother}${c.name_baby ? ` (Bé ${c.name_baby})` : ''}` : c.name_baby || 'Khách hàng';
+      });
+      setCustomersMap(cMap);
+    } catch (err) {
+      console.error('Error fetching reference maps:', err);
+    }
+  };
 
   const fetchLogs = async () => {
     setIsRefreshing(true);
@@ -410,6 +570,7 @@ export default function AuditPage() {
   };
 
   useEffect(() => {
+    fetchReferenceMaps();
     const timer = setTimeout(() => {
       fetchLogs();
     }, 0);
