@@ -147,8 +147,9 @@ export function Sidebar() {
   return (
     <>
       {/* 
-        Redesigned Premium Pastel Pink (Light) & REGAL Velvet Gold (Dark) Sidebar.
-        Provides a luxurious light mode aesthetic and a stunning dark gold & burgundy dark mode theme.
+        Premium Sidebar
+        - Light Mode: Restored perfectly to original soft branding colors (e.g. #9D174D active, #7C8B9E inactive).
+        - Dark Mode: Uses the gorgeous REGAL Velvet Gold dark palette (#11100F background, #5D1C34 active, #A67D44 gold highlights).
       */}
       <aside className="w-80 bg-gradient-to-b from-[#FFF5F7] to-[#FCE4EC] dark:from-[#1C1B19] dark:to-[#11100F] border-r border-[#FBCFE8]/60 dark:border-[#3E3A35] flex flex-col h-screen md:h-[111.2vh] sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)]">
         {/* Soft decorative light glows */}
@@ -167,8 +168,8 @@ export function Sidebar() {
               />
             </div>
             <div className="text-center">
-              <h2 className="text-[3.2rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm text-primary dark:text-[#A67D44]">Bella Spa</h2>
-              <span className="text-[10px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-1">Management System</span>
+              <h2 className="text-[3.2rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm text-[#1C2A3A] dark:text-[#A67D44]">Bella Spa</h2>
+              <span className="text-[10px] font-extrabold text-[#8A99AD] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-1">Management System</span>
             </div>
           </Link>
         </div>
@@ -186,27 +187,27 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group cursor-pointer border",
                     isActive
-                      ? "bg-white text-[#BE185D] dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] shadow-[0_8px_20px_rgba(219,39,119,0.08)] dark:shadow-none border-[#FFE4E6] dark:border-[#A67D44]/30"
-                      : "text-[#8A6D7C] bg-transparent border-transparent hover:bg-white/70 hover:text-[#BE185D] dark:text-[#CDBCAB] dark:hover:bg-[#1C1B19]/50 dark:hover:text-[#EFE9E1] hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50 dark:hover:border-[#3E3A35]/50"
+                      ? "bg-white text-[#9D174D] border-[#FFF0F3] shadow-[0_8px_20px_rgba(157,23,77,0.06)] dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/30 dark:shadow-none"
+                      : "text-[#7C8B9E] bg-transparent border-transparent hover:bg-white/80 hover:text-[#9D174D] hover:shadow-[0_4px_12px_rgba(157,23,77,0.03)] hover:border-[#FFF0F3]/40 dark:text-[#CDBCAB] dark:hover:bg-[#1C1B19]/50 dark:hover:text-[#EFE9E1] dark:hover:border-[#3E3A35]/50"
                   )}
                 >
                   <item.icon className={cn(
                     "w-[18px] h-[18px] transition-all duration-300",
                     isActive 
-                      ? "text-[#BE185D] dark:text-[#A67D44] scale-105" 
-                      : "text-[#A07888] dark:text-[#CDBCAB]/80 group-hover:text-[#BE185D] dark:group-hover:text-[#A67D44]"
+                      ? "text-[#9D174D] dark:text-[#A67D44] scale-105" 
+                      : "text-[#7C8B9E] dark:text-[#CDBCAB]/80 group-hover:text-[#9D174D] dark:group-hover:text-[#A67D44]"
                   )} />
                   <span className={cn(
                     "text-[14px] tracking-tight transition-all duration-300",
                     isActive 
-                      ? "font-extrabold text-[#BE185D] dark:text-[#EFE9E1]" 
+                      ? "font-extrabold text-[#9D174D] dark:text-[#EFE9E1]" 
                       : "font-semibold"
                   )}>{item.label}</span>
 
                   {isActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute right-5 w-1.5 h-1.5 bg-[#BE185D] dark:bg-[#A67D44] rounded-full shadow-[0_0_6px_rgba(219,39,119,0.4)] dark:shadow-[0_0_6px_rgba(166,125,68,0.4)]"
+                      className="absolute right-5 w-1.5 h-1.5 bg-[#9D174D] dark:bg-[#A67D44] rounded-full shadow-[0_0_6px_rgba(157,23,77,0.4)] dark:shadow-[0_0_6px_rgba(166,125,68,0.4)]"
                     />
                   )}
                 </motion.div>
@@ -223,17 +224,17 @@ export function Sidebar() {
           </div>
 
           {/* User profile card */}
-          <div className="bg-white/80 dark:bg-[#1C1B19] p-3 rounded-[1.5rem] shadow-[0_4px_20px_rgba(219,39,119,0.04)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3E3A35] group cursor-pointer transition-all duration-300 hover:border-rose-300 dark:hover:border-[#A67D44]/30">
+          <div className="bg-white dark:bg-[#1C1B19] p-3 rounded-[1.5rem] shadow-[0_4px_20px_rgba(157,23,77,0.03)] dark:shadow-none border border-[#FFF0F3] dark:border-[#3E3A35] group cursor-pointer transition-all duration-300 hover:border-rose-200 dark:hover:border-[#A67D44]/30">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-8 h-8 bg-[#FFE4E6] dark:bg-[#5D1C34]/40 rounded-full flex items-center justify-center text-[#BE185D] dark:text-[#A67D44] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
+                <div className="w-8 h-8 bg-[#0d080c] dark:bg-[#5D1C34]/40 rounded-full flex items-center justify-center text-white dark:text-[#A67D44] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#11100F] rounded-full" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-extrabold text-[#4C243B] dark:text-[#EFE9E1] truncate leading-tight">{user?.full_name || 'Admin Bella Spa'}</p>
-                <p className="text-[9px] text-[#BE185D] dark:text-[#A67D44] font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
+                <p className="text-[13px] font-extrabold text-[#1C2A3A] dark:text-[#EFE9E1] truncate leading-tight">{user?.full_name || 'Admin Bella Spa'}</p>
+                <p className="text-[9px] text-[#E11D48] dark:text-[#A67D44] font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
               </div>
             </div>
           </div>
@@ -241,9 +242,9 @@ export function Sidebar() {
           {/* Logout */}
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 text-[#8A6D7C] dark:text-[#CDBCAB] hover:text-[#BE185D] dark:hover:text-[#A67D44] transition-all font-extrabold text-[10px] uppercase tracking-[0.15em] group"
+            className="flex items-center gap-3 w-full px-3 py-2 text-[#7C8B9E] dark:text-[#CDBCAB] hover:text-rose-600 dark:hover:text-[#A67D44] transition-all font-extrabold text-[10px] uppercase tracking-[0.15em] group"
           >
-            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#FFE4E6] dark:bg-[#1C1B19] group-hover:bg-[#FFF0F3] dark:group-hover:bg-[#5D1C34]/40 group-hover:text-[#BE185D] dark:group-hover:text-[#A67D44] transition-colors">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#FFF0F3] dark:bg-[#1C1B19] group-hover:bg-rose-50 dark:group-hover:bg-[#5D1C34]/40 group-hover:text-rose-600 dark:group-hover:text-[#A67D44] transition-colors">
               <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
             </div>
             ĐĂNG XUẤT
