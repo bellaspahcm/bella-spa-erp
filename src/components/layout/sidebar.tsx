@@ -146,10 +146,15 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-80 bg-gradient-to-b from-[#FFF5F7] to-[#FCE4EC] dark:from-[#25131A] dark:to-[#1A0C11] border-r border-[#FBCFE8]/60 dark:border-[#3D1E2A] flex flex-col h-screen md:h-[111.2vh] sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.4)]">
-        {/* Soft decorative glows */}
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-pink-300/30 dark:bg-pink-900/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/20 dark:bg-rose-900/10 rounded-full blur-[100px] pointer-events-none" />
+      {/* 
+        Redesigned Premium Pastel Pink Sidebar
+        Uses a consistent soft elegant light pastel pink & cream rose theme, which provides high contrast, 
+        aesthetic brilliance and elite spa branding.
+      */}
+      <aside className="w-80 bg-gradient-to-b from-[#FFF5F7] to-[#FCE4EC] border-r border-[#FBCFE8]/60 flex flex-col h-screen md:h-[111.2vh] sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)]">
+        {/* Soft decorative light glows */}
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-pink-300/25 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/20 rounded-full blur-[100px] pointer-events-none" />
 
         {/* ── Logo ── */}
         <div className="px-8 pt-10 pb-6 shrink-0 relative z-10">
@@ -164,7 +169,7 @@ export function Sidebar() {
             </div>
             <div className="text-center">
               <h2 className="text-[3.2rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm" style={{ color: 'var(--primary)' }}>Bella Spa</h2>
-              <span className="text-[10px] font-extrabold text-[#8A6D7C] dark:text-[#A68393] uppercase tracking-[0.25em] block mt-1">Management System</span>
+              <span className="text-[10px] font-extrabold text-[#8A6D7C] uppercase tracking-[0.25em] block mt-1">Management System</span>
             </div>
           </Link>
         </div>
@@ -182,27 +187,27 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group cursor-pointer border",
                     isActive
-                      ? "bg-white dark:bg-[#3D202E] text-[#BE185D] dark:text-[#FFC0CBD9] shadow-[0_8px_20px_rgba(219,39,119,0.08)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.3)] border-[#FFE4E6] dark:border-[#522B3E]"
-                      : "text-[#8A6D7C] dark:text-[#C5A5B5] bg-transparent border-transparent hover:bg-white/70 hover:text-[#BE185D] dark:hover:bg-[#3D202E]/40 dark:hover:text-[#FFC0CBD9] hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50"
+                      ? "bg-white text-[#BE185D] shadow-[0_8px_20px_rgba(219,39,119,0.08)] border-[#FFE4E6]"
+                      : "text-[#8A6D7C] bg-transparent border-transparent hover:bg-white/70 hover:text-[#BE185D] hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50"
                   )}
                 >
                   <item.icon className={cn(
                     "w-[18px] h-[18px] transition-all duration-300",
                     isActive 
-                      ? "text-[#BE185D] dark:text-[#FFB7C5] scale-105" 
-                      : "text-[#A07888] dark:text-[#C5A5B5] group-hover:text-[#BE185D] dark:group-hover:text-[#FFB7C5]"
+                      ? "text-[#BE185D] scale-105" 
+                      : "text-[#A07888] group-hover:text-[#BE185D]"
                   )} />
                   <span className={cn(
                     "text-[14px] tracking-tight transition-all duration-300",
                     isActive 
-                      ? "font-extrabold text-[#BE185D] dark:text-[#FFB7C5]" 
+                      ? "font-extrabold text-[#BE185D]" 
                       : "font-semibold"
                   )}>{item.label}</span>
 
                   {isActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute right-5 w-1.5 h-1.5 bg-[#BE185D] dark:bg-[#FFB7C5] rounded-full shadow-[0_0_6px_rgba(219,39,119,0.4)]"
+                      className="absolute right-5 w-1.5 h-1.5 bg-[#BE185D] rounded-full shadow-[0_0_6px_rgba(219,39,119,0.4)]"
                     />
                   )}
                 </motion.div>
@@ -218,18 +223,18 @@ export function Sidebar() {
             <ThemeToggle />
           </div>
 
-          {/* Admin card */}
-          <div className="bg-white dark:bg-[#2D1822] p-3 rounded-[1.5rem] shadow-[0_4px_20px_rgba(219,39,119,0.04)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3D1E2A] group cursor-pointer transition-all duration-300 hover:border-rose-300 dark:hover:border-[#522B3E]">
+          {/* User profile card */}
+          <div className="bg-white/80 p-3 rounded-[1.5rem] shadow-[0_4px_20px_rgba(219,39,119,0.04)] border border-[#FFE4E6] group cursor-pointer transition-all duration-300 hover:border-rose-300">
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="w-8 h-8 bg-[#FFE4E6] dark:bg-[#522B3E] rounded-full flex items-center justify-center text-[#BE185D] dark:text-[#FFB7C5] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
+                <div className="w-8 h-8 bg-[#FFE4E6] rounded-full flex items-center justify-center text-[#BE185D] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#1c1218] rounded-full" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-extrabold text-[#4C243B] dark:text-rose-100 truncate leading-tight">{user?.full_name || 'Admin Bella Spa'}</p>
-                <p className="text-[9px] text-[#BE185D] dark:text-[#FFB7C5] font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
+                <p className="text-[13px] font-extrabold text-[#4C243B] truncate leading-tight">{user?.full_name || 'Admin Bella Spa'}</p>
+                <p className="text-[9px] text-[#BE185D] font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
               </div>
             </div>
           </div>
@@ -237,9 +242,9 @@ export function Sidebar() {
           {/* Logout */}
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 text-[#8A6D7C] dark:text-[#C5A5B5] hover:text-[#BE185D] dark:hover:text-[#FFB7C5] transition-all font-extrabold text-[10px] uppercase tracking-[0.15em] group"
+            className="flex items-center gap-3 w-full px-3 py-2 text-[#8A6D7C] hover:text-[#BE185D] transition-all font-extrabold text-[10px] uppercase tracking-[0.15em] group"
           >
-            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#FFE4E6] dark:bg-[#2D1822] group-hover:bg-[#FFF0F3] dark:group-hover:bg-[#3D202E] group-hover:text-[#BE185D] dark:group-hover:text-[#FFB7C5] transition-colors">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#FFE4E6] group-hover:bg-[#FFF0F3] group-hover:text-[#BE185D] transition-colors">
               <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
             </div>
             ĐĂNG XUẤT
@@ -249,4 +254,5 @@ export function Sidebar() {
     </>
   );
 }
+
 
