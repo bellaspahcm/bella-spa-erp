@@ -34,6 +34,9 @@
     - Loại bỏ hoàn toàn phối màu tối `dark:from-[#25131A] dark:to-[#1A0C11]` và các thuộc tính viền tối/chữ mờ tối ở Sidebar.
     - Đồng bộ hóa Sidebar luôn luôn hiển thị dải màu hồng pastel nhẹ cao cấp (`from-[#FFF5F7] to-[#FCE4EC]`), viền `#FBCFE8/60`, các menu hoạt động dùng nền trắng `bg-white` kết hợp chữ hồng đậm thương hiệu `#BE185D`.
     - Trải nghiệm người dùng đồng bộ 100%, đem lại cảm quan cực kỳ nhẹ nhàng, sang trọng, thanh khiết đặc trưng của một hệ thống vận hành Spa cao cấp. Giao diện trang chính của bảng điều khiển vẫn thay đổi Sáng/Tối linh hoạt không bị ảnh hưởng.
+  * 📄 `src/app/globals.css` & `ThemeToggle.tsx` (REGAL Theme Integration):
+    - Tái cấu trúc toàn bộ mã màu trong lớp phủ `.dark` để tuân thủ 100% bảng màu hoàng gia **REGAL** tinh tế: Background `#11100F`, Primary `#5D1C34`, Accent `#A67D44`, Text `#EFE9E1`, Warm Subtext `#CDBCAB`, Border `#3E3A35`.
+    - Cập nhật các hiệu ứng glassmorphism, card hover và thanh cuộn để tạo hiệu ứng phủ bóng vàng kim và đỏ mận cực kỳ quý phái. Layout giữ vững ổn định, không làm biến đổi bất kỳ thành phần nào khác.
 
 ### 🚨 Troubleshooting
 > 🐛 **Problem Encountered (Chromium Page Zoom Height Bug)**: Do trong file `globals.css` cấu hình thuộc tính `zoom: 0.9` cho thẻ `html` đối với màn hình trung bình trở lên (MD trở lên), các phần tử sử dụng chiều cao toàn màn hình cố định `100vh` thực tế bị thu nhỏ tỷ lệ chỉ còn hiển thị tương đương `90vh`, để lại một khoảng trắng thô cứng khoảng 10% ở chân Sidebar khi cuộn trang.

@@ -51,7 +51,7 @@ export default function ThemeToggle() {
   }
 
   return (
-    <div className="w-full bg-[#FFF6F8] dark:bg-[#1f141b] border border-[#FCE4EC] dark:border-[#2d1f27] p-1 rounded-2xl flex items-center justify-between relative shadow-inner">
+    <div className="w-full bg-[#FFF6F8] dark:bg-[#1C1B19] border border-[#FCE4EC] dark:border-[#3E3A35] p-1 rounded-2xl flex items-center justify-between relative shadow-inner">
       <div className="absolute inset-0 bg-gradient-to-r from-rose-200/5 to-rose-300/5 pointer-events-none rounded-2xl" />
       
       {/* Light Mode Pill */}
@@ -60,7 +60,7 @@ export default function ThemeToggle() {
         className={`flex-1 relative z-10 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider transition-all duration-300 ${
           theme === 'light'
             ? 'text-primary'
-            : 'text-slate-500 hover:text-slate-700 dark:text-[#a6959f] dark:hover:text-slate-200'
+            : 'text-slate-500 hover:text-slate-700 dark:text-[#CDBCAB] dark:hover:text-slate-200'
         }`}
       >
         {theme === 'light' && (
@@ -80,13 +80,13 @@ export default function ThemeToggle() {
         className={`flex-1 relative z-10 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider transition-all duration-300 ${
           theme === 'dark'
             ? 'text-white'
-            : 'text-slate-500 hover:text-slate-700 dark:text-[#a6959f] dark:hover:text-slate-200'
+            : 'text-slate-500 hover:text-slate-700 dark:text-[#CDBCAB] dark:hover:text-slate-200'
         }`}
       >
         {theme === 'dark' && (
           <motion.div
             layoutId="active-theme-pill"
-            className="absolute inset-0 bg-gradient-to-br from-[#2d1f27] to-[#140d12] shadow-md border border-[#ffb7c5]/20 rounded-xl z-[-1]"
+            className="absolute inset-0 bg-gradient-to-br from-[#5D1C34] to-[#11100F] shadow-md border border-[#A67D44]/30 rounded-xl z-[-1]"
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
           />
         )}
