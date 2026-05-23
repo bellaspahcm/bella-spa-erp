@@ -4,7 +4,6 @@ import { useState } from "react";
 import { KeyRound, ShieldCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase-client";
-import { motion } from "framer-motion";
 
 export default function SecurityTab() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -27,7 +26,27 @@ export default function SecurityTab() {
     setIsSaving(true);
     const supabase = createClient();
     try {
-      // Cập nhật mật khẩu trong Supabase Auth
+      // 1. Lấy thông tin user hiện tại để lấy email
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user || !user.email) {
+        toast.error("Không tìm thấy thông tin phiên đăng nhập!");
+        setIsSaving(false);
+        return;
+      }
+
+      // 2. Xác minh mật khẩu cũ bằng cách đăng nhập lại
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast.error("Mật khẩu cũ không chính xác!");
+        setIsSaving(false);
+        return;
+      }
+
+      // 3. Cập nhật mật khẩu mới trong Supabase Auth
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -61,7 +80,20 @@ export default function SecurityTab() {
 
       <div className="bg-white/40 dark:bg-black/20 p-8 rounded-3xl border border-white/50 dark:border-white/10 shadow-sm relative overflow-hidden">
         <form onSubmit={handleUpdatePassword} className="space-y-6 relative z-10 max-w-md">
-          {/* Supabase update user only requires new password if logged in, but we can ask for current password for UI completeness, though Supabase Auth doesn't strictly verify it via updateUser by default unless reauthenticated, but we'll leave it as a form field */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">
+              Mật khẩu cũ
+            </label>
+            <input
+              type="password"
+              required
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="block w-full px-4 py-3 bg-white/60 dark:bg-black/40 border border-border rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none text-foreground"
+              placeholder="••••••••"
+            />
+          </div>
+
           <div className="space-y-2">
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">
               Mật khẩu mới

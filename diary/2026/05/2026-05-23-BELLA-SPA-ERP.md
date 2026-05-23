@@ -28,7 +28,8 @@
   * 📄 `supabase/migrations/20260523010000_harden_all_database_rls.sql` (New):
     - Trực tiếp chạy migration bổ sung và siết chặt các chính sách Row-Level Security (RLS) cho tất cả các bảng quan trọng (`customers`, `bookings`, `session_logs`, `revenue`, `expenses`, `salary_records`, `attendance`, `tenants`) bằng hàm `public.get_auth_tenant_id()`. Xóa bỏ các chính sách `true` không an toàn, cách ly hoàn toàn dữ liệu giữa các chi nhánh, đảm bảo chi nhánh A không thể truy cập dữ liệu của chi nhánh B hay HQ.
   * 📄 `src/app/dashboard/settings/page.tsx` & `components/SecurityTab.tsx` (New):
-    - Khởi tạo chức năng Đổi Mật Khẩu (Security Tab) ngay trong trang Cài đặt chung của hệ thống, gọi API `supabase.auth.updateUser` giúp người dùng thay đổi thông tin xác thực an toàn, tiện lợi mà không tác động thay đổi hay phá vỡ layout gốc.
+    - Khởi tạo chức năng Đổi Mật Khẩu (Security Tab) ngay trong trang Cài đặt chung của hệ thống, gọi API `supabase.auth.updateUser` giúp người dùng thay đổi thông tin xác thực an toàn, tiện lợi.
+    - Cập nhật quy trình đổi mật khẩu: Yêu cầu xác thực mật khẩu cũ bằng cách gọi `supabase.auth.signInWithPassword` với email người dùng hiện hành trước khi chạy lệnh đổi mới mật khẩu, tối ưu hóa độ bảo mật, tránh việc người khác lợi dụng phiên đăng nhập để tự ý đổi. Layout và giao diện giữ nguyên không bị xáo trộn.
 
 ### 🚨 Troubleshooting
 > 🐛 **Problem Encountered (Chromium Page Zoom Height Bug)**: Do trong file `globals.css` cấu hình thuộc tính `zoom: 0.9` cho thẻ `html` đối với màn hình trung bình trở lên (MD trở lên), các phần tử sử dụng chiều cao toàn màn hình cố định `100vh` thực tế bị thu nhỏ tỷ lệ chỉ còn hiển thị tương đương `90vh`, để lại một khoảng trắng thô cứng khoảng 10% ở chân Sidebar khi cuộn trang.
