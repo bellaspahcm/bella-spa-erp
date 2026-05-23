@@ -26,6 +26,7 @@ import { TransactionModal } from '@/components/features/TransactionModal';
 import { FinancePnLSummary } from '@/components/features/FinancePnLSummary';
 import { createClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 export default function FinancePage() {
   const [data, setData] = useState<any>({
@@ -41,7 +42,7 @@ export default function FinancePage() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -155,13 +156,7 @@ export default function FinancePage() {
     };
   }, []);
 
-  if (isLoading && !data) {
-    return (
-      <div className="flex-1 p-10 flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-      </div>
-    );
-  }
+
 
   const { totalBalance, totalRevenueMonth, totalExpenseMonth, transactions } = data;
   
@@ -246,65 +241,73 @@ export default function FinancePage() {
       ) : (
         <div className="space-y-10">
           {/* Financial Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <motion.div 
-          whileHover={{ y: -5 }}
-          className="luxury-card-pink p-8 rounded-[40px] relative overflow-hidden"
-        >
-          <div className="relative z-10">
-            <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/20">
-              <Wallet className="w-6 h-6 text-white" />
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <SkeletonLoader variant="card" className="w-full h-48 bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-pink-500/10 border-pink-200/20 animate-pulse" />
+          <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40 animate-pulse" />
+          <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40 animate-pulse" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <motion.div 
+            whileHover={{ y: -5 }}
+            className="luxury-card-pink p-8 rounded-[40px] relative overflow-hidden"
+          >
+            <div className="relative z-10">
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/20">
+                <Wallet className="w-6 h-6 text-white" />
+              </div>
+              <p className="text-sm font-black text-white/90 uppercase tracking-widest mb-2">Số dư hiện tại</p>
+              <h3 className="text-4xl font-black mb-4">{totalBalance.toLocaleString()}đ</h3>
+              <div className="flex items-center gap-2 text-white/90 font-black text-sm">
+                <TrendingUp className="w-4 h-4" />
+                +12.5% so với tháng trước
+              </div>
             </div>
-            <p className="text-sm font-black text-white/90 uppercase tracking-widest mb-2">Số dư hiện tại</p>
-            <h3 className="text-4xl font-black mb-4">{totalBalance.toLocaleString()}đ</h3>
-            <div className="flex items-center gap-2 text-white/90 font-black text-sm">
-              <TrendingUp className="w-4 h-4" />
-              +12.5% so với tháng trước
-            </div>
-          </div>
-          <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-        </motion.div>
+            <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+          </motion.div>
 
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
-        >
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
-              <ArrowUpRight className="w-6 h-6 text-emerald-600" />
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
+                <ArrowUpRight className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng thu tháng</p>
+                <h4 className="text-2xl font-black text-slate-900">{(totalRevenueMonth / 1000000).toFixed(1)}M</h4>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng thu tháng</p>
-              <h4 className="text-2xl font-black text-slate-900">{(totalRevenueMonth / 1000000).toFixed(1)}M</h4>
+            <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
+              <div className="bg-emerald-500 h-full w-[70%] rounded-full"></div>
             </div>
-          </div>
-          <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full w-[70%] rounded-full"></div>
-          </div>
-          <p className="text-xs font-bold text-slate-500 mt-3">Đạt 70% mục tiêu tháng</p>
-        </motion.div>
+            <p className="text-xs font-bold text-slate-500 mt-3">Đạt 70% mục tiêu tháng</p>
+          </motion.div>
 
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
-        >
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center">
-              <ArrowDownRight className="w-6 h-6 text-rose-600" />
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center">
+                <ArrowDownRight className="w-6 h-6 text-rose-600" />
+              </div>
+              <div>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng chi tháng</p>
+                <h4 className="text-2xl font-black text-slate-900">{(totalExpenseMonth / 1000000).toFixed(1)}M</h4>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng chi tháng</p>
-              <h4 className="text-2xl font-black text-slate-900">{(totalExpenseMonth / 1000000).toFixed(1)}M</h4>
+            <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
+              <div className="bg-rose-500 h-full w-[35%] rounded-full"></div>
             </div>
-          </div>
-          <div className="w-full bg-slate-50 h-2 rounded-full overflow-hidden">
-            <div className="bg-rose-500 h-full w-[35%] rounded-full"></div>
-          </div>
-          <p className="text-xs font-bold text-slate-500 mt-3">Giảm 5% so với tháng trước</p>
-        </motion.div>
-      </div>
+            <p className="text-xs font-bold text-slate-500 mt-3">Giảm 5% so với tháng trước</p>
+          </motion.div>
+        </div>
+      )}
 
       {/* Recent Transactions */}
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
@@ -338,99 +341,105 @@ export default function FinancePage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left bg-slate-50/50">
-                <th 
-                  onClick={() => sortData('category')}
-                  className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    Danh mục
-                    {sortConfig?.key === 'category' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                  </div>
-                </th>
-                <th 
-                  onClick={() => sortData('details')}
-                  className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    Chi tiết nghiệp vụ
-                    {sortConfig?.key === 'details' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                  </div>
-                </th>
-                <th 
-                  onClick={() => sortData('timestamp')}
-                  className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    Ngày
-                    {sortConfig?.key === 'timestamp' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                  </div>
-                </th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Phương thức</th>
-                <th 
-                  onClick={() => sortData('amount')}
-                  className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    Số tiền
-                    {sortConfig?.key === 'amount' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
-                  </div>
-                </th>
-                <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {currentTransactions.map((tx: any) => (
-                <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
-                   <td className="px-8 py-5">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                        tx.type === 'revenue' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-                      }`}>
-                        {tx.type === 'revenue' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                      </div>
-                      <span className="font-bold text-slate-900">{tx.category}</span>
+          {isLoading ? (
+            <div className="p-8">
+              <SkeletonTable />
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="text-left bg-slate-50/50">
+                  <th 
+                    onClick={() => sortData('category')}
+                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      Danh mục
+                      {sortConfig?.key === 'category' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                     </div>
-                  </td>
-                  <td className="px-8 py-5">
-                    <p className="text-sm font-bold text-slate-700">{tx.details || 'N/A'}</p>
-                  </td>
-                  <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.date}</td>
-                  <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.method}</td>
-                  <td className="px-8 py-5 font-black text-slate-900">{tx.amount}</td>
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-3">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                        tx.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                      }`}>
-                        {tx.status === 'confirmed' ? 'Đã xác nhận' : 'Đang chờ'}
-                      </span>
-                      {tx.status !== 'confirmed' && (
-                        <motion.button 
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => handleConfirm(tx)}
-                          disabled={isConfirmingId === tx.id}
-                          className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-sm shadow-slate-200 disabled:opacity-50"
-                        >
-                          {isConfirmingId === tx.id ? (
-                            <RefreshCw className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <>
-                              <Check className="w-3 h-3" />
-                              Duyệt thu chi
-                            </>
-                          )}
-                        </motion.button>
-                      )}
+                  </th>
+                  <th 
+                    onClick={() => sortData('details')}
+                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      Chi tiết nghiệp vụ
+                      {sortConfig?.key === 'details' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                     </div>
-                  </td>
+                  </th>
+                  <th 
+                    onClick={() => sortData('timestamp')}
+                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      Ngày
+                      {sortConfig?.key === 'timestamp' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                    </div>
+                  </th>
+                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Phương thức</th>
+                  <th 
+                    onClick={() => sortData('amount')}
+                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      Số tiền
+                      {sortConfig?.key === 'amount' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+                    </div>
+                  </th>
+                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {currentTransactions.map((tx: any) => (
+                  <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
+                     <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          tx.type === 'revenue' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                        }`}>
+                          {tx.type === 'revenue' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                        </div>
+                        <span className="font-bold text-slate-900">{tx.category}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5">
+                      <p className="text-sm font-bold text-slate-700">{tx.details || 'N/A'}</p>
+                    </td>
+                    <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.date}</td>
+                    <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.method}</td>
+                    <td className="px-8 py-5 font-black text-slate-900">{tx.amount}</td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          tx.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                        }`}>
+                          {tx.status === 'confirmed' ? 'Đã xác nhận' : 'Đang chờ'}
+                        </span>
+                        {tx.status !== 'confirmed' && (
+                          <motion.button 
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleConfirm(tx)}
+                            disabled={isConfirmingId === tx.id}
+                            className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-sm shadow-slate-200 disabled:opacity-50"
+                          >
+                            {isConfirmingId === tx.id ? (
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <>
+                                <Check className="w-3 h-3" />
+                                Duyệt thu chi
+                              </>
+                            )}
+                          </motion.button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
         <div className="p-8 border-t border-slate-50 flex items-center justify-between bg-slate-50/30">
           <p className="text-xs font-bold text-slate-500">

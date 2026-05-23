@@ -4,12 +4,15 @@ import { motion } from 'framer-motion';
 import { DollarSign, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { KtvSalaryRecord, CurrentUser } from '@/types/domain';
 
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+
 interface SalaryStatsProps {
   totalPayout: number;
   totalSessions: number;
   ktvSalaries: KtvSalaryRecord[];
   currentUser: CurrentUser | null;
   prevMonthYear: string;
+  isLoading?: boolean;
 }
 
 export default function SalaryStats({
@@ -18,7 +21,18 @@ export default function SalaryStats({
   ktvSalaries,
   currentUser,
   prevMonthYear,
+  isLoading = false,
 }: SalaryStatsProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <SkeletonLoader variant="card" className="w-full h-48 bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-pink-500/10 border-pink-200/20" />
+        <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40" />
+        <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40" />
+      </div>
+    );
+  }
+
   const maxSalary = ktvSalaries.length > 0 
     ? Math.max(...ktvSalaries.map((s) => s.totalSalary)) 
     : 0;

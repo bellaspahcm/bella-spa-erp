@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Phase 16 - Triệt để Bảo Mật & Code Quality (Completed) | 100% Build Compiled
+Status: 🟢 Phase 23 - Trải nghiệm UX/UI Phép thuật (Completed) | 100% Build Compiled
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -216,13 +216,13 @@ Status: 🟢 Phase 16 - Triệt để Bảo Mật & Code Quality (Completed) | 1
   - Sử dụng VietQR động hoặc tích hợp cổng thanh toán (VNPAY/MoMo/Stripe) cho hóa đơn gia hạn phần mềm hàng tháng của các chủ Spa.
   - Tự động kích hoạt lại dịch vụ ngay sau khi nhận tín hiệu chuyển khoản thành công từ Payment Webhook.
 
-## 🟡 Phase 23: Trải nghiệm UX/UI Phép thuật (UX Magic & Visual Delights)
-- [ ] **Chế độ Giao diện tối (Dark Mode)**:
-  - Hỗ trợ chế độ Dark Mode chuẩn phong cách Spa sang trọng huyền bí cho cả giao diện Admin và KTV Mobile Dashboard sử dụng Tailwind CSS CSS-variables.
-- [ ] **Bộ tải biểu diễn dữ liệu (Skeleton Loaders)**:
+## 🟢 Phase 23: Trải nghiệm UX/UI Phép thuật (UX Magic & Visual Delights) (Completed)
+- [x] **Chế độ Giao diện tối (Dark Mode)**:
+  - Hỗ trợ chế độ Dark Mode chuẩn phong cách Spa sang trọng huyền bí cho cả giao diện Admin và KTV Mobile Dashboard sử dụng Tailwind CSS CSS-variables (Bảng màu REGAL Thượng lưu `#11100F`, `#5D1C34`, `#A67D44`).
+- [x] **Bộ tải biểu diễn dữ liệu (Skeleton Loaders)**:
   - Bổ sung các Skeleton Loading mượt mà khi tải dữ liệu tài chính P&L, bảng lương hoặc biểu đồ doanh thu để cải thiện cảm nhận tốc độ phản hồi của người dùng.
-- [ ] **Hướng dẫn Người dùng mới (Interactive Onboarding Tour)**:
-  - Tích hợp thư viện hướng dẫn (như React Joyride) đưa chủ Spa đi qua 4 bước cơ bản thiết lập chi nhánh, tạo dịch vụ, thêm KTV và chạy ca thử nghiệm đầu tiên.
+- [x] **Hướng dẫn Người dùng mới (Interactive Onboarding Tour)**:
+  - Tích hợp thư viện hướng dẫn mượt mà (`OnboardingTour.tsx`) đưa chủ Spa đi qua 4 bước cơ bản thiết lập chi nhánh, tạo dịch vụ, thêm KTV và chạy ca thử nghiệm đầu tiên (Kèm nút replay ở góc phải chân trang).
 
 ## 🟡 Phase 24: Kiểm thử Hệ thống Đầy đủ (E2E Testing & RLS Verification)
 - [ ] **Kiểm thử Luồng người dùng toàn diện (End-to-End Testing)**:
