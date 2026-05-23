@@ -1,0 +1,24 @@
+{
+  "name": "Bella Spa ERP Platform",
+  "short_name": "Bella ERP",
+  "description": "Hệ thống quản trị doanh nghiệp chuyên biệt cho Bella Spa mẹ và bé",
+  "start_url": "/ktv/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF8F9",
+  "theme_color": "#FF85A2",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

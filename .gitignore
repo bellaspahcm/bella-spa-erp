@@ -29,6 +29,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# MCP server config (chứa Service Role Key - không commit lên Git)
+.mcp.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
