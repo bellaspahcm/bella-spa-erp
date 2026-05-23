@@ -31,9 +31,9 @@
     - Khởi tạo chức năng Đổi Mật Khẩu (Security Tab) ngay trong trang Cài đặt chung của hệ thống, gọi API `supabase.auth.updateUser` giúp người dùng thay đổi thông tin xác thực an toàn, tiện lợi.
     - Cập nhật quy trình đổi mật khẩu: Yêu cầu xác thực mật khẩu cũ bằng cách gọi `supabase.auth.signInWithPassword` với email người dùng hiện hành trước khi chạy lệnh đổi mới mật khẩu, tối ưu hóa độ bảo mật, tránh việc người khác lợi dụng phiên đăng nhập để tự ý đổi. Layout và giao diện giữ nguyên không bị xáo trộn.
   * 📄 `src/components/layout/sidebar.tsx`:
-    - Khôi phục 100% màu Sáng gốc của Sidebar để hoàn toàn không gây thay đổi giao diện sáng: chữ Active màu hồng đậm `#9D174D`, chữ Inactive xanh đá trầm `#7C8B9E`, tên Admin `#1C2A3A`, và tag quyền `#E11D48`.
-    - Khi chuyển đổi sang chế độ **Tối (Dark)**, Sidebar sẽ chuyển đổi hoàn hảo sang dải màu REGAL Thượng lưu `#1C1B19` đến `#11100F`, viền `#3E3A35`, chữ Logo vàng kim `#A67D44`, nút Active dùng nền `#5D1C34/30` với chữ kem `#EFE9E1` và điểm chỉ báo màu vàng đồng quý tộc.
-    - Cung cấp tính nhất quán và tương phản cao độ ở cả hai chế độ mà hoàn toàn tôn trọng giao diện Light Mode ban đầu.
+    - Ứng dụng phối màu **Pastel Pink** đặc biệt ngọt ngào, sang trọng và mềm mại khi chuyển đổi sang **Giao diện Sáng (Light Mode)**: chữ Active hồng cánh sen `#BE185D`, chữ Inactive xanh tro hồng `#8A6D7C`, tên Admin `#4C243B`, tag vai trò `#BE185D`, nền blush rose sang trọng.
+    - Khi ở chế độ **Tối (Dark Mode)**, Sidebar chuyển hoàn toàn sang dải màu REGAL Thượng lưu `#1C1B19` đến `#11100F`, viền `#3E3A35`, chữ Logo vàng kim `#A67D44`, nút Active dùng nền `#5D1C34/30` với chữ kem `#EFE9E1` và điểm chỉ báo màu vàng đồng quý tộc.
+    - Độc lập hóa hoàn toàn 2 vùng hiển thị: Light Mode Sidebar ngọt ngào, Dark Mode Sidebar huyền bí, không tác động hay làm ảnh hưởng lẫn nhau. Giao diện tối chung của hệ thống vẫn tuyệt đối giữ vững phong cách REGAL.
   * 📄 `src/app/globals.css` & `ThemeToggle.tsx` (REGAL Theme Integration):
     - Tái cấu trúc toàn bộ mã màu trong lớp phủ `.dark` để tuân thủ 100% bảng màu hoàng gia **REGAL** tinh tế: Background `#11100F`, Primary `#5D1C34`, Accent `#A67D44`, Text `#EFE9E1`, Warm Subtext `#CDBCAB`, Border `#3E3A35`.
     - Thêm các lớp phủ ghi đè cao cấp cho Giao diện Tối để triệt tiêu các màu sáng chói:
