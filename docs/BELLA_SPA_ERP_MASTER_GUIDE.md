@@ -567,6 +567,30 @@ Toàn bộ hệ thống Bella Spa ERP đã vượt qua quy trình kiểm thử �
 
 ---
 
+### 4.2 Quy tắc chống lỗi ngầm & chuẩn hóa kiểm thử (Critical Bug Prevention & Testing Standards)
+
+Để đảm bảo hệ thống không phát sinh các lỗi nghiêm trọng trôi qua được bộ kiểm thử tự động Jest (giống như lỗi mất giao dịch do RLS và lỗi mất chấm công do lệch cột), toàn bộ đội ngũ phát triển và AI Agent lập trình bắt buộc phải tuân thủ nghiêm ngặt 3 quy tắc vàng sau:
+
+#### A. Tuyệt đối không nuốt lỗi cơ sở dữ liệu (Zero Silent Database Failures)
+* **Quy chuẩn**: Không được bọc các câu lệnh CSDL trong khối `try/catch` mà chỉ thực hiện ghi log bằng `console.error` rồi trả về kết quả thành công ảo (ví dụ: `return { success: true }`).
+* **Lý do**: Việc này sẽ đánh lừa Jest và UI rằng hành động đã hoàn thành trọn vẹn, trong khi thực tế dữ liệu đã bị mất mát ở tầng CSDL.
+* **Hành vi bắt buộc**: Nếu sử dụng `try/catch` ở tầng Service Actions, bắt buộc phải ném lại lỗi (`throw error`) hoặc trả về cấu trúc lỗi tường minh (ví dụ: `return { success: false, error: error.message }`) để các thành phần gọi phía trên có thể xử lý rollback hoặc hiển thị thông báo lỗi trực quan cho người dùng.
+
+#### B. Bắt buộc kiểm tra phản ứng phụ trong các ca kiểm thử tự động (Side-Effect Test Assertions)
+* **Quy chuẩn**: Khi viết các ca kiểm thử (như trong `src/__tests__`), không chỉ kiểm tra bản ghi chính có thay đổi trạng thái hay không, mà **bắt buộc phải thực hiện truy vấn và khẳng định (Assert) đối với tất cả các bảng dữ liệu chịu ảnh hưởng gián tiếp (phản ứng phụ)**.
+* **Ví dụ thực tế**:
+  * Khi phê duyệt nghỉ phép (`approveLeaveRequest`), ngoài việc khẳng định trạng thái của đơn xin nghỉ phép là `approved`, bài test **phải** truy vấn bảng `attendance` để khẳng định bản ghi chấm công thực tế tương ứng đã được chèn thành công với đúng số ngày nghỉ.
+  * Khi hoàn thành ca trị liệu, bài test **phải** truy vấn bảng `inventory_logs` để kiểm tra nguyên vật liệu có bị trừ đúng định mức hay không.
+* **Hành vi bắt buộc**: Luôn viết thêm ít nhất một câu lệnh khẳng định `expect()` nhắm vào các tác động gián tiếp trên database để tránh mù kiểm thử (Test blindness).
+
+#### C. Ép kiểu dữ liệu CSDL nghiêm ngặt (Strict Database Payload Typing)
+* **Quy chuẩn**: Hạn chế tối đa việc sử dụng ép kiểu `as any` hoặc khai báo payload chèn dữ liệu dạng object lỏng lẻo không định hình.
+* **Hành vi bắt buộc**: Luôn khai báo kiểu dữ liệu cho các biến chèn/cập nhật bằng schema tự động tạo từ Supabase:
+  * Ví dụ: `const payload: Database['public']['Tables']['attendance']['Insert'] = { ... }`
+  * Bằng cách này, nếu cấu trúc database thay đổi hoặc lập trình viên gõ sai cột (như cột `notes` không tồn tại trong bảng `attendance` hay cột `receipt_url` trong bảng `revenue`), TypeScript compiler (`npx tsc --noEmit`) sẽ báo lỗi ngay lập tức tại bước build, ngăn chặn mã lỗi biên dịch được triển khai lên Production.
+
+---
+
 ## 5. 🔧 PHẦN 5: NHẬT KÝ BẢO TRÌ & LỊCH SỬ CẢI TIẾN MÃ NGUỒN (MAINTENANCE LOG)
 
 Trong quá trình xây dựng hệ thống, đội ngũ phát triển đã thực hiện 20 đợt cải tiến, sửa lỗi mã nguồn và nâng cấp tính năng cực kỳ quan trọng để đảm bảo tính an toàn dữ liệu và tối ưu hóa trải nghiệm người dùng:
