@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 
 import { Toaster } from "sonner";
 import OfflineIndicator from "@/components/common/offline-indicator";
+import PwaRegister from "@/components/common/PwaRegister";
 import { cookies } from "next/headers";
 
 export default async function RootLayout({
@@ -34,8 +35,17 @@ export default async function RootLayout({
 
   return (
     <html lang="vi" className={`h-full antialiased ${theme === "dark" ? "dark" : ""} ${corinthia.variable} ${playfair.variable}`} suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Bella ERP" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <meta name="theme-color" content="#FF85A2" />
+      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
+        <PwaRegister />
         <OfflineIndicator />
         <Toaster position="top-center" richColors />
       </body>
