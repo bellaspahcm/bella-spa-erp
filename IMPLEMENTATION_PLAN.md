@@ -229,4 +229,10 @@ Status: 🟢 Phase 23 - Trải nghiệm UX/UI Phép thuật (Completed) | 100% B
 - [x] **Kiểm thử Chính sách Cô lập dữ liệu (RLS Compliance Tests)**: Viết bộ test `rls-compliance.test.ts` (đã PASS 100%) để chứng minh tính bảo mật đa chi nhánh trên 16 bảng dữ liệu, ngăn chặn rò rỉ chéo thông tin.
 - [x] **Sửa lỗi Phân quyền RLS ngầm (Silent RLS Insertion Failures)**: Khắc phục triệt để lỗi RLS ngầm khi ghi nhận thanh toán còn lại của Booking (`recordRemainingPayment`), tích hợp cơ chế tự động Fallback sang Admin Client sử dụng `SUPABASE_SERVICE_ROLE_KEY` trong môi trường phát triển bypass (mock cookie `mock_user_email`) và quản lý ném lỗi đồng bộ chặt chẽ.
 
+## 🟢 Phase 25: Vá Lỗi Doanh Thu & Cải Tiến Nhật Ký Hoạt Động (Human-Readable Audit Trail) (Completed)
+- [x] **Vá lỗi schema cache của PostgREST (`receipt_url` column)**: Chạy DDL cập nhật trực tiếp cho bảng `revenue` và đồng bộ hóa tệp tin migration local `20260523020000_add_receipt_url_to_revenue.sql` giúp giải quyết triệt để lỗi ghi nhận thanh toán kèm ảnh bill.
+- [x] **Ánh xạ Dịch UUID Động (Dynamic Reference Resolution)**: Thiết lập states dynamic maps (`usersMap`, `packagesMap`, `customersMap`) tự động dịch toàn bộ mã UUID thô của database trong log Audit sang tên thực tế (KTV, khách hàng, gói dịch vụ) trực quan trên giao diện.
+- [x] **Thiết kế Mũi tên Chuyển đổi và Thụt dòng Danh sách**: Định cấu hình thẻ thay đổi kết hợp mũi tên chỉ hướng `➔` sắc nét và tự động phân rã các thay đổi phức hợp thành danh sách thụt lề có border lề đứng mượt mà.
+- [x] **Nghiệp vụ hóa câu lệnh INSERT/DELETE**: Xây dựng bộ render chuyên biệt tóm tắt hành động thêm mới/xóa cho các bảng dữ liệu lõi thành câu văn diễn giải nghiệp vụ tự nhiên, loại bỏ hoàn toàn cảm giác máy móc trước đây.
+
 
