@@ -15,6 +15,7 @@ import {
   Lock,
   CreditCard,
   Receipt,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getTenantSettings, saveTenantSettings } from "@/services/tenant-actions";
@@ -29,6 +30,7 @@ import NotificationsTab from "./components/NotificationsTab";
 import AppearanceTab from "./components/AppearanceTab";
 import SubscriptionTab from "./components/SubscriptionTab";
 import HqBillingTab from "./components/HqBillingTab";
+import SecurityTab from "./components/SecurityTab";
 
 const TABS = [
   { id: "general", label: "Thông tin chung", icon: Store },
@@ -37,6 +39,7 @@ const TABS = [
   { id: "salary", label: "Lương & Thưởng", icon: Coins },
   { id: "staff", label: "Nhân sự & Quyền", icon: Shield },
   { id: "permissions", label: "Phân quyền", icon: Lock },
+  { id: "security", label: "Bảo mật & Mật khẩu", icon: KeyRound },
   { id: "notifications", label: "Thông báo", icon: Bell },
   { id: "appearance", label: "Giao diện", icon: Palette },
 ];
@@ -211,6 +214,10 @@ export default function SettingsPage() {
 
               {activeTab === "permissions" && (
                 <PermissionsTab />
+              )}
+
+              {activeTab === "security" && (
+                <SecurityTab />
               )}
 
               {activeTab === "notifications" && (
