@@ -631,3 +631,24 @@
   - **Sửa Code**: Loại bỏ hoàn toàn trường dữ liệu không hợp lệ `notes` khỏi đối tượng chèn của bảng `attendance` trong hàm `approveLeaveRequest` tại file [attendance-actions.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/attendance-actions.ts).
   - **Vá Dữ liệu Database**: Thực thi câu lệnh SQL trực tiếp trên database để bù đắp các bản ghi chấm công bị thiếu của KTV Lê Thu Hà vào các ngày 20/05 (trạng thái: `'half_day'`) và 21/05 (trạng thái: `'absent'`), giúp đồng bộ và sửa đổi chính xác số liệu tổng hợp công thực tế của cô lên `2.5 ngày công` thành công.
   - **Kiểm thử**: Chạy `npm test` thành công **106/106 tests** và biên dịch production Next.js build thành công **100%**. Đã push lên Git và deploy live.
+
+## 2026-05-23 (Session 6): Kiểm Thử Toàn Diện Hệ Thống & Chuẩn Hóa Rào Chắn Chống Lỗi Ngầm
+
+### 1. Phân Tích Điểm Mù Kiểm Thử & Giải Pháp Khắc Phục (UAT Post-Mortem)
+- **Vấn đề**: Các lỗi nghiêm trọng (RLS chặn chèn giao dịch thanh toán nốt và lệch cột bảng `attendance`) đều bị trôi qua bộ kiểm thử tự động Jest (106 tests) một cách âm thầm, chỉ được phát hiện khi chạy thực tế trên Staging/Production.
+- **Nguyên nhân**:
+  1. *Lỗi ngầm bị nuốt (Silent Failures)*: Sử dụng `try/catch` bắt lỗi CSDL nhưng chỉ `console.error` và trả về phản hồi thành công ảo (`{ success: true }`), đánh lừa Jest và UI.
+  2. *Mù phản ứng phụ (No Side-Effect Assertions)*: Các bài test chỉ kiểm tra cột trạng thái của bảng chính mà không truy vấn kiểm tra chéo các bảng liên quan chịu tác động (như bảng `attendance` hay `revenue`).
+  3. *Thiếu ràng buộc Type-safe*: Sử dụng kiểu dữ liệu `any` hoặc loose objects cho payload chèn dữ liệu, bỏ qua bước rà soát lỗi tĩnh của TypeScript.
+
+### 2. Thiết Lập Rào Chắn Chống Tái Phát (System Hardening & Guidelines Integration)
+Chúng tôi đã đưa 3 nguyên tắc vàng chống lỗi ngầm vào các file định hình hệ thống:
+- **Cập nhật `AGENTS.md`**: Thêm chương **`CRITICAL BELLA SPA ERP DEVELOPMENT & TESTING RULES`** bắt buộc mọi AI Agent thế hệ sau phải ghim chặt: cấm nuốt lỗi CSDL ngầm, bắt buộc assert side-effects trong test, và ép kiểu schema Supabase nghiêm ngặt.
+- **Cập nhật `docs/BELLA_SPA_ERP_MASTER_GUIDE.md`**: Chèn thêm mục **`### 4.2 Quy tắc chống lỗi ngầm & chuẩn hóa kiểm thử`** để làm cẩm nang hướng dẫn vĩnh viễn cho lập trình viên con người và các đợt UAT.
+
+### 3. Nghiệm Thu & Kiểm Thử Toàn Diện (Full System Verification)
+- **Kiểm thử tự động (Jest)**: Chạy thành công toàn bộ **106 ca kiểm thử trên 14 test suites**, đạt tỷ lệ xanh **100%**.
+- **Biên dịch Production (Next.js Turbopack)**: Chạy lệnh `npm run build` hoàn thành xuất sắc trong **21.5 giây** (TS check 14.8s, page optimization 6.0s), biên dịch thành công toàn bộ **30/30 dynamic & static routes** không có bất kỳ cảnh báo hay lỗi biên dịch nào.
+- **Tính năng điều hướng & chuyển giao dữ liệu**: Xác minh 100% hoạt động của chuông thông báo (khi click sẽ chuyển hướng chính xác đến `/dashboard/sessions?bookingId=[booking_id]`, tự động mở bung popup liệu trình để admin đối soát tức thì) và cơ chế tự động đánh dấu đã đọc.
+- **Git & Vercel**: Stage, commit và push thành công toàn bộ mã nguồn lên nhánh `main` của GitHub repo, kích hoạt CI/CD triển khai an toàn lên Vercel.
+
