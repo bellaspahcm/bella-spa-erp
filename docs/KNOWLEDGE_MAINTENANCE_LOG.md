@@ -595,4 +595,17 @@
   - Chuyển giao thức bắt lỗi: Không nuốt lỗi ngầm nữa, thực hiện ném lỗi (`throw new Error`) để rollback/báo lỗi trực quan ra giao diện nếu cả hai phương thức kết nối đều bị từ chối, đảm bảo tính nhất quán và toàn vẹn dữ liệu tài chính 100%.
   - Kiểm tra hoàn hảo: Chạy suite kiểm thử tự động toàn dự án (`npm test` thông qua `cmd.exe /c`), tất cả **106/106 ca kiểm thử** trên **14/14 test suites** (bao gồm `e2e-pipeline.test.ts` và `rls-compliance.test.ts`) đều **PASS 100%**.
 
+## 2026-05-23 (Session 3): Fix Lỗi Mismatch Schema Cột `receipt_url` Của Bảng `revenue`
 
+- **Sự cố**: Khi Admin tải lên minh chứng thanh toán (bill ảnh chuyển khoản) và click "XÁC NHẬN THU TIỀN" để thanh toán nốt phần tiền còn lại (`21.000.000đ`), hệ thống báo lỗi đỏ: `Lỗi: Không thể ghi nhận giao dịch tài chính do phân quyền (RLS): Could not find the 'receipt_url' column of 'revenue' in the schema cache`.
+- **Nguyên nhân**:
+  - Trong logic hàm `recordRemainingPayment` tại file [lifecycle-actions.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/modules/booking/actions/lifecycle-actions.ts), hệ thống cố chèn thêm trường `receipt_url: params.receipt_url || null` để lưu ảnh bill minh chứng chuyển khoản của khách hàng.
+  - Tuy nhiên, trong schema cũ của bảng `revenue` trong database chưa có cột `receipt_url` (trong khi bảng `expenses` đã có). Điều này khiến PostgREST quăng lỗi không tìm thấy cột trong schema cache của nó, từ chối giao dịch ở cả client tiêu chuẩn lẫn client admin fallback.
+- **Giải pháp**:
+  - **Sửa Database**: Chạy trực tiếp câu lệnh DDL trên Supabase live database để tạo thêm cột:
+    ```sql
+    ALTER TABLE public.revenue ADD COLUMN IF NOT EXISTS receipt_url TEXT;
+    ```
+    Cột đã được tạo thành công ngay lập tức và tự động tải lại schema cache của PostgREST.
+  - **Đồng bộ Migration**: Tạo file migration local [supabase/migrations/20260523020000_add_receipt_url_to_revenue.sql](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/supabase/migrations/20260523020000_add_receipt_url_to_revenue.sql) để khai báo cột này giúp đồng bộ mã nguồn khi triển khai CI/CD.
+  - **Kiểm thử tự động & Build**: Chạy `npm test` thành công **106/106 tests** và biên dịch production build Next.js thành công **100%** không có lỗi. Đã push và triển khai trực tiếp lên production tại Vercel.
