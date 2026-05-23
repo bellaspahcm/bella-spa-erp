@@ -25,6 +25,10 @@
   * 📄 `src/services/onboarding-actions.ts`:
     - Nâng cấp Server Action `registerNewTenant` để tự động phát hiện và sử dụng Supabase Admin Client (`supabaseAdmin`) khởi tạo tài khoản khi phát hiện khóa bảo mật `SUPABASE_SERVICE_ROLE_KEY`.
     - Thiết lập tùy chọn `email_confirm: true` cho `auth.admin.createUser` để tự động kích hoạt tài khoản trực tiếp trong DB mà không kích hoạt trình gửi thư SMTP của Supabase, loại bỏ hoàn toàn lỗi email rate limit.
+  * 📄 `supabase/migrations/20260523010000_harden_all_database_rls.sql` (New):
+    - Trực tiếp chạy migration bổ sung và siết chặt các chính sách Row-Level Security (RLS) cho tất cả các bảng quan trọng (`customers`, `bookings`, `session_logs`, `revenue`, `expenses`, `salary_records`, `attendance`, `tenants`) bằng hàm `public.get_auth_tenant_id()`. Xóa bỏ các chính sách `true` không an toàn, cách ly hoàn toàn dữ liệu giữa các chi nhánh, đảm bảo chi nhánh A không thể truy cập dữ liệu của chi nhánh B hay HQ.
+  * 📄 `src/app/dashboard/settings/page.tsx` & `components/SecurityTab.tsx` (New):
+    - Khởi tạo chức năng Đổi Mật Khẩu (Security Tab) ngay trong trang Cài đặt chung của hệ thống, gọi API `supabase.auth.updateUser` giúp người dùng thay đổi thông tin xác thực an toàn, tiện lợi mà không tác động thay đổi hay phá vỡ layout gốc.
 
 ### 🚨 Troubleshooting
 > 🐛 **Problem Encountered (Chromium Page Zoom Height Bug)**: Do trong file `globals.css` cấu hình thuộc tính `zoom: 0.9` cho thẻ `html` đối với màn hình trung bình trở lên (MD trở lên), các phần tử sử dụng chiều cao toàn màn hình cố định `100vh` thực tế bị thu nhỏ tỷ lệ chỉ còn hiển thị tương đương `90vh`, để lại một khoảng trắng thô cứng khoảng 10% ở chân Sidebar khi cuộn trang.
@@ -35,6 +39,9 @@
 
 > 🐛 **Problem Encountered (Email Rate Limit Exceeded)**: Khi người dùng nhấp chọn đăng ký chi nhánh mới thông qua trang `/signup`, Supabase Auth kích hoạt gửi email xác nhận. Vì tài khoản Supabase thuộc gói miễn phí (Free-tier), tần suất gửi thư bị giới hạn nghiêm ngặt ở mức tối đa 3 email/giờ. Khi tạo liên tục nhiều chi nhánh, hệ thống ngay lập tức báo lỗi `email rate limit exceeded` từ GoTrue và ngắt tiến trình.
 > 💡 **Solution**: Tận dụng khóa bảo mật server-side `SUPABASE_SERVICE_ROLE_KEY` có sẵn trên production để khởi tạo `supabaseAdmin` và tạo người dùng thông qua `auth.admin.createUser` kết hợp tham số `email_confirm: true`. Việc này ghi trực tiếp trạng thái xác thực `email_confirmed_at = NOW()` vào database mà không gửi SMTP, vượt qua giới hạn rate limit thành công.
+
+> 🐛 **Problem Encountered (Cross-Tenant Data Leakage via Missing RLS Policies)**: Phát hiện tài khoản chi nhánh mới tạo có thể truy vấn và xem dữ liệu của chi nhánh khác hoặc HQ do một số bảng (`customers`, `bookings`, v.v.) đang để lọt cấu hình RLS hoặc sử dụng policy `true` mặc định.
+> 💡 **Solution**: Viết và chạy ngay một migration tổng hợp `20260523010000_harden_all_database_rls.sql` qua Admin SQL Editor, `DROP` mọi rule lỏng lẻo và áp dụng rule `tenant_id = public.get_auth_tenant_id()` cực kỳ nghiêm ngặt trên TOÀN BỘ các bảng nhạy cảm, chặn đứng mọi request chéo tenant.
 
 ### ⏭️ Next Steps
 - [ ] Giám sát tiến trình đăng ký chi nhánh thực tế trên Production, hướng dẫn người dùng kiểm tra nếu có bất kỳ phản hồi nào về tài khoản.

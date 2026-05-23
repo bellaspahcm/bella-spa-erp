@@ -50,7 +50,10 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/ktv') || 
     request.nextUrl.pathname.startsWith('/portal');
 
-  if (isProtectedRoute && !user) {
+  const mockUserEmail = request.cookies.get('mock_user_email')?.value;
+  const isMockDev = process.env.NODE_ENV === 'development' && !!mockUserEmail;
+
+  if (isProtectedRoute && !user && !isMockDev) {
     const loginUrl = new URL('/login', request.url);
     // Optional: save the intended destination to redirect back after login
     loginUrl.searchParams.set('next', request.nextUrl.pathname);
