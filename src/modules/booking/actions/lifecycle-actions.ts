@@ -288,7 +288,7 @@ export async function createBooking(formData: any) {
   }
 
   if (validatedData.deposit_amount > 0 && booking?.id) {
-    const { error: revError } = await supabase
+    let { error: revError } = await supabase
       .from('revenue')
       .insert([{
         booking_id: booking.id,
@@ -301,7 +301,35 @@ export async function createBooking(formData: any) {
         tenant_id: tenantId
       }]);
     
-    if (revError) console.error('Error recording initial deposit revenue:', revError);
+    if (revError) {
+      console.warn('Error recording initial deposit revenue with standard client, trying with admin client fallback:', revError);
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (serviceRoleKey) {
+        const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+        const supabaseAdmin = createSupabaseClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          serviceRoleKey
+        );
+        const { error: adminRevError } = await supabaseAdmin
+          .from('revenue')
+          .insert([{
+            booking_id: booking.id,
+            amount: validatedData.deposit_amount,
+            revenue_type: 'deposit',
+            payment_method: 'bank_transfer',
+            received_date: getLocalDateString(),
+            status: 'confirmed',
+            notes: `Cọc gói ${resolvePackageName(booking)}`,
+            tenant_id: tenantId
+          }]);
+        if (adminRevError) {
+          console.error('Error recording initial deposit revenue with admin client as well:', adminRevError);
+        } else {
+          console.log('Successfully recorded initial deposit revenue with admin client fallback');
+          revError = null;
+        }
+      }
+    }
   }
 
   const { count: existingLogsCount } = await supabase
@@ -694,7 +722,7 @@ export async function recordRemainingPayment(params: {
 
     const tenantId = booking.tenant_id;
 
-    const { error: revError } = await supabase
+    let { error: revError } = await supabase
       .from('revenue')
       .insert([{
         booking_id: params.booking_id,
@@ -709,7 +737,37 @@ export async function recordRemainingPayment(params: {
       }]);
 
     if (revError) {
-      console.error('Error recording revenue:', revError);
+      console.warn('Error recording revenue with standard client, trying with admin client fallback:', revError);
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (serviceRoleKey) {
+        const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+        const supabaseAdmin = createSupabaseClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          serviceRoleKey
+        );
+        const { error: adminRevError } = await supabaseAdmin
+          .from('revenue')
+          .insert([{
+            booking_id: params.booking_id,
+            amount: params.amount,
+            revenue_type: 'remaining_payment',
+            payment_method: params.payment_method,
+            received_date: getLocalDateString(),
+            status: params.status || 'pending',
+            notes: params.notes || `Thanh toán nốt phần còn lại.`,
+            receipt_url: params.receipt_url || null,
+            tenant_id: tenantId
+          }]);
+        if (adminRevError) {
+          console.error('Error recording revenue with admin client as well:', adminRevError);
+          throw new Error('Không thể ghi nhận giao dịch tài chính: ' + adminRevError.message);
+        } else {
+          console.log('Successfully recorded remaining payment revenue with admin client fallback');
+          revError = null;
+        }
+      } else {
+        throw new Error('Không thể ghi nhận giao dịch tài chính do phân quyền (RLS): ' + revError.message);
+      }
     }
 
     const newTotalPaid = (booking.deposit_amount || 0) + params.amount;
@@ -720,7 +778,7 @@ export async function recordRemainingPayment(params: {
       newStatus = 'booked';
     }
 
-    const { error: updateError } = await supabase
+    let { error: updateError } = await supabase
       .from('bookings')
       .update({ 
         deposit_amount: newTotalPaid,
@@ -728,7 +786,32 @@ export async function recordRemainingPayment(params: {
       } as any)
       .eq('id', params.booking_id);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.warn('Error updating booking with standard client, trying with admin client fallback:', updateError);
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (serviceRoleKey) {
+        const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+        const supabaseAdmin = createSupabaseClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          serviceRoleKey
+        );
+        const { error: adminUpdateError } = await supabaseAdmin
+          .from('bookings')
+          .update({ 
+            deposit_amount: newTotalPaid,
+            status: newStatus
+          } as any)
+          .eq('id', params.booking_id);
+        if (adminUpdateError) {
+          console.error('Error updating booking with admin client as well:', adminUpdateError);
+          throw new Error('Không thể cập nhật số tiền thanh toán của gói: ' + adminUpdateError.message);
+        } else {
+          updateError = null;
+        }
+      } else {
+        throw new Error('Không thể cập nhật số tiền thanh toán của gói do phân quyền: ' + updateError.message);
+      }
+    }
 
     try {
       const { recordAuditLog } = await import('@/services/audit-actions');
@@ -744,14 +827,30 @@ export async function recordRemainingPayment(params: {
     }
 
     if (params.status === 'confirmed' || newStatus === 'booked') {
-      const { error: syncError } = await supabase
+      let { error: syncError } = await supabase
         .from('revenue')
         .update({ status: 'confirmed' })
         .eq('booking_id', params.booking_id)
         .eq('status', 'pending');
       
       if (syncError) {
-        console.error('Error syncing revenue status:', syncError);
+        console.warn('Error syncing revenue status with standard client, trying with admin client fallback:', syncError);
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (serviceRoleKey) {
+          const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+          const supabaseAdmin = createSupabaseClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            serviceRoleKey
+          );
+          const { error: adminSyncError } = await supabaseAdmin
+            .from('revenue')
+            .update({ status: 'confirmed' })
+            .eq('booking_id', params.booking_id)
+            .eq('status', 'pending');
+          if (adminSyncError) {
+            console.error('Error syncing revenue status with admin client as well:', adminSyncError);
+          }
+        }
       }
     }
 

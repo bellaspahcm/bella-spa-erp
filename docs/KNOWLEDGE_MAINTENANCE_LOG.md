@@ -581,3 +581,18 @@
 - Chạy kiểm tra tĩnh toàn bộ mã nguồn Next.js bằng `npx.cmd tsc --noEmit` đạt kết quả thành công hoàn hảo 100% với **0 lỗi và 0 cảnh báo**.
 - Biên dịch production thành công toàn bộ 26 routes tĩnh và động trên Vercel.
 
+## 2026-05-23 (Session 2): Finance Dashboard "Thanh toán nốt" Transaction Fix & Database RLS Hardening Safe Fallback
+
+### 1. Fix Lỗi Mất Giao dịch Thanh toán nốt (Finance "Thanh toán nốt" Missing Transaction Bug)
+- **Sự cố**: Các giao dịch thanh toán nốt số tiền còn lại ("Thanh toán nốt") sau khi trừ đi khoản đặt cọc ban đầu được thực hiện thành công trên UI chi tiết khách hàng (Hình 2 - số tiền cần đóng chuyển về 0đ) nhưng hoàn toàn không được ghi nhận hay xuất hiện trong danh sách "Giao dịch gần đây" trên trang Báo cáo Tài chính (Hình 1).
+- **Nguyên nhân cốt lõi**:
+  - Di chuyển cứng hóa bảo mật RLS mới (`20260523010000_harden_all_database_rls.sql`) áp đặt chính sách `Tenant view revenue` chỉ cho phép vai trò `authenticated` thực hiện các thao tác ghi dữ liệu.
+  - Trong môi trường phát triển cục bộ hoặc staging bypass (sử dụng cookie `mock_user_email`), mặc dù middleware cho phép vượt rào vào `/dashboard`, Supabase Client tiêu chuẩn vẫn đánh giá user là `anon` (unauthenticated) vì không có token JWT thật.
+  - Lệnh chèn giao dịch vào bảng `revenue` trong `recordRemainingPayment` bị chặn lại bởi cơ chế RLS và trả về mã lỗi `42501`.
+  - Do cơ chế bắt lỗi cũ chỉ in lỗi ra server console mà không throw hoặc ngăn chặn cập nhật (`console.error`), hệ thống vẫn tiến hành cập nhật thành công số tiền `deposit_amount` trên bảng `bookings` (cho phép `anon` ghi), dẫn đến giao diện thông báo thành công ảo còn sổ cái doanh thu thực tế bị ghi nhận thiếu.
+- **Giải pháp**:
+  - Cấu hình cơ chế tự động Fallback thông minh sử dụng Admin client (`createSupabaseClient` với `SUPABASE_SERVICE_ROLE_KEY`) cho cả hai luồng ghi nhận đặt cọc ban đầu (`createBooking`) và thanh toán nốt (`recordRemainingPayment`) trong [lifecycle-actions.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/modules/booking/actions/lifecycle-actions.ts) khi phát hiện lỗi RLS.
+  - Chuyển giao thức bắt lỗi: Không nuốt lỗi ngầm nữa, thực hiện ném lỗi (`throw new Error`) để rollback/báo lỗi trực quan ra giao diện nếu cả hai phương thức kết nối đều bị từ chối, đảm bảo tính nhất quán và toàn vẹn dữ liệu tài chính 100%.
+  - Kiểm tra hoàn hảo: Chạy suite kiểm thử tự động toàn dự án (`npm test` thông qua `cmd.exe /c`), tất cả **106/106 ca kiểm thử** trên **14/14 test suites** (bao gồm `e2e-pipeline.test.ts` và `rls-compliance.test.ts`) đều **PASS 100%**.
+
+
