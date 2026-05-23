@@ -18,7 +18,9 @@ import {
   Banknote,
   ShieldAlert,
   History,
-  Megaphone
+  Megaphone,
+  Menu,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -55,6 +57,7 @@ export function Sidebar() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [rolePermissions, setRolePermissions] = useState<any>(null);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -74,6 +77,11 @@ export function Sidebar() {
     };
     fetchData();
   }, []);
+
+  // Auto close mobile drawer on navigation
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
 
   const filteredMenuItems = user?.role?.toLowerCase() === 'customer'
     ? customerMenuItems
@@ -146,18 +154,52 @@ export function Sidebar() {
 
   return (
     <>
+      {/* ── Mobile Top Header Bar (lg:hidden) ── */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-[#11100F]/95 border-b border-[#FFE4E6] dark:border-[#3E3A35] backdrop-blur-md z-30 px-6 flex items-center justify-between shadow-[0_2px_15px_rgba(0,0,0,0.02)] transition-colors duration-300">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-2.5 rounded-xl text-[#BE185D] dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all"
+        >
+          <Menu className="w-5.5 h-5.5" />
+        </button>
+        
+        <div className="flex items-center gap-2">
+          <img
+            src="/FullLogo_Transparent_NoBuffer.png"
+            alt="Bella Spa"
+            className="w-7 h-7 object-contain"
+          />
+          <span className="font-handwriting text-2xl text-[#BE185D] dark:text-[#A67D44] leading-none mt-1">Bella Spa</span>
+        </div>
+
+        <div className="w-8 h-8 rounded-full bg-[#FFE4E6] dark:bg-[#5D1C34]/40 flex items-center justify-center text-[#BE185D] dark:text-[#A67D44] font-black text-xs border border-pink-100 dark:border-[#3E3A35]">
+          {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
+        </div>
+      </div>
+
+      {/* ── Overlay Backdrop for Mobile ── */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-xs z-40 lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
       {/* 
-        Premium Sidebar
-        - Light Mode: Exquisite brand Pastel Pink (soft rose #BE185D active, warm rose-taupe #8A6D7C inactive, clearly visible blush pink gradient background from-[#FFF0F3] to-[#FBCFE8]).
-        - Dark Mode: Preserves the majestic REGAL Velvet Gold dark palette (#11100F background, #5D1C34 active, #A67D44 gold highlights).
+        Premium Responsive Sidebar
+        - Desktop: Sticky w-80 sidebar
+        - Mobile: Slide-out fixed drawer based on `isOpen` state
       */}
-      <aside className="w-80 bg-gradient-to-b from-[#FFF0F3] to-[#FBCFE8] border-r border-[#FBCFE8] dark:from-[#1C1B19] dark:to-[#11100F] dark:border-[#3E3A35] flex flex-col h-screen md:h-[111.2vh] sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)]">
+      <aside className={cn(
+        "w-80 bg-gradient-to-b from-[#FFF0F3] to-[#FBCFE8] border-r border-[#FBCFE8] dark:from-[#1C1B19] dark:to-[#11100F] dark:border-[#3E3A35] flex flex-col h-screen md:h-[111.2vh] fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:sticky lg:top-0 transition-transform duration-300 ease-in-out overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)]",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
         {/* Soft decorative light glows */}
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-pink-300/30 dark:bg-[#5D1C34]/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/25 dark:bg-[#A67D44]/5 rounded-full blur-[100px] pointer-events-none" />
 
-        {/* ── Logo ── */}
-        <div className="px-8 pt-10 pb-6 shrink-0 relative z-10">
+        {/* ── Logo & Mobile Close Button ── */}
+        <div className="px-8 pt-10 pb-6 shrink-0 relative z-10 flex items-center justify-between lg:block">
           <Link href="/dashboard" className="flex flex-col items-center group">
             <div className="relative mb-4">
               <div className="absolute inset-0 bg-primary/20 dark:bg-[#A67D44]/15 blur-2xl rounded-full scale-75 group-hover:scale-110 transition-transform duration-500" />
@@ -172,6 +214,14 @@ export function Sidebar() {
               <span className="text-[10px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-1">Management System</span>
             </div>
           </Link>
+
+          {/* Close button inside Drawer for Mobile */}
+          <button
+            onClick={() => setIsOpen(false)}
+            className="lg:hidden p-2 rounded-xl text-[#BE185D] dark:text-[#A67D44] hover:bg-white/60 dark:hover:bg-[#1C1B19]/50 active:scale-95 transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* ── Nav (scrollable) ── */}
@@ -254,5 +304,6 @@ export function Sidebar() {
     </>
   );
 }
+
 
 
