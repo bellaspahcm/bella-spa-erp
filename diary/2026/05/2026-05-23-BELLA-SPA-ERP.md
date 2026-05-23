@@ -30,6 +30,10 @@
   * 📄 `src/app/dashboard/settings/page.tsx` & `components/SecurityTab.tsx` (New):
     - Khởi tạo chức năng Đổi Mật Khẩu (Security Tab) ngay trong trang Cài đặt chung của hệ thống, gọi API `supabase.auth.updateUser` giúp người dùng thay đổi thông tin xác thực an toàn, tiện lợi.
     - Cập nhật quy trình đổi mật khẩu: Yêu cầu xác thực mật khẩu cũ bằng cách gọi `supabase.auth.signInWithPassword` với email người dùng hiện hành trước khi chạy lệnh đổi mới mật khẩu, tối ưu hóa độ bảo mật, tránh việc người khác lợi dụng phiên đăng nhập để tự ý đổi. Layout và giao diện giữ nguyên không bị xáo trộn.
+  * 📄 `src/components/layout/sidebar.tsx`:
+    - Loại bỏ hoàn toàn phối màu tối `dark:from-[#25131A] dark:to-[#1A0C11]` và các thuộc tính viền tối/chữ mờ tối ở Sidebar.
+    - Đồng bộ hóa Sidebar luôn luôn hiển thị dải màu hồng pastel nhẹ cao cấp (`from-[#FFF5F7] to-[#FCE4EC]`), viền `#FBCFE8/60`, các menu hoạt động dùng nền trắng `bg-white` kết hợp chữ hồng đậm thương hiệu `#BE185D`.
+    - Trải nghiệm người dùng đồng bộ 100%, đem lại cảm quan cực kỳ nhẹ nhàng, sang trọng, thanh khiết đặc trưng của một hệ thống vận hành Spa cao cấp. Giao diện trang chính của bảng điều khiển vẫn thay đổi Sáng/Tối linh hoạt không bị ảnh hưởng.
 
 ### 🚨 Troubleshooting
 > 🐛 **Problem Encountered (Chromium Page Zoom Height Bug)**: Do trong file `globals.css` cấu hình thuộc tính `zoom: 0.9` cho thẻ `html` đối với màn hình trung bình trở lên (MD trở lên), các phần tử sử dụng chiều cao toàn màn hình cố định `100vh` thực tế bị thu nhỏ tỷ lệ chỉ còn hiển thị tương đương `90vh`, để lại một khoảng trắng thô cứng khoảng 10% ở chân Sidebar khi cuộn trang.
