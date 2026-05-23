@@ -30,6 +30,7 @@ import { getMonthlyAttendanceSummary } from '@/services/attendance-actions';
 import { exportSalaryToExcel, exportSessionMatrixToExcel } from '@/services/export-actions';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
+import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 // Types
 import { 
@@ -406,17 +407,6 @@ export default function SalaryPage() {
     setIsHrModalOpen(true);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 p-10 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-black text-primary uppercase tracking-[0.2em] text-xs">Đang tính toán lương realtime...</p>
-        </div>
-      </div>
-    );
-  }
-
   const filteredSalaries = ktvSalaries.filter((s) => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -467,6 +457,7 @@ export default function SalaryPage() {
         ktvSalaries={ktvSalaries}
         currentUser={currentUser}
         prevMonthYear={prevMonthYear}
+        isLoading={isLoading}
       />
 
       {/* Premium Tab Selector */}
@@ -514,15 +505,21 @@ export default function SalaryPage() {
       {/* Salary Table (Realtime Payroll) */}
       {(activeTab === 'payroll' || currentUser?.role?.toLowerCase() === 'ktv') && (
         <>
-          <SalaryTable
-            filteredSalaries={filteredSalaries}
-            currentUser={currentUser}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            openEditModal={openEditModal}
-            handleApprove={handleApprove}
-            handleExport={handleExport}
-          />
+          {isLoading ? (
+            <div className="bg-white/80 dark:bg-zinc-900/60 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 shadow-sm mb-10">
+              <SkeletonTable />
+            </div>
+          ) : (
+            <SalaryTable
+              filteredSalaries={filteredSalaries}
+              currentUser={currentUser}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              openEditModal={openEditModal}
+              handleApprove={handleApprove}
+              handleExport={handleExport}
+            />
+          )}
 
           {/* Info Banner */}
           <div className="bg-amber-50 border border-amber-100 p-6 rounded-[32px] flex items-start gap-4 mb-10">
@@ -539,33 +536,52 @@ export default function SalaryPage() {
           </div>
 
           {/* Session Matrix Table */}
-          <SessionMatrixTable
-            matrixData={matrixData}
-            searchQuery={searchQuery}
-            ktvSalaries={ktvSalaries}
-            isExportingMatrix={isExportingMatrix}
-            handleExportMatrix={handleExportMatrix}
-            handleFinalizeOne={handleFinalizeOne}
-            handleConfirmOnBehalf={handleConfirmOnBehalf}
-            handlePublishOne={handlePublishOne}
-          />
+          {isLoading ? (
+            <div className="bg-white/80 dark:bg-zinc-900/60 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 shadow-sm">
+              <div className="h-6 w-48 mb-6"><SkeletonLoader variant="text" width={200} height={20} /></div>
+              <SkeletonTable />
+            </div>
+          ) : (
+            <SessionMatrixTable
+              matrixData={matrixData}
+              searchQuery={searchQuery}
+              ktvSalaries={ktvSalaries}
+              isExportingMatrix={isExportingMatrix}
+              handleExportMatrix={handleExportMatrix}
+              handleFinalizeOne={handleFinalizeOne}
+              handleConfirmOnBehalf={handleConfirmOnBehalf}
+              handlePublishOne={handlePublishOne}
+            />
+          )}
         </>
       )}
 
       {/* Attendance Tab */}
       {activeTab === 'attendance' && currentUser?.role?.toLowerCase() !== 'ktv' && (
-        <AttendanceSummaryTable
-          attendanceData={attendanceData}
-          openKtvCalendar={openKtvCalendar}
-        />
+        isLoading ? (
+          <div className="bg-white/80 dark:bg-zinc-900/60 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 shadow-sm">
+            <SkeletonTable />
+          </div>
+        ) : (
+          <AttendanceSummaryTable
+            attendanceData={attendanceData}
+            openKtvCalendar={openKtvCalendar}
+          />
+        )
       )}
 
       {/* HR Profile Tab */}
       {activeTab === 'hr_profile' && currentUser?.role?.toLowerCase() !== 'ktv' && (
-        <HrProfileTable
-          ktvSalaries={ktvSalaries}
-          openHrEditModal={openHrEditModal}
-        />
+        isLoading ? (
+          <div className="bg-white/80 dark:bg-zinc-900/60 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 shadow-sm">
+            <SkeletonTable />
+          </div>
+        ) : (
+          <HrProfileTable
+            ktvSalaries={ktvSalaries}
+            openHrEditModal={openHrEditModal}
+          />
+        )
       )}
 
       {/* Attendance Override Calendar Modal */}
