@@ -233,6 +233,7 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 
 /* Dark Mode Overrides */
 .dark body {
+  background-color: #11100F !important;
   background-image: 
     radial-gradient(circle at 0% 0%, rgba(166, 125, 68, 0.02) 0%, transparent 40%),
     radial-gradient(circle at 100% 100%, rgba(93, 28, 52, 0.02) 0%, transparent 40%);
@@ -273,4 +274,98 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(166, 125, 68, 0.2);
+}
+
+/* =========================================================================
+   DARK MODE REGAL STYLE OVERRIDES (Cards, Buttons, Text & Avatars)
+   ========================================================================= */
+
+/* Cards background overrides */
+.dark .group.bg-white\/30,
+.dark [class*="bg-white/30"],
+.dark [class*="bg-white/10"],
+.dark [class*="glass-pink"] {
+  background-color: rgba(28, 27, 25, 0.6) !important;
+  border-color: rgba(205, 188, 171, 0.05) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .group.bg-white\/30:hover,
+.dark [class*="bg-white/30"]:hover {
+  background-color: rgba(28, 27, 25, 0.85) !important;
+  border-color: rgba(166, 125, 68, 0.25) !important;
+}
+
+/* Rounded white avatars/icons to be elegant dark gold/bronze instead */
+.dark .rounded-full.bg-white,
+.dark [class*="rounded-full"].bg-white {
+  background-color: #292623 !important;
+  border-color: #3E3A35 !important;
+  color: #A67D44 !important;
+}
+
+/* Solid white elements like buttons (e.g. "Xem chi tiết", Inputs) */
+.dark .bg-white,
+.dark [class*="bg-white"] {
+  background-color: #1C1B19 !important;
+  color: #EFE9E1 !important;
+  border-color: #3E3A35 !important;
+}
+
+/* Hover effects for detail buttons */
+.dark .hover\:border-primary\/20:hover {
+  border-color: rgba(166, 125, 68, 0.4) !important;
+}
+
+.dark .hover\:text-primary:hover {
+  color: #A67D44 !important;
+}
+
+/* Action buttons (e.g. "Hoàn thành buổi 1", save button) */
+.dark .bg-primary,
+.dark [class*="bg-primary"] {
+  background-color: #5D1C34 !important;
+  color: #EFE9E1 !important;
+}
+
+.dark .bg-primary:hover,
+.dark [class*="bg-primary"]:hover {
+  background-color: #4D1328 !important;
+}
+
+/* Text overrides for contrast and tone */
+.dark .text-slate-600,
+.dark [class*="text-slate-600"] {
+  color: #CDBCAB !important;
+}
+
+.dark .text-slate-500,
+.dark [class*="text-slate-500"] {
+  color: #CDBCAB !important;
+}
+
+.dark .text-slate-400,
+.dark [class*="text-slate-400"] {
+  color: #CDBCAB/80 !important;
+}
+
+.dark .text-foreground {
+  color: #EFE9E1 !important;
+}
+
+.dark .border-slate-100 {
+  border-color: #3E3A35 !important;
+}
+
+/* Progress bar inside card */
+.dark .text-primary.bg-primary\/5 {
+  background-color: rgba(93, 28, 52, 0.3) !important;
+  color: #EFE9E1 !important;
+  border-color: rgba(93, 28, 52, 0.5) !important;
+}
+
+.dark .bg-slate-50\/50 {
+  background-color: #292623 !important;
+  color: #CDBCAB !important;
+  border-color: #3E3A35 !important;
 }
