@@ -619,3 +619,15 @@
   - **Phân rã cập nhật phức hợp**: Khi bản ghi cập nhật nhiều trường đồng thời, hệ thống tự động bóc tách thành danh sách thụt dòng có đường viền nhạt bên lề lấp đầy trực quan (`pl-3 border-l border-rose-100`) thay vì nén một dòng thô sơ.
   - **Nghiệp vụ hóa thêm mới**: Viết các bộ render chuyên biệt cho từng bảng dữ liệu core (`revenue`, `bookings`, `session_logs`, `customers`, `users`, `expenses`, `tenants`) để biên soạn bản ghi thêm mới thành câu tóm tắt nghiệp vụ tự nhiên (ví dụ: `"Đã ghi nhận doanh thu 21.000.000 đ (Loại: Thanh toán nốt, Hình thức: Chuyển khoản) cho lịch hẹn..."`).
   - **Độ ổn định & Đóng gói**: Hoàn thiện toàn bộ logic bên trong file [page.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/audit/page.tsx), biên dịch Next.js build hoàn thành **100%** thành công không cảnh báo hay lỗi kiểu dữ liệu. Đã triển khai live lên Vercel.
+
+## 2026-05-23 (Session 5): Fix Lỗi Đồng Bộ Ca Nghỉ Phép KTV Sang Chấm Công Thực Tế (Silent Insert Failure in attendance)
+
+- **Sự cố**: Một số đơn xin nghỉ phép của KTV (ví dụ: Lê Thu Hà xin nghỉ nửa ngày ca chiều ngày 20/05/2026 và nghỉ cả ngày ngày 21/05/2026) tuy đã được Admin phê duyệt (`status = 'approved'`) nhưng hoàn toàn không được tự động cập nhật hay xuất hiện trong bảng tổng hợp công thực tế (cột "Nghỉ" và "Nửa ngày" vẫn hiển thị bằng 0).
+- **Nguyên nhân**:
+  - Trong logic hàm `approveLeaveRequest` tại file [attendance-actions.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/attendance-actions.ts), hệ thống cố chèn thêm trường `notes: 'Nghỉ phép được duyệt (...)'` vào bảng `attendance` khi tạo mới bản ghi chấm công tự động.
+  - Tuy nhiên, trong cấu trúc của bảng `attendance` trong database hoàn toàn không có cột `notes` này. Điều này khiến câu lệnh `.from('attendance').insert(...)` quăng lỗi DDL từ database.
+  - Do khối chèn dữ liệu này nằm trong khối `try {} catch (attErr) {}` chỉ in lỗi ra server console và không ném lỗi (silent failure), nên mặc dù đơn xin nghỉ vẫn chuyển trạng thái thành Đã duyệt trên UI, bản ghi chấm công thực tế hoàn toàn bị mất mát âm thầm trong database.
+- **Giải pháp**:
+  - **Sửa Code**: Loại bỏ hoàn toàn trường dữ liệu không hợp lệ `notes` khỏi đối tượng chèn của bảng `attendance` trong hàm `approveLeaveRequest` tại file [attendance-actions.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/attendance-actions.ts).
+  - **Vá Dữ liệu Database**: Thực thi câu lệnh SQL trực tiếp trên database để bù đắp các bản ghi chấm công bị thiếu của KTV Lê Thu Hà vào các ngày 20/05 (trạng thái: `'half_day'`) và 21/05 (trạng thái: `'absent'`), giúp đồng bộ và sửa đổi chính xác số liệu tổng hợp công thực tế của cô lên `2.5 ngày công` thành công.
+  - **Kiểm thử**: Chạy `npm test` thành công **106/106 tests** và biên dịch production Next.js build thành công **100%**. Đã push lên Git và deploy live.
