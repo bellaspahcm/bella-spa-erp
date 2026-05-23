@@ -609,3 +609,13 @@
     Cột đã được tạo thành công ngay lập tức và tự động tải lại schema cache của PostgREST.
   - **Đồng bộ Migration**: Tạo file migration local [supabase/migrations/20260523020000_add_receipt_url_to_revenue.sql](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/supabase/migrations/20260523020000_add_receipt_url_to_revenue.sql) để khai báo cột này giúp đồng bộ mã nguồn khi triển khai CI/CD.
   - **Kiểm thử tự động & Build**: Chạy `npm test` thành công **106/106 tests** và biên dịch production build Next.js thành công **100%** không có lỗi. Đã push và triển khai trực tiếp lên production tại Vercel.
+
+## 2026-05-23 (Session 4): Cải Tiến Diễn Giải Nhật Ký Hoạt Động (Human-Readable Audit Trail) & Dịch Dynamic IDs
+
+- **Sự cố**: Giao diện trang nhật ký hệ thống (`/dashboard/audit`) hiển thị phần "Chi tiết thay đổi" quá kỹ thuật và máy móc (liệt kê chuỗi key-value dài dòng phân tách bằng dấu phẩy). Hơn nữa, nó chỉ hiển thị mã UUID thô của database (như ID KTV, ID khách hàng, ID gói dịch vụ) khiến người quản lý cực kỳ khó hiểu và không thể biết cụ thể ai là người thực hiện hay ca nào được cập nhật nếu không click vào modal chi tiết.
+- **Giải pháp**:
+  - **Dịch UUID động (Dynamic Reference Resolution)**: Thiết lập states `usersMap`, `packagesMap` và `customersMap` để tự động fetch danh sách nhân viên/KTV, gói dịch vụ và khách hàng từ database lúc khởi động trang. Toàn bộ mã UUID trong log đều được phân giải sang tên thật hiển thị trực quan (ví dụ: `completed_by_ktv_id` dịch thành `KTV Lê Thu Hà`, `customer_id` thành `Mẹ Bích Ngọc`).
+  - **Mũi tên chỉ hướng thay đổi trực quan**: Thay thế câu chữ clunky bằng định dạng thẻ kết hợp mũi tên chỉ hướng `➔` (ví dụ: `Tiền đặt cọc: 0 đ ➔ 21.000.000 đ`).
+  - **Phân rã cập nhật phức hợp**: Khi bản ghi cập nhật nhiều trường đồng thời, hệ thống tự động bóc tách thành danh sách thụt dòng có đường viền nhạt bên lề lấp đầy trực quan (`pl-3 border-l border-rose-100`) thay vì nén một dòng thô sơ.
+  - **Nghiệp vụ hóa thêm mới**: Viết các bộ render chuyên biệt cho từng bảng dữ liệu core (`revenue`, `bookings`, `session_logs`, `customers`, `users`, `expenses`, `tenants`) để biên soạn bản ghi thêm mới thành câu tóm tắt nghiệp vụ tự nhiên (ví dụ: `"Đã ghi nhận doanh thu 21.000.000 đ (Loại: Thanh toán nốt, Hình thức: Chuyển khoản) cho lịch hẹn..."`).
+  - **Độ ổn định & Đóng gói**: Hoàn thiện toàn bộ logic bên trong file [page.tsx](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/app/dashboard/audit/page.tsx), biên dịch Next.js build hoàn thành **100%** thành công không cảnh báo hay lỗi kiểu dữ liệu. Đã triển khai live lên Vercel.
