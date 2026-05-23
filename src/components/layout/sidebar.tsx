@@ -148,13 +148,13 @@ export function Sidebar() {
     <>
       {/* 
         Premium Sidebar
-        - Light Mode: Exquisite brand Pastel Pink (soft rose #BE185D active, warm rose-taupe #8A6D7C inactive, blush pink gradient background).
+        - Light Mode: Exquisite brand Pastel Pink (soft rose #BE185D active, warm rose-taupe #8A6D7C inactive, clearly visible blush pink gradient background from-[#FFF0F3] to-[#FBCFE8]).
         - Dark Mode: Preserves the majestic REGAL Velvet Gold dark palette (#11100F background, #5D1C34 active, #A67D44 gold highlights).
       */}
-      <aside className="w-80 bg-gradient-to-b from-[#FFF5F7] to-[#FCE4EC] dark:from-[#1C1B19] dark:to-[#11100F] border-r border-[#FBCFE8]/60 dark:border-[#3E3A35] flex flex-col h-screen md:h-[111.2vh] sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)]">
+      <aside className="w-80 bg-gradient-to-b from-[#FFF0F3] to-[#FBCFE8] border-r border-[#FBCFE8] dark:from-[#1C1B19] dark:to-[#11100F] dark:border-[#3E3A35] flex flex-col h-screen md:h-[111.2vh] sticky top-0 z-40 overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)]">
         {/* Soft decorative light glows */}
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-pink-300/25 dark:bg-[#5D1C34]/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/20 dark:bg-[#A67D44]/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-pink-300/30 dark:bg-[#5D1C34]/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-rose-300/25 dark:bg-[#A67D44]/5 rounded-full blur-[100px] pointer-events-none" />
 
         {/* ── Logo ── */}
         <div className="px-8 pt-10 pb-6 shrink-0 relative z-10">
