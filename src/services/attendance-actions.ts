@@ -536,7 +536,6 @@ export async function approveLeaveRequest(
           date: leave.leave_date,
           status: leaveAttendanceStatus,
           tenant_id: leave.tenant_id,
-          notes: `Nghỉ phép được duyệt (${leave.leave_type === 'morning' ? 'Ca sáng' : leave.leave_type === 'afternoon' ? 'Ca chiều' : 'Cả ngày'})`
         });
     }
   } catch (attErr) {
