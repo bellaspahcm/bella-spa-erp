@@ -88,7 +88,7 @@ export default function HqDashboardClient({
 }: HqDashboardClientProps) {
   const [stats, setStats] = useState<HqDashboardStats>(initialStats);
   const [tenants, setTenants] = useState<HqTenantRecord[]>(initialTenants);
-  const [isDemoMode, setIsDemoMode] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [compareMetric, setCompareMetric] = useState<'revenue' | 'customers'>('revenue');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
@@ -1116,7 +1116,7 @@ export default function HqDashboardClient({
   };
 
   useEffect(() => {
-    handleToggleDemo(true);
+    // Default to live database view on mount. No auto-toggle demo.
   }, []);
 
   useEffect(() => {

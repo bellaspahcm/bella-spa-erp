@@ -47,7 +47,7 @@ export default function AttendanceSummaryTable({
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center text-rose-600">
                   Nghỉ
                 </th>
-                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">
+                <th className="px-8 py-6 text-[10px] font-black text-orange-600 uppercase tracking-[0.2em] text-center">
                   Nửa ngày
                 </th>
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">
@@ -90,8 +90,8 @@ export default function AttendanceSummaryTable({
                   <td className="px-8 py-6 text-center whitespace-nowrap font-black text-rose-500">
                     -{ktv.absent}
                   </td>
-                  <td className="px-8 py-6 text-center whitespace-nowrap font-black text-blue-500">
-                    +{ktv.halfDay}
+                  <td className="px-8 py-6 text-center whitespace-nowrap font-black text-orange-500">
+                    -{ktv.halfDay}
                   </td>
                   <td className="px-8 py-6 text-center whitespace-nowrap font-black text-slate-900">
                     {ktv.baseSalary ? `${ktv.baseSalary.toLocaleString()}đ` : 'Chưa thiết lập'}
