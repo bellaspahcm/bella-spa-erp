@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { 
-  Scale, 
-  BookOpen, 
-  Calendar, 
-  Activity, 
-  PenTool, 
-  BarChart3 
+import {
+  Scale,
+  BookOpen,
+  Calendar,
+  Activity,
+  PenTool,
+  BarChart3,
+  GitCompareArrows
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +20,7 @@ const tabs = [
   { label: 'Nhật ký chung', href: '/dashboard/accounting/journals', icon: Activity },
   { label: 'Bút toán thủ công', href: '/dashboard/accounting/manual-entry', icon: PenTool },
   { label: 'Kỳ kế toán', href: '/dashboard/accounting/periods', icon: Calendar },
+  { label: 'Đối soát chéo', href: '/dashboard/accounting/reconciliation', icon: GitCompareArrows },
   { label: 'Báo cáo tài chính', href: '/dashboard/accounting/reports', icon: BarChart3 },
 ];
 

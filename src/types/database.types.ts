@@ -2491,6 +2491,18 @@ export type Database = {
         Args: { p_tenant_id: string; p_account_code_prefix: string; p_as_of_date: string }
         Returns: number
       }
+      get_reconciliation_report: {
+        Args: { p_tenant_id: string; p_from_date: string; p_to_date: string }
+        Returns: {
+          category: string
+          category_label: string
+          legacy_amount: number
+          ledger_amount: number
+          diff_amount: number
+          diff_percent: number
+          status: string
+        }[]
+      }
       get_consolidated_pnl: {
         Args: { p_from_date: string; p_to_date: string }
         Returns: {
