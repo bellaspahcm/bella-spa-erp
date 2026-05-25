@@ -253,9 +253,28 @@ export async function runCOOOrchestrator(
     throw logError; // Zero Silent DB Failures
   }
 
-  // 5. Nếu có GEMINI_API_KEY, thực hiện gọi Gemini API để phân tích thực tế thông minh
+  // 5. Nạp GEMINI_API_KEY (ưu tiên Database config chi nhánh, rồi đến .env.local, rồi process.env)
   let geminiApiKey = process.env.GEMINI_API_KEY;
-  if (!geminiApiKey) {
+
+  // Lấy API key từ database (Bắt buộc cho Vercel Serverless nơi không lưu .env.local)
+  try {
+    const { data: configData } = await supabase
+      .from("ai_agent_configs")
+      .select("gemini_api_key")
+      .eq("tenant_id", tenantId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (configData && configData.gemini_api_key) {
+      geminiApiKey = configData.gemini_api_key.trim();
+      console.log("[AI COO Service] Đã đọc GEMINI_API_KEY thành công từ Database chi nhánh:", tenantId);
+    }
+  } catch (dbErr) {
+    console.error("[AI COO Service] Lỗi truy vấn API key từ Database:", dbErr);
+  }
+
+  // Fallback đọc từ file .env.local cho môi trường local dev
+  if (!geminiApiKey || geminiApiKey.trim().length < 10) {
     try {
       const fs = require("fs");
       const path = require("path");

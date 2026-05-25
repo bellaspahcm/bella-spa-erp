@@ -81,7 +81,8 @@ const mockFrom = jest.fn((table?: string) => ({
   insert: mockInsert,
   select: jest.fn().mockReturnThis(),
   eq: jest.fn().mockReturnThis(),
-  single: jest.fn().mockResolvedValue({ data: { id: "user-id", role: "admin", tenant_id: "tenant-id", full_name: "CEO Admin" }, error: null })
+  single: jest.fn().mockResolvedValue({ data: { id: "user-id", role: "admin", tenant_id: "tenant-id", full_name: "CEO Admin" }, error: null }),
+  maybeSingle: jest.fn().mockResolvedValue({ data: { gemini_api_key: "AIzaSyAwpp2qqrmleSsIkceC1AuV8ssgzGlu6yw" }, error: null })
 }) as any);
 
 jest.mock("../lib/supabase-server", () => ({
