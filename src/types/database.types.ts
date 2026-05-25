@@ -2491,6 +2491,30 @@ export type Database = {
         Args: { p_tenant_id: string; p_account_code_prefix: string; p_as_of_date: string }
         Returns: number
       }
+      get_consolidated_pnl: {
+        Args: { p_from_date: string; p_to_date: string }
+        Returns: {
+          tenant_id: string
+          tenant_name: string
+          gross_revenue: number
+          deductions: number
+          net_revenue: number
+          cost_of_goods_sold: number
+          gross_profit: number
+          financial_income: number
+          financial_expense: number
+          operating_expense: number
+          operating_profit: number
+          other_income: number
+          other_expense: number
+          profit_before_tax: number
+          tax_expense: number
+          net_profit: number
+          net_margin_percent: number
+          total_bookings_count: number
+          total_sessions_completed: number
+        }[]
+      }
     }
     Enums: {
       AttendanceStatus: "present" | "late" | "absent" | "half_day"
