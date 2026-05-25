@@ -2,22 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  BarChart3, 
-  FileSpreadsheet, 
-  RefreshCw, 
-  Calendar, 
+import {
+  BarChart3,
+  FileSpreadsheet,
+  RefreshCw,
+  Calendar,
   HelpCircle,
   TrendingUp,
   Download,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle
 } from 'lucide-react';
-import { 
-  getTrialBalanceReport, 
-  getIncomeStatementReport, 
-  getBalanceSheetReport, 
+import {
+  getTrialBalanceReport,
+  getIncomeStatementReport,
+  getBalanceSheetReport,
   getAccountLedgerReport,
+  getCashFlowStatementReport,
   getAccounts
 } from '@/services/accounting-actions';
 import { exportAccountingReportToExcel } from '@/services/export-actions';
@@ -29,6 +31,7 @@ const reportTabs = [
   { value: 'trial_balance', label: 'Bảng cân đối phát sinh' },
   { value: 'income_statement', label: 'Báo cáo Kết quả KD (P&L)' },
   { value: 'balance_sheet', label: 'Bảng Cân đối Kế toán' },
+  { value: 'cash_flow', label: 'Lưu chuyển Tiền tệ (CFS)' },
   { value: 'account_ledger', label: 'Sổ chi tiết tài khoản' },
 ];
 
@@ -43,6 +46,7 @@ export default function AccountingReportsPage() {
   const [incomeStatement, setIncomeStatement] = useState<any>(null);
   const [balanceSheet, setBalanceSheet] = useState<any>(null);
   const [accountLedger, setAccountLedger] = useState<any[]>([]);
+  const [cashFlow, setCashFlow] = useState<any>(null);
 
   // Filtering metadata
   const [asOfDate, setAsOfDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -82,6 +86,9 @@ export default function AccountingReportsPage() {
       } else if (activeTab === 'balance_sheet') {
         const data = await getBalanceSheetReport(asOfDate);
         setBalanceSheet(data);
+      } else if (activeTab === 'cash_flow') {
+        const data = await getCashFlowStatementReport(fromDate, toDate);
+        setCashFlow(data);
       } else if (activeTab === 'account_ledger' && selectedAccountId) {
         const data = await getAccountLedgerReport(selectedAccountId, fromDate, toDate);
         setAccountLedger(data || []);
@@ -115,6 +122,9 @@ export default function AccountingReportsPage() {
       } else if (activeTab === 'balance_sheet') {
         reportData = balanceSheet;
         dateString = asOfDate;
+      } else if (activeTab === 'cash_flow') {
+        reportData = cashFlow;
+        dateString = `${fromDate} đến ${toDate}`;
       }
 
       if (!reportData) {
@@ -122,7 +132,11 @@ export default function AccountingReportsPage() {
         return;
       }
 
-      const base64 = await exportAccountingReportToExcel(activeTab as any, reportData, dateString);
+      const base64 = await exportAccountingReportToExcel(
+        activeTab as 'trial_balance' | 'income_statement' | 'balance_sheet' | 'cash_flow',
+        reportData,
+        dateString
+      );
       
       // Force download via trigger
       const link = document.createElement('a');
@@ -436,9 +450,131 @@ export default function AccountingReportsPage() {
               </table>
             </div>
           </div>
+        ) : activeTab === 'cash_flow' ? (
+          /* ==========================================
+             4. BÁO CÁO LƯU CHUYỂN TIỀN TỆ (CASH FLOW STATEMENT) — Phase 29.2
+             ========================================== */
+          <div className="space-y-6">
+            <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">
+              BÁO CÁO LƯU CHUYỂN TIỀN TỆ — Phương pháp gián tiếp (TT 133/2016/TT-BTC)
+            </h4>
+            <p className="text-3xs text-slate-400 text-center -mt-3 italic">
+              Kỳ báo cáo: {fromDate} → {toDate}
+            </p>
+
+            {!cashFlow ? (
+              <div className="py-12 text-center text-slate-400 italic">Chưa có dữ liệu cho kỳ này.</div>
+            ) : (
+              <div className="space-y-5">
+                {/* ── Tiền đầu kỳ / cuối kỳ summary ── */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-5 rounded-2xl bg-blue-50/40 dark:bg-blue-500/10 border border-blue-200/50 dark:border-blue-500/30">
+                    <p className="text-3xs font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest mb-1">Tiền đầu kỳ</p>
+                    <p className="text-lg font-mono font-black text-slate-900 dark:text-[#EFE9E1]">{Number(cashFlow.opening_cash || 0).toLocaleString('vi-VN')}đ</p>
+                  </div>
+                  <div className={`p-5 rounded-2xl border-2 ${
+                    Number(cashFlow.net_change_in_cash) >= 0
+                      ? 'bg-emerald-50/40 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/50'
+                      : 'bg-rose-50/40 dark:bg-rose-500/10 border-rose-300 dark:border-rose-500/50'
+                  }`}>
+                    <p className={`text-3xs font-black uppercase tracking-widest mb-1 ${
+                      Number(cashFlow.net_change_in_cash) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                    }`}>
+                      ↑↓ Tăng/giảm tiền trong kỳ
+                    </p>
+                    <p className={`text-lg font-mono font-black ${
+                      Number(cashFlow.net_change_in_cash) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                    }`}>
+                      {Number(cashFlow.net_change_in_cash) >= 0 ? '+' : ''}{Number(cashFlow.net_change_in_cash || 0).toLocaleString('vi-VN')}đ
+                    </p>
+                  </div>
+                  <div className="p-5 rounded-2xl bg-purple-50/40 dark:bg-purple-500/10 border border-purple-200/50 dark:border-purple-500/30">
+                    <p className="text-3xs font-black uppercase text-purple-600 dark:text-purple-400 tracking-widest mb-1">Tiền cuối kỳ</p>
+                    <p className="text-lg font-mono font-black text-slate-900 dark:text-[#EFE9E1]">{Number(cashFlow.closing_cash || 0).toLocaleString('vi-VN')}đ</p>
+                  </div>
+                </div>
+
+                {/* ── Detail table ── */}
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
+                        <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Chỉ tiêu</th>
+                        <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Mã</th>
+                        <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Số tiền (VND)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-sans text-xs">
+                      {(() => {
+                        const cf = cashFlow || {};
+                        const items = [
+                          // I. OPERATING
+                          { label: 'I. LƯU CHUYỂN TIỀN TỪ HOẠT ĐỘNG KINH DOANH', code: '20', val: cf.net_cash_operating, isBold: true, isSection: true },
+                          { label: '1. Lợi nhuận trước thuế', code: '01', val: cf.profit_before_tax, isBold: false, isSection: false },
+                          { label: '2. (+) Khấu hao tài sản cố định (214)', code: '02', val: cf.depreciation, isBold: false, isSection: false },
+                          { label: '3. (−) Tăng/(+) Giảm khoản phải thu (131)', code: '03', val: -Number(cf.change_in_receivables || 0), isBold: false, isSection: false },
+                          { label: '4. (−) Tăng/(+) Giảm hàng tồn kho (152, 153)', code: '04', val: -Number(cf.change_in_inventory || 0), isBold: false, isSection: false },
+                          { label: '5. (+) Tăng/(−) Giảm khoản phải trả (331, 333, 334, 338)', code: '05', val: cf.change_in_payables, isBold: false, isSection: false },
+                          { label: '6. (+) Tăng doanh thu chưa thực hiện (3387)', code: '06', val: cf.change_in_unearned_revenue, isBold: false, isSection: false },
+                          { label: '7. (−) Chi phí thuế TNDN đã ghi nhận (821)', code: '07', val: -Number(cf.tax_paid || 0), isBold: false, isSection: false },
+                          { label: 'Lưu chuyển tiền thuần từ HĐKD', code: '20', val: cf.net_cash_operating, isBold: true, isTotal: true },
+
+                          // II. INVESTING
+                          { label: 'II. LƯU CHUYỂN TIỀN TỪ HOẠT ĐỘNG ĐẦU TƯ', code: '30', val: cf.net_cash_investing, isBold: true, isSection: true },
+                          { label: '1. (−) Chi mua sắm tài sản cố định (Δ 211)', code: '21', val: -Number(cf.fixed_assets_purchased || 0), isBold: false, isSection: false },
+                          { label: '2. (+) Thu thanh lý tài sản cố định', code: '22', val: cf.fixed_assets_sold, isBold: false, isSection: false },
+                          { label: 'Lưu chuyển tiền thuần từ HĐĐT', code: '30', val: cf.net_cash_investing, isBold: true, isTotal: true },
+
+                          // III. FINANCING
+                          { label: 'III. LƯU CHUYỂN TIỀN TỪ HOẠT ĐỘNG TÀI CHÍNH', code: '40', val: cf.net_cash_financing, isBold: true, isSection: true },
+                          { label: '1. (+) Tiền góp vốn của chủ sở hữu (Δ 411)', code: '31', val: cf.owner_contributions, isBold: false, isSection: false },
+                          { label: '2. (+) Tiền vay nợ ngân hàng', code: '33', val: cf.loans_received, isBold: false, isSection: false },
+                          { label: '3. (−) Tiền trả nợ vay', code: '34', val: -Number(cf.loans_repaid || 0), isBold: false, isSection: false },
+                          { label: 'Lưu chuyển tiền thuần từ HĐTC', code: '40', val: cf.net_cash_financing, isBold: true, isTotal: true },
+
+                          // TOTAL
+                          { label: 'TĂNG/GIẢM TIỀN THUẦN TRONG KỲ (I + II + III)', code: '50', val: cf.net_change_in_cash, isBold: true, isTotal: true },
+                          { label: 'TIỀN VÀ TƯƠNG ĐƯƠNG TIỀN ĐẦU KỲ', code: '60', val: cf.opening_cash, isBold: true, isTotal: true },
+                          { label: 'TIỀN VÀ TƯƠNG ĐƯƠNG TIỀN CUỐI KỲ', code: '70', val: cf.closing_cash, isBold: true, isTotal: true, isFinal: true },
+                        ];
+
+                        return items.map((item, idx) => (
+                          <tr key={idx} className={`hover:bg-slate-50/40 dark:hover:bg-[#11100F]/10 transition-colors ${
+                            item.isFinal ? 'bg-emerald-50/40 dark:bg-emerald-500/10 font-black text-emerald-700 dark:text-emerald-300' :
+                            item.isTotal ? 'bg-slate-50/50 dark:bg-[#11100F]/30 font-black text-slate-900 dark:text-[#EFE9E1]' :
+                            item.isSection ? 'bg-pink-50/30 dark:bg-[#5D1C34]/20 font-black text-primary dark:text-[#A67D44] uppercase tracking-wider' :
+                            'text-slate-600 dark:text-[#CDBCAB]'
+                          }`}>
+                            <td className="px-6 py-3 text-xs">{item.label}</td>
+                            <td className="px-6 py-3 text-center font-mono font-bold">{item.code}</td>
+                            <td className={`px-6 py-3 text-right font-mono font-bold ${
+                              Number(item.val) < 0 ? 'text-rose-500' : ''
+                            }`}>
+                              {Number(item.val || 0).toLocaleString('vi-VN')}đ
+                            </td>
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* ── Verification footer ── */}
+                {Math.abs(Number(cashFlow.verification_diff || 0)) > 1 && (
+                  <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div className="text-xs text-amber-800 dark:text-amber-200">
+                      <p className="font-bold">Cảnh báo: Có sai lệch {Number(cashFlow.verification_diff || 0).toLocaleString('vi-VN')}đ giữa (Tiền cuối − Tiền đầu) và Lưu chuyển thuần.</p>
+                      <p className="text-2xs mt-1">Nguyên nhân thường gặp: thiếu account 821 trong COA, hoặc có nghiệp vụ trực tiếp ảnh hưởng tiền chưa được phân loại đúng nhóm hoạt động.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         ) : (
           /* ==========================================
-             4. SỔ CHI TIẾT TÀI KHOẢN (ACCOUNT LEDGER)
+             5. SỔ CHI TIẾT TÀI KHOẢN (ACCOUNT LEDGER)
              ========================================== */
           <div className="space-y-6">
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">SỔ CHI TIẾT TÀI KHOẢN KẾ TOÁN</h4>

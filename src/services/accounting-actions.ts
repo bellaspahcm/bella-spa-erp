@@ -549,3 +549,21 @@ export async function getAccountLedgerReport(accountId: string, fromDate: string
   if (error) throw error;
   return data || [];
 }
+
+/**
+ * 16. RPC Report: Cash Flow Statement (Phase 29.2) — phương pháp gián tiếp chuẩn TT133
+ */
+export async function getCashFlowStatementReport(fromDate: string, toDate: string) {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user?.tenant_id) throw new Error('Unauthorized or missing tenant session.');
+
+  const { data, error } = await supabase.rpc('get_cash_flow_statement', {
+    p_tenant_id: user.tenant_id,
+    p_from_date: fromDate,
+    p_to_date: toDate,
+  });
+
+  if (error) throw error;
+  return data?.[0] || null;
+}
