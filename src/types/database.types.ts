@@ -208,6 +208,7 @@ export type Database = {
       ai_agent_configs: {
         Row: {
           created_at: string
+          gemini_api_key: string | null
           id: string
           is_active: boolean | null
           telegram_bot_token: string | null
@@ -217,6 +218,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          gemini_api_key?: string | null
           id?: string
           is_active?: boolean | null
           telegram_bot_token?: string | null
@@ -226,6 +228,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          gemini_api_key?: string | null
           id?: string
           is_active?: boolean | null
           telegram_bot_token?: string | null
