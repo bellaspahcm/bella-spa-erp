@@ -254,18 +254,36 @@ export async function runCOOOrchestrator(
   }
 
   // 5. Nếu có GEMINI_API_KEY, thực hiện gọi Gemini API để phân tích thực tế thông minh
-  const geminiApiKey = process.env.GEMINI_API_KEY;
+  let geminiApiKey = process.env.GEMINI_API_KEY;
+  if (!geminiApiKey) {
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const envPath = path.join(process.cwd(), ".env.local");
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, "utf8");
+        const match = envContent.match(/^GEMINI_API_KEY\s*=\s*(.+)$/m);
+        if (match && match[1]) {
+          geminiApiKey = match[1].trim();
+          console.log("[AI COO Service] Đã đọc GEMINI_API_KEY trực tiếp từ file .env.local thành công!");
+        }
+      }
+    } catch (fsErr) {
+      console.error("[AI COO Service] Không thể đọc trực tiếp từ .env.local:", fsErr);
+    }
+  }
+
   let executiveSummary = subAgentResponse?.summary || "Đang xử lý phân tích tổng quan chi nhánh.";
   let anomaliesFound = subAgentResponse?.anomalies || [];
   let draftActions = subAgentResponse?.draftProposals || [];
   let strategicRecommendations = routedTo === "chro" ? [
-    "1. Ban hành quy chế thắt chặt bán kính nhận ca tắm bé (< 5km) cho KTV chi nhánh để tối ưu chi phí di chuyển.",
-    "2. Yêu cầu KTV Lead tổ chức buổi chấn chỉnh ý thức tổ chức kỷ luật và quy trình Check-in GPS đúng vị trí nhà khách.",
-    "3. Kích hoạt tính năng gửi tin nhắn nhắc nhở giải trình tự động qua Telegram/Zalo OA cho các KTV có bất thường cao nhất."
+    "Ban hành quy chế thắt chặt bán kính nhận ca tắm bé (< 5km) cho KTV chi nhánh để tối ưu chi phí di chuyển.",
+    "Yêu cầu KTV Lead tổ chức buổi chấn chỉnh ý thức tổ chức kỷ luật và quy trình Check-in GPS đúng vị trí nhà khách.",
+    "Kích hoạt tính năng gửi tin nhắn nhắc nhở giải trình tự động qua Telegram/Zalo OA cho các KTV có bất thường cao nhất."
   ] : [
-    "1. Định kỳ chạy đối soát quỹ đối chiếu với báo cáo doanh thu để kiểm tra sai lệch quỹ kế toán trước ngày 5 hàng tháng.",
-    "2. Thắt chặt kiểm soát các chi phí vận hành biến động (dầu massage, khăn tắm bé hao hụt) của chi nhánh có biên lợi nhuận thấp.",
-    "3. Rà soát lại việc ghi nhận sổ cái cho các khoản chiết khấu dịch vụ của các combo cao cấp."
+    "Định kỳ chạy đối soát quỹ đối chiếu với báo cáo doanh thu để kiểm tra sai lệch quỹ kế toán trước ngày 5 hàng tháng.",
+    "Thắt chặt kiểm soát các chi phí vận hành biến động (dầu massage, khăn tắm bé hao hụt) của chi nhánh có biên lợi nhuận thấp.",
+    "Rà soát lại việc ghi nhận sổ cái cho các khoản chiết khấu dịch vụ của các combo cao cấp."
   ];
 
   if (geminiApiKey) {
@@ -304,7 +322,7 @@ Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa 
   ]
 }`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
