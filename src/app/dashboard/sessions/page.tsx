@@ -52,6 +52,10 @@ function SessionsContent() {
   const [userRole, setUserRole] = useState<'KTV' | 'admin' | ''>('');
   const [selectedBooking, setSelectedBooking] = useState<SessionBooking | null>(null);
   
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
   const activeBooking = useMemo(() => {
     if (!selectedBooking) return null;
     return sessions.find((s) => s.id === selectedBooking.id) || selectedBooking;
@@ -201,6 +205,24 @@ function SessionsContent() {
       return okMonth && okYear;
     });
   }, [filteredSessions, monthFilter, yearFilter]);
+
+  // Reset page on filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, sortFilter, monthFilter, yearFilter]);
+
+  const totalPages = Math.ceil(displaySessions.length / pageSize) || 1;
+  const paginatedSessions = useMemo(() => {
+    return displaySessions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [displaySessions, currentPage]);
+
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, displaySessions.length);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const isUpdatedToday = (booking: SessionBooking) => {
     const today = new Date().toLocaleDateString('sv-SE');
@@ -449,21 +471,76 @@ function SessionsContent() {
           <p className="text-slate-500">Thử thay đổi từ khóa hoặc bộ lọc</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6">
-          {displaySessions.map((booking, idx) => (
-            <SessionCard
-              key={booking.id}
-              booking={booking}
-              idx={idx}
-              userRole={userRole}
-              updatingId={updatingId}
-              isReusingId={isReusingId}
-              onSelect={() => setSelectedBooking(booking)}
-              onUpdateProgress={handleUpdateProgress}
-              onReusePackage={handleReusePackage}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-6">
+            {paginatedSessions.map((booking, idx) => (
+              <SessionCard
+                key={booking.id}
+                booking={booking}
+                idx={idx}
+                userRole={userRole}
+                updatingId={updatingId}
+                isReusingId={isReusingId}
+                onSelect={() => setSelectedBooking(booking)}
+                onUpdateProgress={handleUpdateProgress}
+                onReusePackage={handleReusePackage}
+              />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+                Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{displaySessions.length}</span> thẻ liệu trình
+              </p>
+              
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                    if (totalPages > 7) {
+                      if (page > 1 && page < totalPages && (page < currentPage - 1 || page > currentPage + 1)) {
+                        if (page === currentPage - 2 || page === currentPage + 2) return <span key={page} className="px-1 text-slate-300">...</span>;
+                        return null;
+                      }
+                    }
+                    
+                    return (
+                      <button 
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={cn(
+                          "w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-90",
+                          currentPage === page 
+                            ? "bg-primary text-white shadow-lg shadow-rose-200" 
+                            : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-300"
+                        )}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <button 
+                  onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
       
       {/* Detail Modal */}

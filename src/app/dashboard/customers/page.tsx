@@ -60,7 +60,7 @@ export default function CustomersPage() {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
+  const pageSize = 15;
 
   // Form states
   const [formData, setFormData] = useState({

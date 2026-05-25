@@ -96,8 +96,8 @@ export function SessionCard({
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
-      <div className="w-20 h-20 bg-gradient-to-br from-pink-50 to-white rounded-3xl flex items-center justify-center flex-shrink-0 border border-pink-100 shadow-inner group-hover:scale-110 transition-transform relative z-10">
-        <Flower2 className="text-primary w-10 h-10" />
+      <div className="w-16 h-16 bg-gradient-to-br from-pink-50 to-white rounded-2xl flex items-center justify-center flex-shrink-0 border border-pink-100 shadow-inner group-hover:scale-110 transition-transform relative z-10">
+        <Flower2 className="text-primary w-8 h-8" />
       </div>
       
       <div className="flex-1 min-w-0 relative z-10">
