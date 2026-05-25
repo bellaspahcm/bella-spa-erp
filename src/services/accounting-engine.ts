@@ -1,10 +1,11 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+import type { AccountingReferenceType } from '@/lib/accounting-outbox';
 
 export type JournalEntryInput = {
   tenant_id: string;
   description: string;
-  reference_type?: string;
+  reference_type?: AccountingReferenceType;
   reference_id?: string;
   entry_date?: string;
   lines: {

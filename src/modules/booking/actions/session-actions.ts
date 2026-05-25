@@ -198,43 +198,32 @@ export async function completeSession(sessionId: string, bookingId: string, cust
 
   // ⭐ Ghi nhận vào hàng đợi Accounting Outbox cho sự kiện SESSION_DONE
   if (sessionId && tenantId) {
-    try {
-      const fullPrice = Number(currentBooking?.full_price || 0);
-      const discountPercent = Number(currentBooking?.discount_percent || 0);
-      const targetPrice = fullPrice * (1 - discountPercent / 100);
-      const totalSessions = Number(currentBooking?.total_sessions || 1);
-      const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
-      const commission = Number(currentBooking?.ktv_commission) || 0;
+    const fullPrice = Number(currentBooking?.full_price || 0);
+    const discountPercent = Number(currentBooking?.discount_percent || 0);
+    const targetPrice = fullPrice * (1 - discountPercent / 100);
+    const totalSessions = Number(currentBooking?.total_sessions || 1);
+    const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
+    const commission = Number(currentBooking?.ktv_commission) || 0;
 
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const activeClient = serviceRoleKey
-        ? (() => {
-            const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
-            return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
-          })()
-        : supabase;
-
-      const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
-        p_tenant_id: tenantId,
-        p_event_type: 'SESSION_DONE',
-        p_reference_type: 'SESSION_LOG',
-        p_reference_id: sessionId,
-        p_payload: {
+    const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+    await enqueueWithAutoClient(
+      supabase,
+      {
+        tenantId,
+        eventType: 'SESSION_DONE',
+        referenceType: 'SESSION_LOG',
+        referenceId: sessionId,
+        payload: {
           earnedRevenueAmount,
           commissionAmount: commission,
           ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
-          branchId: null,
-          description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`
-        }
-      });
-      if (outboxError) {
-        console.error('[completeSession] Failed to enqueue SESSION_DONE accounting outbox event:', outboxError);
-      } else {
-        console.log('[completeSession] Successfully enqueued SESSION_DONE event for session:', sessionId);
-      }
-    } catch (outboxErr) {
-      console.warn('[completeSession] Exception enqueuing outbox event:', outboxErr);
-    }
+          // TODO Phase 29: dùng branch_id thực khi multi-branch
+          branchId: tenantId,
+          description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`,
+        },
+      },
+      '[completeSession]'
+    );
   }
 
   return { success: true };
@@ -591,43 +580,32 @@ export async function updateSessionLog(id: string, payload: any) {
 
       // ⭐ Ghi nhận vào hàng đợi Accounting Outbox cho sự kiện SESSION_DONE
       if (id && tenantId) {
-        try {
-          const fullPrice = Number(currentBooking?.full_price || 0);
-          const discountPercent = Number(currentBooking?.discount_percent || 0);
-          const targetPrice = fullPrice * (1 - discountPercent / 100);
-          const totalSessions = Number(currentBooking?.total_sessions || 1);
-          const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
-          const commission = Number(currentBooking?.ktv_commission) || 0;
+        const fullPrice = Number(currentBooking?.full_price || 0);
+        const discountPercent = Number(currentBooking?.discount_percent || 0);
+        const targetPrice = fullPrice * (1 - discountPercent / 100);
+        const totalSessions = Number(currentBooking?.total_sessions || 1);
+        const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
+        const commission = Number(currentBooking?.ktv_commission) || 0;
 
-          const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-          const activeClient = serviceRoleKey
-            ? (() => {
-                const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
-                return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
-              })()
-            : supabase;
-
-          const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
-            p_tenant_id: tenantId,
-            p_event_type: 'SESSION_DONE',
-            p_reference_type: 'SESSION_LOG',
-            p_reference_id: id,
-            p_payload: {
+        const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+        await enqueueWithAutoClient(
+          supabase,
+          {
+            tenantId,
+            eventType: 'SESSION_DONE',
+            referenceType: 'SESSION_LOG',
+            referenceId: id,
+            payload: {
               earnedRevenueAmount,
               commissionAmount: commission,
               ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
-              branchId: null,
-              description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`
-            }
-          });
-          if (outboxError) {
-            console.error('[updateSessionLog] Failed to enqueue SESSION_DONE accounting outbox event:', outboxError);
-          } else {
-            console.log('[updateSessionLog] Successfully enqueued SESSION_DONE event for session:', id);
-          }
-        } catch (outboxErr) {
-          console.warn('[updateSessionLog] Exception enqueuing outbox event:', outboxErr);
-        }
+              // TODO Phase 29: dùng branch_id thực khi multi-branch
+              branchId: tenantId,
+              description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`,
+            },
+          },
+          '[updateSessionLog]'
+        );
       }
     }
   }

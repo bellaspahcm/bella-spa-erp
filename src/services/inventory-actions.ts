@@ -279,31 +279,23 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
 
     // Enqueue INVENTORY_CONSUMED outbox event if totalCost > 0
     if (totalCost > 0) {
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      const activeClient = serviceRoleKey
-        ? (() => {
-            const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
-            return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
-          })()
-        : supabase;
-
-      const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
-        p_tenant_id: tenantId,
-        p_event_type: 'INVENTORY_CONSUMED',
-        p_reference_type: 'SESSION_LOG',
-        p_reference_id: sessionLogId,
-        p_payload: {
-          amount: totalCost,
-          description: `Vật tư tiêu hao ca trị liệu, buổi ID: ${sessionLogId}`,
-          branchId: null
-        }
-      });
-
-      if (outboxError) {
-        console.error('[autoConsumeForSession] Failed to enqueue INVENTORY_CONSUMED event:', outboxError);
-      } else {
-        console.log('[autoConsumeForSession] Successfully enqueued INVENTORY_CONSUMED event for session:', sessionLogId, 'cost:', totalCost);
-      }
+      const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+      await enqueueWithAutoClient(
+        supabase,
+        {
+          tenantId,
+          eventType: 'INVENTORY_CONSUMED',
+          referenceType: 'SESSION_LOG',
+          referenceId: sessionLogId,
+          payload: {
+            amount: totalCost,
+            description: `Vật tư tiêu hao ca trị liệu, buổi ID: ${sessionLogId}`,
+            // TODO Phase 29: dùng branch_id thực khi multi-branch
+            branchId: tenantId,
+          },
+        },
+        '[autoConsumeForSession]'
+      );
     }
 
     return { success: true, processed: results.length, totalCost };
