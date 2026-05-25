@@ -91,7 +91,14 @@ export async function runCOOOrchestrator(
       const present = Number(item.present_count || 0);
       const gpsAnomaly = Number(item.gps_anomaly_count || 0);
       
-      const onTimeRate = total > 0 ? (((present - late) / total) * 100).toFixed(1) : "100";
+      const totalAttended = present + late;
+      const totalShifts = total > 0 ? total : (totalAttended + Number(item.absent_count || 0));
+      
+      let onTimeRateVal = 100;
+      if (totalShifts > 0) {
+        onTimeRateVal = (present / totalShifts) * 100;
+      }
+      const onTimeRate = onTimeRateVal.toFixed(1);
       const sInfo = (salarySheet || []).find((s: any) => s.ktv_id === item.ktv_id);
 
       return {
@@ -258,7 +265,7 @@ export async function runCOOOrchestrator(
 
   // Lấy API key từ database (Bắt buộc cho Vercel Serverless nơi không lưu .env.local)
   try {
-    const { data: configData } = await (supabase as any)
+    const { data: configData } = await supabase
       .from("ai_agent_configs")
       .select("gemini_api_key")
       .eq("tenant_id", tenantId)
