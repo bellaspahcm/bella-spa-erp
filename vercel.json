@@ -10,8 +10,8 @@
       "schedule": "0 3 * * *"
     },
     {
-      "path": "/api/cron/reconciliation-check",
-      "schedule": "0 4 * * *"
+      "path": "/api/cron/ai-autopilot",
+      "schedule": "0 22 * * *"
     }
   ]
 }
