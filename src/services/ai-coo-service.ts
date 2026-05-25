@@ -287,7 +287,25 @@ export async function runCOOOrchestrator(
   ];
 
   if (!geminiApiKey || geminiApiKey.trim().length < 10) {
-    executiveSummary = `⚠️ Hệ thống chưa nạp được GEMINI_API_KEY hợp lệ từ file .env.local (Độ dài khóa tìm được: ${geminiApiKey ? geminiApiKey.trim().length : 0} ký tự). Vui lòng kiểm tra lại cấu hình key trong file .env.local ở thư mục gốc dự án.`;
+    const fs = require("fs");
+    const path = require("path");
+    const envPath = path.join(process.cwd(), ".env.local");
+    const exists = fs.existsSync(envPath);
+    let debugInfo = `Cwd: ${process.cwd()}, Path: ${envPath}, Exists: ${exists}`;
+    if (exists) {
+      try {
+        const content = fs.readFileSync(envPath, "utf8");
+        debugInfo += `, Content Length: ${content.length}`;
+        const match = content.match(/^GEMINI_API_KEY\s*=\s*(.+)$/m);
+        debugInfo += `, Match Found: ${!!match}`;
+        if (match) {
+          debugInfo += `, Match[1] Length: ${match[1] ? match[1].trim().length : 0}`;
+        }
+      } catch (err: any) {
+        debugInfo += `, Read Error: ${err.message}`;
+      }
+    }
+    executiveSummary = `⚠️ Hệ thống chưa nạp được GEMINI_API_KEY hợp lệ từ file .env.local (Độ dài khóa tìm được: ${geminiApiKey ? geminiApiKey.trim().length : 0} ký tự). Chi tiết chẩn đoán: [${debugInfo}]. Vui lòng kiểm tra lại cấu hình key trong file .env.local ở thư mục gốc dự án.`;
   } else {
     try {
       console.log("[AI COO Service] Phát hiện GEMINI_API_KEY. Tiến hành gọi Gemini API cho phân tích thông minh...");
