@@ -1,0 +1,389 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  PlusCircle, 
+  Folder, 
+  FolderOpen, 
+  FileText, 
+  Search, 
+  X, 
+  HelpCircle,
+  Eye,
+  CheckCircle2,
+  ChevronRight,
+  ChevronDown
+} from 'lucide-react';
+import { getAccounts, createAccount } from '@/services/accounting-actions';
+import { toast } from 'sonner';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+
+const accountTypes = [
+  { value: 'ASSET', label: '1xx, 2xx - TÀI SẢN (ASSETS)' },
+  { value: 'LIABILITY', label: '3xx - NỢ PHẢI TRẢ (LIABILITY)' },
+  { value: 'EQUITY', label: '4xx, 9xx - VỐN CHỦ SỞ HỮU (EQUITY)' },
+  { value: 'REVENUE', label: '5xx, 7xx - DOANH THU (REVENUE)' },
+  { value: 'EXPENSE', label: '6xx, 8xx - CHI PHÍ (EXPENSE)' },
+];
+
+export default function ChartOfAccountsPage() {
+  const [loading, setLoading] = useState(true);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
+  
+  // Add modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [newAccount, setNewAccount] = useState({
+    account_code: '',
+    account_name: '',
+    account_type: 'ASSET' as any,
+    parent_id: '',
+  });
+
+  // Expanded tree nodes
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
+
+  const fetchCOA = async () => {
+    try {
+      const data = await getAccounts();
+      setAccounts(data || []);
+      
+      // Auto expand all top nodes initially
+      const initialExpanded: Record<string, boolean> = {};
+      data.forEach((acc: any) => {
+        if (!acc.parent_id) {
+          initialExpanded[acc.id] = true;
+        }
+      });
+      setExpandedNodes(initialExpanded);
+    } catch (err: any) {
+      console.error('Error fetching COA:', err);
+      toast.error('Không thể tải hệ thống tài khoản.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCOA();
+  }, []);
+
+  const toggleNode = (nodeId: string) => {
+    setExpandedNodes(prev => ({
+      ...prev,
+      [nodeId]: !prev[nodeId]
+    }));
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAccount.account_code || !newAccount.account_name) {
+      toast.warning('Vui lòng nhập đầy đủ mã và tên tài khoản.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await createAccount({
+        account_code: newAccount.account_code,
+        account_name: newAccount.account_name,
+        account_type: newAccount.account_type,
+        parent_id: newAccount.parent_id || null,
+      });
+
+      if (res.success) {
+        toast.success(`Đã thêm tài khoản "${newAccount.account_code} - ${newAccount.account_name}" thành công!`);
+        setIsModalOpen(false);
+        setNewAccount({ account_code: '', account_name: '', account_type: 'ASSET', parent_id: '' });
+        fetchCOA();
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi khi thêm tài khoản mới.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Group accounts in parent-child tree hierarchy
+  const buildTree = (list: any[]) => {
+    const map: Record<string, any> = {};
+    const roots: any[] = [];
+
+    // Filter by type if needed
+    let filteredList = list;
+    if (selectedTypeFilter !== 'all') {
+      filteredList = list.filter(a => a.account_type === selectedTypeFilter);
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      const normalizedSearch = searchTerm.toLowerCase();
+      filteredList = list.filter(
+        a => a.account_code.includes(normalizedSearch) || a.account_name.toLowerCase().includes(normalizedSearch)
+      );
+      // When searching, display as flat list instead of nested tree for better visibility
+      return filteredList.map(a => ({ ...a, children: [] }));
+    }
+
+    filteredList.forEach((acc) => {
+      map[acc.id] = { ...acc, children: [] };
+    });
+
+    filteredList.forEach((acc) => {
+      const mapped = map[acc.id];
+      if (acc.parent_id && map[acc.parent_id]) {
+        map[acc.parent_id].children.push(mapped);
+      } else {
+        // If it has a parent that is filtered out, or it is a root node
+        roots.push(mapped);
+      }
+    });
+
+    return roots;
+  };
+
+  const treeData = buildTree(accounts);
+
+  // Render tree node component helper
+  const renderTreeNode = (node: any, depth = 0) => {
+    const hasChildren = node.children && node.children.length > 0;
+    const isExpanded = !!expandedNodes[node.id];
+    
+    // Type colors
+    const typeBadges: Record<string, string> = {
+      'ASSET': 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20',
+      'LIABILITY': 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 border-rose-100 dark:border-rose-500/20',
+      'EQUITY': 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border-amber-100 dark:border-amber-500/20',
+      'REVENUE': 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border-blue-100 dark:border-blue-500/20',
+      'EXPENSE': 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 border-purple-100 dark:border-purple-500/20',
+    };
+
+    return (
+      <div key={node.id} className="w-full">
+        <div 
+          className={`flex items-center justify-between py-3 px-4 rounded-xl border border-slate-50 dark:border-[#3E3A35]/30 hover:bg-slate-50/50 dark:hover:bg-[#1C1B19]/50 transition-colors ${
+            depth === 0 ? 'bg-white dark:bg-[#1C1B19] font-black' : 'bg-transparent font-medium'
+          }`}
+          style={{ paddingLeft: `${Math.max(16, depth * 28)}px` }}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            {hasChildren ? (
+              <button 
+                onClick={() => toggleNode(node.id)}
+                className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-[#3E3A35] text-slate-400"
+              >
+                {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              </button>
+            ) : (
+              <div className="w-6 flex items-center justify-center shrink-0">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-[#3E3A35]" />
+              </div>
+            )}
+            
+            <span className="font-mono text-xs px-2.5 py-0.5 bg-slate-100 dark:bg-[#3E3A35] text-slate-700 dark:text-[#EFE9E1] rounded-md border border-slate-200/50 dark:border-none">
+              {node.account_code}
+            </span>
+            <span className="text-slate-800 dark:text-[#EFE9E1] truncate text-sm">{node.account_name}</span>
+          </div>
+
+          <div className="flex items-center gap-4 shrink-0">
+            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider border uppercase ${typeBadges[node.account_type]}`}>
+              {node.account_type}
+            </span>
+            <span className={`text-[10px] font-bold ${node.is_active ? 'text-emerald-500' : 'text-slate-300'}`}>
+              ● Active
+            </span>
+          </div>
+        </div>
+
+        {/* Render child nodes recursively */}
+        {hasChildren && isExpanded && (
+          <div className="space-y-1 mt-1">
+            {node.children.map((child: any) => renderTreeNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Find candidate parent accounts matching currently chosen account type
+  const parentCandidates = accounts.filter(
+    a => a.account_type === newAccount.account_type && !a.parent_id
+  );
+
+  return (
+    <div className="space-y-8">
+      {/* ── HEADER SEARCH & FILTERS ── */}
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 max-w-2xl">
+          {/* Search bar */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Tìm kiếm tài khoản..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-[#11100F] border-none rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-rose-500/10 transition-all text-slate-800 dark:text-[#EFE9E1]" 
+            />
+          </div>
+
+          {/* Type filter dropdown */}
+          <PremiumSelect
+            value={selectedTypeFilter}
+            onChange={(val) => setSelectedTypeFilter(val)}
+            options={[
+              { value: 'all', label: 'Tất cả loại' },
+              { value: 'ASSET', label: 'Tài sản (Asset)' },
+              { value: 'LIABILITY', label: 'Nợ phải trả (Liability)' },
+              { value: 'EQUITY', label: 'Vốn chủ sở hữu (Equity)' },
+              { value: 'REVENUE', label: 'Doanh thu (Revenue)' },
+              { value: 'EXPENSE', label: 'Chi phí (Expense)' },
+            ]}
+            className="w-52 text-xs"
+          />
+        </div>
+
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs shrink-0 active:scale-95 cursor-pointer"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>Thêm tài khoản</span>
+        </button>
+      </div>
+
+      {/* ── TREE VIEW LIST ── */}
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
+        <div className="flex items-center justify-between mb-6 border-b border-slate-50 dark:border-[#3E3A35]/30 pb-4">
+          <h4 className="text-base font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider">Hệ thống Tài khoản số cái (COA)</h4>
+          <span className="text-xs font-bold text-slate-400 dark:text-[#CDBCAB]/60">
+            Tổng cộng: <span className="text-slate-900 dark:text-[#EFE9E1] font-black">{accounts.length}</span> tài khoản
+          </span>
+        </div>
+
+        {loading ? (
+          <SkeletonTable />
+        ) : treeData.length === 0 ? (
+          <div className="py-16 text-center text-slate-400">
+            <HelpCircle className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+            <p className="font-extrabold uppercase text-xs tracking-wider">Không tìm thấy tài khoản phù hợp</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {treeData.map((node) => renderTreeNode(node, 0))}
+          </div>
+        )}
+      </div>
+
+      {/* ── ADD NEW ACCOUNT DIALOG MODAL ── */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Dark overlay backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-xs"
+            />
+
+            {/* Modal Glass Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35] shadow-2xl p-8 max-w-lg w-full relative z-10 space-y-6"
+            >
+              <div className="flex items-center justify-between border-b border-slate-50 dark:border-[#3E3A35]/30 pb-4">
+                <h4 className="text-lg font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wide">Thêm Tài khoản Mới</h4>
+                <button 
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1.5 rounded-xl hover:bg-slate-50 dark:hover:bg-[#11100F] text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreate} className="space-y-4">
+                {/* Account Type */}
+                <div className="space-y-1.5">
+                  <label className="text-2xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Loại tài khoản</label>
+                  <PremiumSelect
+                    value={newAccount.account_type}
+                    onChange={(val) => setNewAccount(prev => ({ ...prev, account_type: val as any, parent_id: '' }))}
+                    options={accountTypes}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Parent Account */}
+                <div className="space-y-1.5">
+                  <label className="text-2xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Tài khoản cấp cha (Tùy chọn)</label>
+                  <PremiumSelect
+                    value={newAccount.parent_id}
+                    onChange={(val) => setNewAccount(prev => ({ ...prev, parent_id: val }))}
+                    options={[
+                      { value: '', label: 'Tài khoản gốc (Root / Không có cha)' },
+                      ...parentCandidates.map(p => ({
+                        value: p.id,
+                        label: `[${p.account_code}] - ${p.account_name}`,
+                      })),
+                    ]}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Account Code */}
+                <div className="space-y-1.5">
+                  <label className="text-2xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Mã số tài khoản (Mã số phụ)</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ví dụ: 1121" 
+                    value={newAccount.account_code}
+                    onChange={(e) => setNewAccount(prev => ({ ...prev, account_code: e.target.value.replace(/\D/g, '') }))}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35] rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-rose-500/10 text-slate-800 dark:text-[#EFE9E1]" 
+                  />
+                </div>
+
+                {/* Account Name */}
+                <div className="space-y-1.5">
+                  <label className="text-2xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Tên tài khoản</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ví dụ: Tiền gửi BIDV VND" 
+                    value={newAccount.account_name}
+                    onChange={(e) => setNewAccount(prev => ({ ...prev, account_name: e.target.value }))}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35] rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-rose-500/10 text-slate-800 dark:text-[#EFE9E1]" 
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-4 border-t border-slate-50 dark:border-[#3E3A35]/30">
+                  <button 
+                    type="button" 
+                    onClick={() => setIsModalOpen(false)}
+                    className="flex-1 bg-slate-50 dark:bg-[#11100F] border border-slate-200/50 dark:border-[#3E3A35]/50 hover:bg-slate-100 dark:hover:bg-[#1C1B19] text-slate-700 dark:text-[#CDBCAB] py-4 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all cursor-pointer"
+                  >
+                    Hủy bỏ
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={saving}
+                    className="flex-1 bg-primary hover:bg-primary-hover text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-pink-100 disabled:opacity-50 cursor-pointer"
+                  >
+                    {saving ? 'Đang lưu...' : 'Thêm tài khoản'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

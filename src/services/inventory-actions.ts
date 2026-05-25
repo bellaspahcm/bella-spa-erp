@@ -122,7 +122,7 @@ export async function getPackageMaterials(packageId: string) {
       .from('package_materials')
       .select(`
         id, quantity_per_session,
-        inventory_items!package_materials_item_id_fkey(id, name, unit, stock_level)
+        inventory_items!package_materials_item_id_fkey(id, name, unit, stock_level, price_per_unit)
       `)
       .eq('package_id', packageId);
 
@@ -258,18 +258,55 @@ export async function consumeInventory(
 // ─── Auto-consume khi hoàn thành buổi ─────────────────────────────────────────
 export async function autoConsumeForSession(packageId: string, sessionLogId: string) {
   try {
+    const { supabase, tenantId } = await getSupabaseWithTenant();
+    if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
+
     const materials = await getPackageMaterials(packageId);
+    let totalCost = 0;
+
     const results = await Promise.allSettled(
-      materials.map((mat: any) =>
-        consumeInventory(
+      materials.map((mat: any) => {
+        const cost = Number(mat.quantity_per_session || 0) * Number(mat.inventory_items?.price_per_unit || 0);
+        totalCost += cost;
+        return consumeInventory(
           mat.inventory_items?.id,
           mat.quantity_per_session,
           sessionLogId,
           'Tự động tiêu hao buổi liệu trình'
-        )
-      )
+        );
+      })
     );
-    return { success: true, processed: results.length };
+
+    // Enqueue INVENTORY_CONSUMED outbox event if totalCost > 0
+    if (totalCost > 0) {
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const activeClient = serviceRoleKey
+        ? (() => {
+            const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+            return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
+          })()
+        : supabase;
+
+      const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
+        p_tenant_id: tenantId,
+        p_event_type: 'INVENTORY_CONSUMED',
+        p_reference_type: 'SESSION_LOG',
+        p_reference_id: sessionLogId,
+        p_payload: {
+          amount: totalCost,
+          description: `Vật tư tiêu hao ca trị liệu, buổi ID: ${sessionLogId}`,
+          branchId: null
+        }
+      });
+
+      if (outboxError) {
+        console.error('[autoConsumeForSession] Failed to enqueue INVENTORY_CONSUMED event:', outboxError);
+      } else {
+        console.log('[autoConsumeForSession] Successfully enqueued INVENTORY_CONSUMED event for session:', sessionLogId, 'cost:', totalCost);
+      }
+    }
+
+    return { success: true, processed: results.length, totalCost };
   } catch (e) {
     console.error('[autoConsumeForSession]', e);
     return { success: false, error: 'Lỗi tiêu hao tự động' };

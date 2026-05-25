@@ -196,18 +196,45 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     console.error('Error creating pending review:', reviewErr);
   }
 
-  // Audit log
-  try {
-    const { recordAuditLog } = await import('@/services/audit-actions');
-    await recordAuditLog({
-      action: 'UPDATE',
-      table_name: 'session_logs',
-      record_id: sessionId,
-      old_data: existingLog,
-      new_data: updatePayload
-    });
-  } catch (auditErr) {
-    console.warn('Failed to record completeSession audit log:', auditErr);
+  // ⭐ Ghi nhận vào hàng đợi Accounting Outbox cho sự kiện SESSION_DONE
+  if (sessionId && tenantId) {
+    try {
+      const fullPrice = Number(currentBooking?.full_price || 0);
+      const discountPercent = Number(currentBooking?.discount_percent || 0);
+      const targetPrice = fullPrice * (1 - discountPercent / 100);
+      const totalSessions = Number(currentBooking?.total_sessions || 1);
+      const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
+      const commission = Number(currentBooking?.ktv_commission) || 0;
+
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const activeClient = serviceRoleKey
+        ? (() => {
+            const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+            return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
+          })()
+        : supabase;
+
+      const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
+        p_tenant_id: tenantId,
+        p_event_type: 'SESSION_DONE',
+        p_reference_type: 'SESSION_LOG',
+        p_reference_id: sessionId,
+        p_payload: {
+          earnedRevenueAmount,
+          commissionAmount: commission,
+          ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
+          branchId: null,
+          description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`
+        }
+      });
+      if (outboxError) {
+        console.error('[completeSession] Failed to enqueue SESSION_DONE accounting outbox event:', outboxError);
+      } else {
+        console.log('[completeSession] Successfully enqueued SESSION_DONE event for session:', sessionId);
+      }
+    } catch (outboxErr) {
+      console.warn('[completeSession] Exception enqueuing outbox event:', outboxErr);
+    }
   }
 
   return { success: true };
@@ -496,7 +523,7 @@ export async function updateSessionLog(id: string, payload: any) {
     // --- AUTOMATION START: Financial Recognition ---
     if (safeUpdates.status === 'completed' && existingLog?.status !== 'completed') {
       const ktvId = safeUpdates.completed_by_ktv_id || null;
-      const tenantId = currentUser?.tenant_id;
+      const tenantId = currentUser?.tenant_id || currentBooking?.tenant_id;
       
       if (currentBooking?.package_name?.toLowerCase().includes('lẻ')) {
         await supabase.from('revenue').insert([{
@@ -559,6 +586,47 @@ export async function updateSessionLog(id: string, payload: any) {
               status: 'pending_review',
               tenant_id: currentBooking.tenant_id
             } as any]);
+        }
+      }
+
+      // ⭐ Ghi nhận vào hàng đợi Accounting Outbox cho sự kiện SESSION_DONE
+      if (id && tenantId) {
+        try {
+          const fullPrice = Number(currentBooking?.full_price || 0);
+          const discountPercent = Number(currentBooking?.discount_percent || 0);
+          const targetPrice = fullPrice * (1 - discountPercent / 100);
+          const totalSessions = Number(currentBooking?.total_sessions || 1);
+          const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
+          const commission = Number(currentBooking?.ktv_commission) || 0;
+
+          const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const activeClient = serviceRoleKey
+            ? (() => {
+                const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+                return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
+              })()
+            : supabase;
+
+          const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
+            p_tenant_id: tenantId,
+            p_event_type: 'SESSION_DONE',
+            p_reference_type: 'SESSION_LOG',
+            p_reference_id: id,
+            p_payload: {
+              earnedRevenueAmount,
+              commissionAmount: commission,
+              ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
+              branchId: null,
+              description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`
+            }
+          });
+          if (outboxError) {
+            console.error('[updateSessionLog] Failed to enqueue SESSION_DONE accounting outbox event:', outboxError);
+          } else {
+            console.log('[updateSessionLog] Successfully enqueued SESSION_DONE event for session:', id);
+          }
+        } catch (outboxErr) {
+          console.warn('[updateSessionLog] Exception enqueuing outbox event:', outboxErr);
         }
       }
     }

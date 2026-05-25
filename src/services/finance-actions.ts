@@ -244,16 +244,138 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   const today = getLocalDateString();
 
   if (type === 'revenue') {
-    const { error } = await supabase.from('revenue').update({ status: 'confirmed', received_date: today }).eq('id', id);
+    const { data: updatedRev, error } = await supabase
+      .from('revenue')
+      .update({ status: 'confirmed', received_date: today })
+      .eq('id', id)
+      .select('*')
+      .single();
+
     if (error) {
       console.error(`Error confirming revenue:`, error);
       throw new Error(`Failed to confirm revenue: ${error.message}`);
     }
+
+    // ⭐ Enqueue PACKAGE_SALE if type is deposit/remaining_payment/package_payment
+    if (updatedRev && ['deposit', 'remaining_payment', 'package_payment', 'package_sale'].includes(updatedRev.revenue_type || '')) {
+      try {
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const activeClient = serviceRoleKey
+          ? (() => {
+              const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+              return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
+            })()
+          : supabase;
+
+        const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
+          p_tenant_id: updatedRev.tenant_id,
+          p_event_type: 'PACKAGE_SALE',
+          p_reference_type: 'REVENUE',
+          p_reference_id: updatedRev.id,
+          p_payload: {
+            totalAmount: Number(updatedRev.amount),
+            vatRate: 0,
+            description: updatedRev.notes || `Xác nhận thanh toán gói dịch vụ`,
+            branchId: null
+          }
+        });
+        if (outboxError) {
+          console.error('[confirmTransaction] Failed to enqueue PACKAGE_SALE event:', outboxError);
+        } else {
+          console.log('[confirmTransaction] Successfully enqueued PACKAGE_SALE event for revenue:', updatedRev.id);
+        }
+      } catch (outboxErr) {
+        console.warn('[confirmTransaction] Exception enqueuing outbox event:', outboxErr);
+      }
+    }
   } else {
-    const { error } = await supabase.from('expenses').update({ status: 'approved', expense_date: today }).eq('id', id);
+    const { data: updatedExpense, error } = await supabase
+      .from('expenses')
+      .update({ status: 'approved', expense_date: today })
+      .eq('id', id)
+      .select('*')
+      .single();
+
     if (error) {
       console.error(`Error confirming expense:`, error);
       throw new Error(`Failed to confirm expense: ${error.message}`);
+    }
+
+    // ⭐ Enqueue EXPENSE_RECORDED or SALARY_PAID event
+    if (updatedExpense) {
+      try {
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const activeClient = serviceRoleKey
+          ? (() => {
+              const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+              return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
+            })()
+          : supabase;
+
+        if (updatedExpense.category === 'salary') {
+          const salaryRecordIdMatch = updatedExpense.description?.match(/\[salary_record_id:([^\]]*)\]/);
+          const ktvIdMatch = updatedExpense.description?.match(/\[ktv_id:([^\]]*)\]/);
+          const salaryRecordId = salaryRecordIdMatch ? salaryRecordIdMatch[1] : null;
+          const ktvId = ktvIdMatch ? ktvIdMatch[1] : null;
+
+          if (salaryRecordId && ktvId) {
+            // Update salary record status to 'paid'
+            const { error: salaryRecordUpdateError } = await supabase
+              .from('salary_records')
+              .update({ status: 'paid', paid_date: today, paid_method: 'bank_transfer' })
+              .eq('id', salaryRecordId);
+
+            if (salaryRecordUpdateError) {
+              console.error('[confirmTransaction] Failed to update salary record status:', salaryRecordUpdateError);
+              throw salaryRecordUpdateError;
+            }
+
+            const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
+              p_tenant_id: updatedExpense.tenant_id,
+              p_event_type: 'SALARY_PAID',
+              p_reference_type: 'SALARY_RECORD',
+              p_reference_id: salaryRecordId,
+              p_payload: {
+                amount: Number(updatedExpense.amount),
+                paymentMethod: 'bank_transfer',
+                description: updatedExpense.description || 'Thanh toán lương',
+                ktvId: ktvId,
+                branchId: null
+              }
+            });
+
+            if (outboxError) {
+              console.error('[confirmTransaction] Failed to enqueue SALARY_PAID event:', outboxError);
+            } else {
+              console.log('[confirmTransaction] Successfully enqueued SALARY_PAID event for salary record:', salaryRecordId);
+            }
+            revalidatePath('/dashboard/finance');
+            return { success: true };
+          }
+        }
+
+        const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
+          p_tenant_id: updatedExpense.tenant_id,
+          p_event_type: 'EXPENSE_RECORDED',
+          p_reference_type: 'EXPENSE',
+          p_reference_id: updatedExpense.id,
+          p_payload: {
+            amount: Number(updatedExpense.amount),
+            category: updatedExpense.category,
+            paymentMethod: 'bank_transfer', // default
+            description: updatedExpense.description || 'Chi phí vận hành',
+            branchId: null
+          }
+        });
+        if (outboxError) {
+          console.error('[confirmTransaction] Failed to enqueue EXPENSE_RECORDED event:', outboxError);
+        } else {
+          console.log('[confirmTransaction] Successfully enqueued EXPENSE_RECORDED event for expense:', updatedExpense.id);
+        }
+      } catch (outboxErr) {
+        console.warn('[confirmTransaction] Exception enqueuing outbox event:', outboxErr);
+        throw outboxErr;
+      }
     }
   }
 
@@ -307,6 +429,35 @@ export async function recordTransaction(data: {
         throw error;
       }
 
+      // ⭐ Ghi nhận Outbox nếu đã được phê duyệt
+      if (dbStatus === 'approved' && result) {
+        try {
+          const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const activeClient = serviceRoleKey
+            ? (() => {
+                const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+                return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
+              })()
+            : supabase;
+
+          await activeClient.rpc('enqueue_accounting_event', {
+            p_tenant_id: tenantId,
+            p_event_type: 'EXPENSE_RECORDED',
+            p_reference_type: 'EXPENSE',
+            p_reference_id: result.id,
+            p_payload: {
+              amount: Math.abs(data.amount),
+              category: dbCategory,
+              paymentMethod: 'bank_transfer',
+              description: data.notes || 'Chi phí vận hành',
+              branchId: null
+            }
+          });
+        } catch (outboxErr) {
+          console.warn('[recordTransaction] Exception enqueuing expense outbox:', outboxErr);
+        }
+      }
+
       revalidatePath('/dashboard/finance');
       return result;
     } else {
@@ -335,6 +486,34 @@ export async function recordTransaction(data: {
       if (error) {
         console.error('[recordTransaction] revenue error:', error);
         throw error;
+      }
+
+      // ⭐ Ghi nhận Outbox nếu đã confirmed và thuộc loại cọc/thanh toán gói
+      if (dbStatus === 'confirmed' && result && ['deposit', 'remaining_payment', 'package_payment', 'package_sale'].includes(dbRevenueType)) {
+        try {
+          const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const activeClient = serviceRoleKey
+            ? (() => {
+                const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+                return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
+              })()
+            : supabase;
+
+          await activeClient.rpc('enqueue_accounting_event', {
+            p_tenant_id: tenantId,
+            p_event_type: 'PACKAGE_SALE',
+            p_reference_type: 'REVENUE',
+            p_reference_id: result.id,
+            p_payload: {
+              totalAmount: Math.abs(data.amount),
+              vatRate: 0,
+              description: data.notes || 'Giao dịch doanh thu cọc/thanh toán gói',
+              branchId: null
+            }
+          });
+        } catch (outboxErr) {
+          console.warn('[recordTransaction] Exception enqueuing revenue outbox:', outboxErr);
+        }
       }
 
       revalidatePath('/dashboard/finance');
