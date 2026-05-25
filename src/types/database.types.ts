@@ -1655,9 +1655,286 @@ export type Database = {
           },
         ]
       }
+      accounting_accounts: {
+        Row: {
+          id: string
+          tenant_id: string | null
+          account_code: string
+          account_name: string
+          account_type: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE"
+          parent_id: string | null
+          is_active: boolean | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id?: string | null
+          account_code: string
+          account_name: string
+          account_type: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE"
+          parent_id?: string | null
+          is_active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string | null
+          account_code?: string
+          account_name?: string
+          account_type?: "ASSET" | "LIABILITY" | "EQUITY" | "REVENUE" | "EXPENSE"
+          parent_id?: string | null
+          is_active?: boolean | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_accounts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_accounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_periods: {
+        Row: {
+          id: string
+          tenant_id: string | null
+          name: string
+          start_date: string
+          end_date: string
+          status: "OPEN" | "CLOSED"
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id?: string | null
+          name: string
+          start_date: string
+          end_date: string
+          status?: "OPEN" | "CLOSED"
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string | null
+          name?: string
+          start_date?: string
+          end_date?: string
+          status?: "OPEN" | "CLOSED"
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_periods_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_entries: {
+        Row: {
+          id: string
+          tenant_id: string | null
+          entry_date: string
+          description: string
+          reference_type: string | null
+          reference_id: string | null
+          status: "DRAFT" | "POSTED" | "CANCELED"
+          period_id: string | null
+          created_by: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id?: string | null
+          entry_date?: string
+          description: string
+          reference_type?: string | null
+          reference_id?: string | null
+          status?: "DRAFT" | "POSTED" | "CANCELED"
+          period_id?: string | null
+          created_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string | null
+          entry_date?: string
+          description?: string
+          reference_type?: string | null
+          reference_id?: string | null
+          status?: "DRAFT" | "POSTED" | "CANCELED"
+          period_id?: string | null
+          created_by?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_lines: {
+        Row: {
+          id: string
+          entry_id: string
+          account_id: string
+          debit_amount: number
+          credit_amount: number
+          branch_id: string | null
+          ktv_id: string | null
+          cost_center_id: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          entry_id: string
+          account_id: string
+          debit_amount?: number
+          credit_amount?: number
+          branch_id?: string | null
+          ktv_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          entry_id?: string
+          account_id?: string
+          debit_amount?: number
+          credit_amount?: number
+          branch_id?: string | null
+          ktv_id?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_lines_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_lines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_outbox: {
+        Row: {
+          id: string
+          tenant_id: string
+          event_type: "PACKAGE_SALE" | "SESSION_DONE" | "EXPENSE_RECORDED" | "SALARY_PAID" | "INVENTORY_CONSUMED" | "REFUND_ISSUED" | "MANUAL_ENTRY"
+          reference_type: string
+          reference_id: string
+          payload: Json
+          status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "DEAD"
+          retry_count: number
+          max_retries: number
+          last_error: string | null
+          next_retry_at: string | null
+          journal_entry_id: string | null
+          created_at: string
+          processed_at: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          event_type: "PACKAGE_SALE" | "SESSION_DONE" | "EXPENSE_RECORDED" | "SALARY_PAID" | "INVENTORY_CONSUMED" | "REFUND_ISSUED" | "MANUAL_ENTRY"
+          reference_type: string
+          reference_id: string
+          payload: Json
+          status?: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "DEAD"
+          retry_count?: number
+          max_retries?: number
+          last_error?: string | null
+          next_retry_at?: string | null
+          journal_entry_id?: string | null
+          created_at?: string
+          processed_at?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          event_type?: "PACKAGE_SALE" | "SESSION_DONE" | "EXPENSE_RECORDED" | "SALARY_PAID" | "INVENTORY_CONSUMED" | "REFUND_ISSUED" | "MANUAL_ENTRY"
+          reference_type?: string
+          reference_id?: string
+          payload?: Json
+          status?: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "DEAD"
+          retry_count?: number
+          max_retries?: number
+          last_error?: string | null
+          next_retry_at?: string | null
+          journal_entry_id?: string | null
+          created_at?: string
+          processed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_outbox_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_outbox_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      outbox_health: {
+        Row: {
+          tenant_id: string | null
+          status: string | null
+          event_type: string | null
+          count: number | null
+          latest_event: string | null
+          last_completed: string | null
+          avg_latency_seconds: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_rating_bonus: { Args: { p_session_id: string }; Returns: undefined }
@@ -1721,6 +1998,50 @@ export type Database = {
         Args: { p_tenant_id: string; p_month: string }
         Returns: undefined
       }
+      seed_default_coa: { Args: { p_tenant_id: string }; Returns: number }
+      ensure_open_period: {
+        Args: { p_tenant_id: string; p_date: string }
+        Returns: string
+      }
+      close_accounting_period: {
+        Args: { p_period_id: string }
+        Returns: undefined
+      }
+      reopen_accounting_period: {
+        Args: { p_period_id: string }
+        Returns: undefined
+      }
+      enqueue_accounting_event: {
+        Args: {
+          p_tenant_id: string
+          p_event_type: string
+          p_reference_type: string
+          p_reference_id: string
+          p_payload: Json
+        }
+        Returns: string
+      }
+      claim_outbox_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          tenant_id: string
+          event_type: string
+          reference_type: string
+          reference_id: string
+          payload: Json
+          retry_count: number
+        }[]
+      }
+      mark_outbox_completed: {
+        Args: { p_outbox_id: string; p_journal_entry_id: string }
+        Returns: undefined
+      }
+      mark_outbox_failed: {
+        Args: { p_outbox_id: string; p_error: string }
+        Returns: undefined
+      }
+      is_hq_super_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       AttendanceStatus: "present" | "late" | "absent" | "half_day"

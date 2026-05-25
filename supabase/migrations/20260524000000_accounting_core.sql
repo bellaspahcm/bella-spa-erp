@@ -87,11 +87,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_check_journal_entry_update ON public.journal_entries;
 CREATE TRIGGER trg_check_journal_entry_update
 BEFORE UPDATE ON public.journal_entries
 FOR EACH ROW
 EXECUTE FUNCTION check_journal_entry_modification();
 
+DROP TRIGGER IF EXISTS trg_check_journal_line_modify ON public.journal_lines;
 CREATE TRIGGER trg_check_journal_line_modify
 BEFORE UPDATE OR DELETE ON public.journal_lines
 FOR EACH ROW
@@ -122,6 +124,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_validate_journal_entry_balance ON public.journal_entries;
 CREATE TRIGGER trg_validate_journal_entry_balance
 BEFORE UPDATE ON public.journal_entries
 FOR EACH ROW
@@ -148,46 +151,58 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_set_journal_entry_period ON public.journal_entries;
 CREATE TRIGGER trg_set_journal_entry_period
 BEFORE INSERT OR UPDATE ON public.journal_entries
 FOR EACH ROW
 EXECUTE FUNCTION set_journal_entry_period();
 
--- 6. RLS Policies
+-- 6. RLS Policies (initial — sẽ được replace bởi migration 20260525100000_accounting_rls_harden.sql)
 -- accounting_accounts
+DROP POLICY IF EXISTS "Enable read for tenant users" ON public.accounting_accounts;
 CREATE POLICY "Enable read for tenant users" ON public.accounting_accounts FOR SELECT USING (tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()));
+DROP POLICY IF EXISTS "Enable all for tenant admins" ON public.accounting_accounts;
 CREATE POLICY "Enable all for tenant admins" ON public.accounting_accounts FOR ALL USING (
-    tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND 
+    tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
 );
 
 -- accounting_periods
+DROP POLICY IF EXISTS "Enable read for tenant users" ON public.accounting_periods;
 CREATE POLICY "Enable read for tenant users" ON public.accounting_periods FOR SELECT USING (tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()));
+DROP POLICY IF EXISTS "Enable all for tenant admins" ON public.accounting_periods;
 CREATE POLICY "Enable all for tenant admins" ON public.accounting_periods FOR ALL USING (
-    tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND 
+    tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
 );
 
 -- journal_entries
+DROP POLICY IF EXISTS "Enable read for tenant users" ON public.journal_entries;
 CREATE POLICY "Enable read for tenant users" ON public.journal_entries FOR SELECT USING (tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()));
+DROP POLICY IF EXISTS "Enable insert for tenant users" ON public.journal_entries;
 CREATE POLICY "Enable insert for tenant users" ON public.journal_entries FOR INSERT WITH CHECK (tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()));
+DROP POLICY IF EXISTS "Enable update for tenant admins" ON public.journal_entries;
 CREATE POLICY "Enable update for tenant admins" ON public.journal_entries FOR UPDATE USING (
-    tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND 
+    tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
 );
 
 -- journal_lines
+DROP POLICY IF EXISTS "Enable read for tenant users" ON public.journal_lines;
 CREATE POLICY "Enable read for tenant users" ON public.journal_lines FOR SELECT USING (
     entry_id IN (SELECT id FROM public.journal_entries WHERE tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()))
 );
+DROP POLICY IF EXISTS "Enable insert for tenant users" ON public.journal_lines;
 CREATE POLICY "Enable insert for tenant users" ON public.journal_lines FOR INSERT WITH CHECK (
     entry_id IN (SELECT id FROM public.journal_entries WHERE tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()))
 );
+DROP POLICY IF EXISTS "Enable update for tenant admins" ON public.journal_lines;
 CREATE POLICY "Enable update for tenant admins" ON public.journal_lines FOR UPDATE USING (
-    entry_id IN (SELECT id FROM public.journal_entries WHERE tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND 
+    entry_id IN (SELECT id FROM public.journal_entries WHERE tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'super_admin')))
 );
+DROP POLICY IF EXISTS "Enable delete for tenant admins" ON public.journal_lines;
 CREATE POLICY "Enable delete for tenant admins" ON public.journal_lines FOR DELETE USING (
-    entry_id IN (SELECT id FROM public.journal_entries WHERE tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND 
+    entry_id IN (SELECT id FROM public.journal_entries WHERE tenant_id = (SELECT tenant_id FROM public.users WHERE id = auth.uid()) AND
     EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'super_admin')))
 );
