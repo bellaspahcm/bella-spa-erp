@@ -2463,6 +2463,34 @@ export type Database = {
           total_amount: number
         }[]
       }
+      get_cash_flow_statement: {
+        Args: { p_tenant_id: string; p_from_date: string; p_to_date: string }
+        Returns: {
+          opening_cash: number
+          closing_cash: number
+          profit_before_tax: number
+          depreciation: number
+          change_in_receivables: number
+          change_in_inventory: number
+          change_in_payables: number
+          change_in_unearned_revenue: number
+          tax_paid: number
+          net_cash_operating: number
+          fixed_assets_purchased: number
+          fixed_assets_sold: number
+          net_cash_investing: number
+          owner_contributions: number
+          loans_received: number
+          loans_repaid: number
+          net_cash_financing: number
+          net_change_in_cash: number
+          verification_diff: number
+        }[]
+      }
+      acc_balance_at: {
+        Args: { p_tenant_id: string; p_account_code_prefix: string; p_as_of_date: string }
+        Returns: number
+      }
     }
     Enums: {
       AttendanceStatus: "present" | "late" | "absent" | "half_day"

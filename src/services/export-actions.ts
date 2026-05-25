@@ -165,7 +165,7 @@ export async function exportSessionMatrixToExcel(data: any[], packageNames: stri
  * Export Accounting Reports (Trial Balance, Income Statement, Balance Sheet) to Excel (Thông tư 133)
  */
 export async function exportAccountingReportToExcel(
-  reportType: 'trial_balance' | 'income_statement' | 'balance_sheet',
+  reportType: 'trial_balance' | 'income_statement' | 'balance_sheet' | 'cash_flow',
   data: any,
   dateStr: string
 ) {
@@ -338,6 +338,66 @@ export async function exportAccountingReportToExcel(
       ];
 
       XLSX.utils.book_append_sheet(wb, ws, 'Balance Sheet');
+
+    } else if (reportType === 'cash_flow') {
+      // BÁO CÁO LƯU CHUYỂN TIỀN TỆ — Phương pháp gián tiếp (TT133)
+      const cf = data || {};
+      sheetData.push(
+        ['BÁO CÁO LƯU CHUYỂN TIỀN TỆ — Phương pháp gián tiếp (TT 133/2016/TT-BTC)'],
+        ['Chi nhánh Spa:', 'Bella Spa ERP'],
+        ['Kỳ báo cáo:', dateStr],
+        ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+        [],
+        ['Chỉ tiêu', 'Mã số', 'Số tiền (VND)'],
+
+        // I. OPERATING
+        ['I. LƯU CHUYỂN TIỀN TỪ HOẠT ĐỘNG KINH DOANH', '20', cf.net_cash_operating || 0],
+        ['1. Lợi nhuận trước thuế', '01', cf.profit_before_tax || 0],
+        ['2. (+) Khấu hao tài sản cố định (214)', '02', cf.depreciation || 0],
+        ['3. Điều chỉnh: (−) Tăng khoản phải thu (131)', '03', -Number(cf.change_in_receivables || 0)],
+        ['4. Điều chỉnh: (−) Tăng hàng tồn kho (152, 153)', '04', -Number(cf.change_in_inventory || 0)],
+        ['5. Điều chỉnh: (+) Tăng khoản phải trả (331, 333, 334, 338)', '05', cf.change_in_payables || 0],
+        ['6. Điều chỉnh: (+) Tăng doanh thu chưa thực hiện (3387)', '06', cf.change_in_unearned_revenue || 0],
+        ['7. (−) Chi phí thuế TNDN đã ghi nhận (821)', '07', -Number(cf.tax_paid || 0)],
+        ['Lưu chuyển tiền thuần từ HĐKD', '20', cf.net_cash_operating || 0],
+        [],
+
+        // II. INVESTING
+        ['II. LƯU CHUYỂN TIỀN TỪ HOẠT ĐỘNG ĐẦU TƯ', '30', cf.net_cash_investing || 0],
+        ['1. (−) Chi mua sắm tài sản cố định (Δ 211)', '21', -Number(cf.fixed_assets_purchased || 0)],
+        ['2. (+) Thu thanh lý tài sản cố định', '22', cf.fixed_assets_sold || 0],
+        ['Lưu chuyển tiền thuần từ HĐĐT', '30', cf.net_cash_investing || 0],
+        [],
+
+        // III. FINANCING
+        ['III. LƯU CHUYỂN TIỀN TỪ HOẠT ĐỘNG TÀI CHÍNH', '40', cf.net_cash_financing || 0],
+        ['1. (+) Tiền góp vốn của chủ sở hữu (Δ 411)', '31', cf.owner_contributions || 0],
+        ['2. (+) Tiền vay nợ ngân hàng', '33', cf.loans_received || 0],
+        ['3. (−) Tiền trả nợ vay, cổ tức', '34', -Number(cf.loans_repaid || 0)],
+        ['Lưu chuyển tiền thuần từ HĐTC', '40', cf.net_cash_financing || 0],
+        [],
+
+        // TOTALS
+        ['TĂNG/GIẢM TIỀN THUẦN TRONG KỲ (I + II + III)', '50', cf.net_change_in_cash || 0],
+        ['TIỀN VÀ TƯƠNG ĐƯƠNG TIỀN ĐẦU KỲ', '60', cf.opening_cash || 0],
+        ['TIỀN VÀ TƯƠNG ĐƯƠNG TIỀN CUỐI KỲ (50 + 60)', '70', cf.closing_cash || 0]
+      );
+
+      if (Math.abs(Number(cf.verification_diff || 0)) > 1) {
+        sheetData.push(
+          [],
+          ['⚠ Cảnh báo: sai lệch giữa (Tiền cuối - Tiền đầu) và Lưu chuyển thuần', '', cf.verification_diff || 0]
+        );
+      }
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      ws['!cols'] = [
+        { wch: 70 }, // Chỉ tiêu
+        { wch: 12 }, // Mã số
+        { wch: 24 }, // Số tiền
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Cash Flow Statement');
     }
 
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
