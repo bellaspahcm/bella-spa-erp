@@ -286,7 +286,9 @@ export async function runCOOOrchestrator(
     "Rà soát lại việc ghi nhận sổ cái cho các khoản chiết khấu dịch vụ của các combo cao cấp."
   ];
 
-  if (geminiApiKey) {
+  if (!geminiApiKey || geminiApiKey.trim().length < 10) {
+    executiveSummary = `⚠️ Hệ thống chưa nạp được GEMINI_API_KEY hợp lệ từ file .env.local (Độ dài khóa tìm được: ${geminiApiKey ? geminiApiKey.trim().length : 0} ký tự). Vui lòng kiểm tra lại cấu hình key trong file .env.local ở thư mục gốc dự án.`;
+  } else {
     try {
       console.log("[AI COO Service] Phát hiện GEMINI_API_KEY. Tiến hành gọi Gemini API cho phân tích thông minh...");
       const prompt = `Bạn là AI COO (Thư ký điều phối vận hành kiêm Trợ lý cấp cao của Tổng Giám Đốc/CEO) của hệ thống Spa cao cấp Bella Spa.
@@ -345,10 +347,13 @@ Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa 
           console.log("[AI COO Service] Gọi Gemini thành công và phân tích số liệu thành công!");
         }
       } else {
+        const errPayload = await response.json().catch(() => ({}));
         console.error("[AI COO Service] Gọi Gemini API thất bại, HTTP status:", response.status);
+        executiveSummary = `⚠️ Gọi Gemini API thất bại (HTTP Status: ${response.status}). Phản hồi lỗi: ${JSON.stringify(errPayload)}`;
       }
-    } catch (geminiErr) {
+    } catch (geminiErr: any) {
       console.error("[AI COO Service] Lỗi xảy ra trong quá trình gọi hoặc parse dữ liệu Gemini:", geminiErr);
+      executiveSummary = `⚠️ Lỗi hệ thống khi gọi Gemini: ${geminiErr.message || geminiErr}`;
     }
   }
 
