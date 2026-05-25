@@ -260,15 +260,15 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 items-center md:items-start text-center md:text-left">
         <div>
           <h1 className="text-4xl font-bold text-foreground tracking-tight uppercase">Dashboard</h1>
-          <p className="text-muted-foreground font-semibold mt-1 flex items-center gap-2">
+          <p className="text-muted-foreground font-semibold mt-1 flex items-center gap-2 justify-center md:justify-start">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
             Chào buổi sáng, Bella Spa {userRole === 'admin' ? 'admin' : 'KTV'}!
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 w-full md:w-auto">
           {/* Month Selector */}
           <div className="flex items-center bg-white/80 border border-border p-1 rounded-2xl shadow-sm gap-2">
             <PremiumSelect 

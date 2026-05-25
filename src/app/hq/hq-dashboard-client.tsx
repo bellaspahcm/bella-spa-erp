@@ -1607,7 +1607,7 @@ export default function HqDashboardClient({
             {/* Growth visualization (SVG chart) & Quick System Integrity Status */}
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Spa Growth Chart */}
-              <div className="lg:col-span-2 bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6">
+              <div className="lg:col-span-2 bg-white p-4 sm:p-8 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 shadow-sm space-y-6 overflow-hidden">
                 <div className="flex justify-between items-center">
                   <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest text-left">
                     Xu hướng phát triển chi nhánh
@@ -1619,7 +1619,7 @@ export default function HqDashboardClient({
                 </div>
 
                 {/* Premium Custom SVG Bar Chart */}
-                <div className="h-64 flex items-end justify-between gap-4 pt-6 px-4">
+                <div className="h-64 flex items-end justify-between gap-2 sm:gap-4 pt-6 px-1 sm:px-4">
                   {(stats.spaGrowthData || []).map((data, idx) => {
                     const percentage = (data.spas / maxGrowth) * 80 + 20; // safe scale
                     return (
@@ -1650,7 +1650,7 @@ export default function HqDashboardClient({
               </div>
 
               {/* Branch Analytics Comparison Card */}
-              <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm space-y-6 text-left flex flex-col justify-between">
+              <div className="bg-white p-4 sm:p-8 rounded-[2rem] sm:rounded-[3rem] border border-slate-100 shadow-sm space-y-6 text-left flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
