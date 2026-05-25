@@ -1,4 +1,5 @@
-import { createAdminClient } from '@/lib/supabase-admin';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 
 export type JournalEntryInput = {
   tenant_id: string;
@@ -16,11 +17,26 @@ export type JournalEntryInput = {
   }[];
 };
 
-type JournalHeader = { id: string };
+type AdminClient = SupabaseClient<Database>;
+
+/**
+ * Service-role typed Supabase client — bypasses RLS.
+ * Use ONLY in trusted server-side code (accounting engine, webhooks, cron jobs).
+ */
+function getAdminClient(): AdminClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
+  }
+  return createClient<Database>(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
 
 export class AccountingEngineService {
   static async postJournalEntry(entry: JournalEntryInput): Promise<string> {
-    const supabase = createAdminClient();
+    const supabase = getAdminClient();
 
     const totalDebit = entry.lines.reduce((sum, l) => sum + l.debit_amount, 0);
     const totalCredit = entry.lines.reduce((sum, l) => sum + l.credit_amount, 0);
@@ -43,7 +59,7 @@ export class AccountingEngineService {
         status: 'DRAFT',
       })
       .select('id')
-      .single<JournalHeader>();
+      .single();
 
     if (headerError || !header) {
       throw new Error(headerError?.message ?? 'Failed to create journal entry header');
@@ -78,14 +94,9 @@ export class AccountingEngineService {
     return header.id;
   }
 
-  static async closePeriod(tenantId: string, periodId: string): Promise<void> {
-    const supabase = createAdminClient();
-    const { error } = await supabase
-      .from('accounting_periods')
-      .update({ status: 'CLOSED' })
-      .eq('id', periodId)
-      .eq('tenant_id', tenantId);
-
+  static async closePeriod(periodId: string): Promise<void> {
+    const supabase = getAdminClient();
+    const { error } = await supabase.rpc('close_accounting_period', { p_period_id: periodId });
     if (error) {
       throw new Error(`Failed to close period: ${error.message}`);
     }
