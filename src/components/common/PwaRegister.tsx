@@ -98,7 +98,7 @@ export default function PwaRegister() {
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-[380px] z-[9999] p-5 rounded-2xl border border-pink-200/50 bg-white/90 dark:bg-zinc-900/90 shadow-2xl backdrop-blur-md transition-all duration-300 animate-in slide-in-from-bottom-5">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-[360px] md:left-auto md:right-6 md:translate-x-0 md:w-[380px] z-[9999] p-5 rounded-2xl border border-pink-200/50 bg-white/90 dark:bg-zinc-900/90 shadow-2xl backdrop-blur-md transition-all duration-300 animate-in slide-in-from-bottom-5">
       <button 
         onClick={handleDismiss}
         className="absolute top-3 right-3 p-1 rounded-full text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"

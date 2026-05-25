@@ -17,6 +17,7 @@ import { getAccounts, postManualJournalEntry } from '@/services/accounting-actio
 import { getUsers } from '@/services/user-actions';
 import { toast } from 'sonner';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface JournalLineRow {
   account_id: string;
@@ -216,18 +217,21 @@ export default function ManualEntryPage() {
               {/* Account select */}
               <div className="md:col-span-4 space-y-1">
                 <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Tài khoản</span>
-                <select
+                <PremiumSelect
                   value={line.account_id}
-                  onChange={(e) => handleLineChange(idx, 'account_id', e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1C1B19] border border-slate-200/50 dark:border-[#3E3A35]/50 rounded-xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] select-custom"
-                >
-                  <option value="">-- Chọn tài khoản --</option>
-                  {accounts.map(a => (
-                    <option key={a.id} value={a.id}>
-                      [{a.account_code}] - {a.account_name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => handleLineChange(idx, 'account_id', val)}
+                  options={accounts.map(a => ({
+                    value: a.id,
+                    label: `[${a.account_code}] - ${a.account_name}`,
+                    group: a.account_type === 'ASSET' ? 'Tài sản (Asset)' :
+                           a.account_type === 'LIABILITY' ? 'Nợ phải trả (Liability)' :
+                           a.account_type === 'EQUITY' ? 'Vốn chủ sở hữu (Equity)' :
+                           a.account_type === 'REVENUE' ? 'Doanh thu (Revenue)' :
+                           a.account_type === 'EXPENSE' ? 'Chi phí (Expense)' : undefined
+                  }))}
+                  placeholder="-- Chọn tài khoản --"
+                  className="w-full text-xs"
+                />
               </div>
 
               {/* Debit Amount */}
@@ -257,18 +261,16 @@ export default function ManualEntryPage() {
               {/* Dimension: KTV */}
               <div className="md:col-span-2 space-y-1">
                 <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">KTV (Nếu có)</span>
-                <select
+                <PremiumSelect
                   value={line.ktv_id}
-                  onChange={(e) => handleLineChange(idx, 'ktv_id', e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1C1B19] border border-slate-200/50 dark:border-[#3E3A35]/50 rounded-xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]"
-                >
-                  <option value="">-- Chọn KTV --</option>
-                  {ktvs.map(k => (
-                    <option key={k.id} value={k.id}>
-                      {k.full_name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => handleLineChange(idx, 'ktv_id', val)}
+                  options={ktvs.map(k => ({
+                    value: k.id,
+                    label: k.full_name
+                  }))}
+                  placeholder="-- Chọn KTV --"
+                  className="w-full text-xs"
+                />
               </div>
 
               {/* Delete line */}

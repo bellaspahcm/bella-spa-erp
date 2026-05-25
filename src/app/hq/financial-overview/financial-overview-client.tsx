@@ -115,24 +115,26 @@ export default function FinancialOverviewClient({
           </div>
 
           {/* Date range filter */}
-          <div className="flex items-center gap-2 bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 px-4 py-2.5 rounded-2xl shadow-sm">
-            <Calendar className="w-4 h-4 text-primary dark:text-[#A67D44]" />
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="px-2 py-1 bg-transparent text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]"
-            />
-            <span className="text-3xs text-slate-400">→</span>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="px-2 py-1 bg-transparent text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]"
-            />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-3 sm:px-4 sm:py-2.5 rounded-2xl shadow-sm w-full sm:w-auto">
+            <div className="flex items-center gap-2 justify-between sm:justify-start">
+              <Calendar className="w-4 h-4 text-primary dark:text-[#A67D44] shrink-0" />
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="px-2 py-1 bg-transparent text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] w-24 sm:w-auto"
+              />
+              <span className="text-3xs text-slate-400">→</span>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="px-2 py-1 bg-transparent text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] w-24 sm:w-auto"
+              />
+            </div>
             <button
               onClick={handleApplyDateFilter}
-              className="ml-2 px-3 py-1.5 rounded-xl bg-primary text-white text-3xs font-black uppercase tracking-widest hover:bg-primary/90 active:scale-95 cursor-pointer transition-all"
+              className="px-4 py-2 sm:py-1.5 rounded-xl bg-primary text-white text-3xs font-black uppercase tracking-widest hover:bg-primary/90 active:scale-95 cursor-pointer transition-all w-full sm:w-auto text-center shrink-0"
             >
               Áp dụng
             </button>

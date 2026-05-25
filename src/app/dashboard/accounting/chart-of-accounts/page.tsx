@@ -187,7 +187,7 @@ export default function ChartOfAccountsPage() {
             <span className="font-mono text-xs px-2.5 py-0.5 bg-slate-100 dark:bg-[#3E3A35] text-slate-700 dark:text-[#EFE9E1] rounded-md border border-slate-200/50 dark:border-none">
               {node.account_code}
             </span>
-            <span className="text-slate-800 dark:text-[#EFE9E1] truncate text-sm">{node.account_name}</span>
+            <span className="text-slate-800 dark:text-[#EFE9E1] whitespace-nowrap text-sm">{node.account_name}</span>
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
@@ -274,8 +274,10 @@ export default function ChartOfAccountsPage() {
             <p className="font-extrabold uppercase text-xs tracking-wider">Không tìm thấy tài khoản phù hợp</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {treeData.map((node) => renderTreeNode(node, 0))}
+          <div className="overflow-x-auto -mx-6 md:-mx-8 px-6 md:px-8 pb-2">
+            <div className="space-y-2 min-w-[600px] md:min-w-full">
+              {treeData.map((node) => renderTreeNode(node, 0))}
+            </div>
           </div>
         )}
       </div>
