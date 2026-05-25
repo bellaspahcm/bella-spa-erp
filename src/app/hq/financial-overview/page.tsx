@@ -32,8 +32,21 @@ export default async function HqFinancialOverviewPage({
   try {
     pnlRows = await getConsolidatedPnLReport(fromDate, toDate);
   } catch (err: any) {
-    console.error('[HqFinancialOverview] Error loading consolidated P&L:', err);
-    errorMessage = err?.message || 'Không thể tải báo cáo P&L tổng hợp.';
+    // Supabase PostgrestError serializes poorly through console.error — destructure explicitly
+    const fullError = {
+      message: err?.message,
+      code: err?.code,
+      details: err?.details,
+      hint: err?.hint,
+      name: err?.name,
+      stack: err?.stack?.split('\n').slice(0, 3).join('\n'),
+    };
+    console.error('[HqFinancialOverview] Error loading consolidated P&L:', JSON.stringify(fullError, null, 2));
+    errorMessage = err?.message
+      || err?.details
+      || err?.hint
+      || (typeof err === 'string' ? err : null)
+      || 'Không thể tải báo cáo P&L tổng hợp. Xem terminal server để biết chi tiết.';
   }
 
   return (
