@@ -184,11 +184,13 @@ export async function POST(request: NextRequest) {
       const bookingNumber = match[1].trim().toUpperCase().replace(/^[-_]+/, "");
       console.log(`[Payment Webhook] Match found! Booking Number: "${bookingNumber}"`);
 
-      // 3. Find booking in database
+      // 3. Find booking in database — scope by booking_number only (unique constraint).
+      // Service-role client bypasses RLS so we verify tenant_id after fetch (defense-in-depth).
       const { data: booking, error: bookingErr } = await supabase
         .from("bookings")
         .select("*")
         .eq("booking_number", bookingNumber)
+        .not("tenant_id", "is", null)
         .maybeSingle();
 
       if (bookingErr || !booking) {

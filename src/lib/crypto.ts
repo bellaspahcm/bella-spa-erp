@@ -1,8 +1,10 @@
 import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'crypto';
 
-// Derive a 32-byte key from DB_ENCRYPTION_KEY, fallback to a development default
 const getEncryptionKey = (): Buffer => {
-  const rawKey = process.env.DB_ENCRYPTION_KEY || 'bella-spa-erp-default-dev-secret-key-32-chars-long';
+  const rawKey = process.env.DB_ENCRYPTION_KEY;
+  if (!rawKey) {
+    throw new Error('CRITICAL: DB_ENCRYPTION_KEY environment variable is required but not set.');
+  }
   return createHash('sha256').update(rawKey).digest();
 };
 
