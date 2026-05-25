@@ -258,7 +258,7 @@ export async function runCOOOrchestrator(
 
   // Lấy API key từ database (Bắt buộc cho Vercel Serverless nơi không lưu .env.local)
   try {
-    const { data: configData } = await supabase
+    const { data: configData } = await (supabase as any)
       .from("ai_agent_configs")
       .select("gemini_api_key")
       .eq("tenant_id", tenantId)
