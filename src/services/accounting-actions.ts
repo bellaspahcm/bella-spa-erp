@@ -5,6 +5,7 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
 import { getCurrentUser } from './user-actions';
 import { AccountingEngineService } from './accounting-engine';
+import type { AccountingReferenceType } from '@/lib/accounting-outbox';
 import type { Database } from '@/types/database.types';
 
 // Strict typing for custom account inputs
@@ -238,7 +239,7 @@ export async function reverseJournalEntry(entryId: string, reason: string) {
   const reversalInput = {
     tenant_id: user.tenant_id, // Safely use current tenant_id
     description: `Ghi đảo bút toán (Reversal of entry: ${original.id}) - Lý do: ${reason}`,
-    reference_type: original.reference_type as any || 'REVERSAL',
+    reference_type: 'REVERSAL' as AccountingReferenceType,
     reference_id: original.id,
     entry_date: original.entry_date, // Keep the same date
     lines: original.journal_lines.map((l: any) => ({
@@ -401,7 +402,7 @@ export async function postManualJournalEntry(input: ManualJournalInput) {
   const journalInput = {
     tenant_id: user.tenant_id,
     description: input.description,
-    reference_type: 'MANUAL' as any,
+    reference_type: 'MANUAL' as AccountingReferenceType,
     reference_id: user.id, // Reference creator admin's uuid
     entry_date: input.entry_date || new Date().toISOString().slice(0, 10),
     lines: input.lines.map(l => ({

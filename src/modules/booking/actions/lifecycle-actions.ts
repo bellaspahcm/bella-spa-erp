@@ -344,36 +344,25 @@ export async function createBooking(formData: any) {
     }
 
     // ⭐ Ghi nhận vào hàng đợi Accounting Outbox nếu tạo revenue thành công
-    if (insertedRev?.id) {
-      try {
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const activeClient = (revError === null && serviceRoleKey)
-          ? (() => {
-              const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
-              return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
-            })()
-          : supabase;
-
-        const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
-          p_tenant_id: tenantId,
-          p_event_type: 'PACKAGE_SALE',
-          p_reference_type: 'REVENUE',
-          p_reference_id: insertedRev.id,
-          p_payload: {
+    if (insertedRev?.id && tenantId) {
+      const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+      await enqueueWithAutoClient(
+        supabase,
+        {
+          tenantId,
+          eventType: 'PACKAGE_SALE',
+          referenceType: 'REVENUE',
+          referenceId: insertedRev.id,
+          payload: {
             totalAmount: validatedData.deposit_amount,
             vatRate: 0,
             description: `Cọc gói ${resolvePackageName(booking)}`,
-            branchId: null
-          }
-        });
-        if (outboxError) {
-          console.error('[createBooking] Failed to enqueue initial deposit accounting outbox event:', outboxError);
-        } else {
-          console.log('[createBooking] Successfully enqueued PACKAGE_SALE event for revenue:', insertedRev.id);
-        }
-      } catch (outboxErr) {
-        console.warn('[createBooking] Exception enqueuing outbox event:', outboxErr);
-      }
+            // TODO Phase 29: thay tenantId bằng branch_id thực khi có bảng branches riêng
+            branchId: tenantId,
+          },
+        },
+        '[createBooking]'
+      );
     }
   }
 
@@ -827,36 +816,25 @@ export async function recordRemainingPayment(params: {
     }
 
     // ⭐ Ghi nhận vào hàng đợi Accounting Outbox nếu tạo revenue thành công và đã confirmed
-    if (insertedRev?.id && insertedRev.status === 'confirmed') {
-      try {
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const activeClient = (revError === null && serviceRoleKey)
-          ? (() => {
-              const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
-              return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
-            })()
-          : supabase;
-
-        const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
-          p_tenant_id: tenantId,
-          p_event_type: 'PACKAGE_SALE',
-          p_reference_type: 'REVENUE',
-          p_reference_id: insertedRev.id,
-          p_payload: {
+    if (insertedRev?.id && insertedRev.status === 'confirmed' && tenantId) {
+      const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+      await enqueueWithAutoClient(
+        supabase,
+        {
+          tenantId,
+          eventType: 'PACKAGE_SALE',
+          referenceType: 'REVENUE',
+          referenceId: insertedRev.id,
+          payload: {
             totalAmount: params.amount,
             vatRate: 0,
-            description: params.notes || `Thanh toán nốt phần còn lại.`,
-            branchId: null
-          }
-        });
-        if (outboxError) {
-          console.error('[recordRemainingPayment] Failed to enqueue accounting outbox event:', outboxError);
-        } else {
-          console.log('[recordRemainingPayment] Successfully enqueued PACKAGE_SALE event for remaining payment:', insertedRev.id);
-        }
-      } catch (outboxErr) {
-        console.warn('[recordRemainingPayment] Exception enqueuing outbox event:', outboxErr);
-      }
+            description: params.notes || 'Thanh toán nốt phần còn lại.',
+            // TODO Phase 29: dùng branch_id thực khi multi-branch
+            branchId: tenantId,
+          },
+        },
+        '[recordRemainingPayment]'
+      );
     }
 
     const newTotalPaid = (booking.deposit_amount || 0) + params.amount;
