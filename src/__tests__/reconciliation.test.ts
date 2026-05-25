@@ -30,6 +30,11 @@ jest.mock('../lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({ rpc: mockRpc })),
 }));
 
+// Mock the admin client (service-role) used after H4 refactor
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({ rpc: mockRpc })),
+}));
+
 const mockGetCurrentUser = jest.fn();
 jest.mock('../services/user-actions', () => ({
   getCurrentUser: () => mockGetCurrentUser(),

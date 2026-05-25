@@ -205,6 +205,89 @@ export type Database = {
           },
         ]
       }
+      ai_agent_configs: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          telegram_bot_token: string | null
+          telegram_chat_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          telegram_bot_token?: string | null
+          telegram_chat_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          telegram_bot_token?: string | null
+          telegram_chat_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_agent_configs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      ai_agent_logs: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          sender: string
+          tenant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          sender: string
+          tenant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          sender?: string
+          tenant_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_agent_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_agent_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       app_notifications: {
         Row: {
           created_at: string
@@ -2526,6 +2609,38 @@ export type Database = {
           total_bookings_count: number
           total_sessions_completed: number
         }[]
+      }
+      get_ai_attendance_kpis: {
+        Args: { p_month_year: string }
+        Returns: {
+          ktv_id: string
+          ktv_name: string
+          total_shifts: number
+          present_count: number
+          late_count: number
+          absent_count: number
+          gps_anomaly_count: number
+        }[]
+      }
+      calculate_ktv_salary_sheet: {
+        Args: { p_month_year: string }
+        Returns: {
+          ktv_id: string
+          ktv_name: string
+          base_salary: number
+          session_bonus: number
+          rating_bonus: number
+          kpi_bonus: number
+          deductions: number
+          advances: number
+          total_salary: number
+          total_sessions: number
+          status: string
+        }[]
+      }
+      set_session_tenant: {
+        Args: { p_tenant_id: string }
+        Returns: undefined
       }
     }
     Enums: {

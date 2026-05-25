@@ -32,6 +32,7 @@ import ThemeToggle from '@/components/common/ThemeToggle';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard',      href: '/dashboard' },
+  { icon: Sparkles,        label: 'AI Copilot',     href: '/dashboard/ai-copilot' },
   { icon: Users,           label: 'Khách hàng',     href: '/dashboard/customers' },
   { icon: Calendar,        label: 'Lịch hẹn',       href: '/dashboard/bookings' },
   { icon: Flower2,         label: 'Thẻ liệu trình', href: '/dashboard/sessions' },
@@ -92,6 +93,7 @@ export function Sidebar() {
           if (rolePermissions) {
             const moduleMap: Record<string, string> = {
               'Dashboard': 'dashboard',
+              'AI Copilot': 'ai_copilot',
               'Khách hàng': 'customers',
               'Lịch hẹn': 'bookings',
               'Thẻ liệu trình': 'sessions',
@@ -113,13 +115,13 @@ export function Sidebar() {
           } else {
             // Default fallbacks while loading or if no custom permissions set
             if (user.role === 'ktv') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Kế toán sổ cái'].includes(item.label);
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Kế toán sổ cái', 'AI Copilot'].includes(item.label);
             }
             if (user.role === 'ktv_lead') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng', 'Kế toán sổ cái'].includes(item.label);
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng', 'Kế toán sổ cái', 'AI Copilot'].includes(item.label);
             }
             if (user.role === 'admin_staff') {
-              return !['Đối soát', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt', 'Kế toán sổ cái'].includes(item.label);
+              return !['Đối soát', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt', 'Kế toán sổ cái', 'AI Copilot'].includes(item.label);
             }
           }
         }

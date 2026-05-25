@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kế Hoạch Triển Khai Bella AI ERP — Multi-Agent System</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Mermaid.js for Dynamic Flowcharts -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#FF85A2',
+        primaryTextColor: '#fff',
+        primaryBorderColor: '#FF85A2',
+        lineColor: '#FF85A2',
+        secondaryColor: '#8E2DE2',
+        tertiaryColor: '#2b2d42'
+      }
+    });
+  </script>
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --bg-gradient: radial-gradient(circle at top right, #1f1224, #0b0c10 60%);
+      --surface: rgba(25, 28, 36, 0.65);
+      --surface-hover: rgba(35, 40, 52, 0.8);
+      --border: rgba(255, 133, 162, 0.15);
+      --border-hover: rgba(255, 133, 162, 0.35);
+      --primary: #FF85A2;          /* Bella Pink Pastel */
+      --primary-glow: rgba(255, 133, 162, 0.25);
+      --secondary: #8E2DE2;        /* COO Agent Violet */
+      --finance: #4A90E2;          /* CFO Blue */
+      --hr: #00B4DB;               /* CHRO Cyan */
+      --ktv: #F5A623;              /* KTV Coordinator Amber */
+      --sales: #2EC866;            /* Sales & CRM Green */
+      --mkt: #FF6B6B;              /* Marketing Coral */
+      --ops: #a2a2a2;              /* Operations & Inventory Slate */
+      --text: #e2e8f0;
+      --text-muted: #8a99ad;
+      --mono: 'Courier New', monospace;
+      --font-title: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      background-image: var(--bg-gradient);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.7;
+      padding: 60px 20px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── Luxury Header ── */
+    .header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 40px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 133, 162, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: linear-gradient(to bottom, var(--primary), var(--secondary));
+    }
+
+    .header-logo-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .logo-title {
+      font-family: var(--font-title);
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-title span {
+      background: linear-gradient(135deg, var(--primary), #ffa3b9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-badge {
+      background: rgba(255, 133, 162, 0.1);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px rgba(255, 133, 162, 0.15);
+    }
+
+    .header-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 24px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .meta-item strong {
+      color: #fff;
+      font-weight: 600;
+      display: block;
+      margin-top: 2px;
+      font-size: 15px;
+    }
+
+    /* ── Section Styles ── */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 40px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .section-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: 0 10px 40px rgba(255, 133, 162, 0.08);
+    }
+
+    .section-title {
+      font-family: var(--font-title);
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, rgba(255, 133, 162, 0.3), transparent);
+      margin-left: 16px;
+    }
+
+    .section-title span.number {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    /* ── Interactive Agent Switcher (Pure CSS) ── */
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .agent-tab-label {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .agent-tab-label .icon {
+      font-size: 24px;
+      transition: transform 0.3s ease;
+    }
+
+    .agent-tab-label .name {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* Hide inputs */
+    .agent-tab-input { display: none; }
+
+    /* Hover state */
+    .agent-tab-label:hover {
+      background: rgba(255, 255, 255, 0.06);
+      transform: translateY(-2px);
+    }
+
+    /* Target styling based on selected agent radio button */
+    #tab-coo:checked ~ .agent-grid label[for="tab-coo"],
+    #tab-cfo:checked ~ .agent-grid label[for="tab-cfo"],
+    #tab-chro:checked ~ .agent-grid label[for="tab-chro"],
+    #tab-ktv:checked ~ .agent-grid label[for="tab-ktv"],
+    #tab-sales:checked ~ .agent-grid label[for="tab-sales"],
+    #tab-mkt:checked ~ .agent-grid label[for="tab-mkt"],
+    #tab-ops:checked ~ .agent-grid label[for="tab-ops"] {
+      background: var(--surface-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    #tab-coo:checked ~ .agent-grid label[for="tab-coo"] { border-color: var(--secondary); color: var(--secondary); }
+    #tab-cfo:checked ~ .agent-grid label[for="tab-cfo"] { border-color: var(--finance); color: var(--finance); }
+    #tab-chro:checked ~ .agent-grid label[for="tab-chro"] { border-color: var(--hr); color: var(--hr); }
+    #tab-ktv:checked ~ .agent-grid label[for="tab-ktv"] { border-color: var(--ktv); color: var(--ktv); }
+    #tab-sales:checked ~ .agent-grid label[for="tab-sales"] { border-color: var(--sales); color: var(--sales); }
+    #tab-mkt:checked ~ .agent-grid label[for="tab-mkt"] { border-color: var(--mkt); color: var(--mkt); }
+    #tab-ops:checked ~ .agent-grid label[for="tab-ops"] { border-color: var(--ops); color: var(--ops); }
+
+    #tab-coo:checked ~ .agent-grid label[for="tab-coo"] .name { color: var(--secondary); }
+    #tab-cfo:checked ~ .agent-grid label[for="tab-cfo"] .name { color: var(--finance); }
+    #tab-chro:checked ~ .agent-grid label[for="tab-chro"] .name { color: var(--hr); }
+    #tab-ktv:checked ~ .agent-grid label[for="tab-ktv"] .name { color: var(--ktv); }
+    #tab-sales:checked ~ .agent-grid label[for="tab-sales"] .name { color: var(--sales); }
+    #tab-mkt:checked ~ .agent-grid label[for="tab-mkt"] .name { color: var(--mkt); }
+    #tab-ops:checked ~ .agent-grid label[for="tab-ops"] .name { color: var(--ops); }
+
+    /* Agent Panels content */
+    .agent-panel {
+      display: none;
+      animation: fadeIn 0.4s ease-in-out forwards;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 16px;
+      padding: 30px;
+    }
+
+    #tab-coo:checked ~ .agent-content #panel-coo,
+    #tab-cfo:checked ~ .agent-content #panel-cfo,
+    #tab-chro:checked ~ .agent-content #panel-chro,
+    #tab-ktv:checked ~ .agent-content #panel-ktv,
+    #tab-sales:checked ~ .agent-content #panel-sales,
+    #tab-mkt:checked ~ .agent-content #panel-mkt,
+    #tab-ops:checked ~ .agent-content #panel-ops {
+      display: block;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: 16px;
+    }
+
+    .panel-header h3 {
+      font-family: var(--font-title);
+      font-size: 20px;
+      color: #fff;
+    }
+
+    .panel-header .tag {
+      font-family: var(--font-title);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 50px;
+      border: 1px solid;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .panel-grid { grid-template-columns: 1fr 1.2fr; }
+    }
+
+    .panel-item-title {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .panel-block {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    /* Specific Tab Accent Colors */
+    .color-coo { color: var(--secondary) !important; }
+    .color-cfo { color: var(--finance) !important; }
+    .color-chro { color: var(--hr) !important; }
+    .color-ktv { color: var(--ktv) !important; }
+    .color-sales { color: var(--sales) !important; }
+    .color-mkt { color: var(--mkt) !important; }
+    .color-ops { color: var(--ops) !important; }
+
+    /* ── Mermaid Layout Box ── */
+    .mermaid-box {
+      background: #0f1118;
+      border: 1px solid rgba(255, 133, 162, 0.1);
+      border-radius: 16px;
+      padding: 30px;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    /* ── Bullet Styles ── */
+    ul { list-style: none; }
+    li.bullet-item {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    li.bullet-item::before {
+      content: '✦';
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-size: 12px;
+    }
+
+    /* ── Code display ── */
+    pre {
+      background: #06070a;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 16px;
+      border-radius: 10px;
+      font-family: var(--mono);
+      font-size: 12px;
+      overflow-x: auto;
+      line-height: 1.6;
+      color: #9cdcfe;
+    }
+    .comment { color: #6a9955; }
+    .string { color: #ce9178; }
+
+    /* ── Flow steps / Timeline ── */
+    .timeline {
+      position: relative;
+      padding-left: 32px;
+      margin-top: 20px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 11px; top: 0; bottom: 0;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 30px;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -26px; top: 6px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+    .timeline-item.active::before {
+      background: var(--primary);
+    }
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .timeline-title {
+      font-family: var(--font-title);
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .timeline-date {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+    }
+
+    /* ── Alerts & Highlights ── */
+    .alert-box {
+      background: rgba(255, 133, 162, 0.05);
+      border-left: 4px solid var(--primary);
+      padding: 20px;
+      border-radius: 0 12px 12px 0;
+      margin-bottom: 24px;
+    }
+    .alert-title {
+      font-family: var(--font-title);
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Table Styles ── */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.15);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      color: #fff;
+      font-weight: 600;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-family: var(--font-title);
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* ── Accordion for Workflows ── */
+    .accordion-item {
+      background: rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .accordion-header {
+      padding: 18px 24px;
+      font-family: var(--font-title);
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.3s ease;
+    }
+    .accordion-header:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .accordion-header::after {
+      content: '▼';
+      font-size: 11px;
+      color: var(--text-muted);
+      transition: transform 0.3s ease;
+    }
+    .accordion-content {
+      padding: 0 24px 20px;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255,255,255,0.03);
+      padding-top: 20px;
+    }
+
+    /* ── QA Cards ── */
+    .qa-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .qa-badge {
+      background: rgba(142, 45, 226, 0.1);
+      color: #b87cff;
+      border: 1px solid rgba(142, 45, 226, 0.3);
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+    .qa-question {
+      font-family: var(--font-title);
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .qa-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .qa-option {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 13px;
+    }
+    .qa-option:hover {
+      background: rgba(255, 133, 162, 0.05);
+      border-color: rgba(255, 133, 162, 0.2);
+    }
+    .qa-option input {
+      accent-color: var(--primary);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 60px;
+      padding: 30px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Print settings */
+    @media print {
+      body { background: #fff; color: #000; padding: 20px; }
+      .section-card, .header { border: 1px solid #ccc; box-shadow: none; background: #fff; color: #000; page-break-inside: avoid; }
+      .logo-title span { color: #000; -webkit-text-fill-color: initial; }
+      .agent-grid, .agent-tab-input { display: none; }
+      .agent-panel { display: block !important; margin-bottom: 30px; border: 1px solid #ccc; background: #fff; color: #000; }
+      th { background: #eee; color: #000; }
+      td { color: #222; }
+      .mermaid-box { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ══════════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════════ -->
+  <div class="header">
+    <div class="header-logo-section">
+      <h1 class="logo-title">
+        🌸 Bella AI <span>ERP</span>
+      </h1>
+      <span class="status-badge" style="background: rgba(46, 200, 102, 0.1); color: var(--sales); border-color: var(--sales); box-shadow: 0 0 15px rgba(46, 200, 102, 0.15);">Đã Phê Duyệt & Đóng Dấu</span>
+    </div>
+    <div style="font-family: var(--font-title); font-size: 20px; font-weight: 600; color: #fff; margin-bottom: 24px;">
+      Kế Hoạch Triển Khai Trợ Lý Ảo Vận Hành Toàn Diện (Multi-Agent System)
+    </div>
+    <div class="header-meta">
+      <div class="meta-item">
+        Đối Tác Triển Khai
+        <strong>Antigravity AI Agent</strong>
+      </div>
+      <div class="meta-item">
+        Ngày Lập Kế Hoạch
+        <strong>2026-05-25</strong>
+      </div>
+      <div class="meta-item">
+        Phạm Vi Hệ Thống
+        <strong>6 Chi Nhánh & Trụ Sở HQ</strong>
+      </div>
+      <div class="meta-item">
+        Độ Khớp Số Liệu Yêu Cầu
+        <strong>100% (Sai lệch 0%)</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       MỤC TIÊU & TỔNG QUAN
+  ══════════════════════════════════════════════ -->
+  <div class="section-card">
+    <h2 class="section-title"><span class="number">1</span>Mục Tiêu & Tầm Nhìn Chiến Lược</h2>
+    <div class="alert-box">
+      <div class="alert-title">📢 Tuyên bố sứ mệnh Bella AI ERP:</div>
+      <p style="font-size: 14px; color: var(--text-muted);">
+        Chuyển đổi Bella Spa ERP từ một hệ thống ghi sổ thủ công sang cơ chế <strong>Vận hành tự động thông minh</strong>. Tích hợp sâu vào cơ sở dữ liệu Supabase hiện tại để phân tích chuẩn xác mọi chỉ số báo cáo tài chính TT133, đối soát công nợ, tối ưu hóa công suất kỹ thuật viên (KTV) và quản lý chặt chẽ vật tư tiêu hao.
+      </p>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 24px;">
+      <div style="background: rgba(255, 255, 255, 0.02); padding: 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.04);">
+        <h4 style="color:#fff; font-family: var(--font-title); margin-bottom: 12px; font-size:16px;">🎯 Các Mục Tiêu Cốt Lõi:</h4>
+        <ul>
+          <li class="bullet-item"><strong>Cấp thông tin thời gian thực cho CEO:</strong> AI tự động tổng hợp báo cáo P&L đa chi nhánh và đề xuất cải thiện vận hành ngay khi có bất thường.</li>
+          <li class="bullet-item"><strong>Zero Silent DB Failure:</strong> AI tương tác với DB thông qua các API & RPCs được định kiểu nghiêm ngặt, chặn đứng mọi lỗi ghi ngầm.</li>
+          <li class="bullet-item"><strong>Human-in-the-loop:</strong> Đảm bảo AI chỉ hỗ trợ phân tích và lập bản nháp, quyền phê duyệt giao dịch cuối cùng luôn thuộc về CEO.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SƠ ĐỒ HỆ THỐNG
+  ══════════════════════════════════════════════ -->
+  <div class="section-card">
+    <h2 class="section-title"><span class="number">2</span>Sơ Đồ Kiến Trúc Luồng Dữ Liệu</h2>
+    <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">
+      Sơ đồ dưới đây minh họa luồng giao tiếp bảo mật phân cấp từ CEO, đi qua AI COO Agent để phân rã nhiệm vụ và gửi tới các Sub-Agent phòng ban chuyên môn.
+    </p>
+    <div class="mermaid-box">
+      <pre class="mermaid" style="background:transparent; border:none; padding:0;">
+graph TD
+    CEO[CEO / Tổng Giám Đốc] -->|1. Ra lệnh & Nhận báo cáo| COOA(AI COO Agent)
+    COOA -->|2. Phân rã & Định tuyến| CFO(CFO Agent - Kế toán)
+    COOA -->|2. Phân rã & Định tuyến| CHRO(CHRO Agent - Nhân sự)
+    COOA -->|2. Phân rã & Định tuyến| KTV(KTV Coordinator)
+    COOA -->|2. Phân rã & Định tuyến| Sales(Sales & CRM Agent)
+    COOA -->|2. Phân rã & Định tuyến| Mkt(Marketing Agent)
+    COOA -->|2. Phân rã & Định tuyến| Ops(Operations & Inventory)
+    
+    CFO -->|3. Query RLS| DB[(Supabase Database)]
+    CHRO -->|3. Query RLS| DB
+    KTV -->|3. Query RLS| DB
+    Sales -->|3. Query RLS| DB
+    Mkt -->|3. Query RLS| DB
+    Ops -->|3. Query RLS| DB
+      </pre>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       CHI TIẾT VAI TRÒ ĐẠI LÝ (INTERACTIVE TABS)
+  ══════════════════════════════════════════════ -->
+  <div class="section-card">
+    <h2 class="section-title"><span class="number">3</span>Đặc Tả Chi Tiết 7 Đại Lý AI (Sub-Agents)</h2>
+    <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">
+      Nhấp chọn từng vai trò dưới đây để xem chi tiết Ngữ cảnh cô đặc, Dữ liệu truy cập và Bộ công cụ chuyên biệt của mỗi Trưởng phòng AI:
+    </p>
+
+    <!-- Hidden Radio Buttons for Tabs -->
+    <input type="radio" name="agent-tabs" id="tab-coo" class="agent-tab-input" checked>
+    <input type="radio" name="agent-tabs" id="tab-cfo" class="agent-tab-input">
+    <input type="radio" name="agent-tabs" id="tab-chro" class="agent-tab-input">
+    <input type="radio" name="agent-tabs" id="tab-ktv" class="agent-tab-input">
+    <input type="radio" name="agent-tabs" id="tab-sales" class="agent-tab-input">
+    <input type="radio" name="agent-tabs" id="tab-mkt" class="agent-tab-input">
+    <input type="radio" name="agent-tabs" id="tab-ops" class="agent-tab-input">
+
+    <!-- Tab Labels Grid -->
+    <div class="agent-grid">
+      <label for="tab-coo" class="agent-tab-label">
+        <span class="icon">👔</span>
+        <span class="name">AI COO</span>
+      </label>
+      <label for="tab-cfo" class="agent-tab-label">
+        <span class="icon">💵</span>
+        <span class="name">Kế toán</span>
+      </label>
+      <label for="tab-chro" class="agent-tab-label">
+        <span class="icon">👥</span>
+        <span class="name">Nhân sự</span>
+      </label>
+      <label for="tab-ktv" class="agent-tab-label">
+        <span class="icon">💆‍♀️</span>
+        <span class="name">KTV</span>
+      </label>
+      <label for="tab-sales" class="agent-tab-label">
+        <span class="icon">📈</span>
+        <span class="name">Sales</span>
+      </label>
+      <label for="tab-mkt" class="agent-tab-label">
+        <span class="icon">📣</span>
+        <span class="name">Marketing</span>
+      </label>
+      <label for="tab-ops" class="agent-tab-label">
+        <span class="icon">📦</span>
+        <span class="name">Kho vận</span>
+      </label>
+    </div>
+
+    <!-- Agent Panels Container -->
+    <div class="agent-content">
+
+      <!-- COO PANEL -->
+      <div class="agent-panel" id="panel-coo">
+        <div class="panel-header">
+          <h3>COO Agent — Thư ký kiêm Giám đốc vận hành tổng</h3>
+          <span class="tag color-coo" style="border-color:var(--secondary)">Orchestrator</span>
+        </div>
+        <div class="panel-grid">
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Vai Trò & Triết Lý</div>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                Đại lý AI cao cấp trực tiếp nhận ý chí của CEO. Phân tách một bài toán lớn ra nhiều mảng nhỏ, định tuyến và gọi đúng Sub-Agent chuyên sâu, tổng hợp dữ liệu thành báo cáo cô đọng cùng phương án xử lý thiết thực cho CEO.
+              </p>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Ngữ Cảnh Cô Đặc (System Context)</div>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                Hiểu rõ mô hình nhượng quyền thương hiệu (Franchise), vận hành chuỗi Mẹ & Bé, quản lý hiệu năng chi nhánh. Áp dụng các khung tư duy kinh tế chuẩn mực (SWOT, OKR, BCG).
+              </p>
+            </div>
+          </div>
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Bộ Công Cụ Nghiệp Vụ (Tools)</div>
+              <ul style="font-size:13px;">
+                <li class="bullet-item"><code>TaskDecomposer</code>: Phân rã câu hỏi CEO thành các bài toán thành phần.</li>
+                <li class="bullet-item"><code>AgentRouter</code>: Lập bản đồ gọi Sub-Agent theo phân môn phù hợp.</li>
+                <li class="bullet-item"><code>ExecutiveReportSynthesizer</code>: Trích lọc số liệu, soạn báo cáo kết luận.</li>
+              </ul>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Ví dụ tình huống</div>
+              <p style="font-size:13px; font-style:italic; color:var(--text-muted);">
+                "Hệ thống phát hiện chi nhánh Quận 7 bị sụt giảm doanh thu 15% do chi phí di chuyển KTV tăng mạnh, đề xuất dồn ca cho chi nhánh Quận 4..."
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CFO PANEL -->
+      <div class="agent-panel" id="panel-cfo">
+        <div class="panel-header">
+          <h3>CFO Agent — Trưởng phòng Kế toán Tài chính</h3>
+          <span class="tag color-cfo" style="border-color:var(--finance)">Finance Core</span>
+        </div>
+        <div class="panel-grid">
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Vai Trò & Triết Lý</div>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                Đảm nhiệm tính đúng đắn và chính xác tuyệt đối của số liệu tài chính. Không bao giờ để xảy ra chênh lệch dữ liệu (chỉ số khớp 100%).
+              </p>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Dữ Liệu Truy Cập (Data Scope)</div>
+              <p style="font-size:12.5px; font-family:var(--mono); color:var(--primary);">
+                accounting_accounts, accounting_periods, journal_entries, journal_lines, revenue, expenses
+              </p>
+            </div>
+          </div>
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Bộ Công Cụ Chuyên Biệt (Typed RPCs)</div>
+              <pre><span class="comment">// Gọi trực tiếp RPC PostgreSQL định kiểu</span>
+get_trial_balance(period_id)
+get_income_statement(period_id)
+get_cash_flow_statement(period_id)
+get_consolidated_pnl() <span class="comment">// HQ View</span>
+verify_reconciliation_audit()</pre>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Ngữ Cảnh Quy Chuẩn</div>
+              <p style="font-size:13px; color:var(--text-muted);">
+                Thông tư 133/2016/TT-BTC doanh nghiệp vừa và nhỏ, cân đối Sổ cái, Bảng cân đối phát sinh, Dòng tiền gián tiếp.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHRO PANEL -->
+      <div class="agent-panel" id="panel-chro">
+        <div class="panel-header">
+          <h3>CHRO Agent — Trưởng phòng Nhân sự - Tiền lương</h3>
+          <span class="tag color-chro" style="border-color:var(--hr)">HR & Payroll</span>
+        </div>
+        <div class="panel-grid">
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Vai Trò & Triết Lý</div>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                Đảm bảo tính tuân thủ kỷ luật lao động, tính toán chính xác chi phí lương KTV (Lương cơ bản + hoa hồng ca + thưởng KPI sao đánh giá - phạt trễ ca).
+              </p>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Dữ Liệu Truy Cập (Data Scope)</div>
+              <p style="font-size:12.5px; font-family:var(--mono); color:var(--primary);">
+                users, attendance, salary_records, kpi_records, staff_leaves
+              </p>
+            </div>
+          </div>
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Bộ Công Cụ Chuyên Biệt (Typed RPCs)</div>
+              <pre><span class="comment">// Công cụ phân tích nhân sự</span>
+calculate_ktv_salary_sheet(month)
+audit_gps_attendance_anomaly()
+predict_leave_resource_risk()
+evaluate_kpi_bonus_level(ktv_id)</pre>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Quy tắc Nghiệp vụ</div>
+              <p style="font-size:13px; color:var(--text-muted);">
+                Chặn mọi hành vi sửa đổi lương đã duyệt (Snapshot Locked), phát hiện bất thường GPS check-in ca tắm bé tại nhà.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KTV PANEL -->
+      <div class="agent-panel" id="panel-ktv">
+        <div class="panel-header">
+          <h3>KTV Coordinator Agent — Trưởng nhóm Điều phối KTV</h3>
+          <span class="tag color-ktv" style="border-color:var(--ktv)">Spa Operations</span>
+        </div>
+        <div class="panel-grid">
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Vai Trò & Triết Lý</div>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                Tối ưu hóa công suất phục vụ của KTV. Đảm bảo KTV làm việc hiệu suất tối đa nhưng không bị quá tải ca hoặc trùng lịch di chuyển xa.
+              </p>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Dữ Liệu Truy Cập (Data Scope)</div>
+              <p style="font-size:12.5px; font-family:var(--mono); color:var(--primary);">
+                session_logs, session_reviews, ktv_schedule, shifts
+              </p>
+            </div>
+          </div>
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Bộ Công Cụ Chuyên Biệt (Tools)</div>
+              <ul style="font-size:13px;">
+                <li class="bullet-item"><code>KtvUtilizationCalculator</code>: Phân tích công suất thực tế/đăng ký ca.</li>
+                <li class="bullet-item"><code>ScheduleClashDetector</code>: Cảnh báo trùng lịch ca tắm/massage.</li>
+                <li class="bullet-item"><code>SentimentReviewScanner</code>: Quét phản hồi khách bầu để phát hiện sớm phàn nàn dịch vụ.</li>
+              </ul>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Quy Tắc An Toàn</div>
+              <p style="font-size:13px; color:var(--text-muted);">
+                KTV tuyệt đối không thể tự xem hoặc chỉnh sửa phần đánh giá khách hàng (Session Reviews) bị ẩn.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SALES PANEL -->
+      <div class="agent-panel" id="panel-sales">
+        <div class="panel-header">
+          <h3>Sales & CRM Agent — Trưởng phòng Kinh doanh & CSKH</h3>
+          <span class="tag color-sales" style="border-color:var(--sales)">CRM & Sales</span>
+        </div>
+        <div class="panel-grid">
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Vai Trò & Triết Lý</div>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                Chăm sóc tệp khách hàng mẹ bầu toàn diện từ khi đăng ký gói liệu trình (Inquiry), đối soát đặt cọc cho tới khi hoàn tất ca và chăm sóc sau liệu trình.
+              </p>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Dữ Liệu Truy Cập (Data Scope)</div>
+              <p style="font-size:12.5px; font-family:var(--mono); color:var(--primary);">
+                customers, bookings, membership_records
+              </p>
+            </div>
+          </div>
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Bộ Công Cụ Chuyên Biệt (Tools)</div>
+              <ul style="font-size:13px;">
+                <li class="bullet-item"><code>BookingConversionTracker</code>: Thống kê tỷ lệ chuyển đổi chốt gói.</li>
+                <li class="bullet-item"><code>CustomerDebtScanner</code>: Lọc khách nợ đọng, đối chiếu số buổi đã thực hiện.</li>
+                <li class="bullet-item"><code>ChurnRiskAnalyzer</code>: Phát hiện mẹ bầu bị trễ ca (quá 5 ngày chưa xếp lịch).</li>
+              </ul>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Đặc tính kỹ thuật</div>
+              <p style="font-size:13px; color:var(--text-muted);">
+                Hỗ trợ lọc bối cảnh đa hợp đồng (Multi-booking Context) khi khách hàng mua nhiều gói dịch vụ song song.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MARKETING PANEL -->
+      <div class="agent-panel" id="panel-mkt">
+        <div class="panel-header">
+          <h3>Marketing Agent — Trưởng phòng Marketing & Thương hiệu</h3>
+          <span class="tag color-mkt" style="border-color:var(--mkt)">Growth</span>
+        </div>
+        <div class="panel-grid">
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Vai Trò & Triết Lý</div>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                Phát triển tệp khách hàng tiềm năng qua phễu quảng cáo, tự động hóa kịch bản chăm sóc bầu qua Zalo OA và tối ưu hóa Chi phí tiếp cận khách mới (CAC).
+              </p>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Dữ Liệu Truy Cập (Data Scope)</div>
+              <p style="font-size:12.5px; font-family:var(--mono); color:var(--primary);">
+                customer acquisition sources, brand_service_master, tenants
+              </p>
+            </div>
+          </div>
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Bộ Công Cụ Chuyên Biệt (Tools)</div>
+              <ul style="font-size:13px;">
+                <li class="bullet-item"><code>CacVsLtvCalculator</code>: Đo hiệu quả LTV/CAC từng kênh (Facebook/Zalo/Referral).</li>
+                <li class="bullet-item"><code>ZaloOACampaignBuilder</code>: Lập kịch bản gửi tin nhắn chúc mừng, nhắc lịch bầu.</li>
+                <li class="bullet-item"><code>BrandMetricsTracker</code>: Đánh giá gói dịch vụ spa được ưa chuộng nhất.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPERATIONS & INVENTORY PANEL -->
+      <div class="agent-panel" id="panel-ops">
+        <div class="panel-header">
+          <h3>Operations & Inventory Agent — Trưởng phòng Kho vận</h3>
+          <span class="tag color-ops" style="border-color:var(--ops)">Supply Chain</span>
+        </div>
+        <div class="panel-grid">
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Vai Trò & Triết Lý</div>
+              <p style="font-size:13.5px; color:var(--text-muted);">
+                Quản lý kho nguyên vật liệu (dầu massage cốt nghệ, thảo dược tắm bé). Đảm bảo tồn kho chi nhánh luôn ở mức an toàn dựa trên lịch đặt trước.
+              </p>
+            </div>
+            <div class="panel-block">
+              <div class="panel-item-title">Dữ Liệu Truy Cập (Data Scope)</div>
+              <p style="font-size:12.5px; font-family:var(--mono); color:var(--primary);">
+                inventory_items, package_materials, stock_transactions
+              </p>
+            </div>
+          </div>
+          <div>
+            <div class="panel-block">
+              <div class="panel-item-title">Bộ Công Cụ Chuyên Biệt (Tools)</div>
+              <ul style="font-size:13px;">
+                <li class="bullet-item"><code>MaterialConsumptionAudit</code>: So sánh lượng dầu hao hụt thực tế vs định mức lý thuyết.</li>
+                <li class="bullet-item"><code>LowStockPredictor</code>: Dự báo cạn kho dựa trên số lịch đặt hẹn trong tuần.</li>
+                <li class="bullet-item"><code>AutoPurchaseOrderDraft</code>: Tự lập bản nháp đơn hàng mua vật tư dự phòng.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       QUY TRÌNH BẢO MẬT
+  ══════════════════════════════════════════════ -->
+  <div class="section-card">
+    <h2 class="section-title"><span class="number">4</span>Giao Thức Bảo Mật & RLS Bắt Buộc</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 25%">Nguyên tắc bảo mật</th>
+            <th style="width: 45%">Mô tả kỹ thuật</th>
+            <th style="width: 30%">Tác động hệ thống</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Mã hóa đầu cuối (PII Encrypt)</strong></td>
+            <td>Thông tin nhạy cảm của khách bầu (số điện thoại, địa chỉ, nhật ký khám bé) và review nhạy cảm được mã hóa cứng.</td>
+            <td>AI không thể đọc bừa bãi PII của khách hàng khi không được phân quyền rõ ràng.</td>
+          </tr>
+          <tr>
+            <td><strong>Bảo mật RLS đa chi nhánh</strong></td>
+            <td>Mọi cuộc gọi từ Agent bắt buộc đi qua hàm xác thực tenant <code>get_auth_tenant_id()</code> hoặc <code>is_hq_super_admin()</code>.</td>
+            <td>Ngăn chặn hoàn toàn sự cố rò rỉ dữ liệu chéo giữa các chi nhánh spa nhượng quyền.</td>
+          </tr>
+          <tr>
+            <td><strong>Human-in-the-loop (HIL)</strong></td>
+            <td>Tất cả các hành động ghi sổ kế toán hoặc sửa đổi lịch KTV bắt buộc phải trả về mã giao dịch phê duyệt tay từ CEO/Kế toán trưởng.</td>
+            <td>Tránh lỗi vận hành tự động sai lầm khi mô hình ngôn ngữ lớn gặp hiện tượng hallucination.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       KỊCH BẢN VẬN HÀNH TỰ ĐỘNG
+  ══════════════════════════════════════════════ -->
+  <div class="section-card">
+    <h2 class="section-title"><span class="number">5</span>Kịch Bản Vận Hành Thực Tế (Daily Autopilot)</h2>
+    <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">
+      Hãy nhấp chọn các kịch bản dưới đây để xem cách các Sub-Agent hoạt động phối hợp tự động cuối ngày:
+    </p>
+
+    <!-- Accordion 1 -->
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="this.parentElement.classList.toggle('active')">
+        Kịch bản 1: CEO yêu cầu phân tích suy giảm lợi nhuận chi nhánh
+      </div>
+      <div class="accordion-content">
+        <p style="margin-bottom: 12px; color: var(--text);">Quy trình phối hợp:</p>
+        <ul style="font-size: 13.5px;">
+          <li class="bullet-item"><strong>Bước 1:</strong> CEO ra lệnh "Kiểm tra tại sao lợi nhuận Quận 7 giảm mạnh".</li>
+          <li class="bullet-item"><strong>Bước 2:</strong> AI COO Agent phân rã yêu cầu, đồng thời kích hoạt 3 Sub-Agents: CFO, Sales, và KTV Coordinator.</li>
+          <li class="bullet-item"><strong>Bước 3:</strong> CFO Agent phản hồi chi phí di chuyển KTV tăng vọt 25%. Sales Agent báo cáo số ca hoàn thành giảm do thiếu KTV vào giờ cao điểm. KTV Coordinator báo cáo hiệu suất KTV thấp (55%) vì mất 40% thời gian di chuyển xa giữa các quận.</li>
+          <li class="bullet-item"><strong>Bước 4:</strong> AI COO Agent đúc kết: Chi nhánh Q7 giảm lợi nhuận không phải do thiếu khách mà do phân bổ địa bàn KTV không tối ưu. Đề xuất CEO: Điều chuyển các ca xa cho chi nhánh lân cận và thắt chặt bán kính nhận khách.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Accordion 2 -->
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="this.parentElement.classList.toggle('active')">
+        Kịch bản 2: Vận hành tự động cuối ngày (22:00 Daily Autopilot)
+      </div>
+      <div class="accordion-content">
+        <p style="margin-bottom: 12px; color: var(--text);">Quy trình vận hành nền:</p>
+        <ul style="font-size: 13.5px;">
+          <li class="bullet-item"><strong>Tài chính:</strong> CFO Agent chạy đối soát chéo quỹ ngân hàng vs hoá đơn phát sinh trên hệ thống. Nếu lệch > 1% sẽ lập tức bắn cảnh báo đỏ về điện thoại CEO kèm danh sách giao dịch nghi vấn.</li>
+          <li class="bullet-item"><strong>Kho vận:</strong> Operations Agent kiểm tra lượng dầu massage còn lại trong kho. Phát hiện chi nhánh Q3 chỉ còn đủ dùng trong 3 ngày -> Tự động tạo bản nháp luân chuyển kho từ Q1 sang Q3 gửi CEO ký duyệt.</li>
+          <li class="bullet-item"><strong>Nhân sự:</strong> CHRO Agent quét ca làm việc, phát hiện KTV check-in GPS lệch thực tế 1.5km -> Tự động lập biểu mẫu yêu cầu giải trình gửi đến KTV Lead của chi nhánh.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       LỘ TRÌNH PHÂN KỲ
+  ══════════════════════════════════════════════ -->
+  <div class="section-card">
+    <h2 class="section-title"><span class="number">6</span>Lộ Trình Triển Khai Chi Tiết</h2>
+    <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 14px;">
+      Để đảm bảo nguyên tắc an toàn tuyệt đối và không gây ra bất kỳ lỗi hồi quy (Zero Regression Bug) nào trên hệ thống ERP đang hoạt động, quá trình triển khai sẽ được chia làm 3 phân kỳ:
+    </p>
+    <div class="timeline">
+      <div class="timeline-item active">
+        <div class="timeline-header">
+          <span class="timeline-title">Phân kỳ 1: Hạ tầng bảo mật & AI Core Setup</span>
+          <span class="timeline-date">Tuần 1 - Tuần 2</span>
+        </div>
+        <p style="color:var(--text-muted); font-size:13.5px;">
+          Tạo schema chuyên dụng <code>ai_agent_logs</code> để kiểm soát hoạt động. Thiết lập các Database Functions (RPCs) an toàn và lập cấu trúc lõi cho AI COO Agent.
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-header">
+          <span class="timeline-title">Phân kỳ 2: Kích hoạt Sub-Agent phòng ban (Tài chính & Nhân sự trước)</span>
+          <span class="timeline-date">Tuần 3 - Tuần 5</span>
+        </div>
+        <p style="color:var(--text-muted); font-size:13.5px;">
+          Đưa CFO Agent và CHRO Agent vào thử nghiệm đối chiếu song song (Shadow Testing) để đảm bảo khớp dữ liệu doanh thu và bảng lương 100% so với thực tế. Tiếp theo kích hoạt các đại lý Sales, KTV, Marketing và Kho vận.
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-header">
+          <span class="timeline-title">Phân kỳ 3: Tích hợp Autopilot & Cảnh Báo Khẩn</span>
+          <span class="timeline-date">Tuần 6</span>
+        </div>
+        <p style="color:var(--text-muted); font-size:13.5px;">
+          Cấu hình Vercel Cron Jobs tự động chạy quét đối soát nền cuối ngày. Kết nối luồng thông báo khẩn qua Telegram/Zalo OA để gửi trực tiếp tới điện thoại CEO.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       PHIẾU Ý KIẾN CEO
+  ══════════════════════════════════════════════ -->
+  <div class="section-card">
+    <h2 class="section-title"><span class="number">7</span>Ý Kiến Phản Hồi & Phê Duyệt Của CEO</h2>
+    <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">
+      Để chúng tôi tiến hành lập kế hoạch chi tiết cho các Module mã nguồn ở Sprint tới, kính đề nghị CEO cho ý kiến phê duyệt tại các điểm mấu chốt sau:
+    </p>
+
+    <!-- Q1 -->
+    <div class="qa-card">
+      <span class="qa-badge">Quyết định 1</span>
+      <div class="qa-question">CEO mong muốn mức độ tự động hóa của AI ERP ở mức nào?</div>
+      <div class="qa-options">
+        <label class="qa-option">
+          <input type="radio" name="qa-1" checked>
+          <span><strong>Mức A (Khuyên dùng):</strong> AI chỉ phân tích dữ liệu, đề xuất phương án và lập bản nháp (ví dụ đơn chuyển kho, tin nhắn CSKH Zalo). Việc thực thi cuối cùng bắt buộc phải được CEO hoặc Kế toán trưởng duyệt tay trên giao diện ERP.</span>
+        </label>
+        <label class="qa-option">
+          <input type="radio" name="qa-1">
+          <span><strong>Mức B (Tự động hóa hoàn toàn):</strong> Cho phép AI tự động kích hoạt gửi các tin nhắn CSKH hoặc tự gửi phiếu yêu cầu đặt hàng kho khi có cảnh báo cạn kiệt, chỉ giữ lại duyệt tay đối với phần tiền và lương.</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="qa-card">
+      <span class="qa-badge">Quyết định 2</span>
+      <div class="qa-question">CEO muốn nhận báo cáo tổng hợp và cảnh báo đỏ qua kênh nào?</div>
+      <div class="qa-options">
+        <label class="qa-option">
+          <input type="checkbox" checked>
+          <span><strong>Group Telegram riêng tư (Khuyên dùng):</strong> Cực kỳ bảo mật, hỗ trợ nhận tin nhắn tức thời kèm theo các tệp tài liệu PDF báo cáo tài chính đính kèm.</span>
+        </label>
+        <label class="qa-option">
+          <input type="checkbox">
+          <span><strong>Tích hợp trực tiếp vào Zalo cá nhân:</strong> Tiện dụng, nhanh chóng ngay trong app Zalo hằng ngày của CEO.</span>
+        </label>
+        <label class="qa-option">
+          <input type="checkbox">
+          <span><strong>Email Báo Cáo Định Kỳ:</strong> Phù hợp cho các báo cáo vận hành chuyên sâu và dài hơi vào cuối tuần/cuối tháng.</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="qa-card">
+      <span class="qa-badge">Quyết định 3</span>
+      <div class="qa-question">CEO muốn ưu tiên khởi động đại lý phòng ban nào trước tiên trong Giai đoạn 2?</div>
+      <div class="qa-options">
+        <label class="qa-option">
+          <input type="radio" name="qa-3">
+          <span><strong>CFO Agent (Tài chính Kế toán):</strong> Bắt đầu từ số liệu tài chính vì hệ thống báo cáo kế toán TT133 hiện đã chạy rất ổn định và chuẩn hóa.</span>
+        </label>
+        <label class="qa-option">
+          <input type="radio" name="qa-3" checked>
+          <span><strong>CHRO Agent (Nhân sự - Tiền lương) [ĐÃ CHỌN]:</strong> Khởi động từ phần lương và chấm công GPS để giải quyết dứt điểm các bất thường check-in của KTV.</span>
+        </label>
+        <label class="qa-option">
+          <input type="radio" name="qa-3">
+          <span><strong>Sales & Marketing Agent:</strong> Tập trung vào chăm sóc khách bầu và gửi chiến dịch qua Zalo OA trước để kích cầu doanh thu chi nhánh.</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Approval Signature Section -->
+    <div style="margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 30px;">
+      <div style="font-size: 13px; color: var(--text-muted);">
+        * Khi CEO đưa ra quyết định cuối cùng trong khung chat,<br>hệ thống sẽ tự động ghi vết và lập biên bản khởi động Dự án AI ERP.
+      </div>
+      <div style="border-top: 1px dashed rgba(255, 255, 255, 0.2); padding-top: 16px; width: 250px; text-align: center;">
+        <span style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 40px;">Đại diện CEO Bella Spa ký tên</span>
+        <strong style="color: var(--sales); font-family: var(--font-title); font-size: 15px; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(46, 200, 102, 0.3);">✓ ĐÃ KÝ DUYỆT ONLINE</strong>
+        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">Ngày: 2026-05-25 (Xác thực qua Chat)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════ -->
+  <div class="footer">
+    <div>Bản quyền tài liệu thuộc về Bella Spa ERP Dev Team & Antigravity AI Agent · © 2026</div>
+    <div style="margin-top: 8px;">Tài liệu lưu nội bộ · Bảo mật cấp độ cao nhất</div>
+  </div>
+
+</div>
+</body>
+</html>

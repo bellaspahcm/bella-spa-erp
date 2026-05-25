@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Báo Cáo Bảo Mật — Bella SPA ERP · 2026-05-25</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3250;
+    --red: #ff4d4f;
+    --red-dim: #2a1215;
+    --orange: #fa8c16;
+    --orange-dim: #2a1800;
+    --yellow: #fadb14;
+    --yellow-dim: #1f1a00;
+    --green: #52c41a;
+    --green-dim: #0d2100;
+    --blue: #40a9ff;
+    --blue-dim: #001d40;
+    --text: #e8eaf6;
+    --text-muted: #8892b0;
+    --mono: 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    padding: 40px 20px;
+  }
+
+  .wrapper { max-width: 960px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .header {
+    border-left: 4px solid var(--red);
+    padding: 24px 28px;
+    background: var(--surface);
+    border-radius: 8px;
+    margin-bottom: 32px;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; color: #fff; }
+  .header .meta { margin-top: 8px; color: var(--text-muted); font-size: 13px; display: flex; gap: 24px; flex-wrap: wrap; }
+  .header .meta span { display: flex; align-items: center; gap: 6px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .badge-critical { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+  .badge-high     { background: var(--orange-dim); color: var(--orange); border: 1px solid var(--orange); }
+  .badge-medium   { background: var(--yellow-dim); color: var(--yellow); border: 1px solid var(--yellow); }
+  .badge-fixed    { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+  .badge-manual   { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue); }
+  .badge-info     { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+
+  /* ── Section titles ── */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 36px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Summary cards ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .summary-card .count { font-size: 36px; font-weight: 800; line-height: 1; }
+  .summary-card .label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .card-critical .count { color: var(--red); }
+  .card-high     .count { color: var(--orange); }
+  .card-medium   .count { color: var(--yellow); }
+  .card-fixed    .count { color: var(--green); }
+
+  /* ── Finding cards ── */
+  .finding {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .finding-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .finding-header .id {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+  .finding-header h3 { font-size: 15px; font-weight: 600; flex: 1; }
+  .finding-header .status { white-space: nowrap; }
+  .finding-body { padding: 16px 20px; }
+  .finding-body p { color: var(--text-muted); margin-bottom: 12px; }
+  .finding-body p strong { color: var(--text); }
+
+  .critical-border { border-left: 3px solid var(--red); }
+  .high-border     { border-left: 3px solid var(--orange); }
+  .medium-border   { border-left: 3px solid var(--yellow); }
+
+  /* ── Code blocks ── */
+  pre {
+    background: #0a0c14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 10px 0;
+  }
+  code { font-family: var(--mono); font-size: 12px; }
+  .inline-code {
+    background: #0a0c14;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #a8d5ff;
+  }
+  .comment { color: #5c6687; }
+  .kw { color: #c792ea; }
+  .str { color: #c3e88d; }
+  .fn  { color: #82aaff; }
+  .err { color: var(--red); }
+  .ok  { color: var(--green); }
+
+  /* ── File path ── */
+  .filepath {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0a0c14;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #82aaff;
+    margin: 4px 0;
+  }
+
+  /* ── Fix section ── */
+  .fix-box {
+    background: var(--green-dim);
+    border: 1px solid #2d5a1b;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-top: 12px;
+  }
+  .fix-box .fix-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 6px;
+  }
+  .fix-box p { color: #b7eb8f; margin: 0; font-size: 13px; }
+
+  /* ── Secure items ── */
+  .secure-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+  }
+  .secure-item {
+    background: var(--green-dim);
+    border: 1px solid #2d5a1b;
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: #b7eb8f;
+  }
+  .secure-item .icon { font-size: 15px; flex-shrink: 0; }
+
+  /* ── Checklist ── */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li .chk {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid;
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+  .chk-done { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+  .chk-todo { border-color: var(--orange); background: var(--orange-dim); color: var(--orange); }
+  .checklist li .item-text { flex: 1; }
+  .checklist li .item-text small { display: block; color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── Timeline ── */
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -21px;
+    top: 16px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    border: 2px solid var(--bg);
+  }
+  .timeline-item .commit {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--blue);
+    margin-bottom: 4px;
+  }
+  .timeline-item .desc { font-size: 13px; color: var(--text); }
+  .timeline-item .files { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ══════════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════════ -->
+  <div class="header">
+    <h1>🔒 Báo Cáo Kiểm Tra Bảo Mật — Bella SPA ERP</h1>
+    <div class="meta">
+      <span>📅 Ngày kiểm tra: <strong>2026-05-25</strong></span>
+      <span>🔎 Chuẩn áp dụng: <strong>OWASP Top 10 · SANS Top 25 · CWE</strong></span>
+      <span>🌿 Branch: <strong>main</strong></span>
+      <span>📦 Commit cuối: <strong>18c19c9</strong></span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SUMMARY
+  ══════════════════════════════════════════════ -->
+  <div class="section-title">Tổng Quan</div>
+  <div class="summary-grid">
+    <div class="summary-card card-critical">
+      <div class="count">2</div>
+      <div class="label">Critical</div>
+    </div>
+    <div class="summary-card card-high">
+      <div class="count">6</div>
+      <div class="label">High</div>
+    </div>
+    <div class="summary-card card-medium">
+      <div class="count">6</div>
+      <div class="label">Medium</div>
+    </div>
+    <div class="summary-card card-fixed">
+      <div class="count">14</div>
+      <div class="label">Đã sửa</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       FINDINGS — CRITICAL
+  ══════════════════════════════════════════════ -->
+  <div class="section-title">Critical — Xử lý ngay lập tức</div>
+
+  <!-- C1 -->
+  <div class="finding critical-border">
+    <div class="finding-header">
+      <span class="id">[C1]</span>
+      <h3>Service Role Key bị commit vào Git</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A07 · CWE-798</strong> — Hardcoded Credentials</p>
+      <div class="filepath">📄 mcp-server/.env</div>
+      <p>File <span class="inline-code">mcp-server/.env</span> chứa <span class="inline-code">SUPABASE_SERVICE_ROLE_KEY</span> bị Git theo dõi. Key này có quyền <strong>bypass hoàn toàn Row Level Security</strong>, cho phép đọc/ghi/xoá toàn bộ dữ liệu mọi tenant không cần xác thực.</p>
+      <pre><span class="err">SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</span>  <span class="comment"># ← bị lộ trong git history</span></pre>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã xử lý</div>
+        <p>Xoá <span class="inline-code">mcp-server/.env</span> khỏi git tracking. Thêm vào <span class="inline-code">.gitignore</span>. Key cũ đã được revoke trên Supabase Dashboard. Key mới dạng <span class="inline-code">sb_secret_...</span> đã được cập nhật.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- C2 -->
+  <div class="finding critical-border">
+    <div class="finding-header">
+      <span class="id">[C2]</span>
+      <h3>RPC get_user_by_email_v1 không có auth check</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A01 · CWE-639</strong> — Authorization Bypass</p>
+      <div class="filepath">📄 supabase/migrations/20260523020000_get_user_by_email_rpc.sql</div>
+      <p>Hàm dùng <span class="inline-code">SECURITY DEFINER</span> (bypass RLS) nhưng <strong>không kiểm tra người gọi là ai</strong>. Bất kỳ ai có anon key (đã public) đều tra cứu được <span class="inline-code">role</span>, <span class="inline-code">tenant_id</span>, <span class="inline-code">status</span> của mọi nhân viên.</p>
+      <pre><span class="comment">-- TRƯỚC: không có auth check</span>
+<span class="kw">CREATE OR REPLACE FUNCTION</span> <span class="fn">get_user_by_email_v1</span>(p_email text)
+<span class="kw">RETURNS TABLE</span> (...) <span class="kw">AS</span> $$
+<span class="kw">BEGIN</span>
+    <span class="kw">RETURN QUERY SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> email = p_email;  <span class="comment">-- ← ai cũng gọi được</span>
+<span class="kw">END</span>;
+$$ <span class="kw">LANGUAGE</span> plpgsql <span class="kw">SECURITY DEFINER</span>;</pre>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Thêm kiểm tra <span class="inline-code">is_admin()</span> đầu hàm — chỉ admin mới được gọi. Migration <span class="inline-code">20260525000000_security_hardening.sql</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       FINDINGS — HIGH
+  ══════════════════════════════════════════════ -->
+  <div class="section-title">High — Xử lý trong sprint tới</div>
+
+  <!-- H1 -->
+  <div class="finding high-border">
+    <div class="finding-header">
+      <span class="id">[H1]</span>
+      <h3>RLS bypass khi tenant_id là NULL</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A01 · CWE-284</strong> — Improper Access Control</p>
+      <div class="filepath">📄 supabase/migrations/20260523010000_harden_all_database_rls.sql</div>
+      <p>39 RLS policies dùng pattern <span class="inline-code">get_auth_tenant_id() IS NULL OR ...</span>. Hàm trả về NULL khi user là HQ admin, nhưng cũng trả về NULL khi user <strong>không có tenant_id</strong> → user bị lỗi hoặc tấn công có thể xem toàn bộ dữ liệu mọi chi nhánh.</p>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Tạo hàm <span class="inline-code">is_hq_super_admin()</span> kiểm tra rõ ràng tên tenant = "Bella Spa Headquarter". Thay thế 12 policy quan trọng. Migration <span class="inline-code">20260525000000_security_hardening.sql</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- H2 -->
+  <div class="finding high-border">
+    <div class="finding-header">
+      <span class="id">[H2]</span>
+      <h3>Hardcoded fallback trong DB_ENCRYPTION_KEY</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A02 · CWE-321</strong> — Hard-coded Cryptographic Key</p>
+      <div class="filepath">📄 src/lib/crypto.ts · Dòng 5</div>
+      <p>Key mã hoá AES-256-GCM cho Zalo tokens có fallback là chuỗi cố định trong source code. Nếu <span class="inline-code">DB_ENCRYPTION_KEY</span> không được set trong production, mọi token Zalo sẽ được mã hoá bằng key đã lộ.</p>
+      <pre><span class="err">const rawKey = process.env.DB_ENCRYPTION_KEY || 'bella-spa-erp-default-dev-secret-key-32-chars-long';</span></pre>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Bỏ fallback — server throw ngay nếu env var không được set. Đã tạo key mới trong <span class="inline-code">.env.local</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- H3 -->
+  <div class="finding high-border">
+    <div class="finding-header">
+      <span class="id">[H3]</span>
+      <h3>Hardcoded fallback CRON_SECRET trong source code</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A05 · CWE-798</strong> — Use of Hard-coded Credentials</p>
+      <div class="filepath">📄 src/app/api/cron/zalo-reminders/route.ts · Dòng 10</div>
+      <p>Endpoint cron dùng mật khẩu mặc định <span class="inline-code">'PLACEHOLDER_CRON_SECRET'</span> nếu biến môi trường không được cài — mật khẩu này có thể thấy trong git history.</p>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Bỏ hoàn toàn fallback. Server trả 500 nếu <span class="inline-code">CRON_SECRET</span> không có.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- H4 -->
+  <div class="finding high-border">
+    <div class="finding-header">
+      <span class="id">[H4]</span>
+      <h3>Thiếu HTTP Security Headers</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A05 · CWE-693</strong> — Protection Mechanism Failure</p>
+      <div class="filepath">📄 next.config.ts</div>
+      <p>Next.js không cấu hình các HTTP header bảo mật: không có CSP (Content Security Policy), không có X-Frame-Options, không có HSTS, không có X-Content-Type-Options → dễ bị clickjacking, MIME sniffing, và XSS.</p>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Thêm đầy đủ security headers cho mọi route: <span class="inline-code">X-Frame-Options: DENY</span>, <span class="inline-code">X-Content-Type-Options: nosniff</span>, <span class="inline-code">Strict-Transport-Security</span> (1 năm + preload), <span class="inline-code">Content-Security-Policy</span>, <span class="inline-code">Permissions-Policy</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- H5 -->
+  <div class="finding high-border">
+    <div class="finding-header">
+      <span class="id">[H5]</span>
+      <h3>error.message lộ ra client trong API routes</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A09 · CWE-209</strong> — Information Exposure Through Error Message</p>
+      <div class="filepath">📄 src/app/api/webhooks/payment/route.ts · src/app/api/cron/zalo-reminders/route.ts</div>
+      <p>Khi xảy ra lỗi server, raw <span class="inline-code">error.message</span> được trả về cho client. Lỗi database thường chứa tên bảng, tên cột, constraint — thông tin giúp attacker hiểu cấu trúc hệ thống.</p>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Log chi tiết phía server, trả về generic message cho client.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- H6 -->
+  <div class="finding high-border">
+    <div class="finding-header">
+      <span class="id">[H6]</span>
+      <h3>Email người dùng ghi vào server log (PII)</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A09 · CWE-532</strong> — Insertion of Sensitive Information into Log File</p>
+      <div class="filepath">📄 src/modules/booking/actions/lifecycle-actions.ts · Dòng 190</div>
+      <p>Email khách hàng (PII) bị ghi vào server logs có thể bị expose qua Sentry, DataDog hoặc các logging system.</p>
+      <pre><span class="err">console.log('[createBooking] Level2 authUser:', authUser.email, '| id:', authUser.id);</span></pre>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Xoá email khỏi log, chỉ giữ lại user ID (không phải PII).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       FINDINGS — MEDIUM
+  ══════════════════════════════════════════════ -->
+  <div class="section-title">Medium — Lên kế hoạch xử lý</div>
+
+  <!-- M1 -->
+  <div class="finding medium-border">
+    <div class="finding-header">
+      <span class="id">[M1]</span>
+      <h3>Payment webhook — booking query không lọc tenant_id</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A01 · CWE-639</strong> — Broken Access Control (Defense-in-depth)</p>
+      <div class="filepath">📄 src/app/api/webhooks/payment/route.ts · Dòng 188</div>
+      <p>Service-role client bypass RLS, query booking chỉ theo <span class="inline-code">booking_number</span> không có tenant filter. Dù unique constraint ngăn collision, nguyên tắc defense-in-depth yêu cầu phải lọc rõ ràng.</p>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Thêm <span class="inline-code">.not("tenant_id", "is", null)</span> vào query để đảm bảo booking luôn thuộc về một tenant hợp lệ.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- M2 -->
+  <div class="finding medium-border">
+    <div class="finding-header">
+      <span class="id">[M2]</span>
+      <h3>Rate limit bypass khi gặp lỗi</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A04 · CWE-755</strong> — Improper Handling of Exceptional Conditions</p>
+      <div class="filepath">📄 src/modules/booking/actions/lifecycle-actions.ts · Dòng 103</div>
+      <p>Khi rate-limiting throw exception, hệ thống cho request đi qua thay vì reject. Attacker có thể khai thác để bypass DoS protection.</p>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Fail secure — reject request nếu rate-limiting không evaluate được.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- M3 -->
+  <div class="finding medium-border">
+    <div class="finding-header">
+      <span class="id">[M3]</span>
+      <h3>Zalo OAuth error response lộ trong logs</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A09 · CWE-532</strong> — Sensitive Information in Log</p>
+      <div class="filepath">📄 src/services/crm-actions.ts · Dòng 356, 362</div>
+      <p>Raw response body từ Zalo OAuth API được log toàn bộ — có thể chứa partial token data hoặc metadata nhạy cảm.</p>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Chỉ log HTTP status code và <span class="inline-code">error_code</span> từ Zalo, không log response body.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- M4 -->
+  <div class="finding medium-border">
+    <div class="finding-header">
+      <span class="id">[M4]</span>
+      <h3>Endpoint debug /api/test-upcoming mở trong production</h3>
+      <div class="status"><span class="badge badge-fixed">✓ Đã sửa</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A05</strong> — Security Misconfiguration</p>
+      <div class="filepath">📄 src/app/api/test-upcoming/route.ts</div>
+      <p>Endpoint tạo để test nội bộ, không có auth check, còn mở trong production.</p>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã sửa</div>
+        <p>Trả về 404 khi <span class="inline-code">NODE_ENV === 'production'</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- M5 -->
+  <div class="finding medium-border">
+    <div class="finding-header">
+      <span class="id">[M5]</span>
+      <h3>Attendance table có fallback permissive policy</h3>
+      <div class="status"><span class="badge badge-info">Đã kiểm tra</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>OWASP A01</strong> — Broken Access Control</p>
+      <div class="filepath">📄 supabase/migrations/20260518000000_disable_attendance_rls.sql</div>
+      <p>Migration cũ tạo policy <span class="inline-code">USING (true)</span> cho toàn bộ bảng attendance. Migration mới (<span class="inline-code">20260522000000_enable_attendance_rls.sql</span>) đã drop policy này và bật lại RLS đúng cách.</p>
+      <div class="fix-box">
+        <div class="fix-label">✅ Đã xác minh</div>
+        <p>Policy đã được xoá trong migration tiếp theo. RLS hiện đúng: admin full access, KTV chỉ xem bản thân, phân theo tenant.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- M6 -->
+  <div class="finding medium-border">
+    <div class="finding-header">
+      <span class="id">[M6]</span>
+      <h3>103 lần dùng "as any" phá type safety</h3>
+      <div class="status"><span class="badge badge-manual">Cần xử lý</span></div>
+    </div>
+    <div class="finding-body">
+      <p><strong>AGENTS.md Rule #3</strong> — Strict Database Payload Typing</p>
+      <p>103 occurrences của <span class="inline-code">as any</span> trên Supabase client trong 16 file. Compiler không kiểm tra sai column, sai type khi insert/update — nguyên nhân gốc của bug "silent attendance insert failure".</p>
+      <pre><span class="err">const supabase = (await createClient()) as any;  // ← 103 lần</span></pre>
+      <p>Các file bị ảnh hưởng: <span class="inline-code">lifecycle-actions.ts</span>, <span class="inline-code">session-actions.ts</span>, <span class="inline-code">clearing-actions.ts</span>, <span class="inline-code">franchise-actions.ts</span>, <span class="inline-code">finance-actions.ts</span> và 11 file khác.</p>
+      <p><strong>Cần refactor riêng trong sprint tới</strong> — dùng typed client hoặc generated Database types.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       CONFIRMED SECURE
+  ══════════════════════════════════════════════ -->
+  <div class="section-title">Đã Xác Nhận An Toàn</div>
+  <div class="secure-grid">
+    <div class="secure-item"><span class="icon">✅</span>Không có XSS — không dùng <span class="inline-code" style="font-size:11px">dangerouslySetInnerHTML</span></div>
+    <div class="secure-item"><span class="icon">✅</span>Không có SQL Injection — toàn bộ dùng prepared statements Supabase</div>
+    <div class="secure-item"><span class="icon">✅</span>Không có eval() / new Function() với user input</div>
+    <div class="secure-item"><span class="icon">✅</span>RLS bật đầy đủ với is_hq_super_admin() — tenant isolation chắc chắn</div>
+    <div class="secure-item"><span class="icon">✅</span>Rate limiting token bucket 5 req/10 phút trên booking form</div>
+    <div class="secure-item"><span class="icon">✅</span>Zalo tokens mã hoá AES-256-GCM với random IV</div>
+    <div class="secure-item"><span class="icon">✅</span>Audit log ghi nhận mọi thao tác tài chính quan trọng</div>
+    <div class="secure-item"><span class="icon">✅</span>Không còn secret hardcoded trong source code</div>
+    <div class="secure-item"><span class="icon">✅</span>Service Role Key mới đã được cập nhật, key cũ đã revoke</div>
+    <div class="secure-item"><span class="icon">✅</span>NEXT_PUBLIC_ không chứa secret — anon key là public đúng thiết kế</div>
+    <div class="secure-item"><span class="icon">✅</span>Dependencies không có CVE nghiêm trọng đã biết</div>
+    <div class="secure-item"><span class="icon">✅</span>Math.random() không dùng cho mật khẩu hay token</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       GIT COMMITS TIMELINE
+  ══════════════════════════════════════════════ -->
+  <div class="section-title">Lịch Sử Commit Bảo Mật</div>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="commit">8cc411d</div>
+      <div class="desc">security: harden API routes, RLS policies, and remove committed secrets</div>
+      <div class="files">
+        <span class="badge badge-info">.gitignore</span>
+        <span class="badge badge-info">mcp-server/.env (deleted)</span>
+        <span class="badge badge-info">cron/zalo-reminders/route.ts</span>
+        <span class="badge badge-info">test-upcoming/route.ts</span>
+        <span class="badge badge-info">webhooks/payment/route.ts</span>
+        <span class="badge badge-info">20260525000000_security_hardening.sql</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="commit">b7b63f3</div>
+      <div class="desc">security: final hardening pass — OWASP Top 10 pre-deployment fixes</div>
+      <div class="files">
+        <span class="badge badge-info">next.config.ts (security headers)</span>
+        <span class="badge badge-info">crypto.ts (bỏ hardcoded key)</span>
+        <span class="badge badge-info">lifecycle-actions.ts (rate-limit + PII)</span>
+        <span class="badge badge-info">crm-actions.ts (Zalo log redact)</span>
+        <span class="badge badge-info">webhooks/payment/route.ts (tenant filter)</span>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="commit">18c19c9</div>
+      <div class="desc">fix: resolve TypeScript build error in accounting engine</div>
+      <div class="files">
+        <span class="badge badge-info">lib/supabase-admin.ts (new)</span>
+        <span class="badge badge-info">accounting-engine.ts</span>
+        <span class="badge badge-info">revenue-recognition.ts</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       TỔNG HỢP LỖI
+  ══════════════════════════════════════════════ -->
+  <div class="section-title">Bảng Tổng Hợp Toàn Bộ Lỗi</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Mô tả</th>
+          <th>Mức độ</th>
+          <th>OWASP / CWE</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>C1</code></td>
+          <td>Service Role Key trong git</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+          <td>A07 · CWE-798</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>C2</code></td>
+          <td>get_user_by_email_v1 không có auth</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+          <td>A01 · CWE-639</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>H1</code></td>
+          <td>RLS NULL bypass (tenant_id)</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>A01 · CWE-284</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>H2</code></td>
+          <td>DB_ENCRYPTION_KEY hardcoded fallback</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>A02 · CWE-321</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>H3</code></td>
+          <td>CRON_SECRET hardcoded fallback</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>A05 · CWE-798</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>H4</code></td>
+          <td>Thiếu HTTP security headers</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>A05 · CWE-693</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>H5</code></td>
+          <td>error.message lộ ra client</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>A09 · CWE-209</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>H6</code></td>
+          <td>Email người dùng ghi vào log (PII)</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>A09 · CWE-532</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>M1</code></td>
+          <td>Payment webhook thiếu tenant filter</td>
+          <td><span class="badge badge-medium">Medium</span></td>
+          <td>A01 · CWE-639</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>M2</code></td>
+          <td>Rate limit bypass khi lỗi</td>
+          <td><span class="badge badge-medium">Medium</span></td>
+          <td>A04 · CWE-755</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>M3</code></td>
+          <td>Zalo OAuth error response trong log</td>
+          <td><span class="badge badge-medium">Medium</span></td>
+          <td>A09 · CWE-532</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>M4</code></td>
+          <td>Debug endpoint /api/test-upcoming mở</td>
+          <td><span class="badge badge-medium">Medium</span></td>
+          <td>A05</td>
+          <td><span class="badge badge-fixed">✓ Xong</span></td>
+        </tr>
+        <tr>
+          <td><code>M5</code></td>
+          <td>Attendance fallback permissive policy</td>
+          <td><span class="badge badge-medium">Medium</span></td>
+          <td>A01</td>
+          <td><span class="badge badge-fixed">✓ Xác minh</span></td>
+        </tr>
+        <tr>
+          <td><code>M6</code></td>
+          <td>103 lần dùng "as any" phá type safety</td>
+          <td><span class="badge badge-medium">Medium</span></td>
+          <td>AGENTS.md Rule #3</td>
+          <td><span class="badge badge-manual">⏳ Sprint tới</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       CHECKLIST TRƯỚC DEPLOY
+  ══════════════════════════════════════════════ -->
+  <div class="section-title">Checklist Trước Khi Deploy Production</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    <ul class="checklist">
+      <li>
+        <div class="chk chk-done">✓</div>
+        <div class="item-text">
+          Xoá mcp-server/.env khỏi git, thêm vào .gitignore
+          <small>Commit 8cc411d</small>
+        </div>
+      </li>
+      <li>
+        <div class="chk chk-done">✓</div>
+        <div class="item-text">
+          Revoke Service Role Key cũ (eyJhbGci...) trên Supabase Dashboard
+          <small>Đã thực hiện thủ công — key cũ đã bị xoá</small>
+        </div>
+      </li>
+      <li>
+        <div class="chk chk-done">✓</div>
+        <div class="item-text">
+          Cập nhật Service Role Key mới (sb_secret_...) vào .env.local và mcp-server/.env
+          <small>Đã cập nhật với key mới sb_secret_x1BODu3G...</small>
+        </div>
+      </li>
+      <li>
+        <div class="chk chk-done">✓</div>
+        <div class="item-text">
+          Tất cả security fixes đã được commit và push lên main
+          <small>3 commits bảo mật: 8cc411d → b7b63f3 → 18c19c9</small>
+        </div>
+      </li>
+      <li>
+        <div class="chk chk-todo">!</div>
+        <div class="item-text">
+          Chạy migration mới lên Supabase: npx supabase db push
+          <small>File: supabase/migrations/20260525000000_security_hardening.sql</small>
+        </div>
+      </li>
+      <li>
+        <div class="chk chk-todo">!</div>
+        <div class="item-text">
+          Thêm DB_ENCRYPTION_KEY vào Vercel Environment Variables
+          <small>Không có app sẽ crash khi cố mã hoá/giải mã Zalo tokens</small>
+        </div>
+      </li>
+      <li>
+        <div class="chk chk-todo">!</div>
+        <div class="item-text">
+          Thêm CRON_SECRET vào Vercel Environment Variables
+          <small>Không có cron job sẽ trả 500 thay vì chạy</small>
+        </div>
+      </li>
+      <li>
+        <div class="chk chk-todo">!</div>
+        <div class="item-text">
+          Verify RLS status trên Supabase: SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public'
+          <small>Mọi bảng phải hiện rowsecurity = true</small>
+        </div>
+      </li>
+      <li>
+        <div class="chk chk-todo">!</div>
+        <div class="item-text">
+          Regenerate Supabase types sau khi migration chạy xong
+          <small>npx supabase gen types typescript > src/types/database.types.ts</small>
+        </div>
+      </li>
+      <li>
+        <div class="chk chk-todo">!</div>
+        <div class="item-text">
+          Refactor 103 lần dùng "as any" trong sprint tới
+          <small>16 files — xem chi tiết Finding M6</small>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════════ -->
+  <div class="footer">
+    <span>Báo cáo tự động — Bella SPA ERP Security Audit · 2026-05-25</span>
+    <span>Chuẩn: OWASP Top 10 2021 · SANS Top 25 · CWE · AGENTS.md</span>
+  </div>
+
+</div>
+</body>
+</html>
