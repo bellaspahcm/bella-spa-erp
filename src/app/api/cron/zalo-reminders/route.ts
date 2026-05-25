@@ -7,22 +7,26 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     // 1. Authorization check
-    const secret = process.env.CRON_SECRET || 'PLACEHOLDER_CRON_SECRET';
-    
+    const secret = process.env.CRON_SECRET;
+    if (!secret) {
+      console.error('[Cron] CRON_SECRET environment variable is not configured.');
+      return NextResponse.json({ error: 'Server misconfiguration.' }, { status: 500 });
+    }
+
     // Check in query parameter: ?secret=...
     const { searchParams } = new URL(request.url);
     const querySecret = searchParams.get('secret');
-    
+
     // Check in headers: Authorization: Bearer ...
     const authHeader = request.headers.get('Authorization');
-    const bearerSecret = authHeader?.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
+    const bearerSecret = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
       : null;
 
     if (querySecret !== secret && bearerSecret !== secret) {
-      console.warn('Unauthorized cron trigger attempt.');
+      console.warn('[Cron] Unauthorized trigger attempt.');
       return NextResponse.json(
-        { error: 'Unauthorized. Invalid or missing secret token.' },
+        { error: 'Unauthorized.' },
         { status: 401 }
       );
     }

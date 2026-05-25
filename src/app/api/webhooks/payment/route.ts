@@ -281,6 +281,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, processedCount: results.filter(r => r.status === "success").length, details: results });
   } catch (error: any) {
     console.error("[Payment Webhook] Exception error in POST route:", error);
-    return NextResponse.json({ error: "Internal Server Error", message: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Đã xảy ra lỗi hệ thống." }, { status: 500 });
   }
 }
