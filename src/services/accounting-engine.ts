@@ -1,5 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
-import { Database } from '@/types/database.types';
+import { createAdminClient } from '@/lib/supabase-admin';
 
 export type JournalEntryInput = {
   tenant_id: string;
@@ -17,86 +16,70 @@ export type JournalEntryInput = {
   }[];
 };
 
+type JournalHeader = { id: string };
+
 export class AccountingEngineService {
-  /**
-   * Post a double-entry journal to the ledger.
-   * Throws an error if debit != credit.
-   */
-  static async postJournalEntry(entry: JournalEntryInput) {
-    const supabase = await createClient();
+  static async postJournalEntry(entry: JournalEntryInput): Promise<string> {
+    const supabase = createAdminClient();
 
-    // 1. Validate Balance
-    const totalDebit = entry.lines.reduce((sum, line) => sum + line.debit_amount, 0);
-    const totalCredit = entry.lines.reduce((sum, line) => sum + line.credit_amount, 0);
+    const totalDebit = entry.lines.reduce((sum, l) => sum + l.debit_amount, 0);
+    const totalCredit = entry.lines.reduce((sum, l) => sum + l.credit_amount, 0);
 
-    // Using a small epsilon to handle potential floating point issues if somehow passed, though DB strictly uses decimal
     if (Math.abs(totalDebit - totalCredit) > 0.001) {
       throw new Error(`Unbalanced journal entry. Debit: ${totalDebit}, Credit: ${totalCredit}`);
     }
-
     if (totalDebit === 0) {
       throw new Error('Journal entry must have non-zero lines.');
     }
 
-    // 2. Insert Entry & Lines in a transaction (Supabase RPC or via standard insert since constraints handle integrity)
-    // Create Header (DRAFT first)
     const { data: header, error: headerError } = await supabase
       .from('journal_entries')
       .insert({
         tenant_id: entry.tenant_id,
         description: entry.description,
-        reference_type: entry.reference_type,
-        reference_id: entry.reference_id,
-        entry_date: entry.entry_date || new Date().toISOString(),
+        reference_type: entry.reference_type ?? null,
+        reference_id: entry.reference_id ?? null,
+        entry_date: entry.entry_date ?? new Date().toISOString().slice(0, 10),
         status: 'DRAFT',
       })
       .select('id')
-      .single();
+      .single<JournalHeader>();
 
     if (headerError || !header) {
-      console.error('Error creating journal entry header:', headerError);
-      throw new Error(headerError?.message || 'Failed to create journal entry');
+      throw new Error(headerError?.message ?? 'Failed to create journal entry header');
     }
 
-    // Insert Lines
     const linesToInsert = entry.lines.map((line) => ({
       entry_id: header.id,
       account_id: line.account_id,
       debit_amount: line.debit_amount,
       credit_amount: line.credit_amount,
-      branch_id: line.branch_id,
-      ktv_id: line.ktv_id,
-      cost_center_id: line.cost_center_id,
+      branch_id: line.branch_id ?? null,
+      ktv_id: line.ktv_id ?? null,
+      cost_center_id: line.cost_center_id ?? null,
     }));
 
     const { error: linesError } = await supabase.from('journal_lines').insert(linesToInsert);
 
     if (linesError) {
-      // Rollback header if lines fail (not strictly necessary if we rely on DRAFT status to clean up later, but good practice)
       await supabase.from('journal_entries').delete().eq('id', header.id);
-      console.error('Error creating journal lines:', linesError);
       throw new Error(linesError.message);
     }
 
-    // 3. POST the entry (triggers DB balance validation)
     const { error: postError } = await supabase
       .from('journal_entries')
       .update({ status: 'POSTED' })
       .eq('id', header.id);
 
     if (postError) {
-      console.error('Error posting journal entry:', postError);
-      throw new Error(postError.message);
+      throw new Error(`Failed to post journal entry: ${postError.message}`);
     }
 
     return header.id;
   }
 
-  /**
-   * Closes an accounting period
-   */
-  static async closePeriod(tenantId: string, periodId: string) {
-    const supabase = await createClient();
+  static async closePeriod(tenantId: string, periodId: string): Promise<void> {
+    const supabase = createAdminClient();
     const { error } = await supabase
       .from('accounting_periods')
       .update({ status: 'CLOSED' })
@@ -106,6 +89,5 @@ export class AccountingEngineService {
     if (error) {
       throw new Error(`Failed to close period: ${error.message}`);
     }
-    return true;
   }
 }
