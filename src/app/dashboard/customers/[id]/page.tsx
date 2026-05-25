@@ -34,11 +34,13 @@ import { getBookingsByCustomerId, updateBooking, reusePackage, recordRemainingPa
 import { completeSession } from '@/modules/booking/actions/session-actions';
 import { getUsers, getCurrentUser } from '@/services/user-actions';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { BookingModal } from '@/components/features/BookingModal';
 import { createClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { PaymentReceiptTemplate, ReceiptData } from '@/components/common/PaymentReceiptTemplate';
+import { toPng } from 'html-to-image';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +69,9 @@ export default function CustomerDetailPage() {
   });
 
   const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
+
+  const quotationRef = useRef<HTMLDivElement>(null);
+  const [isExportingQuotation, setIsExportingQuotation] = useState(false);
 
   useEffect(() => {
     async function checkRole() {
@@ -357,6 +362,60 @@ export default function CustomerDetailPage() {
       toast.error('Lỗi: ' + error.message);
     } finally {
       setIsRecordingPayment(false);
+    }
+  };
+
+  const getReceiptData = (): ReceiptData | null => {
+    if (!customer || !activeBooking) return null;
+    return {
+      customerName: customer.name_mother || 'Chưa cập nhật',
+      phone: customer.phone || 'Chưa cập nhật',
+      address: customer.address || 'Chưa cập nhật',
+      serviceNote: `${activeBooking.package_name || activeBooking.packages?.name || 'Gói dịch vụ'} (Bắt đầu gói từ ${activeBooking.start_date || 'Chưa cập nhật'})`,
+      items: [
+        {
+          id: 1,
+          name: activeBooking.package_name || activeBooking.packages?.name || 'Gói dịch vụ',
+          sessions: activeBooking.total_sessions || 15,
+          unitPrice: Math.round((activeBooking.full_price || 0) / Math.max(1, activeBooking.total_sessions || 15)),
+          total: activeBooking.full_price || 0,
+          discountNote: activeBooking.discount_percent ? `Giảm ${activeBooking.discount_percent}%` : 'Không có',
+          prepaid: activeBooking.deposit_amount || 0,
+          finalPayment: Math.max(0, Math.round((activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100)) - (activeBooking.deposit_amount || 0)),
+        }
+      ],
+      totalAmount: Math.round((activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100)),
+      bankInfo: {
+        ownerName: "Cao Thị Thúy Vân",
+        accountNumber: "8832041471",
+        bankName: "Ngân hàng BIDV",
+      }
+    };
+  };
+
+  const handleExportQuotation = async () => {
+    if (!quotationRef.current || !customer) return;
+    
+    setIsExportingQuotation(true);
+    toast.loading('Đang khởi tạo ảnh báo giá...', { id: 'quotation-export' });
+    
+    try {
+      const dataUrl = await toPng(quotationRef.current, { 
+        quality: 1, 
+        pixelRatio: 2 
+      });
+      
+      const link = document.createElement("a");
+      link.download = `Bao_Gia_${(customer.name_mother || 'Khach').replace(/\s+/g, "_")}.png`;
+      link.href = dataUrl;
+      link.click();
+      
+      toast.success('Đã xuất ảnh báo giá thành công!', { id: 'quotation-export' });
+    } catch (err) {
+      console.error("Failed to export image", err);
+      toast.error('Lỗi khi xuất ảnh. Vui lòng thử lại!', { id: 'quotation-export' });
+    } finally {
+      setIsExportingQuotation(false);
     }
   };
 
@@ -709,6 +768,15 @@ export default function CustomerDetailPage() {
                         Link Portal Khách
                       </button>
 
+                      <button 
+                        onClick={handleExportQuotation}
+                        disabled={isExportingQuotation}
+                        className="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3.5 rounded-2xl font-black transition-all hover:bg-slate-50 uppercase tracking-widest text-[11px] shadow-lg disabled:opacity-50"
+                      >
+                        {isExportingQuotation ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                        Xuất ảnh báo giá
+                      </button>
+
                       {userRole === 'admin' && (
                         <>
                           <button 
@@ -1013,6 +1081,12 @@ export default function CustomerDetailPage() {
         data={editBookingData}
         setData={setEditBookingData}
       />
+
+      {activeBooking && customer && (
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
+          <PaymentReceiptTemplate ref={quotationRef} data={getReceiptData()!} />
+        </div>
+      )}
     </div>
   );
 }
