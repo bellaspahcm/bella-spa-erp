@@ -101,7 +101,8 @@ export async function createBooking(formData: any) {
     // 5 requests / 10 minutes = 5 tokens capacity, refill rate of 5/600 per second (approx 0.008333)
     rateLimitAllowed = rateLimit(`booking_ip:${clientIp}`, 5, 5 / 600);
   } catch (err) {
-    console.warn('[createBooking] Safe rate-limiting bypass due to unexpected error:', err);
+    console.error('[createBooking] Rate-limiting evaluation failed, rejecting request for safety:', err);
+    return { error: 'Hệ thống tạm thời không khả dụng. Vui lòng thử lại.' };
   }
 
   if (!rateLimitAllowed) {
@@ -187,7 +188,7 @@ export async function createBooking(formData: any) {
     if (authUser) {
       isLoggedIn = true;
       userEmail = authUser.email ?? null;
-      console.log('[createBooking] Level2 authUser:', authUser.email, '| id:', authUser.id);
+      console.log('[createBooking] Level2 authUser authenticated | id:', authUser.id);
       const { data: userProfile } = await supabase
         .from('users')
         .select('tenant_id, email')

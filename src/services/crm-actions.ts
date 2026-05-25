@@ -352,14 +352,13 @@ export async function getOrRefreshZaloToken(tenantId: string): Promise<string | 
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      console.error(`Failed to refresh Zalo token for tenant ${tenantId}. Status: ${response.status}. Error:`, errText);
+      console.error(`Failed to refresh Zalo token for tenant ${tenantId}. HTTP status: ${response.status}.`);
       return null;
     }
 
     const result = await response.json();
     if (!result || !result.access_token) {
-      console.error(`Invalid response from Zalo OAuth for tenant ${tenantId}:`, result);
+      console.error(`Invalid response from Zalo OAuth for tenant ${tenantId}. Error code: ${result?.error_code ?? 'unknown'}.`);
       return null;
     }
 
