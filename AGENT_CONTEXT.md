@@ -236,10 +236,11 @@ BELLA SPA ERP/
 │   │   └── hr-salary
 │   ├── proxy.ts
 │   ├── services
-│   │   ├── accounting-actions.ts          # ⭐ NEW (Phase 28): COA + GL + reports + reversal + period close + outbox monitor + manual entry
+│   │   ├── accounting-actions.ts          # ⭐ NEW (Phase 28+29): COA + GL + 5 reports (TB/PnL/BS/CFS/Ledger) + reversal + period close/reopen/preview + outbox monitor + manual entry
 │   │   ├── accounting-engine.ts           # ⭐ NEW (Phase 26): AccountingEngineService.postJournalEntry (typed admin client)
 │   │   ├── revenue-recognition.ts         # ⭐ NEW (Phase 26-27): 5 handlers (PackageSale/SessionDone/Expense/Salary/Inventory)
-│   │   ├── export-actions.ts              # ⭐ NEW (Phase 28): Excel export TT133 format
+│   │   ├── export-actions.ts              # ⭐ NEW (Phase 28+29.2): Excel export TT133 format (4 sheets: TB/PnL/BS/CFS)
+│   │   ├── hq-actions.ts                  # ⭐ UPDATED (Phase 29.3): + getConsolidatedPnLReport (HQ-only multi-branch P&L)
 │   │   ├── attendance-actions.ts
 │   │   ├── audit-actions.ts
 │   │   ├── brand-service-actions.ts
@@ -338,18 +339,20 @@ _(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-25)_
 - [x] **Phase 26 Foundation**: 5 bảng accounting (`accounting_accounts`, `accounting_periods`, `journal_entries`, `journal_lines`, `accounting_outbox`) + seed 38 COA accounts chuẩn TT133 + 11 Jest tests.
 - [x] **Phase 27 Integration**: Hook 7 nghiệp vụ (createBooking, recordRemainingPayment, completeSession, updateSessionLog, confirmTransaction, confirmSalary, autoConsumeForSession) vào outbox + cron worker `/api/cron/accounting-worker` + 10 tests.
 - [x] **Phase 28 Reports Hub**: 4 SQL report functions (trial_balance, income_statement, balance_sheet, account_ledger) + 6 dashboard pages (`/dashboard/accounting/*`) + Excel export + Reversal logic + 6 tests.
-- [x] **Tổng Jest tests**: 27/27 pass trong 0.8s. TypeScript build 100% sạch.
+- [x] **Phase 29.1 + 29.4 Period Closing + Compliance**: `generate_closing_entries()` tự tạo 3 bút toán 5xx→911→421, trigger DB chặn ghi vào period CLOSED, cascade lock revenue/expenses/salary, UI 2-bước modal premium + audit log trigger tự ghi mọi POSTED entry vào audit_logs + 10 tests.
+- [x] **Phase 29.2 Cash Flow Statement**: `get_cash_flow_statement()` indirect method chuẩn TT133 (Operating + Investing + Financing) với verification cross-check + UI tab CFS + Excel export + 7 tests.
+- [x] **Phase 29.3 Multi-branch HQ View**: `get_consolidated_pnl()` HQ-only function (gate `is_hq_super_admin()`) trả về 14-indicator P&L per branch + 3 KPIs phụ + trang `/hq/financial-overview` với Recharts BarChart top-10 + bảng xếp hạng 🥇🥈🥉 + 7 tests. Có hotfix `#variable_conflict use_column` cho PL/pgSQL ambiguity.
+- [x] **Tổng Jest tests**: **51/51 pass** trong 1.36s (6 suites). TypeScript build 100% sạch.
 
 ### 🚧 Việc cần làm tiếp theo
 - [ ] **Cấu hình Vercel Cron Job** kích hoạt `/api/cron/accounting-worker` mỗi 1 phút (hoặc Supabase pg_cron) để worker tự chạy nền.
 - [ ] **Theo dõi metrics outbox health** trong tuần đầu sau deploy (số PENDING/FAILED/DEAD theo ngày qua dashboard `/dashboard/accounting/outbox`).
-- [ ] **Thu thập phản hồi từ kế toán thực tế** về 4 báo cáo TT133 — có cần điều chỉnh format hay thêm chỉ tiêu nào không.
-- [ ] **Phase 29 Advanced Features**:
-  - Period Closing Workflow tự động (5xx, 6xx → 911 → 421).
-  - Cash Flow Statement (Báo cáo Lưu chuyển Tiền tệ).
-  - Multi-branch Cost Allocation (P&L per branch tận dụng `journal_lines.branch_id`).
-  - Compliance hooks: tự ghi POSTED entry vào `audit_logs`, lock period enforcement.
-  - Migration UI Finance cũ → Accounting Ledger (chạy song song 1 tháng để đối chiếu).
+- [ ] **Thu thập phản hồi từ kế toán thực tế** về 5 báo cáo TT133 (Trial Balance, P&L, Balance Sheet, Cash Flow, Account Ledger) — có cần điều chỉnh format hay thêm chỉ tiêu nào không.
+- [ ] **Phase 29.5 — Migration Finance UI cũ → Ledger** (cuối Phase 29):
+  - Reconciliation Report so sánh side-by-side P&L từ `revenue`+`expenses` (cũ) vs `journal_entries` (mới).
+  - Daily reconciliation cron + Sentry alert nếu lệch > 1%.
+  - UI dashboard "Đối soát chéo" trong `/dashboard/accounting/reconciliation`.
+  - Sau 1 tháng match 100% → deprecate `/dashboard/finance` cũ.
 - [ ] Theo dõi phản hồi từ người dùng về trải nghiệm thị giác tổng thể của hệ màu hồng pastel mới trên sidebar.
 
 

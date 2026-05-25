@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Phase 28 — Accounting Core: Foundation + Business Integration + Reports Hub (Completed) | 100% Build Compiled | 27/27 accounting tests passing
+Status: 🟢 Phase 29.3 — Period Closing + Cash Flow + Multi-branch HQ View (Completed) | 100% Build Compiled | 51/51 accounting tests passing | Phase 29.5 pending
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -365,28 +365,86 @@ Status: 🟢 Phase 28 — Accounting Core: Foundation + Business Integration + R
 
 ---
 
-## 🟡 Phase 29: Accounting Core — Advanced Features (Planned)
+## 🟢 Phase 29.1 + 29.4: Period Closing Workflow + Compliance Hooks (Completed)
 
-**Mục tiêu:** Đạt chuẩn audit nhà nước, sẵn sàng cho kế toán thuế thực sự + multi-branch analytics.
+**Mục tiêu:** Đóng kỳ kế toán tự động chuẩn TT133 với cascade lock + audit trail đầy đủ.
 
-- [ ] **Period Closing Workflow tự động:**
-  - Validate không còn entry DRAFT trong kỳ.
-  - Generate closing entries: 5xx, 6xx → 911 (Xác định KQKD).
-  - Transfer entry: 911 → 421 (Lợi nhuận chưa phân phối).
-  - Trigger DB ngăn mọi update vào period đã CLOSED.
-- [ ] **Multi-branch Cost Allocation:**
-  - Tận dụng `journal_lines.branch_id` đã có sẵn.
-  - P&L per branch, ROI per service package per branch.
-  - So sánh hiệu quả giữa chi nhánh trong cùng tenant (HQ view).
-- [ ] **Cash Flow Statement (Báo cáo Lưu chuyển Tiền tệ):**
-  - Phương pháp gián tiếp từ Net Income + thay đổi vốn lưu động.
-  - Phân loại: Operating, Investing, Financing activities.
-- [ ] **Compliance & Audit:**
-  - Tự động ghi mọi POSTED entry vào `audit_logs`.
-  - Link với `accounting_periods.status` enforce lock month.
-  - Cảnh báo nếu kế toán cố tình tạo entry vào kỳ đã CLOSED.
-- [ ] **Migration Finance cũ → Accounting Ledger:**
-  - Chạy song song UI cũ + ledger 1 tháng để đối chiếu.
-  - Switch hoàn toàn khi 2 nguồn match 100%.
+- [x] **SQL function `preview_closing_entries(period_id)`**: trả về 3-step preview cho UI (Σ doanh thu / Σ chi phí / lãi-lỗ ròng).
+- [x] **SQL function `generate_closing_entries(period_id)`**: atomic tạo + POST 3 bút toán đóng kỳ:
+  - **Bước 1**: Kết chuyển doanh thu 5xx → 911 (Nợ 5xx / Có 911 zero-out)
+  - **Bước 2**: Kết chuyển chi phí 6xx + 8xx → 911 (Nợ 911 / Có 6xx-8xx)
+  - **Bước 3**: Lãi/Lỗ ròng → 421 (Nợ 911/Có 421 nếu lãi, ngược lại nếu lỗ)
+- [x] **Nâng cấp `close_accounting_period()` RPC**: validate không còn DRAFT (loại trừ PERIOD_CLOSING) → generate_closing_entries → cascade lock `is_locked=true` trên revenue/expenses/salary_records → set period.status=CLOSED. Authorization check: admin của tenant hoặc HQ super admin.
+- [x] **Trigger DB `trg_prevent_closed_period_modify`**: BEFORE INSERT/UPDATE journal_entries — RAISE EXCEPTION nếu period_id thuộc kỳ CLOSED. Safety net: kiểm tra cả entry_date nếu period_id chưa gán. Bypass session variable `app.bypass_period_lock` cho reopen workflow.
+- [x] **Nâng cấp `reopen_accounting_period()` RPC**: chỉ HQ super admin gọi được, cascade unlock revenue/expenses/salary trong kỳ.
+- [x] **Phase 29.4 — Trigger `trg_audit_journal_entry_change`**: AFTER INSERT/UPDATE journal_entries → tự ghi vào audit_logs với action ('INSERT' hoặc 'STATUS_CHANGE:OLD→NEW'), actor từ `auth.uid()`, payload JSONB. Exception-safe (RAISE WARNING, không block).
+- [x] **Performance index `idx_journal_entries_period_status`**: cho closing query partial index trên (period_id, status).
+- [x] **Server actions** (`accounting-actions.ts`):
+  - `previewClosingEntries(periodId)` với admin auth check.
+  - `closePeriodAction(periodId)` upgrade gọi RPC mới + audit log + revalidate journals.
+  - `reopenPeriodAction(periodId)` mới với audit log + HQ-only check (RPC enforces).
+- [x] **UI upgrade `/dashboard/accounting/periods/page.tsx`**:
+  - Replace `window.confirm()` thô bằng premium 2-step modal (`AnimatePresence`):
+    - **Step 1 Preview**: hiển thị 3 bút toán sắp tạo với debit/credit account codes + net P&L card màu xanh lá (lãi) / đỏ rose (lỗ) + warning checklist các side effects (cascade lock, cấm ghi mới, chỉ HQ mở lại).
+    - **Step 2 Confirm**: button gradient rose-pink với loading spinner.
+  - Nút "Mở lại" cho CLOSED periods (browser confirm + reopenPeriodAction).
+- [x] **Jest tests** (`src/__tests__/period-closing.test.ts`): 10 cases cover preview success/non-admin/RPC error, close success/DRAFT error/non-admin, reopen success/non-HQ/unauthenticated.
+
+---
+
+## 🟢 Phase 29.2: Cash Flow Statement (Báo cáo Lưu chuyển Tiền tệ — Indirect Method) (Completed)
+
+**Mục tiêu:** Báo cáo lưu chuyển tiền tệ chuẩn TT133 phương pháp gián tiếp đầy đủ.
+
+- [x] **Helper SQL `acc_balance_at(tenant, account_prefix, as_of_date)`**: tính số dư account tại 1 ngày, xử lý đúng sign convention (ASSET/EXPENSE = debit-credit; LIABILITY/EQUITY/REVENUE = credit-debit).
+- [x] **SQL function `get_cash_flow_statement(tenant, from, to)`**: full indirect-method CFS:
+  - **I. Operating**: profit_before_tax + khấu hao (214) - Δ phải thu (131) - Δ kho (152+153) + Δ phải trả (331+333+334+335+338) + Δ doanh thu chưa TH (3387) - thuế TNDN (821)
+  - **II. Investing**: −Δ TSCĐ nguyên giá (211) + thu thanh lý (placeholder)
+  - **III. Financing**: Δ vốn chủ (411) + vay/trả nợ (placeholders 341)
+  - **Verification**: tính `verification_diff = (closing_cash − opening_cash) − net_change` để cross-check, UI hiện warning nếu lệch > 1 VND.
+- [x] **Server action `getCashFlowStatementReport(fromDate, toDate)`**: wrap RPC + tenant auth.
+- [x] **UI tab "Lưu chuyển Tiền tệ (CFS)"** trong `/dashboard/accounting/reports`:
+  - 3 cards summary: Tiền đầu kỳ (xanh blue) / Tăng giảm trong kỳ (xanh-đỏ tùy dấu) / Tiền cuối kỳ (xanh tím).
+  - Bảng chi tiết 18 indicators chia 3 sections (Operating/Investing/Financing) với styling differential (section header màu hồng accent, totals bold, regular rows).
+  - Verification warning banner màu hổ phách khi diff > 1 VND, kèm gợi ý nguyên nhân (thiếu 821 trong COA, etc.).
+- [x] **Excel export** (`export-actions.ts`): thêm case `'cash_flow'` với sheet riêng layout TT133 (3 columns: Chỉ tiêu/Mã số/Số tiền VND). Mở rộng type signature của `exportAccountingReportToExcel`.
+- [x] **Jest tests** (`src/__tests__/cash-flow.test.ts`): 7 cases cover RPC success/empty array → null/unauthorized/RPC error, Excel export non-empty PK header/null fields graceful/verification warning row.
+
+---
+
+## 🟢 Phase 29.3: Multi-branch Consolidated P&L — HQ View (Completed)
+
+**Mục tiêu:** HQ Super Admin xem được P&L tổng hợp toàn network + so sánh hiệu quả các chi nhánh.
+
+- [x] **SQL function `get_consolidated_pnl(from, to)`** HQ-only (gate `is_hq_super_admin()`):
+  - Loop qua mọi tenant active, tính 14-indicator P&L (gross/net revenue, COGS, gross profit, financial income-expense, operating profit, other, profit before tax, tax, net profit).
+  - Bonus 3 KPIs: `net_margin_percent`, `total_bookings_count`, `total_sessions_completed`.
+  - Return 1 row per tenant, sort by tenant name ASC.
+- [x] **Hotfix migration `20260525200000`**: PL/pgSQL gotcha — RETURN TABLE column `tenant_id` xung đột với column reference trong JOIN. Fix bằng `#variable_conflict use_column` directive.
+- [x] **Interface + Server action** (`hq-actions.ts`):
+  - `ConsolidatedPnLRow` interface với 19 typed fields.
+  - `getConsolidatedPnLReport(from, to)`: wrap RPC + `checkHqAuth()` gate + client-side sort by net_profit DESC for ranking.
+- [x] **UI pages** (`src/app/hq/financial-overview/`):
+  - `page.tsx` (Server Component): `checkHqAuth` guard với redirect, default current month, fetch data server-side.
+  - `financial-overview-client.tsx` (Client Component):
+    - 4 aggregated metric cards (Branches count / Network revenue / Total profit / Network margin) với 4 color variants.
+    - **Recharts BarChart top-10 chi nhánh**: bars Doanh thu (hồng `#BE185D`) + Lợi nhuận (xanh emerald nếu dương, đỏ nếu âm), custom tooltip hiện full tenant name + VND formatter, compact axis labels (1.5M, 800K).
+    - **Bảng xếp hạng** với 🥇🥈🥉 medals cho top 3, branch link drill-down sang `/hq?selectedBranch=<id>`, columns: revenue / opex / profit (colored) / margin % / sessions count.
+    - Footer row totals toàn network.
+- [x] **HQ dashboard integration** (`hq-dashboard-client.tsx`): nút "Tổng quan Tài chính" mới (gradient emerald-teal) ở header với icon `PieChart`, link sang `/hq/financial-overview`.
+- [x] **Improved error logging**: server-side catch destructure PostgrestError fields explicitly (message, code, details, hint, stack) thay vì console.error raw object → terminal log thấy được lỗi đầy đủ JSON.
+- [x] **Jest tests** (`src/__tests__/consolidated-pnl.test.ts`): 7 cases cover HQ admin success + sort DESC verified, empty branches, non-HQ branch admin rejected, KTV rejected, orphan user rejected, RPC error propagation, null data graceful.
+- [x] **Tổng accounting tests:** **51/51 pass** trong 1.36s (5 suites).
+
+---
+
+## 🟡 Phase 29.5: Migration Finance UI cũ → Accounting Ledger (Planned)
+
+**Mục tiêu:** Chạy song song UI Finance cũ + Accounting Ledger 1 tháng để đối chiếu, sau đó deprecate hoàn toàn.
+
+- [ ] **Reconciliation Report**: page mới so sánh side-by-side P&L tính từ `revenue`+`expenses` (cũ) vs từ `journal_entries` (mới), hiển thị discrepancy + % lệch.
+- [ ] **Daily reconciliation cron** chạy nửa đêm, gửi alert Sentry nếu lệch > 1%.
+- [ ] **UI dashboard "Đối soát chéo"** trong `/dashboard/accounting/reconciliation` cho admin xem trực quan match/mismatch theo ngày.
+- [ ] Sau **1 tháng match 100%** → deprecate `/dashboard/finance` cũ, redirect sang `/dashboard/accounting`.
 
 
