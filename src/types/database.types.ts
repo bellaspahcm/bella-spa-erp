@@ -2444,6 +2444,25 @@ export type Database = {
         Returns: undefined
       }
       seed_default_coa: { Args: { p_tenant_id: string }; Returns: number }
+      preview_closing_entries: {
+        Args: { p_period_id: string }
+        Returns: {
+          step: number
+          step_name: string
+          description: string
+          debit_account_code: string
+          credit_account_code: string
+          amount: number
+        }[]
+      }
+      generate_closing_entries: {
+        Args: { p_period_id: string }
+        Returns: {
+          entry_id: string | null
+          step: string
+          total_amount: number
+        }[]
+      }
     }
     Enums: {
       AttendanceStatus: "present" | "late" | "absent" | "half_day"

@@ -299,22 +299,72 @@ export async function getAccountingPeriods() {
 }
 
 /**
- * 8. Close accounting period (Period Closing Workflow)
+ * 8a. Preview closing entries — Phase 29.1
+ * Gọi RPC preview_closing_entries để hiển thị 3 bút toán sắp tạo trước khi đóng kỳ.
+ */
+export async function previewClosingEntries(periodId: string) {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
+    throw new Error('Unauthorized: Only branch admins can preview closing entries.');
+  }
+
+  const { data, error } = await supabase.rpc('preview_closing_entries', {
+    p_period_id: periodId,
+  });
+
+  if (error) throw error;
+  return data || [];
+}
+
+/**
+ * 8b. Close accounting period (Period Closing Workflow) — Phase 29.1
+ * Gọi close_accounting_period RPC để:
+ *   1. Validate không còn DRAFT
+ *   2. Tự động generate 3 bút toán kết chuyển (5xx → 911 → 421)
+ *   3. Cascade lock revenue/expenses/salary_records
+ *   4. Set period.status = CLOSED
  */
 export async function closePeriodAction(periodId: string) {
+  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Only branch admins can close accounting periods.');
   }
 
-  // Calls the RPC helper which enforces no DRAFT entries left
-  await AccountingEngineService.closePeriod(periodId);
+  // RPC close_accounting_period handles validation, generation, lock cascade atomically
+  const { error } = await supabase.rpc('close_accounting_period', { p_period_id: periodId });
+  if (error) throw error;
 
   await recordAuditLog({
     action: 'UPDATE',
     table_name: 'accounting_periods',
     record_id: periodId,
-    new_data: { status: 'CLOSED' },
+    new_data: { status: 'CLOSED', closed_by: user.id },
+  });
+
+  await safeRevalidatePath('/dashboard/accounting/periods');
+  await safeRevalidatePath('/dashboard/accounting/journals');
+  return { success: true };
+}
+
+/**
+ * 8c. Reopen accounting period — Phase 29.1
+ * Chỉ HQ super admin được mở lại kỳ đã đóng. Auto unlock cascade revenue/expenses/salary.
+ */
+export async function reopenPeriodAction(periodId: string) {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user) throw new Error('Unauthorized.');
+
+  const { error } = await supabase.rpc('reopen_accounting_period', { p_period_id: periodId });
+  if (error) throw error;
+
+  await recordAuditLog({
+    action: 'UPDATE',
+    table_name: 'accounting_periods',
+    record_id: periodId,
+    new_data: { status: 'OPEN', reopened_by: user.id },
   });
 
   await safeRevalidatePath('/dashboard/accounting/periods');
