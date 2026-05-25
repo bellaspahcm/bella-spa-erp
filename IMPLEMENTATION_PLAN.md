@@ -1,6 +1,6 @@
 # Bella Spa ERP - Roadmap & Implementation Plan (Post-Purge)
 
-Status: 🟢 Phase 23 - Trải nghiệm UX/UI Phép thuật (Completed) | 100% Build Compiled
+Status: 🟢 Phase 28 — Accounting Core: Foundation + Business Integration + Reports Hub (Completed) | 100% Build Compiled | 27/27 accounting tests passing
 
 ## 🟢 Phase 0: The Great Purge (Completed)
 - [x] Remove all RealEstate legacy tables and columns.
@@ -234,5 +234,159 @@ Status: 🟢 Phase 23 - Trải nghiệm UX/UI Phép thuật (Completed) | 100% B
 - [x] **Ánh xạ Dịch UUID Động (Dynamic Reference Resolution)**: Thiết lập states dynamic maps (`usersMap`, `packagesMap`, `customersMap`) tự động dịch toàn bộ mã UUID thô của database trong log Audit sang tên thực tế (KTV, khách hàng, gói dịch vụ) trực quan trên giao diện.
 - [x] **Thiết kế Mũi tên Chuyển đổi và Thụt dòng Danh sách**: Định cấu hình thẻ thay đổi kết hợp mũi tên chỉ hướng `➔` sắc nét và tự động phân rã các thay đổi phức hợp thành danh sách thụt lề có border lề đứng mượt mà.
 - [x] **Nghiệp vụ hóa câu lệnh INSERT/DELETE**: Xây dựng bộ render chuyên biệt tóm tắt hành động thêm mới/xóa cho các bảng dữ liệu lõi thành câu văn diễn giải nghiệp vụ tự nhiên, loại bỏ hoàn toàn cảm giác máy móc trước đây.
+
+---
+
+## 🟢 Phase 26: Accounting Core — Foundation (Double-Entry Bookkeeping) (Completed)
+
+**Mục tiêu:** Xây dựng nền tảng kế toán kép (double-entry) đầy đủ chuẩn Việt Nam (Thông tư 133/2016/TT-BTC) làm sổ cái chính thống cho hệ thống.
+
+- [x] **Schema mới — 5 bảng kế toán cốt lõi** (migration `20260524000000_accounting_core.sql`):
+  - `accounting_accounts` — Hệ thống tài khoản (Chart of Accounts) cây phân cấp theo tenant
+  - `accounting_periods` — Kỳ kế toán (OPEN/CLOSED) theo tháng
+  - `journal_entries` — Header bút toán (DRAFT → POSTED → CANCELED) với reference tracking
+  - `journal_lines` — Chi tiết Nợ/Có với dimensions: branch_id, ktv_id, cost_center_id
+  - `accounting_outbox` — Bảng queue transactional outbox cho async event processing
+- [x] **RLS Hardening dùng `is_hq_super_admin()`** (migration `20260525100000_accounting_rls_harden.sql`):
+  - Drop policies cũ pattern `SELECT tenant_id FROM users`, thay bằng helper function chuẩn hệ thống.
+  - 12 policies mới phân quyền chi tiết: KTV xem được COA, chỉ admin sửa; cấm DELETE journal_entries (chỉ CANCEL/REVERSE).
+  - 6 indexes tối ưu performance cho lookups thường xuyên.
+- [x] **Triggers bất biến kế toán** (idempotent — `DROP IF EXISTS` + `CREATE`):
+  - `trg_check_journal_entry_update`: chặn modify entry đã POSTED.
+  - `trg_check_journal_line_modify`: chặn modify line trong entry POSTED.
+  - `trg_validate_journal_entry_balance`: bắt buộc Debit = Credit khi POST.
+  - `trg_set_journal_entry_period`: tự gán period_id khi insert.
+- [x] **Seed Chart of Accounts chuẩn Thông tư 133** (migration `20260525110000_seed_default_coa.sql`):
+  - Function `seed_default_coa(tenant_id)` insert 38 tài khoản cho doanh nghiệp vừa và nhỏ.
+  - Phân loại đủ 5 nhóm: TÀI SẢN (9), NỢ PHẢI TRẢ (8), VỐN CHỦ SỞ HỮU (2), DOANH THU (6), CHI PHÍ (12), XÁC ĐỊNH KẾT QUẢ (1).
+  - Backfill tự động cho mọi tenant cũ qua `DO $$` block, đảm bảo idempotent.
+- [x] **Auto-create accounting periods** (migration `20260525120000_accounting_periods_auto.sql`):
+  - `ensure_open_period(tenant_id, date)` tự tạo period tháng nếu chưa có.
+  - `close_accounting_period(period_id)` đóng kỳ với guard (cấm khi còn DRAFT).
+  - `reopen_accounting_period(period_id)` chỉ cho HQ super admin mở lại kỳ đã đóng.
+- [x] **Tích hợp seed COA vào tenant onboarding** (migration `20260525140000_onboard_with_coa.sql`):
+  - Sửa `onboard_tenant` RPC để mọi tenant mới tự seed COA + open period tháng hiện tại.
+  - Wrap trong `BEGIN ... EXCEPTION` để không fail onboarding nếu accounting setup gặp lỗi.
+- [x] **Transactional Outbox Pattern** (migration `20260525130000_accounting_outbox.sql`):
+  - 5 RPC: `enqueue_accounting_event`, `claim_outbox_batch` (FOR UPDATE SKIP LOCKED — race-safe), `mark_outbox_completed`, `mark_outbox_failed` (exponential backoff 2^n phút, max 60min).
+  - 7 event types: PACKAGE_SALE, SESSION_DONE, EXPENSE_RECORDED, SALARY_PAID, INVENTORY_CONSUMED, REFUND_ISSUED, MANUAL_ENTRY.
+  - View `outbox_health` cho dashboard monitoring.
+  - Idempotency guard: UNIQUE `(event_type, reference_id)` chặn duplicate.
+- [x] **Database Permissions Grant** (migration `20260525160000_accounting_grants.sql`):
+  - Cấp `SELECT, INSERT, UPDATE, DELETE` cho role `authenticated` trên 5 bảng accounting để PostgREST không bị chặn ngay trước khi RLS kiểm tra.
+- [x] **Engine TypeScript** (`src/services/`):
+  - `accounting-engine.ts` — `AccountingEngineService.postJournalEntry()` validate balance app-side, insert header DRAFT, insert lines, transition POSTED; rollback header nếu lines fail.
+  - `revenue-recognition.ts` — `RevenueRecognitionService` với 5 handlers chuẩn:
+    - `handlePackageSale` (Nợ 111 / Có 3387 / Có 3331)
+    - `handleSessionDone` (Nợ 3387 / Có 5111 + Nợ 6421 / Có 334)
+    - `handleExpenseRecorded` (Nợ 64xx / Có 111 hoặc 112)
+    - `handleSalaryPaid` (Nợ 334 / Có 111 hoặc 112)
+    - `handleInventoryConsumed` (Nợ 632 / Có 153)
+- [x] **Database Types** (`src/types/database.types.ts`):
+  - Bổ sung typed schema cho 5 bảng mới + view `outbox_health` + 9 RPC functions.
+  - Đảm bảo strict typing cho mọi insert/update — tuân thủ AGENTS.md Rule #3.
+- [x] **Jest Tests** (`src/__tests__/accounting-engine.test.ts`):
+  - 11 test cases coverage: balanced post, unbalanced rejection, zero-line rejection, header/line error propagation, rollback, VAT split, KTV commission, missing account.
+  - Toàn bộ pass trong 0.6s.
+
+---
+
+## 🟢 Phase 27: Accounting Core — Business Integration (Outbox Pattern) (Completed)
+
+**Mục tiêu:** Mọi giao dịch tài chính trong ERP tự động sinh journal entry qua outbox pattern, không block business flow nếu accounting fail.
+
+- [x] **Booking & Payment hooks** (`src/modules/booking/actions/lifecycle-actions.ts`):
+  - `createBooking` (đặt cọc) → enqueue `PACKAGE_SALE` event ngay sau insert `revenue` thành công.
+  - `recordRemainingPayment` (thanh toán nốt) → enqueue `PACKAGE_SALE` cho phần còn lại.
+  - Pattern: dùng admin client (service-role) khi có `SUPABASE_SERVICE_ROLE_KEY` để bypass RLS, fallback sang user-session client.
+  - Wrap trong `try/catch` riêng — booking vẫn thành công nếu enqueue fail, chỉ log Sentry.
+- [x] **Session completion hooks** (`src/modules/booking/actions/session-actions.ts`):
+  - `completeSession` (KTV check-out) → enqueue `SESSION_DONE` với `earnedRevenueAmount = (full_price × (1 - discount/100)) / total_sessions` và `commissionAmount = ktv_commission`.
+  - `updateSessionLog` (Admin override) → enqueue cùng event khi session chuyển sang `completed`.
+- [x] **Finance & Expense hooks** (`src/services/finance-actions.ts`):
+  - `confirmTransaction` cho revenue type `deposit`/`remaining_payment` → enqueue `PACKAGE_SALE`.
+  - `confirmTransaction` cho expense category `salary` (link `salary_record_id`) → enqueue `SALARY_PAID`.
+  - `confirmTransaction` cho expense thường → enqueue `EXPENSE_RECORDED` với mapping category → COA code (`rent → 6423`, `utilities → 6424`, `marketing → 6425`, `materials → 632`, `salary → 642`, mặc định `6427`).
+  - `createRevenue` và `createExpense` (manual entry từ UI Finance) cũng enqueue tương ứng.
+- [x] **Inventory consumption hook** (`src/services/inventory-actions.ts`):
+  - `autoConsumeForSession` (trigger sau khi KTV checkout) → enqueue `INVENTORY_CONSUMED` với `amount = totalCost` (tính từ `unit_cost × quantity` các items đã trừ).
+- [x] **Salary payment hook** (`src/modules/hr-salary/actions/admin-salary-actions.ts`):
+  - `confirmSalary` (Admin xác nhận trả lương) → enqueue `SALARY_PAID` cùng `salary_records.id` làm reference.
+- [x] **Cron Worker** (`src/app/api/cron/accounting-worker/route.ts`):
+  - Endpoint `GET /api/cron/accounting-worker` được bảo vệ bằng `CRON_SECRET` (Bearer token).
+  - Gọi `claim_outbox_batch(50)` lấy events PENDING/FAILED ready to retry.
+  - Switch theo `event_type` → call handler tương ứng trong `AccountingEngineService` / `RevenueRecognitionService`.
+  - Success → `mark_outbox_completed(outbox_id, journal_entry_id)`.
+  - Fail → `mark_outbox_failed(outbox_id, error_message)` — RPC tự backoff hoặc chuyển sang DEAD sau 5 retries.
+  - Đảm bảo crash 1 event không ảnh hưởng các events khác trong batch.
+- [x] **Jest Tests** (`src/__tests__/accounting-outbox.test.ts`):
+  - 10 test cases coverage outbox enqueue (idempotency), claim batch, mark completed/failed, exponential backoff, dead letter.
+
+---
+
+## 🟢 Phase 28: Accounting Core — Reports Hub & UI Dashboard (Completed)
+
+**Mục tiêu:** Admin/Kế toán có giao diện đầy đủ + 4 báo cáo tài chính chuẩn Thông tư 133 + export Excel.
+
+- [x] **4 SQL Report Functions** (migration `20260525150000_accounting_reports.sql`):
+  - `get_trial_balance(tenant_id, as_of_date)` — Bảng cân đối phát sinh: lấy số dư đầu năm + phát sinh trong kỳ + số dư cuối kỳ. Chỉ tính trên **leaf accounts** (không có account con) để tránh cộng trùng số liệu của tài khoản cha.
+  - `get_income_statement(tenant_id, from_date, to_date)` — P&L 14 chỉ tiêu: doanh thu thuần (511 - 521), giá vốn (632), lợi nhuận gộp, doanh thu tài chính (515), chi phí tài chính (635), chi phí QLKD (642), lợi nhuận thuần, thu/chi phí khác (711/811), lợi nhuận trước thuế, thuế TNDN (821), lợi nhuận sau thuế.
+  - `get_balance_sheet(tenant_id, as_of_date)` — Bảng cân đối kế toán tự cân: TÀI SẢN (tiền 111+112, phải thu 131, kho 152+153, TSCĐ 211−214, chi phí trả trước 242) = NỢ PHẢI TRẢ (331, 333, 334, 3387, 338) + VỐN CHỦ SỞ HỮU (411 + LNST kỳ này từ P&L).
+  - `get_account_ledger(tenant_id, account_id, from_date, to_date)` — Sổ chi tiết: opening balance + running balance từng dòng phát sinh.
+- [x] **6 Dashboard Pages** (`src/app/dashboard/accounting/`):
+  - `layout.tsx` — Sub-navigation tabs với 6 mục, glassmorphism + responsive flex-wrap.
+  - `page.tsx` — Tổng quan: cards Tổng tài sản, Lợi nhuận thuần, Doanh thu tháng, Outbox health (PENDING/FAILED/DEAD counts).
+  - `chart-of-accounts/page.tsx` — Cây phân cấp COA, thêm/sửa/khoá tài khoản tuỳ chỉnh, hiển thị parent-child relationships.
+  - `journals/page.tsx` + `journals/[entryId]/page.tsx` — General Ledger viewer với filters (date/status/reference_type), drill-down xem chi tiết lines + nút **Reverse Journal Entry**.
+  - `periods/page.tsx` — Danh sách kỳ kế toán, nút **Đóng kỳ** với confirmation modal.
+  - `outbox/page.tsx` — Monitor queue: 5 status tabs (PENDING/PROCESSING/COMPLETED/FAILED/DEAD), nút **Replay** cho FAILED/DEAD events.
+  - `manual-entry/page.tsx` — Form tạo bút toán thủ công với dynamic add/remove lines, live balance check Debit/Credit.
+  - `reports/page.tsx` — Tabs cho 4 báo cáo, date range pickers, nút **Export Excel** chuẩn TT133.
+- [x] **Server Actions** (`src/services/accounting-actions.ts` — 500 dòng, 15 hàm):
+  - COA: `getAccounts`, `createAccount`, `updateAccount`.
+  - Journals: `getJournalEntries`, `getJournalEntryDetails`, `reverseJournalEntry` (đảo Debit↔Credit, link reference, mark CANCELED).
+  - Periods: `getAccountingPeriods`, `closePeriodAction`.
+  - Outbox: `getOutboxEvents`, `replayOutboxEvent`.
+  - Manual: `postManualJournalEntry`.
+  - Reports: `getTrialBalanceReport`, `getIncomeStatementReport`, `getBalanceSheetReport`, `getAccountLedgerReport`.
+  - Mọi hàm validate `user.tenant_id` + `role IN ['admin','super_admin']` cho ghi/sửa.
+- [x] **Excel Export** (`src/services/export-actions.ts`):
+  - `exportAccountingReportToExcel` dùng `xlsx` (đã có trong deps) — format chuẩn TT133.
+  - 4 sheet riêng cho 4 báo cáo, header tự định dạng tiếng Việt + số tiền VND.
+- [x] **Sidebar Integration** (`src/components/layout/sidebar.tsx`):
+  - Thêm mục "Kế toán Sổ cái" với icon `Scale`, vị trí giữa Finance và Inventory.
+  - Tích hợp Dynamic RBAC — chỉ hiển thị cho admin và accountant.
+- [x] **TypeScript build fixes**:
+  - `tsconfig.json`: exclude `mcp-server/` khỏi Next.js compilation scope.
+  - Type safety 100% — zero `any` casts trong accounting modules mới.
+- [x] **Jest Tests** (`src/__tests__/accounting-reports.test.ts`):
+  - 6 test cases coverage RPC mock cho 4 reports + reversal logic + manual entry balance validation.
+- [x] **Tổng tests:** **27/27 pass** trong 0.8s (accounting-engine + accounting-outbox + accounting-reports).
+
+---
+
+## 🟡 Phase 29: Accounting Core — Advanced Features (Planned)
+
+**Mục tiêu:** Đạt chuẩn audit nhà nước, sẵn sàng cho kế toán thuế thực sự + multi-branch analytics.
+
+- [ ] **Period Closing Workflow tự động:**
+  - Validate không còn entry DRAFT trong kỳ.
+  - Generate closing entries: 5xx, 6xx → 911 (Xác định KQKD).
+  - Transfer entry: 911 → 421 (Lợi nhuận chưa phân phối).
+  - Trigger DB ngăn mọi update vào period đã CLOSED.
+- [ ] **Multi-branch Cost Allocation:**
+  - Tận dụng `journal_lines.branch_id` đã có sẵn.
+  - P&L per branch, ROI per service package per branch.
+  - So sánh hiệu quả giữa chi nhánh trong cùng tenant (HQ view).
+- [ ] **Cash Flow Statement (Báo cáo Lưu chuyển Tiền tệ):**
+  - Phương pháp gián tiếp từ Net Income + thay đổi vốn lưu động.
+  - Phân loại: Operating, Investing, Financing activities.
+- [ ] **Compliance & Audit:**
+  - Tự động ghi mọi POSTED entry vào `audit_logs`.
+  - Link với `accounting_periods.status` enforce lock month.
+  - Cảnh báo nếu kế toán cố tình tạo entry vào kỳ đã CLOSED.
+- [ ] **Migration Finance cũ → Accounting Ledger:**
+  - Chạy song song UI cũ + ledger 1 tháng để đối chiếu.
+  - Switch hoàn toàn khi 2 nguồn match 100%.
 
 

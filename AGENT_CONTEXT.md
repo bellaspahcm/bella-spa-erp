@@ -1,6 +1,6 @@
 # Ngữ cảnh dự án (Agent Context): BELLA SPA ERP
 
-> **Thời gian cập nhật gần nhất**: 2026-05-23 05:12
+> **Thời gian cập nhật gần nhất**: 2026-05-25 (Phase 26-28 Accounting Core Completed)
 > **Tự động tạo**: Được tạo bởi `prepare_context.py` nhằm giúp AI Agent nhanh chóng nắm bắt bức tranh toàn cảnh dự án
 
 ---
@@ -236,6 +236,10 @@ BELLA SPA ERP/
 │   │   └── hr-salary
 │   ├── proxy.ts
 │   ├── services
+│   │   ├── accounting-actions.ts          # ⭐ NEW (Phase 28): COA + GL + reports + reversal + period close + outbox monitor + manual entry
+│   │   ├── accounting-engine.ts           # ⭐ NEW (Phase 26): AccountingEngineService.postJournalEntry (typed admin client)
+│   │   ├── revenue-recognition.ts         # ⭐ NEW (Phase 26-27): 5 handlers (PackageSale/SessionDone/Expense/Salary/Inventory)
+│   │   ├── export-actions.ts              # ⭐ NEW (Phase 28): Excel export TT133 format
 │   │   ├── attendance-actions.ts
 │   │   ├── audit-actions.ts
 │   │   ├── brand-service-actions.ts
@@ -325,14 +329,27 @@ BELLA SPA ERP/
 * _(Chưa có file `.auto-skill-local.md`, các kinh nghiệm thực chiến dự án sẽ tự động tích lũy trong quá trình phát triển)_
 
 ## 🚦 5. Tiến độ hiện tại & Việc cần làm (Current Status & TODO)
-_(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-23)_
+_(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-25)_
 
-### 🚧 Việc cần làm
-- [x] Tạo nút Sign Up (Đăng ký Chi Nhánh mới) trên trang HQ Bella liên kết tới trang kích hoạt hệ thống `/signup`.
-- [x] Sửa lỗi crash của hàm RPC `create_onboarding_user` do ghi đè cột sinh tự động (`confirmed_at`, `email`).
-- [x] Nâng cấp bộ tải Khung xương (Skeleton Loaders) cho trang Bảng lương KTV và trang Tổng quan Tài chính.
-- [x] Bật tích hợp và nút kích hoạt hướng dẫn Onboarding Tour tương tác cho các Admin mới.
+### ✅ Vừa hoàn tất (2026-05-25)
+- [x] **Security Audit Enterprise**: 2 Critical + 6 High + 6 Medium vulnerabilities đã vá theo OWASP Top 10 / SANS Top 25.
+- [x] **Đổi Supabase API Keys** sang format `sb_secret_*` mới, revoke key cũ JWT format.
+- [x] **HTTP Security Headers** trong `next.config.ts`: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Permissions-Policy.
+- [x] **Phase 26 Foundation**: 5 bảng accounting (`accounting_accounts`, `accounting_periods`, `journal_entries`, `journal_lines`, `accounting_outbox`) + seed 38 COA accounts chuẩn TT133 + 11 Jest tests.
+- [x] **Phase 27 Integration**: Hook 7 nghiệp vụ (createBooking, recordRemainingPayment, completeSession, updateSessionLog, confirmTransaction, confirmSalary, autoConsumeForSession) vào outbox + cron worker `/api/cron/accounting-worker` + 10 tests.
+- [x] **Phase 28 Reports Hub**: 4 SQL report functions (trial_balance, income_statement, balance_sheet, account_ledger) + 6 dashboard pages (`/dashboard/accounting/*`) + Excel export + Reversal logic + 6 tests.
+- [x] **Tổng Jest tests**: 27/27 pass trong 0.8s. TypeScript build 100% sạch.
+
+### 🚧 Việc cần làm tiếp theo
+- [ ] **Cấu hình Vercel Cron Job** kích hoạt `/api/cron/accounting-worker` mỗi 1 phút (hoặc Supabase pg_cron) để worker tự chạy nền.
+- [ ] **Theo dõi metrics outbox health** trong tuần đầu sau deploy (số PENDING/FAILED/DEAD theo ngày qua dashboard `/dashboard/accounting/outbox`).
+- [ ] **Thu thập phản hồi từ kế toán thực tế** về 4 báo cáo TT133 — có cần điều chỉnh format hay thêm chỉ tiêu nào không.
+- [ ] **Phase 29 Advanced Features**:
+  - Period Closing Workflow tự động (5xx, 6xx → 911 → 421).
+  - Cash Flow Statement (Báo cáo Lưu chuyển Tiền tệ).
+  - Multi-branch Cost Allocation (P&L per branch tận dụng `journal_lines.branch_id`).
+  - Compliance hooks: tự ghi POSTED entry vào `audit_logs`, lock period enforcement.
+  - Migration UI Finance cũ → Accounting Ledger (chạy song song 1 tháng để đối chiếu).
 - [ ] Theo dõi phản hồi từ người dùng về trải nghiệm thị giác tổng thể của hệ màu hồng pastel mới trên sidebar.
-- [ ] Bảo trì định kỳ và đồng bộ các yếu tố UX tương tác khác như nút bấm tạo lịch đặt, hiệu ứng chuyển trang để có cùng tông pastel sang trọng.
 
 
