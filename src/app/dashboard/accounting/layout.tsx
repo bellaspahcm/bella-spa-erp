@@ -36,7 +36,7 @@ export default function AccountingLayout({
 
       {/* Sub-Navigation Header Bar */}
       <header className="sticky top-0 z-20 backdrop-blur-md bg-white/70 dark:bg-[#11100F]/80 border-b border-[#FFE4E6]/60 dark:border-[#3E3A35]/50 px-6 py-4 shrink-0 transition-colors duration-300">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 max-w-7xl mx-auto">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 max-w-7xl mx-auto flex-wrap">
           <div>
             <h1 className="text-2xl font-black text-[#4C243B] dark:text-[#EFE9E1] tracking-tight uppercase flex items-center gap-2.5">
               <Scale className="w-6 h-6 text-primary dark:text-[#A67D44] animate-pulse" />
@@ -48,7 +48,7 @@ export default function AccountingLayout({
           </div>
 
           {/* Sub tabs list */}
-          <nav className="flex items-center gap-1 overflow-x-auto pb-1 xl:pb-0 scrollbar-none">
+          <nav className="flex flex-wrap items-center gap-1">
             {tabs.map((tab) => {
               const isActive = pathname === tab.href;
               return (

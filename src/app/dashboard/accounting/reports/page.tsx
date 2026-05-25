@@ -150,10 +150,9 @@ export default function AccountingReportsPage() {
         </div>
       )}
 
-      {/* ── REPORTS SELECTION TABS & FILTERS BAR ── */}
-      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6 flex-wrap">
         {/* Switch report type tabs */}
-        <div className="flex items-center gap-1 bg-slate-50 dark:bg-[#11100F] p-1.5 rounded-2xl border border-slate-100 dark:border-none overflow-x-auto w-fit max-w-full scrollbar-none">
+        <div className="flex flex-wrap items-center gap-1 bg-slate-50 dark:bg-[#11100F] p-1.5 rounded-2xl border border-slate-100 dark:border-none w-fit max-w-full shrink-0">
           {reportTabs.map((t) => (
             <button 
               key={t.value}
