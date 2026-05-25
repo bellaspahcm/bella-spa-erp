@@ -160,3 +160,191 @@ export async function exportSessionMatrixToExcel(data: any[], packageNames: stri
     throw error;
   }
 }
+
+/**
+ * Export Accounting Reports (Trial Balance, Income Statement, Balance Sheet) to Excel (Thông tư 133)
+ */
+export async function exportAccountingReportToExcel(
+  reportType: 'trial_balance' | 'income_statement' | 'balance_sheet',
+  data: any,
+  dateStr: string
+) {
+  try {
+    const wb = XLSX.utils.book_new();
+    const sheetData: any[][] = [];
+
+    if (reportType === 'trial_balance') {
+      // BẢNG CÂN ĐỐI PHÁT SINH
+      sheetData.push(
+        ['BẢNG CÂN ĐỐI PHÁT SINH TÀI KHOẢN (TT 133/2016/TT-BTC)'],
+        ['Chi nhánh Spa:', 'Bella Spa ERP'],
+        ['Kỳ báo cáo:', `Đến ngày ${dateStr}`],
+        ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+        [],
+        [
+          'Mã tài khoản',
+          'Tên tài khoản',
+          'Số dư đầu kỳ',
+          '',
+          'Số phát sinh trong kỳ',
+          '',
+          'Số dư cuối kỳ',
+          '',
+        ],
+        ['', '', 'Nợ', 'Có', 'Nợ', 'Có', 'Nợ', 'Có']
+      );
+
+      let sumOpDebit = 0;
+      let sumOpCredit = 0;
+      let sumPdDebit = 0;
+      let sumPdCredit = 0;
+      let sumClDebit = 0;
+      let sumClCredit = 0;
+
+      (data || []).forEach((row: any) => {
+        sheetData.push([
+          row.account_code,
+          row.account_name,
+          row.opening_debit,
+          row.opening_credit,
+          row.period_debit,
+          row.period_credit,
+          row.closing_debit,
+          row.closing_credit,
+        ]);
+
+        sumOpDebit += Number(row.opening_debit || 0);
+        sumOpCredit += Number(row.opening_credit || 0);
+        sumPdDebit += Number(row.period_debit || 0);
+        sumPdCredit += Number(row.period_credit || 0);
+        sumClDebit += Number(row.closing_debit || 0);
+        sumClCredit += Number(row.closing_credit || 0);
+      });
+
+      // Tổng cộng row
+      sheetData.push([
+        'TỔNG CỘNG',
+        '',
+        sumOpDebit,
+        sumOpCredit,
+        sumPdDebit,
+        sumPdCredit,
+        sumClDebit,
+        sumClCredit,
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      
+      // Column widths
+      ws['!cols'] = [
+        { wch: 15 }, // Mã
+        { wch: 35 }, // Tên
+        { wch: 18 }, // Dư đầu Nợ
+        { wch: 18 }, // Dư đầu Có
+        { wch: 18 }, // Phát sinh Nợ
+        { wch: 18 }, // Phát sinh Có
+        { wch: 18 }, // Dư cuối Nợ
+        { wch: 18 }, // Dư cuối Có
+      ];
+
+      // Merge header columns for Nợ / Có
+      ws['!merges'] = [
+        { s: { r: 5, c: 2 }, e: { r: 5, c: 3 } }, // Số dư đầu kỳ
+        { s: { r: 5, c: 4 }, e: { r: 5, c: 5 } }, // Phát sinh trong kỳ
+        { s: { r: 5, c: 6 }, e: { r: 5, c: 7 } }, // Số dư cuối kỳ
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Trial Balance');
+
+    } else if (reportType === 'income_statement') {
+      // BÁO CÁO KẾT QUẢ KINH DOANH (P&L)
+      const pnl = data || {};
+      sheetData.push(
+        ['BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH (TT 133/2016/TT-BTC)'],
+        ['Chi nhánh Spa:', 'Bella Spa ERP'],
+        ['Kỳ báo cáo:', `Từ ngày ${dateStr}`],
+        ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+        [],
+        ['Chỉ tiêu', 'Mã số', 'Thuyết minh', 'Kỳ này (VND)', 'Kỳ trước (VND)'],
+        ['1. Doanh thu bán hàng và cung cấp dịch vụ', '01', '', pnl.gross_revenue || 0, 0],
+        ['2. Các khoản giảm trừ doanh thu (Refund, voucher)', '02', '', pnl.deductions || 0, 0],
+        ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ (10 = 01 - 02)', '10', '', pnl.net_revenue || 0, 0],
+        ['4. Giá vốn hàng bán (Vật tư tiêu hao ca làm)', '11', '', pnl.cost_of_goods_sold || 0, 0],
+        ['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ (20 = 10 - 11)', '20', '', pnl.gross_profit || 0, 0],
+        ['6. Doanh thu hoạt động tài chính', '21', '', pnl.financial_income || 0, 0],
+        ['7. Chi phí tài chính', '22', '', pnl.financial_expense || 0, 0],
+        ['8. Chi phí quản lý kinh doanh (Hoa hồng + Thưởng + Vận hành)', '24', '', pnl.operating_expense || 0, 0],
+        ['9. Lợi nhuận thuần từ hoạt động kinh doanh (30 = 20 + 21 - 22 - 24)', '30', '', pnl.operating_profit || 0, 0],
+        ['10. Thu nhập khác', '31', '', pnl.other_income || 0, 0],
+        ['11. Chi phí khác', '32', '', pnl.other_expense || 0, 0],
+        ['12. Lợi nhuận khác (40 = 31 - 32)', '40', '', (pnl.other_income || 0) - (pnl.other_expense || 0), 0],
+        ['13. Tổng lợi nhuận kế toán trước thuế (50 = 30 + 40)', '50', '', pnl.profit_before_tax || 0, 0],
+        ['14. Chi phí thuế thu nhập doanh nghiệp', '51', '', pnl.tax_expense || 0, 0],
+        ['15. Lợi nhuận sau thuế thu nhập doanh nghiệp (60 = 50 - 51)', '60', '', pnl.net_profit || 0, 0]
+      );
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      ws['!cols'] = [
+        { wch: 60 }, // Chỉ tiêu
+        { wch: 10 }, // Mã số
+        { wch: 15 }, // Thuyết minh
+        { wch: 22 }, // Kỳ này
+        { wch: 22 }, // Kỳ trước
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Profit and Loss');
+
+    } else if (reportType === 'balance_sheet') {
+      // CÂN ĐỐI KẾ TOÁN
+      const bs = data || {};
+      sheetData.push(
+        ['BẢNG CÂN ĐỐI KẾ TOÁN (TT 133/2016/TT-BTC)'],
+        ['Chi nhánh Spa:', 'Bella Spa ERP'],
+        ['Tại ngày:', dateStr],
+        ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+        [],
+        ['Tài sản / Nguồn vốn', 'Mã số', 'Thuyết minh', 'Số cuối kỳ (VND)', 'Số đầu năm (VND)'],
+        ['A - TÀI SẢN NGẮN HẠN & DÀI HẠN', '100', '', bs.total_assets || 0, 0],
+        ['I. Tiền và các khoản tương đương tiền (111 + 112)', '110', '', bs.cash_and_equivalents || 0, 0],
+        ['II. Phải thu ngắn hạn khách hàng (131 + 138)', '120', '', bs.accounts_receivable || 0, 0],
+        ['III. Hàng tồn kho (Vật tư massage, tinh dầu 152 + 153)', '130', '', bs.inventory || 0, 0],
+        ['IV. Tài sản cố định hữu hình - Nguyên giá (211)', '140', '', bs.fixed_assets_cost || 0, 0],
+        ['V. Hao mòn lũy kế tài sản cố định (214)', '141', '', -Math.abs(bs.accumulated_depreciation || 0), 0],
+        ['VI. Chi phí trả trước (Thuê nhà mặt bằng dài hạn 242)', '150', '', bs.prepaid_expenses || 0, 0],
+        ['BỔNG CỘNG TÀI SẢN', '200', '', bs.total_assets || 0, 0],
+        [],
+        ['B - NỢ PHẢI TRẢ (LIABILITIES)', '300', '', bs.total_liabilities || 0, 0],
+        ['I. Phải trả người bán ngắn hạn (331)', '310', '', bs.accounts_payable || 0, 0],
+        ['II. Thuế và các khoản phải nộp nhà nước (333)', '320', '', bs.taxes_payable || 0, 0],
+        ['III. Phải trả người lao động (334)', '330', '', bs.employee_payables || 0, 0],
+        ['IV. Doanh thu chưa thực hiện (Gói trị liệu chưa dùng 3387)', '340', '', bs.unearned_revenue || 0, 0],
+        ['V. Phải trả, phải nộp ngắn hạn khác (335 + 338)', '350', '', bs.other_payables || 0, 0],
+        ['TỔNG CỘNG NỢ PHẢI TRẢ', '390', '', bs.total_liabilities || 0, 0],
+        [],
+        ['C - VỐN CHỦ SỞ HỮU (OWNERS EQUITY)', '400', '', bs.total_equity || 0, 0],
+        ['I. Vốn đầu tư của chủ sở hữu (411)', '410', '', bs.owners_capital || 0, 0],
+        ['II. Lợi nhuận sau thuế chưa phân phối (421 + P&L kỳ này)', '420', '', bs.retained_earnings || 0, 0],
+        ['TỔNG CỘNG VỐN CHỦ SỞ HỮU', '430', '', bs.total_equity || 0, 0],
+        ['TỔNG CỘNG NGUỒN VỐN (390 + 430)', '440', '', bs.total_equity_and_liabilities || 0, 0]
+      );
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      ws['!cols'] = [
+        { wch: 60 }, // Tài sản / Nguồn vốn
+        { wch: 10 }, // Mã số
+        { wch: 15 }, // Thuyết minh
+        { wch: 22 }, // Kỳ cuối
+        { wch: 22 }, // Kỳ đầu
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Balance Sheet');
+    }
+
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    return buf.toString('base64');
+  } catch (error) {
+    console.error('Export accounting report error:', error);
+    throw error;
+  }
+}
+

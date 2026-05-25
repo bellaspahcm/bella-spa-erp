@@ -271,7 +271,7 @@ export async function finalizeSalaryRecord(ktvId: string) {
   const monthYear = getMonthStart(now);
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
 
-  const { data: recordData } = await supabase
+  const { data: recordData, error: fetchError } = await supabase
     .from('salary_records')
     .select('*, users(full_name)')
     .eq('ktv_id', ktvId)
@@ -279,30 +279,38 @@ export async function finalizeSalaryRecord(ktvId: string) {
     .eq('status', 'confirmed')
     .single();
 
+  if (fetchError) throw fetchError;
+
   const record = recordData as unknown as SalaryRecordDbAdmin | null;
 
   if (!record) return { success: false, error: 'Không tìm thấy bản ghi đã được xác nhận' };
 
   // Lock record
-  await supabase.from('salary_records')
+  const { error: lockError } = await supabase.from('salary_records')
     .update({ status: 'finalized', finalized_at: new Date().toISOString() })
     .eq('id', record.id);
 
+  if (lockError) throw lockError;
+
   // Lock session_logs
-  await supabase.from('session_logs')
+  const { error: sessionError } = await supabase.from('session_logs')
     .update({ is_confirmed: true })
     .eq('completed_by_ktv_id', ktvId)
     .eq('status', 'completed');
 
+  if (sessionError) throw sessionError;
+
   // Create expense for Finance
-  await supabase.from('expenses').insert({
+  const { error: expenseError } = await supabase.from('expenses').insert({
     amount: record.total_salary || 0,
     category: 'salary',
-    description: `Lương T${monthLabel} - ${record.users?.full_name || 'KTV'}`,
+    description: `Lương T${monthLabel} - ${record.users?.full_name || 'KTV'} [salary_record_id:${record.id}] [ktv_id:${ktvId}]`,
     status: 'submitted',
     expense_date: new Date().toISOString(),
     tenant_id: tenantId,
   });
+
+  if (expenseError) throw expenseError;
 
   await recordAuditLog({ action: 'UPDATE', table_name: 'salary_records', record_id: ktvId, new_data: { status: 'finalized', amount: record.total_salary } });
   revalidatePath('/dashboard/salary');
@@ -357,11 +365,13 @@ export async function approveSalary(ktvId: string) {
 
   try {
     // 1. Get KTV info for description
-    const { data: ktvData } = await supabase
+    const { data: ktvData, error: ktvError } = await supabase
       .from('users')
       .select('full_name, tenant_id')
       .eq('id', ktvId)
       .single();
+
+    if (ktvError) throw ktvError;
 
     const ktv = ktvData as KtvUserDataAdmin | null;
 
@@ -371,7 +381,9 @@ export async function approveSalary(ktvId: string) {
       return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
     }
 
-    const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
+    const { data: tenantData, error: tenantError } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
+    if (tenantError) throw tenantError;
+
     const salaryConfig = (tenantData?.salary_config as unknown as TenantSalaryConfig) || {
       bonus_5_star: 50000,
       bonus_4_5_star: 30000,
@@ -383,7 +395,7 @@ export async function approveSalary(ktvId: string) {
     const endOfMonth = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
 
     // 2. Fetch completed sessions with booking details to get the locked commission rate
-    const { data: sessions } = await supabase
+    const { data: sessions, error: sessionsError } = await supabase
       .from('session_logs')
       .select('id, bookings(ktv_commission)')
       .eq('completed_by_ktv_id', ktvId)
@@ -391,6 +403,8 @@ export async function approveSalary(ktvId: string) {
       .gte('completed_date', monthYear)
       .lt('completed_date', endOfMonth);
     
+    if (sessionsError) throw sessionsError;
+
     const sessionsTyped = (sessions || []) as unknown as SessionLogAdmin[];
     
     const ktvSessionsCount = sessionsTyped.length;
@@ -400,12 +414,14 @@ export async function approveSalary(ktvId: string) {
     }, 0);
 
     // 3. Get/Calculate salary details
-    const { data: existingData } = await supabase
+    const { data: existingData, error: existingError } = await supabase
       .from('salary_records')
       .select('*')
       .eq('ktv_id', ktvId)
       .eq('month_year', monthYear)
-      .single();
+      .maybeSingle();
+
+    if (existingError) throw existingError;
 
     const existing = existingData as SalaryRecordDbAdmin | null;
 
@@ -416,6 +432,8 @@ export async function approveSalary(ktvId: string) {
     const advances = existing?.service_percentage_bonus || 0;
     const totalSalary = baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances;
 
+    let salaryRecordId = existing?.id;
+
     // 4. Update or Insert salary record
     if (existing) {
       const { error: updateError } = await supabase
@@ -425,7 +443,7 @@ export async function approveSalary(ktvId: string) {
       
       if (updateError) throw updateError;
     } else {
-      const { error: insertError } = await supabase
+      const { data: insertedRecord, error: insertError } = await supabase
         .from('salary_records')
         .insert([{
           ktv_id: ktvId,
@@ -436,9 +454,12 @@ export async function approveSalary(ktvId: string) {
           service_percentage_bonus: advances,
           status: 'approved',
           tenant_id: tenantId
-        }]);
+        }])
+        .select()
+        .single();
       
       if (insertError) throw insertError;
+      salaryRecordId = insertedRecord?.id;
     }
 
     // 5. Create expense record in Finance dashboard
@@ -447,15 +468,13 @@ export async function approveSalary(ktvId: string) {
       .insert({
         amount: totalSalary,
         category: 'salary',
-        description: `Thanh toán lương T${monthLabel} - KTV ${ktv?.full_name || 'Nhân viên'}`,
+        description: `Thanh toán lương T${monthLabel} - KTV ${ktv?.full_name || 'Nhân viên'} [salary_record_id:${salaryRecordId || ''}] [ktv_id:${ktvId}]`,
         status: 'submitted', // Will appear as "Chờ duyệt" in Finance
         expense_date: new Date().toISOString(),
         tenant_id: tenantId
       });
 
-    if (expenseError) {
-      console.error('Error creating expense record:', expenseError);
-    }
+    if (expenseError) throw expenseError;
 
     // Record Audit Log
     await recordAuditLog({

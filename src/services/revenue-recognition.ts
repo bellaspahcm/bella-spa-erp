@@ -123,4 +123,162 @@ export class RevenueRecognitionService {
 
     return null;
   }
+
+  /**
+   * Ghi nhận chi phí: Nợ 642 (hoặc tài khoản chi phí con) / Có 111 (Tiền mặt) hoặc 112 (Tiền gửi ngân hàng)
+   */
+  static async handleExpenseRecorded(params: {
+    tenantId: string;
+    expenseId: string;
+    amount: number;
+    category: string;
+    paymentMethod: string;
+    description: string;
+    branchId?: string;
+  }) {
+    const { tenantId, expenseId, amount, category, paymentMethod, description, branchId } = params;
+
+    if (amount <= 0) return null;
+
+    // Xác định mã tài khoản chi phí theo category nghiệp vụ
+    let expenseAccountCode = '6427'; // Chi phí khác bằng tiền (mặc định)
+    const normCategory = category?.toLowerCase();
+    if (normCategory === 'rent') {
+      expenseAccountCode = '6423'; // Chi phí thuê mặt bằng
+    } else if (normCategory === 'utilities') {
+      expenseAccountCode = '6424'; // Chi phí điện nước, internet
+    } else if (normCategory === 'marketing') {
+      expenseAccountCode = '6425'; // Chi phí marketing & Zalo OA
+    } else if (normCategory === 'materials') {
+      expenseAccountCode = '632';  // Giá vốn hàng bán (vật tư tiêu hao)
+    } else if (normCategory === 'salary') {
+      expenseAccountCode = '642';  // Chi phí nhân viên nói chung
+    }
+
+    const payAccountCode = paymentMethod?.toLowerCase() === 'cash' ? '111' : '112';
+
+    const [expenseAccountId, payAccountId] = await Promise.all([
+      this.getAccountByCode(tenantId, expenseAccountCode),
+      this.getAccountByCode(tenantId, payAccountCode),
+    ]);
+
+    const lines: JournalEntryInput['lines'] = [
+      { account_id: expenseAccountId, debit_amount: amount, credit_amount: 0, branch_id: branchId },
+      { account_id: payAccountId, debit_amount: 0, credit_amount: amount, branch_id: branchId },
+    ];
+
+    return await AccountingEngineService.postJournalEntry({
+      tenant_id: tenantId,
+      description: `Ghi nhận chi phí: ${description}`,
+      reference_type: 'EXPENSE',
+      reference_id: expenseId,
+      lines,
+    });
+  }
+
+  /**
+   * Thanh toán lương: Nợ 334 (Phải trả người lao động) / Có 111 hoặc 112
+   */
+  static async handleSalaryPaid(params: {
+    tenantId: string;
+    salaryRecordId: string;
+    amount: number;
+    paymentMethod?: string;
+    description: string;
+    ktvId: string;
+    branchId?: string;
+  }) {
+    const { tenantId, salaryRecordId, amount, paymentMethod = 'bank_transfer', description, ktvId, branchId } = params;
+
+    if (amount <= 0) return null;
+
+    const payAccountCode = paymentMethod?.toLowerCase() === 'cash' ? '111' : '112';
+
+    const [payableAccountId, payAccountId] = await Promise.all([
+      this.getAccountByCode(tenantId, '334'),
+      this.getAccountByCode(tenantId, payAccountCode),
+    ]);
+
+    const lines: JournalEntryInput['lines'] = [
+      { account_id: payableAccountId, debit_amount: amount, credit_amount: 0, ktv_id: ktvId, branch_id: branchId },
+      { account_id: payAccountId, debit_amount: 0, credit_amount: amount, ktv_id: ktvId, branch_id: branchId },
+    ];
+
+    return await AccountingEngineService.postJournalEntry({
+      tenant_id: tenantId,
+      description: `Chi trả lương: ${description}`,
+      reference_type: 'SALARY_PAYMENT',
+      reference_id: salaryRecordId,
+      lines,
+    });
+  }
+
+  /**
+   * Khấu hao tiêu hao vật tư: Nợ 632 (Giá vốn) / Có 152 (Nguyên liệu, vật liệu)
+   */
+  static async handleInventoryConsumed(params: {
+    tenantId: string;
+    sessionLogId: string;
+    amount: number;
+    description: string;
+    branchId?: string;
+  }) {
+    const { tenantId, sessionLogId, amount, description, branchId } = params;
+
+    if (amount <= 0) return null;
+
+    const [cogsAccountId, materialsAccountId] = await Promise.all([
+      this.getAccountByCode(tenantId, '632'),
+      this.getAccountByCode(tenantId, '152'),
+    ]);
+
+    const lines: JournalEntryInput['lines'] = [
+      { account_id: cogsAccountId, debit_amount: amount, credit_amount: 0, branch_id: branchId },
+      { account_id: materialsAccountId, debit_amount: 0, credit_amount: amount, branch_id: branchId },
+    ];
+
+    return await AccountingEngineService.postJournalEntry({
+      tenant_id: tenantId,
+      description: `Tiêu hao vật tư ca trị liệu: ${description}`,
+      reference_type: 'INVENTORY_CONSUMPTION',
+      reference_id: sessionLogId,
+      lines,
+    });
+  }
+
+  /**
+   * Hoàn tiền khách hàng: Nợ 521 (Các khoản giảm trừ DT) / Có 111 hoặc 112
+   */
+  static async handleRefundIssued(params: {
+    tenantId: string;
+    refundId: string;
+    amount: number;
+    paymentMethod?: string;
+    description: string;
+    branchId?: string;
+  }) {
+    const { tenantId, refundId, amount, paymentMethod = 'bank_transfer', description, branchId } = params;
+
+    if (amount <= 0) return null;
+
+    const payAccountCode = paymentMethod?.toLowerCase() === 'cash' ? '111' : '112';
+
+    const [deductAccountId, payAccountId] = await Promise.all([
+      this.getAccountByCode(tenantId, '521'),
+      this.getAccountByCode(tenantId, payAccountCode),
+    ]);
+
+    const lines: JournalEntryInput['lines'] = [
+      { account_id: deductAccountId, debit_amount: amount, credit_amount: 0, branch_id: branchId },
+      { account_id: payAccountId, debit_amount: 0, credit_amount: amount, branch_id: branchId },
+    ];
+
+    return await AccountingEngineService.postJournalEntry({
+      tenant_id: tenantId,
+      description: `Hoàn tiền khách hàng: ${description}`,
+      reference_type: 'REFUND',
+      reference_id: refundId,
+      lines,
+    });
+  }
 }

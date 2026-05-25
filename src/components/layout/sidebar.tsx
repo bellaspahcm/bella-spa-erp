@@ -20,7 +20,8 @@ import {
   History,
   Megaphone,
   Menu,
-  X
+  X,
+  Scale
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +40,7 @@ const menuItems = [
   { icon: Sparkles,        label: 'Dịch vụ',         href: '/dashboard/services' },
   { icon: DollarSign,      label: 'Tài chính',       href: '/dashboard/finance' },
   { icon: ShieldAlert,     label: 'Đối soát',        href: '/dashboard/finance/reconciliation' },
+  { icon: Scale,           label: 'Kế toán sổ cái',   href: '/dashboard/accounting' },
   { icon: Package,         label: 'Kho hàng',        href: '/dashboard/inventory' },
   { icon: Banknote,        label: 'Bảng lương',      href: '/dashboard/salary' },
   { icon: History,         label: 'Nhật ký hệ thống', href: '/dashboard/audit' },
@@ -98,6 +100,7 @@ export function Sidebar() {
               'Dịch vụ': 'services',
               'Tài chính': 'finance',
               'Đối soát': 'reconciliation',
+              'Kế toán sổ cái': 'accounting',
               'Kho hàng': 'inventory',
               'Bảng lương': 'salary',
               'Nhật ký hệ thống': 'audit',
@@ -110,13 +113,13 @@ export function Sidebar() {
           } else {
             // Default fallbacks while loading or if no custom permissions set
             if (user.role === 'ktv') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng'].includes(item.label);
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Kế toán sổ cái'].includes(item.label);
             }
             if (user.role === 'ktv_lead') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng'].includes(item.label);
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng', 'Kế toán sổ cái'].includes(item.label);
             }
             if (user.role === 'admin_staff') {
-              return !['Đối soát', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt'].includes(item.label);
+              return !['Đối soát', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt', 'Kế toán sổ cái'].includes(item.label);
             }
           }
         }

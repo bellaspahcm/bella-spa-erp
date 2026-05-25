@@ -289,7 +289,9 @@ export async function createBooking(formData: any) {
   }
 
   if (validatedData.deposit_amount > 0 && booking?.id) {
-    let { error: revError } = await supabase
+    let insertedRev: { id: string } | null = null;
+
+    let { data: revData, error: revError } = await supabase
       .from('revenue')
       .insert([{
         booking_id: booking.id,
@@ -300,7 +302,11 @@ export async function createBooking(formData: any) {
         status: 'confirmed',
         notes: `Cọc gói ${resolvePackageName(booking)}`,
         tenant_id: tenantId
-      }]);
+      }])
+      .select('id')
+      .single();
+    
+    if (revData) insertedRev = revData;
     
     if (revError) {
       console.warn('Error recording initial deposit revenue with standard client, trying with admin client fallback:', revError);
@@ -311,7 +317,7 @@ export async function createBooking(formData: any) {
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           serviceRoleKey
         );
-        const { error: adminRevError } = await supabaseAdmin
+        const { data: adminRevData, error: adminRevError } = await supabaseAdmin
           .from('revenue')
           .insert([{
             booking_id: booking.id,
@@ -322,13 +328,51 @@ export async function createBooking(formData: any) {
             status: 'confirmed',
             notes: `Cọc gói ${resolvePackageName(booking)}`,
             tenant_id: tenantId
-          }]);
+          }])
+          .select('id')
+          .single();
+        
+        if (adminRevData) insertedRev = adminRevData;
+
         if (adminRevError) {
           console.error('Error recording initial deposit revenue with admin client as well:', adminRevError);
         } else {
           console.log('Successfully recorded initial deposit revenue with admin client fallback');
           revError = null;
         }
+      }
+    }
+
+    // ⭐ Ghi nhận vào hàng đợi Accounting Outbox nếu tạo revenue thành công
+    if (insertedRev?.id) {
+      try {
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const activeClient = (revError === null && serviceRoleKey)
+          ? (() => {
+              const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+              return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
+            })()
+          : supabase;
+
+        const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
+          p_tenant_id: tenantId,
+          p_event_type: 'PACKAGE_SALE',
+          p_reference_type: 'REVENUE',
+          p_reference_id: insertedRev.id,
+          p_payload: {
+            totalAmount: validatedData.deposit_amount,
+            vatRate: 0,
+            description: `Cọc gói ${resolvePackageName(booking)}`,
+            branchId: null
+          }
+        });
+        if (outboxError) {
+          console.error('[createBooking] Failed to enqueue initial deposit accounting outbox event:', outboxError);
+        } else {
+          console.log('[createBooking] Successfully enqueued PACKAGE_SALE event for revenue:', insertedRev.id);
+        }
+      } catch (outboxErr) {
+        console.warn('[createBooking] Exception enqueuing outbox event:', outboxErr);
       }
     }
   }
@@ -723,7 +767,9 @@ export async function recordRemainingPayment(params: {
 
     const tenantId = booking.tenant_id;
 
-    let { error: revError } = await supabase
+    let insertedRev: { id: string; status: string } | null = null;
+
+    let { data: revData, error: revError } = await supabase
       .from('revenue')
       .insert([{
         booking_id: params.booking_id,
@@ -735,7 +781,11 @@ export async function recordRemainingPayment(params: {
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
         receipt_url: params.receipt_url || null,
         tenant_id: tenantId
-      }]);
+      }])
+      .select('id, status')
+      .single();
+
+    if (revData) insertedRev = revData;
 
     if (revError) {
       console.warn('Error recording revenue with standard client, trying with admin client fallback:', revError);
@@ -746,7 +796,7 @@ export async function recordRemainingPayment(params: {
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
           serviceRoleKey
         );
-        const { error: adminRevError } = await supabaseAdmin
+        const { data: adminRevData, error: adminRevError } = await supabaseAdmin
           .from('revenue')
           .insert([{
             booking_id: params.booking_id,
@@ -758,7 +808,12 @@ export async function recordRemainingPayment(params: {
             notes: params.notes || `Thanh toán nốt phần còn lại.`,
             receipt_url: params.receipt_url || null,
             tenant_id: tenantId
-          }]);
+          }])
+          .select('id, status')
+          .single();
+        
+        if (adminRevData) insertedRev = adminRevData;
+
         if (adminRevError) {
           console.error('Error recording revenue with admin client as well:', adminRevError);
           throw new Error('Không thể ghi nhận giao dịch tài chính: ' + adminRevError.message);
@@ -768,6 +823,39 @@ export async function recordRemainingPayment(params: {
         }
       } else {
         throw new Error('Không thể ghi nhận giao dịch tài chính do phân quyền (RLS): ' + revError.message);
+      }
+    }
+
+    // ⭐ Ghi nhận vào hàng đợi Accounting Outbox nếu tạo revenue thành công và đã confirmed
+    if (insertedRev?.id && insertedRev.status === 'confirmed') {
+      try {
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const activeClient = (revError === null && serviceRoleKey)
+          ? (() => {
+              const { createClient: createSupabaseClient } = require('@supabase/supabase-js');
+              return createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey);
+            })()
+          : supabase;
+
+        const { error: outboxError } = await activeClient.rpc('enqueue_accounting_event', {
+          p_tenant_id: tenantId,
+          p_event_type: 'PACKAGE_SALE',
+          p_reference_type: 'REVENUE',
+          p_reference_id: insertedRev.id,
+          p_payload: {
+            totalAmount: params.amount,
+            vatRate: 0,
+            description: params.notes || `Thanh toán nốt phần còn lại.`,
+            branchId: null
+          }
+        });
+        if (outboxError) {
+          console.error('[recordRemainingPayment] Failed to enqueue accounting outbox event:', outboxError);
+        } else {
+          console.log('[recordRemainingPayment] Successfully enqueued PACKAGE_SALE event for remaining payment:', insertedRev.id);
+        }
+      } catch (outboxErr) {
+        console.warn('[recordRemainingPayment] Exception enqueuing outbox event:', outboxErr);
       }
     }
 
