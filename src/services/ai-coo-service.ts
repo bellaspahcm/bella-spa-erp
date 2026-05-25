@@ -253,7 +253,88 @@ export async function runCOOOrchestrator(
     throw logError; // Zero Silent DB Failures
   }
 
-  // Lập báo cáo chiến lược
+  // 5. Nếu có GEMINI_API_KEY, thực hiện gọi Gemini API để phân tích thực tế thông minh
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  let executiveSummary = subAgentResponse?.summary || "Đang xử lý phân tích tổng quan chi nhánh.";
+  let anomaliesFound = subAgentResponse?.anomalies || [];
+  let draftActions = subAgentResponse?.draftProposals || [];
+  let strategicRecommendations = routedTo === "chro" ? [
+    "1. Ban hành quy chế thắt chặt bán kính nhận ca tắm bé (< 5km) cho KTV chi nhánh để tối ưu chi phí di chuyển.",
+    "2. Yêu cầu KTV Lead tổ chức buổi chấn chỉnh ý thức tổ chức kỷ luật và quy trình Check-in GPS đúng vị trí nhà khách.",
+    "3. Kích hoạt tính năng gửi tin nhắn nhắc nhở giải trình tự động qua Telegram/Zalo OA cho các KTV có bất thường cao nhất."
+  ] : [
+    "1. Định kỳ chạy đối soát quỹ đối chiếu với báo cáo doanh thu để kiểm tra sai lệch quỹ kế toán trước ngày 5 hàng tháng.",
+    "2. Thắt chặt kiểm soát các chi phí vận hành biến động (dầu massage, khăn tắm bé hao hụt) của chi nhánh có biên lợi nhuận thấp.",
+    "3. Rà soát lại việc ghi nhận sổ cái cho các khoản chiết khấu dịch vụ của các combo cao cấp."
+  ];
+
+  if (geminiApiKey) {
+    try {
+      console.log("[AI COO Service] Phát hiện GEMINI_API_KEY. Tiến hành gọi Gemini API cho phân tích thông minh...");
+      const prompt = `Bạn là AI COO (Thư ký điều phối vận hành kiêm Trợ lý cấp cao của Tổng Giám Đốc/CEO) của hệ thống Spa cao cấp Bella Spa.
+Nhiệm vụ của bạn là nhận câu lệnh ngôn ngữ tự nhiên của Tổng Giám Đốc, kết hợp với bộ dữ liệu thô vừa truy xuất từ hệ thống ERP chi nhánh để viết báo cáo tóm tắt phân tích sâu sắc, chính xác số liệu và đề xuất các quyết định thực tế.
+
+Thông tin ngữ cảnh:
+- Câu lệnh của Tổng Giám Đốc: "${command}"
+- Bộ trợ lý chuyên môn đang phân tích: ${routedTo === 'chro' ? 'CHRO (Trưởng phòng Nhân sự - Tiền lương)' : 'CFO (Trưởng phòng Tài chính - Kế toán)'}
+- Kỳ báo cáo: ${formattedDate}
+- Dữ liệu thô từ Hệ thống ERP chi nhánh:
+${JSON.stringify(subAgentResponse?.data, null, 2)}
+
+Yêu cầu định dạng phản hồi:
+Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa mã markdown \`\`\`json hay bất kỳ chữ nào ngoài JSON) có cấu trúc chính xác như sau:
+{
+  "executiveSummary": "Đoạn văn tóm tắt điều hành (khoảng 3-4 câu) bằng tiếng Việt cực kỳ chuyên nghiệp gửi đến Tổng Giám Đốc. Hãy phân tích trực tiếp các con số thực tế trong dữ liệu thô (ví dụ: chỉ rõ nhân sự KTV nào vi phạm GPS hay đi muộn ca tắm bé, hoặc báo cáo tài chính lãi lỗ cụ thể bao nhiêu, chênh lệch quỹ tiền mặt của tài khoản nào kế toán cần chú ý). Xưng hô lịch sự 'Tổng Giám Đốc' hoặc 'CEO' và dùng từ ngữ của một COO thực thụ.",
+  "anomaliesFound": [
+    "Mô tả bất thường 1 phát hiện từ số liệu (ví dụ: 'KTV Nguyễn Văn A đi muộn 3 lần trong kỳ công')",
+    "Mô tả bất thường 2 phát hiện từ số liệu..."
+  ],
+  "strategicRecommendations": [
+    "Gợi ý chiến lược 1 (chuỗi ngắn gọn, thực tế và hành động được ngay)",
+    "Gợi ý chiến lược 2 (chuỗi ngắn gọn, thực tế...)",
+    "Gợi ý chiến lược 3 (chuỗi ngắn gọn, thực tế...)"
+  ],
+  "draftActions": [
+    {
+      "type": "${routedTo === 'chro' ? 'attendance_warning' : 'reconciliation_audit'}",
+      "recipient": "Tên đối tượng nhận (tên KTV hoặc bộ phận Kế toán)",
+      "reason": "Lý do chi tiết phát hiện lỗi hoặc chênh lệch cần xử lý",
+      "draftMessage": "Nội dung tin nhắn dự thảo chi tiết để gửi cho đối tượng qua Telegram/Zalo. Cần viết lịch sự nhưng nghiêm túc, chứa số liệu vi phạm hoặc con số chênh lệch cụ thể."
+    }
+  ]
+}`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        })
+      });
+
+      if (response.ok) {
+        const resData = await response.json();
+        const textResponse = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (textResponse) {
+          const parsed = JSON.parse(textResponse);
+          if (parsed.executiveSummary) executiveSummary = parsed.executiveSummary;
+          if (parsed.anomaliesFound) anomaliesFound = parsed.anomaliesFound;
+          if (parsed.strategicRecommendations) strategicRecommendations = parsed.strategicRecommendations;
+          if (parsed.draftActions) draftActions = parsed.draftActions;
+          console.log("[AI COO Service] Gọi Gemini thành công và phân tích số liệu thành công!");
+        }
+      } else {
+        console.error("[AI COO Service] Gọi Gemini API thất bại, HTTP status:", response.status);
+      }
+    } catch (geminiErr) {
+      console.error("[AI COO Service] Lỗi xảy ra trong quá trình gọi hoặc parse dữ liệu Gemini:", geminiErr);
+    }
+  }
+
+  // Lập báo cáo chiến lược tích hợp AI thật
   return {
     status: "success",
     timestamp: new Date().toISOString(),
@@ -262,19 +343,11 @@ export async function runCOOOrchestrator(
     period: `Tháng ${activeDate.getMonth() + 1}/${activeDate.getFullYear()}`,
     routedAgent: routedTo,
     analysis: {
-      executiveSummary: subAgentResponse?.summary || "Đang xử lý phân tích tổng quan chi nhánh.",
-      anomaliesFound: subAgentResponse?.anomalies || [],
+      executiveSummary: executiveSummary,
+      anomaliesFound: anomaliesFound,
       fullData: subAgentResponse?.data || []
     },
-    draftActions: subAgentResponse?.draftProposals || [],
-    strategicRecommendations: routedTo === "chro" ? [
-      "1. Ban hành quy chế thắt chặt bán kính nhận ca tắm bé (< 5km) cho KTV chi nhánh để tối ưu chi phí di chuyển.",
-      "2. Yêu cầu KTV Lead tổ chức buổi chấn chỉnh ý thức tổ chức kỷ luật và quy trình Check-in GPS đúng vị trí nhà khách.",
-      "3. Kích hoạt tính năng gửi tin nhắn nhắc nhở giải trình tự động qua Telegram/Zalo OA cho các KTV có bất thường cao nhất."
-    ] : [
-      "1. Định kỳ chạy đối soát quỹ đối chiếu với báo cáo doanh thu để kiểm tra sai lệch quỹ kế toán trước ngày 5 hàng tháng.",
-      "2. Thắt chặt kiểm soát các chi phí vận hành biến động (dầu massage, khăn tắm bé hao hụt) của chi nhánh có biên lợi nhuận thấp.",
-      "3. Rà soát lại việc ghi nhận sổ cái cho các khoản chiết khấu dịch vụ của các combo cao cấp."
-    ]
+    draftActions: draftActions,
+    strategicRecommendations: strategicRecommendations
   };
 }
