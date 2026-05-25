@@ -1,6 +1,6 @@
 # Ngữ cảnh dự án (Agent Context): BELLA SPA ERP
 
-> **Thời gian cập nhật gần nhất**: 2026-05-25 (Phase 26-28 Accounting Core Completed)
+> **Thời gian cập nhật gần nhất**: 2026-05-26 (AI Copilot & Calculation Logic Hardened)
 > **Tự động tạo**: Được tạo bởi `prepare_context.py` nhằm giúp AI Agent nhanh chóng nắm bắt bức tranh toàn cảnh dự án
 
 ---
@@ -330,9 +330,14 @@ BELLA SPA ERP/
 * _(Chưa có file `.auto-skill-local.md`, các kinh nghiệm thực chiến dự án sẽ tự động tích lũy trong quá trình phát triển)_
 
 ## 🚦 5. Tiến độ hiện tại & Việc cần làm (Current Status & TODO)
-_(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-25)_
+_(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-26)_
 
-### ✅ Vừa hoàn tất (2026-05-25)
+### ✅ Vừa hoàn tất (2026-05-26)
+- [x] **Chuẩn hóa Bella AI ERP Multi-Agent**:
+  - Vá lỗi tính toán `onTimeRate` tránh bị trừ muộn hai lần (double-penalty).
+  - Tạo migration database `20260526040000_fix_attendance_logic.sql` tự động fallback `total_shifts` sang tổng chấm công thực tế khi bảng ca lịch trống (sửa triệt để hiển thị sai của KTV Nguyễn Thị Hoa).
+  - Loại bỏ hoàn toàn casting bypass `(supabase as any)` trong `ai-coo-service.ts` bằng việc cập nhật thuộc tính `gemini_api_key: string | null` của bảng `ai_agent_configs` tại file lược đồ kiểu tĩnh `database.types.ts`.
+  - Toàn bộ **171/171 unit tests pass 100%**, push thành công lên `main` branch và deploy lên Vercel.
 - [x] **Security Audit Enterprise**: 2 Critical + 6 High + 6 Medium vulnerabilities đã vá theo OWASP Top 10 / SANS Top 25.
 - [x] **Đổi Supabase API Keys** sang format `sb_secret_*` mới, revoke key cũ JWT format.
 - [x] **HTTP Security Headers** trong `next.config.ts`: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Permissions-Policy.
@@ -342,10 +347,11 @@ _(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-25)_
 - [x] **Phase 29.1 + 29.4 Period Closing + Compliance**: `generate_closing_entries()` tự tạo 3 bút toán 5xx→911→421, trigger DB chặn ghi vào period CLOSED, cascade lock revenue/expenses/salary, UI 2-bước modal premium + audit log trigger tự ghi mọi POSTED entry vào audit_logs + 10 tests.
 - [x] **Phase 29.2 Cash Flow Statement**: `get_cash_flow_statement()` indirect method chuẩn TT133 (Operating + Investing + Financing) với verification cross-check + UI tab CFS + Excel export + 7 tests.
 - [x] **Phase 29.3 Multi-branch HQ View**: `get_consolidated_pnl()` HQ-only function (gate `is_hq_super_admin()`) trả về 14-indicator P&L per branch + 3 KPIs phụ + trang `/hq/financial-overview` với Recharts BarChart top-10 + bảng xếp hạng 🥇🥈🥉 + 7 tests. Có hotfix `#variable_conflict use_column` cho PL/pgSQL ambiguity.
-- [x] **Tổng Jest tests**: **51/51 pass** trong 1.36s (6 suites). TypeScript build 100% sạch.
 
 ### 🚧 Việc cần làm tiếp theo
-- [ ] **Cấu hình Vercel Cron Job** kích hoạt `/api/cron/accounting-worker` mỗi 1 phút (hoặc Supabase pg_cron) để worker tự chạy nền.
+- [ ] **Tích hợp chatbot thực tế:** Cấu hình Telegram Bot thật của chi nhánh và đăng ký webhook url `/api/v1/ai/telegram-webhook` để chạy thử nghiệm UAT hội thoại thực tế.
+- [ ] **Bật Daily Autopilot Cron:** Bật Cron trigger chạy ngầm lúc 22:00 cho endpoint `/api/cron/ai-autopilot` thông qua Vercel Cron Jobs hoặc pg_cron.
+- [ ] **Cấu hình Vercel Cron Job** cho kế toán: kích hoạt `/api/cron/accounting-worker` mỗi 1 phút (hoặc Supabase pg_cron) để worker tự chạy nền.
 - [ ] **Theo dõi metrics outbox health** trong tuần đầu sau deploy (số PENDING/FAILED/DEAD theo ngày qua dashboard `/dashboard/accounting/outbox`).
 - [ ] **Thu thập phản hồi từ kế toán thực tế** về 5 báo cáo TT133 (Trial Balance, P&L, Balance Sheet, Cash Flow, Account Ledger) — có cần điều chỉnh format hay thêm chỉ tiêu nào không.
 - [ ] **Phase 29.5 — Migration Finance UI cũ → Ledger** (cuối Phase 29):
