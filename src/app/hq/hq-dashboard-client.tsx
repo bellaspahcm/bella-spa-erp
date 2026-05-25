@@ -39,7 +39,8 @@ import {
   Send,
   Package,
   Eye,
-  Check
+  Check,
+  PieChart
 } from 'lucide-react';
 import { toggleTenantStatus, getHqDashboardStats, getAllTenants } from '@/services/hq-actions';
 import { 
@@ -1396,8 +1397,17 @@ export default function HqDashboardClient({
             </div>
           </div>
 
+          {/* Phase 29.3 — Multi-branch Financial Overview */}
+          <a
+            href="/hq/financial-overview"
+            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-full shadow-md hover:shadow-emerald-100 transition-all active:scale-95 cursor-pointer"
+          >
+            <PieChart size={12} />
+            Tổng quan Tài chính
+          </a>
+
           {/* Sign Up Chi Nhánh Button */}
-          <a 
+          <a
             href="/signup"
             className="flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-full shadow-md hover:shadow-rose-100 transition-all active:scale-95 cursor-pointer"
           >

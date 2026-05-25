@@ -198,3 +198,57 @@ export async function toggleTenantStatus(tenantId: string, status: 'active' | 's
 
   return { success: true };
 }
+
+
+// =============================================================================
+// Phase 29.3 — Multi-branch Consolidated P&L (HQ View)
+// =============================================================================
+
+export interface ConsolidatedPnLRow {
+  tenant_id: string;
+  tenant_name: string;
+  gross_revenue: number;
+  deductions: number;
+  net_revenue: number;
+  cost_of_goods_sold: number;
+  gross_profit: number;
+  financial_income: number;
+  financial_expense: number;
+  operating_expense: number;
+  operating_profit: number;
+  other_income: number;
+  other_expense: number;
+  profit_before_tax: number;
+  tax_expense: number;
+  net_profit: number;
+  net_margin_percent: number;
+  total_bookings_count: number;
+  total_sessions_completed: number;
+}
+
+/**
+ * Fetches consolidated P&L across all active tenants in the network.
+ * HQ-only — RPC enforces is_hq_super_admin() server-side.
+ * Returns rows sorted client-side by net_profit DESC for ranking.
+ */
+export async function getConsolidatedPnLReport(
+  fromDate: string,
+  toDate: string
+): Promise<ConsolidatedPnLRow[]> {
+  const auth = await checkHqAuth();
+  if (!auth.authorized) {
+    throw new Error(auth.error || 'Unauthorized: HQ Super Admin access required.');
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('get_consolidated_pnl', {
+    p_from_date: fromDate,
+    p_to_date: toDate,
+  });
+
+  if (error) throw error;
+
+  // Sort by net_profit DESC — best-performing branches first
+  const rows = (data as ConsolidatedPnLRow[]) || [];
+  return rows.sort((a, b) => Number(b.net_profit) - Number(a.net_profit));
+}
