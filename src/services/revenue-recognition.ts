@@ -1,5 +1,5 @@
-import { createClient } from '@/utils/supabase/server';
-import { AccountingEngineService } from './accounting-engine';
+import { createAdminClient } from '@/lib/supabase-admin';
+import { AccountingEngineService, type JournalEntryInput } from './accounting-engine';
 
 export class RevenueRecognitionService {
   /**
@@ -7,7 +7,7 @@ export class RevenueRecognitionService {
    * If not found, it throws an error (COA must be set up properly).
    */
   private static async getAccountByCode(tenantId: string, accountCode: string): Promise<string> {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { data, error } = await supabase
       .from('accounting_accounts')
       .select('id')
@@ -106,7 +106,7 @@ export class RevenueRecognitionService {
       this.getAccountByCode(tenantId, '334'),
     ]);
 
-    const lines: any[] = [];
+    const lines: JournalEntryInput['lines'] = [];
 
     // Entry 1: Revenue Recognition (If it's from a pre-paid package)
     if (earnedRevenueAmount > 0) {
