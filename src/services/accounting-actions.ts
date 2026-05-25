@@ -567,3 +567,34 @@ export async function getCashFlowStatementReport(fromDate: string, toDate: strin
   if (error) throw error;
   return data?.[0] || null;
 }
+
+/**
+ * 17. RPC Report: Reconciliation (Phase 29.5) — Đối soát chéo Legacy vs Ledger
+ * So sánh sum revenue/expenses cũ với sum journal_entries mới, hiển thị diff + status.
+ */
+export interface ReconciliationRow {
+  category: string;
+  category_label: string;
+  legacy_amount: number;
+  ledger_amount: number;
+  diff_amount: number;
+  diff_percent: number;
+  status: 'MATCH' | 'MINOR_DIFF' | 'MAJOR_DIFF';
+}
+
+export async function getReconciliationReport(fromDate: string, toDate: string): Promise<ReconciliationRow[]> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
+    throw new Error('Unauthorized: chỉ admin của chi nhánh mới được xem báo cáo đối soát chéo.');
+  }
+
+  const { data, error } = await supabase.rpc('get_reconciliation_report', {
+    p_tenant_id: user.tenant_id,
+    p_from_date: fromDate,
+    p_to_date: toDate,
+  });
+
+  if (error) throw error;
+  return (data as ReconciliationRow[]) || [];
+}
