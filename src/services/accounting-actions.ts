@@ -583,18 +583,31 @@ export interface ReconciliationRow {
 }
 
 export async function getReconciliationReport(fromDate: string, toDate: string): Promise<ReconciliationRow[]> {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: chỉ admin của chi nhánh mới được xem báo cáo đối soát chéo.');
   }
 
-  const { data, error } = await supabase.rpc('get_reconciliation_report', {
+  // Use admin client (service role) — bypass session/GRANT issues.
+  // Authorization đã được kiểm tra ở JavaScript layer above.
+  const { createClient: createAdmin } = await import('@supabase/supabase-js');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const adminClient = createAdmin(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data, error } = await adminClient.rpc('get_reconciliation_report', {
     p_tenant_id: user.tenant_id,
     p_from_date: fromDate,
     p_to_date: toDate,
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error('[getReconciliationReport] RPC error:', JSON.stringify({
+      message: error.message, code: error.code, details: error.details, hint: error.hint,
+    }, null, 2));
+    throw error;
+  }
   return (data as ReconciliationRow[]) || [];
 }
