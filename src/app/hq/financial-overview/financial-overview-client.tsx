@@ -74,9 +74,11 @@ export default function FinancialOverviewClient({
     return { totalRevenue, totalProfit, totalSessions, totalBookings, networkMargin };
   }, [initialRows]);
 
-  // Chart data — show top 10 branches
+  // Chart data — show active branches (max 10)
   const chartData = useMemo(() => {
-    return initialRows.slice(0, 10).map((r) => ({
+    const activeRows = initialRows.filter(r => Number(r.net_revenue) > 0 || Number(r.net_profit) !== 0);
+    const rowsToUse = activeRows.length > 0 ? activeRows : initialRows;
+    return rowsToUse.slice(0, 10).map((r) => ({
       name: r.tenant_name.length > 18 ? r.tenant_name.slice(0, 16) + '…' : r.tenant_name,
       fullName: r.tenant_name,
       revenue: Number(r.net_revenue) || 0,
@@ -115,26 +117,36 @@ export default function FinancialOverviewClient({
           </div>
 
           {/* Date range filter */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-3 sm:px-4 sm:py-2.5 rounded-2xl shadow-sm w-full sm:w-auto">
-            <div className="flex items-center gap-2 justify-between sm:justify-start">
-              <Calendar className="w-4 h-4 text-primary dark:text-[#A67D44] shrink-0" />
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="px-2 py-1 bg-transparent text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] w-24 sm:w-auto"
-              />
-              <span className="text-3xs text-slate-400">→</span>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="px-2 py-1 bg-transparent text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] w-24 sm:w-auto"
-              />
+          <div className="bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-4 rounded-[2rem] shadow-sm w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-2 justify-between sm:justify-start w-full sm:w-auto">
+              {/* From Date */}
+              <div className="relative flex-1 sm:w-40">
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
+                />
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary dark:text-[#A67D44]" />
+              </div>
+              
+              <span className="text-slate-400 font-bold text-xs shrink-0">→</span>
+              
+              {/* To Date */}
+              <div className="relative flex-1 sm:w-40">
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
+                />
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary dark:text-[#A67D44]" />
+              </div>
             </div>
+
             <button
               onClick={handleApplyDateFilter}
-              className="px-4 py-2 sm:py-1.5 rounded-xl bg-primary text-white text-3xs font-black uppercase tracking-widest hover:bg-primary/90 active:scale-95 cursor-pointer transition-all w-full sm:w-auto text-center shrink-0"
+              className="px-5 py-3 rounded-2xl bg-primary hover:bg-primary-hover text-white text-xs font-black uppercase tracking-widest active:scale-95 cursor-pointer transition-all shadow-lg shadow-pink-100/50 text-center shrink-0 w-full sm:w-auto sm:ml-1"
             >
               Áp dụng
             </button>
@@ -193,7 +205,7 @@ export default function FinancialOverviewClient({
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={chartData} margin={{ top: 20, right: 10, left: -15, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#FFE4E6" className="dark:stroke-[#3E3A35]/30" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#94a3b8" />
                 <YAxis tickFormatter={fmtCompact} tick={{ fontSize: 11 }} stroke="#94a3b8" />
@@ -229,17 +241,17 @@ export default function FinancialOverviewClient({
           {initialRows.length === 0 ? (
             <div className="py-12 text-center text-slate-400 italic">Chưa có chi nhánh nào hoạt động.</div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+            <div className="overflow-x-auto -mx-6 px-6 pb-2">
+              <table className="w-full border-collapse min-w-[800px]">
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
-                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">#</th>
-                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Chi nhánh</th>
-                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Doanh thu thuần</th>
-                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Chi phí QLKD</th>
-                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Lợi nhuận thuần</th>
-                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Biên LN</th>
-                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Số ca hoàn thành</th>
+                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center whitespace-nowrap">#</th>
+                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap">Chi nhánh</th>
+                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">Doanh thu thuần</th>
+                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">Chi phí QLKD</th>
+                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">Lợi nhuận thuần</th>
+                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">Biên LN</th>
+                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">Số ca hoàn thành</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20">
@@ -255,10 +267,10 @@ export default function FinancialOverviewClient({
                         whileHover={{ backgroundColor: 'rgba(244,63,94,0.02)' }}
                         className="transition-colors"
                       >
-                        <td className="px-4 py-4 text-center font-mono font-black text-xs">
+                        <td className="px-4 py-4 text-center font-mono font-black text-xs whitespace-nowrap">
                           {rankIcon ? <span className="text-xl">{rankIcon}</span> : <span className="text-slate-400">{idx + 1}</span>}
                         </td>
-                        <td className="px-4 py-4">
+                        <td className="px-4 py-4 whitespace-nowrap">
                           <Link
                             href={`/hq?selectedBranch=${row.tenant_id}`}
                             className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] hover:text-primary dark:hover:text-[#A67D44] transition-colors"
@@ -269,19 +281,19 @@ export default function FinancialOverviewClient({
                             {row.total_bookings_count || 0} bookings · {row.total_sessions_completed || 0} ca xong
                           </p>
                         </td>
-                        <td className="px-4 py-4 text-right font-mono font-bold text-slate-700 dark:text-[#CDBCAB]">
+                        <td className="px-4 py-4 text-right font-mono font-bold text-slate-700 dark:text-[#CDBCAB] whitespace-nowrap">
                           {fmtVND(row.net_revenue)}
                         </td>
-                        <td className="px-4 py-4 text-right font-mono text-2xs text-rose-500">
+                        <td className="px-4 py-4 text-right font-mono text-2xs text-rose-500 whitespace-nowrap">
                           {fmtVND(row.operating_expense)}
                         </td>
-                        <td className={`px-4 py-4 text-right font-mono font-black ${isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        <td className={`px-4 py-4 text-right font-mono font-black ${isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} whitespace-nowrap`}>
                           {isProfit ? '+' : ''}{fmtVND(profit)}
                         </td>
-                        <td className={`px-4 py-4 text-right font-mono font-bold ${margin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        <td className={`px-4 py-4 text-right font-mono font-bold ${margin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} whitespace-nowrap`}>
                           {margin >= 0 ? '+' : ''}{margin.toFixed(1)}%
                         </td>
-                        <td className="px-4 py-4 text-right font-mono font-bold text-slate-700 dark:text-[#CDBCAB]">
+                        <td className="px-4 py-4 text-right font-mono font-bold text-slate-700 dark:text-[#CDBCAB] whitespace-nowrap">
                           {row.total_sessions_completed || 0}
                         </td>
                       </motion.tr>
@@ -290,23 +302,23 @@ export default function FinancialOverviewClient({
                 </tbody>
                 {/* Footer with totals */}
                 <tfoot>
-                  <tr className="border-t-2 border-slate-200 dark:border-[#3E3A35]/40 bg-slate-50/40 dark:bg-[#11100F]/40 font-black">
-                    <td colSpan={2} className="px-4 py-4 text-xs uppercase tracking-widest text-slate-900 dark:text-[#EFE9E1]">
+                  <tr className="border-t-2 border-slate-200 dark:border-[#3E3A35]/40 bg-slate-50/40 dark:bg-[#11100F]/40 font-black whitespace-nowrap">
+                    <td colSpan={2} className="px-4 py-4 text-xs uppercase tracking-widest text-slate-900 dark:text-[#EFE9E1] whitespace-nowrap">
                       Tổng cộng toàn network
                     </td>
-                    <td className="px-4 py-4 text-right font-mono text-sm text-slate-900 dark:text-[#EFE9E1]">
+                    <td className="px-4 py-4 text-right font-mono text-sm text-slate-900 dark:text-[#EFE9E1] whitespace-nowrap">
                       {fmtVND(aggregates.totalRevenue)}
                     </td>
-                    <td className="px-4 py-4 text-right font-mono text-2xs text-rose-500">
+                    <td className="px-4 py-4 text-right font-mono text-2xs text-rose-500 whitespace-nowrap">
                       {fmtVND(initialRows.reduce((s, r) => s + Number(r.operating_expense || 0), 0))}
                     </td>
-                    <td className={`px-4 py-4 text-right font-mono text-sm ${aggregates.totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    <td className={`px-4 py-4 text-right font-mono text-sm ${aggregates.totalProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} whitespace-nowrap`}>
                       {aggregates.totalProfit >= 0 ? '+' : ''}{fmtVND(aggregates.totalProfit)}
                     </td>
-                    <td className={`px-4 py-4 text-right font-mono text-sm ${aggregates.networkMargin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    <td className={`px-4 py-4 text-right font-mono text-sm ${aggregates.networkMargin >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'} whitespace-nowrap`}>
                       {aggregates.networkMargin.toFixed(1)}%
                     </td>
-                    <td className="px-4 py-4 text-right font-mono text-sm text-slate-900 dark:text-[#EFE9E1]">
+                    <td className="px-4 py-4 text-right font-mono text-sm text-slate-900 dark:text-[#EFE9E1] whitespace-nowrap">
                       {aggregates.totalSessions}
                     </td>
                   </tr>
