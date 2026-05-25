@@ -34,6 +34,16 @@ export default function ServicesPage() {
   const [selectedService, setSelectedService] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 2;
+
+  // Reset page on search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  
   // Form states
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -369,6 +379,16 @@ export default function ServicesPage() {
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const totalPages = Math.ceil(filteredServices.length / pageSize) || 1;
+  const paginatedServices = filteredServices.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, filteredServices.length);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+
   return (
     <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
       {/* Header */}
@@ -415,7 +435,7 @@ export default function ServicesPage() {
 
       {/* Services Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {filteredServices.map((service, idx) => (
+        {paginatedServices.map((service, idx) => (
           <motion.div 
             key={service.id}
             initial={{ opacity: 0, y: 20 }}
@@ -519,6 +539,60 @@ export default function ServicesPage() {
           </motion.div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
+            Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{filteredServices.length}</span> gói dịch vụ
+          </p>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                if (totalPages > 7) {
+                  if (page > 1 && page < totalPages && (page < currentPage - 1 || page > currentPage + 1)) {
+                    if (page === currentPage - 2 || page === currentPage + 2) return <span key={page} className="px-1 text-slate-300">...</span>;
+                    return null;
+                  }
+                }
+                
+                return (
+                  <button 
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={cn(
+                      "w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-90",
+                      currentPage === page 
+                        ? "bg-primary text-white shadow-lg shadow-rose-200" 
+                        : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-300"
+                    )}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button 
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="p-3 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary hover:border-primary/20 disabled:opacity-30 disabled:hover:text-slate-400 disabled:hover:border-slate-100 transition-all active:scale-90 shadow-sm"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {/* Add/Edit Service Modal */}
       <AnimatePresence>

@@ -258,7 +258,7 @@ export default function FinancePage() {
                 <Wallet className="w-6 h-6 text-white" />
               </div>
               <p className="text-sm font-black text-white/90 uppercase tracking-widest mb-2">Số dư hiện tại</p>
-              <h3 className="text-4xl font-black mb-4">{totalBalance.toLocaleString()}đ</h3>
+              <h3 className="text-4xl font-black mb-4 text-white">{totalBalance.toLocaleString()}đ</h3>
               <div className="flex items-center gap-2 text-white/90 font-black text-sm">
                 <TrendingUp className="w-4 h-4" />
                 +12.5% so với tháng trước
@@ -346,12 +346,12 @@ export default function FinancePage() {
               <SkeletonTable />
             </div>
           ) : (
-            <table className="w-full">
+            <table className="w-full min-w-[1000px]">
               <thead>
                 <tr className="text-left bg-slate-50/50">
                   <th 
                     onClick={() => sortData('category')}
-                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors whitespace-nowrap"
                   >
                     <div className="flex items-center gap-2">
                       Danh mục
@@ -360,7 +360,7 @@ export default function FinancePage() {
                   </th>
                   <th 
                     onClick={() => sortData('details')}
-                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors whitespace-nowrap"
                   >
                     <div className="flex items-center gap-2">
                       Chi tiết nghiệp vụ
@@ -369,48 +369,48 @@ export default function FinancePage() {
                   </th>
                   <th 
                     onClick={() => sortData('timestamp')}
-                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors whitespace-nowrap"
                   >
                     <div className="flex items-center gap-2">
                       Ngày
                       {sortConfig?.key === 'timestamp' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                     </div>
                   </th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Phương thức</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Phương thức</th>
                   <th 
                     onClick={() => sortData('amount')}
-                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors"
+                    className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest cursor-pointer hover:text-slate-600 transition-colors whitespace-nowrap"
                   >
                     <div className="flex items-center gap-2">
                       Số tiền
                       {sortConfig?.key === 'amount' && (sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
                     </div>
                   </th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
+                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {currentTransactions.map((tx: any) => (
                   <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
-                     <td className="px-8 py-5">
+                     <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                           tx.type === 'revenue' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
                         }`}>
                           {tx.type === 'revenue' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                         </div>
-                        <span className="font-bold text-slate-900">{tx.category}</span>
+                        <span className="font-bold text-slate-900 whitespace-nowrap">{tx.category}</span>
                       </div>
                     </td>
                     <td className="px-8 py-5">
                       <p className="text-sm font-bold text-slate-700">{tx.details || 'N/A'}</p>
                     </td>
-                    <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.date}</td>
-                    <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.method}</td>
-                    <td className="px-8 py-5 font-black text-slate-900">{tx.amount}</td>
-                    <td className="px-8 py-5">
+                    <td className="px-8 py-5 text-sm font-medium text-slate-500 whitespace-nowrap">{tx.date}</td>
+                    <td className="px-8 py-5 text-sm font-medium text-slate-500 whitespace-nowrap">{tx.method}</td>
+                    <td className="px-8 py-5 font-black text-slate-900 whitespace-nowrap">{tx.amount}</td>
+                    <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${
                           tx.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
                         }`}>
                           {tx.status === 'confirmed' ? 'Đã xác nhận' : 'Đang chờ'}
