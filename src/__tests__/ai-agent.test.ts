@@ -17,6 +17,64 @@ jest.mock("next/headers", () => ({ cookies: jest.fn() }), { virtual: true });
 jest.mock("server-only", () => ({}), { virtual: true });
 jest.mock("@sentry/nextjs", () => ({ captureException: jest.fn() }), { virtual: true });
 
+// Mock global fetch for Gemini API calls
+global.fetch = jest.fn().mockImplementation((url, options) => {
+  let executiveSummary = "Báo cáo tóm tắt phân tích chung.";
+  let anomaliesFound: any[] = [];
+  let strategicRecommendations = ["Khuyến nghị chung"];
+  let draftActions: any[] = [];
+
+  try {
+    if (options && options.body) {
+      const body = JSON.parse(options.body);
+      const promptText = body.contents?.[0]?.parts?.[0]?.text || "";
+      
+      if (promptText.includes("CHRO") || promptText.includes("Nhân sự") || promptText.includes("lương")) {
+        executiveSummary = "Đã hoàn tất phân tích 1 hồ sơ KTV của chi nhánh. Phát hiện 1 trường hợp cần lưu ý kỷ luật lao động hoặc có khấu trừ vi phạm lớn.";
+        anomaliesFound = [{ name: "KTV Hoa", gpsAnomaly: 3, totalSalary: 8250000 }];
+        strategicRecommendations = ["Ban hành quy chế thắt chặt bán kính nhận ca tắm bé (< 5km) cho KTV chi nhánh để tối ưu chi phí di chuyển."];
+        draftActions = [
+          {
+            type: "attendance_warning",
+            recipient: "KTV Hoa",
+            reason: "Bị phạt vi phạm",
+            draftMessage: "Cảnh báo"
+          }
+        ];
+      } else if (promptText.includes("CFO") || promptText.includes("tài chính") || promptText.includes("kế toán")) {
+        executiveSummary = "Báo cáo tóm tắt: Bảng cân đối tài khoản phát sinh hoạt động bình thường.";
+        anomaliesFound = [];
+        strategicRecommendations = ["Định kỳ chạy đối soát quỹ đối chiếu với báo cáo doanh thu để kiểm tra sai lệch quỹ kế toán"];
+        draftActions = [];
+      }
+    }
+  } catch (e) {
+    console.error("Error parsing mock fetch body", e);
+  }
+
+  return Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({
+      candidates: [
+        {
+          content: {
+            parts: [
+              {
+                text: JSON.stringify({
+                  executiveSummary,
+                  anomaliesFound,
+                  strategicRecommendations,
+                  draftActions
+                })
+              }
+            ]
+          }
+        }
+      ]
+    })
+  });
+}) as any;
+
 const mockRpc = jest.fn();
 const mockInsert = jest.fn().mockResolvedValue({ error: null });
 const mockFrom = jest.fn((table?: string) => ({
