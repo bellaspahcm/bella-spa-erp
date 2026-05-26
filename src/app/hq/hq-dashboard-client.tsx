@@ -89,7 +89,7 @@ export default function HqDashboardClient({
 }: HqDashboardClientProps) {
   const [stats, setStats] = useState<HqDashboardStats>(initialStats);
   const [tenants, setTenants] = useState<HqTenantRecord[]>(initialTenants);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+
   const [compareMetric, setCompareMetric] = useState<'revenue' | 'customers'>('revenue');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
@@ -185,457 +185,8 @@ export default function HqDashboardClient({
   const [submittingDistribution, setSubmittingDistribution] = useState(false);
   const [submittingTemplate, setSubmittingTemplate] = useState(false);
 
-  const handleToggleDemo = (enable: boolean) => {
-    if (enable) {
-      setIsDemoMode(true);
-      // Mock stats
-      setStats({
-        totalSpas: 5,
-        activeSpas: 4,
-        suspendedSpas: 1,
-        totalRevenue: 8450000000,
-        totalSessions: 24500,
-        zaloSmsUsed: 942,
-        spaGrowthData: [
-          { month: 'T1', spas: 1 },
-          { month: 'T2', spas: 2 },
-          { month: 'T3', spas: 3 },
-          { month: 'T4', spas: 4 },
-          { month: 'T5', spas: 5 },
-        ]
-      });
-
-      // Mock tenants
-      setTenants([
-        {
-          id: 'tenant-q1',
-          name: 'Bella Spa Quận 1 - Premium',
-          contact_phone: '0902222222',
-          email: 'quan1@bellaspa.vn',
-          status: 'active',
-          logo_url: null,
-          created_at: '2025-01-15T00:00:00Z',
-          updated_at: '2026-05-22T00:00:00Z',
-          address: '150 Lê Thị Riêng, Quận 1, TP.HCM',
-          staffCount: 18,
-          customerCount: 1240,
-          revenueSum: 4800000000,
-          royalty_type: 'percentage',
-          royalty_rate: 5,
-          royalty_fixed_amount: 0,
-          internal_clearing_rate: 150000,
-          subscription_tier: 'enterprise',
-          subscription_expires_at: null,
-          franchise_agreement_date: '2025-01-15T00:00:00Z'
-        },
-        {
-          id: 'tenant-q3',
-          name: 'Bella Spa Quận 3 - Elite',
-          contact_phone: '0903333333',
-          email: 'quan3@bellaspa.vn',
-          status: 'active',
-          logo_url: null,
-          created_at: '2025-03-20T00:00:00Z',
-          updated_at: '2026-05-22T00:00:00Z',
-          address: '240 Cao Thắng, Quận 3, TP.HCM',
-          staffCount: 12,
-          customerCount: 820,
-          revenueSum: 2150000000,
-          royalty_type: 'percentage',
-          royalty_rate: 8,
-          royalty_fixed_amount: 0,
-          internal_clearing_rate: 150050,
-          subscription_tier: 'pro',
-          subscription_expires_at: '2027-12-31T00:00:00Z',
-          franchise_agreement_date: '2025-03-20T00:00:00Z'
-        },
-        {
-          id: 'tenant-thuduc',
-          name: 'Bella Spa Thủ Đức - Family',
-          contact_phone: '0904444444',
-          email: 'thuduc@bellaspa.vn',
-          status: 'active',
-          logo_url: null,
-          created_at: '2025-06-10T00:00:00Z',
-          updated_at: '2026-05-22T00:00:00Z',
-          address: '45 Võ Văn Ngân, Thủ Đức, TP.HCM',
-          staffCount: 10,
-          customerCount: 610,
-          revenueSum: 1500000000,
-          royalty_type: 'fixed',
-          royalty_rate: 0,
-          royalty_fixed_amount: 15000000,
-          internal_clearing_rate: 160000,
-          subscription_tier: 'pro',
-          subscription_expires_at: '2026-12-31T00:00:00Z',
-          franchise_agreement_date: '2025-06-10T00:00:00Z'
-        },
-        {
-          id: 'tenant-danang',
-          name: 'Bella Spa Đà Nẵng - Tourist',
-          contact_phone: '0905555555',
-          email: 'danang@bellaspa.vn',
-          status: 'active',
-          logo_url: null,
-          created_at: '2025-11-01T00:00:00Z',
-          updated_at: '2026-05-22T00:00:00Z',
-          address: '90 Võ Nguyên Giáp, Ngũ Hành Sơn, Đà Nẵng',
-          staffCount: 8,
-          customerCount: 450,
-          revenueSum: 900000000,
-          royalty_type: 'percentage',
-          royalty_rate: 4,
-          royalty_fixed_amount: 0,
-          internal_clearing_rate: 140000,
-          subscription_tier: 'basic',
-          subscription_expires_at: '2026-11-01T00:00:00Z',
-          franchise_agreement_date: '2025-11-01T00:00:00Z'
-        },
-        {
-          id: 'tenant-cantho',
-          name: 'Bella Spa Cần Thơ - Mekong',
-          contact_phone: '0906666666',
-          email: 'cantho@bellaspa.vn',
-          status: 'suspended',
-          logo_url: null,
-          created_at: '2026-05-01T00:00:00Z',
-          updated_at: '2026-05-22T00:00:00Z',
-          address: '120 Nguyễn Văn Cừ, Ninh Kiều, Cần Thơ',
-          staffCount: 5,
-          customerCount: 150,
-          revenueSum: 150000000,
-          royalty_type: 'percentage',
-          royalty_rate: 5,
-          royalty_fixed_amount: 0,
-          internal_clearing_rate: 150000,
-          subscription_tier: 'free_trial',
-          subscription_expires_at: '2026-06-01T00:00:00Z',
-          franchise_agreement_date: '2026-05-01T00:00:00Z'
-        }
-      ]);
-
-      // Mock Royalty invoices
-      setInvoices([
-        {
-          id: 'inv-demo-1',
-          tenant_id: 'tenant-q1',
-          invoice_number: 'FR-202604-001',
-          month_year: '2026-04',
-          gross_revenue: 1200000000,
-          calculated_amount: 60000000,
-          royalty_type: 'percentage',
-          royalty_rate: 5,
-          royalty_fixed_amount: 0,
-          status: 'paid',
-          created_at: '2026-05-01T00:00:00Z',
-          paid_at: '2026-05-05T10:00:00Z',
-          payment_method: 'VietQR Webhook',
-          notes: 'Đã gạch nợ thành công qua VietQR Webhook',
-          tenants: { id: 'tenant-q1', name: 'Bella Spa Quận 1 - Premium' }
-        },
-        {
-          id: 'inv-demo-2',
-          tenant_id: 'tenant-q3',
-          invoice_number: 'FR-202604-002',
-          month_year: '2026-04',
-          gross_revenue: 850000000,
-          calculated_amount: 68000000,
-          royalty_type: 'percentage',
-          royalty_rate: 8,
-          royalty_fixed_amount: 0,
-          status: 'pending',
-          created_at: '2026-05-01T00:00:00Z',
-          paid_at: null,
-          payment_method: null,
-          notes: null,
-          tenants: { id: 'tenant-q3', name: 'Bella Spa Quận 3 - Elite' }
-        },
-        {
-          id: 'inv-demo-3',
-          tenant_id: 'tenant-thuduc',
-          invoice_number: 'FR-202604-003',
-          month_year: '2026-04',
-          gross_revenue: 600000000,
-          calculated_amount: 15000000,
-          royalty_type: 'fixed',
-          royalty_rate: 0,
-          royalty_fixed_amount: 15000000,
-          status: 'pending',
-          created_at: '2026-05-01T00:00:00Z',
-          paid_at: null,
-          payment_method: null,
-          notes: null,
-          tenants: { id: 'tenant-thuduc', name: 'Bella Spa Thủ Đức - Family' }
-        }
-      ]);
-
-      // Mock clearing records
-      setClearingRecords([
-        {
-          id: 'clear-demo-1',
-          clearing_number: 'CLR-202605-001',
-          month_year: '2026-05',
-          debtor_tenant_id: 'tenant-q1',
-          creditor_tenant_id: 'tenant-thuduc',
-          session_count: 8,
-          clearing_rate: 150000,
-          calculated_amount: 1200000,
-          status: 'cleared',
-          created_at: '2026-05-18T14:00:00Z',
-          cleared_at: '2026-05-20T08:30:00Z',
-          payment_method: 'HQ Auto',
-          notes: 'Tự động tổng hợp đối soát bù trừ',
-          debtor: { id: 'tenant-q1', name: 'Bella Spa Quận 1 - Premium' },
-          creditor: { id: 'tenant-thuduc', name: 'Bella Spa Thủ Đức - Family' }
-        },
-        {
-          id: 'clear-demo-2',
-          clearing_number: 'CLR-202605-002',
-          month_year: '2026-05',
-          debtor_tenant_id: 'tenant-q3',
-          creditor_tenant_id: 'tenant-thuduc',
-          session_count: 5,
-          clearing_rate: 150000,
-          calculated_amount: 750000,
-          status: 'pending',
-          created_at: '2026-05-21T09:30:00Z',
-          cleared_at: null,
-          payment_method: null,
-          notes: null,
-          debtor: { id: 'tenant-q3', name: 'Bella Spa Quận 3 - Elite' },
-          creditor: { id: 'tenant-thuduc', name: 'Bella Spa Thủ Đức - Family' }
-        },
-        {
-          id: 'clear-demo-3',
-          clearing_number: 'CLR-202605-003',
-          month_year: '2026-05',
-          debtor_tenant_id: 'tenant-q1',
-          creditor_tenant_id: 'tenant-danang',
-          session_count: 3,
-          clearing_rate: 140000,
-          calculated_amount: 420000,
-          status: 'pending',
-          created_at: '2026-05-22T10:00:00Z',
-          cleared_at: null,
-          payment_method: null,
-          notes: null,
-          debtor: { id: 'tenant-q1', name: 'Bella Spa Quận 1 - Premium' },
-          creditor: { id: 'tenant-danang', name: 'Bella Spa Đà Nẵng - Tourist' }
-        }
-      ]);
-
-      // Mock transfer orders
-      setTransferOrders([
-        {
-          id: 'tr-demo-1',
-          order_number: 'TO-202605-001',
-          requester_tenant_id: 'tenant-danang',
-          status: 'pending',
-          shipping_carrier: null,
-          tracking_number: null,
-          notes: 'Xin cấp khẩn cấp dầu massage Lavender chuẩn bị mùa du lịch hè',
-          rejection_reason: null,
-          created_at: '2026-05-20T09:00:00Z',
-          updated_at: '2026-05-20T09:00:00Z',
-          approved_at: null,
-          shipped_at: null,
-          completed_at: null,
-          cancelled_at: null,
-          requester: { id: 'tenant-danang', name: 'Bella Spa Đà Nẵng - Tourist' },
-          items: [
-            { name: 'Dầu massage Lavender 500ml', sku: 'SKU-LAV-500', qty: 50, unit: 'chai' },
-            { name: 'Khăn cotton cao cấp', sku: 'SKU-COT-TOWEL', qty: 100, unit: 'cái' }
-          ]
-        },
-        {
-          id: 'tr-demo-2',
-          order_number: 'TO-202605-002',
-          requester_tenant_id: 'tenant-thuduc',
-          status: 'shipped',
-          shipping_carrier: 'Giao Hàng Nhanh (GHN)',
-          tracking_number: 'GHN884210953',
-          notes: 'Cấp bù vật tư định kỳ tháng 5',
-          rejection_reason: null,
-          created_at: '2026-05-18T14:30:00Z',
-          updated_at: '2026-05-19T10:00:00Z',
-          approved_at: '2026-05-19T09:00:00Z',
-          shipped_at: '2026-05-19T10:00:00Z',
-          completed_at: null,
-          cancelled_at: null,
-          requester: { id: 'tenant-thuduc', name: 'Bella Spa Thủ Đức - Family' },
-          items: [
-            { name: 'Tinh dầu sả chanh 100ml', sku: 'SKU-LEM-100', qty: 20, unit: 'chai' },
-            { name: 'Nước xịt sát khuẩn tay', sku: 'SKU-SAN-HAND', qty: 30, unit: 'chai' }
-          ]
-        },
-        {
-          id: 'tr-demo-3',
-          order_number: 'TO-202605-003',
-          requester_tenant_id: 'tenant-q3',
-          status: 'completed',
-          shipping_carrier: 'Viettel Post',
-          tracking_number: 'VTP99382109',
-          notes: 'Cấp bù vật tư đợt khai trương phòng xông hơi mới',
-          rejection_reason: null,
-          created_at: '2026-05-15T08:00:00Z',
-          updated_at: '2026-05-17T15:00:00Z',
-          approved_at: '2026-05-16T08:00:00Z',
-          shipped_at: '2026-05-16T09:00:00Z',
-          completed_at: '2026-05-17T15:00:00Z',
-          cancelled_at: null,
-          requester: { id: 'tenant-q3', name: 'Bella Spa Quận 3 - Elite' },
-          items: [
-            { name: 'Muối khoáng Himalaya 1kg', sku: 'SKU-HIM-SALT', qty: 10, unit: 'túi' }
-          ]
-        }
-      ]);
-
-      // Mock audit logs
-      setAuditLogs([
-        {
-          id: 'log-demo-1',
-          tenant_name: 'Bella Spa Quận 1 - Premium',
-          user_name: 'Admin Q1 (Nguyễn Hồng)',
-          changed_by_id: 'user-demo-1',
-          action: 'UPDATE',
-          table_name: 'bookings',
-          record_id: 'bk-202',
-          old_data: { status: 'booked' },
-          new_data: { status: 'confirmed', note: 'Đối soát QR động Casso thành công' },
-          tenant_id: 'tenant-q1',
-          created_at: new Date(Date.now() - 5 * 60000).toISOString()
-        },
-        {
-          id: 'log-demo-2',
-          tenant_name: 'Bella Spa Thủ Đức - Family',
-          user_name: 'KTV Trưởng (Lê Hạnh)',
-          changed_by_id: 'user-demo-2',
-          action: 'INSERT',
-          table_name: 'attendance',
-          record_id: 'att-998',
-          old_data: null,
-          new_data: { ktv_id: 'ktv-4', check_in_time: '2026-05-22T08:00:00Z', status: 'present' },
-          tenant_id: 'tenant-thuduc',
-          created_at: new Date(Date.now() - 15 * 60000).toISOString()
-        },
-        {
-          id: 'log-demo-3',
-          tenant_name: 'Bella Spa Quận 3 - Elite',
-          user_name: 'HQ Super Admin',
-          changed_by_id: 'user-demo-3',
-          action: 'UPDATE',
-          table_name: 'franchise_agreements',
-          record_id: 'fa-q3',
-          old_data: { royalty_rate: 6 },
-          new_data: { royalty_rate: 8, reason: 'Điều chỉnh theo quy mô chi nhánh' },
-          tenant_id: 'tenant-q3',
-          created_at: new Date(Date.now() - 60 * 60000).toISOString()
-        }
-      ]);
-
-      // Mock templates
-      setTemplates([
-        {
-          id: 'tpl-demo-1',
-          name: 'Liệu trình Bầu Rạng Rỡ 10 buổi',
-          price: 5500000,
-          duration: '90 phút/buổi',
-          total_sessions: 10,
-          ktv_commission: 150000,
-          price_floor: 4500000,
-          price_cap: 6500000,
-          allowed_franchise_override: true,
-          details: ['Massage bầu chuyên sâu', 'Thảo dược ngâm chân', 'Mặt nạ thiên nhiên'],
-          offer: 'Tặng 1 buổi chăm sóc da mặt miễn phí',
-          is_hq_template: true,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'tpl-demo-2',
-          name: 'Liệu trình Bé Khỏe Bé Ngoan 5 buổi',
-          price: 1800000,
-          duration: '60 phút/buổi',
-          total_sessions: 5,
-          ktv_commission: 80000,
-          price_floor: 1500000,
-          price_cap: 2200000,
-          allowed_franchise_override: false,
-          details: ['Tắm bé chuẩn y khoa', 'Massage kích thích vận động', 'Chăm sóc rốn'],
-          offer: 'Tặng bộ sữa tắm thảo dược',
-          is_hq_template: true,
-          created_at: new Date().toISOString()
-        }
-      ]);
-
-      setDistributedList([
-        {
-          id: 'dist-demo-1',
-          name: 'Liệu trình Bầu Rạng Rỡ 10 buổi',
-          price: 5500000,
-          tenant_id: 'tenant-q1',
-          tenant_name: 'Bella Spa Quận 1 - Premium',
-          template_id: 'tpl-demo-1',
-          status: 'active'
-        },
-        {
-          id: 'dist-demo-2',
-          name: 'Liệu trình Bầu Rạng Rỡ 10 buổi',
-          price: 5800000,
-          tenant_id: 'tenant-q3',
-          tenant_name: 'Bella Spa Quận 3 - Elite',
-          template_id: 'tpl-demo-1',
-          status: 'active'
-        },
-        {
-          id: 'dist-demo-3',
-          name: 'Liệu trình Bé Khỏe Bé Ngoan 5 buổi',
-          price: 1800000,
-          tenant_id: 'tenant-thuduc',
-          tenant_name: 'Bella Spa Thủ Đức - Family',
-          template_id: 'tpl-demo-2',
-          status: 'active'
-        }
-      ]);
-
-      setAuditTables(['bookings', 'attendance', 'franchise_agreements', 'inventory_transfers']);
-      setAuditUsers([
-        { id: 'usr-1', name: 'Admin Q1 (Nguyễn Hồng)' },
-        { id: 'usr-2', name: 'KTV Trưởng (Lê Hạnh)' },
-        { id: 'usr-3', name: 'HQ Super Admin' }
-      ]);
-
-      toast.success('Đã kích hoạt CHẾ ĐỘ DEMO mô phỏng chuỗi! Dữ liệu ảo được tải an toàn và cách ly.');
-    } else {
-      setIsDemoMode(false);
-      setStats(initialStats);
-      setTenants(initialTenants);
-      setInvoices([]);
-      setClearingRecords([]);
-      setTransferOrders([]);
-      setAuditLogs([]);
-      setTemplates([]);
-      setDistributedList([]);
-      toast.success('Đã tắt Chế độ Demo. Đang nạp lại dữ liệu thực tế từ cơ sở dữ liệu...');
-      // Reload actual db data
-      setTimeout(() => {
-        setLoading(true);
-        getHqDashboardStats()
-          .then(freshStats => setStats(freshStats as HqDashboardStats))
-          .catch(() => {});
-        getAllTenants()
-          .then(freshTenants => setTenants(freshTenants as unknown as HqTenantRecord[]))
-          .catch(() => {})
-          .finally(() => setLoading(false));
-      }, 500);
-    }
-  };
-
   // Sync data manually
   const refreshData = async () => {
-    if (isDemoMode) {
-      toast.info('Bạn đang ở chế độ Demo mô phỏng. Vui lòng tắt chế độ Demo để nạp dữ liệu thực tế.');
-      return;
-    }
     setLoading(true);
     try {
       const freshStats = await getHqDashboardStats() as HqDashboardStats;
@@ -665,7 +216,6 @@ export default function HqDashboardClient({
   };
 
   const loadRoyaltyData = async () => {
-    if (isDemoMode) return;
     setLoadingRoyalty(true);
     try {
       const data = await getFranchiseRoyaltyInvoices();
@@ -678,7 +228,6 @@ export default function HqDashboardClient({
   };
 
   const loadClearingData = async () => {
-    if (isDemoMode) return;
     setLoadingClearing(true);
     try {
       const data = await getInterBranchClearingRecords();
@@ -691,7 +240,6 @@ export default function HqDashboardClient({
   };
 
   const loadTransferData = async () => {
-    if (isDemoMode) return;
     setLoadingTransfers(true);
     try {
       const data = await getInventoryTransferOrders();
@@ -704,7 +252,6 @@ export default function HqDashboardClient({
   };
 
   const loadAuditData = async (page: number = 1) => {
-    if (isDemoMode) return;
     setLoadingAudit(true);
     try {
       const logs = await getHqAuditLogs({
@@ -756,22 +303,6 @@ export default function HqDashboardClient({
       return;
     }
 
-    if (isDemoMode) {
-      toast.success(`Đã duyệt và giao hàng thành công đơn ${selectedTransfer.order_number} (Demo Mode)!`);
-      setTransferOrders(prev => prev.map(to => 
-        to.id === selectedTransfer.id ? { 
-          ...to, 
-          status: 'shipped', 
-          shipping_carrier: shippingCarrier, 
-          tracking_number: trackingNumber,
-          shipped_at: new Date().toISOString()
-        } : to
-      ));
-      setShowShipModal(false);
-      setSelectedTransfer(null);
-      return;
-    }
-
     setSubmittingTransferAction(true);
     try {
       const res = await approveAndShipTransfer(selectedTransfer.id, shippingCarrier, trackingNumber);
@@ -794,20 +325,6 @@ export default function HqDashboardClient({
     e.preventDefault();
     if (!selectedTransfer) return;
 
-    if (isDemoMode) {
-      toast.success(`Đã từ chối cấp hàng cho đơn ${selectedTransfer.order_number} (Demo Mode)`);
-      setTransferOrders(prev => prev.map(to => 
-        to.id === selectedTransfer.id ? { 
-          ...to, 
-          status: 'cancelled', 
-          rejection_reason: refusingReason || 'Tổng bộ từ chối cấp hàng'
-        } : to
-      ));
-      setShowCancelModal(false);
-      setSelectedTransfer(null);
-      return;
-    }
-
     setSubmittingTransferAction(true);
     try {
       const res = await cancelTransferOrder(selectedTransfer.id, refusingReason || 'Tổng bộ từ chối cấp hàng');
@@ -829,14 +346,6 @@ export default function HqDashboardClient({
   const handleClearRecord = async (recordId: string, clearingNumber: string) => {
     if (!window.confirm(`Xác nhận GẠCH NỢ nội bộ cho đối soát ${clearingNumber}? Hành động này sẽ chuyển trạng thái sang Đã thanh toán.`)) return;
     
-    if (isDemoMode) {
-      toast.success(`Đã gạch nợ đối soát ${clearingNumber} thành công (Demo Mode)!`);
-      setClearingRecords(prev => prev.map(cr => 
-        cr.id === recordId ? { ...cr, status: 'cleared', cleared_at: new Date().toISOString(), payment_method: 'HQ Manual (Demo)' } : cr
-      ));
-      return;
-    }
-
     try {
       const res = await clearInterBranchRecord(recordId, 'HQ Manual');
       if (res.success) {
@@ -861,15 +370,6 @@ export default function HqDashboardClient({
 
     const rateNum = parseFloat(newClearingRate) || 0;
 
-    if (isDemoMode) {
-      toast.success(`Đã cấu hình đơn giá đối soát bù trừ nội bộ cho ${editingClearingRateTenant.name} (Demo Mode)!`);
-      setTenants(prev => prev.map(t => 
-        t.id === editingClearingRateTenant.id ? { ...t, internal_clearing_rate: rateNum } : t
-      ));
-      setEditingClearingRateTenant(null);
-      return;
-    }
-
     setSubmittingClearingRate(true);
     try {
       const res = await updateTenantClearingRate(editingClearingRateTenant.id, rateNum);
@@ -890,7 +390,6 @@ export default function HqDashboardClient({
 
   // Standard Service & Templates loaders & handlers (Phase 2)
   const loadServicesData = async () => {
-    if (isDemoMode) return;
     setLoadingServices(true);
     try {
       const tList = await getHqPackageTemplates();
@@ -963,26 +462,6 @@ export default function HqDashboardClient({
       offer: templateOffer || null
     };
 
-    if (isDemoMode) {
-      if (editingTemplate) {
-        toast.success(`Đã cập nhật liệu trình chuẩn ${templateName} thành công (Demo Mode)!`);
-        setTemplates(prev => prev.map(t => 
-          t.id === editingTemplate.id ? { ...t, ...data } : t
-        ));
-      } else {
-        toast.success(`Đã thêm mới liệu trình chuẩn ${templateName} thành công (Demo Mode)!`);
-        const newTpl: HqPackageTemplate = {
-          id: 'tpl-demo-' + Math.random().toString(36).substr(2, 9),
-          ...data,
-          is_hq_template: true,
-          created_at: new Date().toISOString()
-        };
-        setTemplates(prev => [newTpl, ...prev]);
-      }
-      setShowTemplateModal(false);
-      return;
-    }
-
     setSubmittingTemplate(true);
     try {
       if (editingTemplate) {
@@ -1014,12 +493,6 @@ export default function HqDashboardClient({
   const handleDeleteTemplate = async (id: string, name: string) => {
     if (!window.confirm(`Bạn có chắc chắn muốn xóa liệu trình chuẩn "${name}"? Hành động này sẽ chỉ xóa gói mẫu tại HQ và không tự động xóa các gói đã phân phối ở chi nhánh con để tránh mất dữ liệu vận hành.`)) return;
     
-    if (isDemoMode) {
-      toast.success(`Đã xóa liệu trình chuẩn ${name} thành công (Demo Mode)!`);
-      setTemplates(prev => prev.filter(t => t.id !== id));
-      return;
-    }
-
     try {
       const res = await deleteHqPackageTemplate(id);
       if (res.success) {
@@ -1044,26 +517,6 @@ export default function HqDashboardClient({
     if (!selectedTemplateForDist) return;
     if (selectedTenantIds.length === 0) {
       toast.error('Vui lòng chọn ít nhất một chi nhánh để phân phối');
-      return;
-    }
-
-    if (isDemoMode) {
-      toast.success(`Đã phân phối liệu trình "${selectedTemplateForDist.name}" đến ${selectedTenantIds.length} chi nhánh thành công (Demo Mode)!`);
-      const newDists = selectedTenantIds.map(tid => {
-        const targetTenant = tenants.find(t => t.id === tid);
-        return {
-          id: 'dist-demo-' + Math.random().toString(36).substr(2, 9),
-          name: selectedTemplateForDist.name,
-          price: selectedTemplateForDist.price,
-          tenant_id: tid,
-          tenant_name: targetTenant ? targetTenant.name : 'Unknown Branch',
-          template_id: selectedTemplateForDist.id,
-          status: 'active'
-        };
-      });
-      setDistributedList(prev => [...newDists, ...prev]);
-      setShowDistributionModal(false);
-      setSelectedTenantIds([]);
       return;
     }
 
@@ -1149,23 +602,6 @@ export default function HqDashboardClient({
 
     if (!window.confirm(confirmMsg)) return;
 
-    if (isDemoMode) {
-      toast.success(newStatus === 'suspended' ? 'Đã khóa chi nhánh thành công (Demo Mode)!' : 'Đã mở khóa chi nhánh thành công (Demo Mode)!');
-      
-      // Update local state instantly
-      setTenants(prev => prev.map(t => 
-        t.id === tenantId ? { ...t, status: newStatus } : t
-      ));
-      
-      // Refresh mock stats
-      setStats(prev => ({
-        ...prev,
-        activeSpas: newStatus === 'active' ? prev.activeSpas + 1 : prev.activeSpas - 1,
-        suspendedSpas: newStatus === 'suspended' ? prev.suspendedSpas + 1 : prev.suspendedSpas - 1
-      }));
-      return;
-    }
-
     setUpdatingId(tenantId);
     try {
       const res = await toggleTenantStatus(tenantId, newStatus);
@@ -1205,20 +641,6 @@ export default function HqDashboardClient({
     const rateNum = parseFloat(royaltyRate) || 0;
     const amountNum = parseFloat(royaltyFixedAmount) || 0;
 
-    if (isDemoMode) {
-      toast.success(`Đã cấu hình chính sách phí nhượng quyền cho ${editingTenant.name} (Demo Mode)!`);
-      setTenants(prev => prev.map(t => 
-        t.id === editingTenant.id ? { 
-          ...t, 
-          royalty_type: royaltyType, 
-          royalty_rate: rateNum, 
-          royalty_fixed_amount: amountNum 
-        } : t
-      ));
-      setEditingTenant(null);
-      return;
-    }
-
     setSubmittingConfig(true);
     try {
       const res = await updateFranchiseRoyaltyConfig(
@@ -1248,20 +670,6 @@ export default function HqDashboardClient({
   const handleReconcileInvoice = async (invoiceNumber: string) => {
     if (!window.confirm(`Xác nhận DUYỆT THANH TOÁN (đối soát tiền mặt/chuyển khoản thủ công) cho hóa đơn nhượng quyền ${invoiceNumber}?`)) return;
     
-    if (isDemoMode) {
-      toast.success(`Hóa đơn ${invoiceNumber} đã được gạch nợ thành công (Demo Mode)!`);
-      setInvoices(prev => prev.map(inv => 
-        inv.invoice_number === invoiceNumber ? { 
-          ...inv, 
-          status: 'paid', 
-          paid_at: new Date().toISOString(), 
-          payment_method: 'HQ Reconciled (Demo)',
-          notes: 'Đã gạch nợ thủ công bởi Trụ sở (Demo)'
-        } : inv
-      ));
-      return;
-    }
-
     setLoadingRoyalty(true);
     try {
       const res = await payFranchiseRoyaltyInvoice(invoiceNumber, 'HQ Reconciled');
@@ -1385,77 +793,68 @@ export default function HqDashboardClient({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* Active Admin Profile */}
-          <div className="flex items-center gap-3 bg-white/90 border border-slate-100 rounded-full py-1.5 pl-3 pr-4 shadow-sm">
-            <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center font-black text-xs text-primary">
+          <div className="flex items-center gap-2 bg-white/90 border border-slate-100 rounded-full py-1 pl-2 pr-3 shadow-sm">
+            <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center font-black text-[10px] text-primary">
               {currentUser.full_name?.charAt(0) || 'A'}
             </div>
             <div className="text-left leading-none">
-              <p className="text-[11px] font-black text-slate-800">{currentUser.full_name || 'Super Admin'}</p>
-              <span className="text-[8px] font-black text-primary uppercase tracking-widest">Cấp cao</span>
+              <p className="text-[10px] font-black text-slate-800 truncate max-w-[100px]">{currentUser.full_name || 'Super Admin'}</p>
+              <span className="text-[7px] font-black text-primary uppercase tracking-widest">Cấp cao</span>
             </div>
           </div>
 
-          {/* Phase 29.3 — Multi-branch Financial Overview */}
-          <a
-            href="/hq/financial-overview"
-            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-full shadow-md hover:shadow-emerald-100 transition-all active:scale-95 cursor-pointer"
-          >
-            <PieChart size={12} />
-            Tổng quan Tài chính
-          </a>
+          {/* Compact Action Buttons — 2 per row grid */}
+          <div className="grid grid-cols-2 gap-1.5">
+            <a
+              href="/hq/financial-overview"
+              className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+            >
+              <PieChart size={10} />
+              Tổng quan
+            </a>
+            <a
+              href="/signup"
+              className="flex items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+            >
+              <Plus size={10} />
+              Đăng ký CN
+            </a>
+            <a 
+              href="/dashboard"
+              className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+            >
+              <ExternalLink size={10} />
+              Spa chính
+            </a>
+            <a
+              href="/signup?type=branch"
+              className="flex items-center gap-1 bg-indigo-500 hover:bg-indigo-600 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+            >
+              <Store size={10} />
+              CN trực thuộc
+            </a>
+          </div>
 
-          {/* Sign Up Chi Nhánh Button */}
-          <a
-            href="/signup"
-            className="flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-full shadow-md hover:shadow-rose-100 transition-all active:scale-95 cursor-pointer"
-          >
-            <Plus size={12} />
-            Đăng ký Chi Nhánh
-          </a>
-
-          {/* Regular Dashboard Redirect */}
-          <a 
-            href="/dashboard"
-            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
-          >
-            <ExternalLink size={12} />
-            Hồ sơ Spa Trụ sở
-          </a>
-
-          {/* Demo Mode Toggle Button */}
-          <button
-            onClick={() => handleToggleDemo(!isDemoMode)}
-            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer ${
-              isDemoMode 
-                ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-rose-200 border border-rose-400/20 animate-pulse' 
-                : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
-            }`}
-            title={isDemoMode ? 'Đang bật mô phỏng chuỗi chi nhánh' : 'Bật chế độ mô phỏng demo chuỗi'}
-          >
-            <Sparkles size={12} className={isDemoMode ? 'text-yellow-250 fill-yellow-200 animate-spin' : 'text-slate-400'} />
-            {isDemoMode ? 'Demo Mode Active' : 'Chạy Demo Chuỗi'}
-          </button>
-
-          {/* Sync Button */}
-          <button
-            onClick={refreshData}
-            disabled={loading}
-            className="w-10 h-10 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:text-primary transition-all active:scale-95 disabled:opacity-50 shadow-sm"
-            title="Đồng bộ lại"
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin text-primary' : ''} />
-          </button>
-
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="w-10 h-10 rounded-full border border-rose-100 bg-rose-50 hover:bg-rose-100 flex items-center justify-center text-rose-500 transition-all active:scale-95 shadow-sm"
-            title="Đăng xuất"
-          >
-            <LogOut size={16} />
-          </button>
+          {/* Sync & Logout — compact */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={refreshData}
+              disabled={loading}
+              className="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:text-primary transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+              title="Đồng bộ lại"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
+            </button>
+            <button
+              onClick={handleLogout}
+              className="w-8 h-8 rounded-lg border border-rose-100 bg-rose-50 hover:bg-rose-100 flex items-center justify-center text-rose-500 transition-all active:scale-95 shadow-sm"
+              title="Đăng xuất"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
         </div>
       </header>
 
