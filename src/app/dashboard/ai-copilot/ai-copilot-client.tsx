@@ -37,33 +37,50 @@ export default function AICopilotClient() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Lock body scroll on mount to prevent sidebar splitting and ensure native app-like fixed viewport
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // Disable native browser history scroll restoration on mount to prevent Next.js from auto-scrolling
+    const originalScrollRestoration = 'scrollRestoration' in window.history ? window.history.scrollRestoration : null;
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
 
-    // Force scroll position to the very top to prevent header from being cut off or pushed up
+    // Force absolute scroll position reset on all potential scroll containers
     const resetScroll = () => {
       window.scrollTo(0, 0);
       if (document.documentElement) {
         document.documentElement.scrollTop = 0;
+        document.documentElement.scrollLeft = 0;
       }
       if (document.body) {
         document.body.scrollTop = 0;
+        document.body.scrollLeft = 0;
       }
     };
 
+    // Reset scroll IMMEDIATELY before applying any overflow properties
     resetScroll();
-    
-    // Execute multiple times with progressive delays to guarantee override of Next.js scroll restoration
-    const timer1 = setTimeout(resetScroll, 20);
-    const timer2 = setTimeout(resetScroll, 100);
-    const timer3 = setTimeout(resetScroll, 300);
+
+    // Lock scroll on both body and documentElement to guarantee complete scroll prevention
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    // Re-verify and force scroll position in multiple progressive timers to fight Next.js router timings
+    const timers = [
+      setTimeout(resetScroll, 10),
+      setTimeout(resetScroll, 50),
+      setTimeout(resetScroll, 150),
+      setTimeout(resetScroll, 300),
+      setTimeout(resetScroll, 600)
+    ];
 
     return () => {
-      document.body.style.overflow = originalOverflow;
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
+      document.body.style.overflow = originalBodyOverflow;
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      if (originalScrollRestoration && 'scrollRestoration' in window.history) {
+        window.history.scrollRestoration = originalScrollRestoration;
+      }
+      timers.forEach(clearTimeout);
     };
   }, []);
 
