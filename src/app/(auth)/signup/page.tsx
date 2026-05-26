@@ -31,6 +31,7 @@ export default function SignupPage() {
   const [contactPhone, setContactPhone] = useState('');
   const [address, setAddress] = useState('');
   const [email, setEmail] = useState('');
+  const [branchType, setBranchType] = useState<'owned' | 'franchise'>('owned');
   
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
@@ -75,7 +76,8 @@ export default function SignupPage() {
         email,
         adminName,
         adminEmail,
-        adminPassword
+        adminPassword,
+        branchType
       });
 
       if (!res.success) {
@@ -182,6 +184,36 @@ export default function SignupPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Hình thức chi nhánh (Owned vs Franchise) Segmented Selection */}
+                    <div className="space-y-2 md:col-span-2">
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">
+                        Hình thức chi nhánh *
+                      </label>
+                      <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-100/80 dark:bg-slate-900/50 rounded-2xl border border-pink-100/10">
+                        <button
+                          type="button"
+                          onClick={() => setBranchType('owned')}
+                          className={`py-3 px-4 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                            branchType === 'owned'
+                              ? 'bg-white dark:bg-slate-800 text-primary shadow-sm border border-pink-100/20'
+                              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          Chi nhánh trực thuộc (Owned)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBranchType('franchise')}
+                          className={`py-3 px-4 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                            branchType === 'franchise'
+                              ? 'bg-white dark:bg-slate-800 text-primary shadow-sm border border-pink-100/20'
+                              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          Nhượng quyền (Franchise)
+                        </button>
+                      </div>
+                    </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">
                         Tên Thương hiệu Spa *
@@ -392,6 +424,15 @@ export default function SignupPage() {
                       <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
                         <MapPin size={12} /> {address}
                       </p>
+                      <div className="pt-2">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
+                          branchType === 'franchise'
+                            ? 'bg-gradient-to-r from-rose-500 to-purple-600 text-white border-transparent shadow-sm'
+                            : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-350 dark:border-slate-700'
+                        }`}>
+                          {branchType === 'franchise' ? 'Nhượng quyền (Franchise)' : 'Chi nhánh trực thuộc'}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="p-5 bg-white/50 border border-slate-100 rounded-3xl space-y-2">
