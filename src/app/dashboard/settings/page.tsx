@@ -16,6 +16,7 @@ import {
   CreditCard,
   Receipt,
   KeyRound,
+  Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getTenantSettings, saveTenantSettings } from "@/services/tenant-actions";
@@ -31,12 +32,14 @@ import AppearanceTab from "./components/AppearanceTab";
 import SubscriptionTab from "./components/SubscriptionTab";
 import HqBillingTab from "./components/HqBillingTab";
 import SecurityTab from "./components/SecurityTab";
+import AccountingConfigTab from "./components/AccountingConfigTab";
 
 const TABS = [
   { id: "general", label: "Thông tin chung", icon: Store },
   { id: "subscription", label: "Gói dịch vụ (SaaS)", icon: CreditCard },
   { id: "hq-billing", label: "Hóa đơn HQ (Royalty)", icon: Receipt },
   { id: "salary", label: "Lương & Thưởng", icon: Coins },
+  { id: "accounting", label: "Chế độ Kế toán", icon: Calculator },
   { id: "staff", label: "Nhân sự & Quyền", icon: Shield },
   { id: "permissions", label: "Phân quyền", icon: Lock },
   { id: "security", label: "Bảo mật & Mật khẩu", icon: KeyRound },
@@ -206,6 +209,10 @@ export default function SettingsPage() {
                   generalSettings={generalSettings}
                   setGeneralSettings={setGeneralSettings}
                 />
+              )}
+
+              {activeTab === "accounting" && (
+                <AccountingConfigTab />
               )}
 
               {activeTab === "staff" && (
