@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
@@ -60,17 +60,6 @@ export default function LandingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
 
-
-  const serviceOptions = [
-    { value: "Gói Bầu Thư Giãn Bella", label: "Gói Bầu Thư Giãn Bella (450k)", group: "Chăm sóc Mẹ Bầu" },
-    { value: "Gói Bầu VIP Toàn Diện", label: "Gói Bầu VIP Toàn Diện (690k)", group: "Chăm sóc Mẹ Bầu" },
-    { value: "Gói Phục Hồi Cơ Bản", label: "Gói Phục Hồi Cơ Bản (650k)", group: "Phục Hồi Sau Sinh" },
-    { value: "Gói Eo Thon Dáng Ngọc VIP", label: "Gói Eo Thon Dáng Ngọc VIP (950k)", group: "Phục Hồi Sau Sinh" },
-    { value: "Tắm Bé Chuẩn Y Khoa", label: "Tắm Bé Chuẩn Y Khoa (200k)", group: "Tắm & Massage Bé" },
-    { value: "Gói Bé Yêu Thông Minh VIP", label: "Gói Bé Yêu Thông Minh VIP (350k)", group: "Tắm & Massage Bé" },
-    { value: "Gói Bella Home-Care Tiêu Chuẩn", label: "Bella Home-Care (7.9M)", group: "Gói Combo" },
-    { value: "Gói Hoàng Gia Bella Signature", label: "Hoàng Gia Signature (18.5M)", group: "Gói Combo" },
-  ];
 
   // Change navbar background on scroll
   useEffect(() => {
@@ -226,6 +215,17 @@ export default function LandingPage() {
   };
 
   const [categories, setCategories] = useState<any>(null);
+
+  const serviceOptions = useMemo(() => {
+    const activeCategories = categories || serviceCategories;
+    return Object.entries(activeCategories).flatMap(([_, cat]: [string, any]) => {
+      return cat.packages.map((pkg: any) => ({
+        value: pkg.name,
+        label: `${pkg.name} (${pkg.price})`,
+        group: cat.title
+      }));
+    });
+  }, [categories]);
 
   useEffect(() => {
     const fetchActivePackages = async () => {
