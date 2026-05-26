@@ -14,7 +14,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
-import { getReconciliationReport, type ReconciliationRow } from '@/services/accounting-actions';
+import { getReconciliationReport, getAccountingMode, syncLegacyToLedger, type ReconciliationRow } from '@/services/accounting-actions';
 import { toast } from 'sonner';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
@@ -60,12 +60,21 @@ export default function ReconciliationPage() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
+  const [accountingMode, setAccountingMode] = useState<'SIMPLE' | 'PROFESSIONAL'>('SIMPLE');
+  const [syncing, setSyncing] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+
   // Khởi tạo ngày tháng an toàn sau khi mount ở Client để tránh Hydration Mismatch về múi giờ
   useEffect(() => {
     const d = new Date();
     d.setDate(1);
     setFromDate(d.toISOString().slice(0, 10));
     setToDate(new Date().toISOString().slice(0, 10));
+
+    // Đọc cấu hình chế độ kế toán
+    getAccountingMode()
+      .then((mode) => setAccountingMode(mode))
+      .catch((err) => console.error('Lỗi khi đọc chế độ kế toán:', err));
   }, []);
 
   const fetchData = async (fromStr: string, toStr: string) => {
@@ -80,6 +89,26 @@ export default function ReconciliationPage() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await syncLegacyToLedger();
+      if (res.success) {
+        toast.success(`Đồng bộ thành công! Đã hạch toán ${res.syncedRevenueCount} doanh thu, ${res.syncedExpenseCount} chi phí, và ${res.syncedSalaryCount} bảng lương KTV.`);
+        setAccountingMode('PROFESSIONAL');
+        setShowSyncModal(false);
+        if (fromDate && toDate) {
+          fetchData(fromDate, toDate);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error during migration:', err);
+      toast.error(err?.message || 'Có lỗi xảy ra trong quá trình đồng bộ kế toán.');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -131,6 +160,36 @@ export default function ReconciliationPage() {
           </p>
         </div>
       </div>
+
+      {/* ── DUAL-MODE ACCOUNTING BANNER ── */}
+      {accountingMode === 'SIMPLE' ? (
+        <div className="p-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-[2rem] border border-amber-200 dark:border-amber-500/20 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <h5 className="text-xs font-black text-amber-800 dark:text-amber-300 uppercase tracking-wider">
+                Hệ thống kế toán đang ở chế độ Đơn giản (Legacy Finance)
+              </h5>
+              <p className="text-3xs font-medium text-amber-700/80 dark:text-amber-400/70 mt-1 max-w-2xl leading-relaxed">
+                Bella Spa ERP hiện vận hành song song sổ sách cũ. Để kích hoạt hạch toán kép chuyên nghiệp chuẩn Thông tư 133, vui lòng click nút bên dưới để tự động đồng bộ lịch sử thu/chi/lương vào sổ cái kế toán mới và chuyển đổi chế độ.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowSyncModal(true)}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white text-3xs font-black uppercase tracking-widest transition-all shadow-md shrink-0 self-start md:self-auto cursor-pointer"
+          >
+            Đồng bộ & Kích hoạt Kế toán Chuyên nghiệp
+          </button>
+        </div>
+      ) : (
+        <div className="px-6 py-4 bg-emerald-50/40 dark:bg-emerald-500/10 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+          <span className="text-3xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">
+            Đã kích hoạt chế độ Kế toán Chuyên nghiệp (Thông tư 133)
+          </span>
+        </div>
+      )}
 
       {/* ── FILTER + SUMMARY ── */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -299,6 +358,56 @@ export default function ReconciliationPage() {
           </div>
         )}
       </div>
+
+      {/* ── SYNC & MIGRATION MODAL ── */}
+      {showSyncModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#1C1B19] rounded-[2rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 shadow-2xl p-6 md:p-8 max-w-md w-full relative z-50 animate-in zoom-in-95 duration-200">
+            <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider mb-4 flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-primary" />
+              Kích hoạt Kế toán Chuyên nghiệp
+            </h4>
+            <div className="space-y-3 text-2xs text-slate-600 dark:text-[#CDBCAB]/80 leading-relaxed font-medium">
+              <p>
+                Hệ thống sẽ thực hiện các thao tác tự động sau:
+              </p>
+              <ul className="list-disc pl-4 space-y-1.5">
+                <li>Quét toàn bộ dữ liệu lịch sử các khoản thu, chi và bảng lương KTV đã xác nhận.</li>
+                <li>Tự động tạo các bút toán kép hạch toán thẳng vào Sổ Nhật Ký Chung của Sổ Cái mới.</li>
+                <li>Kích hoạt chế độ <strong>Kế toán Chuyên nghiệp (Thông tư 133)</strong> cho chi nhánh này.</li>
+                <li className="text-amber-600 dark:text-amber-400 font-bold">Khóa đóng băng các màn hình Legacy Finance cũ để ngăn chặn việc nhập liệu trùng lặp.</li>
+              </ul>
+              <p className="text-3xs italic text-slate-400 mt-2">
+                ⓘ Quá trình này được chạy an toàn (Idempotent) nên không lo bị trùng lặp bút toán nếu đồng bộ lại.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                disabled={syncing}
+                onClick={() => setShowSyncModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-[#11100F] border border-slate-200 dark:border-[#3E3A35]/50 hover:bg-slate-200 text-slate-700 dark:text-[#CDBCAB] text-3xs font-black uppercase tracking-widest transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                disabled={syncing}
+                onClick={handleSync}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 disabled:from-slate-400 disabled:to-slate-400 text-white text-3xs font-black uppercase tracking-widest transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              >
+                {syncing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Đang đồng bộ...
+                  </>
+                ) : (
+                  'Bắt đầu đồng bộ'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

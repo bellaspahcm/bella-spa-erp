@@ -238,6 +238,12 @@ export async function getFinancialOverview() {
 
 // ─── confirmTransaction ───────────────────────────────────────────────────────
 export async function confirmTransaction(id: string, type: 'revenue' | 'expense') {
+  const { getAccountingMode } = await import('./accounting-actions');
+  const mode = await getAccountingMode();
+  if (mode === 'PROFESSIONAL') {
+    throw new Error('Hệ thống đang ở chế độ Kế toán Chuyên nghiệp. Mọi nghiệp vụ nhập liệu và hạch toán thu/chi phải được thực hiện thông qua bút toán trong phân hệ Kế toán.');
+  }
+
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
 
@@ -369,6 +375,12 @@ export async function recordTransaction(data: {
   status?: string;
   booking_id?: string;
 }) {
+  const { getAccountingMode } = await import('./accounting-actions');
+  const mode = await getAccountingMode();
+  if (mode === 'PROFESSIONAL') {
+    throw new Error('Hệ thống đang ở chế độ Kế toán Chuyên nghiệp. Mọi nghiệp vụ nhập liệu và hạch toán thu/chi phải được thực hiện thông qua bút toán trong phân hệ Kế toán.');
+  }
+
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
   const tenantId = await resolveTenantId();
