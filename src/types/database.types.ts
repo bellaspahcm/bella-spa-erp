@@ -2603,6 +2603,27 @@ export type Database = {
           status: string
         }[]
       }
+      get_salary_reconciliation_report: {
+        Args: { p_tenant_id: string; p_month_year: string }
+        Returns: {
+          ktv_id: string
+          ktv_name: string
+          legacy_base_salary: number
+          legacy_session_bonus: number
+          legacy_kpi_bonus: number
+          legacy_deductions: number
+          legacy_total: number
+          legacy_status: string
+          ai_base_salary: number
+          ai_session_bonus: number
+          ai_kpi_bonus: number
+          ai_deductions: number
+          ai_total: number
+          diff_total: number
+          diff_percent: number
+          status: string
+        }[]
+      }
       get_consolidated_pnl: {
         Args: { p_from_date: string; p_to_date: string }
         Returns: {

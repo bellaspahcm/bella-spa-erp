@@ -611,3 +611,57 @@ export async function getReconciliationReport(fromDate: string, toDate: string):
   }
   return (data as ReconciliationRow[]) || [];
 }
+
+/**
+ * 18. RPC Report: Salary Reconciliation (M2) — So sánh per-KTV salary_records cũ vs calculate_ktv_salary_sheet AI
+ * Pattern matches Phase 29.5 reconciliation. Detect drift trước khi switch legacy → AI hoàn toàn.
+ */
+export interface SalaryReconciliationRow {
+  ktv_id: string;
+  ktv_name: string;
+  legacy_base_salary: number;
+  legacy_session_bonus: number;
+  legacy_kpi_bonus: number;
+  legacy_deductions: number;
+  legacy_total: number;
+  legacy_status: string;
+  ai_base_salary: number;
+  ai_session_bonus: number;
+  ai_kpi_bonus: number;
+  ai_deductions: number;
+  ai_total: number;
+  diff_total: number;
+  diff_percent: number;
+  status: 'MATCH' | 'MINOR_DIFF' | 'MAJOR_DIFF' | 'PENDING_LEGACY';
+}
+
+export async function getSalaryReconciliationReport(monthYear: string): Promise<SalaryReconciliationRow[]> {
+  const user = await getCurrentUser();
+  if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
+    throw new Error('Unauthorized: chỉ admin/kế toán mới được xem báo cáo đối soát lương.');
+  }
+
+  // Service-role client để bypass session/GRANT issues
+  const { createClient: createAdmin } = await import('@supabase/supabase-js');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const adminClient = createAdmin(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  // Set tenant context (calculate_ktv_salary_sheet requires it for service_role)
+  await adminClient.rpc('set_session_tenant', { p_tenant_id: user.tenant_id });
+
+  const { data, error } = await adminClient.rpc('get_salary_reconciliation_report', {
+    p_tenant_id: user.tenant_id,
+    p_month_year: monthYear,
+  });
+
+  if (error) {
+    console.error('[getSalaryReconciliationReport] RPC error:', JSON.stringify({
+      message: error.message, code: error.code, details: error.details, hint: error.hint,
+    }, null, 2));
+    throw error;
+  }
+  return (data as SalaryReconciliationRow[]) || [];
+}

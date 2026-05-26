@@ -1,0 +1,242 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Users,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  RefreshCw,
+  Calendar,
+  HelpCircle,
+  Clock,
+} from 'lucide-react';
+import { getSalaryReconciliationReport, type SalaryReconciliationRow } from '@/services/accounting-actions';
+import { toast } from 'sonner';
+import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+
+const fmtVND = (n: number) =>
+  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(n) || 0);
+
+const STATUS_CONFIG: Record<string, { label: string; bg: string; border: string; text: string; icon: any }> = {
+  MATCH: {
+    label: 'Khớp',
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+    border: 'border-emerald-200 dark:border-emerald-500/30',
+    text: 'text-emerald-700 dark:text-emerald-400',
+    icon: CheckCircle2,
+  },
+  MINOR_DIFF: {
+    label: 'Lệch nhẹ',
+    bg: 'bg-amber-50 dark:bg-amber-500/10',
+    border: 'border-amber-200 dark:border-amber-500/30',
+    text: 'text-amber-700 dark:text-amber-400',
+    icon: AlertTriangle,
+  },
+  MAJOR_DIFF: {
+    label: 'Lệch lớn',
+    bg: 'bg-rose-50 dark:bg-rose-500/10',
+    border: 'border-rose-200 dark:border-rose-500/30',
+    text: 'text-rose-700 dark:text-rose-400',
+    icon: XCircle,
+  },
+  PENDING_LEGACY: {
+    label: 'Chưa có legacy',
+    bg: 'bg-slate-50 dark:bg-slate-500/10',
+    border: 'border-slate-200 dark:border-slate-500/30',
+    text: 'text-slate-700 dark:text-slate-400',
+    icon: Clock,
+  },
+};
+
+export default function SalaryReconciliationPage() {
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [rows, setRows] = useState<SalaryReconciliationRow[]>([]);
+
+  const [monthYear, setMonthYear] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+
+  const fetchData = async () => {
+    setRefreshing(true);
+    try {
+      const data = await getSalaryReconciliationReport(monthYear);
+      setRows(data || []);
+    } catch (err: any) {
+      console.error('Error fetching salary reconciliation:', err);
+      toast.error(err?.message || 'Không thể tải báo cáo đối soát lương.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => { fetchData(); }, [monthYear]);
+
+  const total = rows.length;
+  const matchCount = rows.filter((r) => r.status === 'MATCH').length;
+  const minorCount = rows.filter((r) => r.status === 'MINOR_DIFF').length;
+  const majorCount = rows.filter((r) => r.status === 'MAJOR_DIFF').length;
+  const pendingCount = rows.filter((r) => r.status === 'PENDING_LEGACY').length;
+  const matchRate = total > 0 ? (matchCount / total) * 100 : 0;
+  const totalAi = rows.reduce((s, r) => s + Number(r.ai_total || 0), 0);
+  const totalLegacy = rows.reduce((s, r) => s + Number(r.legacy_total || 0), 0);
+  const totalDiff = totalLegacy - totalAi;
+
+  return (
+    <div className="space-y-8 relative">
+      {refreshing && (
+        <div className="absolute top-0 right-0 flex items-center gap-1.5 text-xs font-semibold text-primary dark:text-[#A67D44] animate-pulse">
+          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+          <span>Đang tính đối soát lương...</span>
+        </div>
+      )}
+
+      {/* INTRO */}
+      <div className="p-6 md:p-8 bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 shadow-sm flex items-start gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-pink-50 dark:bg-[#5D1C34]/30 flex items-center justify-center text-primary dark:text-[#A67D44] shrink-0">
+          <Users className="w-6 h-6 text-primary" />
+        </div>
+        <div className="flex-1">
+          <h4 className="text-base font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider">
+            Đối soát lương KTV: Legacy ↔ AI Computed
+          </h4>
+          <p className="text-xs font-medium text-slate-500 dark:text-[#CDBCAB]/70 mt-1 leading-relaxed">
+            So sánh per-KTV giữa <strong>salary_records cũ</strong> (admin nhập thủ công) với
+            <strong> calculate_ktv_salary_sheet</strong> (AI tự tính realtime: pro-rata công + hoa hồng + thưởng sao + KPI − khấu trừ).
+            Detect drift trước khi switch hoàn toàn sang AI.
+          </p>
+          <p className="text-2xs text-amber-700 dark:text-amber-400 mt-2 italic">
+            ⓘ Lệch &lt; 5,000đ = MATCH (làm tròn) · Lệch &lt; 1% = MINOR_DIFF · Lệch ≥ 1% = MAJOR_DIFF cần điều tra.
+          </p>
+        </div>
+      </div>
+
+      {/* FILTER + SUMMARY */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        <div className="lg:col-span-2 bg-white dark:bg-[#1C1B19] rounded-2xl border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 shadow-sm">
+          <p className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest mb-3">Tháng đối soát</p>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-primary dark:text-[#A67D44]" />
+            <input
+              type="month"
+              value={monthYear.slice(0, 7)}
+              onChange={(e) => setMonthYear(`${e.target.value}-01`)}
+              className="px-3 py-1.5 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]"
+            />
+          </div>
+        </div>
+
+        <div className={`rounded-2xl border p-5 ${matchRate === 100 ? 'bg-emerald-50/40 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30' : matchRate >= 66 ? 'bg-amber-50/40 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30' : 'bg-rose-50/40 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30'}`}>
+          <p className="text-3xs font-black uppercase tracking-widest opacity-70 mb-2">Tỷ lệ khớp</p>
+          <p className={`text-2xl font-mono font-black ${matchRate === 100 ? 'text-emerald-600 dark:text-emerald-400' : matchRate >= 66 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            {matchRate.toFixed(0)}%
+          </p>
+          <p className="text-3xs text-slate-500 mt-1">{matchCount}/{total} KTV</p>
+        </div>
+
+        <div className="bg-white dark:bg-[#1C1B19] rounded-2xl border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 shadow-sm">
+          <p className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest mb-2">Phân loại</p>
+          <div className="space-y-1 text-2xs">
+            <p className="flex items-center justify-between"><span className="text-emerald-600">✓ Khớp</span><strong className="font-mono">{matchCount}</strong></p>
+            <p className="flex items-center justify-between"><span className="text-amber-600">⚠ Lệch nhẹ</span><strong className="font-mono">{minorCount}</strong></p>
+            <p className="flex items-center justify-between"><span className="text-rose-600">✕ Lệch lớn</span><strong className="font-mono">{majorCount}</strong></p>
+            <p className="flex items-center justify-between"><span className="text-slate-500">⏳ Chưa có legacy</span><strong className="font-mono">{pendingCount}</strong></p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-[#1C1B19] rounded-2xl border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 shadow-sm">
+          <p className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest mb-2">Tổng chênh lệch</p>
+          <p className={`text-sm font-mono font-black mt-1 ${Math.abs(totalDiff) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            {totalDiff >= 0 ? '+' : ''}{fmtVND(totalDiff)}
+          </p>
+          <p className="text-3xs text-slate-400 mt-1">Legacy − AI</p>
+        </div>
+      </div>
+
+      {/* TABLE */}
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
+        <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider mb-6 flex items-center gap-2">
+          <Users className="w-4 h-4 text-primary dark:text-[#A67D44]" />
+          Bảng so sánh chi tiết per-KTV
+        </h4>
+
+        {loading ? (
+          <SkeletonTable />
+        ) : rows.length === 0 ? (
+          <div className="py-16 text-center text-slate-400">
+            <HelpCircle className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+            <p className="text-xs font-bold uppercase tracking-wider">Chưa có dữ liệu đối soát lương cho tháng này</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
+                  <th className="px-3 py-3 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">KTV</th>
+                  <th className="px-3 py-3 text-3xs font-black text-blue-500 uppercase tracking-widest text-right">Legacy</th>
+                  <th className="px-3 py-3 text-3xs font-black text-pink-500 uppercase tracking-widest text-right">AI</th>
+                  <th className="px-3 py-3 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Chênh lệch</th>
+                  <th className="px-3 py-3 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">% lệch</th>
+                  <th className="px-3 py-3 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-sans text-xs">
+                {rows.map((row) => {
+                  const cfg = STATUS_CONFIG[row.status] || STATUS_CONFIG.MAJOR_DIFF;
+                  const StatusIcon = cfg.icon;
+                  return (
+                    <motion.tr
+                      key={row.ktv_id}
+                      whileHover={{ backgroundColor: 'rgba(244,63,94,0.02)' }}
+                      className="transition-colors"
+                    >
+                      <td className="px-3 py-3 font-bold text-slate-900 dark:text-[#EFE9E1]">
+                        {row.ktv_name}
+                        <p className="text-3xs text-slate-400 mt-0.5">Status: {row.legacy_status}</p>
+                      </td>
+                      <td className="px-3 py-3 text-right font-mono font-bold text-blue-700 dark:text-blue-300">
+                        {fmtVND(row.legacy_total)}
+                      </td>
+                      <td className="px-3 py-3 text-right font-mono font-bold text-pink-700 dark:text-pink-300">
+                        {fmtVND(row.ai_total)}
+                      </td>
+                      <td className={`px-3 py-3 text-right font-mono font-black ${Math.abs(Number(row.diff_total)) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {Number(row.diff_total) > 0 ? '+' : ''}{fmtVND(row.diff_total)}
+                      </td>
+                      <td className={`px-3 py-3 text-right font-mono font-bold ${Number(row.diff_percent) < 1 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {Number(row.diff_percent).toFixed(2)}%
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-4xs font-black uppercase tracking-wider border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {cfg.label}
+                        </span>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-200 dark:border-[#3E3A35]/40 bg-slate-50/40 dark:bg-[#11100F]/40 font-black">
+                  <td className="px-3 py-4 text-xs uppercase tracking-widest text-slate-900 dark:text-[#EFE9E1]">Tổng cộng</td>
+                  <td className="px-3 py-4 text-right font-mono text-sm text-blue-700 dark:text-blue-300">{fmtVND(totalLegacy)}</td>
+                  <td className="px-3 py-4 text-right font-mono text-sm text-pink-700 dark:text-pink-300">{fmtVND(totalAi)}</td>
+                  <td className={`px-3 py-4 text-right font-mono text-sm ${Math.abs(totalDiff) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                    {totalDiff >= 0 ? '+' : ''}{fmtVND(totalDiff)}
+                  </td>
+                  <td colSpan={2} className="px-3 py-4 text-right font-mono text-3xs text-slate-500">
+                    {totalAi > 0 ? `${((Math.abs(totalDiff) / totalAi) * 100).toFixed(2)}% diff` : '—'}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

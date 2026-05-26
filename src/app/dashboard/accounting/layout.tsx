@@ -21,6 +21,7 @@ const tabs = [
   { label: 'Bút toán thủ công', href: '/dashboard/accounting/manual-entry', icon: PenTool },
   { label: 'Kỳ kế toán', href: '/dashboard/accounting/periods', icon: Calendar },
   { label: 'Đối soát chéo', href: '/dashboard/accounting/reconciliation', icon: GitCompareArrows },
+  { label: 'Đối soát lương', href: '/dashboard/accounting/salary-reconciliation', icon: GitCompareArrows },
   { label: 'Báo cáo tài chính', href: '/dashboard/accounting/reports', icon: BarChart3 },
 ];
 
