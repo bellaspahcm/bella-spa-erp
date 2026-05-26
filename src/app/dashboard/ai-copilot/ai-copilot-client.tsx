@@ -56,14 +56,19 @@ export default function AICopilotClient() {
       }
     };
 
-    // Reset scroll IMMEDIATELY before applying any overflow properties
+    // Reset scroll IMMEDIATELY before applying any overflow and height properties
     resetScroll();
 
-    // Lock scroll on both body and documentElement to guarantee complete scroll prevention
+    // Lock scroll and restrict height to 100vh on both body and documentElement to guarantee complete scroll prevention
     const originalBodyOverflow = document.body.style.overflow;
     const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyHeight = document.body.style.height;
+    const originalHtmlHeight = document.documentElement.style.height;
+
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
+    document.body.style.height = "100vh";
+    document.documentElement.style.height = "100vh";
 
     // Re-verify and force scroll position in multiple progressive timers to fight Next.js router timings
     const timers = [
@@ -77,6 +82,8 @@ export default function AICopilotClient() {
     return () => {
       document.body.style.overflow = originalBodyOverflow;
       document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.height = originalBodyHeight;
+      document.documentElement.style.height = originalHtmlHeight;
       if (originalScrollRestoration && 'scrollRestoration' in window.history) {
         window.history.scrollRestoration = originalScrollRestoration;
       }
