@@ -42,7 +42,7 @@ export default async function AICopilotLayout({
   const pathname = headersList.get('x-pathname') ?? '';
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div className="h-[calc(100vh-4rem)] lg:h-screen flex flex-col">
       {/* Sub-nav */}
       <nav className="shrink-0 px-6 pt-4 border-b border-border bg-card/40 backdrop-blur-md flex items-center gap-1">
         {NAV_TABS.map(({ label, href, icon: Icon }) => {
