@@ -11,6 +11,7 @@ export interface RegisterTenantInput {
   adminName: string;
   adminEmail: string;
   adminPassword?: string;
+  branchType?: 'owned' | 'franchise';
 }
 
 /**
@@ -139,6 +140,23 @@ export async function registerNewTenant(input: RegisterTenantInput) {
       }
  
       return { success: false, error: rpcError.message };
+    }
+
+    // 3.1. Update franchise agreement details if Nhượng quyền (Franchise) is chosen
+    if (input.branchType === 'franchise') {
+      const today = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
+      const { error: updateError } = await supabase
+        .from('tenants')
+        .update({
+          franchise_agreement_date: today,
+          royalty_type: 'percentage'
+        })
+        .eq('id', tenantId as string);
+
+      if (updateError) {
+        console.error('[registerNewTenant] Post-onboarding franchise update failed:', updateError.message);
+        return { success: false, error: `Lỗi cập nhật cấu hình nhượng quyền: ${updateError.message}` };
+      }
     }
  
     // 4. Record Audit Log for Onboarding

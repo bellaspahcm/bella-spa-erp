@@ -805,35 +805,28 @@ export default function HqDashboardClient({
             </div>
           </div>
 
-          {/* Compact Action Buttons — 2 per row grid */}
+          {/* Compact Action Buttons — premium layout */}
           <div className="grid grid-cols-2 gap-1.5">
             <a
               href="/hq/financial-overview"
-              className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+              className="flex items-center justify-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <PieChart size={10} />
               Tổng quan
             </a>
-            <a
-              href="/signup"
-              className="flex items-center gap-1 bg-rose-500 hover:bg-rose-600 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
-            >
-              <Plus size={10} />
-              Đăng ký CN
-            </a>
             <a 
               href="/dashboard"
-              className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+              className="flex items-center justify-center gap-1 bg-slate-800 hover:bg-slate-700 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <ExternalLink size={10} />
               Spa chính
             </a>
             <a
-              href="/signup?type=branch"
-              className="flex items-center gap-1 bg-indigo-500 hover:bg-indigo-600 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-1.5 rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+              href="/signup"
+              className="col-span-2 flex items-center justify-center gap-1 bg-gradient-to-r from-rose-500 to-pink-650 hover:from-rose-600 hover:to-pink-700 text-white text-[8px] font-black uppercase tracking-wider px-2.5 py-2 rounded-lg shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             >
-              <Store size={10} />
-              CN trực thuộc
+              <Plus size={10} />
+              Đăng ký Chi nhánh
             </a>
           </div>
 
