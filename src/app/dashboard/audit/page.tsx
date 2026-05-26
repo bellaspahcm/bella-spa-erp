@@ -719,53 +719,53 @@ export default function AuditPage() {
         animate={{ opacity: 1 }}
         className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm"
       >
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto custom-scrollbar w-full">
+          <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px]">Thời gian</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px]">Người thực hiện</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[120px]">Hành động</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[160px]">Bảng dữ liệu</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Chi tiết thay đổi</th>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right w-[80px]">Thao tác</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px] whitespace-nowrap">Thời gian</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px] whitespace-nowrap">Người thực hiện</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[120px] whitespace-nowrap">Hành động</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[160px] whitespace-nowrap">Bảng dữ liệu</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 whitespace-nowrap">Chi tiết thay đổi</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600 text-right w-[80px] whitespace-nowrap">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={6} className="px-6 py-8 h-16 bg-slate-50/20"></td>
+                    <td colSpan={6} className="px-6 py-8 h-16 bg-slate-50/20 whitespace-nowrap"></td>
                   </tr>
                 ))
               ) : paginatedLogs.length > 0 ? (
                 paginatedLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-slate-400 animate-pulse group-hover:text-rose-500 transition-colors" />
-                        <span className="text-sm text-slate-600">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <Clock className="w-4 h-4 text-slate-400 animate-pulse group-hover:text-rose-500 transition-colors shrink-0" />
+                        <span className="text-sm text-slate-600 whitespace-nowrap">
                           {new Date(log.created_at).toLocaleString('vi-VN')}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
-                        <span className="text-sm font-medium text-slate-700">{log.user_name}</span>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <UserIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
+                        <span className="text-sm font-medium text-slate-700 whitespace-nowrap">{log.user_name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${getActionColor(log.action)}`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${getActionColor(log.action)}`}>
                         {log.action === 'INSERT' ? 'Thêm mới' : log.action === 'UPDATE' ? 'Cập nhật' : 'Xóa'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-semibold text-slate-700">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1 whitespace-nowrap">
+                        <span className="text-sm font-semibold text-slate-700 whitespace-nowrap">
                           {TABLE_TRANSLATIONS[log.table_name] || log.table_name}
                         </span>
-                        <code className="text-[10px] text-slate-400 font-mono self-start bg-slate-50 px-1 py-0.5 rounded border border-slate-100">
+                        <code className="text-[10px] text-slate-400 font-mono self-start bg-slate-50 px-1 py-0.5 rounded border border-slate-100 whitespace-nowrap">
                           {log.table_name}
                         </code>
                       </div>
@@ -775,7 +775,7 @@ export default function AuditPage() {
                         {renderReadableChanges(log)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right whitespace-nowrap">
                       <button 
                         onClick={() => setSelectedLog(log)}
                         className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-all"
@@ -787,8 +787,8 @@ export default function AuditPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center gap-2 opacity-40">
+                  <td colSpan={6} className="px-6 py-20 text-center whitespace-nowrap">
+                    <div className="flex flex-col items-center gap-2 opacity-40 whitespace-nowrap">
                       <AlertCircle className="w-12 h-12" />
                       <p>Không có dữ liệu nhật ký nào.</p>
                     </div>
