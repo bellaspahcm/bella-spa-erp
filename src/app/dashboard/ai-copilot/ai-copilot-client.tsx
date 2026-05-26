@@ -40,8 +40,30 @@ export default function AICopilotClient() {
     // Lock body scroll on mount to prevent sidebar splitting and ensure native app-like fixed viewport
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+
+    // Force scroll position to the very top to prevent header from being cut off or pushed up
+    const resetScroll = () => {
+      window.scrollTo(0, 0);
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
+      if (document.body) {
+        document.body.scrollTop = 0;
+      }
+    };
+
+    resetScroll();
+    
+    // Execute multiple times with progressive delays to guarantee override of Next.js scroll restoration
+    const timer1 = setTimeout(resetScroll, 20);
+    const timer2 = setTimeout(resetScroll, 100);
+    const timer3 = setTimeout(resetScroll, 300);
+
     return () => {
       document.body.style.overflow = originalOverflow;
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
     };
   }, []);
 
