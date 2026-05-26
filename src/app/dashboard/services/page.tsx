@@ -24,6 +24,7 @@ import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
 import { getPackages, createPackage, updatePackage, deletePackage } from '@/services/package-actions';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 
 export default function ServicesPage() {
@@ -33,15 +34,16 @@ export default function ServicesPage() {
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedService, setSelectedService] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 2;
 
-  // Reset page on search changes
+  // Reset page on search/filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, statusFilter]);
 
   
   // Form states
@@ -375,9 +377,17 @@ export default function ServicesPage() {
     }
   };
 
-  const filteredServices = services.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredServices = services
+    .filter(s => {
+      const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase());
+      if (statusFilter === 'all') return matchesSearch;
+      return matchesSearch && s.status === statusFilter;
+    })
+    .sort((a, b) => {
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (a.status !== 'active' && b.status === 'active') return 1;
+      return a.name.localeCompare(b.name);
+    });
 
   const totalPages = Math.ceil(filteredServices.length / pageSize) || 1;
   const paginatedServices = filteredServices.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -427,10 +437,18 @@ export default function ServicesPage() {
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-slate-700"
           />
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 transition-colors font-bold text-slate-600 text-sm">
-          <Filter className="w-4 h-4" />
-          Loại dịch vụ
-        </button>
+        <div className="w-full md:w-64 flex-shrink-0">
+          <PremiumSelect
+            value={statusFilter}
+            options={[
+              { value: 'all', label: 'Tất cả trạng thái', icon: <Filter className="w-4 h-4" /> },
+              { value: 'active', label: 'Đang hoạt động', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" /> },
+              { value: 'inactive', label: 'Tạm ngưng / Nháp', icon: <X className="w-4 h-4 text-slate-400" /> }
+            ]}
+            onChange={(val) => setStatusFilter(val as 'all' | 'active' | 'inactive')}
+            placeholder="Lọc trạng thái..."
+          />
+        </div>
       </div>
 
       {/* Services Grid */}

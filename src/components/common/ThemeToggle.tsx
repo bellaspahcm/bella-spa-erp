@@ -51,7 +51,7 @@ export default function ThemeToggle() {
   }
 
   return (
-    <div className="w-full bg-[#FFF6F8] dark:bg-[#1C1B19] border border-[#FCE4EC] dark:border-[#3E3A35] p-1 rounded-2xl flex items-center justify-between relative shadow-inner">
+    <div className="w-full bg-[#FFF6F8] dark:bg-[#1C1B19] border border-[#FCE4EC] dark:border-[#3E3A35] p-1 rounded-2xl flex items-center justify-between gap-2 relative shadow-inner">
       <div className="absolute inset-0 bg-gradient-to-r from-rose-200/5 to-rose-300/5 pointer-events-none rounded-2xl" />
       
       {/* Light Mode Pill */}

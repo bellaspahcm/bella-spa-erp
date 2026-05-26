@@ -344,7 +344,7 @@ export function Sidebar() {
             <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFE4E6] dark:via-[#3E3A35] to-transparent" />
             
             <div className="flex items-center justify-between p-2">
-               <div className="px-2">
+               <div className="flex-1 px-2">
                  <ThemeToggle />
                </div>
                <button 
