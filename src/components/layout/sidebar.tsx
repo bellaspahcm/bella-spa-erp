@@ -196,7 +196,7 @@ export function Sidebar() {
         - Mobile: Slide-out fixed drawer based on `isOpen` state
       */}
       <aside className={cn(
-        "w-80 bg-[#FFF0F3] border-r border-[#FBCFE8] dark:bg-[#1C1B19] dark:border-[#3E3A35] flex flex-col h-screen md:h-[111.2vh] fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:sticky lg:top-0 transition-transform duration-300 ease-in-out overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)]",
+        "w-80 bg-[#FFF0F3] border-r border-[#FBCFE8] dark:bg-[#1C1B19] dark:border-[#3E3A35] flex flex-col h-screen fixed inset-y-0 left-0 z-50 transform lg:translate-x-0 lg:sticky lg:top-0 transition-transform duration-300 ease-in-out overflow-hidden shadow-[10px_0_40px_rgba(244,63,94,0.06)] dark:shadow-[10px_0_40px_rgba(0,0,0,0.5)]",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Soft decorative light glows */}
