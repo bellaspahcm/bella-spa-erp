@@ -31,22 +31,29 @@ import { createClient } from '@/lib/supabase-client';
 import ThemeToggle from '@/components/common/ThemeToggle';
 
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard',      href: '/dashboard' },
-  { icon: Sparkles,        label: 'AI Copilot',     href: '/dashboard/ai-copilot' },
-  { icon: Scale,           label: 'Đối soát Lương', href: '/dashboard/ai-copilot/salary-reconciliation' },
-  { icon: Users,           label: 'Khách hàng',     href: '/dashboard/customers' },
-  { icon: Calendar,        label: 'Lịch hẹn',       href: '/dashboard/bookings' },
-  { icon: Flower2,         label: 'Thẻ liệu trình', href: '/dashboard/sessions' },
-  { icon: MessageSquare,   label: 'Tin nhắn',        href: '/dashboard/chat' },
-  { icon: Megaphone,       label: 'CRM & Zalo',     href: '/dashboard/crm' },
-  { icon: Sparkles,        label: 'Dịch vụ',         href: '/dashboard/services' },
-  { icon: DollarSign,      label: 'Tài chính',       href: '/dashboard/finance' },
-  { icon: ShieldAlert,     label: 'Đối soát',        href: '/dashboard/finance/reconciliation' },
-  { icon: Scale,           label: 'Kế toán sổ cái',   href: '/dashboard/accounting' },
-  { icon: Package,         label: 'Kho hàng',        href: '/dashboard/inventory' },
-  { icon: Banknote,        label: 'Bảng lương',      href: '/dashboard/salary' },
-  { icon: History,         label: 'Nhật ký hệ thống', href: '/dashboard/audit' },
-  { icon: Settings,        label: 'Cài đặt',         href: '/dashboard/settings' },
+  { type: 'header', label: 'Tổng quan & AI' },
+  { icon: LayoutDashboard, label: 'Dashboard',          href: '/dashboard' },
+  { icon: Sparkles,        label: 'AI Copilot',         href: '/dashboard/ai-copilot' },
+
+  { type: 'header', label: 'Khách hàng & Dịch vụ' },
+  { icon: Users,           label: 'Khách hàng',         href: '/dashboard/customers' },
+  { icon: Calendar,        label: 'Lịch hẹn',           href: '/dashboard/bookings' },
+  { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' },
+  { icon: MessageSquare,   label: 'Tin nhắn',           href: '/dashboard/chat' },
+  { icon: Megaphone,       label: 'CRM & Zalo',         href: '/dashboard/crm' },
+  { icon: Sparkles,        label: 'Dịch vụ',            href: '/dashboard/services' },
+
+  { type: 'header', label: 'Tài chính & Đối soát' },
+  { icon: DollarSign,      label: 'Tài chính',           href: '/dashboard/finance' },
+  { icon: ShieldAlert,     label: 'Đối soát Tài chính',  href: '/dashboard/finance/reconciliation' },
+  { icon: Scale,           label: 'Đối soát Lương',     href: '/dashboard/ai-copilot/salary-reconciliation' },
+  { icon: Banknote,        label: 'Bảng lương',          href: '/dashboard/salary' },
+  { icon: Scale,           label: 'Kế toán sổ cái',      href: '/dashboard/accounting' },
+  { icon: Package,         label: 'Kho hàng',            href: '/dashboard/inventory' },
+
+  { type: 'header', label: 'Hệ thống' },
+  { icon: History,         label: 'Nhật ký hệ thống',    href: '/dashboard/audit' },
+  { icon: Settings,        label: 'Cài đặt',             href: '/dashboard/settings' },
 ];
 
 const customerMenuItems = [
@@ -90,6 +97,9 @@ export function Sidebar() {
   const filteredMenuItems = user?.role?.toLowerCase() === 'customer'
     ? customerMenuItems
     : menuItems.filter(item => {
+        if (item.type === 'header') {
+          return true; // Keep headers for post-processing cleanup
+        }
         if (user && user.role !== 'admin' && user.role !== 'customer') {
           if (rolePermissions) {
             const moduleMap: Record<string, string> = {
@@ -102,7 +112,7 @@ export function Sidebar() {
               'CRM & Zalo': 'crm',
               'Dịch vụ': 'services',
               'Tài chính': 'finance',
-              'Đối soát': 'reconciliation',
+              'Đối soát Tài chính': 'reconciliation',
               'Kế toán sổ cái': 'accounting',
               'Kho hàng': 'inventory',
               'Bảng lương': 'salary',
@@ -116,13 +126,13 @@ export function Sidebar() {
           } else {
             // Default fallbacks while loading or if no custom permissions set
             if (user.role === 'ktv') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương'].includes(item.label);
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát Tài chính', 'Nhật ký hệ thống', 'Kho hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương'].includes(item.label);
             }
             if (user.role === 'ktv_lead') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương'].includes(item.label);
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát Tài chính', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương'].includes(item.label);
             }
             if (user.role === 'admin_staff') {
-              return !['Đối soát', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương'].includes(item.label);
+              return !['Đối soát Tài chính', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương'].includes(item.label);
             }
           }
         }
@@ -136,6 +146,28 @@ export function Sidebar() {
       filteredMenuItems.push({ icon: DollarSign, label: 'Thu nhập cá nhân', href: '/ktv/earnings' });
     }
   }
+
+  // Post-process to remove headers that have no active links following them
+  const finalMenuItems: any[] = [];
+  let currentHeader: any = null;
+  let hasItemsInHeader = false;
+
+  filteredMenuItems.forEach((item: any) => {
+    if (item.type === 'header') {
+      if (currentHeader && hasItemsInHeader) {
+        finalMenuItems.push(currentHeader);
+      }
+      currentHeader = item;
+      hasItemsInHeader = false;
+    } else {
+      if (currentHeader) {
+        finalMenuItems.push(currentHeader);
+        currentHeader = null;
+      }
+      finalMenuItems.push(item);
+      hasItemsInHeader = true;
+    }
+  });
 
   const handleLogout = async () => {
     try {
@@ -234,7 +266,18 @@ export function Sidebar() {
         <nav className="flex-1 min-h-0 px-5 space-y-1.5 overflow-y-auto relative z-10 pb-2
                         [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent
                         [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-rose-200/60 dark:[&::-webkit-scrollbar-thumb]:bg-[#3E3A35]">
-          {filteredMenuItems.map((item: any) => {
+          {finalMenuItems.map((item: any, idx: number) => {
+            if (item.type === 'header') {
+              return (
+                <div 
+                  key={`header-${idx}`} 
+                  className="px-5 pt-3 pb-1 text-[9.5px] font-extrabold text-[#BE185D]/60 dark:text-[#A67D44]/60 uppercase tracking-[0.2em] relative z-10 select-none pointer-events-none mt-4 first:mt-1"
+                >
+                  {item.label}
+                </div>
+              );
+            }
+
             const isActive = pathname === item.href;
             return (
               <Link key={item.href} href={item.href}>

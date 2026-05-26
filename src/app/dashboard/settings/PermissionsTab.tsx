@@ -16,7 +16,7 @@ const MODULES = [
   { id: "services", label: "Dịch vụ & Sản phẩm" },
   { id: "inventory", label: "Kho hàng" },
   { id: "finance", label: "Tài chính & Thu chi" },
-  { id: "reconciliation", label: "Đối soát hoa hồng" },
+  { id: "reconciliation", label: "Đối soát Tài chính" },
   { id: "salary", label: "Bảng lương" },
   { id: "audit", label: "Nhật ký hệ thống" },
   { id: "settings", label: "Cài đặt" }
