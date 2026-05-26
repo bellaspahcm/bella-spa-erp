@@ -462,43 +462,45 @@ export default function SalaryPage() {
 
       {/* Premium Tab Selector */}
       {currentUser?.role?.toLowerCase() !== 'ktv' && (
-        <div className="flex bg-white/60 p-2 rounded-2xl border border-slate-100 gap-2 mb-10 w-fit backdrop-blur-md">
-          <button
-            onClick={() => setActiveTab('payroll')}
-            className={cn(
-              "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
-              activeTab === 'payroll'
-                ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
-                : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
-            )}
-          >
-            <DollarSign className="w-4 h-4" />
-            Bảng Lương realtime
-          </button>
-          <button
-            onClick={() => setActiveTab('attendance')}
-            className={cn(
-              "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
-              activeTab === 'attendance'
-                ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
-                : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
-            )}
-          >
-            <CalendarDays className="w-4 h-4" />
-            Chấm Công Thực Tế
-          </button>
-          <button
-            onClick={() => setActiveTab('hr_profile')}
-            className={cn(
-              "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
-              activeTab === 'hr_profile'
-                ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
-                : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
-            )}
-          >
-            <UserCog className="w-4 h-4" />
-            Hồ Sơ Nhân Sự (HR)
-          </button>
+        <div className="overflow-x-auto custom-scrollbar w-full max-w-full mb-10">
+          <div className="flex bg-white/60 p-2 rounded-2xl border border-slate-100 gap-2 w-fit backdrop-blur-md whitespace-nowrap">
+            <button
+              onClick={() => setActiveTab('payroll')}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
+                activeTab === 'payroll'
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
+                  : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
+              )}
+            >
+              <DollarSign className="w-4 h-4" />
+              Bảng Lương realtime
+            </button>
+            <button
+              onClick={() => setActiveTab('attendance')}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
+                activeTab === 'attendance'
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
+                  : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
+              )}
+            >
+              <CalendarDays className="w-4 h-4" />
+              Chấm Công Thực Tế
+            </button>
+            <button
+              onClick={() => setActiveTab('hr_profile')}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
+                activeTab === 'hr_profile'
+                  ? "bg-slate-900 text-white shadow-lg shadow-slate-950/10"
+                  : "text-slate-500 hover:text-slate-950 hover:bg-slate-50"
+              )}
+            >
+              <UserCog className="w-4 h-4" />
+              Hồ Sơ Nhân Sự (HR)
+            </button>
+          </div>
         </div>
       )}
 
