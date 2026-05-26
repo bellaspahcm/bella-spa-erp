@@ -82,10 +82,16 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   if (bookingData?.package_id) {
     try {
       const { autoConsumeForSession } = await import('@/services/inventory-actions');
-      await autoConsumeForSession(bookingData.package_id, sessionId);
+      const consumeResult = await autoConsumeForSession(bookingData.package_id, sessionId);
+      
+      // Chặn đứng (halt) quy trình nếu kho không đủ nguyên liệu
+      if (consumeResult && consumeResult.success === false) {
+        return { error: consumeResult.error || 'Kho không đủ nguyên liệu để thực hiện ca dịch vụ này.' };
+      }
       console.log(`[completeSession] Successfully auto-consumed materials for package ${bookingData.package_id} and session ${sessionId}`);
-    } catch (consumeErr) {
+    } catch (consumeErr: any) {
       console.error('[completeSession] Error in autoConsumeForSession:', consumeErr);
+      return { error: consumeErr.message || 'Lỗi hệ thống khi kiểm tra kho vật tư.' };
     }
   }
 

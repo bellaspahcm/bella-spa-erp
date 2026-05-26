@@ -739,22 +739,41 @@ export async function recordRemainingPayment(params: {
   amount: number;
   payment_method: string;
   notes?: string;
-  receipt_url?: string;
   status?: string;
+  revenue_type?: string;
 }) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
+  const { getCurrentUser } = await import('@/services/user-actions');
+  const currentUser = await getCurrentUser();
 
   try {
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')
-      .select('*')
+      .select('id, deposit_amount, full_price, status, tenant_id, discount_percent')
       .eq('id', params.booking_id)
       .single();
 
-    if (fetchError || !booking) throw fetchError || new Error('Không tìm thấy booking');
+    if (fetchError || !booking) throw new Error('Không tìm thấy booking: ' + fetchError?.message);
 
-    const tenantId = booking.tenant_id;
+    // Bắt đầu luồng kiểm tra rủi ro (Negative Test Checks)
+    const currentDebt = (booking.full_price * (1 - (booking.discount_percent || 0)/100)) - (booking.deposit_amount || 0);
+    if (params.amount > currentDebt) {
+      throw new Error(`Số tiền thanh toán vượt quá số tiền còn nợ của gói (${currentDebt.toLocaleString()} đ)`);
+    }
+
+    try {
+      const { checkMonthLock } = await import('@/services/audit-actions');
+      const lockCheck = await checkMonthLock();
+      if (lockCheck?.isLocked) {
+        throw new Error('Không thể ghi nhận doanh thu: Kỳ kế toán này đã được chốt sổ.');
+      }
+    } catch (e: any) {
+      if (e.message.includes('chốt sổ')) throw e;
+      // if checkMonthLock doesn't exist yet, we ignore it to prevent crashing normal flow
+    }
+
+    const tenantId = booking.tenant_id || currentUser?.tenant_id;
 
     let insertedRev: { id: string; status: string } | null = null;
 
@@ -763,12 +782,11 @@ export async function recordRemainingPayment(params: {
       .insert([{
         booking_id: params.booking_id,
         amount: params.amount,
-        revenue_type: 'remaining_payment',
+        revenue_type: params.revenue_type || 'remaining_payment',
         payment_method: params.payment_method,
         received_date: getLocalDateString(),
         status: params.status || 'pending',
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
-        receipt_url: params.receipt_url || null,
         tenant_id: tenantId
       }])
       .select('id, status')
