@@ -1,19 +1,19 @@
-# Ngữ cảnh dự án (Agent Context): BELLA SPA ERP
+# 專案上下文 (Agent Context)：BELLA SPA ERP
 
-> **Thời gian cập nhật gần nhất**: 2026-05-26 (AI Copilot & Calculation Logic Hardened)
-> **Tự động tạo**: Được tạo bởi `prepare_context.py` nhằm giúp AI Agent nhanh chóng nắm bắt bức tranh toàn cảnh dự án
+> **最後更新時間**：2026-05-27 06:20
+> **自動生成**：由 `prepare_context.py` 產生，供 AI Agent 快速掌握專案全局
 
 ---
 
-## 🎯 1. Mục tiêu dự án (Project Goal)
-* **Mục tiêu cốt lõi**: _(Vui lòng bổ sung thủ công hoặc tạo file README.md)_
+## 🎯 1. 專案目標 (Project Goal)
+* **核心目的**：_（請手動補充，或建立 README.md）_
 
-## 🛠️ 2. Công nghệ & Môi trường (Tech Stack & Environment)
-* **Thư viện cốt lõi**: @sentry/nextjs, @supabase/ssr, @supabase/supabase-js, clsx, date-fns, dexie, framer-motion, lucide-react, next, react
-* **Thư viện phát triển**: @tailwindcss/postcss, @testing-library/jest-dom, @testing-library/react, @types/jest, @types/node, @types/react, @types/react-dom, eslint
-* **Lệnh khả dụng**: dev, build, start, lint, test
+## 🛠️ 2. 技術棧與環境 (Tech Stack & Environment)
+* **核心套件**：@sentry/nextjs, @supabase/ssr, @supabase/supabase-js, clsx, date-fns, dexie, framer-motion, html-to-image, lucide-react, next
+* **開發套件**：@playwright/test, @tailwindcss/postcss, @testing-library/jest-dom, @testing-library/react, @types/jest, @types/node, @types/react, @types/react-dom
+* **可用指令**：dev, build, start, lint, test, e2e, e2e:ui, e2e:headed, e2e:debug, e2e:report, load:smoke, load:dashboard, load:stress, load:spike, load:soak, load:soak:short, load:report
 
-### File cấu hình gốc
+### 原始設定檔
 
 <details><summary>package.json</summary>
 
@@ -27,7 +27,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest"
+    "test": "jest",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:headed": "playwright test --headed",
+    "e2e:debug": "playwright test --debug",
+    "e2e:report": "playwright show-report",
+    "load:smoke": "k6 run load-tests/scripts/01-smoke.js",
+    "load:dashboard": "k6 run load-tests/scripts/02-dashboard-load.js",
+    "load:stress": "k6 run load-tests/scripts/03-booking-stress.js",
+    "load:spike": "k6 run load-tests/scripts/04-login-spike.js",
+    "load:soak": "k6 run load-tests/scripts/05-checkout-soak.js",
+    "load:soak:short": "k6 run -e SOAK_MINUTES=5 load-tests/scripts/05-checkout-soak.js",
+    "load:report": "k6 run --out json=load-tests/results/result.json load-tests/scripts/01-smoke.js"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.53.1",
@@ -37,6 +49,7 @@
     "date-fns": "^4.1.0",
     "dexie": "^4.4.2",
     "framer-motion": "^12.38.0",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "react": "19.2.4",
@@ -49,6 +62,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -70,13 +84,15 @@
 ```
 </details>
 
-## 📂 3. Cấu trúc thư mục cốt lõi (Core Structure)
-_(💡 Quy tắc đọc của AI: Vui lòng tìm kiếm các file tương ứng dựa theo cấu trúc này, không tự ý đoán mò đường dẫn)_
+## 📂 3. 核心目錄結構 (Core Structure)
+_(💡 AI 讀取守則：請依據此結構尋找對應檔案，勿盲目猜測路徑)_
 ```text
 BELLA SPA ERP/
 ├── 2026-05-21.md
 ├── 2026-05-22.md
 ├── 2026-05-23.md
+├── 2026-05-25.md
+├── 2026-05-26.md
 ├── AGENTS.md
 ├── AGENT_CONTEXT.md
 ├── CLAUDE.md
@@ -84,14 +100,17 @@ BELLA SPA ERP/
 ├── IMPLEMENTATION_PLAN.md
 ├── bella-spa-erp
 │   └── README.md
+├── bella_ai_erp_implementation_plan.html
 ├── bella_spa_erp_audit_report.html
 ├── bella_spa_erp_audit_report.pdf
 ├── bella_spa_erp_audit_report_2026_05_21.html
+├── comprehensive_test_plan.html
 ├── create-admin.js
 ├── diary
 │   └── 2026
 │       └── 05
 ├── docs
+│   ├── BELLA_AI_ERP_PROGRESS.md
 │   ├── BELLA_SPA_ERP_MASTER_GUIDE.md
 │   ├── BELLA_SPA_ERP_MASTER_GUIDE.pdf
 │   ├── BELLA_SPA_EXECUTIVE_SUMMARY.md
@@ -115,15 +134,65 @@ BELLA SPA ERP/
 │   ├── plans
 │   │   ├── 2026-05-18-hr-attendance.md
 │   │   └── OFFLINE_SYNC_STRATEGY.md
+│   ├── user-manuals
+│   │   ├── accountant.html
+│   │   ├── admin.html
+│   │   ├── hr.html
+│   │   ├── index.html
+│   │   ├── ktv.html
+│   │   └── sop.html
 │   └── zero-mock-phase-1.md
+├── e2e
+│   ├── README.md
+│   ├── fixtures
+│   │   └── auth.ts
+│   ├── helpers
+│   │   ├── supabase-admin.ts
+│   │   └── ui.ts
+│   └── tests
+│       ├── 01-booking-creation.spec.ts
+│       ├── 02-session-checkin-checkout.spec.ts
+│       ├── 03-bank-reconciliation.spec.ts
+│       ├── 04-period-closing.spec.ts
+│       └── 05-payroll-finalization.spec.ts
 ├── eslint.config.mjs
 ├── fix_as_any.ps1
+├── generate-report.js
 ├── jest.config.ts
 ├── jest.setup.ts
+├── load-tests
+│   ├── README.md
+│   ├── config
+│   │   ├── env.js
+│   │   └── thresholds.js
+│   ├── helpers
+│   │   ├── auth.js
+│   │   └── data.js
+│   ├── results
+│   └── scripts
+│       ├── 01-smoke.js
+│       ├── 02-dashboard-load.js
+│       ├── 03-booking-stress.js
+│       ├── 04-login-spike.js
+│       └── 05-checkout-soak.js
+├── mcp-server
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── src
+│   │   ├── db.ts
+│   │   ├── index.ts
+│   │   ├── prompts.ts
+│   │   ├── resources.ts
+│   │   └── tools.ts
+│   └── tsconfig.json
 ├── next-env.d.ts
 ├── next.config.ts
 ├── package-lock.json
 ├── package.json
+├── playwright-report
+│   └── index.html
+├── playwright-results.json
+├── playwright.config.ts
 ├── postcss.config.mjs
 ├── public
 │   ├── FullLogo_Transparent_NoBuffer.png
@@ -135,16 +204,27 @@ BELLA SPA ERP/
 │   ├── file.svg
 │   ├── globe.svg
 │   ├── home_baby_care.png
+│   ├── icons
+│   │   ├── icon-192x192.png
+│   │   └── icon-512x512.png
+│   ├── images
+│   │   ├── logo.png
+│   │   └── receipt-bg.png
 │   ├── logo.png
+│   ├── manifest.json
 │   ├── newborn_baby_hand.png
 │   ├── newborn_family_happy.png
 │   ├── newborn_mother_love.png
 │   ├── next.svg
+│   ├── sw.js
 │   ├── vercel.svg
 │   └── window.svg
 ├── scratch
+│   ├── accounting_cleanup.sql
+│   ├── apply_fix_via_pg.mjs
 │   ├── check_all_columns.js
 │   ├── check_audit_table.js
+│   ├── check_column_types.mjs
 │   ├── check_columns.js
 │   ├── check_columns.ts
 │   ├── check_customer_data.js
@@ -156,17 +236,30 @@ BELLA SPA ERP/
 │   ├── check_user_tenant.js
 │   ├── create_table_attempt.js
 │   ├── debug_finance.ts
+│   ├── debug_reconciliation.mjs
 │   ├── debug_user.py
+│   ├── diagnose_function.sql
 │   ├── fix_booking_actions.py
 │   ├── fix_packages_permissions.js
+│   ├── fix_reconciliation_auth.sql
+│   ├── fix_reconciliation_v2.sql
+│   ├── generate_icons.py
 │   ├── migration_v1.js
 │   ├── query.js
 │   ├── query_packages.js
+│   ├── query_tenants.js
 │   ├── test-query.js
 │   ├── test.txt
+│   ├── test_gemini.js
+│   ├── test_keys.js
 │   ├── test_packages.js
+│   ├── test_regex.js
+│   ├── trigger_sync_local.js
 │   └── update_booking.js
 ├── scripts
+│   ├── README-reset.md
+│   ├── check_exec_sql.mjs
+│   ├── db-reset.js
 │   ├── debug
 │   │   ├── query_ktv.js
 │   │   ├── query_ktv2.js
@@ -179,27 +272,48 @@ BELLA SPA ERP/
 │   │   ├── test_upcoming.js
 │   │   ├── test_upcoming2.js
 │   │   └── test_upcoming_auth.js
+│   ├── encrypt_telegram_tokens.mjs
+│   ├── reset-customer-data.sql
 │   ├── seed-demo.mjs
-│   └── simulate-realtime.mjs
+│   ├── simulate-realtime.mjs
+│   └── verify-reset.sql
+├── security-report-2026-05-25.html
 ├── sentry.client.config.ts
 ├── sentry.edge.config.ts
 ├── sentry.server.config.ts
 ├── src
 │   ├── __tests__
+│   │   ├── accounting-engine.test.ts
+│   │   ├── accounting-outbox.test.ts
+│   │   ├── accounting-reports.test.ts
+│   │   ├── ai-agent.test.ts
+│   │   ├── ai-coo-agents.test.ts
 │   │   ├── booking.test.ts
 │   │   ├── brand-service-master.test.ts
+│   │   ├── cash-flow.test.ts
+│   │   ├── consolidated-pnl.test.ts
+│   │   ├── dual-mode-accounting.test.ts
+│   │   ├── e2e-negative-pipeline.test.ts
 │   │   ├── e2e-pipeline.test.ts
 │   │   ├── finance.lockMonth.test.ts
 │   │   ├── finance.test.ts
+│   │   ├── form-validators.test.ts
 │   │   ├── franchise-royalty.test.ts
 │   │   ├── hq-audit-explorer.test.ts
 │   │   ├── inter-branch-clearing.test.ts
 │   │   ├── inventory-transfer.test.ts
 │   │   ├── kpi-calculator.test.ts
+│   │   ├── log-redactor.test.ts
+│   │   ├── onboarding.test.ts
+│   │   ├── period-closing.test.ts
 │   │   ├── rate-limit.test.ts
+│   │   ├── reconciliation.test.ts
 │   │   ├── rls-compliance.test.ts
+│   │   ├── salary-reconciliation.test.ts
 │   │   ├── salary.test.ts
-│   │   └── subscription.test.ts
+│   │   ├── subscription.test.ts
+│   │   ├── utils.test.ts
+│   │   └── validations.test.ts
 │   ├── app
 │   │   ├── (auth)
 │   │   ├── api
@@ -217,15 +331,22 @@ BELLA SPA ERP/
 │   │   ├── features
 │   │   ├── layout
 │   │   └── ui
+│   ├── config
+│   │   └── ai-constants.ts
 │   ├── constants
 │   ├── hooks
 │   │   └── useOfflineSync.ts
 │   ├── lib
+│   │   ├── accounting-outbox.ts
 │   │   ├── crypto.ts
+│   │   ├── form-validators.ts
+│   │   ├── log-redactor.ts
+│   │   ├── mfa.ts
 │   │   ├── migration.ts
 │   │   ├── offline-db.ts
 │   │   ├── rate-limit.ts
 │   │   ├── revalidate.ts
+│   │   ├── safe-logger.ts
 │   │   ├── subscription.ts
 │   │   ├── supabase-client.ts
 │   │   ├── supabase-server.ts
@@ -236,11 +357,9 @@ BELLA SPA ERP/
 │   │   └── hr-salary
 │   ├── proxy.ts
 │   ├── services
-│   │   ├── accounting-actions.ts          # ⭐ NEW (Phase 28+29): COA + GL + 5 reports (TB/PnL/BS/CFS/Ledger) + reversal + period close/reopen/preview + outbox monitor + manual entry
-│   │   ├── accounting-engine.ts           # ⭐ NEW (Phase 26): AccountingEngineService.postJournalEntry (typed admin client)
-│   │   ├── revenue-recognition.ts         # ⭐ NEW (Phase 26-27): 5 handlers (PackageSale/SessionDone/Expense/Salary/Inventory)
-│   │   ├── export-actions.ts              # ⭐ NEW (Phase 28+29.2): Excel export TT133 format (4 sheets: TB/PnL/BS/CFS)
-│   │   ├── hq-actions.ts                  # ⭐ UPDATED (Phase 29.3): + getConsolidatedPnLReport (HQ-only multi-branch P&L)
+│   │   ├── accounting-actions.ts
+│   │   ├── accounting-engine.ts
+│   │   ├── ai-coo-service.ts
 │   │   ├── attendance-actions.ts
 │   │   ├── audit-actions.ts
 │   │   ├── brand-service-actions.ts
@@ -260,6 +379,8 @@ BELLA SPA ERP/
 │   │   ├── onboarding-actions.ts
 │   │   ├── package-actions.ts
 │   │   ├── reconciliation-actions.ts
+│   │   ├── revenue-recognition.ts
+│   │   ├── salary-reconciliation-actions.ts
 │   │   ├── subscription-actions.ts
 │   │   ├── sync-actions.ts
 │   │   ├── tenant-actions.ts
@@ -319,46 +440,57 @@ BELLA SPA ERP/
 │   │   ├── 20260522010000_franchise_royalty_system.sql
 │   │   ├── 20260522020000_inter_branch_clearing.sql
 │   │   ├── 20260522030000_inventory_transfer_orders.sql
-│   │   └── 20260522040000_brand_service_master.sql
+│   │   ├── 20260522040000_brand_service_master.sql
+│   │   ├── 20260523000000_fix_create_onboarding_user.sql
+│   │   ├── 20260523010000_harden_all_database_rls.sql
+│   │   ├── 20260523020000_add_receipt_url_to_revenue.sql
+│   │   ├── 20260523020000_get_user_by_email_rpc.sql
+│   │   ├── 20260523030000_grant_service_role_schema_access.sql
+│   │   ├── 20260523040000_fix_hq_super_admin_rls.sql
+│   │   ├── 20260524000000_accounting_core.sql
+│   │   ├── 20260525000000_security_hardening.sql
+│   │   ├── 20260525100000_accounting_rls_harden.sql
+│   │   ├── 20260525110000_seed_default_coa.sql
+│   │   ├── 20260525120000_accounting_periods_auto.sql
+│   │   ├── 20260525130000_accounting_outbox.sql
+│   │   ├── 20260525140000_onboard_with_coa.sql
+│   │   ├── 20260525150000_accounting_reports.sql
+│   │   ├── 20260525160000_accounting_grants.sql
+│   │   ├── 20260525170000_period_closing_workflow.sql
+│   │   ├── 20260525180000_cash_flow_statement.sql
+│   │   ├── 20260525190000_consolidated_pnl_hq.sql
+│   │   ├── 20260525200000_fix_consolidated_pnl_ambiguous.sql
+│   │   ├── 20260525210000_reconciliation_report.sql
+│   │   ├── 20260525220000_fix_function_grants.sql
+│   │   ├── 20260525230000_fix_reconciliation_date_types.sql
+│   │   ├── 20260526000000_ai_agent_infrastructure.sql
+│   │   ├── 20260526010000_ai_agent_salary_tools.sql
+│   │   ├── 20260526020000_allow_service_role_ai_rpc.sql
+│   │   ├── 20260526030000_ai_security_hardening.sql
+│   │   ├── 20260526040000_fix_attendance_logic.sql
+│   │   ├── 20260526040000_salary_reconciliation.sql
+│   │   ├── 20260526040000_salary_reconciliation_report.sql
+│   │   ├── 20260526050000_dual_mode_accounting.sql
+│   │   └── 20260526060000_add_hr_role.sql
 │   ├── seed.sql
 │   └── seed_demo_2026.sql
+├── test-execution-report.html
+├── test-results
+├── test-results-fresh.json
+├── test-results.json
+├── test-summary.json
 ├── tsconfig.json
-└── tsconfig.tsbuildinfo
+├── tsconfig.tsbuildinfo
+└── vercel.json
 ```
 
-## 🏛️ 4. Quy ước kiến trúc & Thiết kế (Architecture & Conventions)
-* _(Chưa có file `.auto-skill-local.md`, các kinh nghiệm thực chiến dự án sẽ tự động tích lũy trong quá trình phát triển)_
+## 🏛️ 4. 架構與設計約定 (Architecture & Conventions)
+* _（尚無 `.auto-skill-local.md`，專案踩坑經驗將在開發過程中自動累積）_
 
-## 🚦 5. Tiến độ hiện tại & Việc cần làm (Current Status & TODO)
-_(Tự động trích xuất từ nhật ký mới nhất ngày 2026-05-26)_
+## 🚦 5. 目前進度與待辦 (Current Status & TODO)
+_(自動提取自最近日記 2026-05-27)_
 
-### ✅ Vừa hoàn tất (2026-05-26)
-- [x] **Chuẩn hóa Bella AI ERP Multi-Agent**:
-  - Vá lỗi tính toán `onTimeRate` tránh bị trừ muộn hai lần (double-penalty).
-  - Tạo migration database `20260526040000_fix_attendance_logic.sql` tự động fallback `total_shifts` sang tổng chấm công thực tế khi bảng ca lịch trống (sửa triệt để hiển thị sai của KTV Nguyễn Thị Hoa).
-  - Loại bỏ hoàn toàn casting bypass `(supabase as any)` trong `ai-coo-service.ts` bằng việc cập nhật thuộc tính `gemini_api_key: string | null` của bảng `ai_agent_configs` tại file lược đồ kiểu tĩnh `database.types.ts`.
-  - Toàn bộ **171/171 unit tests pass 100%**, push thành công lên `main` branch và deploy lên Vercel.
-- [x] **Security Audit Enterprise**: 2 Critical + 6 High + 6 Medium vulnerabilities đã vá theo OWASP Top 10 / SANS Top 25.
-- [x] **Đổi Supabase API Keys** sang format `sb_secret_*` mới, revoke key cũ JWT format.
-- [x] **HTTP Security Headers** trong `next.config.ts`: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Permissions-Policy.
-- [x] **Phase 26 Foundation**: 5 bảng accounting (`accounting_accounts`, `accounting_periods`, `journal_entries`, `journal_lines`, `accounting_outbox`) + seed 38 COA accounts chuẩn TT133 + 11 Jest tests.
-- [x] **Phase 27 Integration**: Hook 7 nghiệp vụ (createBooking, recordRemainingPayment, completeSession, updateSessionLog, confirmTransaction, confirmSalary, autoConsumeForSession) vào outbox + cron worker `/api/cron/accounting-worker` + 10 tests.
-- [x] **Phase 28 Reports Hub**: 4 SQL report functions (trial_balance, income_statement, balance_sheet, account_ledger) + 6 dashboard pages (`/dashboard/accounting/*`) + Excel export + Reversal logic + 6 tests.
-- [x] **Phase 29.1 + 29.4 Period Closing + Compliance**: `generate_closing_entries()` tự tạo 3 bút toán 5xx→911→421, trigger DB chặn ghi vào period CLOSED, cascade lock revenue/expenses/salary, UI 2-bước modal premium + audit log trigger tự ghi mọi POSTED entry vào audit_logs + 10 tests.
-- [x] **Phase 29.2 Cash Flow Statement**: `get_cash_flow_statement()` indirect method chuẩn TT133 (Operating + Investing + Financing) với verification cross-check + UI tab CFS + Excel export + 7 tests.
-- [x] **Phase 29.3 Multi-branch HQ View**: `get_consolidated_pnl()` HQ-only function (gate `is_hq_super_admin()`) trả về 14-indicator P&L per branch + 3 KPIs phụ + trang `/hq/financial-overview` với Recharts BarChart top-10 + bảng xếp hạng 🥇🥈🥉 + 7 tests. Có hotfix `#variable_conflict use_column` cho PL/pgSQL ambiguity.
-
-### 🚧 Việc cần làm tiếp theo
-- [ ] **Tích hợp chatbot thực tế:** Cấu hình Telegram Bot thật của chi nhánh và đăng ký webhook url `/api/v1/ai/telegram-webhook` để chạy thử nghiệm UAT hội thoại thực tế.
-- [ ] **Bật Daily Autopilot Cron:** Bật Cron trigger chạy ngầm lúc 22:00 cho endpoint `/api/cron/ai-autopilot` thông qua Vercel Cron Jobs hoặc pg_cron.
-- [ ] **Cấu hình Vercel Cron Job** cho kế toán: kích hoạt `/api/cron/accounting-worker` mỗi 1 phút (hoặc Supabase pg_cron) để worker tự chạy nền.
-- [ ] **Theo dõi metrics outbox health** trong tuần đầu sau deploy (số PENDING/FAILED/DEAD theo ngày qua dashboard `/dashboard/accounting/outbox`).
-- [ ] **Thu thập phản hồi từ kế toán thực tế** về 5 báo cáo TT133 (Trial Balance, P&L, Balance Sheet, Cash Flow, Account Ledger) — có cần điều chỉnh format hay thêm chỉ tiêu nào không.
-- [ ] **Phase 29.5 — Migration Finance UI cũ → Ledger** (cuối Phase 29):
-  - Reconciliation Report so sánh side-by-side P&L từ `revenue`+`expenses` (cũ) vs `journal_entries` (mới).
-  - Daily reconciliation cron + Sentry alert nếu lệch > 1%.
-  - UI dashboard "Đối soát chéo" trong `/dashboard/accounting/reconciliation`.
-  - Sau 1 tháng match 100% → deprecate `/dashboard/finance` cũ.
-- [ ] Theo dõi phản hồi từ người dùng về trải nghiệm thị giác tổng thể của hệ màu hồng pastel mới trên sidebar.
-
+### 🚧 待辦事項
+- [ ] Tiếp tục theo dõi phản hồi thực tế từ khách hàng về giao diện đặt lịch.
+- [ ] Kiểm thử kỹ lưỡng hành vi đặt lịch trên các thiết bị di động để đảm bảo độ mượt mà khi cuộn và hiệu năng chuyển trang.
 
