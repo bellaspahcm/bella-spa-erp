@@ -1,11 +1,23 @@
+// Script tạo/sửa tài khoản testadmin trong public.users
+// Chạy: node -r dotenv/config create-admin.js dotenv_config_path=.env.local
+require('dotenv').config({ path: '.env.local' });
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient('https://lvnvkpyxtuilhrabtlwv.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2bnZrcHl4dHVpbGhyYWJ0bHd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NzIxMjksImV4cCI6MjA5NDA0ODEyOX0.eOdkh5g-Te7ALOWHgVl7HSqzkK933rQQY2Cp8w7m2U0');
+
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!url || !key) {
+  console.error('❌ Thiếu NEXT_PUBLIC_SUPABASE_URL hoặc NEXT_PUBLIC_SUPABASE_ANON_KEY trong .env.local');
+  process.exit(1);
+}
+
+const supabase = createClient(url, key);
 
 async function run() {
   const email = 'bellaspa.testadmin@gmail.com';
   const tenantId = '0e66365b-42b0-420e-acca-f7d7692e125e'; // Bella Spa tenant
 
-  console.log('Inserting/updating public.users record for testadmin directly in project root...');
+  console.log('Inserting/updating public.users record for testadmin...');
   const { data, error } = await supabase
     .from('users')
     .upsert({
