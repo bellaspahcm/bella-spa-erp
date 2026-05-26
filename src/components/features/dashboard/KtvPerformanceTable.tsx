@@ -84,21 +84,21 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
         <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Top KTV Xuất Sắc</h2>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className="w-full min-w-[600px]">
           <thead>
             <tr className="text-left border-b border-pink-100">
-              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2 whitespace-nowrap">
                 <Users className="w-4 h-4" /> Tên KTV
               </th>
-              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground">
+              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                 <Clock className="w-4 h-4 inline mr-2" /> Buổi
               </th>
-              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground">
+              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                 <Star className="w-4 h-4 inline mr-2" /> Rating
               </th>
-              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground text-center">Status</th>
-              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground text-right">
+              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground text-center whitespace-nowrap">Status</th>
+              <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground text-right whitespace-nowrap">
                 <Diamond className="w-4 h-4 inline mr-2" /> Bonus
               </th>
             </tr>
@@ -106,15 +106,15 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
           <tbody className="divide-y divide-pink-50">
             {topKTVs.map((ktv, idx) => (
               <tr key={idx} className="group hover:bg-white/40 transition-colors">
-                <td className="py-6 font-bold text-foreground">{ktv.name}</td>
-                <td className="py-6 font-bold text-muted-foreground">{ktv.sessions} buổi</td>
-                <td className="py-6 font-bold text-muted-foreground">
+                <td className="py-6 font-bold text-foreground whitespace-nowrap">{ktv.name}</td>
+                <td className="py-6 font-bold text-muted-foreground whitespace-nowrap">{ktv.sessions} buổi</td>
+                <td className="py-6 font-bold text-muted-foreground whitespace-nowrap">
                   <div className="flex items-center gap-1">
                     {ktv.rating} <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                   </div>
                 </td>
-                <td className="py-6 text-center">
-                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                <td className="py-6 text-center whitespace-nowrap">
+                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap ${
                     ktv.status === 'Xuất Sắc' 
                       ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' 
                       : 'bg-blue-100 text-blue-600 border border-blue-200'
@@ -122,7 +122,7 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
                     {ktv.status}
                   </span>
                 </td>
-                <td className="py-6 text-right font-bold text-primary">{ktv.bonus}</td>
+                <td className="py-6 text-right font-bold text-primary whitespace-nowrap">{ktv.bonus}</td>
               </tr>
             ))}
           </tbody>

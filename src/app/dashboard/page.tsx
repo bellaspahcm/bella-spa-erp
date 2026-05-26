@@ -494,31 +494,31 @@ export default function DashboardPage() {
                       className="group bg-white/30 hover:bg-white/60 p-6 md:p-7 rounded-[2.5rem] transition-all border border-white/40 hover:border-primary/10 shadow-sm hover:shadow-2xl hover:shadow-pink-100/30 relative mb-5 last:mb-0 backdrop-blur-md"
                     >
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
-                        <div className="flex flex-1 items-start gap-5 md:gap-7">
+                        <div className="flex flex-1 items-start gap-3 md:gap-7">
                           {/* Avatar Section */}
                           <div className="relative shrink-0">
-                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white shadow-inner flex items-center justify-center text-primary font-black text-xl md:text-2xl border-2 border-pink-50 relative group-hover:scale-105 transition-transform duration-500">
+                            <div className="w-10 h-10 md:w-20 md:h-20 rounded-full bg-white shadow-inner flex items-center justify-center text-primary font-black text-sm md:text-2xl border-2 border-pink-50 relative group-hover:scale-105 transition-transform duration-500">
                               {customerName.charAt(0)}
                             </div>
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
-                              <CheckCircle2 className="w-3 h-3 text-white" />
+                            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 md:w-6 md:h-6 bg-emerald-500 rounded-full border border-white flex items-center justify-center shadow-sm">
+                              <CheckCircle2 className="w-2 h-2 md:w-3 md:h-3 text-white" />
                             </div>
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex flex-col mb-4">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Khách hàng</span>
-                              <h3 className="font-bold text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
+                            <div className="flex flex-col mb-2 md:mb-4">
+                              <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Khách hàng</span>
+                              <h3 className="font-bold text-sm md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
                                 Mẹ: {customerName}
-                                {babyName && <span className="text-rose-400 font-medium ml-2">- Bé: {babyName}</span>}
+                                {babyName && <span className="text-rose-400 font-medium ml-1.5 text-xs md:text-base">- Bé: {babyName}</span>}
                               </h3>
                             </div>
-                              <div className="mt-1.5 flex items-center gap-3">
-                                <span className="text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider">
+                              <div className="mt-1 flex items-center gap-2 md:gap-3">
+                                <span className="text-[8px] md:text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider">
                                   KTV
                                 </span>
                                 <span className={cn(
-                                  "text-sm font-bold truncate",
+                                  "text-xs md:text-sm font-bold truncate",
                                   session.bookings?.assigned_ktv?.full_name ? "text-slate-500" : "text-amber-600 italic"
                                 )}>
                                   {technicianName}
@@ -526,34 +526,34 @@ export default function DashboardPage() {
                               </div>
                             
                             {/* Badge Row - Cleaned up */}
-                            <div className="flex flex-wrap items-center gap-2 mb-6">
+                            <div className="flex flex-wrap items-center gap-2 mt-2 mb-4 md:mb-6">
                               <div className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border shadow-sm",
+                                "flex items-center gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl text-[9px] md:text-[11px] font-bold transition-all border shadow-sm",
                                 (session.assigned_time || booking?.preferred_time)
                                   ? "bg-slate-50/50 text-slate-600 border-slate-100" 
                                   : "bg-amber-50/80 text-amber-700 border-amber-100/50 animate-pulse"
                               )}>
-                                <Clock className="w-3.5 h-3.5 text-amber-500" />
+                                <Clock className="w-2.5 h-2.5 md:w-3.5 md:h-3.5 text-amber-500" />
                                 {session.assigned_time || booking?.preferred_time || 'Chưa có giờ'}
                               </div>
                             </div>
 
                             {!session.assigned_time && !booking?.preferred_time && (
-                              <div className="mb-4 inline-flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-amber-50/80 to-orange-50/80 backdrop-blur-sm border border-amber-100/50 rounded-2xl text-[10px] font-bold text-amber-800 uppercase tracking-widest shadow-sm">
-                                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                              <div className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-50/80 to-orange-50/80 backdrop-blur-sm border border-amber-100/50 rounded-xl text-[8px] md:text-[10px] font-bold text-amber-800 uppercase tracking-widest shadow-sm">
+                                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
                                 <span>Xác nhận giờ đặt lịch</span>
                               </div>
                             )}
 
                             {/* Progress Section - Refined labels */}
                             <div className="max-w-[320px]">
-                              <div className="flex items-center justify-between mb-2 px-1">
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tiến độ liệu trình</span>
-                                <span className="text-[10px] font-black text-primary bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
+                              <div className="flex items-center justify-between mb-1.5 px-1">
+                                <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-widest">Tiến độ liệu trình</span>
+                                <span className="text-[8px] md:text-[10px] font-black text-primary bg-primary/5 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full border border-primary/10">
                                   {booking?.completed_sessions || 0} / {booking?.total_sessions || 15} Buổi
                                 </span>
                               </div>
-                              <div className="h-2.5 w-full bg-slate-100/40 rounded-full overflow-hidden p-0.5 border border-white shadow-inner">
+                              <div className="h-1.5 md:h-2.5 w-full bg-slate-100/40 rounded-full overflow-hidden p-0.5 border border-white shadow-inner">
                                 <motion.div 
                                   initial={{ width: 0 }}
                                   animate={{ width: `${((booking?.completed_sessions || 0) / (booking?.total_sessions || 15)) * 100}%` }}
