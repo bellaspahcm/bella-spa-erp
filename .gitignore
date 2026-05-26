@@ -36,8 +36,10 @@ yarn-error.log*
 # MCP server config (chứa Service Role Key - không commit lên Git)
 .mcp.json
 
-# MCP server secrets
+# MCP server secrets + build output (build artifacts có thể chứa env value inlined)
 mcp-server/.env
+mcp-server/dist/
+mcp-server/node_modules/
 
 # typescript
 *.tsbuildinfo
