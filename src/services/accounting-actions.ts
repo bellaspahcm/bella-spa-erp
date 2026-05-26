@@ -584,15 +584,34 @@ export interface ReconciliationRow {
 
 export async function getReconciliationReport(fromDate: string, toDate: string): Promise<ReconciliationRow[]> {
   const user = await getCurrentUser();
-  if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
-    throw new Error('Unauthorized: chỉ admin của chi nhánh mới được xem báo cáo đối soát chéo.');
+  if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
+    throw new Error('Unauthorized: chỉ admin hoặc kế toán của chi nhánh mới được xem báo cáo đối soát chéo.');
   }
 
-  // Use admin client (service role) — bypass session/GRANT issues.
-  // Authorization đã được kiểm tra ở JavaScript layer above.
-  const { createClient: createAdmin } = await import('@supabase/supabase-js');
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // Fallback sang user client nếu hoàn toàn không có serviceKey (ví dụ: trên Vercel chưa cấu hình)
+  if (!serviceKey) {
+    console.warn('[getReconciliationReport] SUPABASE_SERVICE_ROLE_KEY is missing. Using user client fallback.');
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc('get_reconciliation_report', {
+      p_tenant_id: user.tenant_id,
+      p_from_date: fromDate,
+      p_to_date: toDate,
+    });
+
+    if (error) {
+      console.error('[getReconciliationReport] Fallback RPC error:', JSON.stringify({
+        message: error.message, code: error.code, details: error.details, hint: error.hint,
+      }, null, 2));
+      throw error; // Zero Silent Database Failures
+    }
+    return (data as ReconciliationRow[]) || [];
+  }
+
+  // Sử dụng adminClient chính thức (service role)
+  const { createClient: createAdmin } = await import('@supabase/supabase-js');
   const adminClient = createAdmin(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -607,7 +626,7 @@ export async function getReconciliationReport(fromDate: string, toDate: string):
     console.error('[getReconciliationReport] RPC error:', JSON.stringify({
       message: error.message, code: error.code, details: error.details, hint: error.hint,
     }, null, 2));
-    throw error;
+    throw error; // Zero Silent Database Failures
   }
   return (data as ReconciliationRow[]) || [];
 }
@@ -641,10 +660,29 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
     throw new Error('Unauthorized: chỉ admin/kế toán mới được xem báo cáo đối soát lương.');
   }
 
-  // Service-role client để bypass session/GRANT issues
-  const { createClient: createAdmin } = await import('@supabase/supabase-js');
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // Fallback sang user client nếu hoàn toàn không có serviceKey (ví dụ: trên Vercel chưa cấu hình)
+  if (!serviceKey) {
+    console.warn('[getSalaryReconciliationReport] SUPABASE_SERVICE_ROLE_KEY is missing. Using user client fallback.');
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc('get_salary_reconciliation_report', {
+      p_tenant_id: user.tenant_id,
+      p_month_year: monthYear,
+    });
+
+    if (error) {
+      console.error('[getSalaryReconciliationReport] Fallback RPC error:', JSON.stringify({
+        message: error.message, code: error.code, details: error.details, hint: error.hint,
+      }, null, 2));
+      throw error; // Zero Silent Database Failures
+    }
+    return (data as SalaryReconciliationRow[]) || [];
+  }
+
+  // Sử dụng adminClient chính thức (service role)
+  const { createClient: createAdmin } = await import('@supabase/supabase-js');
   const adminClient = createAdmin(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -661,7 +699,7 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
     console.error('[getSalaryReconciliationReport] RPC error:', JSON.stringify({
       message: error.message, code: error.code, details: error.details, hint: error.hint,
     }, null, 2));
-    throw error;
+    throw error; // Zero Silent Database Failures
   }
   return (data as SalaryReconciliationRow[]) || [];
 }
