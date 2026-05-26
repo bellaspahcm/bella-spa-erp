@@ -51,23 +51,23 @@ export default function AccountingLayout({
           </div>
 
           {/* Sub tabs list */}
-          <nav className="flex flex-wrap items-center gap-1">
+          <nav className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-x-4 gap-y-3 md:gap-1.5 mt-6 lg:mt-0 w-full lg:w-auto">
             {tabs.map((tab) => {
               const isActive = pathname === tab.href;
               return (
-                <Link key={tab.href} href={tab.href} className="relative block shrink-0">
+                <Link key={tab.href} href={tab.href} className="relative block shrink-0 w-full md:w-auto">
                   <div className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all relative z-10 cursor-pointer",
+                    "flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all relative z-10 cursor-pointer w-full justify-start",
                     isActive
                       ? "text-[#BE185D] dark:text-[#EFE9E1]"
                       : "text-slate-500 hover:text-[#BE185D] dark:text-[#CDBCAB]/80 dark:hover:text-[#EFE9E1]"
                   )}>
                     <tab.icon className={cn(
-                      "w-4 h-4 transition-colors",
+                      "w-4 h-4 transition-colors shrink-0",
                       isActive ? "text-[#BE185D] dark:text-[#A67D44]" : "text-slate-400 dark:text-[#CDBCAB]/60"
                     )} />
-                    <span>{tab.label}</span>
-
+                    <span className="truncate">{tab.label}</span>
+ 
                     {isActive && (
                       <motion.div
                         layoutId="active-sub-tab"
