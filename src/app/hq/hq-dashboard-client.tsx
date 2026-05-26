@@ -76,6 +76,8 @@ import {
   getBrandDistributionMatrix 
 } from '@/services/brand-service-actions';
 
+import ThemeToggle from '@/components/common/ThemeToggle';
+
 interface HqDashboardClientProps {
   initialStats: HqDashboardStats;
   initialTenants: HqTenantRecord[];
@@ -773,9 +775,9 @@ export default function HqDashboardClient({
   const totalOutstandingFees = invoices.filter(inv => inv.status === 'pending').reduce((acc, inv) => acc + Number(inv.calculated_amount), 0);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-20 font-sans antialiased text-slate-800">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-[#11100F] pb-20 font-sans antialiased text-slate-800 dark:text-[#EFE9E1] transition-colors duration-300">
       {/* Super Top Premium Navigation Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-white/70 border-b border-slate-100 px-6 py-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-white/70 dark:bg-[#11100F]/80 border-b border-slate-100 dark:border-[#3E3A35] px-6 py-4 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 transition-colors duration-300">
         <div className="flex items-center gap-3">
           <motion.div 
             whileHover={{ scale: 1.05 }}
@@ -783,25 +785,25 @@ export default function HqDashboardClient({
           >
             <img src="/logo.png" alt="Bella Spa Logo" className="h-10 w-auto object-contain" />
           </motion.div>
-          <div className="h-6 w-px bg-slate-200" />
+          <div className="h-6 w-px bg-slate-200 dark:bg-[#3E3A35]" />
           <div>
-            <h1 className="text-sm font-black text-slate-900 tracking-wider uppercase flex items-center gap-1.5">
+            <h1 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] tracking-wider uppercase flex items-center gap-1.5">
               Bella Spa Headquarter 
               <span className="bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">HQ Portal</span>
             </h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Hệ thống Quản trị Cấp cao</p>
+            <p className="text-[10px] text-slate-500 dark:text-[#CDBCAB] font-bold uppercase tracking-wider">Hệ thống Quản trị Cấp cao</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           {/* Active Admin Profile */}
-          <div className="flex items-center gap-2 bg-white/90 border border-slate-100 rounded-full py-1 pl-2 pr-3 shadow-sm">
-            <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center font-black text-[10px] text-primary">
+          <div className="flex items-center gap-2 bg-white/90 dark:bg-[#1C1B19]/90 border border-slate-100 dark:border-[#3E3A35] rounded-full py-1 pl-2 pr-3 shadow-sm transition-colors duration-300">
+            <div className="w-7 h-7 rounded-full bg-rose-100 dark:bg-[#5D1C34] flex items-center justify-center font-black text-[10px] text-primary dark:text-[#EFE9E1]">
               {currentUser.full_name?.charAt(0) || 'A'}
             </div>
             <div className="text-left leading-none">
-              <p className="text-[10px] font-black text-slate-800 truncate max-w-[100px]">{currentUser.full_name || 'Super Admin'}</p>
-              <span className="text-[7px] font-black text-primary uppercase tracking-widest">Cấp cao</span>
+              <p className="text-[10px] font-black text-slate-800 dark:text-[#EFE9E1] truncate max-w-[100px]">{currentUser.full_name || 'Super Admin'}</p>
+              <span className="text-[7px] font-black text-primary dark:text-rose-400 uppercase tracking-widest">Cấp cao</span>
             </div>
           </div>
 
@@ -830,19 +832,22 @@ export default function HqDashboardClient({
             </a>
           </div>
 
-          {/* Sync & Logout — compact */}
-          <div className="flex items-center gap-1.5">
+          {/* Sync, Theme Toggle & Logout — compact */}
+          <div className="flex items-center gap-1.5 flex-nowrap">
+            <div className="w-28 shrink-0">
+              <ThemeToggle />
+            </div>
             <button
               onClick={refreshData}
               disabled={loading}
-              className="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:text-primary transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+              className="w-8 h-8 rounded-lg border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#1C1B19] flex items-center justify-center text-slate-500 dark:text-[#CDBCAB] hover:text-primary dark:hover:text-primary transition-all active:scale-95 disabled:opacity-50 shadow-sm"
               title="Đồng bộ lại"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
             </button>
             <button
               onClick={handleLogout}
-              className="w-8 h-8 rounded-lg border border-rose-100 bg-rose-50 hover:bg-rose-100 flex items-center justify-center text-rose-500 transition-all active:scale-95 shadow-sm"
+              className="w-8 h-8 rounded-lg border border-rose-100 dark:border-[#3E3A35] bg-rose-50 dark:bg-[#5D1C34]/30 hover:bg-rose-100 dark:hover:bg-[#5D1C34]/50 flex items-center justify-center text-rose-500 dark:text-rose-400 transition-all active:scale-95 shadow-sm"
               title="Đăng xuất"
             >
               <LogOut size={14} />
@@ -1147,16 +1152,16 @@ export default function HqDashboardClient({
             </section>
 
             {/* Subscription packages reference box */}
-            <section className="bg-gradient-to-br from-white to-slate-50 border border-slate-100 rounded-[3rem] p-6 shadow-sm text-left">
+            <section className="bg-gradient-to-br from-white to-slate-50 dark:from-[#1C1B19] dark:to-[#11100F] border border-slate-100 dark:border-[#3E3A35] rounded-[3rem] p-6 shadow-sm text-left transition-colors duration-300">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 bg-rose-50 text-primary rounded-xl flex items-center justify-center">
+                <div className="w-8 h-8 bg-rose-50 dark:bg-[#5D1C34]/40 text-primary dark:text-rose-400 rounded-xl flex items-center justify-center">
                   <Crown size={18} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest leading-none">
+                  <h4 className="text-xs font-black text-slate-800 dark:text-[#EFE9E1] uppercase tracking-widest leading-none">
                     Thông tin Gói dịch vụ & Định mức Hệ thống
                   </h4>
-                  <p className="text-[10px] text-slate-400 font-bold mt-0.5 uppercase tracking-wider">
+                  <p className="text-[10px] text-slate-500 dark:text-[#CDBCAB] font-bold mt-0.5 uppercase tracking-wider">
                     Mỗi chi nhánh hoạt động theo giới hạn tài nguyên của gói dịch vụ đã đăng ký.
                   </p>
                 </div>
@@ -1164,85 +1169,85 @@ export default function HqDashboardClient({
               
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Free Trial */}
-                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 space-y-2 shadow-xs">
+                <div className="bg-white/80 dark:bg-[#1C1B19]/80 backdrop-blur-sm border border-slate-100 dark:border-[#3E3A35] rounded-2xl p-4 space-y-2 shadow-xs transition-colors duration-300">
                   <div className="flex justify-between items-center">
-                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-slate-100 dark:bg-[#292623] text-slate-500 dark:text-[#CDBCAB] dark:border dark:border-[#3E3A35]">
                       Free Trial
                     </span>
-                    <span className="text-[10px] font-black text-slate-400">Dùng thử</span>
+                    <span className="text-[10px] font-black text-slate-400 dark:text-[#CDBCAB]">Dùng thử</span>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800">Tối đa 1 KTV</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 1 KTV</span>
                     </p>
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Khách hàng:</span> <span className="font-black text-slate-800">Tối đa 15</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Khách hàng:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 15</span>
                     </p>
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Zalo SMS:</span> <span className="font-black text-slate-800">Tối đa 20</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Zalo SMS:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 20</span>
                     </p>
                   </div>
                 </div>
 
                 {/* Basic */}
-                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 space-y-2 shadow-xs">
+                <div className="bg-white/80 dark:bg-[#1C1B19]/80 backdrop-blur-sm border border-slate-100 dark:border-[#3E3A35] rounded-2xl p-4 space-y-2 shadow-xs transition-colors duration-300">
                   <div className="flex justify-between items-center">
-                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-slate-200 to-slate-300 text-slate-800 border border-slate-350">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-slate-200 to-slate-300 dark:from-[#292623] dark:to-[#3E3A35] text-slate-800 dark:text-[#EFE9E1] border border-slate-350 dark:border-[#3E3A35]">
                       Silver / Basic
                     </span>
-                    <span className="text-[10px] font-black text-slate-500">Cơ bản</span>
+                    <span className="text-[10px] font-black text-slate-500 dark:text-[#CDBCAB]">Cơ bản</span>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800">Tối đa 3 KTV</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 3 KTV</span>
                     </p>
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Khách hàng:</span> <span className="font-black text-slate-800">Tối đa 50</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Khách hàng:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 50</span>
                     </p>
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Zalo SMS:</span> <span className="font-black text-slate-800">Tối đa 100</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Zalo SMS:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 100</span>
                     </p>
                   </div>
                 </div>
 
                 {/* Pro */}
-                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 space-y-2 shadow-xs">
+                <div className="bg-white/80 dark:bg-[#1C1B19]/80 backdrop-blur-sm border border-slate-100 dark:border-[#3E3A35] rounded-2xl p-4 space-y-2 shadow-xs transition-colors duration-300">
                   <div className="flex justify-between items-center">
-                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border border-amber-300/30">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-yellow-500 dark:from-[#A67D44]/20 dark:to-[#A67D44]/40 text-amber-950 dark:text-[#EFE9E1] border border-amber-300/30 dark:border-[#A67D44]/30">
                       Gold / Pro
                     </span>
-                    <span className="text-[10px] font-black text-amber-600">Chuyên nghiệp</span>
+                    <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">Chuyên nghiệp</span>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800">Tối đa 10 KTV</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Kỹ thuật viên:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 10 KTV</span>
                     </p>
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Khách hàng:</span> <span className="font-black text-slate-800">Tối đa 500</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Khách hàng:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 500</span>
                     </p>
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Zalo SMS:</span> <span className="font-black text-slate-800">Tối đa 500</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Zalo SMS:</span> <span className="font-black text-slate-800 dark:text-[#EFE9E1]">Tối đa 500</span>
                     </p>
                   </div>
                 </div>
 
                 {/* Enterprise */}
-                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl p-4 space-y-2 shadow-xs">
+                <div className="bg-white/80 dark:bg-[#1C1B19]/80 backdrop-blur-sm border border-slate-100 dark:border-[#3E3A35] rounded-2xl p-4 space-y-2 shadow-xs transition-colors duration-300">
                   <div className="flex justify-between items-center">
-                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-rose-500 via-purple-600 to-indigo-500 text-white border border-white/20 animate-pulse">
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-gradient-to-r from-rose-500 via-purple-600 to-indigo-500 text-white border border-white/20 dark:border-[#5D1C34]/40 animate-pulse">
                       Diamond / Enterprise
                     </span>
-                    <span className="text-[10px] font-black text-rose-500">Nhượng quyền</span>
+                    <span className="text-[10px] font-black text-rose-500 dark:text-rose-400">Nhượng quyền</span>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Kỹ thuật viên:</span> <span className="font-black text-rose-600">Không giới hạn</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Kỹ thuật viên:</span> <span className="font-black text-rose-600 dark:text-rose-400">Không giới hạn</span>
                     </p>
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Khách hàng:</span> <span className="font-black text-rose-600">Không giới hạn</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Khách hàng:</span> <span className="font-black text-rose-600 dark:text-rose-400">Không giới hạn</span>
                     </p>
-                    <p className="text-[11px] font-bold text-slate-600 flex justify-between">
-                      <span>Zalo SMS:</span> <span className="font-black text-rose-600">Tối đa 2000</span>
+                    <p className="text-[11px] font-bold text-slate-600 dark:text-[#CDBCAB] flex justify-between">
+                      <span>Zalo SMS:</span> <span className="font-black text-rose-600 dark:text-rose-400">Tối đa 2000</span>
                     </p>
                   </div>
                 </div>
