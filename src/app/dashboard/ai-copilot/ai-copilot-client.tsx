@@ -37,57 +37,12 @@ export default function AICopilotClient() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Disable native browser history scroll restoration on mount to prevent Next.js from auto-scrolling
-    const originalScrollRestoration = 'scrollRestoration' in window.history ? window.history.scrollRestoration : null;
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
-    }
-
-    // Force absolute scroll position reset on all potential scroll containers
-    const resetScroll = () => {
-      window.scrollTo(0, 0);
-      if (document.documentElement) {
-        document.documentElement.scrollTop = 0;
-        document.documentElement.scrollLeft = 0;
-      }
-      if (document.body) {
-        document.body.scrollTop = 0;
-        document.body.scrollLeft = 0;
-      }
-    };
-
-    // Reset scroll IMMEDIATELY before applying any overflow and height properties
-    resetScroll();
-
-    // Lock scroll and restrict height to 100vh on both body and documentElement to guarantee complete scroll prevention
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-    const originalBodyHeight = document.body.style.height;
-    const originalHtmlHeight = document.documentElement.style.height;
-
+    // Lock body scroll on mount to prevent sidebar splitting and ensure native app-like fixed viewport
+    const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.height = "100vh";
-    document.documentElement.style.height = "100vh";
-
-    // Re-verify and force scroll position in multiple progressive timers to fight Next.js router timings
-    const timers = [
-      setTimeout(resetScroll, 10),
-      setTimeout(resetScroll, 50),
-      setTimeout(resetScroll, 150),
-      setTimeout(resetScroll, 300),
-      setTimeout(resetScroll, 600)
-    ];
-
+    window.scrollTo(0, 0);
     return () => {
-      document.body.style.overflow = originalBodyOverflow;
-      document.documentElement.style.overflow = originalHtmlOverflow;
-      document.body.style.height = originalBodyHeight;
-      document.documentElement.style.height = originalHtmlHeight;
-      if (originalScrollRestoration && 'scrollRestoration' in window.history) {
-        window.history.scrollRestoration = originalScrollRestoration;
-      }
-      timers.forEach(clearTimeout);
+      document.body.style.overflow = originalOverflow;
     };
   }, []);
 
