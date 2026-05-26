@@ -138,7 +138,7 @@ export default function AICopilotClient() {
       <Toaster position="top-right" richColors />
 
       {/* Header Bar */}
-      <header className="shrink-0 z-10 px-6 py-4 border-b border-border bg-card flex items-center justify-between shadow-sm">
+      <header className="relative shrink-0 z-10 px-6 py-4 border-b border-border bg-card flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 animate-pulse">
             <Brain className="w-6 h-6 text-white" />
