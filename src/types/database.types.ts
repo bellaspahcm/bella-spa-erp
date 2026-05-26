@@ -2102,6 +2102,7 @@ export type Database = {
           zalo_template_birthday_id: string | null
           zalo_template_reminder_id: string | null
           zalo_token_expires_at: string | null
+          accounting_mode: string | null
         }
         Insert: {
           address?: string | null
@@ -2136,6 +2137,7 @@ export type Database = {
           zalo_template_birthday_id?: string | null
           zalo_template_reminder_id?: string | null
           zalo_token_expires_at?: string | null
+          accounting_mode?: string | null
         }
         Update: {
           address?: string | null
@@ -2170,6 +2172,7 @@ export type Database = {
           zalo_template_birthday_id?: string | null
           zalo_template_reminder_id?: string | null
           zalo_token_expires_at?: string | null
+          accounting_mode?: string | null
         }
         Relationships: [
           {
