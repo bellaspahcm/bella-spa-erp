@@ -229,7 +229,7 @@ export default function SubscriptionTab() {
           <div className="flex justify-end">
             <button
               onClick={() => setSelectedPlan(PLANS.find(p => p.id === 'pro'))}
-              className="bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-pink-100 hover:-translate-y-0.5 active:translate-y-0"
+              className="bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-pink-100 dark:shadow-none hover:-translate-y-0.5 active:translate-y-0"
             >
               Gia hạn / Nâng cấp
             </button>
@@ -379,7 +379,7 @@ export default function SubscriptionTab() {
                   className={cn(
                     "w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all",
                     plan.recommended
-                      ? "bg-primary text-white hover:bg-primary-hover shadow-lg shadow-pink-100"
+                      ? "bg-primary text-white hover:bg-primary-hover shadow-lg shadow-pink-100 dark:shadow-none"
                       : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-100"
                   )}
                 >
@@ -467,7 +467,7 @@ export default function SubscriptionTab() {
                 <button
                   onClick={handleCreateInvoice}
                   disabled={isPending}
-                  className="w-full bg-primary hover:bg-primary-hover text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 flex items-center justify-center gap-3"
+                  className="w-full bg-primary hover:bg-primary-hover text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none flex items-center justify-center gap-3"
                 >
                   {isPending ? (
                     <Loader2 className="w-5 h-5 animate-spin" />

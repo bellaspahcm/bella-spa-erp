@@ -83,7 +83,7 @@ export default function AccountingConfigTab() {
         <div
           className={`relative p-8 rounded-3xl border-2 transition-all ${
             mode === "SIMPLE"
-              ? "border-primary bg-primary/5 shadow-lg shadow-pink-100"
+              ? "border-primary bg-primary/5 shadow-lg shadow-pink-100 dark:shadow-none"
               : "border-slate-100 bg-white hover:border-pink-200"
           }`}
         >
@@ -102,7 +102,7 @@ export default function AccountingConfigTab() {
             className={`w-full py-3 rounded-xl font-bold transition-all ${
               mode === "SIMPLE"
                 ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                : "bg-primary text-white hover:bg-primary-hover active:scale-95 shadow-md shadow-pink-200"
+                : "bg-primary text-white hover:bg-primary-hover active:scale-95 shadow-md shadow-pink-200 dark:shadow-none"
             }`}
           >
             {isUpdating && mode !== "SIMPLE" ? "Đang chuyển..." : "Chuyển sang Simple"}
@@ -113,7 +113,7 @@ export default function AccountingConfigTab() {
         <div
           className={`relative p-8 rounded-3xl border-2 transition-all ${
             mode === "PROFESSIONAL"
-              ? "border-primary bg-primary/5 shadow-lg shadow-pink-100"
+              ? "border-primary bg-primary/5 shadow-lg shadow-pink-100 dark:shadow-none"
               : "border-slate-100 bg-white hover:border-pink-200"
           }`}
         >
@@ -132,7 +132,7 @@ export default function AccountingConfigTab() {
             className={`w-full py-3 rounded-xl font-bold transition-all ${
               mode === "PROFESSIONAL"
                 ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                : "bg-primary text-white hover:bg-primary-hover active:scale-95 shadow-md shadow-pink-200"
+                : "bg-primary text-white hover:bg-primary-hover active:scale-95 shadow-md shadow-pink-200 dark:shadow-none"
             }`}
           >
             {isUpdating && mode !== "PROFESSIONAL" ? "Đang chuyển..." : "Chuyển sang Professional"}
