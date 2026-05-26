@@ -260,10 +260,22 @@ export default function StaffManagementTab() {
                             ? "bg-rose-50 text-rose-600 border-rose-100"
                             : user.role?.toLowerCase() === "ktv"
                               ? "bg-blue-50 text-blue-600 border-blue-100"
-                              : "bg-slate-50 text-slate-600 border-slate-100",
+                              : user.role?.toLowerCase() === "accountant"
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                : user.role?.toLowerCase() === "hr"
+                                  ? "bg-violet-50 text-violet-600 border-violet-100"
+                                  : user.role?.toLowerCase() === "ktv_lead"
+                                    ? "bg-amber-50 text-amber-600 border-amber-100"
+                                    : "bg-slate-50 text-slate-600 border-slate-100",
                         )}
                       >
-                        {user.role}
+                        {user.role === 'admin' ? 'Quản trị viên'
+                          : user.role === 'ktv' ? 'Kỹ thuật viên'
+                          : user.role === 'ktv_lead' ? 'KTV Trưởng'
+                          : user.role === 'admin_staff' ? 'Lễ tân / Staff'
+                          : user.role === 'accountant' ? 'Kế toán'
+                          : user.role === 'hr' ? 'Nhân sự'
+                          : user.role}
                       </span>
                     </td>
                     <td className="px-8 py-6">
@@ -433,6 +445,8 @@ export default function StaffManagementTab() {
                       { value: "ktv", label: "Kỹ thuật viên" },
                       { value: "ktv_lead", label: "KTV Trưởng (Tổ trưởng)" },
                       { value: "admin_staff", label: "Lễ tân / Nhân viên" },
+                      { value: "accountant", label: "Kế toán" },
+                      { value: "hr", label: "Nhân sự (HR)" },
                       { value: "admin", label: "Quản trị viên (Admin)" },
                     ]}
                     placeholder="Chọn vai trò..."
@@ -543,6 +557,8 @@ export default function StaffManagementTab() {
                       { value: "ktv", label: "Kỹ thuật viên" },
                       { value: "ktv_lead", label: "KTV Trưởng (Tổ trưởng)" },
                       { value: "admin_staff", label: "Lễ tân / Nhân viên" },
+                      { value: "accountant", label: "Kế toán" },
+                      { value: "hr", label: "Nhân sự (HR)" },
                       { value: "admin", label: "Quản trị viên (Admin)" },
                     ]}
                     placeholder="Chọn vai trò..."

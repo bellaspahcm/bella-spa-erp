@@ -460,7 +460,7 @@ export async function approveLeaveRequest(
 ) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
-  if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant') {
+  if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant' && currentUser.role !== 'hr') {
     return { success: false, error: 'Không có quyền thực hiện' };
   }
 
@@ -560,7 +560,7 @@ export async function approveLeaveRequest(
 export async function rejectLeaveRequest(leaveId: string, rejectReason?: string) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
-  if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant') {
+  if (!currentUser || currentUser.role !== 'admin' && currentUser.role !== 'ktv_lead' && currentUser.role !== 'admin_staff' && currentUser.role !== 'accountant' && currentUser.role !== 'hr') {
     return { success: false, error: 'Không có quyền thực hiện' };
   }
 

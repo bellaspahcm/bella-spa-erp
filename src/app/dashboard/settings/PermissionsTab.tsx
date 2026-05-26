@@ -25,6 +25,8 @@ const MODULES = [
 const ROLES = [
   { id: "ktv_lead", label: "KTV Trưởng" },
   { id: "admin_staff", label: "Lễ tân / Staff" },
+  { id: "accountant", label: "Kế toán" },
+  { id: "hr", label: "Nhân sự (HR)" },
 ];
 
 export default function PermissionsTab() {
@@ -60,6 +62,34 @@ export default function PermissionsTab() {
       finance: true,
       reconciliation: false,
       salary: false,
+      audit: false,
+      settings: false
+    },
+    accountant: {
+      dashboard: true,
+      customers: false,
+      bookings: false,
+      sessions: false,
+      crm: false,
+      services: true,
+      inventory: true,
+      finance: true,
+      reconciliation: true,
+      salary: true,
+      audit: false,
+      settings: false
+    },
+    hr: {
+      dashboard: true,
+      customers: false,
+      bookings: false,
+      sessions: true,
+      crm: false,
+      services: false,
+      inventory: false,
+      finance: false,
+      reconciliation: false,
+      salary: true,
       audit: false,
       settings: false
     }
