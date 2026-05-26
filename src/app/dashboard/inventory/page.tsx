@@ -409,45 +409,45 @@ export default function InventoryPage() {
               </div>
 
               {/* table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
+              <div className="overflow-x-auto custom-scrollbar w-full">
+                <table className="w-full min-w-[850px] text-left">
                   <thead>
                     <tr className="bg-slate-50/50">
                       {['Vật tư','SKU','Tồn kho','Đơn giá','Hành động'].map(h => (
-                        <th key={h} className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                        <th key={h} className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {filteredItems.length === 0 ? (
-                      <tr><td colSpan={5} className="px-8 py-16 text-center text-slate-400 font-semibold">Không có vật tư nào</td></tr>
+                      <tr><td colSpan={5} className="px-8 py-16 text-center text-slate-400 font-semibold whitespace-nowrap">Không có vật tư nào</td></tr>
                     ) : filteredItems.map(item => {
                       const isLow = Number(item.stock_level) <= Number(item.min_stock_level);
                       const pct   = Math.min(100, (Number(item.stock_level) / (Number(item.min_stock_level) * 3)) * 100);
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/30 transition-all group">
-                          <td className="px-8 py-5">
+                          <td className="px-8 py-5 whitespace-nowrap">
                             <div className="flex items-center gap-3">
-                              <div className={cn('w-10 h-10 rounded-2xl flex items-center justify-center',
+                              <div className={cn('w-10 h-10 rounded-2xl flex items-center justify-center shrink-0',
                                 isLow ? 'bg-amber-50 text-amber-500' : 'bg-rose-50 text-primary')}>
                                 <Package className="w-5 h-5" />
                               </div>
                               <div>
-                                <p className="text-sm font-black text-slate-900">{item.name}</p>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase">{item.unit}</p>
+                                <p className="text-sm font-black text-slate-900 whitespace-nowrap">{item.name}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase whitespace-nowrap">{item.unit}</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-5">
-                            <span className="text-[10px] font-mono font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-md">{item.sku || 'N/A'}</span>
+                          <td className="px-8 py-5 whitespace-nowrap">
+                            <span className="text-[10px] font-mono font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-md whitespace-nowrap">{item.sku || 'N/A'}</span>
                           </td>
-                          <td className="px-8 py-5 min-w-[160px]">
+                          <td className="px-8 py-5 min-w-[160px] whitespace-nowrap">
                             <div className="space-y-1.5">
-                              <div className="flex justify-between items-end">
-                                <p className={cn('text-sm font-black', isLow ? 'text-amber-500' : 'text-slate-900')}>
+                              <div className="flex justify-between items-end gap-4">
+                                <p className={cn('text-sm font-black whitespace-nowrap', isLow ? 'text-amber-500' : 'text-slate-900')}>
                                   {item.stock_level} <span className="text-[10px] text-slate-400">{item.unit}</span>
                                 </p>
-                                {isLow && <span className="text-[8px] font-black text-amber-500 uppercase">Sắp hết!</span>}
+                                {isLow && <span className="text-[8px] font-black text-amber-500 uppercase whitespace-nowrap">Sắp hết!</span>}
                               </div>
                               <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                 <div className={cn('h-full transition-all duration-700', isLow ? 'bg-amber-400' : 'bg-primary')}
@@ -455,21 +455,21 @@ export default function InventoryPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-8 py-5">
-                            <p className="text-sm font-black text-slate-700">{formatNumberWithSeparator(item.price_per_unit)}đ</p>
+                          <td className="px-8 py-5 whitespace-nowrap">
+                            <p className="text-sm font-black text-slate-700 whitespace-nowrap">{formatNumberWithSeparator(item.price_per_unit)}đ</p>
                           </td>
-                          <td className="px-8 py-5">
-                            <div className="flex gap-4">
+                          <td className="px-8 py-5 whitespace-nowrap">
+                            <div className="flex gap-4 whitespace-nowrap">
                               <button onClick={() => { setRestockTarget(item); setRestockAmt(0); }}
-                                className="flex items-center gap-1.5 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:text-slate-800 transition-colors">
-                                <ArrowRightLeft className="w-3.5 h-3.5" /> Điều chỉnh
+                                className="flex items-center gap-1.5 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:text-slate-800 transition-colors whitespace-nowrap">
+                                <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" /> Điều chỉnh
                               </button>
                               <button onClick={() => {
                                 setRequestCart([{ name: item.name, sku: item.sku || '', qty: 10, unit: item.unit }]);
                                 setShowCreateRequest(true);
                               }}
-                                className="flex items-center gap-1.5 text-primary font-black text-[10px] uppercase tracking-widest hover:underline transition-all">
-                                <Truck className="w-3.5 h-3.5" /> Yêu cầu cấp
+                                className="flex items-center gap-1.5 text-primary font-black text-[10px] uppercase tracking-widest hover:underline transition-all whitespace-nowrap">
+                                <Truck className="w-3.5 h-3.5 shrink-0" /> Yêu cầu cấp
                               </button>
                             </div>
                           </td>
@@ -504,51 +504,51 @@ export default function InventoryPage() {
                 </button>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
+              <div className="overflow-x-auto custom-scrollbar w-full">
+                <table className="w-full min-w-[850px] text-left">
                   <thead>
                     <tr className="bg-slate-50/50">
                       {['Mã yêu cầu','Ngày tạo','Chi tiết vật tư','Trạng thái','Vận chuyển','Hành động'].map(h => (
-                        <th key={h} className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                        <th key={h} className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {loadingOrders ? (
                       <tr>
-                        <td colSpan={6} className="px-8 py-16 text-center">
+                        <td colSpan={6} className="px-8 py-16 text-center whitespace-nowrap">
                           <RefreshCw className="w-6 h-6 mx-auto text-slate-400 animate-spin mb-2" />
                           <p className="text-slate-400 text-sm font-bold">Đang tải danh sách lệnh chuyển kho...</p>
                         </td>
                       </tr>
                     ) : orders.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-8 py-16 text-center text-slate-400 font-semibold">
+                        <td colSpan={6} className="px-8 py-16 text-center text-slate-400 font-semibold whitespace-nowrap">
                           Không có lệnh chuyển kho nào.
                         </td>
                       </tr>
                     ) : orders.map(ord => (
                       <tr key={ord.id} className="hover:bg-slate-50/20 transition-all text-xs font-bold text-slate-600">
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <span className="font-mono font-black text-slate-800">{ord.order_number}</span>
                           {ord.notes && <p className="text-[10px] text-slate-400 font-medium mt-1 truncate max-w-[120px]">{ord.notes}</p>}
                         </td>
-                        <td className="px-6 py-4 text-slate-500">
+                        <td className="px-6 py-4 text-slate-500 whitespace-nowrap">
                           {new Date(ord.created_at).toLocaleDateString('vi-VN')}
                         </td>
-                        <td className="px-6 py-4 max-w-[200px]">
+                        <td className="px-6 py-4 max-w-[200px] whitespace-nowrap">
                           <div className="space-y-1">
                             {ord.items.map((it, idx) => (
-                              <div key={idx} className="flex justify-between items-center bg-slate-50 px-2 py-1 rounded-md text-[10px]">
-                                <span className="font-black text-slate-700 truncate pr-2 max-w-[110px]">{it.name}</span>
+                              <div key={idx} className="flex justify-between items-center bg-slate-50 px-2 py-1 rounded-md text-[10px] whitespace-nowrap">
+                                <span className="font-black text-slate-700 truncate pr-2 max-w-[110px] whitespace-nowrap">{it.name}</span>
                                 <span className="text-primary font-black whitespace-nowrap">x{it.qty} {it.unit}</span>
                               </div>
                             ))}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <span className={cn(
-                            'px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider',
+                            'px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider whitespace-nowrap',
                             ord.status === 'pending' && 'bg-blue-50 text-blue-500',
                             ord.status === 'approved' && 'bg-indigo-50 text-indigo-500',
                             ord.status === 'shipped' && 'bg-amber-50 text-amber-500 animate-pulse',
@@ -562,37 +562,37 @@ export default function InventoryPage() {
                             {ord.status === 'cancelled' && 'Đã hủy'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-[10px]">
+                        <td className="px-6 py-4 text-[10px] whitespace-nowrap">
                           {ord.shipping_carrier ? (
-                            <div>
-                              <p className="font-black text-slate-800">{ord.shipping_carrier}</p>
-                              <p className="text-slate-400 font-mono mt-0.5">{ord.tracking_number}</p>
+                            <div className="whitespace-nowrap">
+                              <p className="font-black text-slate-800 whitespace-nowrap">{ord.shipping_carrier}</p>
+                              <p className="text-slate-400 font-mono mt-0.5 whitespace-nowrap">{ord.tracking_number}</p>
                             </div>
                           ) : (
-                            <span className="text-slate-400">—</span>
+                            <span className="text-slate-400 whitespace-nowrap">—</span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex gap-2">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex gap-2 whitespace-nowrap">
                             {ord.status === 'pending' && (
                               <button onClick={() => handleCancelOrder(ord.id)}
-                                className="text-rose-500 hover:text-rose-700 transition-colors uppercase tracking-widest text-[9px] font-black">
+                                className="text-rose-500 hover:text-rose-700 transition-colors uppercase tracking-widest text-[9px] font-black whitespace-nowrap">
                                 Hủy đơn
                               </button>
                             )}
                             {ord.status === 'shipped' && (
                               <button onClick={() => handleConfirmReceipt(ord.id)}
-                                className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl transition-all shadow-md text-[9px] font-black uppercase tracking-wider">
-                                <CheckCircle2 className="w-3 h-3" /> Đã Nhận
+                                className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl transition-all shadow-md text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
+                                <CheckCircle2 className="w-3 h-3 shrink-0" /> Đã Nhận
                               </button>
                             )}
                             {ord.status === 'completed' && (
-                              <span className="text-emerald-500 flex items-center gap-0.5 text-[10px] font-black uppercase">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Thành công
+                              <span className="text-emerald-500 flex items-center gap-0.5 text-[10px] font-black uppercase whitespace-nowrap">
+                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> Thành công
                               </span>
                             )}
                             {ord.status === 'cancelled' && (
-                              <span className="text-slate-400 italic text-[10px] font-medium">
+                              <span className="text-slate-400 italic text-[10px] font-medium whitespace-nowrap">
                                 {ord.rejection_reason || 'Đã hủy'}
                               </span>
                             )}
