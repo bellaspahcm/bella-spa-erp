@@ -196,11 +196,11 @@ export default async function SalaryReconciliationPage({
       </div>
 
       {/* Legend */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 py-5 px-6 bg-card/30 border border-border/50 rounded-2xl shadow-sm mt-4">
         {Object.entries(STATUS_META).map(([key, { label, icon: Icon, cls }]) => (
-          <div key={key} className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${cls}`}>
-              <Icon className="w-3 h-3" /> {label}
+          <div key={key} className="flex items-center">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-widest shadow-sm ${cls}`}>
+              <Icon className="w-3.5 h-3.5" /> {label}
             </span>
           </div>
         ))}
