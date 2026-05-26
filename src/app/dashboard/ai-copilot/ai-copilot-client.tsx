@@ -37,6 +37,15 @@ export default function AICopilotClient() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Lock body scroll on mount to prevent sidebar splitting and ensure native app-like fixed viewport
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -129,7 +138,7 @@ export default function AICopilotClient() {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative font-sans bg-background text-foreground">
+    <div className="fixed top-16 lg:top-0 bottom-0 left-0 lg:left-80 right-0 flex flex-col overflow-hidden bg-background text-foreground z-10">
       {/* Dynamic Background Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />

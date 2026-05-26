@@ -21,7 +21,8 @@ import {
   Megaphone,
   Menu,
   X,
-  Scale
+  Scale,
+  Wallet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,9 +47,9 @@ const menuItems = [
   { type: 'header', label: 'Tài chính & Đối soát' },
   { icon: DollarSign,      label: 'Tài chính',           href: '/dashboard/finance' },
   { icon: ShieldAlert,     label: 'Đối soát Tài chính',  href: '/dashboard/finance/reconciliation' },
-  { icon: Scale,           label: 'Đối soát Lương',     href: '/dashboard/ai-copilot/salary-reconciliation' },
+  { icon: Scale,           label: 'Đối soát Lương (AI)', href: '/dashboard/ai-copilot/salary-reconciliation' },
   { icon: Banknote,        label: 'Bảng lương',          href: '/dashboard/salary' },
-  { icon: Scale,           label: 'Kế toán sổ cái',      href: '/dashboard/accounting' },
+  { icon: Wallet,          label: 'Kế toán sổ cái',      href: '/dashboard/accounting' },
   { icon: Package,         label: 'Kho hàng',            href: '/dashboard/inventory' },
 
   { type: 'header', label: 'Hệ thống' },
@@ -126,13 +127,13 @@ export function Sidebar() {
           } else {
             // Default fallbacks while loading or if no custom permissions set
             if (user.role === 'ktv') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát Tài chính', 'Nhật ký hệ thống', 'Kho hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương'].includes(item.label);
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát Tài chính', 'Nhật ký hệ thống', 'Kho hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương (AI)'].includes(item.label);
             }
             if (user.role === 'ktv_lead') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát Tài chính', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương'].includes(item.label);
+              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát Tài chính', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương (AI)'].includes(item.label);
             }
             if (user.role === 'admin_staff') {
-              return !['Đối soát Tài chính', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương'].includes(item.label);
+              return !['Đối soát Tài chính', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương (AI)'].includes(item.label);
             }
           }
         }
@@ -316,38 +317,37 @@ export function Sidebar() {
         </nav>
 
         {/* ── Theme Switcher, User Profile & Logout — pinned at bottom ── */}
-        <div className="mt-auto shrink-0 relative z-10 px-6 pt-2 pb-4 flex flex-col gap-3">
-          {/* Theme Toggle Button */}
-          <div className="px-1">
-            <ThemeToggle />
-          </div>
-
-          {/* User profile card */}
-          <div className="bg-white/80 dark:bg-[#1C1B19] p-3 rounded-[1.5rem] shadow-[0_4px_20px_rgba(219,39,119,0.04)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3E3A35] group cursor-pointer transition-all duration-300 hover:border-rose-300 dark:hover:border-[#A67D44]/30">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-8 h-8 bg-[#FFE4E6] dark:bg-[#5D1C34]/40 rounded-full flex items-center justify-center text-[#BE185D] dark:text-[#A67D44] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
+        <div className="mt-auto shrink-0 relative z-10 px-4 pt-4 pb-4 flex flex-col gap-2">
+          {/* Unified Profile & Actions Panel */}
+          <div className="bg-white/80 dark:bg-[#1C1B19] rounded-[1.25rem] shadow-[0_4px_20px_rgba(219,39,119,0.06)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3E3A35] flex flex-col overflow-hidden transition-all duration-300 hover:border-rose-300 dark:hover:border-[#A67D44]/30">
+            <div className="p-3 flex items-center gap-3">
+              <div className="relative shrink-0">
+                <div className="w-9 h-9 bg-[#FFE4E6] dark:bg-[#5D1C34]/40 rounded-full flex items-center justify-center text-[#BE185D] dark:text-[#A67D44] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-[#11100F] rounded-full" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-[#11100F] rounded-full" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-extrabold text-[#4C243B] dark:text-[#EFE9E1] truncate leading-tight">{user?.full_name || 'Admin Bella Spa'}</p>
                 <p className="text-[9px] text-[#BE185D] dark:text-[#A67D44] font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
               </div>
             </div>
-          </div>
-
-          {/* Logout */}
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-3 py-2 text-[#8A6D7C] dark:text-[#CDBCAB] hover:text-[#BE185D] dark:hover:text-[#A67D44] transition-all font-extrabold text-[10px] uppercase tracking-[0.15em] group"
-          >
-            <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[#FFE4E6] dark:bg-[#1C1B19] group-hover:bg-[#FFF0F3] dark:group-hover:bg-[#5D1C34]/40 group-hover:text-[#BE185D] dark:group-hover:text-[#A67D44] transition-colors">
-              <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFE4E6] dark:via-[#3E3A35] to-transparent" />
+            
+            <div className="flex items-center justify-between p-2">
+               <div className="px-2">
+                 <ThemeToggle />
+               </div>
+               <button 
+                 onClick={handleLogout} 
+                 title="Đăng xuất"
+                 className="p-2 mr-1 rounded-xl text-[#8A6D7C] dark:text-[#CDBCAB] hover:bg-rose-50 hover:text-[#BE185D] dark:hover:bg-[#5D1C34]/40 dark:hover:text-[#A67D44] transition-all"
+               >
+                 <LogOut className="w-4 h-4" />
+               </button>
             </div>
-            ĐĂNG XUẤT
-          </button>
+          </div>
         </div>
       </aside>
     </>

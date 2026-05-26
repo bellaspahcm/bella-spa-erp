@@ -266,4 +266,34 @@ export async function deleteUser(id: string) {
   return { success: true };
 }
 
+export async function updateBaseSalary(id: string, base_salary: number) {
+  const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+
+  if (currentUser?.role !== 'admin' && currentUser?.role !== 'manager') {
+    return { error: 'Quyền truy cập bị từ chối: Chỉ Admin hoặc Manager mới có quyền thay đổi lương cứng.' };
+  }
+
+  const { error } = await supabase
+    .from('users')
+    .update({ base_salary })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error updating base salary:', error);
+    return { error: error.message };
+  }
+
+  // Record Audit Log
+  await recordAuditLog({
+    action: 'UPDATE',
+    table_name: 'users',
+    record_id: id,
+    new_data: { base_salary }
+  });
+
+  await safeRevalidatePath('/dashboard/settings');
+  return { success: true };
+}
+
 
