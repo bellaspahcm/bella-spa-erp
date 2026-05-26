@@ -322,7 +322,7 @@ function SessionsContent() {
   };
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative" onClick={() => setIsFilterOpen(false)}>
+    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative" onClick={() => setIsFilterOpen(false)}>
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (

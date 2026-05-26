@@ -415,7 +415,7 @@ export default function SalaryPage() {
   const totalSessions = ktvSalaries.reduce((acc, curr) => acc + curr.sessions, 0);
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
+    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
         <div>

@@ -349,7 +349,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div id="customers-list-container" className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
+    <div id="customers-list-container" className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (

@@ -317,7 +317,7 @@ export default function InventoryPage() {
   );
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto space-y-10">
+    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto space-y-10">
 
       {/* ── Header ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">

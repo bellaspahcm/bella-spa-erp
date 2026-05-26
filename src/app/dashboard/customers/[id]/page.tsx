@@ -420,13 +420,13 @@ export default function CustomerDetailPage() {
   };
 
   if (loading) return (
-    <div className="flex-1 flex items-center justify-center bg-slate-50/30">
+    <div className="flex-1 flex items-center justify-center bg-background/30">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-500"></div>
     </div>
   );
 
   if (!customer) return (
-    <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/30">
+    <div className="flex-1 flex flex-col items-center justify-center bg-background/30">
       <h2 className="text-xl font-bold text-slate-800 mb-4">Không tìm thấy khách hàng</h2>
       <button onClick={() => router.back()} className="text-rose-500 font-bold hover:underline">Quay lại danh sách</button>
     </div>
@@ -440,7 +440,7 @@ export default function CustomerDetailPage() {
   const isCompleted = activeBooking && activeBooking.completed_sessions >= (activeBooking.total_sessions || 15);
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
+    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto">
       <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-500 hover:text-primary font-bold mb-8 group">
         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-100 group-hover:bg-primary group-hover:text-white transition-all">
           <ChevronLeft className="w-5 h-5" />
