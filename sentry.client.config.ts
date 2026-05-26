@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { sentryBeforeSend } from "@/lib/log-redactor";
 
 // Only initialize Sentry when DSN is configured
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
@@ -15,11 +16,14 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
       }),
     ],
     beforeSend(event) {
-      if (event.user) {
-        delete event.user.email;
-        delete event.user.ip_address;
+      return sentryBeforeSend(event);
+    },
+    beforeBreadcrumb(breadcrumb) {
+      if (breadcrumb.data) {
+        const { redact } = require("@/lib/log-redactor");
+        breadcrumb.data = redact(breadcrumb.data);
       }
-      return event;
+      return breadcrumb;
     },
   });
 }
