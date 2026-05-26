@@ -178,7 +178,7 @@ export default function FinancePage() {
     currentPage * itemsPerPage
   );
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative">
+    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative">
       {isRefreshing && (
         <div className="fixed top-0 left-0 right-0 h-1 bg-primary/20 z-[100]">
           <motion.div 

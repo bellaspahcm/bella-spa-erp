@@ -400,7 +400,7 @@ export default function ServicesPage() {
 
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto">
+    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
@@ -462,7 +462,7 @@ export default function ServicesPage() {
             className="group luxury-card-white rounded-[2.5rem] transition-all overflow-hidden flex flex-col sm:flex-row h-full relative"
           >
             {/* Visual Section */}
-            <div className="sm:w-48 bg-gradient-to-br from-rose-50 to-pink-100 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+            <div className="sm:w-48 bg-gradient-to-br from-rose-50 to-pink-100 dark:from-[#2D1620] dark:to-[#1A0A10] dark:border-r dark:border-[#3E3A35]/30 flex flex-col items-center justify-center p-8 relative overflow-hidden">
               <div className="absolute inset-0 opacity-20 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)]" />
               </div>

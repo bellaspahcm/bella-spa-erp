@@ -323,7 +323,7 @@ function BookingsContent() {
   };
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-slate-50/30 overflow-auto relative">
+    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative">
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (
