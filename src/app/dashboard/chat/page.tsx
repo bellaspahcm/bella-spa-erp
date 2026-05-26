@@ -22,6 +22,7 @@ import {
   Calendar,
   CreditCard,
   ChevronRight,
+  ChevronLeft,
   Sparkles,
   MessageSquare,
   TrendingUp
@@ -39,6 +40,7 @@ export default function ChatPage() {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showChatMobile, setShowChatMobile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -241,9 +243,11 @@ export default function ChatPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex gap-6 min-h-0">
+      <div className="flex-1 flex gap-6 min-h-0 overflow-hidden">
         {/* Left Column: Conversations List */}
-        <div className="w-80 flex flex-col bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 overflow-hidden luxury-box-hover">
+        <div className={`w-full lg:w-80 flex flex-col bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 overflow-hidden luxury-box-hover shrink-0 ${
+          showChatMobile ? 'hidden lg:flex' : 'flex'
+        }`}>
           <div className="p-6 border-b border-pink-50">
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -264,7 +268,10 @@ export default function ChatPage() {
             ) : chats.map((chat) => (
               <button
                 key={chat.id}
-                onClick={() => setSelectedChat(chat)}
+                onClick={() => {
+                  setSelectedChat(chat);
+                  setShowChatMobile(true);
+                }}
                 className={`w-full flex items-center gap-4 p-4 rounded-[1.5rem] transition-all duration-300 group ${
                   selectedChat?.id === chat.id 
                     ? 'bg-primary text-white shadow-lg shadow-pink-200' 
@@ -307,12 +314,21 @@ export default function ChatPage() {
         </div>
 
         {/* Center Column: Chat Window */}
-        <div className="flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 overflow-hidden relative luxury-box-hover">
+        <div className={`flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 overflow-hidden relative luxury-box-hover ${
+          showChatMobile ? 'flex' : 'hidden lg:flex'
+        }`}>
           {selectedChat ? (
             <>
               {/* Chat Header */}
               <div className="p-6 border-b border-pink-50 flex items-center justify-between bg-white/50 backdrop-blur-md sticky top-0 z-10">
                 <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setShowChatMobile(false)}
+                    className="lg:hidden p-2 hover:bg-pink-50 rounded-xl text-primary transition-all active:scale-95 mr-1"
+                    type="button"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
                   <div className="relative">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center text-primary font-black shadow-inner">
                       {selectedChat.avatar}
