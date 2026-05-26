@@ -1,6 +1,6 @@
 # 專案上下文 (Agent Context)：BELLA SPA ERP
 
-> **最後更新時間**：2026-05-27 06:20
+> **最後更新時間**：2026-05-27 06:27
 > **自動生成**：由 `prepare_context.py` 產生，供 AI Agent 快速掌握專案全局
 
 ---
@@ -93,6 +93,7 @@ BELLA SPA ERP/
 ├── 2026-05-23.md
 ├── 2026-05-25.md
 ├── 2026-05-26.md
+├── 2026-05-27.md
 ├── AGENTS.md
 ├── AGENT_CONTEXT.md
 ├── CLAUDE.md
