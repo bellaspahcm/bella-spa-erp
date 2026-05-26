@@ -723,11 +723,11 @@ export default function CustomerDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-end gap-3 min-w-[200px]">
+                <div className="grid grid-cols-2 gap-2 min-w-[200px]">
                   {isDepositOnly ? (
                     <button 
                       onClick={() => setIsBookingModalOpen(true)}
-                      className="w-full flex items-center justify-center gap-3 bg-white text-rose-500 px-6 py-3.5 rounded-2xl font-black transition-all hover:scale-105 shadow-xl"
+                      className="col-span-2 flex items-center justify-center gap-2 bg-white text-rose-500 px-4 py-2.5 rounded-xl font-bold transition-all hover:scale-105 shadow-md"
                     >
                       CHỌN GÓI NGAY
                     </button>
@@ -738,10 +738,10 @@ export default function CustomerDetailPage() {
                           const cleanPhone = customer.phone.replace(/[^\d]/g, '');
                           window.open(`https://zalo.me/${cleanPhone}`, '_blank');
                         }}
-                        className="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3.5 rounded-2xl font-black transition-all hover:bg-slate-50 uppercase tracking-widest text-[11px] shadow-lg"
+                        className="flex items-center justify-center gap-2 bg-white text-slate-900 px-4 py-2.5 rounded-xl font-bold transition-all hover:bg-slate-50 uppercase tracking-wider text-[9.5px] shadow-md border border-slate-100"
                       >
-                        <MessageCircle className="w-4 h-4" />
-                        Gửi báo cáo Zalo
+                        <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                        Zalo
                       </button>
                       
                       <button 
@@ -762,37 +762,40 @@ export default function CustomerDetailPage() {
                           navigator.clipboard.writeText(url);
                           toast.success('Đã sao chép link Cổng thông tin khách hàng');
                         }}
-                        className="flex items-center justify-center gap-3 bg-white/20 backdrop-blur-md text-white px-6 py-3.5 rounded-2xl font-black transition-all hover:bg-white/30 uppercase tracking-widest text-[11px] border border-white/20 shadow-lg"
+                        className="flex items-center justify-center gap-2 bg-white/20 backdrop-blur-md text-white px-4 py-2.5 rounded-xl font-bold transition-all hover:bg-white/30 uppercase tracking-wider text-[9.5px] border border-white/20 shadow-md"
                       >
-                        <Share2 className="w-4 h-4" />
-                        Link Portal Khách
+                        <Share2 className="w-3.5 h-3.5" />
+                        Link Portal
                       </button>
-
+ 
                       <button 
                         onClick={handleExportQuotation}
                         disabled={isExportingQuotation}
-                        className="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3.5 rounded-2xl font-black transition-all hover:bg-slate-50 uppercase tracking-widest text-[11px] shadow-lg disabled:opacity-50"
+                        className={cn(
+                          "flex items-center justify-center gap-2 bg-white text-slate-900 px-4 py-2.5 rounded-xl font-bold transition-all hover:bg-slate-50 uppercase tracking-wider text-[9.5px] shadow-md border border-slate-100 disabled:opacity-50",
+                          userRole !== 'admin' ? "col-span-2" : ""
+                        )}
                       >
-                        {isExportingQuotation ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
-                        Xuất ảnh báo giá
+                        {isExportingQuotation ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                        Xuất báo giá
                       </button>
-
+ 
                       {userRole === 'admin' && (
                         <>
                           <button 
                             disabled={activeBooking?.deposit_amount < (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)}
                             onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
                             className={cn(
-                              "flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl font-black transition-all uppercase tracking-widest text-[11px]",
+                              "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all uppercase tracking-wider text-[9.5px]",
                               activeBooking?.deposit_amount >= (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)
-                                ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20"
+                                ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 shadow-md"
                                 : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
                             )}
                           >
-                            <FileText className="w-4 h-4" />
+                            <FileText className="w-3.5 h-3.5" />
                             Xuất hợp đồng
                           </button>
-
+ 
                           <button 
                             onClick={() => {
                               setEditBookingData({
@@ -808,10 +811,10 @@ export default function CustomerDetailPage() {
                               });
                               setIsEditBookingModalOpen(true);
                             }}
-                            className="flex items-center justify-center gap-3 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3.5 rounded-2xl font-black transition-all uppercase tracking-widest text-[11px] shadow-lg shadow-amber-500/20 active:scale-95 hover:scale-105"
+                            className="col-span-2 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-bold transition-all uppercase tracking-wider text-[9.5px] shadow-lg shadow-amber-500/20 active:scale-95 hover:scale-105"
                           >
-                            <Sparkles className="w-4 h-4" />
-                            Sửa gói dịch vụ
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Sửa dịch vụ
                           </button>
                         </>
                       )}

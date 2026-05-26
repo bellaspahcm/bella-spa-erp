@@ -480,7 +480,7 @@ export default function CustomersPage() {
                     onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
                   >
                     <Sparkles className="w-3 h-3" />
-                    Đang có gói liệu trình, xem chi tiết để biết thông tin
+                    Đang có gói liệu trình
                   </motion.div>
                 )}
 
