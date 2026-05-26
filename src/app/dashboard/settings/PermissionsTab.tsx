@@ -240,7 +240,7 @@ export default function PermissionsTab() {
         <button
           onClick={handleSave}
           disabled={isSaving || isLoading}
-          className="px-6 py-3 bg-primary text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-primary-hover transition-all flex items-center gap-2 shadow-lg shadow-pink-200"
+          className="px-6 py-3 bg-primary text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-primary-hover transition-all flex items-center gap-2 shadow-lg shadow-pink-200/50 dark:shadow-none"
         >
           <Save className="w-4 h-4" />
           {isSaving ? "Đang lưu..." : "Lưu phân quyền"}
