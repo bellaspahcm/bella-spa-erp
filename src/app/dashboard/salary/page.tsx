@@ -440,7 +440,7 @@ export default function SalaryPage() {
               </button>
               <button
                 onClick={handleFinalizeAll}
-                className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs"
+                className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none uppercase tracking-widest text-xs"
               >
                 <Lock className="w-4 h-4" />
                 <span>Chốt sổ</span>

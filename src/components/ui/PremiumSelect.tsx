@@ -71,7 +71,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
           "w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300",
           "bg-white shadow-sm hover:shadow-md active:scale-[0.98]",
           isOpen 
-            ? "border-rose-300 ring-4 ring-rose-50 ring-offset-0 shadow-rose-100/50" 
+            ? "border-rose-300 ring-4 ring-rose-50 ring-offset-0 shadow-rose-100/50 dark:shadow-none" 
             : "border-slate-100 hover:border-rose-200",
           disabled && "opacity-50 cursor-not-allowed bg-slate-50 grayscale-[0.5]"
         )}

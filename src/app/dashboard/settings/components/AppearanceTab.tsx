@@ -54,7 +54,7 @@ export default function AppearanceTab() {
           onClick={() => handleThemeChange('light')}
           className={`p-8 rounded-[2.5rem] relative overflow-hidden group cursor-pointer transition-all duration-300 ${
             theme === 'light' 
-              ? 'bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-xl shadow-pink-200/50 scale-[1.02]' 
+              ? 'bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-xl shadow-pink-200/50 dark:shadow-none scale-[1.02]' 
               : 'bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200'
           }`}
         >

@@ -202,7 +202,7 @@ export default function FinancePage() {
           </button>
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs active:scale-95"
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none uppercase tracking-widest text-xs active:scale-95"
           >
             <PlusCircle className="w-5 h-5" />
             <span>Ghi nhận thu chi</span>
@@ -462,7 +462,7 @@ export default function FinancePage() {
                   onClick={() => setCurrentPage(i + 1)}
                   className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${
                     currentPage === i + 1 
-                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-100' 
+                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-100 dark:shadow-none' 
                       : 'text-slate-400 hover:bg-white hover:text-slate-600'
                   }`}
                 >

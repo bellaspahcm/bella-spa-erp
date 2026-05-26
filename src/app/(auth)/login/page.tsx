@@ -190,7 +190,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary hover:bg-primary-hover disabled:bg-muted text-white font-black py-5 rounded-2xl shadow-xl shadow-pink-200 transition-all active:scale-95 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
+                className="w-full bg-primary hover:bg-primary-hover disabled:bg-muted text-white font-black py-5 rounded-2xl shadow-xl shadow-pink-200 dark:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
               >
                 {loading ? (
                   <Loader2 className="animate-spin w-6 h-6" />
@@ -241,7 +241,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary hover:bg-primary-hover disabled:bg-muted text-white font-black py-5 rounded-2xl shadow-xl shadow-pink-200 transition-all active:scale-95 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
+                className="w-full bg-primary hover:bg-primary-hover disabled:bg-muted text-white font-black py-5 rounded-2xl shadow-xl shadow-pink-200 dark:shadow-none transition-all active:scale-95 flex items-center justify-center gap-3 text-lg uppercase tracking-widest"
               >
                 {loading ? (
                   <Loader2 className="animate-spin w-6 h-6" />

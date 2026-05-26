@@ -105,7 +105,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
         
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-rose-100">
+            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-rose-100 dark:shadow-none">
                <Heart className="white w-6 h-6 fill-current text-white" />
             </div>
             <div>
@@ -126,7 +126,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 </p>
               </div>
               <div>
-                <a href="tel:0865701493" className="inline-flex items-center gap-1.5 text-[10px] font-black text-rose-500 uppercase tracking-wider bg-rose-50 border border-rose-100/60 px-3 py-1.5 rounded-full hover:bg-rose-100 transition-all active:scale-95 shadow-sm shadow-rose-50/50">
+                <a href="tel:0865701493" className="inline-flex items-center gap-1.5 text-[10px] font-black text-rose-500 uppercase tracking-wider bg-rose-50 border border-rose-100/60 px-3 py-1.5 rounded-full hover:bg-rose-100 transition-all active:scale-95 shadow-sm shadow-rose-50/50 dark:shadow-none">
                   <Phone className="w-3 h-3 fill-current" />
                   <span>Hotline hỗ trợ: <strong className="font-black">0865 701 493</strong></span>
                 </a>
@@ -225,7 +225,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
           const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact.png?amount=${amountToPay}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountName || '')}`;
 
           return (
-            <div className="bg-white/80 backdrop-blur-md rounded-[32px] p-6 border border-pink-100/50 shadow-lg shadow-pink-50/40 space-y-6">
+            <div className="bg-white/80 backdrop-blur-md rounded-[32px] p-6 border border-pink-100/50 shadow-lg shadow-pink-50/40 dark:shadow-none space-y-6">
               <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
                 <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
                   <CreditCard className="w-5 h-5" />
@@ -264,7 +264,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                 {/* QR Code */}
                 <div className="flex flex-col items-center justify-center bg-slate-50/50 border border-slate-100 p-6 rounded-[2rem] relative">
-                  <div className="w-[180px] h-[180px] bg-white rounded-3xl p-3 border border-pink-100 flex items-center justify-center shadow-md shadow-pink-50 relative overflow-hidden group">
+                  <div className="w-[180px] h-[180px] bg-white rounded-3xl p-3 border border-pink-100 flex items-center justify-center shadow-md shadow-pink-50 dark:shadow-none relative overflow-hidden group">
                     <img
                       src={qrUrl}
                       alt="VietQR Code"
@@ -349,7 +349,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-gradient-to-br from-amber-50/90 to-rose-50/90 border border-amber-200/60 rounded-[32px] p-6 shadow-md shadow-pink-100/50 flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden"
+            className="bg-gradient-to-br from-amber-50/90 to-rose-50/90 border border-amber-200/60 rounded-[32px] p-6 shadow-md shadow-pink-100/50 dark:shadow-none flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-amber-400/5 rounded-full blur-xl -mr-12 -mt-12 pointer-events-none" />
             
@@ -518,7 +518,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
               <button 
                 onClick={handleSubmitRating}
                 disabled={isSubmitting}
-                className="w-full bg-primary hover:bg-primary-hover text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100"
+                className="w-full bg-primary hover:bg-primary-hover text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100 dark:shadow-none"
               >
                 {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                 Gửi đánh giá

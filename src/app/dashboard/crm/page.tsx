@@ -214,7 +214,7 @@ export default function CRMPage() {
           <button 
             onClick={handleManualScan}
             disabled={scanning || loading}
-            className="px-6 py-3 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white rounded-2xl transition-all flex items-center gap-2 shadow-lg shadow-rose-200 font-black text-xs uppercase tracking-widest disabled:opacity-75"
+            className="px-6 py-3 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white rounded-2xl transition-all flex items-center gap-2 shadow-lg shadow-rose-200 dark:shadow-none font-black text-xs uppercase tracking-widest disabled:opacity-75"
           >
             {scanning ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -560,7 +560,7 @@ export default function CRMPage() {
                                 <button 
                                   onClick={() => handleSendSingleReminder(session.id)}
                                   disabled={actionLoading === session.id}
-                                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-rose-100 hover:shadow-lg transition-all"
+                                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-rose-100 dark:shadow-none hover:shadow-lg transition-all"
                                 >
                                   {actionLoading === session.id ? 'ĐANG GỬI...' : 'GỬI NGAY'}
                                 </button>
@@ -637,7 +637,7 @@ export default function CRMPage() {
                               <button 
                                 onClick={() => handleSendBirthday(c.id, c.name_baby)}
                                 disabled={actionLoading === c.id}
-                                className="px-4 py-2 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-rose-100 hover:shadow-lg transition-all flex items-center gap-1.5 mx-auto"
+                                className="px-4 py-2 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-rose-100 dark:shadow-none hover:shadow-lg transition-all flex items-center gap-1.5 mx-auto"
                               >
                                 <Gift className="w-3.5 h-3.5" />
                                 {actionLoading === c.id ? 'ĐANG GỬI...' : 'TẶNG VOUCHER'}

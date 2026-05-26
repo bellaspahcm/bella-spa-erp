@@ -327,7 +327,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
                 className={`flex-[2] py-4 rounded-2xl font-black text-white shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 uppercase tracking-widest ${
                   type === 'revenue' 
                     ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' 
-                    : 'bg-rose-600 hover:bg-rose-700 shadow-rose-100'
+                    : 'bg-rose-600 hover:bg-rose-700 shadow-rose-100 dark:shadow-none'
                 } disabled:opacity-50 disabled:scale-100`}
               >
                 {isSubmitting ? (

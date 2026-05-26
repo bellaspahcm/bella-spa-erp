@@ -306,7 +306,7 @@ export default function DashboardPage() {
             <button 
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
               className={`p-4 rounded-2xl transition-all shadow-sm relative group active:scale-95 border ${
-                isNotificationsOpen ? 'bg-primary text-white border-primary shadow-lg shadow-pink-100' : 'bg-white/80 border-border text-foreground hover:bg-white'
+                isNotificationsOpen ? 'bg-primary text-white border-primary shadow-lg shadow-pink-100 dark:shadow-none' : 'bg-white/80 border-border text-foreground hover:bg-white'
               }`}
             >
               <Bell className={`w-6 h-6 transition-colors ${isNotificationsOpen ? 'text-white' : 'group-hover:text-primary'}`} />
@@ -324,7 +324,7 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-4 w-96 bg-white rounded-[2rem] shadow-2xl shadow-pink-200/50 border border-pink-100 p-6 z-50 overflow-hidden"
+                    className="absolute right-0 mt-4 w-96 bg-white rounded-[2rem] shadow-2xl shadow-pink-200/50 dark:shadow-none border border-pink-100 p-6 z-50 overflow-hidden"
                   >
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="font-black uppercase tracking-widest text-sm text-foreground">Thông báo</h3>
@@ -393,7 +393,7 @@ export default function DashboardPage() {
           
           <button 
             onClick={() => setIsBookingModalOpen(true)}
-            className="flex items-center gap-3 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-pink-200 active:scale-95 uppercase tracking-wider"
+            className="flex items-center gap-3 bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-pink-200 dark:shadow-none active:scale-95 uppercase tracking-wider"
           >
             <PlusCircle className="w-5 h-5" />
             <span>Tạo Booking</span>
@@ -417,7 +417,7 @@ export default function DashboardPage() {
           
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 relative gap-6">
             <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center text-white shadow-xl shadow-pink-200/50 transform -rotate-3 hover:rotate-0 transition-transform">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-2xl flex items-center justify-center text-white shadow-xl shadow-pink-200/50 dark:shadow-none transform -rotate-3 hover:rotate-0 transition-transform">
                 <SparklesIcon className="w-8 h-8" />
               </div>
               <div>
@@ -430,7 +430,7 @@ export default function DashboardPage() {
             </div>
             <Link 
               href="/dashboard/bookings"
-              className="px-8 py-4 bg-white/80 backdrop-blur-md text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-lg shadow-pink-100/50 flex items-center gap-3 group/link"
+              className="px-8 py-4 bg-white/80 backdrop-blur-md text-primary border border-primary/20 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-lg shadow-pink-100/50 dark:shadow-none flex items-center gap-3 group/link"
             >
               Xem tất cả <ChevronRight className="w-5 h-5 group-hover/link:translate-x-1.5 transition-transform" />
             </Link>
@@ -491,7 +491,7 @@ export default function DashboardPage() {
                   return (
                     <div 
                       key={session.id}
-                      className="group bg-white/30 hover:bg-white/60 p-6 md:p-7 rounded-[2.5rem] transition-all border border-white/40 hover:border-primary/10 shadow-sm hover:shadow-2xl hover:shadow-pink-100/30 relative mb-5 last:mb-0 backdrop-blur-md"
+                      className="group bg-white/30 hover:bg-white/60 p-6 md:p-7 rounded-[2.5rem] transition-all border border-white/40 hover:border-primary/10 shadow-sm hover:shadow-2xl hover:shadow-pink-100/30 dark:hover:shadow-none relative mb-5 last:mb-0 backdrop-blur-md"
                     >
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
                         <div className="flex flex-1 items-start gap-3 md:gap-7">
@@ -594,7 +594,7 @@ export default function DashboardPage() {
                                     autoFocus
                                     type="text"
                                     placeholder="Thêm ghi chú buổi..."
-                                    className="w-full pl-4 pr-12 py-4 bg-white border-2 border-primary/20 rounded-[1.25rem] text-sm font-bold focus:border-primary outline-none shadow-xl shadow-pink-100/20"
+                                    className="w-full pl-4 pr-12 py-4 bg-white border-2 border-primary/20 rounded-[1.25rem] text-sm font-bold focus:border-primary outline-none shadow-xl shadow-pink-100/20 dark:shadow-none"
                                     value={quickNoteValue}
                                     onChange={(e) => setQuickNoteValue(e.target.value)}
                                     onKeyDown={(e) => {
@@ -854,7 +854,7 @@ export default function DashboardPage() {
                       className={cn(
                         "px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all active:scale-95 border",
                         notifTab === tab.id 
-                          ? "bg-primary text-white border-primary shadow-lg shadow-pink-100" 
+                          ? "bg-primary text-white border-primary shadow-lg shadow-pink-100 dark:shadow-none" 
                           : "bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100"
                       )}
                     >

@@ -348,7 +348,7 @@ function SessionsContent() {
               onClick={() => setUserRole('KTV')}
               className={cn(
                 "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                userRole === 'KTV' ? "bg-primary text-white shadow-lg shadow-rose-100" : "text-slate-400 hover:text-slate-600"
+                userRole === 'KTV' ? "bg-primary text-white shadow-lg shadow-rose-100 dark:shadow-none" : "text-slate-400 hover:text-slate-600"
               )}
             >
               <UserCircle className="w-3.5 h-3.5" /> KTV
@@ -520,7 +520,7 @@ function SessionsContent() {
                         className={cn(
                           "w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-90",
                           currentPage === page 
-                            ? "bg-primary text-white shadow-lg shadow-rose-200" 
+                            ? "bg-primary text-white shadow-lg shadow-rose-200 dark:shadow-none" 
                             : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-300"
                         )}
                       >

@@ -249,7 +249,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
-          className="bg-primary p-6 rounded-[32px] shadow-lg shadow-pink-100 relative overflow-hidden"
+          className="bg-primary p-6 rounded-[32px] shadow-lg shadow-pink-100 dark:shadow-none relative overflow-hidden"
         >
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-4">

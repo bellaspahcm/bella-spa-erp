@@ -52,7 +52,7 @@ const PLANS = [
       'Hỗ trợ kỹ thuật qua Zalo OA',
     ],
     color: 'from-pink-400 to-rose-600',
-    glow: 'shadow-pink-200/50',
+    glow: 'shadow-pink-200/50 dark:shadow-none',
   },
   {
     id: 'pro',
@@ -338,7 +338,7 @@ export default function SubscriptionTab() {
               onClick={() => handleSelectPlan(plan)}
               className={cn(
                 "p-8 rounded-[2.5rem] bg-white border transition-all duration-300 relative overflow-hidden group cursor-pointer flex flex-col justify-between",
-                plan.recommended ? "border-primary shadow-xl shadow-pink-100 ring-2 ring-primary/20 scale-[1.03] lg:scale-[1.05]" : "border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200",
+                plan.recommended ? "border-primary shadow-xl shadow-pink-100 dark:shadow-none ring-2 ring-primary/20 scale-[1.03] lg:scale-[1.05]" : "border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200",
                 selectedPlan?.id === plan.id ? "ring-2 ring-primary/50" : ""
               )}
             >
@@ -393,7 +393,7 @@ export default function SubscriptionTab() {
 
       {/* Upgrade Configuration Modal / Panel */}
       {selectedPlan && (
-        <div className="p-8 rounded-[3.0rem] bg-gradient-to-br from-white via-pink-50/5 to-white border border-pink-100 shadow-xl shadow-pink-50 space-y-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
+        <div className="p-8 rounded-[3.0rem] bg-gradient-to-br from-white via-pink-50/5 to-white border border-pink-100 shadow-xl shadow-pink-50 dark:shadow-none space-y-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
           <div className="flex items-center justify-between">
             <h4 className="text-xl font-black text-slate-800 flex items-center gap-3">
               <Zap className="w-6 h-6 text-primary animate-bounce" /> Cấu hình gia hạn {selectedPlan.name}

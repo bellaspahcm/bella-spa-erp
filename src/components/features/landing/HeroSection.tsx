@@ -60,7 +60,7 @@ export function HeroSection() {
         >
           <a 
             href="#booking"
-            className="w-full sm:w-auto bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-full shadow-xl shadow-pink-200 hover:shadow-pink-300/40 hover:-translate-y-0.5 transition-all text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 group"
+            className="w-full sm:w-auto bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-full shadow-xl shadow-pink-200 dark:shadow-none hover:shadow-pink-300/40 dark:hover:shadow-none hover:-translate-y-0.5 transition-all text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 group"
           >
             Bắt đầu đặt lịch ngay
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

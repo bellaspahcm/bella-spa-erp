@@ -146,7 +146,7 @@ export default function FinancialOverviewClient({
 
             <button
               onClick={handleApplyDateFilter}
-              className="px-5 py-3 rounded-2xl bg-primary hover:bg-primary-hover text-white text-xs font-black uppercase tracking-widest active:scale-95 cursor-pointer transition-all shadow-lg shadow-pink-100/50 text-center shrink-0 w-full sm:w-auto sm:ml-1"
+              className="px-5 py-3 rounded-2xl bg-primary hover:bg-primary-hover text-white text-xs font-black uppercase tracking-widest active:scale-95 cursor-pointer transition-all shadow-lg shadow-pink-100/50 dark:shadow-none text-center shrink-0 w-full sm:w-auto sm:ml-1"
             >
               Áp dụng
             </button>

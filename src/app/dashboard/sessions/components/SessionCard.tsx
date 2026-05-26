@@ -212,7 +212,7 @@ export function SessionCard({
                 "w-full flex items-center gap-3 px-8 py-4 rounded-2xl font-black transition-all text-[10px] uppercase tracking-widest justify-center shadow-lg active:scale-95",
                 (alreadyDoneToday || (!isScheduledForToday && userRole !== 'admin')) 
                   ? "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed" 
-                  : "bg-primary text-white shadow-pink-100 hover:bg-primary-hover"
+                  : "bg-primary text-white shadow-pink-100 dark:shadow-none hover:bg-primary-hover"
               )}
             >
               {isUpdating ? (

@@ -155,7 +155,7 @@ export default function SignupPage() {
                 key={s} 
                 className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs z-10 border transition-all duration-300 ${
                   step >= s 
-                    ? 'bg-primary text-white border-primary shadow-lg shadow-pink-200' 
+                    ? 'bg-primary text-white border-primary shadow-lg shadow-pink-200 dark:shadow-none' 
                     : 'bg-white text-muted-foreground border-pink-100'
                 }`}
               >
@@ -263,7 +263,7 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={nextStep}
-                      className="bg-primary hover:bg-primary-hover text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-pink-200 transition-all active:scale-95 flex items-center gap-2 text-sm uppercase tracking-widest cursor-pointer"
+                      className="bg-primary hover:bg-primary-hover text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-pink-200 dark:shadow-none transition-all active:scale-95 flex items-center gap-2 text-sm uppercase tracking-widest cursor-pointer"
                     >
                       Tiếp tục
                       <ArrowRight size={16} />
@@ -358,7 +358,7 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={nextStep}
-                      className="bg-primary hover:bg-primary-hover text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-pink-200 transition-all active:scale-95 flex items-center gap-2 text-sm uppercase tracking-widest cursor-pointer"
+                      className="bg-primary hover:bg-primary-hover text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-pink-200 dark:shadow-none transition-all active:scale-95 flex items-center gap-2 text-sm uppercase tracking-widest cursor-pointer"
                     >
                       Tiếp tục
                       <ArrowRight size={16} />
@@ -459,7 +459,7 @@ export default function SignupPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="bg-gradient-to-r from-primary to-secondary hover:brightness-105 disabled:brightness-95 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-pink-200 transition-all active:scale-95 flex items-center gap-2.5 text-sm uppercase tracking-widest cursor-pointer"
+                      className="bg-gradient-to-r from-primary to-secondary hover:brightness-105 disabled:brightness-95 text-white font-black px-8 py-4 rounded-2xl shadow-xl shadow-pink-200 dark:shadow-none transition-all active:scale-95 flex items-center gap-2.5 text-sm uppercase tracking-widest cursor-pointer"
                     >
                       {loading ? (
                         <>

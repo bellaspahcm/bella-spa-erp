@@ -453,7 +453,7 @@ export default function CustomerDetailPage() {
           <div className="bg-white rounded-[3rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl" />
             <div className="flex flex-col items-center text-center relative z-10">
-              <div className="w-32 h-32 bg-rose-50 rounded-[2.5rem] flex items-center justify-center mb-6 shadow-2xl shadow-rose-100 border-4 border-white">
+              <div className="w-32 h-32 bg-rose-50 rounded-[2.5rem] flex items-center justify-center mb-6 shadow-2xl shadow-rose-100 dark:shadow-none border-4 border-white">
                 <Heart className="text-primary w-14 h-14" />
               </div>
               <h1 className="text-2xl font-black text-slate-900 mb-2">{customer.name_mother}</h1>
@@ -517,7 +517,7 @@ export default function CustomerDetailPage() {
 
               <button 
                 onClick={() => setIsBookingModalOpen(true)}
-                className="w-full mt-4 flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-rose-200 active:scale-95"
+                className="w-full mt-4 flex items-center justify-center gap-3 bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black transition-all shadow-lg shadow-rose-200 dark:shadow-none active:scale-95"
               >
                 <TrendingUp className="w-5 h-5" />
                 <span>ĐẶT LỊCH NGAY</span>
@@ -620,7 +620,7 @@ export default function CustomerDetailPage() {
                     className={cn(
                       "px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border",
                       activeBooking?.id === b.id 
-                        ? "bg-primary text-white border-primary shadow-lg shadow-pink-100" 
+                        ? "bg-primary text-white border-primary shadow-lg shadow-pink-100 dark:shadow-none" 
                         : "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/30"
                     )}
                   >
@@ -660,7 +660,7 @@ export default function CustomerDetailPage() {
                       </div>
                       
                       {!isDepositOnly && activeBooking?.preferred_time && (
-                        <div className="bg-white px-5 py-2.5 rounded-2xl shadow-xl shadow-rose-900/20 border border-white flex flex-col items-center justify-center min-w-[120px] self-start md:self-center mt-2 md:mt-0">
+                        <div className="bg-white px-5 py-2.5 rounded-2xl shadow-xl shadow-rose-900/20 dark:shadow-none border border-white flex flex-col items-center justify-center min-w-[120px] self-start md:self-center mt-2 md:mt-0">
                           <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest leading-none mb-1">GIỜ MẶC ĐỊNH</span>
                           <span className="text-2xl font-black text-slate-900 leading-none">{activeBooking.preferred_time}</span>
                         </div>
@@ -887,7 +887,7 @@ export default function CustomerDetailPage() {
               {nextSession ? (
                 <div className="p-6 bg-primary/5 border border-primary/20 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
                   <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-pink-200">
+                    <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg shadow-pink-200 dark:shadow-none">
                       <Clock className="w-7 h-7" />
                     </div>
                     <div>
@@ -900,7 +900,7 @@ export default function CustomerDetailPage() {
                   </div>
                   <button 
                     onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}`)}
-                    className="w-full md:w-auto bg-primary hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-rose-200 flex items-center justify-center gap-3 active:scale-95"
+                    className="w-full md:w-auto bg-primary hover:bg-rose-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl shadow-rose-200 dark:shadow-none flex items-center justify-center gap-3 active:scale-95"
                   >
                     <ClipboardList className="w-5 h-5" />
                     XEM THẺ LIỆU TRÌNH
@@ -1114,7 +1114,7 @@ function EditCustomerModal({ isOpen, onClose, onConfirm, isSubmitting, data, set
       >
         <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200">
+            <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200 dark:shadow-none">
               <User className="w-6 h-6" />
             </div>
             <div>

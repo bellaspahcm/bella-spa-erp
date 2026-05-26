@@ -372,7 +372,7 @@ export default function CustomersPage() {
           <PremiumExportButton />
           <button 
             onClick={handleAddNew}
-            className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 active:scale-95"
+            className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 dark:shadow-none active:scale-95"
           >
             <UserPlus className="w-5 h-5" />
             <span>Thêm khách hàng</span>
@@ -476,7 +476,7 @@ export default function CustomersPage() {
                   <motion.div 
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="flex items-center gap-2 bg-rose-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-rose-200 animate-pulse cursor-pointer"
+                    className="flex items-center gap-2 bg-rose-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-rose-200 dark:shadow-none animate-pulse cursor-pointer"
                     onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
                   >
                     <Sparkles className="w-3 h-3" />
@@ -528,7 +528,7 @@ export default function CustomersPage() {
               </button>
               <button 
                 onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
-                className="flex items-center gap-2 bg-primary hover:bg-rose-600 text-white px-5 py-3 rounded-xl font-bold transition-all text-sm shadow-lg shadow-rose-200"
+                className="flex items-center gap-2 bg-primary hover:bg-rose-600 text-white px-5 py-3 rounded-xl font-bold transition-all text-sm shadow-lg shadow-rose-200 dark:shadow-none"
               >
                 Chi tiết
                 <ChevronRight className="w-4 h-4" />
@@ -632,7 +632,7 @@ export default function CustomersPage() {
                     className={cn(
                       "w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-90",
                       currentPage === page 
-                        ? "bg-primary text-white shadow-lg shadow-rose-200" 
+                        ? "bg-primary text-white shadow-lg shadow-rose-200 dark:shadow-none" 
                         : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-300"
                     )}
                   >
@@ -676,7 +676,7 @@ export default function CustomersPage() {
               <div className="p-10">
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200">
+                    <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200 dark:shadow-none">
                       <UserPlus className="w-6 h-6" />
                     </div>
                     <div>
@@ -756,7 +756,7 @@ export default function CustomersPage() {
                             className={cn(
                               "py-3 rounded-xl font-bold text-xs transition-all border",
                               formData.gender_baby === g.id 
-                                ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-100" 
+                                ? "bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-100 dark:shadow-none" 
                                 : "bg-slate-50 text-slate-400 border-slate-100 hover:border-rose-200"
                             )}
                           >
@@ -787,7 +787,7 @@ export default function CustomersPage() {
                       disabled={isSubmitting}
                       className={cn(
                         "flex-1 py-4 text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2",
-                        isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:bg-rose-600 shadow-rose-200"
+                        isSubmitting ? "bg-slate-400 cursor-not-allowed" : "bg-primary hover:bg-rose-600 shadow-rose-200 dark:shadow-none"
                       )}
                     >
                       {isSubmitting && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}

@@ -125,7 +125,7 @@ export default function PwaRegister() {
           {!isIOS && (
             <button
               onClick={handleInstallClick}
-              className="mt-3 px-4 py-2 w-full text-xs font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 active:scale-95 transition-all duration-200 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-pink-500/20"
+              className="mt-3 px-4 py-2 w-full text-xs font-semibold text-white bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 active:scale-95 transition-all duration-200 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-pink-500/20 dark:shadow-none"
             >
               <Download size={14} />
               Cài đặt ứng dụng ngay

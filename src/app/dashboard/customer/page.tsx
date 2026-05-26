@@ -215,7 +215,7 @@ export default function CustomerDashboard() {
                   ) : (
                     <button 
                       onClick={() => setRatingModal({ isOpen: true, sessionId: session.id })}
-                      className="bg-primary text-white px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-100 flex items-center gap-2"
+                      className="bg-primary text-white px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-100 dark:shadow-none flex items-center gap-2"
                     >
                       <Star className="w-4 h-4 fill-current" />
                       Đánh giá ngay
@@ -299,7 +299,7 @@ export default function CustomerDashboard() {
                   <button 
                     onClick={handleRatingSubmit}
                     disabled={selectedRating === 0 || submitting}
-                    className="flex-[2] bg-primary text-white px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-600 transition-all shadow-xl shadow-rose-200 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+                    className="flex-[2] bg-primary text-white px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-600 transition-all shadow-xl shadow-rose-200 dark:shadow-none disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
                   >
                     {submitting ? 'Đang gửi...' : 'Gửi đánh giá'}
                   </button>
