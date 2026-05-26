@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database.types';
+import { AI_THRESHOLDS } from '@/config/ai-constants';
 
 export interface COOAnalysisResult {
   status: string;
@@ -116,11 +117,19 @@ export async function runCOOOrchestrator(
         deductions: sInfo ? Number(sInfo.deductions) : 0,
         advances: sInfo ? Number(sInfo.advances) : 0,
         totalSalary: sInfo ? Number(sInfo.total_salary) : 0,
-        status: gpsAnomaly > 2 ? "🔴 Bất thường GPS cao" : (late > 3 ? "🟡 Trễ ca nhiều" : "🟢 Tốt")
+        status: gpsAnomaly > AI_THRESHOLDS.GPS_ANOMALY_HIGH
+          ? "🔴 Bất thường GPS cao"
+          : late > AI_THRESHOLDS.LATE_SHIFTS_WARNING
+            ? "🟡 Trễ ca nhiều"
+            : "🟢 Tốt"
       };
     });
 
-    const anomalies = kpiSummary.filter((k: any) => k.gpsAnomaly > 0 || k.late > 2 || k.deductions > 200000);
+    const anomalies = kpiSummary.filter((k: any) =>
+      k.gpsAnomaly > 0 ||
+      k.late > AI_THRESHOLDS.LATE_SHIFTS_ANOMALY ||
+      k.deductions > AI_THRESHOLDS.DEDUCTIONS_MIN_ALERT
+    );
 
     subAgentResponse = {
       agent: "CHRO (Trưởng phòng Nhân sự - Tiền lương)",

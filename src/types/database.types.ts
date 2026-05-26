@@ -2577,6 +2577,20 @@ export type Database = {
         Args: { p_tenant_id: string; p_account_code_prefix: string; p_as_of_date: string }
         Returns: number
       }
+      get_salary_reconciliation: {
+        Args: { p_month_year: string }
+        Returns: {
+          ktv_id: string
+          ktv_name: string
+          legacy_total: number
+          ai_total: number
+          diff_amount: number
+          diff_percent: number | null
+          status: string
+          legacy_status: string
+          has_legacy_record: boolean
+        }[]
+      }
       get_reconciliation_report: {
         Args: { p_tenant_id: string; p_from_date: string; p_to_date: string }
         Returns: {
