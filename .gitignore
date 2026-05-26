@@ -29,6 +29,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Local scratch / experiment scripts (KHÔNG commit — có thể chứa secrets)
+/scratch/
+/scripts/check_exec_sql.mjs
+
 # MCP server config (chứa Service Role Key - không commit lên Git)
 .mcp.json
 
