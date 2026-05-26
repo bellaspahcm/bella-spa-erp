@@ -177,7 +177,7 @@ export default function AICopilotClient() {
   };
 
   return (
-    <div className="flex flex-col w-full h-[calc(100dvh-4rem)] lg:h-[100dvh] overflow-hidden bg-background text-foreground relative z-10">
+    <div className="flex flex-col w-full lg:w-auto h-[calc(100dvh-4rem)] lg:h-auto lg:fixed lg:top-0 lg:bottom-0 lg:left-80 lg:right-0 overflow-hidden bg-background text-foreground relative z-10">
       {/* Dynamic Background Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
