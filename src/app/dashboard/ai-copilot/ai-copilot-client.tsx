@@ -138,7 +138,7 @@ export default function AICopilotClient() {
   };
 
   return (
-    <div className="fixed top-16 lg:top-0 bottom-0 left-0 lg:left-80 right-0 flex flex-col overflow-hidden bg-background text-foreground z-10">
+    <div className="flex flex-col w-full h-[calc(100dvh-4rem)] lg:h-[100dvh] overflow-hidden bg-background text-foreground relative z-10">
       {/* Dynamic Background Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
@@ -147,7 +147,7 @@ export default function AICopilotClient() {
       <Toaster position="top-right" richColors />
 
       {/* Header Bar */}
-      <header className="relative shrink-0 z-10 px-6 py-4 border-b border-border bg-card flex items-center justify-between shadow-sm">
+      <header className="relative shrink-0 z-10 px-4 sm:px-6 py-4 border-b border-border bg-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 animate-pulse">
             <Brain className="w-6 h-6 text-white" />

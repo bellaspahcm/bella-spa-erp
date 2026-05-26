@@ -397,7 +397,7 @@ export default function LandingPage() {
                 href="#booking" 
                 className="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-full shadow-lg shadow-pink-200 dark:shadow-none hover:shadow-pink-300/40 dark:hover:shadow-none hover:-translate-y-0.5 transition-all text-xs font-black uppercase tracking-wider"
               >
-                DÙNG THỬ NGAY
+                ĐĂNG KÝ TƯ VẤN
               </a>
             </div>
 
@@ -470,7 +470,7 @@ export default function LandingPage() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="w-full text-center py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-pink-200 dark:shadow-none transition-all"
                   >
-                    DÙNG THỬ NGAY
+                    ĐĂNG KÝ TƯ VẤN
                   </a>
                 </div>
               </div>
