@@ -741,6 +741,7 @@ export async function recordRemainingPayment(params: {
   notes?: string;
   status?: string;
   revenue_type?: string;
+  receipt_url?: string;
 }) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = (await createClient()) as any;
@@ -787,6 +788,7 @@ export async function recordRemainingPayment(params: {
         received_date: getLocalDateString(),
         status: params.status || 'pending',
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
+        receipt_url: params.receipt_url || null,
         tenant_id: tenantId
       }])
       .select('id, status')
