@@ -57,17 +57,22 @@ export default function ReconciliationPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [rows, setRows] = useState<ReconciliationRow[]>([]);
 
-  const [fromDate, setFromDate] = useState(() => {
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+
+  // Khởi tạo ngày tháng an toàn sau khi mount ở Client để tránh Hydration Mismatch về múi giờ
+  useEffect(() => {
     const d = new Date();
     d.setDate(1);
-    return d.toISOString().slice(0, 10);
-  });
-  const [toDate, setToDate] = useState(() => new Date().toISOString().slice(0, 10));
+    setFromDate(d.toISOString().slice(0, 10));
+    setToDate(new Date().toISOString().slice(0, 10));
+  }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (fromStr: string, toStr: string) => {
+    if (!fromStr || !toStr) return;
     setRefreshing(true);
     try {
-      const data = await getReconciliationReport(fromDate, toDate);
+      const data = await getReconciliationReport(fromStr, toStr);
       setRows(data || []);
     } catch (err: any) {
       console.error('Error fetching reconciliation:', err);
@@ -79,7 +84,9 @@ export default function ReconciliationPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    if (fromDate && toDate) {
+      fetchData(fromDate, toDate);
+    }
   }, [fromDate, toDate]);
 
   const totalChecks = rows.length;
@@ -208,8 +215,10 @@ export default function ReconciliationPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-sans text-xs">
                 {rows.map((row, idx) => {
-                  const cfg = STATUS_CONFIG[row.status];
-                  const StatusIcon = cfg.icon;
+                  // Chuẩn hóa status và fallback an toàn tránh crash render
+                  const statusKey = (row.status || '').toUpperCase() as keyof typeof STATUS_CONFIG;
+                  const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.MAJOR_DIFF;
+                  const StatusIcon = cfg?.icon || XCircle;
 
                   return (
                     <motion.tr
