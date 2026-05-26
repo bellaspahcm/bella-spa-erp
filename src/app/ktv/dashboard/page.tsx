@@ -406,7 +406,7 @@ export default function KTVDashboard() {
               <button 
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
                 className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all active:scale-95 relative ${
-                  isNotifOpen ? 'bg-primary text-white border-primary shadow-lg shadow-pink-100' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                  isNotifOpen ? 'bg-primary text-white border-primary shadow-lg shadow-pink-100 dark:shadow-none' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
                 }`}
               >
                 <Bell className="w-5 h-5" />
@@ -626,7 +626,7 @@ export default function KTVDashboard() {
               <button
                 onClick={handleCheckIn}
                 disabled={isAttendanceLoading}
-                className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-rose-100 text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-rose-100 dark:shadow-none text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isAttendanceLoading ? 'Đang gửi...' : 'Đầu ca: CHECK-IN'}
               </button>
@@ -1031,7 +1031,7 @@ export default function KTVDashboard() {
               <div className="space-y-3 mt-auto">
                 <button 
                   onClick={handleLogout}
-                  className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100"
+                  className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100 dark:shadow-none"
                 >
                   <LogOut className="w-4 h-4" />
                   Đăng xuất tài khoản
@@ -1081,7 +1081,7 @@ export default function KTVDashboard() {
                     selectedNotif.type === 'booking' ? 'bg-indigo-100 text-indigo-600 border border-indigo-200/50 shadow-indigo-100' :
                     selectedNotif.type === 'salary' || selectedNotif.type === 'payroll' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200/50 shadow-emerald-100' :
                     selectedNotif.type === 'system' ? 'bg-amber-100 text-amber-600 border border-amber-200/50 shadow-amber-100' :
-                    'bg-rose-100 text-rose-600 border border-rose-200/50 shadow-rose-100'
+                    'bg-rose-100 text-rose-600 border border-rose-200/50 shadow-rose-100 dark:shadow-none'
                   }`}>
                     {selectedNotif.type === 'booking' && <CalendarIcon className="w-8 h-8" />}
                     {(selectedNotif.type === 'salary' || selectedNotif.type === 'payroll') && <DollarSign className="w-8 h-8" />}
@@ -1489,7 +1489,7 @@ export default function KTVDashboard() {
                           onClick={() => setLeaveType(t)}
                           className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${
                             leaveType === t
-                              ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-100'
+                              ? 'bg-rose-500 text-white border-rose-500 shadow-md shadow-rose-100 dark:shadow-none'
                               : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                           }`}
                         >
@@ -1516,7 +1516,7 @@ export default function KTVDashboard() {
                   <button
                     type="submit"
                     disabled={isLeaveSubmitting}
-                    className="w-full bg-rose-500 hover:bg-rose-600 text-white font-black text-xs py-3.5 rounded-2xl uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100 disabled:opacity-50 mt-4 animate-pulse"
+                    className="w-full bg-rose-500 hover:bg-rose-600 text-white font-black text-xs py-3.5 rounded-2xl uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100 dark:shadow-none disabled:opacity-50 mt-4 animate-pulse"
                   >
                     {isLeaveSubmitting ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />

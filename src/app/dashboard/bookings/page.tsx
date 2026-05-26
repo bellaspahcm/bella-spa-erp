@@ -378,7 +378,7 @@ function BookingsContent() {
           <button 
             type="button"
             onClick={() => setShowCreateModal(true)}
-            className="flex-grow sm:flex-initial flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 active:scale-95 text-xs whitespace-nowrap"
+            className="flex-grow sm:flex-initial flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 dark:shadow-none active:scale-95 text-xs whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span>Đặt lịch mới</span>
@@ -484,7 +484,7 @@ function BookingsContent() {
                       <div className="flex justify-between items-start mb-2">
                         <span className={`flex items-center justify-center w-8 h-8 text-sm font-bold rounded-xl transition-all ${
                           isSelected 
-                            ? 'bg-rose-50 text-white shadow-lg shadow-rose-200' 
+                            ? 'bg-rose-50 text-white shadow-lg shadow-rose-200 dark:shadow-none' 
                             : isToday 
                               ? 'bg-rose-50 text-rose-500 border border-rose-100' 
                               : 'text-slate-600 group-hover:text-slate-900'
@@ -679,7 +679,7 @@ function BookingsContent() {
                                 setShowDetailModal(true);
                                 if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
                               }}
-                              className="px-4 py-2 bg-primary hover:bg-rose-600 text-white rounded-xl font-bold text-xs transition-colors disabled:opacity-50 flex items-center gap-1 shadow-lg shadow-rose-100"
+                              className="px-4 py-2 bg-primary hover:bg-rose-600 text-white rounded-xl font-bold text-xs transition-colors disabled:opacity-50 flex items-center gap-1 shadow-lg shadow-rose-100 dark:shadow-none"
                             >
                               Chăm sóc
                             </button>
@@ -775,7 +775,7 @@ function BookingsContent() {
                           onClick={() => setSelectedDate(date)}
                           className={`flex flex-col items-center justify-center w-12 h-14 rounded-2xl transition-all shrink-0 select-none ${
                             isSelected
-                              ? 'bg-gradient-to-br from-rose-500 to-rose-400 text-white shadow-md shadow-rose-200 scale-105'
+                              ? 'bg-gradient-to-br from-rose-500 to-rose-400 text-white shadow-md shadow-rose-200 dark:shadow-none scale-105'
                               : isToday
                                 ? 'bg-rose-50 text-rose-500 border border-rose-100'
                                 : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
@@ -1303,7 +1303,7 @@ function BookingsContent() {
                   <button 
                     onClick={handleUpdatePlan}
                     disabled={isUpdating}
-                    className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 disabled:opacity-50"
+                    className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 dark:shadow-none disabled:opacity-50"
                   >
                     {isUpdating ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Lưu thay đổi'}
                   </button>
@@ -1424,7 +1424,7 @@ function BookingsContent() {
                   <button 
                     type="submit"
                     disabled={isUpdating}
-                    className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 disabled:opacity-50"
+                    className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 dark:shadow-none disabled:opacity-50"
                   >
                     {isUpdating ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Xác nhận lịch hẹn'}
                   </button>

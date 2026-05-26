@@ -389,7 +389,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
                                 isRejectingLeave || 
                                 (conflictSessions.length > 0 && conflictSessions.some(session => !reassignmentMapping[session.id]))
                               }
-                              className="flex-1 py-3 px-4 rounded-xl bg-[#1A0A0E] text-white hover:bg-slate-900 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-lg shadow-rose-100/10"
+                              className="flex-1 py-3 px-4 rounded-xl bg-[#1A0A0E] text-white hover:bg-slate-900 text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-lg shadow-rose-100/10 dark:shadow-none"
                             >
                               {isApprovingLeave ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />

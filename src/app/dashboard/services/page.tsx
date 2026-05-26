@@ -417,7 +417,7 @@ export default function ServicesPage() {
           </button>
           <button 
             onClick={openAddModal}
-            className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-rose-200 active:scale-95"
+            className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-rose-200 dark:shadow-none active:scale-95"
           >
             <Plus className="w-5 h-5" />
             <span>Thêm dịch vụ mới</span>
@@ -466,7 +466,7 @@ export default function ServicesPage() {
               <div className="absolute inset-0 opacity-20 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)]" />
               </div>
-              <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-lg shadow-rose-200 mb-4 z-10">
+              <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center shadow-lg shadow-rose-200 dark:shadow-none mb-4 z-10">
                 <Sparkles className="text-primary w-8 h-8" />
               </div>
               <div className="bg-primary text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full z-10">
@@ -545,7 +545,7 @@ export default function ServicesPage() {
 
               {/* Offer Badge */}
               <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex items-start gap-3">
-                <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm shadow-rose-100">
+                <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm shadow-rose-100 dark:shadow-none">
                   <Tag className="w-4 h-4 text-primary" />
                 </div>
                 <div className="text-xs font-bold text-rose-600 leading-relaxed">
@@ -590,7 +590,7 @@ export default function ServicesPage() {
                     className={cn(
                       "w-10 h-10 rounded-xl font-black text-sm transition-all active:scale-90",
                       currentPage === page 
-                        ? "bg-primary text-white shadow-lg shadow-rose-200" 
+                        ? "bg-primary text-white shadow-lg shadow-rose-200 dark:shadow-none" 
                         : "bg-white border border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-300"
                     )}
                   >
@@ -632,7 +632,7 @@ export default function ServicesPage() {
               <div className="p-10">
                 <div className="flex items-center justify-between mb-10">
                   <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-primary rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl shadow-rose-200">
+                    <div className="w-14 h-14 bg-primary rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl shadow-rose-200 dark:shadow-none">
                       <Zap className="w-7 h-7" />
                     </div>
                     <div>
@@ -761,7 +761,7 @@ export default function ServicesPage() {
                     <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-[2rem] transition-all uppercase tracking-widest text-xs">
                       Hủy bỏ
                     </button>
-                    <button type="submit" className="flex-1 py-5 bg-primary hover:bg-rose-600 text-white font-black rounded-[2rem] shadow-2xl shadow-rose-200 transition-all uppercase tracking-widest text-xs">
+                    <button type="submit" className="flex-1 py-5 bg-primary hover:bg-rose-600 text-white font-black rounded-[2rem] shadow-2xl shadow-rose-200 dark:shadow-none transition-all uppercase tracking-widest text-xs">
                       {modalMode === 'add' ? 'Lưu dịch vụ' : 'Cập nhật dịch vụ'}
                     </button>
                   </div>

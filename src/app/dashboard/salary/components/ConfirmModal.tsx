@@ -71,8 +71,8 @@ export default function ConfirmModal({
             className={cn(
               "flex-1 py-4 text-white font-black rounded-2xl transition-all text-xs uppercase tracking-wider flex items-center justify-center gap-2",
               isDanger 
-                ? "bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-100" 
-                : "bg-primary hover:bg-primary-hover shadow-lg shadow-pink-100"
+                ? "bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-100 dark:shadow-none" 
+                : "bg-primary hover:bg-primary-hover shadow-lg shadow-pink-100 dark:shadow-none"
             )}
           >
             {isLoading ? (

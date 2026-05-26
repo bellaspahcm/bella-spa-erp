@@ -67,7 +67,7 @@ export default function KTVLeaderboardPage() {
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
-      <div className="bg-rose-500 text-white px-6 pt-12 pb-24 rounded-b-[40px] relative overflow-hidden shadow-2xl shadow-rose-100">
+      <div className="bg-rose-500 text-white px-6 pt-12 pb-24 rounded-b-[40px] relative overflow-hidden shadow-2xl shadow-rose-100 dark:shadow-none">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl -mr-32 -mt-32" />
         
         <div className="relative z-10 text-center">

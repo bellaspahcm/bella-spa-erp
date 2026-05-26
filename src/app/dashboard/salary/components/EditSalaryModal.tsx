@@ -80,7 +80,7 @@ export default function EditSalaryModal({
           <button 
             onClick={handleSaveConfig}
             disabled={isSaving}
-            className="flex-1 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-hover shadow-lg shadow-pink-100 transition-all disabled:opacity-50"
+            className="flex-1 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary-hover shadow-lg shadow-pink-100 dark:shadow-none transition-all disabled:opacity-50"
           >
             {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
           </button>

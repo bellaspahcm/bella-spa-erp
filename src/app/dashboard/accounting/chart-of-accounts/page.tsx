@@ -250,7 +250,7 @@ export default function ChartOfAccountsPage() {
 
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 uppercase tracking-widest text-xs shrink-0 active:scale-95 cursor-pointer"
+          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none uppercase tracking-widest text-xs shrink-0 active:scale-95 cursor-pointer"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Thêm tài khoản</span>
@@ -376,7 +376,7 @@ export default function ChartOfAccountsPage() {
                   <button 
                     type="submit" 
                     disabled={saving}
-                    className="flex-1 bg-primary hover:bg-primary-hover text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-pink-100 disabled:opacity-50 cursor-pointer"
+                    className="flex-1 bg-primary hover:bg-primary-hover text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-pink-100 dark:shadow-none disabled:opacity-50 cursor-pointer"
                   >
                     {saving ? 'Đang lưu...' : 'Thêm tài khoản'}
                   </button>

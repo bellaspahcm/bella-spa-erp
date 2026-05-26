@@ -111,7 +111,7 @@ export function ServiceWizard({ categories, serviceCategories, onSelectPackage }
             {[1, 2, 3, 4].map((step) => (
               <div 
                 key={step}
-                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${wizardStep === step ? 'bg-primary text-white scale-110 shadow-md shadow-pink-100' : wizardStep > step ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}
+                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${wizardStep === step ? 'bg-primary text-white scale-110 shadow-md shadow-pink-100 dark:shadow-none' : wizardStep > step ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400'}`}
               >
                 {wizardStep > step ? '✓' : step}
               </div>
@@ -292,7 +292,7 @@ export function ServiceWizard({ categories, serviceCategories, onSelectPackage }
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto pt-6">
                   <button
                     onClick={startBookingWithRecommendation}
-                    className="w-full bg-primary hover:bg-primary-hover text-white py-4 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-pink-200 active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                    className="w-full bg-primary hover:bg-primary-hover text-white py-4 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-pink-200 dark:shadow-none active:scale-95 transition-all flex items-center justify-center gap-1.5"
                   >
                     Đặt lịch ngay với liệu trình này
                     <ArrowRight className="w-4 h-4" />

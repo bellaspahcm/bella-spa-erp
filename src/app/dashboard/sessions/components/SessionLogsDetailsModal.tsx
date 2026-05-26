@@ -316,7 +316,7 @@ export function SessionLogsDetailsModal({
             </div>
             <Link
               href={`/dashboard/customers/${activeBooking.customers?.id}?bookingId=${activeBooking.id}`}
-              className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-pink-100 active:scale-95 flex items-center gap-2"
+              className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-pink-100 dark:shadow-none active:scale-95 flex items-center gap-2"
             >
               <UserCircle className="w-3.5 h-3.5" /> Hồ sơ
             </Link>
@@ -592,7 +592,7 @@ export function SessionLogsDetailsModal({
                     <button 
                       onClick={() => handleSaveFullUpdate()}
                       disabled={isSavingNote || !selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
-                      className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
+                      className="w-full mt-2 bg-primary text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-pink-100 dark:shadow-none flex items-center justify-center gap-2 hover:bg-primary-hover active:scale-95 transition-all disabled:opacity-50"
                     >
                       {isSavingNote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
                       Cập nhật thông tin

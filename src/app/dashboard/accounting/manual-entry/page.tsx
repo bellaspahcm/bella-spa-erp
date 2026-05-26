@@ -325,7 +325,7 @@ export default function ManualEntryPage() {
         <button 
           type="submit" 
           disabled={saving || !isBalanced || !hasAccountsSelected}
-          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-[#11100F] dark:disabled:text-slate-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 disabled:shadow-none uppercase tracking-widest text-xs shrink-0 active:scale-95 cursor-pointer border-none"
+          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-[#11100F] dark:disabled:text-slate-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none disabled:shadow-none uppercase tracking-widest text-xs shrink-0 active:scale-95 cursor-pointer border-none"
         >
           <span>Ghi sổ bút toán</span>
           <ArrowRight className="w-4 h-4" />

@@ -245,7 +245,7 @@ export default function ChatPage() {
 
       <div className="flex-1 flex gap-6 min-h-0 overflow-hidden">
         {/* Left Column: Conversations List */}
-        <div className={`w-full lg:w-80 flex flex-col bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 overflow-hidden luxury-box-hover shrink-0 ${
+        <div className={`w-full lg:w-80 flex flex-col bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 dark:shadow-none border border-pink-50 overflow-hidden luxury-box-hover shrink-0 ${
           showChatMobile ? 'hidden lg:flex' : 'flex'
         }`}>
           <div className="p-6 border-b border-pink-50">
@@ -274,7 +274,7 @@ export default function ChatPage() {
                 }}
                 className={`w-full flex items-center gap-4 p-4 rounded-[1.5rem] transition-all duration-300 group ${
                   selectedChat?.id === chat.id 
-                    ? 'bg-primary text-white shadow-lg shadow-pink-200' 
+                    ? 'bg-primary text-white shadow-lg shadow-pink-200 dark:shadow-none' 
                     : 'hover:bg-pink-50'
                 }`}
               >
@@ -314,7 +314,7 @@ export default function ChatPage() {
         </div>
 
         {/* Center Column: Chat Window */}
-        <div className={`flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 border border-pink-50 overflow-hidden relative luxury-box-hover ${
+        <div className={`flex-1 flex flex-col bg-white rounded-[2.5rem] shadow-xl shadow-pink-100/50 dark:shadow-none border border-pink-50 overflow-hidden relative luxury-box-hover ${
           showChatMobile ? 'flex' : 'hidden lg:flex'
         }`}>
           {selectedChat ? (
@@ -379,7 +379,7 @@ export default function ChatPage() {
 
                         <div className={`px-6 py-4 rounded-[1.8rem] text-[15px] font-semibold shadow-sm transition-all group-hover:shadow-md ${
                           msg.sender === 'spa' 
-                            ? 'bg-primary text-white rounded-tr-none shadow-pink-100' 
+                            ? 'bg-primary text-white rounded-tr-none shadow-pink-100 dark:shadow-none' 
                             : 'bg-white text-foreground border border-pink-50 rounded-tl-none'
                         }`}>
                           {msg.text}
@@ -452,7 +452,7 @@ export default function ChatPage() {
                     <button 
                       type="submit" 
                       disabled={!inputValue.trim()}
-                      className="bg-primary text-white p-4 rounded-full hover:bg-primary-hover shadow-lg shadow-pink-200 transition-all disabled:opacity-50 disabled:shadow-none active:scale-90"
+                      className="bg-primary text-white p-4 rounded-full hover:bg-primary-hover shadow-lg shadow-pink-200 dark:shadow-none transition-all disabled:opacity-50 disabled:shadow-none active:scale-90"
                     >
                       <Send className="w-5 h-5" />
                     </button>
@@ -476,11 +476,11 @@ export default function ChatPage() {
         <div className="w-80 hidden xl:flex flex-col gap-6">
           {selectedChat ? (
             <>
-              <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-pink-100/50 border border-pink-50 luxury-box-hover text-center relative overflow-hidden">
+              <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-pink-100/50 dark:shadow-none border border-pink-50 luxury-box-hover text-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -mr-12 -mt-12" />
                 
                 <div className="relative mb-6 mx-auto w-24 h-24">
-                    <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-pink-100">
+                    <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-3xl font-black shadow-xl shadow-pink-100 dark:shadow-none">
                       {selectedChat.avatar}
                     </div>
                     <div className="absolute -bottom-2 -right-2 bg-white p-2 rounded-2xl shadow-lg border border-pink-50">
@@ -503,14 +503,14 @@ export default function ChatPage() {
                       <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Dịch vụ gần nhất</p>
                       <p className="text-sm font-bold text-foreground">{selectedChat.lastBooking}</p>
                     </div>
-                    <div className="p-4 bg-primary text-white rounded-2xl shadow-lg shadow-pink-100">
+                    <div className="p-4 bg-primary text-white rounded-2xl shadow-lg shadow-pink-100 dark:shadow-none">
                       <p className="text-[10px] font-black text-white/70 uppercase tracking-widest mb-1">Tổng chi tiêu</p>
                       <p className="text-lg font-black">{selectedChat.totalSpent}</p>
                     </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2.5rem] p-6 shadow-xl shadow-pink-100/50 border border-pink-50 luxury-box-hover">
+              <div className="bg-white rounded-[2.5rem] p-6 shadow-xl shadow-pink-100/50 dark:shadow-none border border-pink-50 luxury-box-hover">
                 <h4 className="text-xs font-black text-foreground uppercase tracking-[0.2em] mb-4 flex items-center justify-between">
                   Hành động nhanh
                   <ChevronRight className="w-4 h-4 text-primary" />
@@ -526,7 +526,7 @@ export default function ChatPage() {
                       <Link 
                         key={i} 
                         href={btn.href}
-                        className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-pink-50/50 hover:bg-primary hover:text-white transition-all group border border-transparent hover:shadow-lg hover:shadow-pink-100"
+                        className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-pink-50/50 hover:bg-primary hover:text-white transition-all group border border-transparent hover:shadow-lg hover:shadow-pink-100 dark:hover:shadow-none"
                       >
                         <btn.icon className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
                         <span className="text-[10px] font-black uppercase tracking-wider">{btn.label}</span>
@@ -540,7 +540,7 @@ export default function ChatPage() {
                             if (note) alert(`Đã lưu ghi chú: ${note}`);
                           }
                         }}
-                        className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-pink-50/50 hover:bg-primary hover:text-white transition-all group border border-transparent hover:shadow-lg hover:shadow-pink-100"
+                        className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-pink-50/50 hover:bg-primary hover:text-white transition-all group border border-transparent hover:shadow-lg hover:shadow-pink-100 dark:hover:shadow-none"
                       >
                         <btn.icon className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
                         <span className="text-[10px] font-black uppercase tracking-wider">{btn.label}</span>

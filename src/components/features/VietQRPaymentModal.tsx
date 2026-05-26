@@ -108,7 +108,7 @@ export default function VietQRPaymentModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
                 {/* QR Display */}
                 <div className="flex flex-col items-center justify-center bg-slate-50 border border-slate-100/60 p-6 rounded-[2rem] relative">
-                  <div className="w-[180px] h-[180px] bg-white rounded-3xl p-3 border border-pink-50 flex items-center justify-center shadow-lg shadow-pink-50/30 overflow-hidden relative group">
+                  <div className="w-[180px] h-[180px] bg-white rounded-3xl p-3 border border-pink-50 flex items-center justify-center shadow-lg shadow-pink-50/30 dark:shadow-none overflow-hidden relative group">
                     <img
                       src={qrUrl}
                       alt="VietQR Code"

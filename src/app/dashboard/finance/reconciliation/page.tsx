@@ -327,7 +327,7 @@ export default function FinancialReconciliationPage() {
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-rose-200 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-rose-200 dark:shadow-none relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -484,7 +484,7 @@ export default function FinancialReconciliationPage() {
                                 <button
                                   onClick={() => handlePayClearing(rec.id)}
                                   disabled={isPayingClearing === rec.id}
-                                  className="inline-flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm shadow-rose-100 active:scale-95 disabled:opacity-50"
+                                  className="inline-flex items-center gap-1.5 bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm shadow-rose-100 dark:shadow-none active:scale-95 disabled:opacity-50"
                                 >
                                   {isPayingClearing === rec.id ? (
                                     <>
@@ -912,7 +912,7 @@ export default function FinancialReconciliationPage() {
                   <button
                     onClick={handlePayment}
                     disabled={isPaying || !paymentAmount}
-                    className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg shadow-rose-200"
+                    className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg shadow-rose-200 dark:shadow-none"
                   >
                     {isPaying ? 'Đang Xử Lý...' : 'Xác Nhận Thu Nợ'}
                     {!isPaying && <CheckCircle2 className="w-4 h-4" />}

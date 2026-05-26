@@ -1034,7 +1034,7 @@ export default function HqDashboardClient({
                             transition={{ duration: 0.8, delay: idx * 0.1, ease: 'easeOut' }}
                             className={`w-full max-w-[40px] rounded-t-xl transition-all ${
                               idx === (stats.spaGrowthData || []).length - 1 
-                                ? 'bg-gradient-to-t from-primary to-secondary shadow-lg shadow-pink-200' 
+                                ? 'bg-gradient-to-t from-primary to-secondary shadow-lg shadow-pink-200 dark:shadow-none' 
                                 : 'bg-slate-100 group-hover:bg-indigo-50'
                             }`}
                           />
@@ -1317,7 +1317,7 @@ export default function HqDashboardClient({
                         onClick={() => setStatusFilter(btn.value)}
                         className={`px-4 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
                           statusFilter === btn.value
-                            ? 'bg-primary text-white shadow-sm shadow-pink-100'
+                            ? 'bg-primary text-white shadow-sm shadow-pink-100 dark:shadow-none'
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
@@ -1341,7 +1341,7 @@ export default function HqDashboardClient({
                   </span>
                   <a 
                     href="/signup"
-                    className="flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-650 hover:from-rose-600 hover:to-pink-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-md hover:shadow-rose-100 transition-all active:scale-95 cursor-pointer"
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-650 hover:from-rose-600 hover:to-pink-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-md hover:shadow-rose-100 dark:hover:shadow-none transition-all active:scale-95 cursor-pointer"
                   >
                     <Plus size={12} />
                     Đăng ký Chi Nhánh mới
@@ -2785,7 +2785,7 @@ export default function HqDashboardClient({
                       onClick={() => setRoyaltyType('percentage')}
                       className={`py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 border transition-all cursor-pointer ${
                         royaltyType === 'percentage'
-                          ? 'bg-primary/5 text-primary border-primary shadow-sm shadow-pink-100'
+                          ? 'bg-primary/5 text-primary border-primary shadow-sm shadow-pink-100 dark:shadow-none'
                           : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
@@ -2797,7 +2797,7 @@ export default function HqDashboardClient({
                       onClick={() => setRoyaltyType('fixed')}
                       className={`py-3.5 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 border transition-all cursor-pointer ${
                         royaltyType === 'fixed'
-                          ? 'bg-primary/5 text-primary border-primary shadow-sm shadow-pink-100'
+                          ? 'bg-primary/5 text-primary border-primary shadow-sm shadow-pink-100 dark:shadow-none'
                           : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
@@ -3082,7 +3082,7 @@ export default function HqDashboardClient({
                   <button
                     type="submit"
                     disabled={submittingTransferAction}
-                    className="flex-1 py-3.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-rose-100"
+                    className="flex-1 py-3.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-rose-100 dark:shadow-none"
                   >
                     {submittingTransferAction ? (
                       <RefreshCw size={14} className="animate-spin" />

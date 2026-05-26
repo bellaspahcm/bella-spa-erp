@@ -395,7 +395,7 @@ export default function LandingPage() {
               </Link>
               <a 
                 href="#booking" 
-                className="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-full shadow-lg shadow-pink-200 hover:shadow-pink-300/40 hover:-translate-y-0.5 transition-all text-xs font-black uppercase tracking-wider"
+                className="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-full shadow-lg shadow-pink-200 dark:shadow-none hover:shadow-pink-300/40 dark:hover:shadow-none hover:-translate-y-0.5 transition-all text-xs font-black uppercase tracking-wider"
               >
                 DÙNG THỬ NGAY
               </a>
@@ -468,7 +468,7 @@ export default function LandingPage() {
                   <a 
                     href="#booking" 
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full text-center py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-pink-200 transition-all"
+                    className="w-full text-center py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-pink-200 dark:shadow-none transition-all"
                   >
                     DÙNG THỬ NGAY
                   </a>
@@ -664,7 +664,7 @@ export default function LandingPage() {
             <div className="absolute bottom-6 right-6 z-10 hidden sm:block">
               <a 
                 href="#booking"
-                className="bg-primary hover:bg-primary-hover text-white px-6 py-3.5 rounded-full shadow-lg shadow-pink-200 hover:shadow-pink-300/40 hover:-translate-y-0.5 transition-all text-xs font-black uppercase tracking-wider flex items-center gap-2 group-hover:scale-105"
+                className="bg-primary hover:bg-primary-hover text-white px-6 py-3.5 rounded-full shadow-lg shadow-pink-200 dark:shadow-none hover:shadow-pink-300/40 dark:hover:shadow-none hover:-translate-y-0.5 transition-all text-xs font-black uppercase tracking-wider flex items-center gap-2 group-hover:scale-105"
               >
                 Đăng ký tắm bé tại nhà ngay
                 <ChevronRight className="w-4 h-4" />
@@ -953,7 +953,7 @@ export default function LandingPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-primary hover:bg-primary-hover disabled:bg-slate-200 text-white font-black py-4.5 rounded-2xl shadow-xl shadow-pink-200 hover:shadow-pink-300/40 active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 mt-2"
+                    className="w-full bg-primary hover:bg-primary-hover disabled:bg-slate-200 text-white font-black py-4.5 rounded-2xl shadow-xl shadow-pink-200 dark:shadow-none hover:shadow-pink-300/40 dark:hover:shadow-none active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2 mt-2"
                   >
                     {isSubmitting ? (
                       <>

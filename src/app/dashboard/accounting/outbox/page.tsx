@@ -205,7 +205,7 @@ export default function OutboxMonitorPage() {
                           {canReplay && (
                             <button 
                               onClick={() => handleReplay(ev.id, ev.event_type)}
-                              className="inline-flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3.5 py-1.5 rounded-xl text-3xs font-black uppercase tracking-widest transition-all cursor-pointer border-none active:scale-95 shadow-sm shadow-pink-100"
+                              className="inline-flex items-center gap-1 bg-primary hover:bg-primary-hover text-white px-3.5 py-1.5 rounded-xl text-3xs font-black uppercase tracking-widest transition-all cursor-pointer border-none active:scale-95 shadow-sm shadow-pink-100 dark:shadow-none"
                             >
                               <Play className="w-3 h-3 fill-current" />
                               Replay
