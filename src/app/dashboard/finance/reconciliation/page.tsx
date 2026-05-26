@@ -326,8 +326,8 @@ export default function FinancialReconciliationPage() {
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-[32px] p-6 text-white shadow-lg shadow-rose-200 relative overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-rose-200 relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -336,12 +336,12 @@ export default function FinancialReconciliationPage() {
               <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md">{data.debt_alerts.length} khách</span>
             </div>
             <p className="text-white/80 font-black text-xs uppercase tracking-widest mb-1">Cần thu hồi nợ</p>
-            <h3 className="text-3xl font-black">{formatCurrency(totalDebt)}</h3>
+            <h3 className="text-2xl sm:text-3xl font-black break-words">{formatCurrency(totalDebt)}</h3>
           </div>
           <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
 
-        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-[32px] p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -350,12 +350,12 @@ export default function FinancialReconciliationPage() {
               <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md">{data.orphaned_revenue.length} khoản</span>
             </div>
             <p className="text-white/80 font-black text-xs uppercase tracking-widest mb-1">Tiền thu bị treo</p>
-            <h3 className="text-3xl font-black">{formatCurrency(totalOrphaned)}</h3>
+            <h3 className="text-2xl sm:text-3xl font-black break-words">{formatCurrency(totalOrphaned)}</h3>
           </div>
           <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-[32px] p-6 text-white shadow-lg shadow-purple-200 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-purple-200 relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -364,7 +364,7 @@ export default function FinancialReconciliationPage() {
               <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md">Xử lý ngay</span>
             </div>
             <p className="text-white/80 font-black text-xs uppercase tracking-widest mb-1">Booking lệch giá trị</p>
-            <h3 className="text-3xl font-black">{totalMismatches} <span className="text-lg opacity-80">vụ việc</span></h3>
+            <h3 className="text-2xl sm:text-3xl font-black break-words">{totalMismatches} <span className="text-lg opacity-80">vụ việc</span></h3>
           </div>
           <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
@@ -427,49 +427,49 @@ export default function FinancialReconciliationPage() {
               </div>
               
               <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                <div className="overflow-x-auto custom-scrollbar w-full">
+                  <table className="w-full min-w-[1000px]">
                     <thead>
                       <tr className="bg-slate-50/50">
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Mã đối soát</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Chi nhánh chủ nợ</th>
-                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Tháng</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Số buổi</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Đơn giá</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-rose-500 uppercase tracking-wider">Tổng tiền phải trả</th>
-                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Trạng thái</th>
-                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Thao tác</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Mã đối soát</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Chi nhánh chủ nợ</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Tháng</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Số buổi</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Đơn giá</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-rose-500 uppercase tracking-wider whitespace-nowrap">Tổng tiền phải trả</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {payables.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-medium">
+                          <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-medium whitespace-nowrap">
                             Không có khoản phải trả nào cần xử lý. Tuyệt vời! 🎉
                           </td>
                         </tr>
                       ) : (
                         payables.map((rec) => (
                           <tr key={rec.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600">
+                            <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600 whitespace-nowrap">
                               {rec.clearing_number}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <span className="font-black text-sm text-slate-800">{rec.creditor?.name || 'Chi nhánh khác'}</span>
                             </td>
-                            <td className="px-6 py-4 text-center text-xs font-bold text-slate-500">
+                            <td className="px-6 py-4 text-center text-xs font-bold text-slate-500 whitespace-nowrap">
                               {rec.month_year}
                             </td>
-                            <td className="px-6 py-4 text-right font-black text-slate-700">
+                            <td className="px-6 py-4 text-right font-black text-slate-700 whitespace-nowrap">
                               {rec.session_count} buổi
                             </td>
-                            <td className="px-6 py-4 text-right font-bold text-slate-500">
+                            <td className="px-6 py-4 text-right font-bold text-slate-500 whitespace-nowrap">
                               {formatCurrency(rec.clearing_rate)}
                             </td>
-                            <td className="px-6 py-4 text-right font-black text-rose-600 text-sm">
+                            <td className="px-6 py-4 text-right font-black text-rose-600 text-sm whitespace-nowrap">
                               {formatCurrency(rec.calculated_amount)}
                             </td>
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-6 py-4 text-center whitespace-nowrap">
                               <span className={cn(
                                 "inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
                                 rec.status === 'cleared' 
@@ -479,7 +479,7 @@ export default function FinancialReconciliationPage() {
                                 {rec.status === 'cleared' ? 'Đã Bù Trừ' : 'Chờ Bù Trừ'}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-6 py-4 text-center whitespace-nowrap">
                               {rec.status === 'pending' ? (
                                 <button
                                   onClick={() => handlePayClearing(rec.id)}
@@ -519,49 +519,49 @@ export default function FinancialReconciliationPage() {
               </div>
               
               <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                <div className="overflow-x-auto custom-scrollbar w-full">
+                  <table className="w-full min-w-[1000px]">
                     <thead>
                       <tr className="bg-slate-50/50">
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Mã đối soát</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Chi nhánh con nợ</th>
-                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Tháng</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Số buổi</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider">Đơn giá</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-black text-emerald-600 uppercase tracking-wider">Tổng tiền phải thu</th>
-                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider">Trạng thái</th>
-                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider">Ghi chú</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Mã đối soát</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Chi nhánh con nợ</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Tháng</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Số buổi</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Đơn giá</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black text-emerald-600 uppercase tracking-wider whitespace-nowrap">Tổng tiền phải thu</th>
+                        <th className="px-6 py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Trạng thái</th>
+                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Ghi chú</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {receivables.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-medium">
+                          <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-medium whitespace-nowrap">
                             Không có khoản phải thu nào.
                           </td>
                         </tr>
                       ) : (
                         receivables.map((rec) => (
                           <tr key={rec.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600">
+                            <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600 whitespace-nowrap">
                               {rec.clearing_number}
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-6 py-4 whitespace-nowrap">
                               <span className="font-black text-sm text-slate-800">{rec.debtor?.name || 'Chi nhánh khác'}</span>
                             </td>
-                            <td className="px-6 py-4 text-center text-xs font-bold text-slate-500">
+                            <td className="px-6 py-4 text-center text-xs font-bold text-slate-500 whitespace-nowrap">
                               {rec.month_year}
                             </td>
-                            <td className="px-6 py-4 text-right font-black text-slate-700">
+                            <td className="px-6 py-4 text-right font-black text-slate-700 whitespace-nowrap">
                               {rec.session_count} buổi
                             </td>
-                            <td className="px-6 py-4 text-right font-bold text-slate-500">
+                            <td className="px-6 py-4 text-right font-bold text-slate-500 whitespace-nowrap">
                               {formatCurrency(rec.clearing_rate)}
                             </td>
-                            <td className="px-6 py-4 text-right font-black text-emerald-600 text-sm">
+                            <td className="px-6 py-4 text-right font-black text-emerald-600 text-sm whitespace-nowrap">
                               {formatCurrency(rec.calculated_amount)}
                             </td>
-                            <td className="px-6 py-4 text-center">
+                            <td className="px-6 py-4 text-center whitespace-nowrap">
                               <span className={cn(
                                 "inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
                                 rec.status === 'cleared' 
@@ -571,7 +571,7 @@ export default function FinancialReconciliationPage() {
                                 {rec.status === 'cleared' ? 'Đã Thanh Toán' : 'Chờ Đối Tác Trả'}
                               </span>
                             </td>
-                            <td className="px-6 py-4 text-left text-xs text-slate-500 max-w-xs truncate">
+                            <td className="px-6 py-4 text-left text-xs text-slate-500 max-w-xs truncate whitespace-nowrap">
                               {rec.notes || <span className="italic text-slate-300">Không có ghi chú</span>}
                             </td>
                           </tr>
@@ -584,42 +584,42 @@ export default function FinancialReconciliationPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto custom-scrollbar w-full">
+            <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="bg-slate-50/50">
                   {activeTab === 'debt' && (
                     <>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Khách hàng & Gói</th>
-                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Giá trị Gói</th>
-                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Đã Thu</th>
-                      <th className="px-8 py-6 text-right text-[10px] font-black text-rose-400 uppercase tracking-[0.2em]">Còn Nợ</th>
-                      <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Thao tác</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Khách hàng & Gói</th>
+                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Giá trị Gói</th>
+                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Đã Thu</th>
+                      <th className="px-8 py-6 text-right text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] whitespace-nowrap">Còn Nợ</th>
+                      <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Thao tác</th>
                     </>
                   )}
                   {activeTab === 'orphan' && (
                     <>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">ID Khoản Thu & Loại</th>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ghi Chú</th>
-                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Số Tiền</th>
-                      <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Thao tác</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">ID Khoản Thu & Loại</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Ghi Chú</th>
+                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Số Tiền</th>
+                      <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Thao tác</th>
                     </>
                   )}
                   {activeTab === 'mismatch' && (
                     <>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Khách hàng & Gói</th>
-                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Giá trị Gói</th>
-                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Tổng Đã Thu</th>
-                      <th className="px-8 py-6 text-right text-[10px] font-black text-purple-400 uppercase tracking-[0.2em]">Mức Lệch</th>
-                      <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Thao tác</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Khách hàng & Gói</th>
+                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Giá trị Gói</th>
+                      <th className="px-8 py-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Tổng Đã Thu</th>
+                      <th className="px-8 py-6 text-right text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] whitespace-nowrap">Mức Lệch</th>
+                      <th className="px-8 py-6 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Thao tác</th>
                     </>
                   )}
                   {activeTab === 'history' && (
                     <>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ngày Thu</th>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Khách Hàng</th>
-                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ghi Chú & Hình Thức</th>
-                      <th className="px-8 py-6 text-right text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">Số Tiền Đã Thu</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Ngày Thu</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Khách Hàng</th>
+                      <th className="px-8 py-6 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] whitespace-nowrap">Ghi Chú & Hình Thức</th>
+                      <th className="px-8 py-6 text-right text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] whitespace-nowrap">Số Tiền Đã Thu</th>
                     </>
                   )}
                 </tr>
@@ -628,19 +628,19 @@ export default function FinancialReconciliationPage() {
                 {/* DEBT TAB */}
                 {activeTab === 'debt' && filteredDebt.map((item, i) => (
                   <tr key={item.booking_id || i} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6">
+                    <td className="px-8 py-6 whitespace-nowrap">
                       <div className="font-black text-sm text-slate-900">{item.customer_name}</div>
                       <div className="text-xs text-slate-500 font-medium mt-1">{item.package_name || 'Gói Dịch Vụ'}</div>
                       <div className="text-[10px] text-slate-300 font-mono mt-1">ID: {item.booking_id?.split('-')[0]}...</div>
                     </td>
-                    <td className="px-8 py-6 text-right font-black text-slate-500">{formatCurrency(item.full_price)}</td>
-                    <td className="px-8 py-6 text-right font-black text-emerald-600">{formatCurrency(item.total_paid)}</td>
-                    <td className="px-8 py-6 text-right">
+                    <td className="px-8 py-6 text-right font-black text-slate-500 whitespace-nowrap">{formatCurrency(item.full_price)}</td>
+                    <td className="px-8 py-6 text-right font-black text-emerald-600 whitespace-nowrap">{formatCurrency(item.total_paid)}</td>
+                    <td className="px-8 py-6 text-right whitespace-nowrap">
                       <span className="inline-block bg-rose-50 text-rose-600 font-black px-3 py-1.5 rounded-xl border border-rose-100">
                         {formatCurrency(item.debt)}
                       </span>
                     </td>
-                    <td className="px-8 py-6 text-center">
+                    <td className="px-8 py-6 text-center whitespace-nowrap">
                       <button 
                         onClick={() => {
                           setSelectedDebt(item);
@@ -659,7 +659,7 @@ export default function FinancialReconciliationPage() {
                 {/* ORPHAN TAB */}
                 {activeTab === 'orphan' && filteredOrphan.map((item, i) => (
                   <tr key={item.revenue_id || i} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6">
+                    <td className="px-8 py-6 whitespace-nowrap">
                       <div className="font-mono text-xs text-slate-900 bg-slate-100 inline-block px-2 py-1 rounded-lg">
                         {item.revenue_id?.split('-')[0]}...
                       </div>
@@ -667,13 +667,13 @@ export default function FinancialReconciliationPage() {
                         {item.revenue_type || 'UNKNOWN TYPE'} • {item.received_date}
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <p className="text-sm text-slate-600 font-medium max-w-xs">{item.notes || <span className="italic text-slate-300">Không có ghi chú</span>}</p>
+                    <td className="px-8 py-6 whitespace-nowrap">
+                      <p className="text-sm text-slate-600 font-medium max-w-xs truncate">{item.notes || <span className="italic text-slate-300">Không có ghi chú</span>}</p>
                     </td>
-                    <td className="px-8 py-6 text-right font-black text-amber-600 text-lg">
+                    <td className="px-8 py-6 text-right font-black text-amber-600 text-lg whitespace-nowrap">
                       {formatCurrency(item.amount)}
                     </td>
-                    <td className="px-8 py-6 text-center">
+                    <td className="px-8 py-6 text-center whitespace-nowrap">
                       <button 
                         onClick={() => { setSelectedOrphan(item); setShowAllocateModal(true); }}
                         className="inline-flex items-center gap-2 bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
@@ -687,18 +687,18 @@ export default function FinancialReconciliationPage() {
                 {/* MISMATCH TAB */}
                 {activeTab === 'mismatch' && filteredMismatch.map((item, i) => (
                   <tr key={item.booking_id || i} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6">
+                    <td className="px-8 py-6 whitespace-nowrap">
                       <div className="font-black text-sm text-slate-900">{item.customer_name}</div>
                       <div className="text-xs text-slate-500 font-medium mt-1">{item.package_name || 'Gói Dịch Vụ'}</div>
                     </td>
-                    <td className="px-8 py-6 text-right font-black text-slate-500">{formatCurrency(item.full_price)}</td>
-                    <td className="px-8 py-6 text-right font-black text-emerald-600">{formatCurrency(item.total_paid)}</td>
-                    <td className="px-8 py-6 text-right">
+                    <td className="px-8 py-6 text-right font-black text-slate-500 whitespace-nowrap">{formatCurrency(item.full_price)}</td>
+                    <td className="px-8 py-6 text-right font-black text-emerald-600 whitespace-nowrap">{formatCurrency(item.total_paid)}</td>
+                    <td className="px-8 py-6 text-right whitespace-nowrap">
                       <span className="inline-block bg-purple-50 text-purple-600 font-black px-3 py-1.5 rounded-xl border border-purple-100">
                         + {formatCurrency(item.mismatch)}
                       </span>
                     </td>
-                    <td className="px-8 py-6 text-center">
+                    <td className="px-8 py-6 text-center whitespace-nowrap">
                       <Link href={`/dashboard/customers/${item.customer_id}?bookingId=${item.booking_id}`}
                         className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
                         <ExternalLink className="w-3 h-3" />
@@ -711,20 +711,20 @@ export default function FinancialReconciliationPage() {
                 {/* HISTORY TAB */}
                 {activeTab === 'history' && filteredHistory.map((item, i) => (
                   <tr key={item.revenue_id || i} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6 align-top">
+                    <td className="px-8 py-6 align-top whitespace-nowrap">
                       <div className="font-black text-sm text-slate-900">{item.received_date}</div>
                       <div className="text-[10px] font-mono text-slate-400 mt-1">ID: {item.revenue_id?.split('-')[0]}</div>
                     </td>
-                    <td className="px-8 py-6 align-top">
+                    <td className="px-8 py-6 align-top whitespace-nowrap">
                       <div className="font-black text-sm text-slate-900">{item.customer_name}</div>
                     </td>
-                    <td className="px-8 py-6 align-top">
+                    <td className="px-8 py-6 align-top whitespace-nowrap">
                       <div className="text-sm font-medium text-slate-600">{item.notes}</div>
                       <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
                         {item.payment_method?.replace('_', ' ')}
                       </div>
                     </td>
-                    <td className="px-8 py-6 text-right align-top">
+                    <td className="px-8 py-6 text-right align-top whitespace-nowrap">
                       <div className="font-black text-emerald-600 text-base mt-[-1px]">
                         + {formatCurrency(item.amount)}
                       </div>
@@ -734,16 +734,16 @@ export default function FinancialReconciliationPage() {
 
                 {/* EMPTY STATES */}
                 {activeTab === 'debt' && filteredDebt.length === 0 && (
-                  <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium">Không tìm thấy công nợ nào cần xử lý. Tuyệt vời! 🎉</td></tr>
+                  <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium whitespace-nowrap">Không tìm thấy công nợ nào cần xử lý. Tuyệt vời! 🎉</td></tr>
                 )}
                 {activeTab === 'orphan' && filteredOrphan.length === 0 && (
-                  <tr><td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-medium">Mọi khoản tiền đều đã được phân bổ rõ ràng. ✨</td></tr>
+                  <tr><td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-medium whitespace-nowrap">Mọi khoản tiền đều đã được phân bổ rõ ràng. ✨</td></tr>
                 )}
                 {activeTab === 'mismatch' && filteredMismatch.length === 0 && (
-                  <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium">Không có sai lệch dữ liệu nào. Hệ thống an toàn! 🛡️</td></tr>
+                  <tr><td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium whitespace-nowrap">Không có sai lệch dữ liệu nào. Hệ thống an toàn! 🛡️</td></tr>
                 )}
                 {activeTab === 'history' && filteredHistory.length === 0 && (
-                  <tr><td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-medium">Chưa có dữ liệu thu nợ nào trong bộ lọc này.</td></tr>
+                  <tr><td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-medium whitespace-nowrap">Chưa có dữ liệu thu nợ nào trong bộ lọc này.</td></tr>
                 )}
               </tbody>
             </table>
