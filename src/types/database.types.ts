@@ -2698,7 +2698,7 @@ export type Database = {
       MessageType: "text" | "system" | "file"
       PaymentMethod: "cash" | "bank_transfer" | "zalo_pay" | "momo"
       RevenueType: "deposit" | "session_completed" | "additional_service"
-      Role: "admin" | "ktv_lead" | "ktv" | "admin_staff" | "accountant"
+      Role: "admin" | "ktv_lead" | "ktv" | "admin_staff" | "accountant" | "hr"
       SalaryStatus: "draft" | "pending_approval" | "approved" | "paid"
       SessionStatus: "scheduled" | "completed" | "cancelled"
       ShiftStatus: "scheduled" | "completed" | "cancelled"

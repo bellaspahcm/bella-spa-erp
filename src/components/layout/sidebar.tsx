@@ -135,6 +135,12 @@ export function Sidebar() {
             if (user.role === 'admin_staff') {
               return !['Đối soát Tài chính', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương (AI)'].includes(item.label);
             }
+            if (user.role === 'accountant') {
+              return !['Khách hàng', 'Lịch hẹn', 'Thẻ liệu trình', 'Tin nhắn', 'CRM & Zalo', 'Nhật ký hệ thống', 'Cài đặt', 'AI Copilot'].includes(item.label);
+            }
+            if (user.role === 'hr') {
+              return !['Khách hàng', 'Lịch hẹn', 'Tin nhắn', 'CRM & Zalo', 'Dịch vụ', 'Tài chính', 'Đối soát Tài chính', 'Kho hàng', 'Kế toán sổ cái', 'Nhật ký hệ thống', 'Cài đặt', 'AI Copilot', 'Đối soát Lương (AI)'].includes(item.label);
+            }
           }
         }
         return true;
@@ -188,6 +194,8 @@ export function Sidebar() {
     user?.role?.toLowerCase() === 'ktv' ? 'Kỹ thuật viên'
     : user?.role?.toLowerCase() === 'ktv_lead' ? 'KTV Trưởng'
     : user?.role?.toLowerCase() === 'admin_staff' ? 'Lễ tân / Staff'
+    : user?.role?.toLowerCase() === 'accountant' ? 'Kế toán'
+    : user?.role?.toLowerCase() === 'hr' ? 'Nhân sự'
     : user?.role?.toLowerCase() === 'customer' ? 'Khách hàng'
     : 'Quản trị viên';
 
