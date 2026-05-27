@@ -141,7 +141,6 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     let prevCustQ = supabase.from('customers').select('id', { count: 'exact', head: true }).lt('created_at', monthStart);
     let revQ     = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', monthStart).lt('received_date', monthEnd);
     let prevRevQ = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', prevStart).lt('received_date', monthStart);
-    let ratQ     = supabase.from('session_logs').select('rating, completed_date').not('rating', 'is', null); 
     let todayBookingsQ = supabase.from('session_logs').select('id', { count: 'exact', head: true }).eq('assigned_date', today);
     let yesterdayBookingsQ = supabase.from('session_logs').select('id', { count: 'exact', head: true }).eq('assigned_date', yesterday);
 
@@ -150,13 +149,17 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
       prevCustQ = prevCustQ.eq('tenant_id', tenantId);
       revQ     = revQ.eq('tenant_id', tenantId);
       prevRevQ = prevRevQ.eq('tenant_id', tenantId);
-      ratQ     = ratQ.eq('tenant_id', tenantId);
       todayBookingsQ = todayBookingsQ.eq('tenant_id', tenantId);
       yesterdayBookingsQ = yesterdayBookingsQ.eq('tenant_id', tenantId);
     }
 
-    const [custRes, prevCustRes, revRes, prevRevRes, ratingRes, todayBookingsRes, yesterdayBookingsRes] = await Promise.all([
-      custQ, prevCustQ, revQ, prevRevQ, ratQ, todayBookingsQ, yesterdayBookingsQ
+    // Composite blended rating via RPC (60% customer + 40% discipline).
+    // Run alongside other queries so we don't add round-trip latency.
+    const curMonthRpc  = tenantId ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: monthStart }) : Promise.resolve({ data: [] as any[] });
+    const prevMonthRpc = tenantId ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: prevStart })  : Promise.resolve({ data: [] as any[] });
+
+    const [custRes, prevCustRes, revRes, prevRevRes, todayBookingsRes, yesterdayBookingsRes, curRpcRes, prevRpcRes] = await Promise.all([
+      custQ, prevCustQ, revQ, prevRevQ, todayBookingsQ, yesterdayBookingsQ, curMonthRpc, prevMonthRpc
     ]);
 
     const totalCustomers = custRes.count ?? 0;
@@ -167,25 +170,22 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
 
     const prevRevenueData = (prevRevRes.data as unknown as RevenueStatRow[]) || [];
     const prevRevenue = prevRevenueData.reduce((sum: number, r) => sum + Number(r.amount || 0), 0);
-    
-    // Ratings & Rating Trend Calculation
-    const ratingData = (ratingRes.data as unknown as RatingItem[]) || [];
-    const avgRating = ratingData.length
-      ? ratingData.reduce((sum: number, r) => sum + Number(r.rating || 0), 0) / ratingData.length
-      : 5.0;
 
-    const curMonthRatings = ratingData.filter((r) => r.completed_date && r.completed_date >= monthStart && r.completed_date < monthEnd);
-    const prevMonthRatings = ratingData.filter((r) => r.completed_date && r.completed_date >= prevStart && r.completed_date < monthStart);
+    // Average the composite blended rating across all KTVs in the month.
+    // KTVs with NULL composite (no activity) are excluded so they don't
+    // skew the average toward 0.
+    const composites = (xs: any[]): number[] =>
+      (xs || []).map((k) => k?.average_rating).filter((r) => r !== null && r !== undefined).map(Number);
 
-    const curAvgRating = curMonthRatings.length
-      ? curMonthRatings.reduce((sum: number, r) => sum + Number(r.rating || 0), 0) / curMonthRatings.length
-      : avgRating;
+    const curList  = composites((curRpcRes as any).data);
+    const prevList = composites((prevRpcRes as any).data);
 
-    const prevAvgRating = prevMonthRatings.length
-      ? prevMonthRatings.reduce((sum: number, r) => sum + Number(r.rating || 0), 0) / prevMonthRatings.length
-      : avgRating;
+    const curAvgRating  = curList.length  ? curList.reduce((s, r) => s + r, 0)  / curList.length  : null;
+    const prevAvgRating = prevList.length ? prevList.reduce((s, r) => s + r, 0) / prevList.length : null;
 
-    const ratingTrend = calcTrend(curAvgRating, prevAvgRating);
+    const ratingTrend = (curAvgRating !== null && prevAvgRating !== null)
+      ? calcTrend(curAvgRating, prevAvgRating)
+      : 0;
 
     const todayBookingsCount = todayBookingsRes.count ?? 0;
     const yesterdayBookingsCount = yesterdayBookingsRes.count ?? 0;
@@ -195,7 +195,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
       totalCustomers: { value: totalCustomers.toLocaleString(), trend: calcTrend(totalCustomers, prevCustomers) },
       todayBookings:  { value: todayBookingsCount.toString(), trend: todayBookingsTrend },
       totalRevenue:   { value: totalRevenue > 0 ? (totalRevenue / 1_000_000).toFixed(1) + 'M' : '0M', trend: calcTrend(totalRevenue, prevRevenue) },
-      avgRating:      { value: avgRating.toFixed(1), trend: ratingTrend }
+      avgRating:      { value: curAvgRating !== null ? curAvgRating.toFixed(2) : '—', trend: ratingTrend }
     };
   } catch (e) {
     console.error('[getDashboardStats]', e);
@@ -203,7 +203,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
       totalCustomers: { value: '0', trend: 0 },
       todayBookings:  { value: '0', trend: 0 },
       totalRevenue:   { value: '0M', trend: 0 },
-      avgRating:      { value: '5.0', trend: 0 }
+      avgRating:      { value: '—', trend: 0 }
     };
   }
 }
@@ -327,7 +327,17 @@ export async function getMonthlyPerformance() {
     const rangeStart = months[0].start;
     const rangeEnd   = months[months.length - 1].end;
 
-    const [revData, expData, reviewData, customerData] = await Promise.all([
+    // Run finance/customer queries in parallel with one RPC call per month.
+    // The RPC returns the blended composite rating (60% customer + 40%
+    // discipline) per KTV. We average across KTVs (excluding NULL =
+    // KTVs with no activity) to get the month's headline rating.
+    const monthlyRpcCalls = months.map(mo =>
+      tenantId
+        ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: mo.start })
+        : Promise.resolve({ data: [] as any[] })
+    );
+
+    const [revData, expData, customerData, ...monthlyRpcResults] = await Promise.all([
       (() => {
         let q = supabase.from('revenue').select('amount, received_date')
           .eq('status', 'confirmed').gte('received_date', rangeStart).lt('received_date', rangeEnd);
@@ -339,35 +349,36 @@ export async function getMonthlyPerformance() {
         return tenantId ? q.eq('tenant_id', tenantId) : q;
       })(),
       (() => {
-        let q = supabase.from('session_logs').select('rating, completed_date')
-          .not('rating', 'is', null).gte('completed_date', rangeStart).lt('completed_date', rangeEnd);
-        return tenantId ? q.eq('tenant_id', tenantId) : q;
-      })(),
-      (() => {
         let q = supabase.from('customers').select('id, created_at')
           .gte('created_at', rangeStart).lt('created_at', rangeEnd);
         return tenantId ? q.eq('tenant_id', tenantId) : q;
-      })()
+      })(),
+      ...monthlyRpcCalls
     ]);
 
     const revTyped = (revData.data as unknown as RevenuePerformanceRow[]) || [];
     const expTyped = (expData.data as unknown as ExpensePerformanceRow[]) || [];
-    const reviewTyped = (reviewData.data as unknown as LogPerformanceRow[]) || [];
     const customerTyped = (customerData.data as unknown as CustomerPerformanceRow[]) || [];
 
-    return months.map(mo => {
+    return months.map((mo, idx) => {
       const rev = revTyped
         .filter((r) => r.received_date && r.received_date >= mo.start && r.received_date < mo.end)
         .reduce((sum: number, r) => sum + Number(r.amount || 0), 0);
       const exp = expTyped
         .filter((e) => e.expense_date && e.expense_date >= mo.start && e.expense_date < mo.end)
         .reduce((sum: number, e) => sum + Number(e.amount || 0), 0);
-      const monthRatings = reviewTyped.filter((r) => r.completed_date && r.completed_date >= mo.start && r.completed_date < mo.end);
-      // Use null when no reviews exist for the month so the chart renders '—'
-      // instead of a misleading default 5.0.
-      const avg = monthRatings.length
-        ? monthRatings.reduce((sum: number, r) => sum + Number(r.rating || 0), 0) / monthRatings.length
+
+      // Average composite rating across KTVs for this month.
+      // Null when no KTV has activity → chart shows '—'.
+      const rpcRow = monthlyRpcResults[idx] as any;
+      const composites = ((rpcRow?.data || []) as any[])
+        .map((k) => k?.average_rating)
+        .filter((r) => r !== null && r !== undefined)
+        .map(Number);
+      const avg = composites.length
+        ? composites.reduce((s, r) => s + r, 0) / composites.length
         : null;
+
       const newCustomers = customerTyped
         .filter((c) => c.created_at && c.created_at >= mo.start && c.created_at < mo.end).length;
       return {
@@ -375,7 +386,7 @@ export async function getMonthlyPerformance() {
         customers: newCustomers,
         revenue: Number((rev / 1_000_000).toFixed(1)),
         expense: Number((exp / 1_000_000).toFixed(1)),
-        rating: avg !== null ? Number(avg.toFixed(1)) : null
+        rating: avg !== null ? Number(avg.toFixed(2)) : null
       };
     });
   } catch (e) {
