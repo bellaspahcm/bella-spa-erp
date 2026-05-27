@@ -505,10 +505,15 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   if (packageId) {
     try {
       const { autoConsumeForSession } = await import('./inventory-actions');
-      await autoConsumeForSession(packageId, sessionId);
+      const consumeResult = await autoConsumeForSession(packageId, sessionId);
+      
+      if (consumeResult && consumeResult.success === false) {
+        return { success: false, error: consumeResult.error || 'Kho không đủ nguyên liệu để thực hiện ca dịch vụ này.' };
+      }
       console.log(`[completeKTVSession] Successfully auto-consumed materials for package ${packageId} and session ${sessionId}`);
-    } catch (consumeErr) {
+    } catch (consumeErr: any) {
       console.error('[completeKTVSession] Error in autoConsumeForSession:', consumeErr);
+      return { success: false, error: consumeErr.message || 'Lỗi hệ thống khi kiểm tra kho vật tư.' };
     }
   }
 
