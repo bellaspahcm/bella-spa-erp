@@ -70,13 +70,14 @@ export async function runCOOOrchestrator(
                        lowerCommand.includes("tiêu hao") || 
                        lowerCommand.includes("khăn");
 
-  const isCmoRelated = lowerCommand.includes("khách hàng") || 
-                       lowerCommand.includes("đánh giá") || 
-                       lowerCommand.includes("rating") || 
-                       lowerCommand.includes("chăm sóc") || 
-                       lowerCommand.includes("hài lòng") || 
-                       lowerCommand.includes("feedback") || 
-                       lowerCommand.includes("nhận xét") || 
+  const isCmoRelated = lowerCommand.includes("khách") ||      // bao gồm "khách hàng", "khách mới", "khách VIP"
+                       lowerCommand.includes("customer") ||
+                       lowerCommand.includes("đánh giá") ||
+                       lowerCommand.includes("rating") ||
+                       lowerCommand.includes("chăm sóc") ||
+                       lowerCommand.includes("hài lòng") ||
+                       lowerCommand.includes("feedback") ||
+                       lowerCommand.includes("nhận xét") ||
                        lowerCommand.includes("review");
 
   const isFranchiseRelated = lowerCommand.includes("nhượng quyền") || 
@@ -170,6 +171,41 @@ export async function runCOOOrchestrator(
       throw bookingsError; // Zero Silent DB Failures
     }
 
+    // Truy vấn khách hàng — phục vụ các lệnh "khách mới tháng này", "có bao nhiêu khách"
+    const { data: newCustomersThisMonth, error: newCustError } = await supabase
+      .from("customers")
+      .select("id, name_mother, phone, name_baby, loyalty_points, status, created_at")
+      .eq("tenant_id", tenantId)
+      .gte("created_at", firstDayOfMonth)
+      .order("created_at", { ascending: false });
+
+    if (newCustError) {
+      console.error("[CMO Agent] Lỗi khi truy vấn customers (new this month):", newCustError);
+      throw newCustError; // Zero Silent DB Failures
+    }
+
+    const { count: totalCustomers, error: totalCustError } = await supabase
+      .from("customers")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId);
+
+    if (totalCustError) {
+      console.error("[CMO Agent] Lỗi khi đếm tổng số customers:", totalCustError);
+      throw totalCustError;
+    }
+
+    const { data: topLoyalCustomers, error: loyalError } = await supabase
+      .from("customers")
+      .select("id, name_mother, phone, loyalty_points")
+      .eq("tenant_id", tenantId)
+      .order("loyalty_points", { ascending: false, nullsFirst: false })
+      .limit(5);
+
+    if (loyalError) {
+      console.error("[CMO Agent] Lỗi khi truy vấn top loyal customers:", loyalError);
+      throw loyalError;
+    }
+
     // Tóm tắt trạng thái bookings
     const bookingsSummary = {
       total: bookings?.length || 0,
@@ -208,13 +244,18 @@ export async function runCOOOrchestrator(
     // Lọc đánh giá tệ (< 4 sao)
     const badReviews = (reviews || []).filter(r => Number(r.rating || 0) < 4);
 
-    const summaryText = `Đã hoàn tất phân tích CSKH. Điểm CSAT trung bình đạt ${avgRating}/5 sao dựa trên ${ratings.length} đánh giá. Ghi nhận ${badReviews.length} phản hồi tiêu cực (< 4 sao) cần xử lý khẩn cấp. Phễu đặt lịch ghi nhận ${bookingsSummary.total} giao dịch mới trong 30 ngày.`;
+    const newCustCount = (newCustomersThisMonth || []).length;
+    const summaryText = `Đã hoàn tất phân tích CSKH. Tổng số khách hàng hiện có của chi nhánh: ${totalCustomers || 0} người, trong đó tháng này ghi nhận ${newCustCount} khách hàng mới. Điểm CSAT trung bình đạt ${avgRating}/5 sao dựa trên ${ratings.length} đánh giá. Ghi nhận ${badReviews.length} phản hồi tiêu cực (< 4 sao) cần xử lý khẩn cấp. Phễu đặt lịch ghi nhận ${bookingsSummary.total} giao dịch mới trong 30 ngày.`;
 
     subAgentResponse = {
       agent: "CMO (Trưởng phòng Chăm sóc khách hàng & Marketing)",
       period: `Tháng ${activeDate.getMonth() + 1}/${activeDate.getFullYear()}`,
       summary: summaryText,
       data: {
+        customers_total: totalCustomers || 0,
+        customers_new_this_month_count: newCustCount,
+        customers_new_this_month: newCustomersThisMonth || [],
+        top_loyal_customers: topLoyalCustomers || [],
         bookings_summary: bookingsSummary,
         csat: avgRating,
         total_reviews: reviews?.length || 0,
