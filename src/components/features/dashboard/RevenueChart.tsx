@@ -249,14 +249,28 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
         
         <div className="flex-1 flex flex-col justify-between">
           <div className="mb-4">
-            <p className="text-4xl font-black text-foreground tracking-tighter">
-              {performanceData[performanceData.length - 1]?.rating || '5.0'}
-            </p>
-            <div className="flex items-center gap-1 mt-1">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} className={`w-3 h-3 ${s <= Math.round(performanceData[performanceData.length - 1]?.rating || 5) ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
-              ))}
-            </div>
+            {(() => {
+              const latestRating = performanceData[performanceData.length - 1]?.rating ?? null;
+              return (
+                <>
+                  <p className="text-4xl font-black text-foreground tracking-tighter">
+                    {latestRating !== null ? latestRating : '—'}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-3 h-3 ${
+                          latestRating !== null && s <= Math.round(latestRating)
+                            ? 'text-amber-400 fill-amber-400'
+                            : 'text-gray-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           <div className="h-28 w-full">
