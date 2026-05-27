@@ -55,6 +55,7 @@ export interface TenantSalaryConfig {
   bonus_4_star: number;
   kpi_target_sessions: number;
   kpi_bonus_amount: number;
+  auto_consume_inventory?: boolean;
 }
 
 export interface TenantGeneralSettings {
