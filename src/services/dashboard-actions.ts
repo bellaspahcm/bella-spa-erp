@@ -363,9 +363,11 @@ export async function getMonthlyPerformance() {
         .filter((e) => e.expense_date && e.expense_date >= mo.start && e.expense_date < mo.end)
         .reduce((sum: number, e) => sum + Number(e.amount || 0), 0);
       const monthRatings = reviewTyped.filter((r) => r.completed_date && r.completed_date >= mo.start && r.completed_date < mo.end);
+      // Use null when no reviews exist for the month so the chart renders '—'
+      // instead of a misleading default 5.0.
       const avg = monthRatings.length
         ? monthRatings.reduce((sum: number, r) => sum + Number(r.rating || 0), 0) / monthRatings.length
-        : 5.0;
+        : null;
       const newCustomers = customerTyped
         .filter((c) => c.created_at && c.created_at >= mo.start && c.created_at < mo.end).length;
       return {
@@ -373,7 +375,7 @@ export async function getMonthlyPerformance() {
         customers: newCustomers,
         revenue: Number((rev / 1_000_000).toFixed(1)),
         expense: Number((exp / 1_000_000).toFixed(1)),
-        rating: Number(avg.toFixed(1))
+        rating: avg !== null ? Number(avg.toFixed(1)) : null
       };
     });
   } catch (e) {
