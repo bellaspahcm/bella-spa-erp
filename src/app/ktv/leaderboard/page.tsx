@@ -99,7 +99,7 @@ export default function KTVLeaderboardPage() {
                      <span className="text-xl font-black text-slate-400">2</span>
                   </div>
                   <p className="text-[10px] font-black text-slate-900 text-center truncate w-full">{leaderboard[1].full_name}</p>
-                  <span className="text-[8px] font-black text-slate-400 uppercase">{leaderboard[1].total_sessions} ca</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase">{leaderboard[1].sessions ?? 0} ca</span>
                   <div className="h-16 w-full bg-slate-200 mt-2 rounded-t-2xl flex items-end justify-center pb-2">
                      <Medal className="w-5 h-5 text-slate-400" />
                   </div>
@@ -113,7 +113,7 @@ export default function KTVLeaderboardPage() {
                      <span className="text-2xl font-black text-amber-500">1</span>
                   </div>
                   <p className="text-xs font-black text-slate-900 text-center truncate w-full">{leaderboard[0].full_name}</p>
-                  <span className="text-[10px] font-black text-amber-500 uppercase">{leaderboard[0].total_sessions} ca</span>
+                  <span className="text-[10px] font-black text-amber-500 uppercase">{leaderboard[0].sessions ?? 0} ca</span>
                   <div className="h-24 w-full bg-amber-400 mt-2 rounded-t-3xl flex items-end justify-center pb-4 shadow-lg shadow-amber-100">
                      <Trophy className="w-6 h-6 text-white" />
                   </div>
@@ -127,7 +127,7 @@ export default function KTVLeaderboardPage() {
                      <span className="text-xl font-black text-slate-300">3</span>
                   </div>
                   <p className="text-[10px] font-black text-slate-900 text-center truncate w-full">{leaderboard[2].full_name}</p>
-                  <span className="text-[8px] font-black text-slate-400 uppercase">{leaderboard[2].total_sessions} ca</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase">{leaderboard[2].sessions ?? 0} ca</span>
                   <div className="h-12 w-full bg-rose-200 mt-2 rounded-t-2xl flex items-end justify-center pb-2">
                      <Medal className="w-5 h-5 text-rose-400" />
                   </div>
@@ -137,27 +137,35 @@ export default function KTVLeaderboardPage() {
 
          {/* Rest of the List */}
          <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden">
-            {leaderboard.slice(3).map((item, index) => (
-               <div key={item.ktv_id} className="flex items-center justify-between p-5 border-b border-slate-50 last:border-0">
-                  <div className="flex items-center gap-4">
-                     <span className="text-xs font-black text-slate-300 w-4">{index + 4}</span>
-                     <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
-                        <span className="text-xs font-black text-slate-400">{item.full_name.charAt(0)}</span>
-                     </div>
-                     <div>
-                        <h4 className="text-sm font-black text-slate-900">{item.full_name}</h4>
-                        <p className="text-[10px] text-slate-400 font-medium">Hạng {item.rank} • {item.total_sessions} ca làm</p>
-                     </div>
-                  </div>
-                  <div className="text-right">
-                     <div className="flex items-center gap-1 text-amber-500 font-black text-xs">
-                        <Star className="w-3 h-3 fill-current" />
-                        <span>5.0</span>
-                     </div>
-                     <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Đánh giá</p>
-                  </div>
-               </div>
-            ))}
+            {leaderboard.slice(3).map((item, index) => {
+               const composite = item.average_rating;  // RPC returns composite blend here
+               const hasRating = composite !== null && composite !== undefined;
+               const ratingDisplay = hasRating ? Number(composite).toFixed(1) : '—';
+               const ratingTooltip = hasRating
+                 ? `Khách: ${item.customer_rating ?? '—'} (60%) · Kỷ luật: ${item.discipline_score ?? '—'} (40%)`
+                 : 'Chưa có dữ liệu ca / chấm công tháng này';
+               return (
+                 <div key={item.ktv_id} className="flex items-center justify-between p-5 border-b border-slate-50 last:border-0">
+                    <div className="flex items-center gap-4">
+                       <span className="text-xs font-black text-slate-300 w-4">{index + 4}</span>
+                       <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+                          <span className="text-xs font-black text-slate-400">{item.full_name.charAt(0)}</span>
+                       </div>
+                       <div>
+                          <h4 className="text-sm font-black text-slate-900">{item.full_name}</h4>
+                          <p className="text-[10px] text-slate-400 font-medium">Hạng {item.rank} • {item.sessions ?? item.total_sessions ?? 0} ca làm</p>
+                       </div>
+                    </div>
+                    <div className="text-right" title={ratingTooltip}>
+                       <div className={`flex items-center gap-1 font-black text-xs ${hasRating ? 'text-amber-500' : 'text-slate-300'}`}>
+                          <Star className={`w-3 h-3 ${hasRating ? 'fill-current' : ''}`} />
+                          <span>{ratingDisplay}</span>
+                       </div>
+                       <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">Đánh giá</p>
+                    </div>
+                 </div>
+               );
+            })}
 
             {leaderboard.length === 0 && !isLoading && (
               <div className="p-12 text-center text-slate-400 text-sm">
