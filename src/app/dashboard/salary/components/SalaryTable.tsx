@@ -105,10 +105,17 @@ export default function SalaryTable({
                   </div>
                 </td>
                 <td className="px-8 py-6 whitespace-nowrap">
-                  <div className="flex items-center gap-1.5 text-amber-500 font-black">
-                    <Star className="w-4 h-4 fill-current" />
-                    {s.avgRating?.toFixed(1) || '5.0'}
-                  </div>
+                  {s.avgRating !== null && s.avgRating !== undefined ? (
+                    <div className="flex items-center gap-1.5 text-amber-500 font-black">
+                      <Star className="w-4 h-4 fill-current" />
+                      {s.avgRating.toFixed(1)}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-slate-300 font-black" title="Chưa có dữ liệu trong tháng">
+                      <Star className="w-4 h-4" />
+                      <span>—</span>
+                    </div>
+                  )}
                 </td>
                 <td className="px-8 py-6 font-bold text-slate-600 whitespace-nowrap">{s.baseSalary.toLocaleString()}đ</td>
                 <td className="px-8 py-6 font-bold text-emerald-600 whitespace-nowrap">+{s.sessionBonus.toLocaleString()}đ</td>

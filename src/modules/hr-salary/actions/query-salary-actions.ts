@@ -134,6 +134,22 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
     const sessions = (sessionsData || []) as unknown as SessionLogDb[];
 
+    // Fetch blended composite ratings (60% customer + 40% discipline) via RPC.
+    // Single source of truth — same data the leaderboard and dashboard cards use.
+    // KTVs with no activity yet have average_rating = null → no quality bonus.
+    const { data: leaderboardData, error: leaderboardError } = await supabase.rpc(
+      'get_ktv_leaderboard',
+      { p_tenant_id: tenantId, p_month: currentMonthYear }
+    );
+    if (leaderboardError) {
+      console.error('[getSalaryData] get_ktv_leaderboard failed:', leaderboardError);
+      throw new Error(`get_ktv_leaderboard failed: ${leaderboardError.message}`);
+    }
+    const leaderboard = (leaderboardData || []) as { ktv_id: string; average_rating: number | null }[];
+    const ratingByKtv = new Map<string, number | null>(
+      leaderboard.map((row) => [row.ktv_id, row.average_rating])
+    );
+
     // Fetch all attendance logs this month
     const { data: attendanceLogs } = await supabase
       .from('attendance')
@@ -150,23 +166,16 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         // Use confirmed count from record if available, otherwise use live count
         const ktvSessionsCount = record?.total_sessions || ktvCompletedSessions.length;
         
-        // Calculate Average Rating — aligned with get_ktv_leaderboard RPC
-        const ktvSessionsForRating = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
-        const ratingValues: number[] = ktvSessionsForRating.map((s) => {
-          const approvedReview = s.session_reviews?.find((sr) => sr.status === 'approved');
-          if (approvedReview?.rating) return approvedReview.rating;
-          if (s.rating) return s.rating;
-          return null;
-        }).filter((v: number | null): v is number => v !== null);
-        
-        const avgRating = ratingValues.length > 0
-          ? ratingValues.reduce((acc, v) => acc + v, 0) / ratingValues.length
-          : 5.0;
+        // Blended composite rating (60% customer + 40% discipline) from RPC.
+        // null = KTV has no sessions and no attendance records yet → display "—", pay no bonus.
+        const avgRating: number | null = ratingByKtv.get(ktv.id) ?? null;
 
         let bonusPerSession = 0;
-        if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
-        else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
-        else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
+        if (avgRating !== null) {
+          if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
+          else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
+          else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
+        }
 
         const ratingBonus = ktvSessionsCount * bonusPerSession;
         const status = record?.status || 'draft';

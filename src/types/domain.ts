@@ -3,7 +3,7 @@ export interface KtvSalaryRecord {
   name: string;
   sessions: number;
   isConfirmed: boolean;
-  avgRating: number;
+  avgRating: number | null;
   baseSalary: number;
   sessionBonus: number;
   ratingBonus: number;
