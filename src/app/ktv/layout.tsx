@@ -16,39 +16,21 @@ export default function KtvLayout({
 
   useEffect(() => {
     async function checkAuth() {
-      // Thử tối đa 3 lần với delay 800ms để xử lý trường hợp
-      // proxy.ts chưa kịp refresh session token khi navigate trực tiếp.
-      const MAX_RETRIES = 3;
-      const RETRY_DELAY_MS = 800;
-
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-          const user = await getCurrentUser();
-
-          if (!user) {
-            if (attempt < MAX_RETRIES) {
-              await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-              continue;
-            }
-            router.replace('/login');
-            return;
-          }
-
-          if (user.isSuspended) {
-            setIsSuspended(true);
-            setIsAuthorized(false);
-            return;
-          }
-          setIsAuthorized(true);
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          router.replace('/login');
           return;
-        } catch (err) {
-          console.error(`[KtvLayout] Auth check attempt ${attempt} failed:`, err);
-          if (attempt < MAX_RETRIES) {
-            await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-          } else {
-            router.replace('/login');
-          }
         }
+        if (user.isSuspended) {
+          setIsSuspended(true);
+          setIsAuthorized(false);
+          return;
+        }
+        setIsAuthorized(true);
+      } catch (err) {
+        console.error('[KtvLayout] Auth check failed:', err);
+        router.replace('/login');
       }
     }
     checkAuth();
