@@ -13,7 +13,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getPermittedGuides } from '@/services/user-manuals';
+import { ALL_GUIDES, isManualPermitted } from '@/services/user-manuals-utils';
+import { getCurrentUser } from '@/services/user-actions';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -30,9 +31,10 @@ export default function GuideReader({ params }: PageProps) {
   useEffect(() => {
     async function verifyAccess() {
       try {
-        const permitted = await getPermittedGuides();
-        const found = permitted.find((g) => g.slug === slug);
-        if (!found) {
+        const user = await getCurrentUser();
+        const role = user?.role ?? null;
+        const found = ALL_GUIDES.find((g) => g.slug === slug);
+        if (!found || !isManualPermitted(role, slug)) {
           toast.error('Bạn không có quyền truy cập tài liệu này.');
           router.push('/dashboard/guides');
           return;
@@ -138,7 +140,7 @@ export default function GuideReader({ params }: PageProps) {
           
           <iframe
             id="guide-frame"
-            src={`/api/guides/${slug}`}
+            src={`/user-manuals/${slug}.html`}
             className="w-full h-full border-none"
             title={guideTitle}
           />

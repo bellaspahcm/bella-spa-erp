@@ -12,7 +12,8 @@ import {
   HelpCircle,
   FileText
 } from 'lucide-react';
-import { getPermittedGuides, GuideListItem } from '@/services/user-manuals';
+import { ALL_GUIDES, isManualPermitted, GuideListItem } from '@/services/user-manuals-utils';
+import { getCurrentUser } from '@/services/user-actions';
 import { Loader2 } from 'lucide-react';
 
 export default function UserManualsHub() {
@@ -23,8 +24,9 @@ export default function UserManualsHub() {
   useEffect(() => {
     async function loadGuides() {
       try {
-        const data = await getPermittedGuides();
-        setGuides(data);
+        const user = await getCurrentUser();
+        const role = user?.role ?? null;
+        setGuides(ALL_GUIDES.filter((g) => isManualPermitted(role, g.slug)));
       } catch (err) {
         console.error('Failed to load guides:', err);
       } finally {
