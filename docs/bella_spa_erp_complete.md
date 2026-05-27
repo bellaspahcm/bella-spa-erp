@@ -677,16 +677,19 @@ POST   /api/v1/franchise/royalty/auto-calc → Tính royalty tự động
 - Click vào ngày → modal timeline ngang 07:00–19:00
   - Mỗi thanh = 1 ca, ghi: giờ bắt đầu–kết thúc, KTV, địa chỉ, khách
 
-**Check-in/Out GPS:**
-- KTV bấm "Đã đến" → gọi Geolocation API
-- Lưu: lat/lon, timestamp, tính khoảng cách so địa chỉ booking (< 200m OK)
-- Alert quản lý nếu: cách > 500m hoặc quên check-in sau 30 phút giờ hẹn
-- Tính giờ làm từ checkin → checkout (chấm công tự động)
+**Check-in/Out GPS & Chống Gian Lận:**
+- **Thu thập GPS (Client-side):** KTV bấm "Bắt đầu ca" / "Bắt đầu buổi" trên Mobile Web -> Gọi `navigator.geolocation.getCurrentPosition` lấy tọa độ vĩ độ (`latitude`) và kinh độ (`longitude`) chính xác từ thiết bị di động.
+- **Xác thực vị trí (Database-side):** Sử dụng phép tính khoảng cách Euclid bình phương tối ưu hóa trong Postgres (`get_ai_attendance_kpis` RPC). So khớp tọa độ check-in thực tế với tọa độ chi nhánh chuẩn từ bảng `tenants` theo bán kính cho phép (`gps_threshold_m`, mặc định **500 mét**):
+  $$\text{Threshold}^2 = \left( \frac{\text{gps\_threshold\_m}}{111000.0} \right)^2$$
+  $$\text{Khoảng cách}^2 = (\text{checkin\_lat} - \text{tenant\_lat})^2 + (\text{checkin\_lon} - \text{tenant\_lon})^2$$
+  Nếu vượt quá ngưỡng, hệ thống tự động đánh dấu **Bất thường GPS (GPS Anomaly)** và tăng chỉ số `gps_anomaly_count`.
+- **Chế tài tự động bởi AI:** Tác nhân AI CHRO tự động quét `gps_anomaly_count` vào kỳ chốt công, phân loại KTV vi phạm cao thành `🔴 Bất thường GPS cao`, tự gửi tin nhắn yêu cầu giải trình và áp dụng mức khấu trừ phạt trong bảng tính lương tự động (`salary_records`).
 
 **Công Nghệ:**
-- FullCalendar.js (React wrapper)
-- Google Maps Distance Matrix API
-- Service Worker cache lịch khi offline
+- Geolocation API (HTML5 Navigator)
+- PostgreSQL High-Performance Mathematical Euclidean RPC
+- AI Autopilot Daemon (`/api/cron/ai-autopilot`)
+- AI CHRO Agent Processing (`ai-coo-service.ts`)
 
 ---
 
