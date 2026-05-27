@@ -277,10 +277,10 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
           eq: jest.fn().mockReturnThis(),
           order: jest.fn().mockResolvedValue({
             data: [
-              { 
-                id: "rev-1", 
-                rating: 3, 
-                note: "KTV Hoa làm chưa nhiệt tình", 
+              {
+                id: "rev-1",
+                rating: 3,
+                note: "KTV Hoa làm chưa nhiệt tình",
                 created_at: new Date().toISOString(),
                 reviewer: { name_mother: "Nguyễn Thị Lan" },
                 ktv: { full_name: "KTV Hoa" }
@@ -289,6 +289,28 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
             error: null
           })
         } as any;
+      }
+      if (table === "customers") {
+        // Thenable builder — covers all 3 query shapes used by CMO Agent:
+        //   .select(...).eq(...).gte(...).order(...)        → list of new customers
+        //   .select("id", {count:"exact", head:true}).eq(...) → count
+        //   .select(...).eq(...).order(...).limit(5)        → top loyal customers
+        const builder: any = {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          gte: jest.fn().mockReturnThis(),
+          order: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockReturnThis(),
+          then: (onFulfilled: any) =>
+            Promise.resolve({
+              data: [
+                { id: "c-1", name_mother: "Nguyễn Thị Lan", phone: "0912345678", loyalty_points: 100 }
+              ],
+              count: 12,
+              error: null,
+            }).then(onFulfilled),
+        };
+        return builder;
       }
       if (table === "ai_agent_logs") {
         return {
