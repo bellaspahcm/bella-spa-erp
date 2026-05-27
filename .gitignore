@@ -7,6 +7,19 @@
 # testing
 /coverage
 
+# playwright / e2e
+/playwright-report/
+/playwright-results.json
+/test-results/
+/blob-report/
+/playwright/.cache/
+
+# k6 load test results
+/load-tests/results/*.json
+/load-tests/results/*.html
+/load-tests/results/*.csv
+!/load-tests/results/.gitkeep
+
 # next.js
 /.next/
 /out/
