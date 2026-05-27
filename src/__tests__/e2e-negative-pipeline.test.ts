@@ -123,7 +123,10 @@ jest.mock('@/services/user-actions', () => {
 const mockSupabaseClient = {
   from: jest.fn((table: string) => new MockQueryBuilder(table)),
   rpc: jest.fn().mockResolvedValue({ error: null }),
-  auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'admin-1', email: 'admin@bellaspa.vn' } } }) },
+  auth: {
+    getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'admin-1', email: 'admin@bellaspa.vn' } } }),
+    getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
+  },
 };
 
 jest.mock('@/lib/supabase-server', () => ({ createClient: jest.fn(() => Promise.resolve(mockSupabaseClient)) }));

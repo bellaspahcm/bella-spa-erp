@@ -53,6 +53,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Forward mock email as a request header so server actions can read it
+  // via headers() — cookies() is unreliable inside server action context.
+  if (isMockDev && mockUserEmail) {
+    const modifiedHeaders = new Headers(request.headers);
+    modifiedHeaders.set('x-mock-user-email', mockUserEmail);
+    return NextResponse.next({ request: { headers: modifiedHeaders } });
+  }
+
   return response;
 }
 
