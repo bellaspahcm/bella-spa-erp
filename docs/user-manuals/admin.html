@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sổ tay Quản trị viên · Bella Spa ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FFF5F7;
+    --bg-soft: #FFF0F3;
+    --card: #FFFFFF;
+    --primary: #BE185D;
+    --primary-soft: #FFE4E6;
+    --primary-deep: #9D174D;
+    --secondary: #EC4899;
+    --accent: #F472B6;
+    --text: #4C243B;
+    --text-muted: #8A6D7C;
+    --border: #FBCFE8;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --shadow-pink: 0 8px 30px rgba(219, 39, 119, 0.08);
+    --shadow-pink-lg: 0 20px 60px rgba(219, 39, 119, 0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Be Vietnam Pro', -apple-system, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 15.5px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  /* ───────── Hero ───────── */
+  .hero {
+    background: linear-gradient(135deg, #FFE4E6 0%, #FBCFE8 50%, #F9A8D4 100%);
+    padding: 80px 0 120px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(190,24,93,0.15), transparent 70%);
+    border-radius: 50%;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -150px; left: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(236,72,153,0.12), transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    color: var(--primary-deep);
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    border: 1px solid var(--primary-soft);
+  }
+  .badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--primary);
+  }
+  h1.hero-title {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(40px, 6vw, 68px);
+    color: var(--primary-deep);
+    margin-bottom: 16px;
+    line-height: 1.1;
+    font-weight: 700;
+  }
+  .hero-subtitle {
+    font-size: 18px;
+    color: var(--text);
+    max-width: 700px;
+    margin: 0 auto;
+    font-weight: 500;
+  }
+  .hero-meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hero-meta-item {
+    text-align: center;
+  }
+  .hero-meta-item .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--primary-deep);
+    line-height: 1;
+  }
+  .hero-meta-item .lbl {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* ───────── Main layout ───────── */
+  main {
+    position: relative;
+    margin-top: -80px;
+    padding-bottom: 100px;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    aside.toc { position: static !important; }
+  }
+
+  /* ───────── TOC ───────── */
+  aside.toc {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    background: var(--card);
+    border-radius: 24px;
+    padding: 24px 20px;
+    box-shadow: var(--shadow-pink);
+    border: 1px solid var(--border);
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+  }
+  aside.toc h3 {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--primary);
+    margin-bottom: 16px;
+    padding-left: 12px;
+  }
+  aside.toc ol {
+    list-style: none;
+    counter-reset: toc;
+  }
+  aside.toc ol li {
+    counter-increment: toc;
+  }
+  aside.toc ol li a {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  aside.toc ol li a::before {
+    content: counter(toc, decimal-leading-zero);
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 11px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  aside.toc ol li a:hover {
+    background: var(--primary-soft);
+    color: var(--primary-deep);
+  }
+
+  /* ───────── Content sections ───────── */
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  section.card {
+    background: var(--card);
+    border-radius: 28px;
+    padding: 40px;
+    box-shadow: var(--shadow-pink);
+    border: 1px solid var(--border);
+    scroll-margin-top: 24px;
+  }
+  section.card .num-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-deep));
+    color: white;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(190, 24, 93, 0.3);
+  }
+  section.card h2 {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 32px;
+    color: var(--primary-deep);
+    margin-bottom: 8px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  section.card .lead {
+    font-size: 15.5px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+    font-weight: 500;
+  }
+  section.card h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 28px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  section.card h3::before {
+    content: '';
+    width: 4px;
+    height: 22px;
+    background: linear-gradient(180deg, var(--primary), var(--secondary));
+    border-radius: 4px;
+  }
+  section.card h4 {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 18px 0 8px;
+  }
+  section.card p {
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+  section.card ul, section.card ol {
+    padding-left: 24px;
+    margin-bottom: 14px;
+  }
+  section.card ul li, section.card ol li {
+    margin-bottom: 6px;
+  }
+  section.card ul li::marker {
+    color: var(--primary);
+  }
+  section.card ol li::marker {
+    color: var(--primary);
+    font-weight: 800;
+  }
+  section.card strong { color: var(--primary-deep); font-weight: 700; }
+  section.card code {
+    background: var(--primary-soft);
+    color: var(--primary-deep);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.88em;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+
+  /* ───────── Step list ───────── */
+  .steps {
+    list-style: none;
+    padding: 0 !important;
+    counter-reset: step;
+    margin: 16px 0;
+  }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 16px 16px 16px 60px;
+    background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 100%);
+    border-radius: 16px;
+    margin-bottom: 10px !important;
+    border: 1px solid var(--primary-soft);
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    width: 32px;
+    height: 32px;
+    background: var(--primary);
+    color: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+  }
+
+  /* ───────── Callouts ───────── */
+  .callout {
+    padding: 18px 22px;
+    border-radius: 16px;
+    margin: 18px 0;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    font-size: 14.5px;
+    border-left: 4px solid;
+  }
+  .callout-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .callout.tip {
+    background: #FDF4F8;
+    border-color: var(--primary);
+    color: var(--primary-deep);
+  }
+  .callout.warn {
+    background: #FFFBEB;
+    border-color: var(--warning);
+    color: #92400E;
+  }
+  .callout.danger {
+    background: #FEF2F2;
+    border-color: var(--danger);
+    color: #991B1B;
+  }
+  .callout.info {
+    background: #F0F9FF;
+    border-color: #0EA5E9;
+    color: #075985;
+  }
+
+  /* ───────── Tables ───────── */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    margin: 16px 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 14px;
+  }
+  table th {
+    background: var(--primary-soft);
+    color: var(--primary-deep);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    font-weight: 800;
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #F9E4EB;
+    vertical-align: top;
+  }
+  table tr:last-child td { border-bottom: none; }
+  table tr:hover td { background: #FFFAFC; }
+
+  /* ───────── Menu map ───────── */
+  .menu-map {
+    background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 100%);
+    border-radius: 20px;
+    padding: 24px;
+    margin: 16px 0;
+    border: 1px solid var(--primary-soft);
+  }
+  .menu-group {
+    margin-bottom: 18px;
+  }
+  .menu-group-title {
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--primary);
+    margin-bottom: 10px;
+    padding-left: 6px;
+  }
+  .menu-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+  .menu-item {
+    background: white;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .menu-item::before {
+    content: '◆';
+    color: var(--primary);
+    font-size: 10px;
+  }
+
+  /* ───────── Cards grid ───────── */
+  .grid {
+    display: grid;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .mini-card {
+    background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 60%);
+    padding: 20px;
+    border-radius: 18px;
+    border: 1px solid var(--primary-soft);
+  }
+  .mini-card h4 {
+    color: var(--primary-deep);
+    margin-bottom: 8px;
+    font-size: 14.5px;
+  }
+  .mini-card p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* ───────── FAQ details ───────── */
+  details {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  details[open] {
+    background: #FFFAFC;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-pink);
+  }
+  details summary {
+    padding: 16px 20px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after {
+    content: '+';
+    font-size: 22px;
+    color: var(--primary);
+    font-weight: 300;
+    transition: transform 0.2s;
+  }
+  details[open] summary::after { transform: rotate(45deg); }
+  details .body { padding: 0 20px 18px; color: var(--text); font-size: 14.5px; }
+
+  /* ───────── Footer ───────── */
+  footer {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  footer .brand {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    color: var(--primary-deep);
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+
+  /* ───────── Print ───────── */
+  @media print {
+    aside.toc { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    .hero { padding: 40px 0; background: white; }
+    section.card { box-shadow: none; page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<header class="hero">
+  <div class="container hero-content">
+    <span class="badge">Sổ tay sử dụng · Phiên bản 1.0</span>
+    <h1 class="hero-title">Quản trị viên</h1>
+    <p class="hero-subtitle">Toàn quyền vận hành hệ thống — từ cấu hình chi nhánh, phân quyền nhân sự, đến giám sát doanh thu và đóng kỳ kế toán toàn chuỗi.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><div class="num">15</div><div class="lbl">Module</div></div>
+      <div class="hero-meta-item"><div class="num">∞</div><div class="lbl">Quyền truy cập</div></div>
+      <div class="hero-meta-item"><div class="num">2FA</div><div class="lbl">Bảo mật</div></div>
+      <div class="hero-meta-item"><div class="num">HQ</div><div class="lbl">Đa chi nhánh</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<main>
+  <div class="container">
+    <div class="layout">
+      <!-- ─── TOC ─── -->
+      <aside class="toc">
+        <h3>Mục lục</h3>
+        <ol>
+          <li><a href="#sec-1">Đăng nhập & bật 2FA</a></li>
+          <li><a href="#sec-2">Tổng quan giao diện</a></li>
+          <li><a href="#sec-3">Cấu hình chi nhánh & tenant</a></li>
+          <li><a href="#sec-4">Quản lý nhân sự & phân quyền</a></li>
+          <li><a href="#sec-5">Quản lý gói dịch vụ</a></li>
+          <li><a href="#sec-6">Quản lý khách hàng & booking</a></li>
+          <li><a href="#sec-7">Vận hành liệu trình</a></li>
+          <li><a href="#sec-8">Tài chính & doanh thu</a></li>
+          <li><a href="#sec-9">Lương & KPI</a></li>
+          <li><a href="#sec-10">Kế toán sổ cái & đóng kỳ</a></li>
+          <li><a href="#sec-11">Kho hàng</a></li>
+          <li><a href="#sec-12">CRM & marketing Zalo</a></li>
+          <li><a href="#sec-13">AI Copilot</a></li>
+          <li><a href="#sec-14">Audit & bảo mật</a></li>
+          <li><a href="#sec-15">FAQ & xử lý sự cố</a></li>
+        </ol>
+      </aside>
+
+      <!-- ─── Content ─── -->
+      <div class="content">
+
+        <!-- 1. LOGIN -->
+        <section class="card" id="sec-1">
+          <div class="num-badge">01</div>
+          <h2>Đăng nhập & bật 2FA</h2>
+          <p class="lead">Tài khoản Admin là cao nhất trong hệ thống — phải bật xác thực 2 lớp ngay khi nhận tài khoản.</p>
+
+          <h3>Đăng nhập lần đầu</h3>
+          <ol class="steps">
+            <li>Vào địa chỉ <code>https://bellaspa.vn/login</code> (hoặc URL nội bộ của doanh nghiệp bạn).</li>
+            <li>Nhập <strong>email công việc</strong> và <strong>mật khẩu</strong> được cấp.</li>
+            <li>Vào ngay <strong>Cài đặt → Bảo mật & Mật khẩu</strong> để đổi mật khẩu mặc định.</li>
+            <li>Trong cùng trang, bấm <strong>"Bật 2FA ngay"</strong>.</li>
+          </ol>
+
+          <h3>Bật xác thực 2 lớp (TOTP)</h3>
+          <ol class="steps">
+            <li>Tải ứng dụng <strong>Google Authenticator</strong>, <strong>Authy</strong> hoặc <strong>1Password</strong> trên điện thoại.</li>
+            <li>Trong app Bella, bấm "Bật 2FA ngay" → màn hình hiện mã QR.</li>
+            <li>Mở app authenticator → bấm <strong>Add account</strong> → quét QR.</li>
+            <li>App sẽ hiện mã 6 số đổi mỗi 30 giây — nhập mã đang hiện vào ô xác minh.</li>
+            <li>Lưu lại <strong>secret key</strong> ở nơi an toàn (két sắt, password manager) để khôi phục khi mất điện thoại.</li>
+          </ol>
+
+          <div class="callout danger">
+            <span class="callout-icon">⚠️</span>
+            <div><strong>Bắt buộc bật 2FA</strong> cho mọi tài khoản role <code>admin</code>. Nếu mất quyền truy cập 2FA, chỉ HQ Super-Admin (qua Supabase Dashboard) mới reset được.</div>
+          </div>
+
+          <h3>Mật khẩu mạnh</h3>
+          <ul>
+            <li>Tối thiểu <strong>12 ký tự</strong>, gồm chữ hoa, chữ thường, số, ký tự đặc biệt.</li>
+            <li>KHÔNG dùng lại mật khẩu từ Facebook/Gmail.</li>
+            <li>Đổi mật khẩu định kỳ <strong>3 tháng / lần</strong>.</li>
+          </ul>
+        </section>
+
+        <!-- 2. INTERFACE -->
+        <section class="card" id="sec-2">
+          <div class="num-badge">02</div>
+          <h2>Tổng quan giao diện</h2>
+          <p class="lead">Sau khi đăng nhập, bạn vào trang Dashboard — đây là trung tâm điều hành. Bên trái là sidebar đầy đủ chức năng (chỉ admin nhìn thấy hết).</p>
+
+          <h3>Bản đồ sidebar</h3>
+          <div class="menu-map">
+            <div class="menu-group">
+              <div class="menu-group-title">Tổng quan & AI</div>
+              <div class="menu-items">
+                <div class="menu-item">Dashboard</div>
+                <div class="menu-item">AI Copilot</div>
+              </div>
+            </div>
+            <div class="menu-group">
+              <div class="menu-group-title">Khách hàng & dịch vụ</div>
+              <div class="menu-items">
+                <div class="menu-item">Khách hàng</div>
+                <div class="menu-item">Lịch hẹn</div>
+                <div class="menu-item">Thẻ liệu trình</div>
+                <div class="menu-item">Tin nhắn</div>
+                <div class="menu-item">CRM & Zalo</div>
+                <div class="menu-item">Dịch vụ</div>
+              </div>
+            </div>
+            <div class="menu-group">
+              <div class="menu-group-title">Tài chính & đối soát</div>
+              <div class="menu-items">
+                <div class="menu-item">Tài chính</div>
+                <div class="menu-item">Đối soát Tài chính</div>
+                <div class="menu-item">Đối soát Lương (AI)</div>
+                <div class="menu-item">Bảng lương</div>
+                <div class="menu-item">Kế toán sổ cái</div>
+                <div class="menu-item">Kho hàng</div>
+              </div>
+            </div>
+            <div class="menu-group">
+              <div class="menu-group-title">Hệ thống</div>
+              <div class="menu-items">
+                <div class="menu-item">Nhật ký hệ thống</div>
+                <div class="menu-item">Cài đặt</div>
+              </div>
+            </div>
+          </div>
+
+          <h3>Dashboard chính</h3>
+          <p>Tại <code>/dashboard</code>, bạn thấy:</p>
+          <ul>
+            <li><strong>KPI cards</strong>: Doanh thu hôm nay, doanh thu tháng, số booking mới, tỉ lệ hoàn thành.</li>
+            <li><strong>Biểu đồ doanh thu 30 ngày</strong> (Recharts) — hover để xem chi tiết.</li>
+            <li><strong>Top KTV</strong> theo số session hoàn thành tháng này.</li>
+            <li><strong>Booking sắp đến</strong> — 5 lịch hẹn gần nhất chưa diễn ra.</li>
+            <li><strong>Cảnh báo</strong>: KPI thấp, kho gần hết, kỳ kế toán chưa đóng.</li>
+          </ul>
+
+          <h3>HQ Dashboard (đa chi nhánh)</h3>
+          <p>Truy cập <code>/hq</code> nếu bạn là HQ Super-Admin để xem báo cáo <strong>tổng hợp toàn chuỗi</strong> — consolidated P&L, royalty thu từ các franchise.</p>
+        </section>
+
+        <!-- 3. TENANT -->
+        <section class="card" id="sec-3">
+          <div class="num-badge">03</div>
+          <h2>Cấu hình chi nhánh & tenant</h2>
+          <p class="lead">Mỗi chi nhánh là 1 tenant độc lập. Admin chỉ thấy data của tenant mình. HQ thấy được tất cả.</p>
+
+          <h3>Thiết lập thông tin chi nhánh</h3>
+          <p>Vào <strong>Cài đặt → Thông tin chung</strong>:</p>
+          <ul>
+            <li><strong>Tên chi nhánh</strong>: hiển thị trên hoá đơn và header app.</li>
+            <li><strong>Điện thoại / Email / Địa chỉ</strong>: dùng cho liên hệ khách hàng.</li>
+            <li><strong>Thông tin ngân hàng</strong> (qr_bank_code, qr_account_number, qr_account_name): hệ thống tự sinh QR VietQR khi khách thanh toán chuyển khoản.</li>
+          </ul>
+
+          <h3>Cấu hình Zalo OA</h3>
+          <p>Vào <strong>Cài đặt → Thông báo</strong> → nhập:</p>
+          <ul>
+            <li><strong>Zalo OA ID</strong></li>
+            <li><strong>App Secret</strong></li>
+            <li><strong>Template ID</strong> cho nhắc lịch, sinh nhật, chương trình KM</li>
+          </ul>
+
+          <div class="callout tip">
+            <span class="callout-icon">💡</span>
+            <div>Bella tự gửi tin Zalo nhắc khách trước 1 ngày — không cần làm thủ công. Tỉ lệ no-show giảm ~30% theo data thực tế.</div>
+          </div>
+
+          <h3>Subscription & gói SaaS</h3>
+          <p><strong>Cài đặt → Gói dịch vụ (SaaS)</strong>: xem gói hiện tại (Free/Standard/Pro), hạn dùng, hạn mức KTV/booking. Nếu chi nhánh là franchise, vào <strong>Hoá đơn HQ (Royalty)</strong> để xem nghĩa vụ phải trả HQ.</p>
+        </section>
+
+        <!-- 4. STAFF -->
+        <section class="card" id="sec-4">
+          <div class="num-badge">04</div>
+          <h2>Quản lý nhân sự & phân quyền</h2>
+          <p class="lead">Tạo tài khoản cho KTV, kế toán, nhân sự, lễ tân. Mỗi role có menu và quyền truy cập khác nhau.</p>
+
+          <h3>Tạo tài khoản nhân viên</h3>
+          <ol class="steps">
+            <li>Vào <strong>Cài đặt → Nhân sự & Quyền</strong>.</li>
+            <li>Bấm <strong>"Thêm nhân viên"</strong>.</li>
+            <li>Nhập <strong>email</strong>, <strong>họ tên</strong>, <strong>số điện thoại</strong>.</li>
+            <li>Chọn <strong>vai trò</strong>:
+              <ul>
+                <li><code>admin</code> — toàn quyền</li>
+                <li><code>ktv</code> — kỹ thuật viên</li>
+                <li><code>ktv_lead</code> — KTV trưởng</li>
+                <li><code>accountant</code> — kế toán</li>
+                <li><code>hr</code> — nhân sự</li>
+                <li><code>admin_staff</code> — lễ tân</li>
+              </ul>
+            </li>
+            <li>Đặt mật khẩu tạm — nhân viên sẽ tự đổi khi đăng nhập lần đầu.</li>
+            <li>Bấm <strong>"Tạo tài khoản"</strong>. Hệ thống tự gửi email kích hoạt.</li>
+          </ol>
+
+          <h3>Phân quyền chi tiết</h3>
+          <p>Vào <strong>Cài đặt → Phân quyền</strong> để bật/tắt từng module cho từng role (tuỳ biến ngoài mặc định).</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Module</th><th>Admin</th><th>KTV</th><th>KTV Lead</th><th>Kế toán</th><th>HR</th><th>Lễ tân</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Dashboard</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                <tr><td>Khách hàng</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+                <tr><td>Lịch hẹn</td><td>✓</td><td>✓ (chỉ của mình)</td><td>✓</td><td>—</td><td>—</td><td>✓</td></tr>
+                <tr><td>Thẻ liệu trình</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>✓</td></tr>
+                <tr><td>Tài chính</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+                <tr><td>Kế toán sổ cái</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>—</td><td>—</td></tr>
+                <tr><td>Bảng lương</td><td>✓</td><td>—</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
+                <tr><td>Kho hàng</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+                <tr><td>Cài đặt</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Đình chỉ / xoá tài khoản</h3>
+          <p>Khi nhân viên nghỉ việc, vào tab Nhân sự → bấm nút <strong>"Khoá"</strong> bên cạnh tên — họ không đăng nhập được nữa. Data lịch sử vẫn giữ (audit_log + completed sessions). KHÔNG nên xoá hẳn để giữ lịch sử KPI/lương.</p>
+        </section>
+
+        <!-- 5. SERVICES -->
+        <section class="card" id="sec-5">
+          <div class="num-badge">05</div>
+          <h2>Quản lý gói dịch vụ (Packages)</h2>
+          <p class="lead">Mỗi spa có nhiều gói: Mẹ sau sinh 21 buổi, Bà bầu 12 buổi, Massage bé sơ sinh… Cấu hình giá + hoa hồng KTV ở đây.</p>
+
+          <h3>Tạo gói mới</h3>
+          <ol class="steps">
+            <li>Vào <strong>Dashboard → Dịch vụ</strong>.</li>
+            <li>Bấm <strong>"Thêm gói"</strong>.</li>
+            <li>Nhập tên gói (vd: "Mẹ sau sinh - 21 buổi cao cấp").</li>
+            <li>Nhập <strong>giá trọn gói</strong> (VND).</li>
+            <li>Số <strong>buổi</strong>: vd 21.</li>
+            <li>Thời lượng/buổi: vd "90 phút/buổi".</li>
+            <li>Hoa hồng KTV/buổi: vd 150.000đ.</li>
+            <li>Mô tả chi tiết, ưu đãi đi kèm.</li>
+            <li>Bấm <strong>"Lưu"</strong>.</li>
+          </ol>
+
+          <h3>Định mức nguyên vật liệu (BOM)</h3>
+          <p>Mỗi gói tiêu hao bao nhiêu tinh dầu, khăn, dụng cụ? Cấu hình ở tab <strong>"Định mức"</strong> trong từng gói. Khi KTV check-out session, hệ thống <strong>tự trừ kho</strong> theo BOM.</p>
+        </section>
+
+        <!-- 6. CUSTOMERS -->
+        <section class="card" id="sec-6">
+          <div class="num-badge">06</div>
+          <h2>Quản lý khách hàng & booking</h2>
+          <p class="lead">Đăng kí khách hàng mới, đặt lịch, theo dõi tiến độ liệu trình.</p>
+
+          <h3>Đăng ký khách hàng mới</h3>
+          <ol class="steps">
+            <li>Vào <strong>Dashboard → Khách hàng → "Thêm khách"</strong>.</li>
+            <li>Nhập <strong>SĐT</strong> (mã định danh duy nhất — nếu trùng sẽ load profile cũ).</li>
+            <li>Họ tên mẹ, ngày sinh dự kiến (nếu bà bầu) HOẶC ngày sinh bé + giới tính bé.</li>
+            <li>Địa chỉ tới spa hoặc nơi KTV đến tận nhà.</li>
+            <li>Người giới thiệu (nếu có) — để tính hoa hồng giới thiệu.</li>
+            <li>Ghi chú: dị ứng, lưu ý sức khoẻ.</li>
+          </ol>
+
+          <h3>Đặt lịch (booking)</h3>
+          <ol class="steps">
+            <li>Vào <strong>Lịch hẹn → "Tạo booking"</strong>.</li>
+            <li>Chọn khách (search theo SĐT).</li>
+            <li>Chọn gói dịch vụ.</li>
+            <li>Số tiền cọc (deposit) khách đã trả.</li>
+            <li>Ngày bắt đầu liệu trình.</li>
+            <li>Gán KTV phụ trách (có thể đổi sau).</li>
+            <li>Hệ thống tự sinh <strong>21 session</strong> theo gói, mỗi session 1 ngày.</li>
+            <li>Tự gửi tin Zalo xác nhận cho khách.</li>
+          </ol>
+
+          <div class="callout info">
+            <span class="callout-icon">ℹ️</span>
+            <div>Khi booking có deposit ≥ 1, kế toán tự sinh bút toán: Nợ Tiền — Có Doanh thu hoãn lại. Mỗi buổi hoàn thành sẽ chuyển dần qua doanh thu thực ghi nhận.</div>
+          </div>
+
+          <h3>Quản lý tiến độ</h3>
+          <p>Trang <strong>Khách hàng → [chi tiết]</strong> hiển thị:</p>
+          <ul>
+            <li>Timeline 21 session: hoàn thành / sắp tới / huỷ.</li>
+            <li>KTV mỗi buổi, review của khách.</li>
+            <li>Tổng tiền đã thu / còn phải thu.</li>
+            <li>Lịch sử thanh toán.</li>
+            <li>Note nội bộ (chỉ admin/lễ tân thấy, KTV không thấy).</li>
+          </ul>
+        </section>
+
+        <!-- 7. SESSIONS -->
+        <section class="card" id="sec-7">
+          <div class="num-badge">07</div>
+          <h2>Vận hành liệu trình</h2>
+          <p class="lead">Theo dõi lịch hôm nay, gán KTV thay thế, xử lý huỷ/đổi lịch.</p>
+
+          <h3>Trang Thẻ liệu trình</h3>
+          <p>Tại <strong>Dashboard → Thẻ liệu trình</strong>, bạn thấy danh sách session theo ngày. Mỗi card hiển thị:</p>
+          <ul>
+            <li>Tên khách + SĐT</li>
+            <li>Gói, buổi thứ mấy / tổng</li>
+            <li>KTV được gán</li>
+            <li>Trạng thái: scheduled / in_progress / completed / cancelled</li>
+            <li>GPS check-in (nếu KTV đi tận nhà)</li>
+          </ul>
+
+          <h3>Đổi KTV</h3>
+          <ol class="steps">
+            <li>Click session cần đổi.</li>
+            <li>Chọn KTV mới từ dropdown (chỉ KTV rảnh hôm đó hiện ra).</li>
+            <li>Xác nhận lý do đổi.</li>
+            <li>Hệ thống tự cập nhật salary_records: hoa hồng chuyển sang KTV mới.</li>
+          </ol>
+
+          <h3>Huỷ booking</h3>
+          <p>Vào booking → "Huỷ" → chọn lý do (khách yêu cầu / nội bộ). Khoản cọc xử lý 1 trong 3 cách:</p>
+          <ul>
+            <li><strong>Hoàn 100%</strong> — sinh bút toán hoàn tiền.</li>
+            <li><strong>Hoàn 1 phần</strong> — phần giữ lại ghi thành doanh thu phạt.</li>
+            <li><strong>Giữ toàn bộ</strong> — chuyển full deposit thành doanh thu phạt.</li>
+          </ul>
+        </section>
+
+        <!-- 8. FINANCE -->
+        <section class="card" id="sec-8">
+          <div class="num-badge">08</div>
+          <h2>Tài chính & doanh thu</h2>
+          <p class="lead">Theo dõi doanh thu hàng ngày, hàng tháng, đối soát với ngân hàng.</p>
+
+          <h3>Trang Tài chính</h3>
+          <p><strong>Dashboard → Tài chính</strong>:</p>
+          <ul>
+            <li>Tổng doanh thu tháng (deposit + session completed).</li>
+            <li>Chi phí phát sinh.</li>
+            <li>Lợi nhuận gộp.</li>
+            <li>Chart cash-flow ngày/tuần/tháng.</li>
+            <li>Top khách hàng theo doanh thu.</li>
+          </ul>
+
+          <h3>Đối soát ngân hàng</h3>
+          <ol class="steps">
+            <li>Vào <strong>Tài chính → Đối soát</strong>.</li>
+            <li>Upload <strong>sao kê ngân hàng</strong> (file CSV/Excel từ ngân hàng).</li>
+            <li>Hệ thống tự match transaction với revenue records theo số tiền + ngày.</li>
+            <li>Transaction không match được hiện lên bảng <strong>"Chờ đối soát"</strong> — bạn match thủ công.</li>
+            <li>Khi xong, status revenue chuyển từ <code>pending</code> → <code>confirmed</code>.</li>
+          </ol>
+
+          <h3>Ghi nhận chi phí</h3>
+          <p>Vào <strong>Tài chính → Chi phí</strong> để ghi điện, nước, thuê mặt bằng, vật tư:</p>
+          <ul>
+            <li>Loại chi phí (category)</li>
+            <li>Số tiền</li>
+            <li>Mô tả + URL chứng từ (ảnh hoá đơn)</li>
+            <li>Người duyệt</li>
+          </ul>
+          <p>Hệ thống tự sinh bút toán: Nợ Chi phí — Có Tiền/TK phải trả.</p>
+        </section>
+
+        <!-- 9. SALARY -->
+        <section class="card" id="sec-9">
+          <div class="num-badge">09</div>
+          <h2>Lương & KPI</h2>
+          <p class="lead">Tính lương KTV cuối tháng dựa trên số session + bonus chất lượng + KPI.</p>
+
+          <h3>Cấu hình thang lương</h3>
+          <p><strong>Cài đặt → Lương & Thưởng</strong>:</p>
+          <ul>
+            <li><strong>Bonus 5 sao</strong>: thưởng/lượt khách đánh giá 5★</li>
+            <li><strong>Bonus 4.5 sao</strong>: thưởng/lượt 4.5★</li>
+            <li><strong>Bonus 4 sao</strong>: thưởng/lượt 4★</li>
+            <li><strong>KPI target sessions</strong>: số buổi mục tiêu/tháng (vd 30)</li>
+            <li><strong>KPI bonus</strong>: thưởng nếu đạt KPI (vd 1.000.000đ)</li>
+          </ul>
+
+          <h3>Chốt lương cuối tháng</h3>
+          <ol class="steps">
+            <li>Ngày 1 đầu tháng kế tiếp, vào <strong>Dashboard → Bảng lương</strong>.</li>
+            <li>Chọn tháng cần chốt.</li>
+            <li>Bấm <strong>"Tính lương tự động"</strong> — hệ thống aggregate:
+              <ul>
+                <li>Hoa hồng từ session đã complete</li>
+                <li>Bonus review</li>
+                <li>Bonus/penalty KPI</li>
+                <li>Trừ chấm công nghỉ không phép</li>
+              </ul>
+            </li>
+            <li>Review bảng lương từng KTV — chỉnh tay nếu cần (vd ứng trước).</li>
+            <li>Bấm <strong>"Duyệt & xuất Excel"</strong> để chuyển kế toán làm thanh toán.</li>
+            <li>Sau khi trả, đánh dấu <strong>"Đã trả"</strong> — hệ thống sinh bút toán: Nợ Chi phí lương — Có Tiền.</li>
+          </ol>
+
+          <h3>Đối soát lương AI</h3>
+          <p>Vào <strong>Đối soát Lương (AI)</strong> để AI tự kiểm tra:</p>
+          <ul>
+            <li>Hoa hồng tính có khớp với số session đã complete không?</li>
+            <li>Có session nào chưa được tính tiền cho KTV?</li>
+            <li>Có review nào chưa được tính bonus?</li>
+          </ul>
+          <p>AI sẽ list ra điểm bất thường để bạn fix trước khi duyệt lương.</p>
+        </section>
+
+        <!-- 10. ACCOUNTING -->
+        <section class="card" id="sec-10">
+          <div class="num-badge">10</div>
+          <h2>Kế toán sổ cái & đóng kỳ</h2>
+          <p class="lead">Chế độ dual-mode: cash-basis cho spa nhỏ, accrual cho franchise/chuỗi lớn. Cấu hình ở Cài đặt → Chế độ Kế toán.</p>
+
+          <h3>Hệ thống tài khoản (COA)</h3>
+          <p>Vào <strong>Kế toán sổ cái → Hệ thống tài khoản</strong> để xem/edit Chart of Accounts theo TT200:</p>
+          <ul>
+            <li>111 — Tiền mặt</li>
+            <li>112 — Tiền gửi NH</li>
+            <li>131 — Phải thu khách</li>
+            <li>3387 — Doanh thu hoãn lại</li>
+            <li>5111 — Doanh thu dịch vụ</li>
+            <li>6427 — Chi phí lương KTV</li>
+            <li>… và nhiều TK khác đã seed sẵn</li>
+          </ul>
+
+          <h3>Đóng kỳ kế toán</h3>
+          <ol class="steps">
+            <li>Cuối tháng, vào <strong>Kế toán → Kỳ kế toán</strong>.</li>
+            <li>Đảm bảo mọi entry đã POSTED (không còn DRAFT).</li>
+            <li>Chạy <strong>"Reconciliation Report"</strong> để chắc tổng Nợ = tổng Có.</li>
+            <li>Bấm <strong>"Đóng kỳ"</strong>. Kỳ chuyển status CLOSED — không thể thêm/sửa entry nữa.</li>
+          </ol>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Đóng kỳ KHÔNG thể tự undo. Nếu cần mở lại, chỉ HQ Super-Admin được phép qua function <code>reopen_period(uuid)</code>.</div>
+          </div>
+
+          <h3>Outbox & retry</h3>
+          <p><strong>Kế toán → Outbox</strong> liệt kê các event chưa post (PENDING) hoặc fail (FAILED). Bấm <strong>"Retry"</strong> để chạy lại worker.</p>
+
+          <h3>Báo cáo</h3>
+          <p><strong>Kế toán → Báo cáo</strong>:</p>
+          <ul>
+            <li><strong>P&L (Lãi/Lỗ)</strong> — theo tháng/quý/năm</li>
+            <li><strong>Cash Flow</strong></li>
+            <li><strong>Consolidated P&L</strong> — chỉ HQ thấy, tổng toàn chuỗi</li>
+            <li><strong>Trial Balance</strong> — cân đối thử</li>
+          </ul>
+        </section>
+
+        <!-- 11. INVENTORY -->
+        <section class="card" id="sec-11">
+          <div class="num-badge">11</div>
+          <h2>Kho hàng</h2>
+          <p class="lead">Theo dõi tồn kho tinh dầu, khăn, vật tư. Tự trừ khi session hoàn thành.</p>
+
+          <h3>Thêm sản phẩm</h3>
+          <ol class="steps">
+            <li>Vào <strong>Dashboard → Kho hàng → "Thêm sản phẩm"</strong>.</li>
+            <li>Tên sản phẩm, SKU, đơn vị (chai/lít/cái).</li>
+            <li>Tồn kho ban đầu, ngưỡng cảnh báo (min_stock_level).</li>
+            <li>Giá nhập/đơn vị.</li>
+            <li>Danh mục: Tinh dầu / Khăn / Dụng cụ / Khác.</li>
+          </ol>
+
+          <h3>Nhập kho / Xuất kho thủ công</h3>
+          <p>Bấm <strong>"+ Nhập"</strong> hoặc <strong>"− Xuất"</strong> trên dòng sản phẩm. Mỗi lần thay đổi sinh 1 dòng inventory_logs để truy vết.</p>
+
+          <h3>Chuyển kho giữa chi nhánh (HQ only)</h3>
+          <p>Vào <strong>Kho → Chuyển kho</strong>:</p>
+          <ol class="steps">
+            <li>Chi nhánh A tạo Transfer Order.</li>
+            <li>Chi nhánh B nhận → confirm.</li>
+            <li>Hệ thống tự sinh inter-branch clearing record (nợ chi nhánh A — có chi nhánh B).</li>
+          </ol>
+        </section>
+
+        <!-- 12. CRM -->
+        <section class="card" id="sec-12">
+          <div class="num-badge">12</div>
+          <h2>CRM & Marketing Zalo</h2>
+          <p class="lead">Gửi tin tự động nhắc lịch, sinh nhật, hết liệu trình — qua Zalo OA.</p>
+
+          <h3>Template messages</h3>
+          <p>Vào <strong>CRM & Zalo → Templates</strong> để cấu hình:</p>
+          <ul>
+            <li><strong>Nhắc lịch</strong>: gửi trước 1 ngày — "Chào mẹ {tên}, mai 9h KTV {tên} sẽ đến..."</li>
+            <li><strong>Sinh nhật bé</strong>: tự gửi mừng + voucher 10%</li>
+            <li><strong>Hết liệu trình</strong>: sau session cuối, gửi cảm ơn + survey + gợi ý gia hạn</li>
+            <li><strong>Khách cũ quay lại</strong>: 3 tháng không tới → tin re-engage</li>
+          </ul>
+
+          <h3>Segments & broadcast</h3>
+          <p>Tạo segment khách (vd: "Mẹ bầu tháng 8", "Khách VIP > 5tr") → gửi broadcast Zalo. Theo dõi tỉ lệ mở/click trong tab Analytics.</p>
+        </section>
+
+        <!-- 13. AI -->
+        <section class="card" id="sec-13">
+          <div class="num-badge">13</div>
+          <h2>AI Copilot</h2>
+          <p class="lead">Trợ lý AI gắn vào nghiệp vụ thật — phân tích doanh thu, đề xuất giảm KTV no-show, dự báo tồn kho.</p>
+
+          <h3>Các agent AI sẵn có</h3>
+          <div class="grid grid-2">
+            <div class="mini-card"><h4>🎯 CEO Agent</h4><p>Phân tích tổng quan, đề xuất chiến lược tháng.</p></div>
+            <div class="mini-card"><h4>💰 CFO Agent</h4><p>Phát hiện bất thường tài chính, dự báo cash-flow.</p></div>
+            <div class="mini-card"><h4>👥 CHRO Agent</h4><p>Đánh giá hiệu suất KTV, đề xuất training/đào tạo.</p></div>
+            <div class="mini-card"><h4>📦 Inventory Agent</h4><p>Dự báo hết hàng, đề xuất re-order.</p></div>
+            <div class="mini-card"><h4>📱 CRM Agent</h4><p>Gợi ý chiến dịch Zalo, customer churn risk.</p></div>
+            <div class="mini-card"><h4>⚙️ COO Agent</h4><p>Tối ưu phân ca KTV, giảm waste.</p></div>
+          </div>
+
+          <h3>Cách dùng</h3>
+          <ol class="steps">
+            <li>Vào <strong>AI Copilot</strong> ở sidebar.</li>
+            <li>Chọn agent muốn hỏi.</li>
+            <li>Gõ câu hỏi tiếng Việt tự nhiên: vd "KTV nào sắp burn-out tháng này?"</li>
+            <li>Agent trả lời với data thật + chart minh hoạ.</li>
+          </ol>
+        </section>
+
+        <!-- 14. AUDIT -->
+        <section class="card" id="sec-14">
+          <div class="num-badge">14</div>
+          <h2>Audit & bảo mật</h2>
+          <p class="lead">Mọi thao tác trên hệ thống đều ghi vào audit_logs. Bạn có thể tra cứu ai đã làm gì, khi nào.</p>
+
+          <h3>Tra cứu audit log</h3>
+          <ol class="steps">
+            <li>Vào <strong>Dashboard → Nhật ký hệ thống</strong>.</li>
+            <li>Lọc theo: ngày, user, table, action (INSERT/UPDATE/DELETE).</li>
+            <li>Click 1 dòng để xem <strong>diff</strong> giữa old_data vs new_data.</li>
+          </ol>
+
+          <h3>Best practices</h3>
+          <ul>
+            <li>Định kì <strong>3 tháng/lần</strong> review audit log để phát hiện thao tác bất thường (xoá hàng loạt, sửa salary, đổi role).</li>
+            <li>Bật <strong>2FA</strong> cho tất cả admin/accountant.</li>
+            <li>KHÔNG share tài khoản admin. Mỗi người 1 account riêng để traceable.</li>
+            <li>Khi nhân viên nghỉ việc, <strong>khoá tài khoản trong 24h</strong>.</li>
+          </ul>
+
+          <h3>PII redaction</h3>
+          <p>Hệ thống tự che số điện thoại, email, CCCD trong log gửi ra ngoài (Sentry, error tracking). Không cần làm gì thêm.</p>
+        </section>
+
+        <!-- 15. FAQ -->
+        <section class="card" id="sec-15">
+          <div class="num-badge">15</div>
+          <h2>FAQ & xử lý sự cố</h2>
+          <p class="lead">Những câu hỏi thường gặp và cách giải quyết nhanh.</p>
+
+          <details>
+            <summary>Quên mật khẩu admin — làm sao reset?</summary>
+            <div class="body">Vào trang login → "Quên mật khẩu" → nhập email → check inbox link reset. Nếu link không tới, vào Supabase Dashboard → Authentication → Users → bấm "Send password recovery" cho user đó.</div>
+          </details>
+
+          <details>
+            <summary>Mất điện thoại — không nhập được mã 2FA?</summary>
+            <div class="body">Nếu bạn đã lưu <strong>secret key</strong> khi enrol (khuyến nghị): tải lại Authenticator trên điện thoại mới → Add account thủ công → paste secret. Nếu mất luôn secret: nhờ admin khác (hoặc HQ Super-Admin) gỡ MFA factor qua Supabase Dashboard.</div>
+          </details>
+
+          <details>
+            <summary>KTV không hiện trong dropdown đổi lịch?</summary>
+            <div class="body">Kiểm tra KTV đó: (1) còn role <code>ktv</code>? (2) status <code>active</code>? (3) không trùng lịch cùng giờ? (4) không phải ngày off của họ?</div>
+          </details>
+
+          <details>
+            <summary>Booking đã huỷ nhưng vẫn hiện trong KPI tháng?</summary>
+            <div class="body">KPI chỉ tính session có status <code>completed</code>. Nếu vẫn hiện, vào Outbox tìm event SESSION_DONE chưa được xoá → bấm "Cancel". Sau đó rebuild KPI qua nút "Tính lương tự động".</div>
+          </details>
+
+          <details>
+            <summary>Tổng doanh thu trang Tài chính khác với Kế toán?</summary>
+            <div class="body">Đây thường do: (1) cash-basis vs accrual khác nhau, (2) revenue có status <code>pending</code> chưa confirmed, (3) deposit chưa được chuyển thành doanh thu thực. Vào "Đối soát Tài chính" để xem chi tiết khoản chênh.</div>
+          </details>
+
+          <details>
+            <summary>Hệ thống chậm sau khi có nhiều khách?</summary>
+            <div class="body">Vào <strong>Cài đặt → Gói dịch vụ (SaaS)</strong> xem có vượt hạn mức không. Nếu chi nhánh > 500 khách active, nên upgrade lên gói Pro để có database resource cao hơn.</div>
+          </details>
+
+          <details>
+            <summary>Cần khôi phục dữ liệu xoá nhầm?</summary>
+            <div class="body">Supabase có Point-in-Time Recovery (PITR) 7 ngày trên gói Pro. Vào Supabase Dashboard → Database → Backups → chọn timestamp trước khi xoá → Restore.</div>
+          </details>
+
+          <details>
+            <summary>Mở nhánh franchise mới — cần làm gì?</summary>
+            <div class="body">Chỉ HQ Super-Admin tạo được tenant mới. Vào trang <code>/hq</code> → "Thêm chi nhánh" → nhập thông tin → hệ thống tự seed COA + tạo admin tenant đầu tiên. Sau đó share login cho franchisee.</div>
+          </details>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="brand">Bella Spa</div>
+  <p>Sổ tay Quản trị viên · © 2026 Bella Spa Group</p>
+  <p style="margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Phiên bản 1.0 · Cập nhật 26/05/2026</p>
+</footer>
+
+</body>
+</html>

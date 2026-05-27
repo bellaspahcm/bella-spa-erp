@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sổ tay Kế toán · Bella Spa ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FFF5F7;
+    --card: #FFFFFF;
+    --primary: #BE185D;
+    --primary-soft: #FFE4E6;
+    --primary-deep: #9D174D;
+    --secondary: #EC4899;
+    --text: #4C243B;
+    --text-muted: #8A6D7C;
+    --border: #FBCFE8;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --shadow-pink: 0 8px 30px rgba(219, 39, 119, 0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Be Vietnam Pro', -apple-system, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 15.5px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { background: linear-gradient(135deg, #FFE4E6 0%, #FBCFE8 50%, #F9A8D4 100%); padding: 80px 0 120px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(190,24,93,0.15), transparent 70%); border-radius: 50%; }
+  .hero::after { content: ''; position: absolute; bottom: -150px; left: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(236,72,153,0.12), transparent 70%); border-radius: 50%; }
+  .hero-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); color: var(--primary-deep); padding: 8px 20px; border-radius: 100px; font-size: 12px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 24px; border: 1px solid var(--primary-soft); }
+  .badge::before { content: ''; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 12px var(--primary); }
+  h1.hero-title { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(40px,6vw,68px); color: var(--primary-deep); margin-bottom: 16px; line-height: 1.1; font-weight: 700; }
+  .hero-subtitle { font-size: 18px; color: var(--text); max-width: 700px; margin: 0 auto; font-weight: 500; }
+  .hero-meta { display: flex; gap: 32px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
+  .hero-meta-item { text-align: center; }
+  .hero-meta-item .num { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; color: var(--primary-deep); line-height: 1; }
+  .hero-meta-item .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); margin-top: 6px; }
+
+  main { position: relative; margin-top: -80px; padding-bottom: 100px; }
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 40px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } aside.toc { position: static !important; } }
+
+  aside.toc { position: sticky; top: 24px; align-self: start; background: var(--card); border-radius: 24px; padding: 24px 20px; box-shadow: var(--shadow-pink); border: 1px solid var(--border); max-height: calc(100vh - 48px); overflow-y: auto; }
+  aside.toc h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: var(--primary); margin-bottom: 16px; padding-left: 12px; }
+  aside.toc ol { list-style: none; counter-reset: toc; }
+  aside.toc ol li { counter-increment: toc; }
+  aside.toc ol li a { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 12px; color: var(--text); text-decoration: none; font-size: 13.5px; font-weight: 600; transition: all 0.2s; }
+  aside.toc ol li a::before { content: counter(toc, decimal-leading-zero); color: var(--primary); font-weight: 800; font-size: 11px; flex-shrink: 0; margin-top: 2px; }
+  aside.toc ol li a:hover { background: var(--primary-soft); color: var(--primary-deep); }
+
+  .content { display: flex; flex-direction: column; gap: 28px; }
+  section.card { background: var(--card); border-radius: 28px; padding: 40px; box-shadow: var(--shadow-pink); border: 1px solid var(--border); scroll-margin-top: 24px; }
+  section.card .num-badge { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: white; border-radius: 14px; font-weight: 800; font-size: 18px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(190,24,93,0.3); }
+  section.card h2 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 32px; color: var(--primary-deep); margin-bottom: 8px; font-weight: 700; line-height: 1.2; }
+  section.card .lead { font-size: 15.5px; color: var(--text-muted); margin-bottom: 28px; font-weight: 500; }
+  section.card h3 { font-size: 20px; font-weight: 800; color: var(--text); margin: 28px 0 14px; display: flex; align-items: center; gap: 10px; }
+  section.card h3::before { content: ''; width: 4px; height: 22px; background: linear-gradient(180deg, var(--primary), var(--secondary)); border-radius: 4px; }
+  section.card h4 { font-size: 15.5px; font-weight: 700; color: var(--text); margin: 18px 0 8px; }
+  section.card p { margin-bottom: 14px; color: var(--text); }
+  section.card ul, section.card ol { padding-left: 24px; margin-bottom: 14px; }
+  section.card ul li, section.card ol li { margin-bottom: 6px; }
+  section.card ul li::marker { color: var(--primary); }
+  section.card ol li::marker { color: var(--primary); font-weight: 800; }
+  section.card strong { color: var(--primary-deep); font-weight: 700; }
+  section.card code { background: var(--primary-soft); color: var(--primary-deep); padding: 2px 8px; border-radius: 6px; font-size: 0.88em; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  .steps { list-style: none; padding: 0 !important; counter-reset: step; margin: 16px 0; }
+  .steps li { counter-increment: step; position: relative; padding: 16px 16px 16px 60px; background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 100%); border-radius: 16px; margin-bottom: 10px !important; border: 1px solid var(--primary-soft); }
+  .steps li::before { content: counter(step); position: absolute; left: 16px; top: 16px; width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+
+  .callout { padding: 18px 22px; border-radius: 16px; margin: 18px 0; display: flex; gap: 14px; align-items: flex-start; font-size: 14.5px; border-left: 4px solid; }
+  .callout-icon { font-size: 22px; flex-shrink: 0; line-height: 1; }
+  .callout.tip { background: #FDF4F8; border-color: var(--primary); color: var(--primary-deep); }
+  .callout.warn { background: #FFFBEB; border-color: var(--warning); color: #92400E; }
+  .callout.danger { background: #FEF2F2; border-color: var(--danger); color: #991B1B; }
+  .callout.info { background: #F0F9FF; border-color: #0EA5E9; color: #075985; }
+
+  .table-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--border); margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; background: white; font-size: 14px; }
+  table th { background: var(--primary-soft); color: var(--primary-deep); text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; font-weight: 800; padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+  table td { padding: 14px 16px; border-bottom: 1px solid #F9E4EB; vertical-align: top; }
+  table tr:last-child td { border-bottom: none; }
+  table tr:hover td { background: #FFFAFC; }
+
+  .grid { display: grid; gap: 16px; margin: 16px 0; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .mini-card { background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 60%); padding: 20px; border-radius: 18px; border: 1px solid var(--primary-soft); }
+  .mini-card h4 { color: var(--primary-deep); margin-bottom: 8px; font-size: 14.5px; }
+  .mini-card p { font-size: 13.5px; color: var(--text-muted); margin: 0; }
+
+  /* Journal entry visualization */
+  .journal { background: #FDF4F8; border-radius: 16px; padding: 20px; margin: 16px 0; border: 1px solid var(--primary-soft); font-family: 'JetBrains Mono', monospace; font-size: 13.5px; }
+  .journal .jhead { font-weight: 700; color: var(--primary-deep); margin-bottom: 10px; font-family: 'Be Vietnam Pro', sans-serif; font-size: 14.5px; }
+  .journal .jrow { display: grid; grid-template-columns: 1fr 100px 100px; gap: 12px; padding: 4px 0; }
+  .journal .jrow.head { font-weight: 700; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 4px; }
+  .journal .debit { text-align: right; color: var(--danger); }
+  .journal .credit { text-align: right; color: var(--success); }
+  .journal .total { font-weight: 700; border-top: 1px solid var(--border); padding-top: 6px; margin-top: 4px; }
+
+  details { background: white; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+  details[open] { background: #FFFAFC; border-color: var(--primary); box-shadow: var(--shadow-pink); }
+  details summary { padding: 16px 20px; cursor: pointer; font-weight: 700; font-size: 15px; color: var(--text); list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: '+'; font-size: 22px; color: var(--primary); font-weight: 300; transition: transform 0.2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details .body { padding: 0 20px 18px; color: var(--text); font-size: 14.5px; }
+
+  footer { text-align: center; padding: 60px 24px; color: var(--text-muted); font-size: 13px; font-weight: 500; }
+  footer .brand { font-family: 'Playfair Display', serif; font-style: italic; color: var(--primary-deep); font-size: 28px; margin-bottom: 8px; }
+
+  @media print { aside.toc { display: none; } .layout { grid-template-columns: 1fr; } .hero { padding: 40px 0; background: white; } section.card { box-shadow: none; page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container hero-content">
+    <span class="badge">Sổ tay sử dụng · Phiên bản 1.0</span>
+    <h1 class="hero-title">Kế toán</h1>
+    <p class="hero-subtitle">Vận hành sổ cái đa-chế-độ (cash/accrual), đối soát ngân hàng tự động, đóng kỳ kế toán theo Thông tư 200 — toàn bộ trong một hệ thống.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><div class="num">TT200</div><div class="lbl">Chuẩn VN</div></div>
+      <div class="hero-meta-item"><div class="num">2</div><div class="lbl">Dual-mode</div></div>
+      <div class="hero-meta-item"><div class="num">Auto</div><div class="lbl">Posting</div></div>
+      <div class="hero-meta-item"><div class="num">P&L</div><div class="lbl">Báo cáo</div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <div class="layout">
+      <aside class="toc">
+        <h3>Mục lục</h3>
+        <ol>
+          <li><a href="#sec-1">Đăng nhập & 2FA bắt buộc</a></li>
+          <li><a href="#sec-2">Tổng quan giao diện</a></li>
+          <li><a href="#sec-3">Hệ thống tài khoản (COA)</a></li>
+          <li><a href="#sec-4">Bút toán tự động (Outbox)</a></li>
+          <li><a href="#sec-5">Bút toán thủ công</a></li>
+          <li><a href="#sec-6">Đối soát ngân hàng</a></li>
+          <li><a href="#sec-7">Đối soát lương (AI)</a></li>
+          <li><a href="#sec-8">Doanh thu & chi phí</a></li>
+          <li><a href="#sec-9">Kỳ kế toán & đóng kỳ</a></li>
+          <li><a href="#sec-10">Báo cáo P&L · Cash Flow</a></li>
+          <li><a href="#sec-11">Royalty & inter-branch</a></li>
+          <li><a href="#sec-12">Chế độ cash vs accrual</a></li>
+          <li><a href="#sec-13">FAQ & xử lý sự cố</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+
+        <section class="card" id="sec-1">
+          <div class="num-badge">01</div>
+          <h2>Đăng nhập & 2FA bắt buộc</h2>
+          <p class="lead">Vì bạn truy cập sổ cái, lương, doanh thu — bắt buộc bật 2FA ngay khi nhận tài khoản.</p>
+
+          <h3>Quy trình bắt buộc trong ngày đầu</h3>
+          <ol class="steps">
+            <li>Đăng nhập bằng email + mật khẩu tạm.</li>
+            <li>Vào <strong>Cài đặt → Bảo mật & Mật khẩu</strong> đổi mật khẩu mới (≥ 12 ký tự).</li>
+            <li>Bấm <strong>"Bật 2FA ngay"</strong> → quét QR bằng Google Authenticator.</li>
+            <li>Nhập mã 6 số xác minh.</li>
+            <li>Lưu <strong>secret key</strong> ở két sắt / password manager.</li>
+          </ol>
+
+          <div class="callout danger">
+            <span class="callout-icon">🔒</span>
+            <div>Tài khoản kế toán có thể xem/sửa <strong>journal entries</strong>, <strong>doanh thu</strong>, <strong>lương</strong>. Nếu bị chiếm, hậu quả nghiêm trọng — bao gồm cả pháp lý. Bật 2FA là bắt buộc, không phải tùy chọn.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-2">
+          <div class="num-badge">02</div>
+          <h2>Tổng quan giao diện</h2>
+          <p class="lead">Sidebar của bạn tập trung vào tài chính. KHÔNG có Khách hàng, Lịch hẹn, CRM — đó là phần admin.</p>
+
+          <h3>Menu của bạn</h3>
+          <div class="grid grid-2">
+            <div class="mini-card"><h4>📊 Dashboard</h4><p>Tổng quan tài chính ngày/tháng.</p></div>
+            <div class="mini-card"><h4>💎 Dịch vụ</h4><p>Xem giá gói (để đối chiếu doanh thu).</p></div>
+            <div class="mini-card"><h4>💰 Tài chính</h4><p>Doanh thu, chi phí, cash flow.</p></div>
+            <div class="mini-card"><h4>🛡️ Đối soát Tài chính</h4><p>Match revenue với sao kê NH.</p></div>
+            <div class="mini-card"><h4>⚖️ Đối soát Lương (AI)</h4><p>AI check khớp commission ↔ session.</p></div>
+            <div class="mini-card"><h4>🏷️ Bảng lương</h4><p>Chốt lương cuối tháng.</p></div>
+            <div class="mini-card"><h4>📚 Kế toán sổ cái</h4><p>COA, journals, periods, reports.</p></div>
+            <div class="mini-card"><h4>📦 Kho hàng</h4><p>Theo dõi giá trị tồn kho cuối kỳ.</p></div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-3">
+          <div class="num-badge">03</div>
+          <h2>Hệ thống tài khoản (COA)</h2>
+          <p class="lead">Chart of Accounts theo TT200 đã được seed sẵn khi onboard tenant. Bạn chỉ cần edit nhỏ nếu nghiệp vụ đặc thù.</p>
+
+          <h3>Cấu trúc TK chuẩn</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Mã TK</th><th>Tên tài khoản</th><th>Loại</th><th>Dùng cho</th></tr></thead>
+              <tbody>
+                <tr><td>111</td><td>Tiền mặt</td><td>ASSET</td><td>Thu tiền mặt từ khách</td></tr>
+                <tr><td>112</td><td>Tiền gửi NH</td><td>ASSET</td><td>Chuyển khoản/QR</td></tr>
+                <tr><td>131</td><td>Phải thu khách</td><td>ASSET</td><td>Khách nợ tiền dịch vụ</td></tr>
+                <tr><td>152</td><td>Nguyên vật liệu</td><td>ASSET</td><td>Tinh dầu, khăn, vật tư</td></tr>
+                <tr><td>331</td><td>Phải trả NCC</td><td>LIABILITY</td><td>Nợ nhà cung cấp</td></tr>
+                <tr><td>3387</td><td>Doanh thu hoãn lại</td><td>LIABILITY</td><td>Tiền cọc chưa thực hiện</td></tr>
+                <tr><td>5111</td><td>Doanh thu dịch vụ</td><td>REVENUE</td><td>Doanh thu chính</td></tr>
+                <tr><td>5113</td><td>Doanh thu phạt huỷ</td><td>REVENUE</td><td>Giữ cọc khách huỷ</td></tr>
+                <tr><td>6322</td><td>Giá vốn dịch vụ</td><td>EXPENSE</td><td>Vật tư đã dùng</td></tr>
+                <tr><td>6427</td><td>Chi phí lương KTV</td><td>EXPENSE</td><td>Hoa hồng + lương cơ bản</td></tr>
+                <tr><td>6428</td><td>Chi phí vận hành</td><td>EXPENSE</td><td>Điện, nước, mặt bằng</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Thêm / sửa TK</h3>
+          <ol class="steps">
+            <li>Vào <strong>Kế toán sổ cái → Hệ thống tài khoản</strong>.</li>
+            <li>Bấm <strong>"+ Thêm TK"</strong>.</li>
+            <li>Nhập <code>account_code</code> (vd 5114), <code>account_name</code>, <code>account_type</code>.</li>
+            <li>Nếu là TK con: chọn <code>parent_id</code>.</li>
+            <li>Lưu.</li>
+          </ol>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>KHÔNG xoá/đổi mã TK đã có bút toán. Nếu cần ngừng dùng, đặt <code>is_active = false</code> để ẩn khỏi dropdown nhưng giữ lịch sử.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-4">
+          <div class="num-badge">04</div>
+          <h2>Bút toán tự động (Outbox pattern)</h2>
+          <p class="lead">90% bút toán được sinh tự động từ business event. Bạn chỉ cần giám sát.</p>
+
+          <h3>Event nào tự sinh bút toán</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Sự kiện</th><th>Khi nào</th><th>Tự sinh JE</th></tr></thead>
+              <tbody>
+                <tr><td><code>PACKAGE_SALE</code></td><td>Khách trả tiền cọc/thanh toán nốt</td><td>Nợ Tiền — Có Doanh thu hoãn lại / Doanh thu</td></tr>
+                <tr><td><code>SESSION_DONE</code></td><td>KTV check-out 1 buổi</td><td>Nợ Doanh thu hoãn — Có Doanh thu dịch vụ</td></tr>
+                <tr><td><code>EXPENSE_RECORDED</code></td><td>Admin ghi chi phí</td><td>Nợ Chi phí — Có Tiền/Phải trả</td></tr>
+                <tr><td><code>SALARY_PAID</code></td><td>Trả lương + hoa hồng KTV</td><td>Nợ Chi phí lương — Có Tiền</td></tr>
+                <tr><td><code>INVENTORY_CONSUMED</code></td><td>Session done → trừ kho</td><td>Nợ Giá vốn — Có Nguyên vật liệu</td></tr>
+                <tr><td><code>REFUND_ISSUED</code></td><td>Hoàn tiền khách huỷ</td><td>Nợ Doanh thu hoãn — Có Tiền</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Ví dụ bút toán tự động</h3>
+          <p>Khách A đặt gói 21 buổi giá 21.000.000đ, cọc 5.000.000đ qua chuyển khoản:</p>
+          <div class="journal">
+            <div class="jhead">JE #2026-05-26-001 · PACKAGE_SALE</div>
+            <div class="jrow head"><span>Tài khoản</span><span class="debit">Nợ</span><span class="credit">Có</span></div>
+            <div class="jrow"><span>112 — Tiền gửi NH</span><span class="debit">5.000.000</span><span class="credit"></span></div>
+            <div class="jrow"><span>3387 — Doanh thu hoãn lại</span><span class="debit"></span><span class="credit">5.000.000</span></div>
+            <div class="jrow total"><span>Tổng</span><span class="debit">5.000.000</span><span class="credit">5.000.000</span></div>
+          </div>
+
+          <p>Khi KTV check-out buổi đầu (5.000.000 ÷ 21 = 238.095đ/buổi):</p>
+          <div class="journal">
+            <div class="jhead">JE #2026-05-26-002 · SESSION_DONE</div>
+            <div class="jrow head"><span>Tài khoản</span><span class="debit">Nợ</span><span class="credit">Có</span></div>
+            <div class="jrow"><span>3387 — Doanh thu hoãn lại</span><span class="debit">238.095</span><span class="credit"></span></div>
+            <div class="jrow"><span>5111 — Doanh thu dịch vụ</span><span class="debit"></span><span class="credit">238.095</span></div>
+            <div class="jrow"><span>6322 — Giá vốn dịch vụ</span><span class="debit">35.000</span><span class="credit"></span></div>
+            <div class="jrow"><span>152 — NVL (tinh dầu, khăn)</span><span class="debit"></span><span class="credit">35.000</span></div>
+            <div class="jrow total"><span>Tổng</span><span class="debit">273.095</span><span class="credit">273.095</span></div>
+          </div>
+
+          <h3>Giám sát Outbox</h3>
+          <ol class="steps">
+            <li>Vào <strong>Kế toán → Outbox</strong>.</li>
+            <li>Xem các event ở 4 trạng thái:
+              <ul>
+                <li><code>PENDING</code> — chờ worker xử lý</li>
+                <li><code>POSTED</code> — đã sinh JE thành công</li>
+                <li><code>FAILED</code> — lỗi, có error message</li>
+                <li><code>CANCELLED</code> — admin huỷ</li>
+              </ul>
+            </li>
+            <li>Với event FAILED: đọc error, bấm <strong>"Retry"</strong> để chạy lại worker.</li>
+          </ol>
+
+          <div class="callout info">
+            <span class="callout-icon">ℹ️</span>
+            <div>Worker chạy tự động mỗi <strong>1 phút</strong>. Nếu event vẫn PENDING quá 5 phút → kiểm tra log hệ thống / báo admin.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-5">
+          <div class="num-badge">05</div>
+          <h2>Bút toán thủ công</h2>
+          <p class="lead">Một số nghiệp vụ phải tự ghi: điều chỉnh, kết chuyển cuối kỳ, lỗi hệ thống cần fix.</p>
+
+          <h3>Cách tạo</h3>
+          <ol class="steps">
+            <li>Vào <strong>Kế toán → Manual Entry</strong>.</li>
+            <li>Chọn ngày bút toán + mô tả nghiệp vụ.</li>
+            <li>Thêm các dòng debit/credit:
+              <ul>
+                <li>Chọn TK</li>
+                <li>Nhập số tiền (chỉ debit HOẶC credit / 1 dòng)</li>
+                <li>Tuỳ chọn: branch_id, ktv_id, cost_center_id</li>
+              </ul>
+            </li>
+            <li>Đảm bảo <strong>Tổng Nợ = Tổng Có</strong> (hệ thống tự kiểm).</li>
+            <li>Lưu DRAFT trước, review → bấm <strong>"POSTED"</strong> khi xác nhận.</li>
+          </ol>
+
+          <h3>Ví dụ điều chỉnh cuối kỳ</h3>
+          <p>Trích trước chi phí lương 30/05 cho phần lương sẽ trả ngày 5/06:</p>
+          <div class="journal">
+            <div class="jhead">JE thủ công · ACCRUE_SALARY_MAY</div>
+            <div class="jrow head"><span>Tài khoản</span><span class="debit">Nợ</span><span class="credit">Có</span></div>
+            <div class="jrow"><span>6427 — Chi phí lương</span><span class="debit">120.000.000</span><span class="credit"></span></div>
+            <div class="jrow"><span>335 — Phải trả lương</span><span class="debit"></span><span class="credit">120.000.000</span></div>
+            <div class="jrow total"><span>Tổng</span><span class="debit">120.000.000</span><span class="credit">120.000.000</span></div>
+          </div>
+
+          <div class="callout danger">
+            <span class="callout-icon">⛔</span>
+            <div>Bút toán đã <code>POSTED</code> KHÔNG thể xoá. Muốn sửa, phải tạo <strong>reversing entry</strong> (đảo ngược) rồi tạo entry mới. Hệ thống enforce điều này bằng trigger database.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-6">
+          <div class="num-badge">06</div>
+          <h2>Đối soát ngân hàng</h2>
+          <p class="lead">Match revenue records với sao kê ngân hàng để chuyển status từ <code>pending</code> → <code>confirmed</code>.</p>
+
+          <h3>Quy trình hàng tuần</h3>
+          <ol class="steps">
+            <li>Tải <strong>sao kê tuần qua</strong> từ ngân hàng (VCB / Techcombank / MB / VPBank) dạng CSV hoặc Excel.</li>
+            <li>Vào <strong>Đối soát Tài chính</strong>.</li>
+            <li>Bấm <strong>"Upload sao kê"</strong> → chọn file.</li>
+            <li>Hệ thống tự match dựa trên: số tiền + ngày ±2 + (nếu có) tên người chuyển.</li>
+            <li>Kết quả phân 3 nhóm:
+              <ul>
+                <li><strong>Auto-matched</strong> (xanh): đã ghép tự động</li>
+                <li><strong>Possible matches</strong> (vàng): đề xuất, cần confirm</li>
+                <li><strong>Unmatched</strong> (đỏ): không tìm thấy revenue record</li>
+              </ul>
+            </li>
+            <li>Với Possible: review từng cái, bấm "Match" hoặc "Bỏ qua".</li>
+            <li>Với Unmatched: có thể là tiền vào của booking chưa ghi nhận → tạo revenue record mới hoặc bỏ qua.</li>
+            <li>Bấm <strong>"Hoàn tất đối soát"</strong> → các revenue đã match chuyển <code>confirmed</code>.</li>
+          </ol>
+
+          <div class="callout tip">
+            <span class="callout-icon">💡</span>
+            <div>Đối soát <strong>hàng tuần</strong> tốt hơn cuối tháng — dễ tìm khoản chênh, ít tích luỹ.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-7">
+          <div class="num-badge">07</div>
+          <h2>Đối soát lương (AI)</h2>
+          <p class="lead">Trợ lý AI tự kiểm tra số liệu lương trước khi bạn chốt — phát hiện sai sót sớm.</p>
+
+          <h3>Quy trình chốt lương cuối tháng</h3>
+          <ol class="steps">
+            <li>Ngày 1 đầu tháng kế tiếp, vào <strong>Đối soát Lương (AI)</strong>.</li>
+            <li>Chọn tháng cần chốt (vd tháng 5/2026).</li>
+            <li>Bấm <strong>"Chạy đối soát AI"</strong>. Đợi ~30 giây.</li>
+            <li>AI sẽ liệt kê các điểm bất thường:
+              <ul>
+                <li>Session đã complete nhưng chưa tính commission cho KTV</li>
+                <li>Review 5★ nhưng chưa cộng bonus</li>
+                <li>Chấm công vắng không phép chưa trừ lương</li>
+                <li>Commission KTV âm/quá lớn bất thường</li>
+                <li>Session bị tính 2 lần</li>
+              </ul>
+            </li>
+            <li>Click vào từng item → AI hiện context + đề xuất fix.</li>
+            <li>Fix xong → bấm "Re-run" để xác nhận sạch.</li>
+          </ol>
+
+          <h3>Chốt lương sau khi đối soát sạch</h3>
+          <ol class="steps">
+            <li>Vào <strong>Bảng lương</strong> → chọn tháng.</li>
+            <li>Review từng KTV — chỉnh tay nếu cần (ứng trước, phạt, thưởng đặc biệt).</li>
+            <li>Bấm <strong>"Duyệt tất cả"</strong>.</li>
+            <li>Xuất Excel làm payment file ngân hàng.</li>
+            <li>Sau khi chuyển khoản xong, đánh dấu <strong>"Đã trả"</strong> → hệ thống sinh JE: Nợ 6427 — Có 112.</li>
+          </ol>
+        </section>
+
+        <section class="card" id="sec-8">
+          <div class="num-badge">08</div>
+          <h2>Doanh thu & chi phí</h2>
+          <p class="lead">Ghi chép hằng ngày, theo dõi xu hướng.</p>
+
+          <h3>Doanh thu</h3>
+          <p>Hầu hết tự sinh từ booking + session. Bạn chỉ cần:</p>
+          <ul>
+            <li>Đối soát với NH (xem mục 6)</li>
+            <li>Ghi nhận doanh thu phụ thủ công (vd bán mỹ phẩm lẻ): vào <strong>Tài chính → "+ Doanh thu"</strong></li>
+            <li>Xử lý hoàn tiền: vào booking → "Refund"</li>
+          </ul>
+
+          <h3>Chi phí</h3>
+          <ol class="steps">
+            <li>Vào <strong>Tài chính → Chi phí → "+ Thêm chi phí"</strong>.</li>
+            <li>Chọn <strong>loại</strong>: Điện, Nước, Mặt bằng, Vật tư, Marketing, Khác.</li>
+            <li>Số tiền + ngày phát sinh.</li>
+            <li>Upload ảnh hoá đơn (lưu Supabase Storage).</li>
+            <li>Chọn <strong>người duyệt</strong> (thường admin).</li>
+            <li>Status mặc định: <code>submitted</code> → chờ admin "approved".</li>
+          </ol>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Chi phí >10tr cần kèm hoá đơn VAT để khấu trừ thuế. Chi phí không có chứng từ chỉ ghi nội bộ, KHÔNG đưa vào báo cáo thuế.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-9">
+          <div class="num-badge">09</div>
+          <h2>Kỳ kế toán & đóng kỳ</h2>
+          <p class="lead">Mỗi tháng là 1 kỳ. Đóng kỳ → không thể sửa bút toán ngày đó nữa.</p>
+
+          <h3>Kỳ kế toán tự động</h3>
+          <p>Hệ thống tự tạo kỳ "Tháng MM/YYYY" cho 12 tháng tới. Trạng thái mặc định <code>OPEN</code>.</p>
+
+          <h3>Quy trình đóng kỳ tháng</h3>
+          <ol class="steps">
+            <li>Ngày 5-7 đầu tháng kế tiếp, đảm bảo:
+              <ul>
+                <li>Đối soát NH xong cho tháng trước</li>
+                <li>Đối soát lương AI sạch</li>
+                <li>Tất cả Outbox đã POSTED, không còn PENDING/FAILED</li>
+                <li>Mọi JE thủ công đã POSTED (không DRAFT)</li>
+              </ul>
+            </li>
+            <li>Vào <strong>Kế toán → Kỳ kế toán</strong>.</li>
+            <li>Tìm kỳ tháng cần đóng → bấm <strong>"Run Trial Balance"</strong> để xem cân đối thử.</li>
+            <li>Nếu Tổng Nợ ≠ Tổng Có → có lỗi, fix trước (thường là JE thủ công thiếu dòng).</li>
+            <li>Khi cân đối → bấm <strong>"Đóng kỳ"</strong> → confirm.</li>
+            <li>Kỳ chuyển status <code>CLOSED</code>. Không ai (kể cả admin) sửa được JE thuộc kỳ này.</li>
+          </ol>
+
+          <div class="callout danger">
+            <span class="callout-icon">🔒</span>
+            <div>Đóng kỳ là <strong>hành động không thể tự undo</strong>. Cần mở lại phải qua HQ Super-Admin chạy function <code>reopen_period(uuid)</code> kèm lý do.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-10">
+          <div class="num-badge">10</div>
+          <h2>Báo cáo P&L · Cash Flow · Trial Balance</h2>
+          <p class="lead">3 báo cáo chuẩn TT200 — xuất Excel/PDF gửi giám đốc, kế toán trưởng, cơ quan thuế.</p>
+
+          <h3>Profit & Loss (Lãi/Lỗ)</h3>
+          <ol class="steps">
+            <li>Vào <strong>Kế toán → Báo cáo → P&L</strong>.</li>
+            <li>Chọn khoảng thời gian (tháng/quý/năm/tuỳ chỉnh).</li>
+            <li>Hệ thống aggregate theo TK:
+              <ul>
+                <li>Doanh thu (5xx)</li>
+                <li>Giá vốn (632x)</li>
+                <li>Chi phí bán hàng (641x)</li>
+                <li>Chi phí quản lý (642x)</li>
+                <li>= Lợi nhuận trước thuế</li>
+              </ul>
+            </li>
+            <li>So sánh với tháng trước (% delta).</li>
+            <li>Xuất Excel/PDF.</li>
+          </ol>
+
+          <h3>Cash Flow</h3>
+          <p><strong>Báo cáo → Cash Flow</strong>: dòng tiền thực vào/ra theo TK 111, 112. Phân loại:</p>
+          <ul>
+            <li>Cash in từ khách hàng (5111, 3387)</li>
+            <li>Cash out chi phí (6427, 6428, 6322)</li>
+            <li>Cash out đầu tư (211)</li>
+            <li>Net cash flow</li>
+          </ul>
+
+          <h3>Trial Balance (cân đối thử)</h3>
+          <p>Bảng cân đối thử trước khi đóng kỳ. Nếu có row có balance ≠ 0 ở TK không ngờ → có lỗi.</p>
+
+          <h3>Consolidated P&L (HQ only)</h3>
+          <p>Nếu bạn là kế toán HQ — xem báo cáo <strong>tổng toàn chuỗi</strong>. Tổng doanh thu/chi phí/lãi từ tất cả chi nhánh franchise + tự sở. Loại trừ giao dịch nội bộ (inter-branch).</p>
+        </section>
+
+        <section class="card" id="sec-11">
+          <div class="num-badge">11</div>
+          <h2>Royalty & Inter-Branch Clearing</h2>
+          <p class="lead">Phần này chỉ áp dụng cho mô hình franchise. Nếu spa của bạn 1 chi nhánh, bỏ qua.</p>
+
+          <h3>Royalty franchise</h3>
+          <p>Franchise trả % doanh thu cho HQ (thường 5-10%). Hệ thống tự tính:</p>
+          <ol class="steps">
+            <li>Cuối mỗi tháng, tổng doanh thu chi nhánh được aggregate.</li>
+            <li>Tính royalty = doanh thu × <code>royalty_rate</code> (cấu hình trong <code>tenants</code>).</li>
+            <li>Sinh <strong>franchise_royalty_invoice</strong> tự động.</li>
+            <li>Sinh JE: Nợ 642x (chi nhánh) — Có 331 (phải trả HQ).</li>
+            <li>Khi chi nhánh chuyển khoản trả HQ → đánh dấu "Đã thanh toán".</li>
+          </ol>
+
+          <h3>Inter-Branch Clearing</h3>
+          <p>Khi chi nhánh A "mượn" tài nguyên của B (vật tư, KTV biệt phái) → sinh <strong>clearing record</strong>:</p>
+          <ul>
+            <li>A là <code>debtor_tenant</code>, B là <code>creditor_tenant</code></li>
+            <li>Số tiền tính theo định mức</li>
+            <li>Cuối tháng, đối soát: A trả B hoặc B trả A theo net balance</li>
+          </ul>
+        </section>
+
+        <section class="card" id="sec-12">
+          <div class="num-badge">12</div>
+          <h2>Chế độ Cash-basis vs Accrual</h2>
+          <p class="lead">Bella hỗ trợ dual-mode. Tuỳ quy mô spa, chọn phù hợp.</p>
+
+          <h3>So sánh</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tiêu chí</th><th>Cash-basis (Tiền)</th><th>Accrual (Dồn tích)</th></tr></thead>
+              <tbody>
+                <tr><td>Ghi nhận doanh thu</td><td>Khi nhận tiền</td><td>Khi cung cấp dịch vụ</td></tr>
+                <tr><td>Ghi nhận chi phí</td><td>Khi trả tiền</td><td>Khi phát sinh</td></tr>
+                <tr><td>Phù hợp</td><td>Spa nhỏ (≤ 5 KTV)</td><td>Spa chuỗi, franchise</td></tr>
+                <tr><td>Tuân thủ TT200</td><td>Một phần</td><td>Đầy đủ</td></tr>
+                <tr><td>Báo cáo thuế</td><td>Đơn giản hơn</td><td>Chính xác hơn</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Cấu hình</h3>
+          <p>Vào <strong>Cài đặt → Chế độ Kế toán</strong> → chọn <code>cash</code> hoặc <code>accrual</code>. Mặc định <code>accrual</code> (chuẩn doanh nghiệp).</p>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Đổi chế độ giữa kỳ có thể gây sai lệch báo cáo. Khuyến nghị chỉ đổi <strong>đầu năm tài chính</strong> (1/1) và làm bút toán điều chỉnh chênh.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-13">
+          <div class="num-badge">13</div>
+          <h2>FAQ & xử lý sự cố</h2>
+          <p class="lead">Câu hỏi thường gặp khi vận hành sổ cái Bella.</p>
+
+          <details>
+            <summary>Bút toán FAILED trong Outbox — phải làm gì?</summary>
+            <div class="body">Click event FAILED → đọc error message. Thường do TK chưa tồn tại hoặc kỳ đã CLOSED. Fix nguyên nhân → bấm "Retry". Nếu không retry được, dùng "Cancel" + tạo bút toán thủ công thay thế.</div>
+          </details>
+
+          <details>
+            <summary>Số dư TK 3387 (DT hoãn lại) âm — có sao không?</summary>
+            <div class="body">3387 âm có 2 nguyên nhân: (1) hệ thống ghi nhận doanh thu nhiều hơn cọc đã nhận (booking bị tính buổi sai); (2) thiếu JE PACKAGE_SALE. Vào Outbox tìm event PACKAGE_SALE của booking liên quan → re-run.</div>
+          </details>
+
+          <details>
+            <summary>Trial Balance lệch 1.000đ — nhỏ vậy có cần fix?</summary>
+            <div class="body">CÓ. Theo chuẩn kế toán, Trial Balance phải lệch = 0. Thường do làm tròn (rounding) khi chia doanh thu cọc cho 21 buổi. Tạo bút toán điều chỉnh nhỏ: Nợ/Có 5111 với khoản chênh, mô tả "Rounding adjustment".</div>
+          </details>
+
+          <details>
+            <summary>Tôi xoá nhầm 1 JE quan trọng — khôi phục?</summary>
+            <div class="body">JE đã POSTED không xoá được (database enforce). Nếu là DRAFT — vẫn còn trong audit_logs với <code>action='DELETE'</code> + <code>old_data</code>. Vào <strong>Nhật ký hệ thống</strong>, tìm record đó, tạo JE mới sao chép dữ liệu.</div>
+          </details>
+
+          <details>
+            <summary>Cuối năm tài chính cần làm gì?</summary>
+            <div class="body">31/12: (1) Đóng tất cả kỳ tháng 12. (2) Chạy kết chuyển doanh thu/chi phí về 911 → 421 (lãi/lỗ chưa phân phối). (3) Xuất báo cáo tài chính năm (BCTC) gồm: Bảng cân đối kế toán, P&L, Cash Flow, Thuyết minh. (4) Lưu archive 10 năm theo Luật Kế toán VN.</div>
+          </details>
+
+          <details>
+            <summary>Cần xuất file gửi Cục Thuế — định dạng gì?</summary>
+            <div class="body">Vào <strong>Báo cáo → Xuất XML/Excel</strong> → chọn format Cục Thuế (TT133/TT200). Kèm: tờ khai thuế GTGT, thuế TNCN, BCTC. Hiện tại hệ thống xuất Excel — gửi qua chữ ký số e-Tax bằng phần mềm HTKK của Tổng cục Thuế.</div>
+          </details>
+
+          <details>
+            <summary>Lương KTV tính khác với bảng tôi làm thủ công?</summary>
+            <div class="body">Chạy <strong>Đối soát Lương AI</strong> — AI sẽ chỉ ra chính xác chênh đến từ session/review nào. Đừng tranh cãi với KTV, chỉ ra số liệu rõ ràng dựa trên data.</div>
+          </details>
+
+          <details>
+            <summary>Báo cáo P&L lãi/lỗ khác với cảm nhận thực tế?</summary>
+            <div class="body">Thường do: (1) accrual mode → doanh thu ghi nhận khi service done, không phải khi nhận tiền; (2) khấu hao tài sản chưa tính; (3) chi phí chưa được phân bổ theo kỳ. Kiểm tra: tỷ lệ deposit/total → nếu cao bất thường, doanh thu ghi nhận trễ.</div>
+          </details>
+
+        </section>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="brand">Bella Spa</div>
+  <p>Sổ tay Kế toán · © 2026 Bella Spa Group</p>
+  <p style="margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Phiên bản 1.0 · Cập nhật 26/05/2026 · Theo Thông tư 200/2014/TT-BTC</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sổ tay Nhân sự (HR) · Bella Spa ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FFF5F7;
+    --card: #FFFFFF;
+    --primary: #BE185D;
+    --primary-soft: #FFE4E6;
+    --primary-deep: #9D174D;
+    --secondary: #EC4899;
+    --text: #4C243B;
+    --text-muted: #8A6D7C;
+    --border: #FBCFE8;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --shadow-pink: 0 8px 30px rgba(219, 39, 119, 0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Be Vietnam Pro', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.65; font-size: 15.5px; -webkit-font-smoothing: antialiased; }
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  .hero { background: linear-gradient(135deg, #FFE4E6 0%, #FBCFE8 50%, #F9A8D4 100%); padding: 80px 0 120px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(190,24,93,0.15), transparent 70%); border-radius: 50%; }
+  .hero::after { content: ''; position: absolute; bottom: -150px; left: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(236,72,153,0.12), transparent 70%); border-radius: 50%; }
+  .hero-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); color: var(--primary-deep); padding: 8px 20px; border-radius: 100px; font-size: 12px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 24px; border: 1px solid var(--primary-soft); }
+  .badge::before { content: ''; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 12px var(--primary); }
+  h1.hero-title { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(40px,6vw,68px); color: var(--primary-deep); margin-bottom: 16px; line-height: 1.1; font-weight: 700; }
+  .hero-subtitle { font-size: 18px; color: var(--text); max-width: 700px; margin: 0 auto; font-weight: 500; }
+  .hero-meta { display: flex; gap: 32px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
+  .hero-meta-item { text-align: center; }
+  .hero-meta-item .num { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; color: var(--primary-deep); line-height: 1; }
+  .hero-meta-item .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); margin-top: 6px; }
+
+  main { position: relative; margin-top: -80px; padding-bottom: 100px; }
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 40px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } aside.toc { position: static !important; } }
+
+  aside.toc { position: sticky; top: 24px; align-self: start; background: var(--card); border-radius: 24px; padding: 24px 20px; box-shadow: var(--shadow-pink); border: 1px solid var(--border); max-height: calc(100vh - 48px); overflow-y: auto; }
+  aside.toc h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: var(--primary); margin-bottom: 16px; padding-left: 12px; }
+  aside.toc ol { list-style: none; counter-reset: toc; }
+  aside.toc ol li { counter-increment: toc; }
+  aside.toc ol li a { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 12px; color: var(--text); text-decoration: none; font-size: 13.5px; font-weight: 600; transition: all 0.2s; }
+  aside.toc ol li a::before { content: counter(toc, decimal-leading-zero); color: var(--primary); font-weight: 800; font-size: 11px; flex-shrink: 0; margin-top: 2px; }
+  aside.toc ol li a:hover { background: var(--primary-soft); color: var(--primary-deep); }
+
+  .content { display: flex; flex-direction: column; gap: 28px; }
+  section.card { background: var(--card); border-radius: 28px; padding: 40px; box-shadow: var(--shadow-pink); border: 1px solid var(--border); scroll-margin-top: 24px; }
+  section.card .num-badge { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: white; border-radius: 14px; font-weight: 800; font-size: 18px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(190,24,93,0.3); }
+  section.card h2 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 32px; color: var(--primary-deep); margin-bottom: 8px; font-weight: 700; line-height: 1.2; }
+  section.card .lead { font-size: 15.5px; color: var(--text-muted); margin-bottom: 28px; font-weight: 500; }
+  section.card h3 { font-size: 20px; font-weight: 800; color: var(--text); margin: 28px 0 14px; display: flex; align-items: center; gap: 10px; }
+  section.card h3::before { content: ''; width: 4px; height: 22px; background: linear-gradient(180deg, var(--primary), var(--secondary)); border-radius: 4px; }
+  section.card h4 { font-size: 15.5px; font-weight: 700; color: var(--text); margin: 18px 0 8px; }
+  section.card p { margin-bottom: 14px; color: var(--text); }
+  section.card ul, section.card ol { padding-left: 24px; margin-bottom: 14px; }
+  section.card ul li, section.card ol li { margin-bottom: 6px; }
+  section.card ul li::marker { color: var(--primary); }
+  section.card ol li::marker { color: var(--primary); font-weight: 800; }
+  section.card strong { color: var(--primary-deep); font-weight: 700; }
+  section.card code { background: var(--primary-soft); color: var(--primary-deep); padding: 2px 8px; border-radius: 6px; font-size: 0.88em; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  .steps { list-style: none; padding: 0 !important; counter-reset: step; margin: 16px 0; }
+  .steps li { counter-increment: step; position: relative; padding: 16px 16px 16px 60px; background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 100%); border-radius: 16px; margin-bottom: 10px !important; border: 1px solid var(--primary-soft); }
+  .steps li::before { content: counter(step); position: absolute; left: 16px; top: 16px; width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+
+  .callout { padding: 18px 22px; border-radius: 16px; margin: 18px 0; display: flex; gap: 14px; align-items: flex-start; font-size: 14.5px; border-left: 4px solid; }
+  .callout-icon { font-size: 22px; flex-shrink: 0; line-height: 1; }
+  .callout.tip { background: #FDF4F8; border-color: var(--primary); color: var(--primary-deep); }
+  .callout.warn { background: #FFFBEB; border-color: var(--warning); color: #92400E; }
+  .callout.danger { background: #FEF2F2; border-color: var(--danger); color: #991B1B; }
+  .callout.info { background: #F0F9FF; border-color: #0EA5E9; color: #075985; }
+
+  .table-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--border); margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; background: white; font-size: 14px; }
+  table th { background: var(--primary-soft); color: var(--primary-deep); text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; font-weight: 800; padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+  table td { padding: 14px 16px; border-bottom: 1px solid #F9E4EB; vertical-align: top; }
+  table tr:last-child td { border-bottom: none; }
+  table tr:hover td { background: #FFFAFC; }
+
+  .grid { display: grid; gap: 16px; margin: 16px 0; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .mini-card { background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 60%); padding: 20px; border-radius: 18px; border: 1px solid var(--primary-soft); }
+  .mini-card h4 { color: var(--primary-deep); margin-bottom: 8px; font-size: 14.5px; }
+  .mini-card p { font-size: 13.5px; color: var(--text-muted); margin: 0; }
+
+  details { background: white; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+  details[open] { background: #FFFAFC; border-color: var(--primary); box-shadow: var(--shadow-pink); }
+  details summary { padding: 16px 20px; cursor: pointer; font-weight: 700; font-size: 15px; color: var(--text); list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: '+'; font-size: 22px; color: var(--primary); font-weight: 300; transition: transform 0.2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details .body { padding: 0 20px 18px; color: var(--text); font-size: 14.5px; }
+
+  footer { text-align: center; padding: 60px 24px; color: var(--text-muted); font-size: 13px; font-weight: 500; }
+  footer .brand { font-family: 'Playfair Display', serif; font-style: italic; color: var(--primary-deep); font-size: 28px; margin-bottom: 8px; }
+
+  @media print { aside.toc { display: none; } .layout { grid-template-columns: 1fr; } .hero { padding: 40px 0; background: white; } section.card { box-shadow: none; page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container hero-content">
+    <span class="badge">Sổ tay sử dụng · Phiên bản 1.0</span>
+    <h1 class="hero-title">Nhân sự</h1>
+    <p class="hero-subtitle">Quản lý toàn bộ vòng đời nhân viên — từ tuyển dụng, chấm công, đơn nghỉ phép, KPI, tính lương tự động đến offboarding khi nghỉ việc.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><div class="num">👥</div><div class="lbl">Nhân sự</div></div>
+      <div class="hero-meta-item"><div class="num">📋</div><div class="lbl">Chấm công</div></div>
+      <div class="hero-meta-item"><div class="num">🌴</div><div class="lbl">Nghỉ phép</div></div>
+      <div class="hero-meta-item"><div class="num">📊</div><div class="lbl">KPI & lương</div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <div class="layout">
+      <aside class="toc">
+        <h3>Mục lục</h3>
+        <ol>
+          <li><a href="#sec-1">Đăng nhập & 2FA</a></li>
+          <li><a href="#sec-2">Tổng quan giao diện</a></li>
+          <li><a href="#sec-3">Tuyển dụng & onboarding</a></li>
+          <li><a href="#sec-4">Hồ sơ nhân sự</a></li>
+          <li><a href="#sec-5">Phân quyền role</a></li>
+          <li><a href="#sec-6">Chấm công</a></li>
+          <li><a href="#sec-7">Đơn nghỉ phép</a></li>
+          <li><a href="#sec-8">KPI tháng</a></li>
+          <li><a href="#sec-9">Chốt & duyệt lương</a></li>
+          <li><a href="#sec-10">Đánh giá & kỷ luật</a></li>
+          <li><a href="#sec-11">Offboarding (nghỉ việc)</a></li>
+          <li><a href="#sec-12">Báo cáo nhân sự</a></li>
+          <li><a href="#sec-13">FAQ & xử lý sự cố</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+
+        <section class="card" id="sec-1">
+          <div class="num-badge">01</div>
+          <h2>Đăng nhập & 2FA</h2>
+          <p class="lead">Tài khoản HR truy cập được thông tin lương, hợp đồng, hồ sơ cá nhân — bật 2FA bắt buộc.</p>
+
+          <h3>Quy trình ngày đầu</h3>
+          <ol class="steps">
+            <li>Đăng nhập bằng email + mật khẩu tạm.</li>
+            <li>Vào <strong>Cài đặt → Bảo mật & Mật khẩu</strong> đổi mật khẩu mới.</li>
+            <li>Bật <strong>2FA TOTP</strong> bằng Google Authenticator.</li>
+            <li>Lưu secret key ở nơi an toàn.</li>
+          </ol>
+
+          <div class="callout danger">
+            <span class="callout-icon">🔐</span>
+            <div>HR đọc được CCCD, địa chỉ, số tài khoản nhân viên — dữ liệu nhạy cảm theo Nghị định 13/2023. KHÔNG share tài khoản, KHÔNG chụp ảnh màn hình hồ sơ gửi ra ngoài.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-2">
+          <div class="num-badge">02</div>
+          <h2>Tổng quan giao diện</h2>
+          <p class="lead">Menu HR tập trung vào nhân sự và lương. KHÔNG thấy Khách hàng, Lịch hẹn, CRM, Kế toán sổ cái.</p>
+
+          <h3>Menu của bạn</h3>
+          <div class="grid grid-2">
+            <div class="mini-card"><h4>📊 Dashboard</h4><p>Tổng số nhân sự, đơn chờ duyệt, KPI tháng.</p></div>
+            <div class="mini-card"><h4>🏷️ Bảng lương</h4><p>Tính & duyệt lương cuối tháng.</p></div>
+            <div class="mini-card"><h4>⚖️ Đối soát Lương (AI)</h4><p>AI check khớp commission ↔ session.</p></div>
+            <div class="mini-card"><h4>👥 Nhân sự</h4><p>Hồ sơ, phân quyền (qua Cài đặt → Nhân sự).</p></div>
+          </div>
+
+          <p>Các chức năng chính nằm trong <strong>Cài đặt → Nhân sự & Quyền</strong> và <strong>Bảng lương</strong>.</p>
+        </section>
+
+        <section class="card" id="sec-3">
+          <div class="num-badge">03</div>
+          <h2>Tuyển dụng & onboarding nhân viên mới</h2>
+          <p class="lead">Tạo tài khoản, thiết lập role, khởi tạo lịch ca làm cho KTV mới.</p>
+
+          <h3>Tạo tài khoản KTV mới</h3>
+          <ol class="steps">
+            <li>Vào <strong>Cài đặt → Nhân sự & Quyền</strong>.</li>
+            <li>Bấm <strong>"+ Thêm nhân viên"</strong>.</li>
+            <li>Điền form:
+              <ul>
+                <li>Email (sẽ là username login)</li>
+                <li>Họ tên đầy đủ</li>
+                <li>Số điện thoại</li>
+                <li>CCCD</li>
+                <li>Địa chỉ thường trú</li>
+                <li>Số tài khoản ngân hàng + tên NH (để chuyển lương)</li>
+              </ul>
+            </li>
+            <li>Chọn <strong>vai trò</strong>: ktv / ktv_lead / accountant / hr / admin_staff.</li>
+            <li>Ngày bắt đầu làm việc.</li>
+            <li>Lương cơ bản (nếu áp dụng).</li>
+            <li>Mật khẩu tạm: hệ thống gợi ý 1 chuỗi random — nhân viên sẽ đổi khi login.</li>
+            <li>Bấm <strong>"Tạo tài khoản"</strong>.</li>
+          </ol>
+
+          <h3>Checklist onboarding KTV mới</h3>
+          <ul>
+            <li>☐ Tạo tài khoản hệ thống (bước trên)</li>
+            <li>☐ Gửi sổ tay KTV (file <code>docs/user-manuals/ktv.html</code>)</li>
+            <li>☐ Tập huấn 1-2 buổi không nhận khách</li>
+            <li>☐ Đi cùng KTV senior 3-5 buổi đầu</li>
+            <li>☐ Set lịch ca làm trong <strong>ktv_schedule</strong> (Cài đặt → Lịch ca)</li>
+            <li>☐ Cấp đồng phục + bộ vật tư mặc định</li>
+            <li>☐ Ký hợp đồng lao động (upload PDF vào hồ sơ)</li>
+            <li>☐ Đăng ký BHXH (nếu thuộc diện)</li>
+          </ul>
+        </section>
+
+        <section class="card" id="sec-4">
+          <div class="num-badge">04</div>
+          <h2>Hồ sơ nhân sự</h2>
+          <p class="lead">Lưu trữ tập trung mọi thông tin về nhân viên — truy xuất nhanh, audit đầy đủ.</p>
+
+          <h3>Thông tin mỗi hồ sơ</h3>
+          <div class="grid grid-2">
+            <div class="mini-card"><h4>Thông tin cá nhân</h4><p>Họ tên, DOB, giới tính, CCCD, ảnh đại diện, ngày vào làm.</p></div>
+            <div class="mini-card"><h4>Liên hệ</h4><p>SĐT, email, địa chỉ thường trú, người thân khẩn cấp.</p></div>
+            <div class="mini-card"><h4>Tài chính</h4><p>STK ngân hàng, lương cơ bản, hệ số lương, hoa hồng/buổi.</p></div>
+            <div class="mini-card"><h4>Vai trò & quyền</h4><p>Role hiện tại, lịch sử thay đổi role, các module được phép.</p></div>
+            <div class="mini-card"><h4>Hợp đồng & tài liệu</h4><p>HĐLĐ, phụ lục, biên bản đào tạo (upload PDF).</p></div>
+            <div class="mini-card"><h4>Hiệu suất</h4><p>KPI tháng, đánh giá định kỳ, kỷ luật (nếu có).</p></div>
+          </div>
+
+          <h3>Cập nhật hồ sơ</h3>
+          <ol class="steps">
+            <li>Vào <strong>Cài đặt → Nhân sự & Quyền</strong>.</li>
+            <li>Search theo tên / email / SĐT → click vào nhân viên.</li>
+            <li>Sửa field cần update → bấm "Lưu".</li>
+            <li>Mọi thay đổi tự ghi vào audit_log.</li>
+          </ol>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Đổi số tài khoản ngân hàng nên có <strong>email xác nhận từ nhân viên</strong> kèm chụp căn cước. Có trường hợp lừa đảo giả mạo gửi email yêu cầu đổi STK của KTV → lương bị chuyển nhầm.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-5">
+          <div class="num-badge">05</div>
+          <h2>Phân quyền role</h2>
+          <p class="lead">Mỗi nhân viên có 1 role. Quyền truy cập từng module tuỳ chỉnh được.</p>
+
+          <h3>Các role hệ thống</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Role</th><th>Mô tả</th><th>Module thấy</th></tr></thead>
+              <tbody>
+                <tr><td><code>admin</code></td><td>Toàn quyền quản lý chi nhánh</td><td>Tất cả</td></tr>
+                <tr><td><code>ktv_lead</code></td><td>KTV trưởng nhóm</td><td>Lịch, sessions, chat, dịch vụ</td></tr>
+                <tr><td><code>ktv</code></td><td>KTV phổ thông</td><td>Lịch của mình, thu nhập cá nhân</td></tr>
+                <tr><td><code>admin_staff</code></td><td>Lễ tân</td><td>Khách hàng, booking, chat, kho, dịch vụ</td></tr>
+                <tr><td><code>accountant</code></td><td>Kế toán</td><td>Tài chính, kế toán, lương, kho</td></tr>
+                <tr><td><code>hr</code></td><td>Nhân sự (bạn)</td><td>Dashboard, lương, đối soát lương AI</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Tuỳ chỉnh quyền chi tiết</h3>
+          <p>Vào <strong>Cài đặt → Phân quyền</strong> để bật/tắt từng module cho từng role. Ví dụ: cho phép KTV Lead xem báo cáo nhóm.</p>
+
+          <h3>Đổi role</h3>
+          <p>Đổi role 1 nhân viên (vd thăng KTV thành KTV Lead):</p>
+          <ol class="steps">
+            <li>Vào hồ sơ → tab "Vai trò".</li>
+            <li>Chọn role mới từ dropdown.</li>
+            <li>Nhập lý do đổi (vd "Thăng chức 01/06/2026").</li>
+            <li>Lưu → có hiệu lực ngay sau lần login tiếp theo.</li>
+          </ol>
+        </section>
+
+        <section class="card" id="sec-6">
+          <div class="num-badge">06</div>
+          <h2>Chấm công</h2>
+          <p class="lead">KTV tự check-in/check-out qua app. Bạn giám sát, fix sai sót, xuất bảng công.</p>
+
+          <h3>Cơ chế chấm công</h3>
+          <p>Mỗi session KTV check-in/out tại điểm phục vụ — hệ thống ghi vào <strong>attendance</strong>:</p>
+          <ul>
+            <li>Ngày làm việc</li>
+            <li>Giờ check-in / check-out</li>
+            <li>Shift_id (ca trực)</li>
+            <li>Status: <code>present</code> / <code>late</code> / <code>absent</code> / <code>half_day</code></li>
+          </ul>
+
+          <h3>Xem bảng công tháng</h3>
+          <ol class="steps">
+            <li>Vào <strong>Dashboard → (HR Dashboard)</strong>.</li>
+            <li>Section "Chấm công tháng": ma trận KTV × ngày.</li>
+            <li>Lọc theo KTV / theo ngày / chỉ thấy bất thường.</li>
+            <li>Xuất Excel để gửi kế toán.</li>
+          </ol>
+
+          <h3>Fix chấm công sai</h3>
+          <p>KTV quên check-in/out? Bạn có thể điều chỉnh:</p>
+          <ol class="steps">
+            <li>Click vào ô attendance bất thường.</li>
+            <li>Nhập thời gian chính xác + ghi chú lý do (vd: "GPS lỗi, KTV chụp ảnh báo cáo").</li>
+            <li>Lưu. Audit_log ghi đầy đủ ai sửa, khi nào, từ giá trị nào sang.</li>
+          </ol>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Sửa chấm công nhiều lần cho cùng 1 KTV → red flag. Có thể KTV đang gian lận hoặc GPS thiết bị có vấn đề. Trao đổi trực tiếp với KTV.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-7">
+          <div class="num-badge">07</div>
+          <h2>Đơn nghỉ phép</h2>
+          <p class="lead">KTV/nhân viên đăng ký đơn qua app — bạn duyệt hoặc từ chối.</p>
+
+          <h3>Quy trình duyệt đơn</h3>
+          <ol class="steps">
+            <li>Khi có đơn mới, bạn nhận thông báo Zalo + notification trong app.</li>
+            <li>Vào <strong>Nhân sự → Đơn nghỉ phép</strong> (hoặc Dashboard có widget).</li>
+            <li>Xem chi tiết: loại nghỉ, ngày bắt đầu, ngày kết thúc, lý do.</li>
+            <li>Kiểm tra:
+              <ul>
+                <li>KTV đã dùng bao nhiêu phép trong năm (theo Bộ luật LĐ: 12 ngày phép có lương/năm)</li>
+                <li>Lịch ngày đó có session nào không? Nếu có → cần chuyển KTV thay thế trước khi duyệt</li>
+                <li>Có đụng dịp lễ/cao điểm không?</li>
+              </ul>
+            </li>
+            <li>Bấm <strong>"Duyệt"</strong> hoặc <strong>"Từ chối"</strong> + ghi lý do.</li>
+            <li>KTV nhận thông báo kết quả.</li>
+          </ol>
+
+          <h3>Các loại nghỉ phép</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Loại</th><th>Quy định VN</th><th>Có lương</th></tr></thead>
+              <tbody>
+                <tr><td>Nghỉ phép năm</td><td>12 ngày/năm (12 tháng đủ)</td><td>✓ 100%</td></tr>
+                <tr><td>Nghỉ ốm</td><td>BHXH chi trả 75%</td><td>✓ (qua BHXH)</td></tr>
+                <tr><td>Nghỉ thai sản</td><td>6 tháng (nữ)</td><td>✓ (qua BHXH)</td></tr>
+                <tr><td>Nghỉ kết hôn</td><td>3 ngày</td><td>✓</td></tr>
+                <tr><td>Nghỉ ma chay</td><td>3 ngày (tứ thân phụ mẫu)</td><td>✓</td></tr>
+                <tr><td>Nghỉ không lương</td><td>Thoả thuận</td><td>✗</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Khi duyệt xong</h3>
+          <ul>
+            <li>Lịch <code>ktv_schedule</code> ngày đó tự đổi status <code>off</code>.</li>
+            <li>Không gán session mới cho KTV trong khoảng nghỉ.</li>
+            <li>Salary tháng tự trừ ngày không lương (nếu loại đó là không lương).</li>
+          </ul>
+        </section>
+
+        <section class="card" id="sec-8">
+          <div class="num-badge">08</div>
+          <h2>KPI tháng</h2>
+          <p class="lead">Theo dõi hiệu suất từng KTV, làm cơ sở thưởng/kỷ luật/training.</p>
+
+          <h3>Các chỉ số KPI</h3>
+          <ul>
+            <li><strong>Số buổi hoàn thành</strong> — so với target (vd 30 buổi/tháng)</li>
+            <li><strong>Đánh giá trung bình</strong> (★)</li>
+            <li><strong>Tỷ lệ đúng giờ check-in</strong> (%)</li>
+            <li><strong>Tỷ lệ no-show / late</strong> (%)</li>
+            <li><strong>Khách phàn nàn / vi phạm</strong> (số lần)</li>
+            <li><strong>Thời lượng/buổi trung bình</strong> (phút)</li>
+          </ul>
+
+          <h3>Xem KPI</h3>
+          <ol class="steps">
+            <li>Vào <strong>Dashboard → KPI nhân sự</strong> hoặc <code>/ktv/leaderboard</code>.</li>
+            <li>Filter theo KTV / theo tháng.</li>
+            <li>Click 1 KTV để xem chi tiết breakdown.</li>
+          </ol>
+
+          <h3>Action dựa trên KPI</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>KPI level</th><th>Hành động đề xuất</th></tr></thead>
+              <tbody>
+                <tr><td>≥ 90% (xuất sắc)</td><td>Bonus KPI, công khai khen, đề xuất thăng KTV Lead</td></tr>
+                <tr><td>70-89% (đạt)</td><td>Lương đầy đủ, không bonus</td></tr>
+                <tr><td>50-69% (cảnh báo)</td><td>1-1 meeting tìm nguyên nhân, hỗ trợ training</td></tr>
+                <tr><td>< 50% (dưới chuẩn)</td><td>Cảnh báo chính thức bằng văn bản, kế hoạch cải thiện 30 ngày</td></tr>
+                <tr><td>< 30% (kém kéo dài 2 tháng)</td><td>Xem xét chấm dứt HĐ</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" id="sec-9">
+          <div class="num-badge">09</div>
+          <h2>Chốt & duyệt lương cuối tháng</h2>
+          <p class="lead">Phối hợp với kế toán — bạn duyệt số liệu, kế toán thực hiện chuyển khoản.</p>
+
+          <h3>Timeline chốt lương</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Ngày</th><th>Việc</th><th>Ai làm</th></tr></thead>
+              <tbody>
+                <tr><td>Ngày 28-30 tháng N</td><td>Đóng chấm công tháng N</td><td>HR (bạn)</td></tr>
+                <tr><td>Ngày 1 tháng N+1</td><td>Chạy đối soát Lương AI</td><td>Kế toán</td></tr>
+                <tr><td>Ngày 2-3</td><td>Review từng KTV, xử lý bất thường</td><td>HR + KT</td></tr>
+                <tr><td>Ngày 4</td><td>Duyệt bảng lương</td><td>HR + Admin</td></tr>
+                <tr><td>Ngày 5</td><td>Chuyển khoản + đánh dấu "Đã trả"</td><td>Kế toán</td></tr>
+                <tr><td>Ngày 5-6</td><td>Gửi phiếu lương cho từng KTV (Zalo)</td><td>Hệ thống tự</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Quy trình duyệt lương</h3>
+          <ol class="steps">
+            <li>Sau khi KT chạy đối soát AI sạch, vào <strong>Bảng lương</strong>.</li>
+            <li>Chọn tháng cần duyệt.</li>
+            <li>Review từng KTV — chú ý các trường hợp:
+              <ul>
+                <li>Lương âm (có thể trừ vi phạm quá nhiều) — confirm với KTV</li>
+                <li>Lương quá cao bất thường — kiểm tra session có double-count không</li>
+                <li>Bonus mới (5★ nhiều) — verify review legitimate</li>
+              </ul>
+            </li>
+            <li>Chỉnh tay nếu cần:
+              <ul>
+                <li>+ Ứng trước (đã trả từ trước)</li>
+                <li>+ Thưởng đặc biệt (sinh nhật KTV, khách khen đặc biệt)</li>
+                <li>− Phạt vi phạm (đã có biên bản)</li>
+              </ul>
+            </li>
+            <li>Bấm <strong>"Duyệt tất cả"</strong>.</li>
+            <li>Xuất Excel cho kế toán làm payment file ngân hàng.</li>
+          </ol>
+
+          <div class="callout tip">
+            <span class="callout-icon">💡</span>
+            <div>Khuyến nghị: phiếu lương từng KTV nên gửi qua Zalo (PDF) hoặc cho xem trên app — KHÔNG in ra giấy. Tiết kiệm + bảo mật hơn.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-10">
+          <div class="num-badge">10</div>
+          <h2>Đánh giá & kỷ luật</h2>
+          <p class="lead">Quy trình minh bạch dựa trên data — tránh xung đột chủ quan.</p>
+
+          <h3>Đánh giá định kỳ</h3>
+          <ul>
+            <li><strong>Hàng tháng</strong>: dựa trên KPI dashboard, gặp KTV 15 phút.</li>
+            <li><strong>Hàng quý</strong>: review 360° (khách + đồng nghiệp + quản lý).</li>
+            <li><strong>Hàng năm</strong>: xét lương / thưởng tết / thăng chức.</li>
+          </ul>
+
+          <h3>Kỷ luật</h3>
+          <p>Theo Bộ luật Lao động VN, có 4 mức:</p>
+          <ol>
+            <li><strong>Khiển trách</strong> (miệng/văn bản): vi phạm nhẹ lần đầu</li>
+            <li><strong>Kéo dài thời hạn nâng lương</strong> ≤ 6 tháng: vi phạm trung bình</li>
+            <li><strong>Cách chức</strong>: vi phạm có chức vụ</li>
+            <li><strong>Sa thải</strong>: vi phạm nghiêm trọng (trộm cắp, đánh nhau, tiết lộ bí mật)</li>
+          </ol>
+
+          <h3>Lưu trữ trên hệ thống</h3>
+          <p>Mọi biên bản kỷ luật phải upload PDF vào hồ sơ nhân viên (tab Tài liệu). Ghi rõ ngày, vi phạm, mức xử lý, người ký.</p>
+
+          <div class="callout danger">
+            <span class="callout-icon">⚖️</span>
+            <div>Sa thải KHÔNG đúng quy trình → bị kiện ra Toà → bồi thường nhiều tháng lương. Luôn tham vấn luật sư nếu trường hợp phức tạp.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-11">
+          <div class="num-badge">11</div>
+          <h2>Offboarding — khi nhân viên nghỉ việc</h2>
+          <p class="lead">Quy trình chuẩn để bàn giao, thanh lý, bảo vệ data.</p>
+
+          <h3>Checklist offboarding</h3>
+          <ol>
+            <li>☐ Nhận <strong>đơn nghỉ việc</strong> bằng văn bản (báo trước 30/45 ngày theo HĐ).</li>
+            <li>☐ Bàn giao session đang dở cho KTV khác (cập nhật <code>assigned_ktv_id</code> trong bookings).</li>
+            <li>☐ Thu hồi đồng phục, thẻ KTV, dụng cụ.</li>
+            <li>☐ Đối soát ứng trước (nếu có còn nợ).</li>
+            <li>☐ Tính lương ngày cuối + thưởng tích luỹ (nếu có).</li>
+            <li>☐ Báo BHXH cắt giảm (nếu thuộc diện).</li>
+            <li>☐ Xác nhận hoàn thành công việc (giấy thôi việc).</li>
+            <li>☐ <strong>Khoá tài khoản trong app</strong> (status = <code>terminated</code>) — KHÔNG xoá, vẫn giữ data lịch sử.</li>
+            <li>☐ Đổi mật khẩu mọi shared resource (Zalo OA admin, email công ty).</li>
+            <li>☐ Báo audit trail trong Nhật ký hệ thống.</li>
+          </ol>
+
+          <h3>Khoá tài khoản trong hệ thống</h3>
+          <ol class="steps">
+            <li>Vào <strong>Cài đặt → Nhân sự</strong>.</li>
+            <li>Tìm nhân viên → click vào.</li>
+            <li>Tab "Trạng thái" → đổi từ <code>active</code> sang <code>terminated</code>.</li>
+            <li>Ghi <strong>ngày nghỉ việc</strong>.</li>
+            <li>Lưu → tài khoản KHÔNG login được nữa.</li>
+          </ol>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>KHÔNG xoá nhân viên khỏi DB. Bạn cần giữ lịch sử KPI/lương/audit lâu dài (Luật Kế toán VN yêu cầu lưu 10 năm).</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-12">
+          <div class="num-badge">12</div>
+          <h2>Báo cáo nhân sự</h2>
+          <p class="lead">Xuất số liệu định kỳ cho giám đốc, BHXH, cơ quan thuế.</p>
+
+          <h3>Báo cáo có sẵn</h3>
+          <div class="grid grid-2">
+            <div class="mini-card"><h4>Headcount</h4><p>Tổng nhân sự, phân theo role, theo chi nhánh, theo thâm niên.</p></div>
+            <div class="mini-card"><h4>Turnover</h4><p>Tỷ lệ nghỉ việc tháng/quý/năm.</p></div>
+            <div class="mini-card"><h4>Bảng công tháng</h4><p>Ngày công thực tế, ngày nghỉ phép, vắng.</p></div>
+            <div class="mini-card"><h4>Bảng lương tháng</h4><p>Lương cơ bản + commission + bonus − trừ.</p></div>
+            <div class="mini-card"><h4>KPI tổng hợp</h4><p>Top/bottom performers, trend 6 tháng.</p></div>
+            <div class="mini-card"><h4>Báo cáo BHXH</h4><p>Danh sách đóng BHXH, mức đóng theo lương khai.</p></div>
+          </div>
+
+          <h3>Xuất file</h3>
+          <p>Mọi báo cáo có nút "Xuất Excel" / "Xuất PDF" ở góc phải. File tự đặt tên kèm tháng/năm.</p>
+        </section>
+
+        <section class="card" id="sec-13">
+          <div class="num-badge">13</div>
+          <h2>FAQ & xử lý sự cố</h2>
+          <p class="lead">Câu hỏi thường gặp khi làm HR cho spa.</p>
+
+          <details>
+            <summary>Nhân viên báo quên mật khẩu — reset cách nào?</summary>
+            <div class="body">Hướng dẫn họ vào trang login → "Quên mật khẩu" → check email. Nếu không tới, vào Cài đặt → Nhân sự → tìm họ → bấm "Reset mật khẩu" → gửi link mới.</div>
+          </details>
+
+          <details>
+            <summary>KTV nói số session tính lương khác với họ ghi nhớ?</summary>
+            <div class="body">Yêu cầu họ vào <strong>Thu nhập cá nhân → Lịch sử buổi</strong> để xem từng session. Đối chiếu với note cá nhân của họ. Nếu thực sự thiếu, vào audit_log filter table=session_logs tìm xem có bị xoá không. Nếu thiếu legitimate, tạo manual revenue + bonus.</div>
+          </details>
+
+          <details>
+            <summary>2 KTV mâu thuẫn cá nhân ảnh hưởng công việc?</summary>
+            <div class="body">Đây không phải vấn đề hệ thống — cần xử lý face-to-face. Tách lịch ca, training kỹ năng giao tiếp, mediation. Trong trường hợp nghiêm trọng, có thể tách 2 người về 2 ca/chi nhánh khác nhau.</div>
+          </details>
+
+          <details>
+            <summary>KTV xin nghỉ phép cùng 1 ngày quá nhiều (vd 5 người cùng ngày 30/4)?</summary>
+            <div class="body">Hệ thống không tự chặn — bạn phải tự quyết. Khuyến nghị: thiết lập quy tắc <strong>tối đa 30% team được nghỉ cùng ngày</strong>. Duyệt theo nguyên tắc first-come-first-serve. Với KTV bị từ chối, gợi ý ngày khác.</div>
+          </details>
+
+          <details>
+            <summary>Có cần ký HĐLĐ cho KTV làm bán thời gian (freelance)?</summary>
+            <div class="body">Theo luật VN: làm > 1 tháng → phải có HĐLĐ. Có thể là HĐ thời vụ (< 12 tháng) hoặc HĐ dịch vụ (commission-based). Tham vấn luật sư để tránh rủi ro re-classification.</div>
+          </details>
+
+          <details>
+            <summary>KTV không đồng ý với lương tính ra của hệ thống?</summary>
+            <div class="body">Mời KTV vào hồ sơ → tab "Lương" → xem chi tiết breakdown. Hệ thống ghi đầy đủ session nào tính bao nhiêu. Nếu vẫn không hài lòng, mời kế toán cùng review. Nếu KTV cho rằng có lỗi hệ thống → submit ticket cho team kỹ thuật BELLA.</div>
+          </details>
+
+          <details>
+            <summary>Có thể export hồ sơ nhân viên ra file để lưu offline?</summary>
+            <div class="body">Có. Vào hồ sơ → "Xuất hồ sơ PDF". File gồm: thông tin cá nhân, HĐLĐ scan, lịch sử KPI, lịch sử lương. Lưu archive cẩn thận, KHÔNG email không mã hoá.</div>
+          </details>
+
+          <details>
+            <summary>Tuyển KTV mới có cần test chuyên môn không?</summary>
+            <div class="body">Khuyến nghị MẠNH: có. Hệ thống không tự test — bạn tự xây dựng checklist (kiến thức massage mẹ-bé, kỹ thuật bấm huyệt, quy tắc vệ sinh). Test thực hành 1-2 buổi không nhận khách, có KTV senior chấm. Pass mới ký HĐ chính thức.</div>
+          </details>
+
+        </section>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="brand">Bella Spa</div>
+  <p>Sổ tay Nhân sự (HR) · © 2026 Bella Spa Group</p>
+  <p style="margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Phiên bản 1.0 · Cập nhật 26/05/2026 · Tham chiếu Bộ luật Lao động 2019</p>
+</footer>
+
+</body>
+</html>

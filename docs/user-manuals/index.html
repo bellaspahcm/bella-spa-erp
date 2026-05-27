@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sổ tay người dùng · Bella Spa ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FFF5F7;
+    --card: #FFFFFF;
+    --primary: #BE185D;
+    --primary-soft: #FFE4E6;
+    --primary-deep: #9D174D;
+    --secondary: #EC4899;
+    --text: #4C243B;
+    --text-muted: #8A6D7C;
+    --border: #FBCFE8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Be Vietnam Pro', -apple-system, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    min-height: 100vh;
+    background-image: radial-gradient(at 10% 10%, #FBCFE8 0px, transparent 50%),
+                      radial-gradient(at 90% 0%, #F9A8D4 0px, transparent 50%),
+                      radial-gradient(at 50% 100%, #FCE7F3 0px, transparent 60%);
+    background-attachment: fixed;
+  }
+  .container { max-width: 1280px; margin: 0 auto; padding: 60px 24px 100px; }
+
+  header.intro {
+    text-align: center;
+    margin-bottom: 80px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(10px);
+    color: var(--primary-deep);
+    padding: 10px 24px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    border: 1px solid var(--primary-soft);
+    box-shadow: 0 8px 30px rgba(219, 39, 119, 0.08);
+  }
+  .badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--primary);
+  }
+  h1.intro-title {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: clamp(48px, 8vw, 96px);
+    color: var(--primary-deep);
+    line-height: 0.95;
+    font-weight: 700;
+    margin-bottom: 28px;
+    letter-spacing: -0.02em;
+  }
+  h1.intro-title span {
+    display: block;
+    font-style: normal;
+    font-family: 'Be Vietnam Pro', sans-serif;
+    font-size: 0.4em;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: 0;
+    margin-top: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .intro-lead {
+    font-size: 20px;
+    color: var(--text);
+    max-width: 720px;
+    margin: 0 auto;
+    font-weight: 500;
+  }
+
+  /* ───────── Roles grid ───────── */
+  .roles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 28px;
+    margin-bottom: 80px;
+  }
+  a.role-card {
+    display: block;
+    background: white;
+    border-radius: 32px;
+    padding: 36px 32px;
+    text-decoration: none;
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 40px rgba(219, 39, 119, 0.06);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  a.role-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary), var(--primary));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  a.role-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 24px 60px rgba(219, 39, 119, 0.18);
+    border-color: var(--primary);
+  }
+  a.role-card:hover::before {
+    opacity: 1;
+  }
+  .role-icon {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, var(--primary-soft) 0%, #FBCFE8 100%);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+  a.role-card:hover .role-icon {
+    background: linear-gradient(135deg, var(--primary), var(--primary-deep));
+    transform: scale(1.05) rotate(-3deg);
+    transition: all 0.3s;
+  }
+  .role-card h2 {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 32px;
+    color: var(--primary-deep);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .role-card .role-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 16px;
+  }
+  .role-card .role-desc {
+    font-size: 14.5px;
+    color: var(--text);
+    margin-bottom: 24px;
+    min-height: 88px;
+  }
+  .role-card .features {
+    list-style: none;
+    margin-bottom: 28px;
+  }
+  .role-card .features li {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+  .role-card .features li::before {
+    content: '◆';
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+  .role-card .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 13.5px;
+    letter-spacing: 0.05em;
+    transition: gap 0.3s;
+  }
+  a.role-card:hover .cta {
+    gap: 14px;
+    color: var(--primary-deep);
+  }
+  .role-card .cta::after {
+    content: '→';
+    font-size: 18px;
+  }
+
+  /* ───────── Info section ───────── */
+  .info-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    background: white;
+    padding: 40px;
+    border-radius: 32px;
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 40px rgba(219, 39, 119, 0.06);
+    margin-bottom: 60px;
+  }
+  .info-item {
+    text-align: center;
+  }
+  .info-item .num {
+    font-family: 'Playfair Display', serif;
+    font-size: 44px;
+    font-weight: 700;
+    color: var(--primary-deep);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .info-item .lbl {
+    font-size: 11.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+  }
+
+  /* ───────── Quick help ───────── */
+  .quick-help {
+    background: linear-gradient(135deg, var(--primary-deep) 0%, var(--primary) 100%);
+    border-radius: 32px;
+    padding: 50px 40px;
+    color: white;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .quick-help::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15), transparent 70%);
+    border-radius: 50%;
+  }
+  .quick-help::after {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    left: -50px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08), transparent 70%);
+    border-radius: 50%;
+  }
+  .quick-help-content {
+    position: relative;
+    z-index: 1;
+  }
+  .quick-help h3 {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 36px;
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+  .quick-help p {
+    font-size: 16px;
+    margin-bottom: 28px;
+    opacity: 0.95;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .quick-help .links {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .quick-help .link {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 100px;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.3);
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .quick-help .link:hover {
+    background: white;
+    color: var(--primary-deep);
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 80px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  footer .brand {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    color: var(--primary-deep);
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="intro">
+    <span class="badge">Trung tâm tài liệu hướng dẫn</span>
+    <h1 class="intro-title">
+      Sổ tay người dùng
+      <span>Bella Spa ERP</span>
+    </h1>
+    <p class="intro-lead">Chọn vai trò của bạn để xem tài liệu chi tiết — từng bước, từng tình huống thực tế, dành riêng cho công việc hàng ngày.</p>
+  </header>
+
+  <!-- ─── Roles ─── -->
+  <div class="roles">
+
+    <a href="admin.html" class="role-card">
+      <div class="role-icon">👑</div>
+      <h2>Quản trị viên</h2>
+      <p class="role-sub">Admin · Owner</p>
+      <p class="role-desc">Toàn quyền hệ thống — cấu hình chi nhánh, phân quyền nhân sự, giám sát doanh thu, đóng kỳ kế toán.</p>
+      <ul class="features">
+        <li>Cài đặt tenant & phân quyền</li>
+        <li>Quản lý khách hàng & booking</li>
+        <li>Tài chính · kế toán · lương</li>
+        <li>AI Copilot & báo cáo</li>
+        <li>Audit & bảo mật</li>
+      </ul>
+      <span class="cta">Xem sổ tay Admin</span>
+    </a>
+
+    <a href="ktv.html" class="role-card">
+      <div class="role-icon">💆</div>
+      <h2>Kỹ thuật viên</h2>
+      <p class="role-sub">KTV · KTV Lead</p>
+      <p class="role-desc">Xem lịch hôm nay, check-in/out tại điểm phục vụ, theo dõi thu nhập cá nhân — tất cả trên điện thoại.</p>
+      <ul class="features">
+        <li>Lịch hẹn & GPS check-in</li>
+        <li>Quy trình check-out chuẩn</li>
+        <li>Thu nhập cá nhân & KPI</li>
+        <li>Bảng xếp hạng team</li>
+        <li>Đăng ký nghỉ phép online</li>
+      </ul>
+      <span class="cta">Xem sổ tay KTV</span>
+    </a>
+
+    <a href="accountant.html" class="role-card">
+      <div class="role-icon">📚</div>
+      <h2>Kế toán</h2>
+      <p class="role-sub">Accountant</p>
+      <p class="role-desc">Sổ cái dual-mode, đối soát ngân hàng tự động, đóng kỳ TT200 — vận hành chuyên nghiệp.</p>
+      <ul class="features">
+        <li>Chart of Accounts (COA)</li>
+        <li>Bút toán tự động & thủ công</li>
+        <li>Đối soát NH & lương AI</li>
+        <li>P&L · Cash Flow · Trial Balance</li>
+        <li>Royalty & inter-branch</li>
+      </ul>
+      <span class="cta">Xem sổ tay Kế toán</span>
+    </a>
+
+    <a href="hr.html" class="role-card">
+      <div class="role-icon">👥</div>
+      <h2>Nhân sự</h2>
+      <p class="role-sub">HR</p>
+      <p class="role-desc">Vòng đời nhân viên — tuyển dụng, chấm công, nghỉ phép, KPI, lương, đến offboarding.</p>
+      <ul class="features">
+        <li>Onboarding KTV mới</li>
+        <li>Chấm công & đơn nghỉ phép</li>
+        <li>KPI tháng theo data</li>
+        <li>Chốt & duyệt bảng lương</li>
+        <li>Đánh giá · kỷ luật · offboarding</li>
+      </ul>
+      <span class="cta">Xem sổ tay HR</span>
+    </a>
+
+  </div>
+
+  <!-- ─── Stats ─── -->
+  <div class="info-row">
+    <div class="info-item">
+      <div class="num">4</div>
+      <div class="lbl">Vai trò chính</div>
+    </div>
+    <div class="info-item">
+      <div class="num">15+</div>
+      <div class="lbl">Module nghiệp vụ</div>
+    </div>
+    <div class="info-item">
+      <div class="num">200+</div>
+      <div class="lbl">Quy trình chi tiết</div>
+    </div>
+    <div class="info-item">
+      <div class="num">VN</div>
+      <div class="lbl">Tiếng Việt 100%</div>
+    </div>
+    <div class="info-item">
+      <div class="num">v1.0</div>
+      <div class="lbl">Tháng 5/2026</div>
+    </div>
+  </div>
+
+  <!-- ─── Quick help ─── -->
+  <div class="quick-help">
+    <div class="quick-help-content">
+      <h3>Cần hỗ trợ thêm?</h3>
+      <p>Sổ tay này được cập nhật liên tục. Nếu bạn không tìm thấy câu trả lời, liên hệ trực tiếp với đội ngũ Bella Spa.</p>
+      <div class="links">
+        <a class="link" href="mailto:support@bellaspa.vn">📧 support@bellaspa.vn</a>
+        <a class="link" href="https://zalo.me/bellaspa" target="_blank">💬 Zalo OA Bella Spa</a>
+        <a class="link" href="tel:+84-28-9999-9999">📞 (028) 9999 9999</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="brand">Bella Spa</div>
+    <p>Trung tâm tài liệu hướng dẫn · © 2026 Bella Spa Group</p>
+    <p style="margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Phiên bản 1.0 · Cập nhật 26/05/2026</p>
+  </footer>
+
+</div>
+
+</body>
+</html>

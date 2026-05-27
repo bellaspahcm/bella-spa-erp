@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sổ tay KTV · Bella Spa ERP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FFF5F7;
+    --card: #FFFFFF;
+    --primary: #BE185D;
+    --primary-soft: #FFE4E6;
+    --primary-deep: #9D174D;
+    --secondary: #EC4899;
+    --text: #4C243B;
+    --text-muted: #8A6D7C;
+    --border: #FBCFE8;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --shadow-pink: 0 8px 30px rgba(219, 39, 119, 0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Be Vietnam Pro', -apple-system, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 15.5px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  .hero {
+    background: linear-gradient(135deg, #FFE4E6 0%, #FBCFE8 50%, #F9A8D4 100%);
+    padding: 80px 0 120px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(190,24,93,0.15), transparent 70%); border-radius: 50%; }
+  .hero::after { content: ''; position: absolute; bottom: -150px; left: -100px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(236,72,153,0.12), transparent 70%); border-radius: 50%; }
+  .hero-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); color: var(--primary-deep); padding: 8px 20px; border-radius: 100px; font-size: 12px; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 24px; border: 1px solid var(--primary-soft); }
+  .badge::before { content: ''; width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 12px var(--primary); }
+  h1.hero-title { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(40px,6vw,68px); color: var(--primary-deep); margin-bottom: 16px; line-height: 1.1; font-weight: 700; }
+  .hero-subtitle { font-size: 18px; color: var(--text); max-width: 700px; margin: 0 auto; font-weight: 500; }
+  .hero-meta { display: flex; gap: 32px; margin-top: 40px; flex-wrap: wrap; justify-content: center; }
+  .hero-meta-item { text-align: center; }
+  .hero-meta-item .num { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; color: var(--primary-deep); line-height: 1; }
+  .hero-meta-item .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); margin-top: 6px; }
+
+  main { position: relative; margin-top: -80px; padding-bottom: 100px; }
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 40px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } aside.toc { position: static !important; } }
+
+  aside.toc { position: sticky; top: 24px; align-self: start; background: var(--card); border-radius: 24px; padding: 24px 20px; box-shadow: var(--shadow-pink); border: 1px solid var(--border); max-height: calc(100vh - 48px); overflow-y: auto; }
+  aside.toc h3 { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: var(--primary); margin-bottom: 16px; padding-left: 12px; }
+  aside.toc ol { list-style: none; counter-reset: toc; }
+  aside.toc ol li { counter-increment: toc; }
+  aside.toc ol li a { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 12px; color: var(--text); text-decoration: none; font-size: 13.5px; font-weight: 600; transition: all 0.2s; }
+  aside.toc ol li a::before { content: counter(toc, decimal-leading-zero); color: var(--primary); font-weight: 800; font-size: 11px; flex-shrink: 0; margin-top: 2px; }
+  aside.toc ol li a:hover { background: var(--primary-soft); color: var(--primary-deep); }
+
+  .content { display: flex; flex-direction: column; gap: 28px; }
+  section.card { background: var(--card); border-radius: 28px; padding: 40px; box-shadow: var(--shadow-pink); border: 1px solid var(--border); scroll-margin-top: 24px; }
+  section.card .num-badge { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: white; border-radius: 14px; font-weight: 800; font-size: 18px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(190,24,93,0.3); }
+  section.card h2 { font-family: 'Playfair Display', serif; font-style: italic; font-size: 32px; color: var(--primary-deep); margin-bottom: 8px; font-weight: 700; line-height: 1.2; }
+  section.card .lead { font-size: 15.5px; color: var(--text-muted); margin-bottom: 28px; font-weight: 500; }
+  section.card h3 { font-size: 20px; font-weight: 800; color: var(--text); margin: 28px 0 14px; display: flex; align-items: center; gap: 10px; }
+  section.card h3::before { content: ''; width: 4px; height: 22px; background: linear-gradient(180deg, var(--primary), var(--secondary)); border-radius: 4px; }
+  section.card h4 { font-size: 15.5px; font-weight: 700; color: var(--text); margin: 18px 0 8px; }
+  section.card p { margin-bottom: 14px; color: var(--text); }
+  section.card ul, section.card ol { padding-left: 24px; margin-bottom: 14px; }
+  section.card ul li, section.card ol li { margin-bottom: 6px; }
+  section.card ul li::marker { color: var(--primary); }
+  section.card ol li::marker { color: var(--primary); font-weight: 800; }
+  section.card strong { color: var(--primary-deep); font-weight: 700; }
+  section.card code { background: var(--primary-soft); color: var(--primary-deep); padding: 2px 8px; border-radius: 6px; font-size: 0.88em; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+
+  .steps { list-style: none; padding: 0 !important; counter-reset: step; margin: 16px 0; }
+  .steps li { counter-increment: step; position: relative; padding: 16px 16px 16px 60px; background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 100%); border-radius: 16px; margin-bottom: 10px !important; border: 1px solid var(--primary-soft); }
+  .steps li::before { content: counter(step); position: absolute; left: 16px; top: 16px; width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+
+  .callout { padding: 18px 22px; border-radius: 16px; margin: 18px 0; display: flex; gap: 14px; align-items: flex-start; font-size: 14.5px; border-left: 4px solid; }
+  .callout-icon { font-size: 22px; flex-shrink: 0; line-height: 1; }
+  .callout.tip { background: #FDF4F8; border-color: var(--primary); color: var(--primary-deep); }
+  .callout.warn { background: #FFFBEB; border-color: var(--warning); color: #92400E; }
+  .callout.danger { background: #FEF2F2; border-color: var(--danger); color: #991B1B; }
+  .callout.info { background: #F0F9FF; border-color: #0EA5E9; color: #075985; }
+
+  .table-wrap { overflow-x: auto; border-radius: 16px; border: 1px solid var(--border); margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; background: white; font-size: 14px; }
+  table th { background: var(--primary-soft); color: var(--primary-deep); text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; font-weight: 800; padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+  table td { padding: 14px 16px; border-bottom: 1px solid #F9E4EB; vertical-align: top; }
+  table tr:last-child td { border-bottom: none; }
+  table tr:hover td { background: #FFFAFC; }
+
+  .grid { display: grid; gap: 16px; margin: 16px 0; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .mini-card { background: linear-gradient(135deg, #FFF5F7 0%, #FFE4E6 60%); padding: 20px; border-radius: 18px; border: 1px solid var(--primary-soft); }
+  .mini-card h4 { color: var(--primary-deep); margin-bottom: 8px; font-size: 14.5px; }
+  .mini-card p { font-size: 13.5px; color: var(--text-muted); margin: 0; }
+
+  details { background: white; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; }
+  details[open] { background: #FFFAFC; border-color: var(--primary); box-shadow: var(--shadow-pink); }
+  details summary { padding: 16px 20px; cursor: pointer; font-weight: 700; font-size: 15px; color: var(--text); list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after { content: '+'; font-size: 22px; color: var(--primary); font-weight: 300; transition: transform 0.2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details .body { padding: 0 20px 18px; color: var(--text); font-size: 14.5px; }
+
+  /* phone mock — special KTV touch */
+  .phone-mock {
+    max-width: 320px;
+    margin: 20px auto;
+    background: #1f1f1f;
+    border-radius: 36px;
+    padding: 12px;
+    box-shadow: 0 30px 60px rgba(190,24,93,0.25);
+  }
+  .phone-screen {
+    background: white;
+    border-radius: 24px;
+    padding: 28px 20px;
+    min-height: 400px;
+  }
+  .phone-bar { width: 50px; height: 4px; background: #333; border-radius: 4px; margin: -4px auto 16px; }
+
+  footer { text-align: center; padding: 60px 24px; color: var(--text-muted); font-size: 13px; font-weight: 500; }
+  footer .brand { font-family: 'Playfair Display', serif; font-style: italic; color: var(--primary-deep); font-size: 28px; margin-bottom: 8px; }
+
+  @media print {
+    aside.toc { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    .hero { padding: 40px 0; background: white; }
+    section.card { box-shadow: none; page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="container hero-content">
+    <span class="badge">Sổ tay sử dụng · Phiên bản 1.0</span>
+    <h1 class="hero-title">Kỹ thuật viên</h1>
+    <p class="hero-subtitle">Xem lịch hôm nay, check-in/check-out từng buổi tại nhà khách hoặc tại spa, theo dõi thu nhập cá nhân — tất cả gọn trong một app trên điện thoại.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><div class="num">📱</div><div class="lbl">Mobile-first</div></div>
+      <div class="hero-meta-item"><div class="num">GPS</div><div class="lbl">Check-in</div></div>
+      <div class="hero-meta-item"><div class="num">5★</div><div class="lbl">Bonus reviews</div></div>
+      <div class="hero-meta-item"><div class="num">$$$</div><div class="lbl">Thu nhập</div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <div class="layout">
+      <aside class="toc">
+        <h3>Mục lục</h3>
+        <ol>
+          <li><a href="#sec-1">Đăng nhập lần đầu</a></li>
+          <li><a href="#sec-2">Giao diện chính</a></li>
+          <li><a href="#sec-3">Lịch hôm nay</a></li>
+          <li><a href="#sec-4">Check-in tại điểm</a></li>
+          <li><a href="#sec-5">Trong buổi làm việc</a></li>
+          <li><a href="#sec-6">Check-out & ghi nhận</a></li>
+          <li><a href="#sec-7">Tin nhắn với khách</a></li>
+          <li><a href="#sec-8">Thu nhập cá nhân</a></li>
+          <li><a href="#sec-9">Bảng xếp hạng</a></li>
+          <li><a href="#sec-10">Đăng ký nghỉ phép</a></li>
+          <li><a href="#sec-11">Quy tắc cần nhớ</a></li>
+          <li><a href="#sec-12">FAQ</a></li>
+        </ol>
+      </aside>
+
+      <div class="content">
+
+        <section class="card" id="sec-1">
+          <div class="num-badge">01</div>
+          <h2>Đăng nhập lần đầu</h2>
+          <p class="lead">Khi nhận tài khoản từ admin/quản lý, làm theo các bước sau ngay trong ngày đầu.</p>
+
+          <h3>Trên điện thoại</h3>
+          <ol class="steps">
+            <li>Mở trình duyệt (Chrome / Safari) → vào địa chỉ web Bella Spa.</li>
+            <li>Nhập <strong>email công việc</strong> và <strong>mật khẩu tạm</strong> được cấp.</li>
+            <li>Bấm <strong>"Đăng nhập"</strong>.</li>
+            <li>Vào ngay <strong>Cài đặt → Bảo mật & Mật khẩu</strong> đổi mật khẩu mới (ít nhất 8 ký tự).</li>
+            <li>Lưu app vào màn hình chính: bấm nút <strong>Chia sẻ → Thêm vào màn hình chính</strong>. App sẽ chạy như app cài đặt.</li>
+          </ol>
+
+          <div class="callout tip">
+            <span class="callout-icon">💡</span>
+            <div>Bella hỗ trợ <strong>offline mode</strong>. Bạn vẫn check-in/check-out được khi mạng yếu — data sẽ tự đồng bộ khi có internet.</div>
+          </div>
+
+          <h3>Bật 2FA (khuyến khích)</h3>
+          <p>Nếu muốn bảo mật cao hơn (đặc biệt nếu bạn xem được thông tin lương), bật xác thực 2 lớp:</p>
+          <ol class="steps">
+            <li>Tải <strong>Google Authenticator</strong> trên điện thoại.</li>
+            <li>Vào <strong>Cài đặt → Bảo mật</strong> → "Bật 2FA ngay".</li>
+            <li>Quét QR → nhập mã 6 số xác minh.</li>
+          </ol>
+        </section>
+
+        <section class="card" id="sec-2">
+          <div class="num-badge">02</div>
+          <h2>Giao diện chính</h2>
+          <p class="lead">Sau khi đăng nhập, bạn vào trang KTV Dashboard — thiết kế tối giản tập trung vào lịch và thu nhập.</p>
+
+          <h3>Sidebar bạn nhìn thấy</h3>
+          <div class="grid grid-2">
+            <div class="mini-card"><h4>📋 Dashboard</h4><p>Tổng quan ngày: lịch sắp tới, KPI, doanh thu hôm nay.</p></div>
+            <div class="mini-card"><h4>📅 Lịch hẹn</h4><p>Danh sách session được giao — chỉ thấy của bạn.</p></div>
+            <div class="mini-card"><h4>💆 Thẻ liệu trình</h4><p>Chi tiết liệu trình từng khách.</p></div>
+            <div class="mini-card"><h4>💬 Tin nhắn</h4><p>Chat với admin / lễ tân khi cần.</p></div>
+            <div class="mini-card"><h4>💎 Dịch vụ</h4><p>Tham khảo các gói spa đang có.</p></div>
+            <div class="mini-card"><h4>💰 Thu nhập cá nhân</h4><p>Xem lương + hoa hồng + bonus tháng này.</p></div>
+          </div>
+
+          <p>Các module Tài chính, Kế toán, Cài đặt, Phân quyền — KTV <strong>KHÔNG truy cập</strong>. Đây là quy định bảo mật.</p>
+        </section>
+
+        <section class="card" id="sec-3">
+          <div class="num-badge">03</div>
+          <h2>Lịch hôm nay</h2>
+          <p class="lead">Đây là trang dùng nhiều nhất mỗi ngày. Mở lúc bắt đầu ca để biết đi đâu, gặp ai.</p>
+
+          <h3>Cấu trúc</h3>
+          <p>Vào <strong>Lịch hẹn</strong> → bạn thấy danh sách session sắp xếp theo giờ. Mỗi card gồm:</p>
+          <ul>
+            <li><strong>Giờ bắt đầu</strong> (vd 09:00)</li>
+            <li><strong>Tên khách + SĐT</strong> (bấm gọi trực tiếp)</li>
+            <li><strong>Gói + buổi thứ mấy</strong> (vd "Mẹ sau sinh — Buổi 7/21")</li>
+            <li><strong>Địa chỉ</strong> (bấm mở Google Maps)</li>
+            <li><strong>Trạng thái</strong>: Sắp tới · Đang làm · Hoàn thành · Đã huỷ</li>
+            <li><strong>Note nội bộ</strong> (vd: "Khách dị ứng tinh dầu sả")</li>
+          </ul>
+
+          <h3>Khi lịch thay đổi</h3>
+          <p>Hệ thống tự gửi thông báo push + tin Zalo khi:</p>
+          <ul>
+            <li>Có session mới được gán cho bạn</li>
+            <li>Session bị huỷ hoặc đổi giờ</li>
+            <li>Khách yêu cầu đổi KTV</li>
+          </ul>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Đến lịch <strong>không đi được</strong>? Báo cho lễ tân/admin <strong>ngay khi biết</strong> qua Tin nhắn — đừng để gần giờ mới báo, ảnh hưởng đến trải nghiệm khách.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-4">
+          <div class="num-badge">04</div>
+          <h2>Check-in tại điểm</h2>
+          <p class="lead">Khi tới nơi (tại spa hoặc tại nhà khách), bấm check-in. Hệ thống ghi GPS + thời gian để minh bạch.</p>
+
+          <h3>Quy trình check-in</h3>
+          <ol class="steps">
+            <li>Mở session trong <strong>Lịch hẹn</strong> hoặc <strong>Thẻ liệu trình</strong>.</li>
+            <li>Bấm nút <strong>"Check-in"</strong> (chỉ active khi gần đến giờ hẹn ±30 phút).</li>
+            <li>Cho phép quyền GPS nếu trình duyệt hỏi.</li>
+            <li>Status session chuyển <code>in_progress</code>.</li>
+            <li>Khách nhận tin Zalo "KTV {tên} đã đến".</li>
+          </ol>
+
+          <div class="callout info">
+            <span class="callout-icon">📍</span>
+            <div>GPS check-in giúp <strong>chống gian lận</strong> (KTV không thể check-in từ nhà mình rồi không đi). Toạ độ được mã hoá, chỉ admin xem được.</div>
+          </div>
+
+          <h3>Trường hợp đặc biệt</h3>
+          <ul>
+            <li><strong>Đến sớm</strong>: chờ tới gần giờ hẹn rồi check-in (tránh tính ca dài).</li>
+            <li><strong>Đến muộn</strong>: vẫn check-in được. Hệ thống note "late" trong attendance.</li>
+            <li><strong>Khách hoãn tại chỗ</strong>: bấm "Tạm dừng" → liên hệ lễ tân.</li>
+            <li><strong>Khách không có nhà</strong>: bấm "Báo cáo vắng" → ghi rõ tình huống → lễ tân xử lý.</li>
+          </ul>
+        </section>
+
+        <section class="card" id="sec-5">
+          <div class="num-badge">05</div>
+          <h2>Trong buổi làm việc</h2>
+          <p class="lead">Tập trung phục vụ khách. App không làm phiền, chỉ cần biết những điểm sau.</p>
+
+          <h3>Thông tin khách bạn nên biết</h3>
+          <p>Trước khi bắt đầu, đọc nhanh trong session:</p>
+          <ul>
+            <li><strong>Lịch sử dị ứng</strong> (nếu có note)</li>
+            <li><strong>Đặc điểm bé</strong>: ngày sinh, giới tính (với gói mẹ-bé)</li>
+            <li><strong>Lưu ý sức khoẻ mẹ</strong>: sinh thường/mổ, tuần thai (nếu bầu)</li>
+            <li><strong>Yêu cầu đặc biệt</strong> ghi ở note nội bộ</li>
+          </ul>
+
+          <h3>Vật tư sử dụng</h3>
+          <p>Hệ thống tự trừ kho theo định mức gói. Bạn KHÔNG cần ghi tay. Nếu dùng vượt định mức (vd khăn rách phải đổi), báo lễ tân để bổ sung kho.</p>
+
+          <h3>Thời lượng buổi</h3>
+          <p>Mỗi gói có thời lượng chuẩn (vd 90 phút). Cố gắng đúng giờ:</p>
+          <ul>
+            <li><strong>Quá ngắn</strong> (< 70 phút) → khách không hài lòng → đánh giá thấp</li>
+            <li><strong>Quá dài</strong> (> 120 phút) → ảnh hưởng lịch buổi sau</li>
+          </ul>
+          <p>Hệ thống tự cảnh báo nếu thời lượng bất thường (KPI duration).</p>
+        </section>
+
+        <section class="card" id="sec-6">
+          <div class="num-badge">06</div>
+          <h2>Check-out & ghi nhận</h2>
+          <p class="lead">Kết thúc buổi → check-out → tự động hoàn tất mọi báo cáo.</p>
+
+          <h3>Quy trình check-out</h3>
+          <ol class="steps">
+            <li>Hoàn tất phục vụ → mở lại session đang in_progress.</li>
+            <li>Bấm nút <strong>"Check-out"</strong>.</li>
+            <li>Điền nhanh:
+              <ul>
+                <li>Ghi chú buổi (nếu có gì đặc biệt)</li>
+                <li>Tình trạng khách (mệt / ổn / vui)</li>
+              </ul>
+            </li>
+            <li>Bấm xác nhận → session chuyển <code>completed</code>.</li>
+          </ol>
+
+          <h3>Điều gì tự động xảy ra</h3>
+          <p>Sau khi bạn check-out, hệ thống làm song song:</p>
+          <ul>
+            <li>✅ Cập nhật <strong>completed_sessions</strong> của booking (+1)</li>
+            <li>✅ Sinh <strong>revenue record</strong> tương ứng tỷ lệ buổi</li>
+            <li>✅ Tự ghi <strong>hoa hồng KTV</strong> vào salary tháng</li>
+            <li>✅ Trừ <strong>nguyên vật liệu</strong> theo định mức gói</li>
+            <li>✅ Sinh <strong>bút toán kế toán</strong> qua outbox</li>
+            <li>✅ Gửi <strong>tin Zalo cảm ơn</strong> kèm link đánh giá cho khách</li>
+            <li>✅ Cập nhật <strong>KPI tháng</strong> của bạn</li>
+          </ul>
+
+          <h3>Khách đánh giá</h3>
+          <p>Khách bấm link Zalo → chọn số sao (1-5) + viết nhận xét. Đánh giá KHÔNG hiện cho bạn ngay (lễ tân duyệt trước để lọc spam). Khi duyệt xong:</p>
+          <ul>
+            <li>5 sao: được bonus theo cấu hình (vd 50.000đ)</li>
+            <li>4.5 sao: bonus thấp hơn (vd 30.000đ)</li>
+            <li>4 sao: bonus nhỏ (vd 10.000đ)</li>
+            <li>≤ 3 sao: không bonus, kèm cảnh báo cho quản lý</li>
+          </ul>
+        </section>
+
+        <section class="card" id="sec-7">
+          <div class="num-badge">07</div>
+          <h2>Tin nhắn với khách & nội bộ</h2>
+          <p class="lead">Trao đổi nhanh trong app — không phải dùng Zalo cá nhân.</p>
+
+          <h3>Chat nội bộ với lễ tân/admin</h3>
+          <ol class="steps">
+            <li>Vào <strong>Tin nhắn</strong> ở sidebar.</li>
+            <li>Chọn thread "Team" hoặc "Booking #..." để hỏi về lịch cụ thể.</li>
+            <li>Gửi tin → admin/lễ tân nhận thông báo ngay.</li>
+          </ol>
+
+          <h3>Báo cáo bất thường</h3>
+          <p>Khi gặp tình huống cần báo cáo (khách phàn nàn, có sự cố, vật tư hỏng), <strong>chụp ảnh + gửi vào chat nội bộ</strong> — đừng tự xử lý quá phạm vi của KTV.</p>
+
+          <div class="callout danger">
+            <span class="callout-icon">⚠️</span>
+            <div>KHÔNG nhận tiền mặt trực tiếp từ khách. Nếu khách muốn trả thêm/tip, hướng dẫn họ qua lễ tân hoặc QR ngân hàng. Tránh tranh chấp.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-8">
+          <div class="num-badge">08</div>
+          <h2>Thu nhập cá nhân</h2>
+          <p class="lead">Theo dõi minh bạch hoa hồng + bonus + lương cơ bản theo thời gian thực.</p>
+
+          <h3>Trang Thu nhập</h3>
+          <p>Vào <strong>Thu nhập cá nhân</strong> ở sidebar. Bạn thấy:</p>
+          <ul>
+            <li><strong>Tổng tháng này</strong>: lương cơ bản + hoa hồng + bonus − trừ</li>
+            <li><strong>Breakdown</strong>:
+              <ul>
+                <li>Số buổi đã hoàn thành × hoa hồng/buổi</li>
+                <li>Số review 5★/4.5★/4★ × bonus tương ứng</li>
+                <li>KPI bonus (nếu đạt target tháng)</li>
+                <li>Trừ chấm công nghỉ không phép</li>
+              </ul>
+            </li>
+            <li><strong>Lịch sử 6 tháng</strong>: chart line chart</li>
+            <li><strong>So sánh với target</strong>: bạn đang đạt bao nhiêu % KPI tháng</li>
+          </ul>
+
+          <h3>Khi nhận lương</h3>
+          <p>Đầu tháng kế tiếp, kế toán chốt và chuyển khoản. Bạn nhận thông báo "Đã thanh toán lương tháng X". Vào trang thu nhập → tab "Lịch sử" để xem chi tiết phiếu lương + tải PDF.</p>
+
+          <div class="callout tip">
+            <span class="callout-icon">💡</span>
+            <div>Nếu thấy số liệu không khớp với cảm nhận của bạn, đừng tranh cãi với đồng nghiệp — chụp màn hình + nhắn admin. Mọi dữ liệu đều có audit log truy vết.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-9">
+          <div class="num-badge">09</div>
+          <h2>Bảng xếp hạng (Leaderboard)</h2>
+          <p class="lead">Xem mình đứng thứ mấy trong team — động lực phấn đấu lành mạnh.</p>
+
+          <h3>Cách xem</h3>
+          <p>Vào <strong>KTV Dashboard → Leaderboard</strong> (URL: <code>/ktv/leaderboard</code>):</p>
+          <ul>
+            <li>Top 10 KTV của tháng — theo điểm KPI tổng hợp</li>
+            <li>Phụ chỉ số: số buổi, % 5★, tỷ lệ check-in đúng giờ</li>
+            <li>Position của bạn (highlighted)</li>
+          </ul>
+
+          <h3>Tính điểm KPI</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tiêu chí</th><th>Trọng số</th><th>Ý nghĩa</th></tr></thead>
+              <tbody>
+                <tr><td>Số session hoàn thành</td><td>40%</td><td>Càng nhiều buổi → điểm cao</td></tr>
+                <tr><td>Đánh giá trung bình (★)</td><td>30%</td><td>Chất lượng phục vụ</td></tr>
+                <tr><td>Tỷ lệ đúng giờ check-in</td><td>15%</td><td>Đến đúng giờ hẹn ±15 phút</td></tr>
+                <tr><td>Tỷ lệ không vi phạm</td><td>15%</td><td>Không có complaint, không huỷ giờ chót</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card" id="sec-10">
+          <div class="num-badge">10</div>
+          <h2>Đăng ký nghỉ phép</h2>
+          <p class="lead">Cần nghỉ — đăng ký trên app, không cần gọi điện.</p>
+
+          <h3>Cách đăng ký</h3>
+          <ol class="steps">
+            <li>Vào <strong>Cài đặt → Nghỉ phép</strong> (hoặc tab "Nghỉ phép" trên dashboard).</li>
+            <li>Bấm <strong>"+ Đơn nghỉ phép mới"</strong>.</li>
+            <li>Chọn loại: Nghỉ phép có lương / Không lương / Ốm.</li>
+            <li>Chọn ngày bắt đầu, ngày kết thúc.</li>
+            <li>Ghi lý do (vd: việc gia đình, đám cưới, ốm).</li>
+            <li>Gửi đơn → admin/HR nhận thông báo.</li>
+          </ol>
+
+          <h3>Sau khi gửi</h3>
+          <ul>
+            <li>Bạn nhận tin Zalo khi đơn được <strong>duyệt</strong> hoặc <strong>từ chối</strong>.</li>
+            <li>Nếu duyệt: lịch của bạn ngày đó tự đổi sang <code>off</code> — không nhận session.</li>
+            <li>Nếu từ chối: HR ghi lý do, bạn có thể đăng ký lại ngày khác.</li>
+          </ul>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Đăng ký nghỉ <strong>tối thiểu 3 ngày trước</strong> (trừ trường hợp ốm/cấp cứu). Nghỉ đột xuất nhiều lần sẽ ảnh hưởng KPI và đánh giá tháng.</div>
+          </div>
+        </section>
+
+        <section class="card" id="sec-11">
+          <div class="num-badge">11</div>
+          <h2>Quy tắc cần nhớ</h2>
+          <p class="lead">Những điều bắt buộc tuân thủ để bảo vệ chính bạn và spa.</p>
+
+          <h3>10 quy tắc vàng</h3>
+          <ol>
+            <li><strong>Luôn check-in khi đến nơi</strong> — không check-in nghĩa là không có buổi đó tính lương.</li>
+            <li><strong>Đeo đồng phục</strong> đầy đủ, sạch sẽ. Chụp ảnh đồng phục trước khi vào ca (nếu admin yêu cầu).</li>
+            <li><strong>Không nhận tiền mặt</strong> trực tiếp từ khách. Hướng dẫn họ qua lễ tân.</li>
+            <li><strong>Không xin SĐT/Zalo cá nhân</strong> của khách để liên hệ riêng — vi phạm chính sách bảo mật.</li>
+            <li><strong>Không chia sẻ thông tin khách</strong> ra ngoài (kể cả với KTV khác trong giờ rảnh).</li>
+            <li><strong>Không lan truyền tin đồn</strong> về spa/đồng nghiệp lên Facebook, Zalo nhóm.</li>
+            <li><strong>Trễ giờ phải báo ngay</strong> qua chat nội bộ — không phải gần tới mới báo.</li>
+            <li><strong>Đánh giá khách bằng tinh thần chuyên nghiệp</strong>: kể cả khách khó tính, không cãi lại, luôn lịch sự.</li>
+            <li><strong>Vật tư hỏng/thiếu</strong> phải báo ngay — không tự bù đắp.</li>
+            <li><strong>Tuân thủ checklist an toàn</strong> khi làm với mẹ sau sinh + trẻ sơ sinh (nhiệt độ phòng, độ tinh dầu, thời lượng).</li>
+          </ol>
+        </section>
+
+        <section class="card" id="sec-12">
+          <div class="num-badge">12</div>
+          <h2>FAQ & xử lý sự cố</h2>
+          <p class="lead">Câu hỏi thường gặp khi đi làm hàng ngày.</p>
+
+          <details>
+            <summary>Tôi quên check-in lúc bắt đầu — giờ làm sao?</summary>
+            <div class="body">Vẫn bấm check-in khi nhớ ra. Hệ thống ghi nhận thời gian thật. Nếu lệch quá xa, admin sẽ confirm với bạn qua chat. KHÔNG được sửa thời gian giả vì có audit log.</div>
+          </details>
+
+          <details>
+            <summary>App không cho check-in vì GPS sai vị trí?</summary>
+            <div class="body">Thường do GPS điện thoại yếu (trong nhà tầng dưới, vùng tín hiệu yếu). Ra ngoài 30 giây để lấy GPS chuẩn → check-in lại. Nếu vẫn lỗi, chụp màn hình → gửi admin xử lý thủ công.</div>
+          </details>
+
+          <details>
+            <summary>Khách yêu cầu thêm thời gian phục vụ — tôi có làm không?</summary>
+            <div class="body">KHÔNG tự quyết. Liên hệ lễ tân để đăng ký buổi bổ sung (tính phí riêng). Tránh làm "free" để giữ lòng khách — về lâu dài bạn thiệt thòi và phá giá spa.</div>
+          </details>
+
+          <details>
+            <summary>Tôi thấy session mình bị gán cho KTV khác?</summary>
+            <div class="body">Admin có quyền đổi KTV trong trường hợp khẩn cấp. Bạn nhận thông báo Zalo. Nếu đổi không hợp lý (nhiều lần) — báo cáo qua chat hoặc HR.</div>
+          </details>
+
+          <details>
+            <summary>Thu nhập tôi tính khác với hệ thống — kiểm tra ở đâu?</summary>
+            <div class="body">Vào <strong>Thu nhập → Lịch sử buổi</strong> để xem từng session đóng góp bao nhiêu. Nếu thiếu buổi nào, chụp + nhắn HR. KHÔNG tranh cãi trực tiếp với kế toán — qua HR.</div>
+          </details>
+
+          <details>
+            <summary>Đến nhà khách mà khách không có ở nhà?</summary>
+            <div class="body">Gọi điện 2 lần cách nhau 10 phút. Nếu vẫn không liên hệ được → bấm "Báo cáo vắng" trong session → ghi rõ giờ đến, đã gọi mấy lần. Lễ tân sẽ xử lý (reschedule hoặc tính buổi vắng).</div>
+          </details>
+
+          <details>
+            <summary>Tôi muốn nghỉ việc — quy trình?</summary>
+            <div class="body">Nói chuyện với HR trước, sau đó gửi đơn nghỉ chính thức qua Cài đặt → Đơn HR. Báo trước tối thiểu 30 ngày theo hợp đồng. Bàn giao session đang dở cho KTV khác trước ngày cuối.</div>
+          </details>
+
+          <details>
+            <summary>Đánh mất tài khoản (quên mật khẩu)?</summary>
+            <div class="body">Vào trang login → "Quên mật khẩu" → nhập email → check email reset. Nếu không tới, nhờ HR/admin trong nội bộ reset giúp.</div>
+          </details>
+
+        </section>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="brand">Bella Spa</div>
+  <p>Sổ tay Kỹ thuật viên · © 2026 Bella Spa Group</p>
+  <p style="margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Phiên bản 1.0 · Cập nhật 26/05/2026</p>
+</footer>
+
+</body>
+</html>
