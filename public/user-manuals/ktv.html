@@ -184,7 +184,7 @@
           <li><a href="#sec-6">Check-out & ghi nhận</a></li>
           <li><a href="#sec-7">Tin nhắn với khách</a></li>
           <li><a href="#sec-8">Thu nhập cá nhân</a></li>
-          <li><a href="#sec-9">Bảng xếp hạng</a></li>
+          <li><a href="#sec-9">Đánh giá & Xếp hạng</a></li>
           <li><a href="#sec-10">Đăng ký nghỉ phép</a></li>
           <li><a href="#sec-11">Quy tắc cần nhớ</a></li>
           <li><a href="#sec-12">FAQ</a></li>
@@ -416,29 +416,84 @@
 
         <section class="card" id="sec-9">
           <div class="num-badge">09</div>
-          <h2>Bảng xếp hạng (Leaderboard)</h2>
-          <p class="lead">Xem mình đứng thứ mấy trong team — động lực phấn đấu lành mạnh.</p>
+          <h2>Đánh giá & Xếp hạng</h2>
+          <p class="lead">Hiểu rõ điểm sao của bạn đến từ đâu và cần làm gì để lên xếp loại cao hơn.</p>
 
-          <h3>Cách xem</h3>
-          <p>Vào <strong>KTV Dashboard → Leaderboard</strong> (URL: <code>/ktv/leaderboard</code>):</p>
-          <ul>
-            <li>Top 10 KTV của tháng — theo điểm KPI tổng hợp</li>
-            <li>Phụ chỉ số: số buổi, % 5★, tỷ lệ check-in đúng giờ</li>
-            <li>Position của bạn (highlighted)</li>
-          </ul>
-
-          <h3>Tính điểm KPI</h3>
+          <h3>Điểm tổng hợp (Composite Rating)</h3>
+          <p>Mỗi KTV có <strong>một điểm duy nhất</strong> mỗi tháng, tổng hợp từ hai nguồn:</p>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Tiêu chí</th><th>Trọng số</th><th>Ý nghĩa</th></tr></thead>
+              <thead><tr><th>Thành phần</th><th>Tỷ trọng</th><th>Nguồn dữ liệu</th></tr></thead>
               <tbody>
-                <tr><td>Số session hoàn thành</td><td>40%</td><td>Càng nhiều buổi → điểm cao</td></tr>
-                <tr><td>Đánh giá trung bình (★)</td><td>30%</td><td>Chất lượng phục vụ</td></tr>
-                <tr><td>Tỷ lệ đúng giờ check-in</td><td>15%</td><td>Đến đúng giờ hẹn ±15 phút</td></tr>
-                <tr><td>Tỷ lệ không vi phạm</td><td>15%</td><td>Không có complaint, không huỷ giờ chót</td></tr>
+                <tr><td>⭐ Đánh giá từ khách hàng</td><td><strong>60%</strong></td><td>Khách chấm sao sau mỗi buổi trị liệu</td></tr>
+                <tr><td>📋 Điểm kỷ luật</td><td><strong>40%</strong></td><td>Hệ thống tính tự động từ chấm công</td></tr>
               </tbody>
             </table>
           </div>
+          <div class="callout tip">
+            <span class="callout-icon">💡</span>
+            <div><strong>Công thức:</strong> Điểm tổng = 0.6 × Sao khách hàng + 0.4 × Điểm kỷ luật<br/>
+            Nếu chưa có review khách nào trong tháng, hệ thống dùng điểm kỷ luật thuần. Nếu chưa có cả hai — hiển thị <code>—</code> (chưa đủ dữ liệu).</div>
+          </div>
+
+          <h3>Điểm kỷ luật tính như thế nào?</h3>
+          <p>Bắt đầu từ <strong>5.0</strong>, bị trừ theo vi phạm chấm công trong tháng. Sàn tối thiểu là <strong>1.0</strong>.</p>
+
+          <h4>Trừ điểm đi trễ — theo chuỗi liên tiếp</h4>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Chuỗi trễ liên tiếp dài nhất</th><th>Bị trừ</th></tr></thead>
+              <tbody>
+                <tr><td>1 ngày</td><td>−0.3</td></tr>
+                <tr><td>2 ngày liên tiếp</td><td>−0.7</td></tr>
+                <tr><td>3 ngày liên tiếp</td><td>−1.3</td></tr>
+                <tr><td>≥ 4 ngày liên tiếp</td><td>−2.0</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Ngoài chuỗi dài nhất, mỗi ngày trễ <strong>lẻ</strong> còn lại bị trừ thêm <strong>−0.2/ngày</strong>.</p>
+          <p>Mỗi ngày <strong>vắng không phép</strong> bị trừ <strong>−1.0/ngày</strong>.</p>
+
+          <h4>Ví dụ minh hoạ</h4>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tình huống trong tháng</th><th>Tính toán</th><th>Điểm kỷ luật</th></tr></thead>
+              <tbody>
+                <tr><td>Không vi phạm gì</td><td>5.0 − 0</td><td><strong>5.0</strong></td></tr>
+                <tr><td>3 ngày trễ cách nhau</td><td>5.0 − 0.3 − (2×0.2)</td><td><strong>4.3</strong></td></tr>
+                <tr><td>2 ngày trễ liên tiếp + 1 ngày lẻ</td><td>5.0 − 0.7 − 0.2</td><td><strong>4.1</strong></td></tr>
+                <tr><td>3 ngày trễ liên tiếp</td><td>5.0 − 1.3</td><td><strong>3.7</strong></td></tr>
+                <tr><td>1 ngày vắng + 1 ngày trễ</td><td>5.0 − 1.0 − 0.3</td><td><strong>3.7</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Xếp loại cuối tháng</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Xếp loại</th><th>Ngưỡng điểm tổng hợp</th></tr></thead>
+              <tbody>
+                <tr><td>🟢 <strong>Xuất sắc</strong></td><td>≥ 4.5</td></tr>
+                <tr><td>🔵 <strong>Tốt</strong></td><td>3.5 – 4.49</td></tr>
+                <tr><td>🟡 <strong>Trung bình</strong></td><td>2.5 – 3.49</td></tr>
+                <tr><td>🔴 <strong>Cần cải thiện</strong></td><td>< 2.5</td></tr>
+                <tr><td>⚪ <strong>Chưa có</strong></td><td>Chưa đủ dữ liệu trong tháng</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <div>Trễ <strong>3 ngày liên tiếp</strong> + khách chấm 5★ vẫn chỉ đạt <strong>4.48</strong> — không lên được Xuất sắc. Kỷ luật chấm công ảnh hưởng trực tiếp đến xếp loại dù khách rất hài lòng.</div>
+          </div>
+
+          <h3>Xem xếp hạng trong team</h3>
+          <p>Vào <strong>KTV Dashboard → Leaderboard</strong> (URL: <code>/ktv/leaderboard</code>) để xem:</p>
+          <ul>
+            <li>Thứ hạng của bạn so với toàn bộ KTV trong tháng</li>
+            <li>Điểm tổng hợp, số buổi hoàn thành, hoa hồng</li>
+            <li>Breakdown: điểm từ khách vs. điểm kỷ luật</li>
+          </ul>
         </section>
 
         <section class="card" id="sec-10">
@@ -544,7 +599,7 @@
 <footer>
   <div class="brand">Bella Spa</div>
   <p>Sổ tay Kỹ thuật viên · © 2026 Bella Spa Group</p>
-  <p style="margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Phiên bản 1.0 · Cập nhật 26/05/2026</p>
+  <p style="margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Phiên bản 1.1 · Cập nhật 27/05/2026</p>
 </footer>
 
 </body>
