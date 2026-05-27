@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "alias": ["bella-spa-hcm.vercel.app"],
   "crons": [
     {
       "path": "/api/cron/accounting-worker",
