@@ -1,0 +1,90 @@
+/**
+ * Playwright config for Bella Spa ERP E2E tests.
+ *
+ * Run:
+ *   npm run e2e              # headless, all tests
+ *   npm run e2e:ui           # interactive UI mode
+ *   npm run e2e:headed       # headed browser
+ *   npm run e2e:debug        # debug mode
+ *   npm run e2e:report       # open last report
+ *
+ * Behaviour:
+ *   - Auto-starts `next dev` on port 3000 (reuses if already running).
+ *   - Reads .env.local for SUPABASE_URL / SERVICE_ROLE_KEY (test seed/teardown).
+ *   - Single browser project (chromium) — add Firefox/WebKit later.
+ *   - Retries 1 in CI, 0 locally.
+ */
+
+import { defineConfig, devices } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
+
+// Load .env.local manually so tests can use service-role key
+const envPath = path.resolve(process.cwd(), ".env.local");
+if (fs.existsSync(envPath)) {
+  const text = fs.readFileSync(envPath, "utf8");
+  for (const line of text.split(/\r?\n/)) {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
+  }
+}
+
+const PORT = Number(process.env.E2E_PORT ?? 3000);
+const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
+const IS_CI = !!process.env.CI;
+
+export default defineConfig({
+  testDir: "./e2e/tests",
+  testMatch: "**/*.spec.ts",
+
+  // Test execution
+  fullyParallel: false, // Bella flows touch shared DB rows — run serial
+  forbidOnly: IS_CI,
+  retries: IS_CI ? 1 : 0,
+  workers: 1, // Single worker — same reason as above
+  timeout: 60_000, // 60s per test
+  expect: { timeout: 10_000 },
+
+  // Reporter
+  reporter: [
+    ["list"],
+    ["html", { outputFolder: "playwright-report", open: "never" }],
+    ["json", { outputFile: "playwright-results.json" }],
+  ],
+
+  use: {
+    baseURL: BASE_URL,
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    viewport: { width: 1440, height: 900 },
+    locale: "vi-VN",
+    timezoneId: "Asia/Ho_Chi_Minh",
+  },
+
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    // Uncomment when needed:
+    // { name: 'firefox',  use: { ...devices['Desktop Firefox'] } },
+    // { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
+    // { name: 'mobile-android', use: { ...devices['Pixel 7'] } },
+  ],
+
+  // Auto-start dev server. Detects port reuse so concurrent runs share it.
+  webServer: {
+    command: "npm run dev",
+    url: BASE_URL,
+    reuseExistingServer: !IS_CI,
+    timeout: 180_000,
+    stdout: "pipe",
+    stderr: "pipe",
+    env: {
+      NODE_ENV: "development", // enables `password123` bypass for E2E
+    },
+  },
+});
