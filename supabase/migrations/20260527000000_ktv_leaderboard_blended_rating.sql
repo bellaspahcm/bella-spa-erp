@@ -82,8 +82,8 @@ BEGIN
   --    times counts as a 3-streak even though calendar dates skip.
   late_runs AS (
     SELECT
-      ktv_id,
-      (rn_all - rn_late) AS run_id
+      ranked.ktv_id AS lr_ktv_id,
+      (ranked.rn_all - ranked.rn_late) AS run_id
     FROM (
       SELECT
         a.ktv_id,
@@ -95,17 +95,17 @@ BEGIN
       WHERE a.tenant_id = p_tenant_id
         AND a.date BETWEEN v_start_date AND v_end_date
     ) ranked
-    WHERE status = 'late'
+    WHERE ranked.status = 'late'
   ),
   late_streaks AS (
-    SELECT ktv_id, COUNT(*) AS streak_len
-    FROM late_runs
-    GROUP BY ktv_id, run_id
+    SELECT lr.lr_ktv_id AS ls_ktv_id, COUNT(*) AS streak_len
+    FROM late_runs lr
+    GROUP BY lr.lr_ktv_id, lr.run_id
   ),
   ktv_late_streak AS (
-    SELECT ktv_id, MAX(streak_len) AS max_late_streak
-    FROM late_streaks
-    GROUP BY ktv_id
+    SELECT ls.ls_ktv_id AS kls_ktv_id, MAX(ls.streak_len) AS max_late_streak
+    FROM late_streaks ls
+    GROUP BY ls.ls_ktv_id
   ),
 
   -- 4. Discipline score with floor at 1.0
@@ -131,7 +131,7 @@ BEGIN
       )::numeric AS discipline_raw
     FROM ktv_sessions ks
     LEFT JOIN ktv_attendance   ka  ON ka.ktv_id  = ks.ktv_id
-    LEFT JOIN ktv_late_streak  kls ON kls.ktv_id = ks.ktv_id
+    LEFT JOIN ktv_late_streak  kls ON kls.kls_ktv_id = ks.ktv_id
   ),
 
   -- 5. KPI bonuses (unchanged from previous version)
