@@ -7,7 +7,19 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "jest"
+    "test": "jest",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:headed": "playwright test --headed",
+    "e2e:debug": "playwright test --debug",
+    "e2e:report": "playwright show-report",
+    "load:smoke": "k6 run load-tests/scripts/01-smoke.js",
+    "load:dashboard": "k6 run load-tests/scripts/02-dashboard-load.js",
+    "load:stress": "k6 run load-tests/scripts/03-booking-stress.js",
+    "load:spike": "k6 run load-tests/scripts/04-login-spike.js",
+    "load:soak": "k6 run load-tests/scripts/05-checkout-soak.js",
+    "load:soak:short": "k6 run -e SOAK_MINUTES=5 load-tests/scripts/05-checkout-soak.js",
+    "load:report": "k6 run --out json=load-tests/results/result.json load-tests/scripts/01-smoke.js"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.53.1",
@@ -30,6 +42,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
