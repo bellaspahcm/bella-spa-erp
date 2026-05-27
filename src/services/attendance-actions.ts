@@ -512,24 +512,27 @@ export async function approveLeaveRequest(
       ? 'half_day'
       : 'absent';
 
-    const { data: existingAtt } = await supabase
+    const { data: existingAtt, error: existingAttError } = await supabase
       .from('attendance')
       .select('id, status')
       .eq('ktv_id', leave.user_id)
       .eq('date', leave.leave_date)
       .maybeSingle();
 
+    if (existingAttError) throw existingAttError;
+
     if (existingAtt) {
       // Chỉ ghi đè nếu chưa được chấm (present/late không bị ghi đè)
       if (existingAtt.status === 'absent' || existingAtt.status === 'half_day') {
-        await supabase
+        const { error: updateErr } = await supabase
           .from('attendance')
           .update({ status: leaveAttendanceStatus })
           .eq('id', existingAtt.id);
+        if (updateErr) throw updateErr;
       }
     } else {
       // Chưa có bản ghi chấm công → tạo mới
-      await supabase
+      const { error: insertErr } = await supabase
         .from('attendance')
         .insert({
           ktv_id: leave.user_id,
@@ -537,10 +540,11 @@ export async function approveLeaveRequest(
           status: leaveAttendanceStatus,
           tenant_id: leave.tenant_id,
         });
+      if (insertErr) throw insertErr;
     }
-  } catch (attErr) {
+  } catch (attErr: any) {
     console.error('[approveLeaveRequest] Error writing attendance record:', attErr);
-    // Không trả về lỗi ở đây — phê duyệt vẫn thành công, chỉ log cảnh báo
+    return { success: false, error: 'Phê duyệt phép thất bại do không thể ghi nhận dữ liệu chấm công: ' + (attErr.message || attErr) };
   }
 
   await recordAuditLog({
