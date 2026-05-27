@@ -2,19 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  CheckCircle2, 
-  Tag, 
-  Clock, 
-  DollarSign, 
+import {
+  Sparkles,
+  Plus,
+  Search,
+  Filter,
+  MoreVertical,
+  CheckCircle2,
+  Tag,
+  Clock,
+  DollarSign,
   ChevronRight,
   X,
-  Zap
+  Zap,
+  Database,
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -23,8 +26,17 @@ import { toast } from 'sonner';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
 import { getPackages, createPackage, updatePackage, deletePackage } from '@/services/package-actions';
+import { getPackageMaterials, upsertPackageMaterials, getInventoryItems } from '@/services/inventory-actions';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+
+type MaterialRow = {
+  item_id: string;
+  quantity_per_session: number | '';
+  // metadata cho hiển thị (không submit lên DB)
+  name?: string;
+  unit?: string;
+};
 
 
 export default function ServicesPage() {
@@ -57,6 +69,11 @@ export default function ServicesPage() {
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ── Định mức tiêu hao vật tư (package_materials) ───────────────────────────
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [materialRows, setMaterialRows] = useState<MaterialRow[]>([]);
+  const [loadingMaterials, setLoadingMaterials] = useState(false);
+
   const resetForm = () => {
     setName('');
     setPrice('');
@@ -67,6 +84,7 @@ export default function ServicesPage() {
     setKtvCommission('');
     setStatus('active');
     setSelectedService(null);
+    setMaterialRows([]);
   };
 
 
@@ -97,6 +115,10 @@ export default function ServicesPage() {
 
   useEffect(() => {
     loadData();
+    // Tải danh mục vật tư 1 lần để dropdown chọn trong định mức tiêu hao
+    getInventoryItems().then(setInventoryItems).catch(err => {
+      console.error('Load inventory items error:', err);
+    });
   }, []);
 
   const openAddModal = () => {
@@ -110,10 +132,11 @@ export default function ServicesPage() {
     setDetails('');
     setKtvCommission('');
     setStatus('active');
+    setMaterialRows([]);
     setIsModalOpen(true);
   };
 
-  const openEditModal = (service: any) => {
+  const openEditModal = async (service: any) => {
     setModalMode('edit');
     setSelectedService(service);
     setName(service.name);
@@ -124,7 +147,37 @@ export default function ServicesPage() {
     setDetails(Array.isArray(service.details) ? service.details.join(', ') : (service.details || ''));
     setKtvCommission(service.ktv_commission?.toString() || '150000');
     setStatus(service.status === 'active' ? 'active' : 'inactive');
+    setMaterialRows([]);
     setIsModalOpen(true);
+
+    // Tải định mức tiêu hao hiện hành của gói này
+    setLoadingMaterials(true);
+    try {
+      const mats = await getPackageMaterials(service.id);
+      const rows: MaterialRow[] = (mats || []).map((m: any) => ({
+        item_id: m.item_id || m.inventory_items?.id,
+        quantity_per_session: Number(m.quantity_per_session) || 0,
+        name: m.inventory_items?.name,
+        unit: m.inventory_items?.unit,
+      }));
+      setMaterialRows(rows);
+    } catch (err) {
+      console.error('Load package materials error:', err);
+      toast.error('Không tải được định mức tiêu hao của gói');
+    } finally {
+      setLoadingMaterials(false);
+    }
+  };
+
+  // ── Material row handlers ──────────────────────────────────────────────────
+  const addMaterialRow = () => {
+    setMaterialRows(prev => [...prev, { item_id: '', quantity_per_session: '' }]);
+  };
+  const updateMaterialRow = (idx: number, patch: Partial<MaterialRow>) => {
+    setMaterialRows(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r));
+  };
+  const removeMaterialRow = (idx: number) => {
+    setMaterialRows(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleDelete = async (id: string) => {
@@ -349,23 +402,58 @@ export default function ServicesPage() {
         tenant_id
       };
 
+      let packageId: string | null = null;
+
       if (modalMode === 'edit' && selectedService) {
         const { error } = await supabase
           .from('packages')
           .update(dbData)
           .eq('id', selectedService.id);
-          
+
         if (error) throw error;
+        packageId = selectedService.id;
         toast.success('Đã cập nhật gói dịch vụ');
       } else {
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('packages')
-          .insert([dbData]);
-          
+          .insert([dbData])
+          .select('id')
+          .single();
+
         if (error) throw error;
+        packageId = inserted?.id || null;
         toast.success('Đã thêm gói dịch vụ mới');
       }
-      
+
+      // Lưu định mức tiêu hao vật tư (chỉ khi có packageId và có ít nhất 1 dòng)
+      if (packageId && materialRows.length > 0) {
+        // Validate: không trùng item_id
+        const itemIds = materialRows
+          .map(r => r.item_id)
+          .filter(Boolean);
+        const dup = itemIds.find((id, i) => itemIds.indexOf(id) !== i);
+        if (dup) {
+          toast.error('Có vật tư bị trùng trong định mức tiêu hao. Vui lòng kiểm tra lại.');
+          // Không return — gói đã lưu, vẫn đóng modal, nhưng vật tư chưa lưu
+        } else {
+          const payload = materialRows
+            .filter(r => r.item_id && Number(r.quantity_per_session) > 0)
+            .map(r => ({
+              item_id: r.item_id,
+              quantity_per_session: Number(r.quantity_per_session),
+            }));
+          const res = await upsertPackageMaterials(packageId, payload);
+          if (!res.success) {
+            toast.error('Lỗi lưu định mức tiêu hao: ' + (res.error || ''));
+          } else if (payload.length > 0) {
+            toast.success(`Đã lưu ${payload.length} định mức tiêu hao vật tư cho gói`);
+          }
+        }
+      } else if (packageId && modalMode === 'edit' && materialRows.length === 0) {
+        // Edit mode + materialRows trống → xóa toàn bộ định mức cũ
+        await upsertPackageMaterials(packageId, []);
+      }
+
       setIsModalOpen(false);
       resetForm();
       loadData();
@@ -749,14 +837,125 @@ export default function ServicesPage() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-black text-slate-700 ml-1">Chương trình ưu đãi (nếu có)</label>
-                    <textarea 
+                    <textarea
                       value={offer}
                       onChange={(e) => setOffer(e.target.value)}
-                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 resize-none h-24" 
+                      className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700 resize-none h-24"
                       placeholder="Nhập các khuyến mãi đi kèm..."
                     ></textarea>
                   </div>
-                  
+
+                  {/* ── Định mức tiêu hao vật tư mỗi buổi ───────────────────── */}
+                  <div className="bg-gradient-to-br from-rose-50/40 to-pink-50/40 border border-rose-100 rounded-2xl p-6 space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm">
+                          <Database className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900">Định mức tiêu hao vật tư mỗi buổi</h4>
+                          <p className="text-[11px] text-slate-500 font-semibold leading-relaxed mt-0.5">
+                            Hệ thống sẽ tự trừ kho theo định mức này khi KTV hoàn thành ca <span className="text-rose-500">(nếu bật ở Cài đặt → Quản lý Tiêu hao Kho vận)</span>.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {modalMode === 'add' ? (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs font-bold text-amber-700 leading-relaxed">
+                        💡 Vui lòng <span className="underline">lưu gói trước</span>, sau đó mở lại để thiết lập định mức tiêu hao.
+                      </div>
+                    ) : loadingMaterials ? (
+                      <div className="flex items-center gap-2 text-slate-400 text-xs font-bold py-4">
+                        <RefreshCw className="w-4 h-4 animate-spin" /> Đang tải định mức...
+                      </div>
+                    ) : (
+                      <>
+                        {inventoryItems.length === 0 ? (
+                          <div className="bg-slate-100 border border-slate-200 rounded-xl p-4 text-xs font-bold text-slate-600 leading-relaxed">
+                            ⚠️ Chưa có vật tư nào trong kho. Vui lòng vào <span className="underline">Quản lý Kho Vật Tư</span> để thêm trước.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-2">
+                              {materialRows.length === 0 ? (
+                                <div className="text-center py-4 bg-white/60 border border-dashed border-rose-200 rounded-xl text-xs font-semibold text-slate-400 italic">
+                                  Chưa có vật tư nào trong định mức. Bấm "+ Thêm vật tư" để bắt đầu.
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {/* Header */}
+                                  <div className="hidden md:grid grid-cols-[1fr_140px_60px_40px] gap-3 px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                    <span>Vật tư</span>
+                                    <span>SL / buổi</span>
+                                    <span>Đơn vị</span>
+                                    <span></span>
+                                  </div>
+                                  {materialRows.map((row, idx) => {
+                                    const item = inventoryItems.find(it => it.id === row.item_id);
+                                    return (
+                                      <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_140px_60px_40px] gap-3 items-center bg-white rounded-xl p-3 border border-rose-100">
+                                        <PremiumSelect
+                                          value={row.item_id}
+                                          onChange={(val) => {
+                                            const it = inventoryItems.find(x => x.id === val);
+                                            updateMaterialRow(idx, {
+                                              item_id: val,
+                                              name: it?.name,
+                                              unit: it?.unit,
+                                            });
+                                          }}
+                                          options={[
+                                            { value: '', label: '-- Chọn vật tư --' },
+                                            ...inventoryItems.map(it => ({
+                                              value: it.id,
+                                              label: `${it.name} (Tồn: ${it.stock_level} ${it.unit})`,
+                                            })),
+                                          ]}
+                                          placeholder="Chọn vật tư..."
+                                        />
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          step="0.01"
+                                          value={row.quantity_per_session === '' ? '' : row.quantity_per_session}
+                                          onFocus={e => e.target.select()}
+                                          onChange={e => updateMaterialRow(idx, {
+                                            quantity_per_session: e.target.value === '' ? '' : Number(e.target.value),
+                                          })}
+                                          placeholder="0"
+                                          className="w-full bg-slate-50 px-4 py-2.5 rounded-xl text-sm font-bold text-center outline-none focus:ring-2 focus:ring-primary/20"
+                                        />
+                                        <span className="text-xs font-black text-slate-500 text-center">
+                                          {item?.unit || row.unit || '—'}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => removeMaterialRow(idx)}
+                                          className="w-9 h-9 flex items-center justify-center rounded-xl text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                                          aria-label="Xóa vật tư"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={addMaterialRow}
+                              className="w-full py-3 bg-white border border-dashed border-rose-300 text-rose-500 hover:bg-rose-50 hover:border-rose-400 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" /> Thêm vật tư vào định mức
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+
                   <div className="pt-6 flex gap-4">
                     <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-[2rem] transition-all uppercase tracking-widest text-xs">
                       Hủy bỏ
