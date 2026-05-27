@@ -89,7 +89,7 @@ export default function SalaryStats({
           <div>
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Thu nhập cao nhất</p>
             <h4 className="text-2xl font-black text-slate-900">
-              {(maxSalary / 1000000).toFixed(1)}M
+              {maxSalary.toLocaleString('vi-VN')}đ
             </h4>
           </div>
         </div>
