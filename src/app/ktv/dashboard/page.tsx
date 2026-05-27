@@ -18,7 +18,11 @@ import {
   X,
   Mail,
   Megaphone,
-  Baby
+  Baby,
+  KeyRound,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { 
   getKTVActiveSessions, 
@@ -48,6 +52,12 @@ export default function KTVDashboard() {
   const [systemTime, setSystemTime] = useState<string>('');
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  const [pwdCurrent, setPwdCurrent] = useState('');
+  const [pwdNew, setPwdNew] = useState('');
+  const [pwdConfirm, setPwdConfirm] = useState('');
+  const [pwdShowing, setPwdShowing] = useState(false);
+  const [isChangingPwd, setIsChangingPwd] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState<any>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [checkoutSession, setCheckoutSession] = useState<any | null>(null);
@@ -150,6 +160,60 @@ export default function KTVDashboard() {
     } catch (e) {
       console.error('Logout error:', e);
       router.push('/login');
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (pwdNew !== pwdConfirm) {
+      toast.error('Mật khẩu mới và xác nhận không khớp');
+      return;
+    }
+    if (pwdNew.length < 6) {
+      toast.error('Mật khẩu mới phải có ít nhất 6 ký tự');
+      return;
+    }
+    if (pwdNew === pwdCurrent) {
+      toast.error('Mật khẩu mới phải khác mật khẩu hiện tại');
+      return;
+    }
+
+    setIsChangingPwd(true);
+    const supabase = createClient();
+    try {
+      const { data: { user: authUser }, error: getUserErr } = await supabase.auth.getUser();
+      if (getUserErr || !authUser?.email) {
+        toast.error('Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại.');
+        return;
+      }
+
+      // Verify current password by attempting re-login (doesn't actually rotate session)
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: authUser.email,
+        password: pwdCurrent,
+      });
+      if (signInErr) {
+        toast.error('Mật khẩu hiện tại không đúng');
+        return;
+      }
+
+      const { error: updateErr } = await supabase.auth.updateUser({ password: pwdNew });
+      if (updateErr) {
+        toast.error('Không thể đổi mật khẩu: ' + updateErr.message);
+        return;
+      }
+
+      toast.success('Đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới.');
+      setPwdCurrent('');
+      setPwdNew('');
+      setPwdConfirm('');
+      setIsPasswordOpen(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'lỗi không xác định';
+      toast.error('Đã xảy ra lỗi: ' + msg);
+    } finally {
+      setIsChangingPwd(false);
     }
   };
 
@@ -1036,7 +1100,17 @@ export default function KTVDashboard() {
                 >
                   📖 Sổ tay & Hướng dẫn
                 </Link>
-                <button 
+                <button
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    setIsPasswordOpen(true);
+                  }}
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-slate-100 dark:shadow-none"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  Đổi mật khẩu
+                </button>
+                <button
                   onClick={handleLogout}
                   className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100 dark:shadow-none"
                 >
@@ -1045,6 +1119,128 @@ export default function KTVDashboard() {
                 </button>
               </div>
             </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Change Password Modal */}
+      <AnimatePresence>
+        {isPasswordOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isChangingPwd && setIsPasswordOpen(false)}
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100]"
+            />
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-[101] pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 16 }}
+                transition={{ type: "spring", damping: 25, stiffness: 350 }}
+                className="bg-white rounded-[32px] p-6 w-full max-w-sm shadow-2xl border border-slate-100 pointer-events-auto relative"
+              >
+                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 rounded-t-[32px]" />
+
+                <button
+                  onClick={() => setIsPasswordOpen(false)}
+                  disabled={isChangingPwd}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-40 flex items-center justify-center text-slate-500 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
+                <div className="mt-4 flex flex-col items-center text-center mb-6">
+                  <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 shadow-md bg-rose-100 text-rose-600 border border-rose-200/50 shadow-rose-100">
+                    <KeyRound className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-lg font-black text-slate-900 leading-tight mb-1">Đổi mật khẩu</h3>
+                  <p className="text-[11px] text-slate-400 font-medium">Nhập mật khẩu hiện tại để xác nhận, rồi đặt mật khẩu mới.</p>
+                </div>
+
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                  {/* Current */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                      <Lock className="w-3 h-3" /> Mật khẩu hiện tại
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={pwdShowing ? 'text' : 'password'}
+                        value={pwdCurrent}
+                        onChange={(e) => setPwdCurrent(e.target.value)}
+                        autoComplete="current-password"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 pr-10 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPwdShowing((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        tabIndex={-1}
+                      >
+                        {pwdShowing ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* New */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                      <KeyRound className="w-3 h-3" /> Mật khẩu mới (tối thiểu 6 ký tự)
+                    </label>
+                    <input
+                      type={pwdShowing ? 'text' : 'password'}
+                      value={pwdNew}
+                      onChange={(e) => setPwdNew(e.target.value)}
+                      autoComplete="new-password"
+                      required
+                      minLength={6}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  {/* Confirm */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3 h-3" /> Xác nhận mật khẩu mới
+                    </label>
+                    <input
+                      type={pwdShowing ? 'text' : 'password'}
+                      value={pwdConfirm}
+                      onChange={(e) => setPwdConfirm(e.target.value)}
+                      autoComplete="new-password"
+                      required
+                      minLength={6}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isChangingPwd}
+                    className="w-full bg-rose-500 hover:bg-rose-600 disabled:bg-rose-300 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100 mt-2"
+                  >
+                    {isChangingPwd ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Đang cập nhật...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        Xác nhận đổi mật khẩu
+                      </>
+                    )}
+                  </button>
+                </form>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
