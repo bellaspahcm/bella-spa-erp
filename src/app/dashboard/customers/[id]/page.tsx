@@ -36,11 +36,18 @@ import { getUsers, getCurrentUser } from '@/services/user-actions';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
-import { BookingModal } from '@/components/features/BookingModal';
+import nextDynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { PaymentReceiptTemplate, ReceiptData } from '@/components/common/PaymentReceiptTemplate';
 import { toPng } from 'html-to-image';
+
+// Lazy-load: only opens on user action, keeps customer detail page light.
+// Aliased to nextDynamic to avoid colliding with `export const dynamic` segment config below.
+const BookingModal = nextDynamic(
+  () => import('@/components/features/BookingModal').then(m => ({ default: m.BookingModal })),
+  { ssr: false }
+);
 
 export const dynamic = 'force-dynamic';
 
