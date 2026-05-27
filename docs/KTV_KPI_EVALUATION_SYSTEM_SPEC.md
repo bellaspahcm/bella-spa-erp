@@ -124,10 +124,46 @@ $$\text{KPI Final} = \text{Base KPI} \times F_{vol}$$
 
 ---
 
-## 5. ĐÁNH GIÁ KẾT QUẢ & CHẤT LƯỢNG
+## 5. PHÂN HỆ 3: HỆ THỐNG ĐỊNH VỊ GPS & THUẬT TOÁN PHÁT HIỆN BẤT THƯỜNG (GPS ANOMALIES)
+
+Để bảo vệ tính minh bạch của ca làm việc tại nhà khách hàng (Home-care) và tại trung tâm, hệ thống tích hợp phân hệ tự động xác thực vị trí qua GPS.
+
+### 5.1 Quy trình thu thập Tọa độ GPS (Client-side)
+Khi KTV thực hiện thao tác Check-in bắt đầu ca làm việc (`ktvCheckIn` trong [attendance-actions.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/attendance-actions.ts)) hoặc bắt đầu buổi trị liệu (`startSession` trong [ktv-actions.ts](file:///d:/Antigravity/Projects/BELLA%20SPA%20ERP/src/services/ktv-actions.ts)):
+1. Trình duyệt/Thiết bị di động của KTV gọi API phần cứng:
+   ```typescript
+   navigator.geolocation.getCurrentPosition(resolve, reject, {
+     timeout: 10000,
+     enableHighAccuracy: true
+   });
+   ```
+2. Thu thập chính xác **Vĩ độ (Latitude)** và **Kinh độ (Longitude)** thực tế và gửi về backend để ghi nhận vào cột `checkin_lat` và `checkin_lon` trong bảng `shifts` hoặc `session_logs`.
+3. Nếu thiết bị tắt GPS hoặc từ chối cấp quyền, hệ thống ghi nhận giá trị `null` và kích hoạt ngay cảnh báo vi phạm.
+
+### 5.2 Thuật toán Xác thực Vị trí trong Database (Postgres RPC)
+Hệ thống sử dụng phép so sánh Euclid bình phương khoảng cách hiệu năng cao trong cơ sở dữ liệu (tích hợp trong RPC `get_ai_attendance_kpis`):
+* **Tọa độ tham chiếu:** Tọa độ trung tâm của chi nhánh (`tenant_lat`, `tenant_lon`) và bán kính sai số cho phép (`gps_threshold_m`, mặc định **500 mét**) được truy vấn động từ bảng `tenants`.
+* **Công thức quy đổi mét sang độ chia địa lý:**
+  $$\text{Threshold}^2 = \left( \frac{\text{gps\_threshold\_m}}{111000.0} \right)^2$$
+* **Công thức tính bình phương khoảng cách thực tế:**
+  $$\text{Khoảng cách thực tế}^2 = (\text{checkin\_lat} - \text{tenant\_lat})^2 + (\text{checkin\_lon} - \text{tenant\_lon})^2$$
+* **Quy tắc phát hiện bất thường:**
+  - Nếu $\text{Khoảng cách thực tế}^2 > \text{Threshold}^2$ $\rightarrow$ Hệ thống ghi nhận trạng thái **Bất thường GPS (GPS Anomaly)** và tự động cộng dồn chỉ số `gps_anomaly_count` của KTV đó trong tháng.
+
+### 5.3 Chế tài xử phạt & Cảnh báo tự động từ AI Agent
+* **Cảnh báo CEO & COO:** Hệ thống Cronjob hàng ngày (`/api/cron/ai-autopilot`) tự động kiểm tra và liệt kê các KTV có ca lệch GPS để gửi cảnh báo đỏ trực tiếp đến ban giám đốc.
+* **Tác nhân AI CHRO:** Trong quá trình chốt lương hàng tháng, AI CHRO tự động phân tích `gps_anomaly_count`. Nếu KTV có số ca lệch GPS cao, hệ thống sẽ:
+  - Đổi trạng thái KTV thành `🔴 Bất thường GPS cao`.
+  - Tự động soạn thảo văn bản cảnh cáo kỷ luật gửi tới KTV.
+  - Tự động tính toán khấu trừ phạt vào cột `violations_deduction` trong bảng lương cuối tháng (`salary_records`).
+
+---
+
+## 6. ĐÁNH GIÁ KẾT QUẢ & CHẤT LƯỢNG
 * Tác vụ phân tích Typescript tĩnh được thực hiện thành công (`tsc --noEmit`), đảm bảo dự án không gặp bất kỳ lỗi biên dịch nào.
 * Hệ thống dữ liệu hoạt động mượt mà, bảo toàn tuyệt đối cơ sở tính lương của KTV và tối ưu hóa quy trình giám sát kỷ luật cho Admin.
 
 **Tài liệu nghiệm thu chính thức đã hoàn thành và phê duyệt.**
 * **Đại diện kỹ thuật:** Antigravity AI Pair Programmer  
 * **Đại diện nghiệp vụ:** Bella Spa ERP Administrator  
+
