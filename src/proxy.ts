@@ -1,11 +1,11 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Next.js 16 proxy: runs on every request BEFORE page/API handlers.
-// REQUIRED for Supabase SSR — refreshes the auth session so Server Actions
-// can reliably call supabase.auth.getUser() without getting null.
+// Next.js 16 proxy (formerly middleware): runs before page/API handlers
+// on the routes matched by `config.matcher` below. Used to refresh the
+// Supabase auth session cookie so Server Actions in /dashboard and /ktv
+// can read a fresh user without an extra round-trip.
 export async function proxy(request: NextRequest) {
-  console.log("[Proxy] PATH:", request.nextUrl.pathname);
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -42,20 +42,13 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  const { data: { user }, error } = await supabase.auth.getUser();
-  // console.log("[Proxy] User refresh:", !!user, error?.message);
-
-  const isProtectedRoute = 
-    request.nextUrl.pathname.startsWith('/dashboard') || 
-    request.nextUrl.pathname.startsWith('/ktv') || 
-    request.nextUrl.pathname.startsWith('/portal');
+  const { data: { user } } = await supabase.auth.getUser();
 
   const mockUserEmail = request.cookies.get('mock_user_email')?.value;
   const isMockDev = process.env.NODE_ENV === 'development' && !!mockUserEmail;
 
-  if (isProtectedRoute && !user && !isMockDev) {
+  if (!user && !isMockDev) {
     const loginUrl = new URL('/login', request.url);
-    // Optional: save the intended destination to redirect back after login
     loginUrl.searchParams.set('next', request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -63,7 +56,7 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-// Next.js 16/Turbopack compatibility exports
+// Next.js still recognizes the `middleware` export name as a deprecated alias.
 export async function middleware(request: NextRequest) {
   return proxy(request);
 }
@@ -71,8 +64,8 @@ export async function middleware(request: NextRequest) {
 export default proxy;
 
 export const config = {
-  matcher: [
-    // Run on all routes EXCEPT Next.js internals and static assets
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  // Only run on routes that require an authenticated session.
+  // Portal (/portal/[token]) is intentionally excluded — customers access
+  // it via magic-link tokens, not Supabase Auth.
+  matcher: ['/dashboard/:path*', '/ktv/:path*'],
 };

@@ -17,46 +17,25 @@ export default function DashboardLayout({
 
   useEffect(() => {
     async function checkAuth() {
-      // Thử tối đa 3 lần với delay 800ms để xử lý trường hợp
-      // proxy.ts chưa kịp refresh session token khi navigate trực tiếp.
-      const MAX_RETRIES = 3;
-      const RETRY_DELAY_MS = 800;
-
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-          const user = await getCurrentUser();
-
-          if (!user) {
-            if (attempt < MAX_RETRIES) {
-              // Chờ và thử lại — session có thể đang được proxy refresh
-              await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-              continue;
-            }
-            // Hết lần thử — chuyển về login
-            router.replace('/login');
-            return;
-          }
-
-          if (user.isSuspended) {
-            setIsSuspended(true);
-            setIsAuthorized(false);
-            return;
-          }
-          if (user.role?.toLowerCase() === 'ktv') {
-            router.replace('/ktv/dashboard');
-            return;
-          }
-          setIsAuthorized(true);
+      try {
+        const user = await getCurrentUser();
+        if (!user) {
+          router.replace('/login');
           return;
-        } catch (err) {
-          console.error(`[DashboardLayout] Auth check attempt ${attempt} failed:`, err);
-          if (attempt < MAX_RETRIES) {
-            await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-          } else {
-            // Tất cả lần thử đều thất bại — chuyển về login
-            router.replace('/login');
-          }
         }
+        if (user.isSuspended) {
+          setIsSuspended(true);
+          setIsAuthorized(false);
+          return;
+        }
+        if (user.role?.toLowerCase() === 'ktv') {
+          router.replace('/ktv/dashboard');
+          return;
+        }
+        setIsAuthorized(true);
+      } catch (err) {
+        console.error('[DashboardLayout] Auth check failed:', err);
+        router.replace('/login');
       }
     }
     checkAuth();
