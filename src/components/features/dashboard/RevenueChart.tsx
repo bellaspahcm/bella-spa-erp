@@ -254,7 +254,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
               return (
                 <>
                   <p className="text-4xl font-black text-foreground tracking-tighter">
-                    {latestRating !== null ? latestRating : '—'}
+                    {latestRating !== null ? Number(latestRating).toFixed(2) : '—'}
                   </p>
                   <div className="flex items-center gap-1 mt-1">
                     {[1, 2, 3, 4, 5].map((s) => (
