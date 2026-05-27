@@ -113,7 +113,17 @@ export default function StaffManagementTab() {
       if (result.error) {
         toast.error("Lỗi: " + result.error);
       } else {
-        toast.success("Đã thêm nhân viên " + newStaff.full_name);
+        // Show the default password to the admin so they can pass it on.
+        // Toast stays open longer (12s) so it's not missed.
+        const pwd = (result as { defaultPassword?: string }).defaultPassword;
+        if (pwd) {
+          toast.success(
+            `Đã thêm ${newStaff.full_name}. Mật khẩu mặc định: ${pwd} (báo nhân viên đổi sau lần đăng nhập đầu).`,
+            { duration: 12000 }
+          );
+        } else {
+          toast.success("Đã thêm nhân viên " + newStaff.full_name);
+        }
         setIsAddModalOpen(false);
         setNewStaff({ full_name: "", email: "", role: "ktv" });
         fetchUsers();

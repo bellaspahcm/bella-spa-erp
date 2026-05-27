@@ -174,53 +174,99 @@ export async function getUsers(): Promise<StaffRecord[]> {
 
 import { checkSubscriptionLimit } from '@/lib/subscription';
 
+/**
+ * Default password assigned to newly-created staff. Communicated to admin
+ * via the createUser response so they can pass it to the employee. The
+ * employee should change it on first login (frontend will surface this).
+ */
+const DEFAULT_NEW_STAFF_PASSWORD = 'Bella@2026';
+
 export async function createUser(formData: CreateUserInput) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
 
   const targetRole = formData.role || 'ktv';
-  
+
   if (targetRole === 'ktv' && currentUser?.tenant_id) {
     const ktvLimit = await checkSubscriptionLimit(currentUser.tenant_id, 'ktv');
     if (ktvLimit.isBlocked) {
       return { error: 'Vượt quá giới hạn nhân sự kỹ thuật viên của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.' };
     }
   }
-  
+
+  // STEP 1 — Create the Supabase Auth account first so the employee can log in.
+  // Without this, the public.users row was a dead record (no auth → no login).
+  // Pattern mirrors registerNewTenant() in onboarding-actions.ts.
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    return { error: 'Hệ thống chưa cấu hình SUPABASE_SERVICE_ROLE_KEY — không thể tạo tài khoản đăng nhập. Vui lòng liên hệ kỹ thuật.' };
+  }
+
+  const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    serviceRoleKey,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
+
+  const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.createUser({
+    email: formData.email,
+    password: DEFAULT_NEW_STAFF_PASSWORD,
+    email_confirm: true, // bypass confirmation email (rate limit + UX)
+    user_metadata: { full_name: formData.full_name },
+  });
+
+  if (adminError) {
+    console.error('Error creating auth user:', adminError);
+    if (adminError.message?.toLowerCase().includes('already') || adminError.message?.includes('registered')) {
+      return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
+    }
+    return { error: `Không thể tạo tài khoản đăng nhập: ${adminError.message}` };
+  }
+
+  const authUserId = adminData?.user?.id;
+  if (!authUserId) {
+    return { error: 'Tạo tài khoản đăng nhập không thành công (auth user id rỗng).' };
+  }
+
+  // STEP 2 — Insert the profile row with id matching the auth user, so
+  // getCurrentUser()'s primary id lookup (users.id = auth.uid) hits directly.
   const { data, error } = await supabase
     .from('users')
     .insert([{
+      id: authUserId,
       email: formData.email as string,
       full_name: formData.full_name as string,
       role: targetRole as string,
       status: 'active',
-      tenant_id: currentUser?.tenant_id
+      tenant_id: currentUser?.tenant_id,
     }])
     .select()
     .single();
 
   if (error) {
-    console.error('Error creating user:', error);
+    // Rollback the auth user so we don't leave an orphan account hanging.
+    await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => {});
+    console.error('Error creating user profile:', error);
     if (error.code === '23505' || error.message?.includes('users_email_key')) {
       return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
     }
     return { error: error.message };
   }
 
-  // Record Audit Log
   await recordAuditLog({
     action: 'INSERT',
     table_name: 'users',
     record_id: data.id,
-    new_data: { 
-      full_name: formData.full_name, 
-      email: formData.email, 
-      role: targetRole
-    }
+    new_data: {
+      full_name: formData.full_name,
+      email: formData.email,
+      role: targetRole,
+    },
   });
 
   await safeRevalidatePath('/dashboard/settings');
-  return { data };
+  return { data, defaultPassword: DEFAULT_NEW_STAFF_PASSWORD };
 }
 
 export async function updateUserStatus(id: string, status: 'active' | 'inactive') {
