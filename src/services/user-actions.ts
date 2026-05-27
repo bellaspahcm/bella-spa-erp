@@ -26,14 +26,16 @@ export interface CreateUserInput {
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const supabase = await createClient();
   
-  // Use getSession() instead of getUser() — getSession() validates JWT locally
-  // (no extra network round-trip to Supabase Auth server). getUser() can silently
-  // return null in server action contexts if the auth verification network call fails.
-  let { data: { user } } = await supabase.auth.getUser(); 
+  // Use getSession() first — getSession() validates JWT locally
+  // (no extra network round-trip to Supabase Auth server and avoids concurrent session refresh token race conditions).
+  // Fallback to getUser() only if getSession() is null.
+  const { data: { session } } = await supabase.auth.getSession();
+  let user = session?.user ?? null;
+  
   if (!user) { 
-    const { data: { session } } = await supabase.auth.getSession(); 
-    user = session?.user ?? null; 
-    console.log("[getCurrentUser] Auth result:", !!user, user?.id); 
+    const { data: { user: authUser } } = await supabase.auth.getUser(); 
+    user = authUser ?? null;
+    console.log("[getCurrentUser] Fallback Auth result:", !!user, user?.id); 
   }
   
   if (!user) {
