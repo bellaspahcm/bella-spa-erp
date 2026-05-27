@@ -3,9 +3,11 @@
 import fs from 'fs';
 import path from 'path';
 import { getCurrentUser } from './user-actions';
-import { ALL_GUIDES, isManualPermitted, GuideListItem } from './user-manuals-utils';
+import { ALL_GUIDES, isManualPermitted } from './user-manuals-utils';
+import type { GuideListItem } from './user-manuals-utils';
 
 export type { GuideListItem };
+
 
 /**
  * Lấy danh sách tài liệu hướng dẫn được phép xem của người dùng hiện tại
