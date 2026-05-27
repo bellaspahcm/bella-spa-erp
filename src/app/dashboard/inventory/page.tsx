@@ -6,7 +6,7 @@ import {
   Package, AlertTriangle, PlusCircle, History,
   TrendingDown, TrendingUp, RefreshCw, Search,
   ArrowRightLeft, X, ShieldCheck, Truck, ClipboardList,
-  CheckCircle2, ShoppingCart, Trash2, ArrowRight
+  CheckCircle2, ShoppingCart, Trash2, ArrowRight, ClipboardCheck
 } from 'lucide-react';
 import { getSupabase } from '@/lib/supabase-client';
 import { toast } from 'sonner';
@@ -19,13 +19,29 @@ import {
   cancelTransferOrder,
   InventoryTransferOrder
 } from '@/services/inventory-transfer-actions';
+import {
+  getMonthlyReconciliation,
+  saveMonthlyReconciliation,
+} from '@/services/inventory-actions';
+
+type ReconRow = {
+  item_id: string;
+  name: string;
+  unit: string;
+  price_per_unit: number;
+  nhap: number;
+  tieu_hao: number;
+  expected: number;
+  actual: number | '';
+  notes: string;
+};
 
 const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
                 'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
 const YEARS  = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i);
 
 export default function InventoryPage() {
-  const [activeTab, setActiveTab] = useState<'stock' | 'requests'>('stock');
+  const [activeTab, setActiveTab] = useState<'stock' | 'requests' | 'reconciliation'>('stock');
   const [items,    setItems]    = useState<any[]>([]);
   const [logs,     setLogs]     = useState<any[]>([]);
   const [loading,  setLoading]  = useState(true);
@@ -65,6 +81,13 @@ export default function InventoryPage() {
     name: '', sku: '', unit: 'cái', stock_level: 0,
     min_stock_level: 10, price_per_unit: 0, category: ''
   });
+
+  // ── Reconciliation tab state ────────────────────────────────────────────────
+  const [reconMonth, setReconMonth] = useState(now.getMonth());
+  const [reconYear, setReconYear] = useState(now.getFullYear());
+  const [reconRows, setReconRows] = useState<ReconRow[]>([]);
+  const [reconLoading, setReconLoading] = useState(false);
+  const [reconSaving, setReconSaving] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -124,7 +147,82 @@ export default function InventoryPage() {
     if (activeTab === 'requests') {
       fetchOrders();
     }
+    if (activeTab === 'reconciliation') {
+      fetchReconciliation();
+    }
   }, [activeTab]);
+
+  // Reload báo cáo kiểm kê khi đổi tháng/năm
+  useEffect(() => {
+    if (activeTab === 'reconciliation') {
+      fetchReconciliation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reconMonth, reconYear]);
+
+  const fetchReconciliation = async () => {
+    setReconLoading(true);
+    try {
+      const res = await getMonthlyReconciliation(reconYear, reconMonth + 1);
+      if (!res.success) {
+        toast.error(res.error || 'Lỗi tải báo cáo kiểm kê');
+        setReconRows([]);
+        return;
+      }
+      setReconRows(res.items.map(it => ({
+        ...it,
+        actual: '',
+        notes: '',
+      })));
+    } catch (e: any) {
+      console.error('[fetchReconciliation]', e);
+      toast.error(e?.message || 'Lỗi tải báo cáo kiểm kê');
+    } finally {
+      setReconLoading(false);
+    }
+  };
+
+  const handleSaveReconciliation = async () => {
+    // Chỉ gửi các dòng đã nhập actual (kể cả 0 — nghĩa là hết hàng)
+    const entries = reconRows
+      .filter(r => r.actual !== '' && r.actual !== null && r.actual !== undefined)
+      .map(r => ({
+        item_id: r.item_id,
+        actual_stock: Number(r.actual),
+        notes: r.notes || undefined,
+      }));
+
+    if (entries.length === 0) {
+      toast.error('Vui lòng nhập tồn thực tế cho ít nhất 1 mặt hàng');
+      return;
+    }
+
+    if (!confirm(`Bạn xác nhận lưu kết quả kiểm kê cho ${entries.length} mặt hàng (tháng ${reconMonth + 1}/${reconYear})?\nHệ thống sẽ điều chỉnh tồn kho về số thực tế và ghi log chênh lệch.`)) {
+      return;
+    }
+
+    setReconSaving(true);
+    try {
+      const res = await saveMonthlyReconciliation(reconYear, reconMonth + 1, entries);
+      if (res.success) {
+        toast.success(`Đã lưu kiểm kê ${res.processed} mặt hàng`);
+        if (res.error) toast.warning(res.error);
+        // Reload cả tồn kho lẫn báo cáo
+        await Promise.all([fetchData(), fetchReconciliation()]);
+      } else {
+        toast.error(res.error || 'Lỗi lưu kiểm kê');
+      }
+    } catch (e: any) {
+      console.error('[handleSaveReconciliation]', e);
+      toast.error(e?.message || 'Lỗi hệ thống');
+    } finally {
+      setReconSaving(false);
+    }
+  };
+
+  const updateReconRow = (idx: number, patch: Partial<ReconRow>) => {
+    setReconRows(prev => prev.map((r, i) => i === idx ? { ...r, ...patch } : r));
+  };
 
   // Filter items by search + stock status
   const filteredItems = useMemo(() =>
@@ -368,6 +466,15 @@ export default function InventoryPage() {
         >
           <Truck className="w-4 h-4" /> Yêu cầu cấp từ HQ
         </button>
+        <button
+          onClick={() => setActiveTab('reconciliation')}
+          className={cn(
+            "pb-4 font-black text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2",
+            activeTab === 'reconciliation' ? "border-primary text-primary" : "border-transparent text-slate-400 hover:text-slate-600"
+          )}
+        >
+          <ClipboardCheck className="w-4 h-4" /> Kiểm kê cuối tháng
+        </button>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
@@ -480,7 +587,7 @@ export default function InventoryPage() {
                 </table>
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'requests' ? (
             /* ── Transfer Orders Sub-View ── */
             <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
               <div className="p-8 border-b border-slate-50 flex items-center justify-between">
@@ -604,6 +711,166 @@ export default function InventoryPage() {
                 </table>
               </div>
             </div>
+          ) : (
+            /* ── Monthly Reconciliation Sub-View ── */
+            <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
+              <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <ClipboardCheck className="text-primary w-5 h-5" /> Kiểm kê Tồn Kho Cuối Tháng
+                  </h3>
+                  <p className="text-slate-400 text-xs font-semibold mt-1 leading-relaxed">
+                    Nhập tồn thực tế đếm được vào cột bên phải. Hệ thống tự so với <span className="text-slate-700 font-bold">"Tồn dự kiến"</span> và ghi chênh lệch để đối soát hao hụt.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-2 w-64">
+                    <PremiumSelect
+                      value={String(reconMonth)}
+                      onChange={(val) => setReconMonth(Number(val))}
+                      options={MONTHS.map((m, i) => ({ value: String(i), label: m }))}
+                    />
+                    <PremiumSelect
+                      value={String(reconYear)}
+                      onChange={(val) => setReconYear(Number(val))}
+                      options={YEARS.map(y => ({ value: String(y), label: String(y) }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {reconLoading ? (
+                <div className="p-16 text-center">
+                  <RefreshCw className="w-8 h-8 mx-auto text-primary animate-spin mb-3" />
+                  <p className="text-slate-400 text-sm font-bold">Đang tải báo cáo kiểm kê tháng {reconMonth + 1}/{reconYear}...</p>
+                </div>
+              ) : reconRows.length === 0 ? (
+                <div className="p-16 text-center text-slate-400 font-semibold">
+                  Không có vật tư nào để kiểm kê.
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto custom-scrollbar w-full">
+                    <table className="w-full min-w-[900px] text-left">
+                      <thead>
+                        <tr className="bg-slate-50/50">
+                          {['Vật tư', 'Nhập trong tháng', 'Tiêu hao trong tháng', 'Tồn dự kiến', 'Tồn thực tế', 'Chênh lệch', 'Ghi chú'].map(h => (
+                            <th key={h} className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {reconRows.map((row, idx) => {
+                          const actualNum = row.actual === '' ? null : Number(row.actual);
+                          const variance = actualNum === null ? null : actualNum - row.expected;
+                          const varianceValue = variance === null ? 0 : variance * row.price_per_unit;
+                          return (
+                            <tr key={row.item_id} className="hover:bg-slate-50/30 transition-all">
+                              <td className="px-5 py-4 whitespace-nowrap">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 bg-rose-50 text-primary rounded-xl flex items-center justify-center shrink-0">
+                                    <Package className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-black text-slate-900 whitespace-nowrap">{row.name}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase">{row.unit}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 whitespace-nowrap">
+                                <span className="text-sm font-black text-emerald-600">+{row.nhap}</span>
+                                <span className="text-[10px] text-slate-400 ml-1">{row.unit}</span>
+                              </td>
+                              <td className="px-5 py-4 whitespace-nowrap">
+                                <span className="text-sm font-black text-rose-500">-{row.tieu_hao}</span>
+                                <span className="text-[10px] text-slate-400 ml-1">{row.unit}</span>
+                              </td>
+                              <td className="px-5 py-4 whitespace-nowrap">
+                                <span className="text-sm font-black text-slate-900">{row.expected}</span>
+                                <span className="text-[10px] text-slate-400 ml-1">{row.unit}</span>
+                              </td>
+                              <td className="px-5 py-4 whitespace-nowrap">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  step="0.01"
+                                  value={row.actual === '' ? '' : row.actual}
+                                  onFocus={e => e.target.select()}
+                                  onChange={e => updateReconRow(idx, {
+                                    actual: e.target.value === '' ? '' : Number(e.target.value),
+                                  })}
+                                  placeholder="Đếm tay..."
+                                  className="w-24 bg-slate-50 px-3 py-2 rounded-xl text-sm font-bold text-center outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                              </td>
+                              <td className="px-5 py-4 whitespace-nowrap">
+                                {variance === null ? (
+                                  <span className="text-slate-300 text-xs font-bold">—</span>
+                                ) : variance === 0 ? (
+                                  <span className="inline-flex items-center gap-1 text-emerald-500 text-xs font-black">
+                                    <CheckCircle2 className="w-3.5 h-3.5" /> Khớp sổ
+                                  </span>
+                                ) : (
+                                  <div>
+                                    <span className={cn(
+                                      'text-sm font-black',
+                                      variance > 0 ? 'text-emerald-600' : 'text-amber-600'
+                                    )}>
+                                      {variance > 0 ? '+' : ''}{variance} {row.unit}
+                                    </span>
+                                    {row.price_per_unit > 0 && (
+                                      <p className={cn(
+                                        'text-[10px] font-bold mt-0.5',
+                                        variance > 0 ? 'text-emerald-500' : 'text-amber-500'
+                                      )}>
+                                        ≈ {formatNumberWithSeparator(Math.abs(varianceValue))}đ
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-5 py-4">
+                                <input
+                                  type="text"
+                                  value={row.notes}
+                                  onChange={e => updateReconRow(idx, { notes: e.target.value })}
+                                  placeholder="Nguyên nhân..."
+                                  className="w-40 bg-slate-50 px-3 py-2 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Footer: Summary + Save */}
+                  <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="text-xs font-bold text-slate-500 leading-relaxed">
+                      {(() => {
+                        const filled = reconRows.filter(r => r.actual !== '').length;
+                        const mismatch = reconRows.filter(r => r.actual !== '' && Number(r.actual) !== r.expected).length;
+                        return (
+                          <>
+                            <span className="text-slate-900">{filled}</span> / {reconRows.length} mặt hàng đã đếm
+                            {mismatch > 0 && <span className="ml-3 text-amber-600">⚠️ {mismatch} mặt hàng lệch sổ</span>}
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <button
+                      onClick={handleSaveReconciliation}
+                      disabled={reconSaving || reconRows.every(r => r.actual === '')}
+                      className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-600 active:scale-95 transition-all shadow-lg disabled:opacity-50"
+                    >
+                      {reconSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                      Lưu Kết Quả Kiểm Kê
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
 
@@ -661,6 +928,7 @@ export default function InventoryPage() {
                       {lg.reason === 'transfer_receipt' && 'Nhận từ Tổng bộ'}
                       {lg.reason === 'transfer_shipment' && 'Xuất chuyển kho'}
                       {lg.reason === 'initial' && 'Tồn kho ban đầu'}
+                      {lg.reason === 'monthly_reconciliation' && 'Kiểm kê cuối tháng'}
                     </p>
                     <p className="text-[10px] text-slate-400 font-medium truncate max-w-[190px]">{lg.notes || ''}</p>
                     <p className="text-[10px] text-slate-400">{new Date(lg.created_at).toLocaleDateString('vi-VN')}</p>
