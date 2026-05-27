@@ -1,0 +1,150 @@
+'use client';
+
+import { use, useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { 
+  ChevronLeft, 
+  Printer, 
+  Maximize2, 
+  Minimize2,
+  Sparkles,
+  BookOpen,
+  Loader2
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { getPermittedGuides } from '@/services/user-manuals';
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+export default function GuideReader({ params }: PageProps) {
+  const router = useRouter();
+  const { slug } = use(params);
+  
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [guideTitle, setGuideTitle] = useState('Đang tải...');
+
+  useEffect(() => {
+    async function verifyAccess() {
+      try {
+        const permitted = await getPermittedGuides();
+        const found = permitted.find((g) => g.slug === slug);
+        if (!found) {
+          toast.error('Bạn không có quyền truy cập tài liệu này.');
+          router.push('/dashboard/guides');
+          return;
+        }
+        setGuideTitle(found.title);
+      } catch (err) {
+        console.error('Error verifying guide access:', err);
+        router.push('/dashboard/guides');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    verifyAccess();
+  }, [slug, router]);
+
+  const handlePrint = () => {
+    const iframe = document.getElementById('guide-frame') as HTMLIFrameElement;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } else {
+      toast.error('Không thể in tài liệu vào lúc này.');
+    }
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#FFF5F7] dark:bg-[#11100F]">
+        <Loader2 className="w-10 h-10 animate-spin text-primary animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`min-h-screen bg-[#FFF5F7] dark:bg-[#11100F] transition-colors duration-300 ${
+      isFullscreen ? 'p-0 z-50 fixed inset-0' : 'py-8 px-6 lg:px-12'
+    }`}>
+      <div className={`max-w-7xl mx-auto h-full flex flex-col ${
+        isFullscreen ? 'h-screen max-w-full' : 'space-y-6'
+      }`}>
+        
+        {/* Navigation / Header Bar */}
+        {!isFullscreen && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 dark:bg-[#1C1B19]/80 border border-pink-100 dark:border-[#3E3A35] rounded-3xl p-4 shadow-sm backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard/guides"
+                className="w-10 h-10 rounded-2xl bg-pink-50 hover:bg-pink-100 dark:bg-[#5D1C34]/40 dark:hover:bg-[#5D1C34]/60 text-primary dark:text-[#A67D44] flex items-center justify-center transition-colors active:scale-95"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </Link>
+              <div>
+                <span className="text-[9px] font-black text-primary dark:text-[#A67D44] uppercase tracking-widest block mb-0.5">
+                  Tài liệu Hướng dẫn
+                </span>
+                <h1 className="text-lg font-black text-slate-800 dark:text-[#EFE9E1]">
+                  {guideTitle}
+                </h1>
+              </div>
+            </div>
+
+            {/* Quick Actions Panel */}
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <button
+                onClick={handlePrint}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-[#1C1B19] dark:border dark:border-[#3E3A35] text-slate-600 dark:text-[#CDBCAB] text-xs font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer"
+                title="In tài liệu hướng dẫn"
+              >
+                <Printer className="w-4 h-4" />
+                <span>In tài liệu</span>
+              </button>
+              
+              <button
+                onClick={toggleFullscreen}
+                className="w-10 h-10 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-[#1C1B19] dark:border dark:border-[#3E3A35] text-slate-600 dark:text-[#CDBCAB] flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+                title="Phóng to toàn màn hình"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic Iframe Content Frame */}
+        <div className={`relative bg-white dark:bg-[#1C1B19] border border-pink-100 dark:border-[#3E3A35] shadow-[0_12px_40px_rgba(219,39,119,0.04)] dark:shadow-none transition-all duration-300 flex-grow ${
+          isFullscreen 
+            ? 'w-screen h-screen border-none rounded-none shadow-none' 
+            : 'rounded-[2rem] overflow-hidden h-[80vh]'
+        }`}>
+          {isFullscreen && (
+            <button
+              onClick={toggleFullscreen}
+              className="absolute top-4 right-4 z-50 w-10 h-10 rounded-2xl bg-slate-900/60 hover:bg-slate-900/80 text-white flex items-center justify-center backdrop-blur-md active:scale-95 transition-all shadow-md cursor-pointer"
+              title="Thoát toàn màn hình"
+            >
+              <Minimize2 className="w-5 h-5" />
+            </button>
+          )}
+          
+          <iframe
+            id="guide-frame"
+            src={`/api/guides/${slug}`}
+            className="w-full h-full border-none"
+            title={guideTitle}
+          />
+        </div>
+
+      </div>
+    </div>
+  );
+}

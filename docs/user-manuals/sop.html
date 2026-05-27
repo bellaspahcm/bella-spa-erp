@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quy trình Vận hành Tiêu chuẩn (SOP) · Bella Spa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* ─── Deep rose palette (cao cấp hơn manuals) ─── */
+    --rose-950: #4C0519;
+    --rose-900: #6B0F2A;
+    --rose-800: #881337;
+    --rose-700: #9F1239;
+    --rose-600: #BE123C;
+    --rose-500: #E11D48;
+    --rose-200: #FECDD3;
+    --rose-100: #FFE4E6;
+    --rose-50:  #FFF1F2;
+
+    --gold: #92400E;
+    --gold-soft: #FCD34D;
+    --cream: #FFFAF7;
+    --paper: #FEFCFA;
+    --ink: #1F0F14;
+    --ink-soft: #4A2535;
+    --muted: #8A5566;
+    --line: #F5D5DD;
+    --line-strong: #E5B5C0;
+
+    --shadow-elegant: 0 4px 20px rgba(76,5,25,0.06), 0 1px 3px rgba(76,5,25,0.04);
+    --shadow-lift: 0 12px 40px rgba(76,5,25,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Be Vietnam Pro', -apple-system, system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.7;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  .container { max-width: 1240px; margin: 0 auto; padding: 0 28px; }
+
+  /* ════════════════════════ HERO COVER ════════════════════════ */
+  .cover {
+    background:
+      radial-gradient(ellipse at 15% 25%, rgba(190,18,60,0.08), transparent 50%),
+      radial-gradient(ellipse at 85% 75%, rgba(76,5,25,0.10), transparent 50%),
+      linear-gradient(180deg, #FFF8FA 0%, #FFEEF2 100%);
+    padding: 80px 0 100px;
+    position: relative;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(90deg, transparent 49.5%, rgba(76,5,25,0.03) 50%, transparent 50.5%),
+      linear-gradient(0deg, transparent 49.5%, rgba(76,5,25,0.03) 50%, transparent 50.5%);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+  .cover-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+  .crest {
+    width: 110px;
+    height: 110px;
+    margin: 0 auto 28px;
+    border: 2px solid var(--rose-800);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: white;
+    box-shadow: var(--shadow-elegant), inset 0 0 0 4px white, inset 0 0 0 5px var(--rose-200);
+  }
+  .crest::before, .crest::after {
+    content: '';
+    position: absolute;
+    width: 60px;
+    height: 1px;
+    background: var(--rose-800);
+  }
+  .crest::before { left: -80px; top: 50%; }
+  .crest::after  { right: -80px; top: 50%; }
+  .crest-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 32px;
+    color: var(--rose-800);
+    line-height: 1;
+  }
+  .cover-eyebrow {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--rose-700);
+    margin-bottom: 24px;
+  }
+  .cover-eyebrow::before,
+  .cover-eyebrow::after {
+    content: '· · ·';
+    margin: 0 18px;
+    color: var(--rose-300, var(--rose-200));
+  }
+  .cover h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(48px, 7vw, 84px);
+    font-weight: 600;
+    line-height: 1.05;
+    color: var(--rose-950);
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+  }
+  .cover h1 em {
+    font-style: italic;
+    color: var(--rose-700);
+    font-weight: 700;
+  }
+  .cover-sub {
+    font-size: 18px;
+    color: var(--ink-soft);
+    max-width: 720px;
+    margin: 0 auto 48px;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+  .cover-meta {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    flex-wrap: wrap;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .cover-meta-item {
+    text-align: center;
+  }
+  .cover-meta-item dt {
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .cover-meta-item dd {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--rose-900);
+  }
+
+  /* ════════════════════════ TOC ════════════════════════ */
+  section.toc-section {
+    padding: 80px 0;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+  }
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--rose-700);
+    margin-bottom: 16px;
+  }
+  .section-label::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--rose-700);
+  }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 44px;
+    font-weight: 600;
+    color: var(--rose-950);
+    margin-bottom: 12px;
+    line-height: 1.1;
+  }
+  .section-title em { font-style: italic; color: var(--rose-700); }
+  .section-intro {
+    font-size: 16px;
+    color: var(--ink-soft);
+    max-width: 680px;
+    margin-bottom: 56px;
+  }
+
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 18px;
+  }
+  .toc-item {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 22px 24px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .toc-item:hover {
+    border-color: var(--rose-700);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lift);
+  }
+  .toc-item .toc-id {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--rose-700);
+    line-height: 1;
+    flex-shrink: 0;
+    width: 56px;
+  }
+  .toc-item .toc-meta {
+    flex: 1;
+  }
+  .toc-item .toc-cat {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .toc-item .toc-title {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  /* ════════════════════════ SOP CARDS ════════════════════════ */
+  .sop-stream {
+    padding: 80px 0;
+    background:
+      linear-gradient(180deg, var(--cream) 0%, #FFF5F8 100%);
+  }
+
+  .sop {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    margin-bottom: 60px;
+    padding: 56px;
+    scroll-margin-top: 24px;
+    box-shadow: var(--shadow-elegant);
+    position: relative;
+  }
+  .sop::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--rose-700) 0%, var(--rose-900) 100%);
+    border-radius: 4px 0 0 4px;
+  }
+
+  /* SOP header */
+  .sop-head {
+    border-bottom: 2px solid var(--line);
+    padding-bottom: 32px;
+    margin-bottom: 32px;
+  }
+  .sop-id-row {
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .sop-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--rose-700);
+    background: var(--rose-50);
+    padding: 4px 12px;
+    border-radius: 3px;
+    border: 1px solid var(--rose-200);
+  }
+  .sop-cat {
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .sop-cat::before {
+    content: '◆';
+    margin-right: 8px;
+    color: var(--rose-500);
+  }
+  .sop-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 38px;
+    font-weight: 600;
+    line-height: 1.15;
+    color: var(--rose-950);
+    margin-bottom: 16px;
+  }
+  .sop-title em { font-style: italic; color: var(--rose-700); }
+  .sop-purpose {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    font-style: italic;
+    border-left: 3px solid var(--rose-700);
+    padding-left: 18px;
+  }
+
+  /* Spec table */
+  .sop-spec {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0;
+    margin-bottom: 36px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .spec-cell {
+    padding: 16px 20px;
+    border-right: 1px solid var(--line);
+  }
+  .spec-cell:last-child { border-right: none; }
+  .spec-cell dt {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .spec-cell dd {
+    font-size: 14px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  @media (max-width: 700px) {
+    .sop-spec { grid-template-columns: 1fr 1fr; }
+    .spec-cell:nth-child(2n) { border-right: none; }
+    .spec-cell { border-bottom: 1px solid var(--line); }
+  }
+
+  /* SOP body */
+  .sop h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--rose-900);
+    margin: 36px 0 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .sop h3 .h3-num {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--rose-500);
+    flex-shrink: 0;
+  }
+  .sop h4 {
+    font-size: 14.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--rose-800);
+    margin: 22px 0 10px;
+  }
+  .sop p { margin-bottom: 14px; color: var(--ink); }
+  .sop ul, .sop ol { padding-left: 28px; margin-bottom: 14px; }
+  .sop ul li::marker, .sop ol li::marker { color: var(--rose-600); font-weight: 800; }
+  .sop ul li, .sop ol li { margin-bottom: 6px; }
+  .sop strong { color: var(--rose-900); font-weight: 700; }
+  .sop code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--rose-50);
+    color: var(--rose-800);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.88em;
+    font-weight: 600;
+    border: 1px solid var(--rose-100);
+  }
+
+  /* Procedure steps */
+  .procedure {
+    list-style: none;
+    padding: 0 !important;
+    counter-reset: step;
+    margin: 20px 0;
+  }
+  .procedure > li {
+    counter-increment: step;
+    position: relative;
+    background: linear-gradient(180deg, white 0%, var(--rose-50) 100%);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--rose-700);
+    padding: 20px 24px 20px 80px;
+    margin-bottom: 12px !important;
+    border-radius: 0 4px 4px 0;
+  }
+  .procedure > li::before {
+    content: counter(step, decimal-leading-zero);
+    position: absolute;
+    left: 24px;
+    top: 18px;
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--rose-700);
+    line-height: 1;
+  }
+  .procedure > li > strong:first-child {
+    display: block;
+    font-size: 15px;
+    color: var(--rose-900);
+    margin-bottom: 4px;
+  }
+  .procedure ul {
+    margin-top: 8px !important;
+    margin-bottom: 0 !important;
+    padding-left: 18px !important;
+  }
+  .procedure ul li {
+    background: none !important;
+    border: none !important;
+    padding: 2px 0 !important;
+    margin-bottom: 2px !important;
+  }
+  .procedure ul li::before { content: none !important; }
+
+  /* RACI table */
+  .raci {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0;
+    font-size: 13.5px;
+    background: white;
+  }
+  .raci th {
+    background: var(--rose-900);
+    color: white;
+    text-align: center;
+    padding: 12px 8px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .raci th:first-child { text-align: left; padding-left: 18px; }
+  .raci td {
+    padding: 12px 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+    font-weight: 600;
+  }
+  .raci td:first-child {
+    text-align: left;
+    padding-left: 18px;
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .raci tr:hover td { background: var(--rose-50); }
+  .raci .R { color: var(--rose-700); font-weight: 800; }
+  .raci .A { color: var(--gold); font-weight: 800; }
+  .raci .C { color: var(--ink-soft); }
+  .raci .I { color: var(--muted); }
+
+  /* Pull quote / Callout */
+  .callout {
+    margin: 22px 0;
+    padding: 22px 28px;
+    border-left: 3px solid;
+    background: linear-gradient(90deg, var(--rose-50) 0%, transparent 80%);
+    border-radius: 0 4px 4px 0;
+    font-size: 14.5px;
+  }
+  .callout.standard { border-color: var(--rose-700); }
+  .callout.critical { border-color: var(--rose-900); background: linear-gradient(90deg, #FEE2E2 0%, transparent 80%); }
+  .callout.note { border-color: var(--gold); background: linear-gradient(90deg, #FEF3C7 0%, transparent 80%); }
+  .callout .callout-tag {
+    display: inline-block;
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-bottom: 8px;
+  }
+  .callout.standard .callout-tag { background: var(--rose-700); color: white; }
+  .callout.critical .callout-tag { background: var(--rose-950); color: white; }
+  .callout.note .callout-tag { background: var(--gold); color: white; }
+
+  /* Decision tree */
+  .decision {
+    background: var(--rose-50);
+    border: 1px solid var(--rose-200);
+    border-radius: 4px;
+    padding: 24px;
+    margin: 20px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--ink);
+    overflow-x: auto;
+  }
+  .decision .branch { color: var(--rose-700); font-weight: 700; }
+  .decision .node { color: var(--rose-900); font-weight: 700; }
+  .decision .term { color: var(--gold); font-weight: 700; }
+
+  /* Tables */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    border: 1px solid var(--line);
+    background: white;
+    font-size: 13.5px;
+  }
+  .data-table th {
+    background: var(--rose-50);
+    color: var(--rose-900);
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--rose-200);
+  }
+  .data-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  /* Revision footer per SOP */
+  .sop-foot {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .sop-foot strong { color: var(--rose-800); font-weight: 700; }
+  .sop-foot div { padding-right: 12px; border-right: 1px solid var(--line); }
+  .sop-foot div:last-child { border-right: none; }
+  .sop-foot dt {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    color: var(--muted);
+  }
+  .sop-foot dd { font-weight: 600; color: var(--ink); }
+
+  /* Footer */
+  footer.doc-foot {
+    background: var(--rose-950);
+    color: var(--rose-200);
+    padding: 60px 24px 40px;
+    text-align: center;
+  }
+  .doc-foot h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 36px;
+    color: white;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .doc-foot p { font-size: 13px; line-height: 1.7; opacity: 0.85; }
+  .doc-foot .divider {
+    width: 60px;
+    height: 1px;
+    background: var(--rose-500);
+    margin: 24px auto;
+  }
+  .doc-foot .sign {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .cover { padding: 40px 0; background: white; border-bottom: 2px solid var(--rose-800); }
+    .toc-section { display: none; }
+    .sop-stream { background: white; padding: 20px 0; }
+    .sop { box-shadow: none; padding: 30px; page-break-inside: avoid; page-break-after: always; }
+    .sop::before { display: none; }
+    footer.doc-foot { background: white; color: var(--rose-900); }
+    footer.doc-foot p { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════ COVER ════════════════════════ -->
+<header class="cover">
+  <div class="container cover-content">
+    <div class="crest">
+      <div class="crest-text">B</div>
+    </div>
+    <div class="cover-eyebrow">Document SOP-MASTER · 2026</div>
+    <h1>Quy trình Vận hành<br><em>Tiêu chuẩn</em></h1>
+    <p class="cover-sub">Bộ quy trình chính thức của Bella Spa — chuẩn hoá mọi hoạt động từ đón khách, vận hành kỹ thuật, tài chính, nhân sự đến xử lý sự cố. Áp dụng bắt buộc cho toàn hệ thống chi nhánh.</p>
+    <dl class="cover-meta">
+      <div class="cover-meta-item"><dt>Phiên bản</dt><dd>1.0</dd></div>
+      <div class="cover-meta-item"><dt>Hiệu lực</dt><dd>26.05.2026</dd></div>
+      <div class="cover-meta-item"><dt>Phê duyệt</dt><dd>Ban Giám đốc</dd></div>
+      <div class="cover-meta-item"><dt>SOP</dt><dd>15</dd></div>
+      <div class="cover-meta-item"><dt>Phân loại</dt><dd>Nội bộ</dd></div>
+    </dl>
+  </div>
+</header>
+
+<!-- ════════════════════════ TOC ════════════════════════ -->
+<section class="toc-section">
+  <div class="container">
+    <div class="section-label">Mục lục văn bản</div>
+    <h2 class="section-title">Danh mục <em>quy trình</em></h2>
+    <p class="section-intro">Mỗi SOP được đánh số định danh duy nhất và phân loại theo lĩnh vực. Bấm vào để chuyển nhanh đến quy trình tương ứng.</p>
+
+    <div class="toc-grid">
+      <a class="toc-item" href="#sop-001"><div class="toc-id">001</div><div class="toc-meta"><div class="toc-cat">Vận hành · Lễ tân</div><div class="toc-title">Đón khách & tư vấn ban đầu</div></div></a>
+      <a class="toc-item" href="#sop-002"><div class="toc-id">002</div><div class="toc-meta"><div class="toc-cat">Vận hành · CRM</div><div class="toc-title">Đăng ký hồ sơ khách hàng</div></div></a>
+      <a class="toc-item" href="#sop-003"><div class="toc-id">003</div><div class="toc-meta"><div class="toc-cat">Vận hành · Booking</div><div class="toc-title">Đặt lịch & xác nhận liệu trình</div></div></a>
+      <a class="toc-item" href="#sop-004"><div class="toc-id">004</div><div class="toc-meta"><div class="toc-cat">Kỹ thuật · KTV</div><div class="toc-title">Quy trình KTV trước–trong–sau buổi</div></div></a>
+      <a class="toc-item" href="#sop-005"><div class="toc-id">005</div><div class="toc-meta"><div class="toc-cat">An toàn · Mẹ–bé</div><div class="toc-title">Vệ sinh & an toàn dịch vụ mẹ–bé</div></div></a>
+      <a class="toc-item" href="#sop-006"><div class="toc-id">006</div><div class="toc-meta"><div class="toc-cat">CSKH · Khiếu nại</div><div class="toc-title">Xử lý phàn nàn & sự cố khách hàng</div></div></a>
+      <a class="toc-item" href="#sop-007"><div class="toc-id">007</div><div class="toc-meta"><div class="toc-cat">Tài chính · Cash</div><div class="toc-title">Thu tiền & quản lý tiền mặt</div></div></a>
+      <a class="toc-item" href="#sop-008"><div class="toc-id">008</div><div class="toc-meta"><div class="toc-cat">Tài chính · Đối soát</div><div class="toc-title">Đối soát sao kê ngân hàng</div></div></a>
+      <a class="toc-item" href="#sop-009"><div class="toc-id">009</div><div class="toc-meta"><div class="toc-cat">Nhân sự · Lương</div><div class="toc-title">Chốt & duyệt bảng lương tháng</div></div></a>
+      <a class="toc-item" href="#sop-010"><div class="toc-id">010</div><div class="toc-meta"><div class="toc-cat">Kế toán · Period</div><div class="toc-title">Đóng kỳ kế toán cuối tháng</div></div></a>
+      <a class="toc-item" href="#sop-011"><div class="toc-id">011</div><div class="toc-meta"><div class="toc-cat">Nhân sự · Onboarding</div><div class="toc-title">Tuyển dụng & nhập việc KTV mới</div></div></a>
+      <a class="toc-item" href="#sop-012"><div class="toc-id">012</div><div class="toc-meta"><div class="toc-cat">Nhân sự · Time</div><div class="toc-title">Chấm công & duyệt đơn nghỉ phép</div></div></a>
+      <a class="toc-item" href="#sop-013"><div class="toc-id">013</div><div class="toc-meta"><div class="toc-cat">Bảo mật · Account</div><div class="toc-title">Quản lý tài khoản & xác thực 2 lớp</div></div></a>
+      <a class="toc-item" href="#sop-014"><div class="toc-id">014</div><div class="toc-meta"><div class="toc-cat">Bảo mật · Data</div><div class="toc-title">Sao lưu & khôi phục dữ liệu</div></div></a>
+      <a class="toc-item" href="#sop-015"><div class="toc-id">015</div><div class="toc-meta"><div class="toc-cat">Khẩn cấp · Incident</div><div class="toc-title">Xử lý sự cố khẩn cấp</div></div></a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════ SOPs ════════════════════════ -->
+<main class="sop-stream">
+  <div class="container">
+
+  <!-- ───────── SOP-001 ───────── -->
+  <article class="sop" id="sop-001">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-001</span>
+        <span class="sop-cat">Vận hành · Lễ tân</span>
+      </div>
+      <h2 class="sop-title">Đón khách & <em>tư vấn ban đầu</em></h2>
+      <p class="sop-purpose">Đảm bảo mọi khách hàng tiếp xúc đầu tiên với Bella Spa đều được đón tiếp chuyên nghiệp, đúng thương hiệu, và được tư vấn gói dịch vụ phù hợp với tình trạng sức khoẻ thực tế.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Phạm vi</dt><dd>Toàn bộ chi nhánh</dd></div>
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Mỗi khách mới</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>Lễ tân (Admin Staff)</dd></div>
+      <div class="spec-cell"><dt>Thời gian</dt><dd>15–20 phút</dd></div>
+      <div class="spec-cell"><dt>Hệ thống</dt><dd>Bella ERP · CRM</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Chuẩn bị trước khi khách đến</h3>
+    <p>Khi có lịch hẹn được xác nhận trong hệ thống, lễ tân phải hoàn tất các bước chuẩn bị trong vòng <strong>30 phút trước giờ hẹn</strong>:</p>
+    <ul>
+      <li>Kiểm tra hồ sơ khách hàng trong ERP — nếu là khách cũ, đọc kỹ note lịch sử.</li>
+      <li>Chuẩn bị phòng tư vấn: ánh sáng, nhiệt độ 24–26°C, nước lọc/trà ấm, khăn lau tay.</li>
+      <li>In sẵn brochure các gói phù hợp (mẹ sau sinh / bà bầu / mẹ-bé / dưỡng sinh).</li>
+      <li>Mở sẵn trang <code>/dashboard/customers</code> trong ERP để nhập liệu trực tiếp.</li>
+    </ul>
+
+    <h3><span class="h3-num">II.</span> Quy trình đón khách</h3>
+    <ol class="procedure">
+      <li><strong>Đứng dậy chào khách</strong>Nhìn vào mắt khách, nụ cười nhẹ, gật đầu chào: "Chào chị, em là [tên]. Mời chị ngồi ạ." Không đứng quá xa cửa.</li>
+      <li><strong>Mời ngồi & phục vụ nước</strong>Hỏi khách thích nước lọc, trà gừng (cho mẹ sau sinh), trà hoa hồng hay trà thảo mộc. Phục vụ trong vòng 2 phút.</li>
+      <li><strong>Tạo không khí thoải mái</strong>Hỏi 1–2 câu chia sẻ về bé (nếu là khách mẹ-bé) hoặc tình trạng sức khoẻ hiện tại. KHÔNG hỏi câu nhạy cảm (sinh thường/mổ) ở giai đoạn này.</li>
+      <li><strong>Thu thập thông tin sàng lọc</strong>Dùng <strong>phiếu sàng lọc sức khoẻ</strong> (form chuẩn) — hỏi về dị ứng, bệnh nền, lịch sử sinh nở, tuần thai (nếu bầu). Ghi vào ERP ngay khi khách trả lời.</li>
+      <li><strong>Tư vấn gói phù hợp</strong>Dựa trên thông tin sàng lọc, đề xuất 2–3 gói. Giải thích rõ:
+        <ul>
+          <li>Số buổi, thời lượng, giá trọn gói</li>
+          <li>Chính sách cọc & thanh toán</li>
+          <li>Chính sách huỷ/đổi lịch</li>
+          <li>Có thể KTV đến tận nhà hay tới spa</li>
+        </ul>
+      </li>
+      <li><strong>Cho khách trải nghiệm thử</strong>Nếu khách lưỡng lự, mời xem khu vực massage, gặp 1 KTV senior chia sẻ ngắn. KHÔNG ép quyết định ngay.</li>
+      <li><strong>Chốt hoặc lưu lead</strong>Nếu khách chốt — chuyển sang <a href="#sop-002">SOP-002 Đăng ký hồ sơ</a>. Nếu chưa quyết, lưu lead trong CRM với note chi tiết để follow-up sau 24h.</li>
+    </ol>
+
+    <div class="callout standard">
+      <span class="callout-tag">Tiêu chuẩn</span>
+      <strong>Thời gian tư vấn không quá 25 phút.</strong> Nếu khách hỏi nhiều chi tiết kỹ thuật chuyên sâu (vd hậu sản, sinh lý), mời KTV trưởng vào tư vấn cùng.
+    </div>
+
+    <h3><span class="h3-num">III.</span> Phân vai trách nhiệm (RACI)</h3>
+    <table class="raci">
+      <thead>
+        <tr>
+          <th>Hoạt động</th>
+          <th>Lễ tân</th>
+          <th>KTV Lead</th>
+          <th>Quản lý</th>
+          <th>Kế toán</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Chuẩn bị phòng đón khách</td><td class="R">R</td><td>—</td><td class="A">A</td><td class="I">I</td></tr>
+        <tr><td>Sàng lọc sức khoẻ</td><td class="R">R</td><td class="C">C</td><td class="A">A</td><td>—</td></tr>
+        <tr><td>Tư vấn gói dịch vụ</td><td class="R">R</td><td class="C">C</td><td class="A">A</td><td>—</td></tr>
+        <tr><td>Chốt deposit</td><td class="R">R</td><td class="I">I</td><td class="A">A</td><td class="C">C</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:var(--muted);"><strong>R</strong> = Responsible · <strong>A</strong> = Accountable · <strong>C</strong> = Consulted · <strong>I</strong> = Informed</p>
+
+    <h3><span class="h3-num">IV.</span> Tình huống ngoại lệ</h3>
+    <ul>
+      <li><strong>Khách đến không hẹn:</strong> tiếp đón bình thường, nhưng kiểm tra lịch tư vấn — nếu kín, hẹn lại trong vòng 2 giờ.</li>
+      <li><strong>Khách có dấu hiệu nhiễm bệnh truyền nhiễm:</strong> lịch sự hẹn lại, không phục vụ. Liên hệ KTV Lead.</li>
+      <li><strong>Khách có yêu cầu vượt quy định</strong> (giá, dịch vụ tuỳ chỉnh): liên hệ Quản lý quyết định, không tự quyết.</li>
+    </ul>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-002, SOP-003</dd></div>
+      <div><dt>Phụ lục</dt><dd>Phiếu sàng lọc PSK-01</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0 — Ban hành</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-002 ───────── -->
+  <article class="sop" id="sop-002">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-002</span>
+        <span class="sop-cat">Vận hành · CRM</span>
+      </div>
+      <h2 class="sop-title">Đăng ký <em>hồ sơ khách hàng</em></h2>
+      <p class="sop-purpose">Chuẩn hoá việc thu thập và lưu trữ thông tin khách hàng — đảm bảo đầy đủ, chính xác, tuân thủ Nghị định 13/2023 về bảo vệ dữ liệu cá nhân.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Phạm vi</dt><dd>Toàn chi nhánh</dd></div>
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Mỗi khách mới</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>Lễ tân</dd></div>
+      <div class="spec-cell"><dt>Thời gian</dt><dd>8–10 phút</dd></div>
+      <div class="spec-cell"><dt>Tuân thủ</dt><dd>NĐ 13/2023</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Dữ liệu bắt buộc</h3>
+    <table class="data-table">
+      <thead><tr><th>Trường</th><th>Bắt buộc</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <tr><td>Số điện thoại</td><td>✓ Có</td><td>Mã định danh duy nhất — kiểm tra trùng trước</td></tr>
+        <tr><td>Họ tên mẹ</td><td>✓ Có</td><td>Đầy đủ theo CCCD</td></tr>
+        <tr><td>Tên bé</td><td>Tuỳ</td><td>Với gói mẹ-bé / sau sinh</td></tr>
+        <tr><td>Ngày sinh bé / dự sinh</td><td>Tuỳ</td><td>Với gói mẹ-bé / bà bầu</td></tr>
+        <tr><td>Giới tính bé</td><td>Tuỳ</td><td>Với gói mẹ-bé</td></tr>
+        <tr><td>Địa chỉ</td><td>✓ Có</td><td>Cho cả khách tại spa & tại nhà</td></tr>
+        <tr><td>Zalo OA ID</td><td>Tuỳ</td><td>Để gửi nhắc lịch tự động</td></tr>
+        <tr><td>Người giới thiệu</td><td>Tuỳ</td><td>Để tính hoa hồng giới thiệu</td></tr>
+        <tr><td>Note y tế</td><td>Tuỳ</td><td>Dị ứng, bệnh nền, lưu ý đặc biệt</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">II.</span> Quy trình</h3>
+    <ol class="procedure">
+      <li><strong>Lấy đồng ý xử lý dữ liệu</strong>Đọc khách nghe: <em>"Em xin phép thu thập thông tin của chị để phục vụ chăm sóc. Dữ liệu được bảo mật và chỉ dùng nội bộ. Chị đồng ý không ạ?"</em>Khách phải nói "đồng ý" rõ ràng. Ghi nhận trong ERP.</li>
+      <li><strong>Kiểm tra trùng SĐT</strong>Nhập SĐT vào ERP → nếu trùng, hệ thống hiện cảnh báo "Khách đã tồn tại". Confirm với khách: có phải bạn đã đến lần trước? Nếu đúng, dùng hồ sơ cũ → bổ sung note. Nếu khác người dùng chung SĐT — tạo profile mới với tên rõ ràng.</li>
+      <li><strong>Nhập thông tin bắt buộc</strong>Lần lượt từng trường. Đọc lại từng số/từng tên cho khách xác nhận.</li>
+      <li><strong>Yêu cầu CCCD (nếu chốt gói)</strong>Nếu khách quyết định mua gói ngay, yêu cầu cho xem CCCD để xác minh tên. KHÔNG photo/scan CCCD trừ khi gói trị giá ≥ 20 triệu đồng (theo quy định AML).</li>
+      <li><strong>Đăng ký Zalo OA</strong>Hướng dẫn khách quét QR code Zalo OA Bella Spa và "Quan tâm". Đây là kênh nhận tin nhắn nhắc lịch tự động.</li>
+      <li><strong>Note y tế chi tiết</strong>Hỏi về:
+        <ul>
+          <li>Dị ứng (tinh dầu nào không dùng được)</li>
+          <li>Bệnh nền (tim mạch, huyết áp, tiểu đường)</li>
+          <li>Lịch sử sinh nở (thường/mổ, tuần thứ mấy)</li>
+          <li>Đang dùng thuốc gì</li>
+        </ul>
+        Ghi tất cả vào trường <code>notes</code> trong ERP.</li>
+      <li><strong>Lưu & in tóm tắt</strong>Bấm "Lưu" → in 1 bản tóm tắt giấy cho khách giữ (có SĐT chi nhánh + số booking nếu đã đặt lịch).</li>
+    </ol>
+
+    <div class="callout critical">
+      <span class="callout-tag">Bắt buộc</span>
+      <strong>KHÔNG được</strong> share thông tin khách hàng (kể cả SĐT) ra ngoài Bella Spa. Vi phạm có thể bị phạt theo Nghị định 13/2023 lên đến <strong>5% doanh thu năm</strong> hoặc 80 triệu đồng/cá nhân.
+    </div>
+
+    <h3><span class="h3-num">III.</span> Quyền của khách hàng (GDPR-equivalent)</h3>
+    <p>Theo NĐ 13/2023, khách có các quyền sau — phải đáp ứng trong vòng <strong>72 giờ</strong>:</p>
+    <ul>
+      <li><strong>Quyền truy cập:</strong> yêu cầu xem toàn bộ dữ liệu của mình.</li>
+      <li><strong>Quyền chỉnh sửa:</strong> yêu cầu sửa thông tin sai.</li>
+      <li><strong>Quyền xoá:</strong> yêu cầu xoá hồ sơ (nếu không còn nghĩa vụ pháp lý buộc giữ).</li>
+      <li><strong>Quyền rút lại đồng ý:</strong> không nhận tin Zalo nữa, không lưu trữ thêm.</li>
+    </ul>
+    <p>Khi nhận yêu cầu, chuyển ngay cho Quản lý chi nhánh xử lý.</p>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-001, SOP-003</dd></div>
+      <div><dt>Pháp lý</dt><dd>NĐ 13/2023/NĐ-CP</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0 — Ban hành</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-003 ───────── -->
+  <article class="sop" id="sop-003">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-003</span>
+        <span class="sop-cat">Vận hành · Booking</span>
+      </div>
+      <h2 class="sop-title">Đặt lịch & <em>xác nhận liệu trình</em></h2>
+      <p class="sop-purpose">Tạo booking chính xác, gán KTV phù hợp, ghi nhận deposit đúng, gửi xác nhận tự động — tránh xung đột lịch và thiếu sót dữ liệu tài chính.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Phạm vi</dt><dd>Toàn chi nhánh</dd></div>
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Mỗi gói được chốt</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>Lễ tân + KTV Lead</dd></div>
+      <div class="spec-cell"><dt>Thời gian</dt><dd>10–15 phút</dd></div>
+      <div class="spec-cell"><dt>Hệ thống</dt><dd>ERP · Zalo OA</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Quy trình tạo booking</h3>
+    <ol class="procedure">
+      <li><strong>Mở trang Lịch hẹn → "Tạo booking"</strong>Vào <code>/dashboard/bookings</code> trong ERP.</li>
+      <li><strong>Chọn khách</strong>Search theo SĐT — phải là khách đã có trong CRM (xem SOP-002).</li>
+      <li><strong>Chọn gói dịch vụ</strong>Chọn từ dropdown — gói đang active. Số buổi mặc định lấy từ master data.</li>
+      <li><strong>Nhập deposit</strong>Hỏi khách thanh toán bao nhiêu cọc:
+        <ul>
+          <li>Tối thiểu: <strong>30% giá trọn gói</strong></li>
+          <li>Phương thức: Tiền mặt / Chuyển khoản / QR / MoMo</li>
+          <li>Ghi nhận chính xác — hệ thống tự sinh revenue + JE</li>
+        </ul>
+      </li>
+      <li><strong>Chọn ngày bắt đầu liệu trình</strong>Hỏi khách muốn bắt đầu khi nào. Hệ thống sẽ tự sinh N buổi liên tiếp (vd 21 buổi với gói mẹ sau sinh).</li>
+      <li><strong>Gán KTV phụ trách</strong>Mở popup "Gán KTV" — chọn KTV theo các tiêu chí:
+        <ul>
+          <li>Còn trống lịch trong khoảng thời gian liệu trình</li>
+          <li>Phù hợp vùng địa lý (nếu KTV đi tận nhà)</li>
+          <li>Phù hợp giới tính/kinh nghiệm khách yêu cầu</li>
+        </ul>
+      </li>
+      <li><strong>Xác nhận với khách</strong>Đọc lại thông tin: tên khách, gói, số buổi, ngày bắt đầu, KTV, tổng tiền, cọc đã đóng, còn phải đóng. Khách đồng ý mới Lưu.</li>
+      <li><strong>Bấm "Tạo booking"</strong>Hệ thống tự động:
+        <ul>
+          <li>Sinh booking_number (vd BK-2026-0526-001)</li>
+          <li>Sinh N session_logs với assigned_date</li>
+          <li>Sinh revenue record cho khoản cọc</li>
+          <li>Sinh JE: Nợ Tiền — Có Doanh thu hoãn lại (3387)</li>
+          <li>Gửi Zalo OA xác nhận cho khách</li>
+          <li>Gửi notification cho KTV phụ trách</li>
+        </ul>
+      </li>
+      <li><strong>In/gửi hợp đồng (nếu gói ≥ 10 triệu)</strong>Mẫu HĐ trong hệ thống → in 2 bản → khách ký 1 bản giữ lại, 1 bản chi nhánh lưu. Upload bản scan vào field <code>contract_url</code>.</li>
+    </ol>
+
+    <h3><span class="h3-num">II.</span> Decision tree khi gặp xung đột lịch</h3>
+    <div class="decision">
+<span class="branch">▸</span> Khách muốn ngày X giờ Y
+  <span class="node">├─</span> KTV được yêu cầu có rảnh không?
+  │   <span class="node">├─</span> CÓ → Gán → Confirmed <span class="term">(end)</span>
+  │   <span class="node">└─</span> KHÔNG → tiếp tục
+  <span class="node">├─</span> Có KTV khác cùng chuyên môn rảnh?
+  │   <span class="node">├─</span> CÓ → Hỏi khách có OK đổi KTV?
+  │   │      <span class="node">├─</span> OK → Gán KTV thay thế <span class="term">(end)</span>
+  │   │      <span class="node">└─</span> KHÔNG → tiếp tục
+  │   <span class="node">└─</span> KHÔNG → tiếp tục
+  <span class="node">└─</span> Đề xuất ngày/giờ gần nhất có cả 2 điều kiện
+        <span class="node">├─</span> Khách OK → Cập nhật, gửi xác nhận <span class="term">(end)</span>
+        <span class="node">└─</span> Khách KHÔNG OK → Lưu lead, escalate KTV Lead <span class="term">(end)</span>
+    </div>
+
+    <h3><span class="h3-num">III.</span> Huỷ / đổi lịch sau khi đã booking</h3>
+    <p>Khách yêu cầu huỷ/đổi → áp dụng quy tắc:</p>
+    <table class="data-table">
+      <thead><tr><th>Thời điểm khách báo</th><th>Phí huỷ</th><th>Đổi lịch</th></tr></thead>
+      <tbody>
+        <tr><td>Trước 24h</td><td>0% (hoàn 100% cọc)</td><td>Miễn phí</td></tr>
+        <tr><td>12–24h trước</td><td>50% giá 1 buổi</td><td>Miễn phí (đổi trong tuần)</td></tr>
+        <tr><td>&lt; 12h hoặc không báo</td><td>100% giá 1 buổi</td><td>Tính như đã xong buổi</td></tr>
+        <tr><td>Khách không có nhà khi KTV đến</td><td>100% giá 1 buổi</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout note">
+      <span class="callout-tag">Lưu ý</span>
+      Với khách VIP (đã chi tiêu lifetime &gt; 50 triệu), Quản lý có thể miễn phí huỷ tuỳ tình huống — phải ghi rõ lý do trong note booking để audit.
+    </div>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-001, SOP-002, SOP-007</dd></div>
+      <div><dt>Hệ thống</dt><dd>ERP · Zalo OA · Bank</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-004 ───────── -->
+  <article class="sop" id="sop-004">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-004</span>
+        <span class="sop-cat">Kỹ thuật · KTV</span>
+      </div>
+      <h2 class="sop-title">Quy trình KTV <em>trước–trong–sau</em> buổi phục vụ</h2>
+      <p class="sop-purpose">Chuẩn hoá hành vi KTV từ chuẩn bị, đến phục vụ tại điểm, đến kết thúc — đảm bảo chất lượng đồng nhất giữa các KTV và an toàn cho khách.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Phạm vi</dt><dd>Mọi session</dd></div>
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Mỗi buổi phục vụ</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>KTV phụ trách</dd></div>
+      <div class="spec-cell"><dt>Thời gian</dt><dd>90–120 phút/buổi</dd></div>
+      <div class="spec-cell"><dt>Giám sát</dt><dd>KTV Lead + ERP</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Trước buổi (T-60 → T-0)</h3>
+    <ol class="procedure">
+      <li><strong>T-60 phút: Kiểm tra lịch ngày</strong>Mở app Bella → Lịch hẹn. Đọc kỹ thông tin khách, đặc biệt note y tế.</li>
+      <li><strong>T-45 phút: Chuẩn bị vật tư</strong>Tinh dầu phù hợp, khăn, chăn, dụng cụ massage. Vệ sinh dụng cụ bằng cồn 70°.</li>
+      <li><strong>T-30 phút: Kiểm tra đồng phục</strong>Áo blouse sạch, không nhăn, tóc gọn, móng tay cắt ngắn, không nước hoa nồng.</li>
+      <li><strong>T-20 phút: Di chuyển</strong>Đi đến điểm phục vụ. Dự phòng thời gian kẹt xe + tìm địa chỉ.</li>
+      <li><strong>T-0: Check-in trên app</strong>Bấm "Check-in" trên session → GPS được ghi nhận. Khách nhận Zalo "KTV đã đến".</li>
+    </ol>
+
+    <h3><span class="h3-num">II.</span> Trong buổi</h3>
+    <ol class="procedure">
+      <li><strong>Chào hỏi & cập nhật tình trạng</strong>Hỏi khách: "Hôm nay chị thấy thế nào? Có vấn đề gì cần lưu ý không?". Ghi note nếu có (vd: "Hôm nay khách bị đau lưng — giảm cường độ").</li>
+      <li><strong>Vệ sinh tay & dụng cụ</strong>Rửa tay xà phòng + xịt cồn. Trước mặt khách, lau lại các dụng cụ sẽ dùng.</li>
+      <li><strong>Bắt đầu phục vụ</strong>Theo kỹ thuật chuẩn của gói. Hỏi khách thoải mái với áp lực massage không (1-2 lần trong buổi).</li>
+      <li><strong>Tuân thủ checklist mẹ-bé (nếu áp dụng)</strong>Tham chiếu <a href="#sop-005">SOP-005</a>: nhiệt độ phòng, độ pha tinh dầu, thời gian massage bé.</li>
+      <li><strong>Không vượt thời lượng chuẩn</strong>± 10 phút so với gói. Quá lâu → ảnh hưởng lịch tiếp theo.</li>
+      <li><strong>Không tự bán thêm</strong>Tuyệt đối KHÔNG chào bán dịch vụ/sản phẩm thêm. Mọi up-sell qua lễ tân chính thức.</li>
+    </ol>
+
+    <h3><span class="h3-num">III.</span> Sau buổi</h3>
+    <ol class="procedure">
+      <li><strong>Hỏi cảm nhận khách</strong>"Buổi hôm nay chị thấy thế nào? Có điều gì em nên điều chỉnh không?". Lắng nghe, KHÔNG biện hộ.</li>
+      <li><strong>Dọn dẹp vật tư</strong>Thu gọn khăn bẩn, đặt vào túi riêng. Lau dụng cụ sơ qua bằng khăn ẩm.</li>
+      <li><strong>Check-out trên app</strong>Bấm "Check-out" → điền note buổi (nếu có gì đặc biệt) → xác nhận. Hệ thống tự sinh revenue, JE, trừ kho, gửi link review cho khách.</li>
+      <li><strong>Chào khách & nhắc buổi sau</strong>"Buổi sau là [ngày]. Hẹn chị nhé!". KHÔNG xin SĐT/Zalo cá nhân khách.</li>
+      <li><strong>Báo bất thường (nếu có)</strong>Có gì cần lưu ý cho lễ tân/admin → gửi chat trong app trước khi rời điểm.</li>
+    </ol>
+
+    <div class="callout critical">
+      <span class="callout-tag">Vi phạm nghiêm trọng</span>
+      Nhận tiền mặt trực tiếp từ khách (kể cả tip), bán sản phẩm cá nhân, xin liên lạc riêng — đều là vi phạm nghiêm trọng có thể dẫn đến chấm dứt HĐLĐ ngay lập tức.
+    </div>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-005, SOP-006</dd></div>
+      <div><dt>Đào tạo</dt><dd>Bắt buộc qua test thực hành</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-005 ───────── -->
+  <article class="sop" id="sop-005">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-005</span>
+        <span class="sop-cat">An toàn · Mẹ–bé</span>
+      </div>
+      <h2 class="sop-title">Vệ sinh & <em>an toàn dịch vụ mẹ–bé</em></h2>
+      <p class="sop-purpose">Phòng tránh tuyệt đối các rủi ro về sức khoẻ cho mẹ sau sinh, bà bầu, và trẻ sơ sinh — đối tượng có hệ miễn dịch nhạy cảm, không thể chủ quan ở bất kỳ khâu nào.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Phạm vi</dt><dd>Gói mẹ-bé · bà bầu</dd></div>
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Mỗi buổi</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>KTV + KTV Lead</dd></div>
+      <div class="spec-cell"><dt>Mức độ</dt><dd>BẮT BUỘC</dd></div>
+      <div class="spec-cell"><dt>Audit</dt><dd>Hàng tuần</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Tiêu chuẩn nhiệt độ & môi trường</h3>
+    <table class="data-table">
+      <thead><tr><th>Đối tượng</th><th>Nhiệt độ phòng</th><th>Độ ẩm</th><th>Ánh sáng</th></tr></thead>
+      <tbody>
+        <tr><td>Bé sơ sinh (&lt; 3 tháng)</td><td>28–30°C</td><td>50–60%</td><td>Dịu nhẹ, không chiếu thẳng mặt</td></tr>
+        <tr><td>Bé 3–12 tháng</td><td>26–28°C</td><td>50–60%</td><td>Dịu nhẹ</td></tr>
+        <tr><td>Mẹ sau sinh (&lt; 1 tháng)</td><td>26–28°C</td><td>50–60%</td><td>Bình thường, tránh gió lùa</td></tr>
+        <tr><td>Bà bầu</td><td>24–26°C</td><td>50–60%</td><td>Bình thường</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">II.</span> Vệ sinh dụng cụ — chuẩn 3 cấp</h3>
+    <ol class="procedure">
+      <li><strong>Cấp 1: Trước mỗi khách</strong>Lau cồn 70° toàn bộ dụng cụ tiếp xúc khách. Thay khăn mới.</li>
+      <li><strong>Cấp 2: Cuối ngày</strong>Rửa xà phòng + ngâm nước nóng 70°C trong 10 phút. Phơi khô.</li>
+      <li><strong>Cấp 3: Cuối tuần</strong>Tiệt trùng UV 30 phút (máy tiệt trùng chuyên dụng). Thay khăn mới 100% nếu sờn rách.</li>
+    </ol>
+
+    <h3><span class="h3-num">III.</span> Tinh dầu sử dụng với bé</h3>
+    <p>Tinh dầu nguyên chất KHÔNG được dùng trực tiếp cho bé &lt; 6 tháng. Quy tắc pha loãng:</p>
+    <table class="data-table">
+      <thead><tr><th>Độ tuổi bé</th><th>Tỷ lệ pha</th><th>Loại tinh dầu cho phép</th><th>Cấm tuyệt đối</th></tr></thead>
+      <tbody>
+        <tr><td>0–3 tháng</td><td>KHÔNG dùng</td><td>Chỉ dầu nền (jojoba, hạnh nhân)</td><td>Tất cả tinh dầu thiết yếu</td></tr>
+        <tr><td>3–6 tháng</td><td>0.25% (1 giọt / 20ml dầu nền)</td><td>Lavender, chamomile</td><td>Bạc hà, khuynh diệp, sả</td></tr>
+        <tr><td>6–24 tháng</td><td>0.5% (2 giọt / 20ml)</td><td>Lavender, chamomile, mandarin</td><td>Bạc hà, khuynh diệp, sả</td></tr>
+        <tr><td>2 tuổi+</td><td>1% (4 giọt / 20ml)</td><td>Mở rộng hơn</td><td>Bạc hà, sả (vẫn cẩn thận)</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">IV.</span> Thời lượng massage giới hạn</h3>
+    <ul>
+      <li>Bé 0–3 tháng: tối đa <strong>10 phút</strong>/lần</li>
+      <li>Bé 3–6 tháng: tối đa <strong>15 phút</strong>/lần</li>
+      <li>Bé 6–12 tháng: tối đa <strong>20 phút</strong>/lần</li>
+      <li>Mẹ sau sinh: <strong>60–90 phút</strong>/buổi</li>
+      <li>Bà bầu (tam cá nguyệt 2 trở đi): <strong>60 phút</strong>/buổi, tránh vùng bụng</li>
+    </ul>
+
+    <h3><span class="h3-num">V.</span> Chống chỉ định tuyệt đối — KHÔNG phục vụ</h3>
+    <div class="callout critical">
+      <span class="callout-tag">Dừng phục vụ ngay</span>
+      <ul style="margin:8px 0 0 0;">
+        <li>Bé sốt &gt; 37.5°C</li>
+        <li>Bé có dấu hiệu nhiễm khuẩn (mẩn, vàng da, lừ đừ)</li>
+        <li>Mẹ sốt, ra máu bất thường, sản dịch hôi</li>
+        <li>Bà bầu có dấu hiệu doạ sảy, tiền sản giật</li>
+        <li>Bất kỳ ai có triệu chứng nhiễm trùng đường hô hấp (Covid, cúm)</li>
+      </ul>
+      Báo cáo Quản lý ngay. Hoãn buổi không tính phí.
+    </div>
+
+    <h3><span class="h3-num">VI.</span> Đào tạo & chứng chỉ</h3>
+    <ul>
+      <li>KTV phụ trách mẹ-bé phải có <strong>chứng chỉ đào tạo nội bộ 40 giờ</strong> + thực hành 20 buổi giám sát.</li>
+      <li>Tái đào tạo <strong>1 lần / 6 tháng</strong>.</li>
+      <li>KTV không có chứng chỉ → KHÔNG được gán session mẹ-bé.</li>
+    </ul>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-004, SOP-006</dd></div>
+      <div><dt>Y khoa</dt><dd>Cố vấn BS Sản–Nhi</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0 — Ban hành</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-006 ───────── -->
+  <article class="sop" id="sop-006">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-006</span>
+        <span class="sop-cat">CSKH · Khiếu nại</span>
+      </div>
+      <h2 class="sop-title">Xử lý <em>phàn nàn & sự cố</em> khách hàng</h2>
+      <p class="sop-purpose">Đáp ứng nhanh, đúng quy trình, biến phàn nàn thành cơ hội giữ chân khách — tránh thiệt hại danh tiếng và rủi ro pháp lý.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>SLA</dt><dd>Phản hồi &lt; 4 giờ</dd></div>
+      <div class="spec-cell"><dt>Giải quyết</dt><dd>&lt; 48 giờ</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>Lễ tân → Quản lý</dd></div>
+      <div class="spec-cell"><dt>Escalation</dt><dd>Sau 2h chưa xử lý</dd></div>
+      <div class="spec-cell"><dt>Lưu hồ sơ</dt><dd>Bắt buộc</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Phân loại mức độ</h3>
+    <table class="data-table">
+      <thead><tr><th>Cấp</th><th>Mô tả</th><th>Người xử lý</th><th>SLA</th></tr></thead>
+      <tbody>
+        <tr><td>L1 — Nhẹ</td><td>Không hài lòng chất lượng buổi, đề nghị KTV khác</td><td>Lễ tân</td><td>4h phản hồi, 24h giải quyết</td></tr>
+        <tr><td>L2 — Vừa</td><td>Yêu cầu hoàn tiền, đổi gói, KTV trễ giờ &gt; 30 phút</td><td>Quản lý CN</td><td>2h phản hồi, 24h giải quyết</td></tr>
+        <tr><td>L3 — Nặng</td><td>Sự cố y tế (dị ứng, đau, té), thiệt hại tài sản</td><td>Giám đốc + KTV Lead</td><td>30 phút phản hồi, 24h xử lý</td></tr>
+        <tr><td>L4 — Khẩn cấp</td><td>Nguy hiểm sức khoẻ, đe doạ kiện tụng, viral mạng</td><td>BGD + Luật sư</td><td>Tức thì</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">II.</span> Quy trình LEARN (Lắng nghe – Ghi nhận – Xin lỗi – Giải pháp – Theo dõi)</h3>
+    <ol class="procedure">
+      <li><strong>L — Lắng nghe (Listen)</strong>Để khách nói hết. KHÔNG cắt lời, KHÔNG biện hộ. Gật đầu, ghi note.</li>
+      <li><strong>E — Empathy & ghi nhận</strong>Đồng cảm: "Em hiểu cảm giác của chị. Em thực sự xin lỗi vì điều này". Ghi vào CRM ngay.</li>
+      <li><strong>A — Apologize chân thành</strong>Xin lỗi trực tiếp KHÔNG biện hộ. Câu mẫu: "Em đại diện Bella Spa xin lỗi chị vì sự cố này. Đây là lỗi của chúng em."</li>
+      <li><strong>R — Resolution (giải pháp)</strong>Đề xuất giải pháp cụ thể:
+        <ul>
+          <li>L1: bù 1 buổi miễn phí + đổi KTV</li>
+          <li>L2: hoàn % gói + voucher 20%</li>
+          <li>L3: hoàn 100% + bồi thường y tế nếu có</li>
+        </ul>
+        Hỏi khách: "Giải pháp này có hợp lý không ạ?"</li>
+      <li><strong>N — Notify & theo dõi</strong>Cập nhật ERP, gán task follow-up. Gọi khách lại sau 24h kiểm tra hài lòng.</li>
+    </ol>
+
+    <h3><span class="h3-num">III.</span> Quyền hoàn tiền</h3>
+    <table class="data-table">
+      <thead><tr><th>Người</th><th>Quyền hoàn tối đa</th><th>Cần phê duyệt</th></tr></thead>
+      <tbody>
+        <tr><td>Lễ tân</td><td>≤ 500.000đ</td><td>Tự quyết</td></tr>
+        <tr><td>Quản lý CN</td><td>≤ 5.000.000đ</td><td>Báo cáo Admin sau</td></tr>
+        <tr><td>Admin / Giám đốc</td><td>Không giới hạn</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">IV.</span> Khiếu nại trên mạng xã hội</h3>
+    <div class="callout critical">
+      <span class="callout-tag">Quan trọng</span>
+      <strong>KHÔNG</strong> tranh cãi công khai. <strong>KHÔNG</strong> xoá comment. Phản hồi công khai bằng "Cảm ơn chị đã phản hồi. Chị vui lòng inbox để chúng em xử lý nhanh nhất ạ." → chuyển vào private để xử lý theo SOP này. Báo cáo Giám đốc trong 1 giờ.
+    </div>
+
+    <h3><span class="h3-num">V.</span> Lưu trữ & học hỏi</h3>
+    <ul>
+      <li>Mọi khiếu nại phải có hồ sơ trong ERP (table <code>complaints</code>).</li>
+      <li>Cuối tháng review nguyên nhân — phân loại lỗi (chất lượng / dịch vụ / hệ thống / KTV cá nhân).</li>
+      <li>Nếu 1 KTV bị &gt; 3 khiếu nại L2/tháng → kích hoạt SOP đào tạo lại / kỷ luật.</li>
+    </ul>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-003, SOP-005</dd></div>
+      <div><dt>Pháp lý</dt><dd>Luật Bảo vệ NTD 2010</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-007 ───────── -->
+  <article class="sop" id="sop-007">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-007</span>
+        <span class="sop-cat">Tài chính · Cash</span>
+      </div>
+      <h2 class="sop-title">Thu tiền & <em>quản lý tiền mặt</em></h2>
+      <p class="sop-purpose">Đảm bảo mọi khoản tiền vào (cọc, thanh toán nốt, dịch vụ phụ) được ghi nhận chính xác, đúng kênh, tránh thất thoát hoặc gian lận nội bộ.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Mỗi giao dịch</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>Lễ tân + Kế toán</dd></div>
+      <div class="spec-cell"><dt>Đóng quỹ</dt><dd>Cuối ngày</dd></div>
+      <div class="spec-cell"><dt>Kiểm kê</dt><dd>Hàng tuần</dd></div>
+      <div class="spec-cell"><dt>Phê duyệt</dt><dd>Quản lý CN</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Phương thức thanh toán cho phép</h3>
+    <table class="data-table">
+      <thead><tr><th>Phương thức</th><th>Ưu tiên</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <tr><td>Chuyển khoản / QR VietQR</td><td>★★★ Ưu tiên</td><td>An toàn nhất, tự động đối soát</td></tr>
+        <tr><td>MoMo / ZaloPay</td><td>★★ Trung bình</td><td>Phí gateway 1-2%</td></tr>
+        <tr><td>Tiền mặt</td><td>★ Hạn chế</td><td>Chỉ với khoản &lt; 5tr; phải có biên lai</td></tr>
+        <tr><td>Thẻ tín dụng (POS)</td><td>★★ Trung bình</td><td>Nếu chi nhánh có máy POS</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">II.</span> Quy trình thu chuyển khoản (ưu tiên)</h3>
+    <ol class="procedure">
+      <li><strong>Hiển thị QR VietQR động</strong>Trong ERP, vào booking → bấm "Tạo QR" → màn hình QR có sẵn số tiền + nội dung "BK-XXXX".</li>
+      <li><strong>Khách quét & chuyển</strong>Đợi khách thông báo "Đã chuyển". Hệ thống tự động nhận webhook từ ngân hàng và confirm. Nếu chậm, có thể yêu cầu chụp màn hình giao dịch.</li>
+      <li><strong>Confirm trong ERP</strong>Khi thấy revenue chuyển status <code>confirmed</code> → in biên lai → đưa khách.</li>
+    </ol>
+
+    <h3><span class="h3-num">III.</span> Quy trình thu tiền mặt</h3>
+    <ol class="procedure">
+      <li><strong>Đếm tiền trước mặt khách</strong>Lấy từng tờ ra đếm. Sau khi nhận đủ, lặp lại con số.</li>
+      <li><strong>Kiểm tra tiền giả</strong>Dùng đèn UV hoặc máy soi cho khoản &gt; 1 triệu. Đặc biệt với tờ 500k.</li>
+      <li><strong>Ghi nhận trong ERP</strong>Vào booking → "Thanh toán" → chọn "Tiền mặt" → nhập số tiền. Hệ thống sinh revenue + JE.</li>
+      <li><strong>In biên lai</strong>2 bản — khách giữ 1, lưu file 1.</li>
+      <li><strong>Bỏ tiền vào két</strong>Két sắt khoá. Chỉ Lễ tân + Quản lý có chìa khoá.</li>
+    </ol>
+
+    <h3><span class="h3-num">IV.</span> Đóng quỹ cuối ngày (cash reconciliation)</h3>
+    <ol class="procedure">
+      <li><strong>17:30 — Bắt đầu đóng quỹ</strong>Ngừng nhận thanh toán mới (chuyển hết sang chuyển khoản nếu khách đến muộn).</li>
+      <li><strong>Đếm tiền thực tế trong két</strong>Đếm 2 lần, ghi vào sổ.</li>
+      <li><strong>So sánh với ERP</strong>Mở báo cáo "Cash collected today" trong ERP. Số tiền thực phải = số tiền hệ thống ghi.</li>
+      <li><strong>Xử lý chênh lệch</strong>
+        <ul>
+          <li>Lệch &lt; 50k: ghi note, tự bù từ lương cá nhân</li>
+          <li>Lệch 50k – 500k: báo cáo Quản lý, tìm nguyên nhân (giao dịch nào)</li>
+          <li>Lệch &gt; 500k: báo cáo khẩn, freeze két, escalate audit</li>
+        </ul>
+      </li>
+      <li><strong>Bàn giao cho Quản lý</strong>Quản lý ký xác nhận trong sổ. Tiền cất vào két chính.</li>
+      <li><strong>Nộp ngân hàng (định kỳ 2x/tuần)</strong>Thứ 3 & thứ 6, mang tiền mặt &gt; 5tr nộp ngân hàng → sinh JE: Nợ 112 — Có 111.</li>
+    </ol>
+
+    <div class="callout critical">
+      <span class="callout-tag">Nguyên tắc bất khả xâm phạm</span>
+      KTV <strong>KHÔNG BAO GIỜ</strong> được thu tiền khách. Mọi khoản phải qua lễ tân chính thức. Vi phạm sẽ bị xử lý kỷ luật mức cao nhất.
+    </div>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-008 (đối soát NH)</dd></div>
+      <div><dt>Phê duyệt</dt><dd>Kế toán trưởng</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-008 ───────── -->
+  <article class="sop" id="sop-008">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-008</span>
+        <span class="sop-cat">Tài chính · Đối soát</span>
+      </div>
+      <h2 class="sop-title">Đối soát <em>sao kê ngân hàng</em></h2>
+      <p class="sop-purpose">Đảm bảo mọi khoản tiền chuyển vào tài khoản ngân hàng được khớp đúng với revenue trong hệ thống — chuyển status từ pending sang confirmed.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Hàng tuần (T2)</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>Kế toán</dd></div>
+      <div class="spec-cell"><dt>Giám sát</dt><dd>Kế toán trưởng</dd></div>
+      <div class="spec-cell"><dt>Hệ thống</dt><dd>ERP · NH Online</dd></div>
+      <div class="spec-cell"><dt>Thời gian</dt><dd>60-90 phút</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Quy trình hàng tuần</h3>
+    <ol class="procedure">
+      <li><strong>Tải sao kê</strong>Đăng nhập Internet Banking → tải sao kê 7 ngày qua dạng CSV/Excel (VCB, Techcom, MB, VPBank đều có).</li>
+      <li><strong>Upload vào ERP</strong>Vào <code>/dashboard/finance/reconciliation</code> → bấm "Upload sao kê" → chọn file → chọn ngân hàng.</li>
+      <li><strong>Đợi hệ thống match tự động</strong>~30 giây. ERP match dựa trên: số tiền, ngày ±2, ref code (nếu có), tên người chuyển.</li>
+      <li><strong>Review kết quả</strong>3 nhóm:
+        <ul>
+          <li>🟢 Auto-matched — đã ghép tự động, accept hàng loạt</li>
+          <li>🟡 Possible matches — đề xuất, cần confirm thủ công</li>
+          <li>🔴 Unmatched — không tìm thấy revenue tương ứng</li>
+        </ul>
+      </li>
+      <li><strong>Xử lý Possible matches</strong>Với mỗi item, xem context: số tiền có gần đúng không, ngày có sát không, ref code có hợp lý không. Match hoặc Reject.</li>
+      <li><strong>Xử lý Unmatched (quan trọng nhất)</strong>
+        <ul>
+          <li>Có thể là deposit của booking chưa ghi nhận → tạo revenue mới ngay</li>
+          <li>Có thể là khách chuyển nhầm → liên hệ khách xác nhận</li>
+          <li>Có thể là khoản phí ngân hàng → ghi chi phí 6428</li>
+          <li>Có thể là khoản gian lận → escalate audit</li>
+        </ul>
+      </li>
+      <li><strong>Bấm "Hoàn tất đối soát"</strong>Revenue đã match chuyển <code>confirmed</code>. Báo cáo lưu lại để audit.</li>
+    </ol>
+
+    <h3><span class="h3-num">II.</span> Đối soát cuối tháng (tổng kết)</h3>
+    <p>Ngoài đối soát tuần, ngày 5 đầu tháng sau cần đối soát tổng tháng:</p>
+    <ol class="procedure">
+      <li><strong>So sánh số dư đầu kỳ + cuối kỳ</strong>Số dư đầu kỳ + tổng thu - tổng chi = số dư cuối kỳ phải đúng theo NH.</li>
+      <li><strong>Phân loại theo tài khoản</strong>Tách rõ thu từ khách (5111), thu khác (711), chi phí (642x).</li>
+      <li><strong>Phát hiện bất thường</strong>Khoản &gt; 50tr / lần → phải có chứng từ kèm theo. Khoản chuyển ra TK lạ → phải có lệnh chi.</li>
+      <li><strong>Báo cáo Giám đốc</strong>File "Bank Reconciliation Report tháng MM" gửi mail cho BGD.</li>
+    </ol>
+
+    <h3><span class="h3-num">III.</span> Xử lý chênh lệch</h3>
+    <table class="data-table">
+      <thead><tr><th>Loại chênh</th><th>Nguyên nhân thường gặp</th><th>Cách xử lý</th></tr></thead>
+      <tbody>
+        <tr><td>NH có – ERP không</td><td>Khách chuyển trước khi tạo booking</td><td>Liên hệ khách, tạo booking + revenue retro</td></tr>
+        <tr><td>ERP có – NH không</td><td>Khách hứa chuyển nhưng chưa</td><td>Gọi khách nhắc; nếu &gt;7 ngày, cancel booking</td></tr>
+        <tr><td>Số tiền lệch &lt; 5%</td><td>Phí chuyển khoản, làm tròn</td><td>Ghi 6428 hoặc 515</td></tr>
+        <tr><td>Số tiền lệch &gt; 5%</td><td>Có thể giao dịch khác trùng số</td><td>Manual match từng cái</td></tr>
+      </tbody>
+    </table>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-007, SOP-010</dd></div>
+      <div><dt>Bằng chứng</dt><dd>Lưu sao kê &amp; report 10 năm</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-009 ───────── -->
+  <article class="sop" id="sop-009">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-009</span>
+        <span class="sop-cat">Nhân sự · Lương</span>
+      </div>
+      <h2 class="sop-title">Chốt & duyệt <em>bảng lương tháng</em></h2>
+      <p class="sop-purpose">Đảm bảo lương được tính chính xác, đúng hạn (ngày 5 mỗi tháng), minh bạch — không gây bất mãn, không sai sót pháp lý về BHXH/thuế.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Tháng / lần</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>HR + Kế toán</dd></div>
+      <div class="spec-cell"><dt>Phê duyệt</dt><dd>Giám đốc CN</dd></div>
+      <div class="spec-cell"><dt>Deadline</dt><dd>Ngày 5 tháng N+1</dd></div>
+      <div class="spec-cell"><dt>Phương thức</dt><dd>Chuyển khoản 100%</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Timeline chuẩn</h3>
+    <table class="data-table">
+      <thead><tr><th>Ngày</th><th>Công việc</th><th>Người làm</th></tr></thead>
+      <tbody>
+        <tr><td>28–30 tháng N</td><td>Đóng chấm công, đóng đơn nghỉ phép</td><td>HR</td></tr>
+        <tr><td>1 tháng N+1</td><td>Chạy đối soát Lương AI</td><td>Kế toán</td></tr>
+        <tr><td>2–3</td><td>Review từng KTV, xử lý bất thường</td><td>HR + KT</td></tr>
+        <tr><td>4</td><td>Duyệt bảng lương cuối cùng</td><td>HR → Giám đốc</td></tr>
+        <tr><td>5</td><td>Chuyển khoản hàng loạt</td><td>Kế toán</td></tr>
+        <tr><td>5</td><td>Hệ thống tự gửi phiếu lương qua Zalo</td><td>ERP tự động</td></tr>
+        <tr><td>5–7</td><td>Tiếp nhận khiếu nại lương (nếu có)</td><td>HR</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">II.</span> Công thức lương KTV (chuẩn)</h3>
+    <div class="decision">
+<span class="branch">Lương tháng KTV =</span>
+   <span class="node">+</span> Lương cơ bản (theo HĐLĐ)
+   <span class="node">+</span> Hoa hồng = (số buổi completed) × (hoa hồng/buổi của gói)
+   <span class="node">+</span> Bonus review (5★ × Bonus_5 + 4.5★ × Bonus_4.5 + 4★ × Bonus_4)
+   <span class="node">+</span> KPI bonus (nếu đạt target tháng)
+   <span class="node">+</span> Thưởng đặc biệt (sinh nhật, đề xuất khách)
+   <span class="node">−</span> Trừ chấm công (nghỉ không phép × lương/ngày)
+   <span class="node">−</span> Phạt vi phạm (nếu có biên bản)
+   <span class="node">−</span> Tạm ứng đã nhận
+   <span class="node">−</span> Khấu trừ BHXH (8% lương đóng BH)
+   <span class="node">−</span> Thuế TNCN (nếu lương &gt; ngưỡng)
+   <span class="branch">=</span> <span class="term">Lương thực nhận</span>
+    </div>
+
+    <h3><span class="h3-num">III.</span> Quy trình duyệt</h3>
+    <ol class="procedure">
+      <li><strong>Chạy đối soát AI sạch</strong>Vào <code>/dashboard/ai-copilot/salary-reconciliation</code> → chọn tháng → Run. Đợi sạch (0 bất thường) mới sang bước tiếp.</li>
+      <li><strong>Mở Bảng lương tháng</strong><code>/dashboard/salary</code>.</li>
+      <li><strong>Review từng KTV</strong>Check các trường hợp:
+        <ul>
+          <li>Lương âm → có thể trừ phạt quá lớn; xác nhận với KTV</li>
+          <li>Lương cao bất thường → kiểm tra session có double-count</li>
+          <li>Bonus 5★ nhiều → verify review hợp lệ</li>
+        </ul>
+      </li>
+      <li><strong>Chỉnh tay (nếu cần)</strong>+ Thưởng đặc biệt / − Phạt biên bản. Mọi điều chỉnh phải có note lý do.</li>
+      <li><strong>Bấm "Duyệt tất cả"</strong>HR ký số. Sau đó forward cho Giám đốc duyệt cuối.</li>
+      <li><strong>Giám đốc duyệt</strong>Giám đốc vào ERP → review tổng → "Approved". Status chuyển <code>approved</code>.</li>
+      <li><strong>Xuất Excel & UNC ngân hàng</strong>Kế toán xuất Excel theo template Internet Banking (uỷ nhiệm chi hàng loạt).</li>
+      <li><strong>Chuyển khoản hàng loạt</strong>Upload UNC vào Internet Banking → CFO/Giám đốc phê duyệt giao dịch → chuyển.</li>
+      <li><strong>Đánh dấu "Đã trả" trong ERP</strong>Hệ thống sinh JE: Nợ 6427 (chi phí lương) — Có 112 (tiền NH).</li>
+      <li><strong>Phiếu lương tự gửi</strong>Mỗi KTV nhận Zalo: link xem phiếu chi tiết trong app.</li>
+    </ol>
+
+    <div class="callout critical">
+      <span class="callout-tag">Bảo mật</span>
+      Bảng lương là <strong>tuyệt mật</strong>. KHÔNG share file Excel qua email không mã hoá, KHÔNG in ra giấy để bàn, KHÔNG chụp màn hình. Vi phạm bảo mật lương xử lý kỷ luật nặng.
+    </div>
+
+    <h3><span class="h3-num">IV.</span> Xử lý khiếu nại lương</h3>
+    <ol class="procedure">
+      <li>KTV vào app → Thu nhập → Lịch sử buổi để tự xem trước.</li>
+      <li>Nếu vẫn có thắc mắc → gửi đơn khiếu nại HR trong vòng 5 ngày.</li>
+      <li>HR + Kế toán cùng review trong 48 giờ.</li>
+      <li>Nếu xác nhận sai sót → bù lương + lời xin lỗi chính thức.</li>
+      <li>Nếu xác nhận đúng → giải thích chi tiết bằng văn bản kèm số liệu.</li>
+    </ol>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-012, SOP-010</dd></div>
+      <div><dt>Pháp lý</dt><dd>BLLĐ 2019, Luật BHXH</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-010 ───────── -->
+  <article class="sop" id="sop-010">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-010</span>
+        <span class="sop-cat">Kế toán · Period</span>
+      </div>
+      <h2 class="sop-title">Đóng <em>kỳ kế toán</em> cuối tháng</h2>
+      <p class="sop-purpose">Khoá sổ sách tháng đã qua — không thể thêm/sửa bút toán, đảm bảo tính nhất quán báo cáo, tuân thủ TT200/2014/TT-BTC.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Tháng</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>Kế toán</dd></div>
+      <div class="spec-cell"><dt>Phê duyệt</dt><dd>Kế toán trưởng</dd></div>
+      <div class="spec-cell"><dt>Deadline</dt><dd>Ngày 7 tháng N+1</dd></div>
+      <div class="spec-cell"><dt>Đảo ngược</dt><dd>Chỉ HQ Super-Admin</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Pre-conditions (bắt buộc)</h3>
+    <ul>
+      <li>✓ Đối soát ngân hàng tháng đã xong (SOP-008)</li>
+      <li>✓ Đối soát lương AI sạch (SOP-009)</li>
+      <li>✓ Tất cả accounting_outbox đã POSTED — không còn PENDING/FAILED</li>
+      <li>✓ Mọi journal entry thủ công đã POSTED — không DRAFT</li>
+      <li>✓ Kiểm kê kho cuối tháng đã xong</li>
+      <li>✓ Lương tháng đã được Giám đốc duyệt</li>
+    </ul>
+
+    <h3><span class="h3-num">II.</span> Quy trình đóng kỳ</h3>
+    <ol class="procedure">
+      <li><strong>Chạy Trial Balance</strong>Vào <code>/dashboard/accounting/reports</code> → "Trial Balance" → chọn tháng. Kết quả:
+        <ul>
+          <li>Tổng Nợ = Tổng Có ✓</li>
+          <li>Nếu lệch → đọc breakdown, fix từng dòng</li>
+        </ul>
+      </li>
+      <li><strong>Kết chuyển doanh thu/chi phí</strong>Cuối tháng cần kết chuyển 5xx, 6xx về 911 (xác định kết quả):
+        <ul>
+          <li>Bút toán 1: Nợ 5111 — Có 911 (kết chuyển doanh thu)</li>
+          <li>Bút toán 2: Nợ 911 — Có 6322, 6427, 6428 (kết chuyển chi phí)</li>
+          <li>Bút toán 3: Nợ 911 — Có 4212 (lãi) HOẶC Nợ 4212 — Có 911 (lỗ)</li>
+        </ul>
+      </li>
+      <li><strong>Tính khấu hao TSCĐ</strong>Nếu có TSCĐ (211): tính khấu hao tháng → Nợ 6428 — Có 214.</li>
+      <li><strong>Phân bổ chi phí trả trước</strong>Bảo hiểm năm chia 12, thuê mặt bằng quý chia 3...</li>
+      <li><strong>Trích trước chi phí</strong>Chi phí lương sẽ trả ngày 5 tháng sau → trích trước ngày 30: Nợ 6427 — Có 335.</li>
+      <li><strong>Chạy Trial Balance lần 2</strong>Sau kết chuyển → cân đối lại. Phải = 0.</li>
+      <li><strong>Bấm "Đóng kỳ"</strong>Vào <code>/dashboard/accounting/periods</code> → tháng → "Close period". Confirm 2 lần.</li>
+      <li><strong>Xuất báo cáo tháng</strong>P&L, Cash Flow, Balance Sheet — lưu PDF + Excel. Gửi BGD trong 24h.</li>
+    </ol>
+
+    <h3><span class="h3-num">III.</span> Báo cáo bắt buộc gửi BGD</h3>
+    <ul>
+      <li><strong>Báo cáo P&L</strong> — so sánh với tháng trước, năm trước</li>
+      <li><strong>Báo cáo Cash Flow</strong> — vào / ra theo loại</li>
+      <li><strong>Phân tích doanh thu theo gói</strong> — gói nào hot, gói nào kém</li>
+      <li><strong>Hiệu suất từng chi nhánh</strong> (HQ) — consolidated P&L</li>
+      <li><strong>5 chỉ số quan trọng</strong>: Revenue, Gross Margin %, OpEx %, Net Profit, Cash position</li>
+    </ul>
+
+    <div class="callout critical">
+      <span class="callout-tag">Không thể undo</span>
+      Sau khi đóng kỳ, KHÔNG ai (kể cả admin) sửa được JE thuộc kỳ đó. Chỉ HQ Super-Admin được phép gọi function <code>reopen_period(uuid)</code> và phải có biên bản giải trình.
+    </div>
+
+    <h3><span class="h3-num">IV.</span> Đóng kỳ cuối năm (31/12)</h3>
+    <p>Ngoài quy trình tháng thường, cuối năm thêm:</p>
+    <ul>
+      <li>Kết chuyển 4212 (lãi/lỗ tháng) → 421 (lãi/lỗ luỹ kế năm)</li>
+      <li>Tổng hợp các kỳ tháng → quyết toán năm</li>
+      <li>Báo cáo tài chính năm (BCTC) đầy đủ 4 mẫu</li>
+      <li>Quyết toán thuế TNDN + TNCN</li>
+      <li>Lưu archive 10 năm theo Luật Kế toán</li>
+    </ul>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-008, SOP-009</dd></div>
+      <div><dt>Pháp lý</dt><dd>Luật Kế toán 2015, TT200/2014</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-011 ───────── -->
+  <article class="sop" id="sop-011">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-011</span>
+        <span class="sop-cat">Nhân sự · Onboarding</span>
+      </div>
+      <h2 class="sop-title">Tuyển dụng & <em>nhập việc KTV mới</em></h2>
+      <p class="sop-purpose">Xây dựng đội ngũ KTV chất lượng — sàng lọc kỹ đầu vào, đào tạo bài bản, đảm bảo KTV mới đạt chuẩn trước khi tiếp xúc khách hàng VIP.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Theo nhu cầu</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>HR + KTV Lead</dd></div>
+      <div class="spec-cell"><dt>Thời gian</dt><dd>2–4 tuần / KTV</dd></div>
+      <div class="spec-cell"><dt>Thử việc</dt><dd>60 ngày</dd></div>
+      <div class="spec-cell"><dt>Chuẩn đầu ra</dt><dd>Test thực hành đạt</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Tiêu chí đầu vào</h3>
+    <ul>
+      <li>Tuổi 22–40, nữ (do đặc thù dịch vụ mẹ-bé)</li>
+      <li>Sức khoẻ tốt — có giấy khám sức khoẻ ≤ 6 tháng</li>
+      <li>Không tiền án tiền sự (lý lịch tư pháp)</li>
+      <li>Có chứng chỉ massage / spa cơ bản (ưu tiên)</li>
+      <li>Đã có con (ưu tiên với gói mẹ-bé — có kinh nghiệm thực tế)</li>
+      <li>Tinh thần phục vụ, ngoại hình ưa nhìn, giao tiếp tốt</li>
+    </ul>
+
+    <h3><span class="h3-num">II.</span> Quy trình tuyển dụng</h3>
+    <ol class="procedure">
+      <li><strong>Đăng tin tuyển dụng</strong>Facebook, Zalo, TopCV, Vietnamworks. Mô tả công việc + mức lương cụ thể (cơ bản + hoa hồng).</li>
+      <li><strong>Sàng lọc CV</strong>HR review 100 CV → chọn 20 phù hợp → gọi mời phỏng vấn.</li>
+      <li><strong>Phỏng vấn vòng 1 (HR)</strong>15 phút. Hỏi về kinh nghiệm, động lực, gia đình, kỳ vọng lương. Loại nếu thái độ không phù hợp.</li>
+      <li><strong>Phỏng vấn vòng 2 (KTV Lead)</strong>30 phút. Hỏi sâu chuyên môn: kỹ thuật massage, kiến thức về cơ thể mẹ sau sinh, an toàn cho bé.</li>
+      <li><strong>Test thực hành</strong>2 giờ. KTV ứng viên thực hành trên người mẫu (KTV cũ). KTV Lead chấm theo checklist 20 tiêu chí.</li>
+      <li><strong>Kiểm tra reference</strong>Gọi cho 2 người tham chiếu (sếp cũ, đồng nghiệp). Hỏi: thái độ, tính trung thực, có vấn đề gì không.</li>
+      <li><strong>Quyết định nhận</strong>HR + KTV Lead + Giám đốc CN cùng quyết. Tổng điểm ≥ 70/100 → mời thử việc.</li>
+    </ol>
+
+    <h3><span class="h3-num">III.</span> Onboarding 2 tuần đầu</h3>
+    <ol class="procedure">
+      <li><strong>Ngày 1: Welcome & paperwork</strong>HR tạo tài khoản hệ thống (theo SOP-013). Ký HĐ thử việc. Nhận đồng phục, dụng cụ. Đọc sổ tay KTV.</li>
+      <li><strong>Ngày 2–3: Đào tạo lý thuyết</strong>Học về thương hiệu Bella, sản phẩm/gói, quy trình SOP-004 + SOP-005.</li>
+      <li><strong>Ngày 4–5: Đào tạo thực hành nội bộ</strong>Thực hành trên người mẫu (đồng nghiệp). KTV Lead hướng dẫn từng kỹ thuật.</li>
+      <li><strong>Ngày 6–10: Shadowing</strong>Đi cùng KTV senior 5 buổi liên tục, quan sát. Không thực hành trên khách thật.</li>
+      <li><strong>Ngày 11–14: Thực hành có giám sát</strong>Thực hành 5 buổi trên khách thật, KTV senior đi cùng giám sát và sửa.</li>
+      <li><strong>Cuối tuần 2: Test certification</strong>KTV Lead test thực hành nghiêm túc. Pass → được nhận session độc lập (vẫn trong thử việc).</li>
+    </ol>
+
+    <h3><span class="h3-num">IV.</span> Đánh giá hết thử việc (60 ngày)</h3>
+    <table class="data-table">
+      <thead><tr><th>Tiêu chí</th><th>Trọng số</th><th>Đạt</th></tr></thead>
+      <tbody>
+        <tr><td>Số buổi hoàn thành ≥ 20</td><td>30%</td><td>≥ 20 buổi</td></tr>
+        <tr><td>Đánh giá trung bình ≥ 4.3★</td><td>30%</td><td>≥ 4.3</td></tr>
+        <tr><td>Tỷ lệ check-in đúng giờ ≥ 90%</td><td>15%</td><td>≥ 90%</td></tr>
+        <tr><td>Không có khiếu nại L2+</td><td>15%</td><td>0 khiếu nại</td></tr>
+        <tr><td>Đánh giá KTV Lead về thái độ</td><td>10%</td><td>≥ 7/10</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">V.</span> Sau thử việc</h3>
+    <ul>
+      <li><strong>Pass</strong> (≥ 70/100): Ký HĐLĐ chính thức 12 tháng. Lương cơ bản tăng. Được nhận session VIP.</li>
+      <li><strong>Cần cải thiện</strong> (50-69): Kéo dài thử việc 30 ngày, có kế hoạch coaching.</li>
+      <li><strong>Không pass</strong> (&lt; 50): Chấm dứt HĐ thử việc, có thư cảm ơn.</li>
+    </ul>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-004, SOP-005, SOP-013</dd></div>
+      <div><dt>Pháp lý</dt><dd>BLLĐ 2019, NĐ 145/2020</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-012 ───────── -->
+  <article class="sop" id="sop-012">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-012</span>
+        <span class="sop-cat">Nhân sự · Time</span>
+      </div>
+      <h2 class="sop-title">Chấm công & duyệt <em>đơn nghỉ phép</em></h2>
+      <p class="sop-purpose">Theo dõi giờ làm, đơn nghỉ phép minh bạch, đúng quy định BLLĐ — bảo vệ quyền lợi nhân viên và quyền lợi doanh nghiệp.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Hàng ngày + tháng</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>HR</dd></div>
+      <div class="spec-cell"><dt>Tự động</dt><dd>Qua GPS check-in/out</dd></div>
+      <div class="spec-cell"><dt>Đóng tháng</dt><dd>Ngày 30/31</dd></div>
+      <div class="spec-cell"><dt>Pháp lý</dt><dd>BLLĐ 2019</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Cơ chế chấm công</h3>
+    <p>KTV check-in/out tại từng session — hệ thống tự ghi vào table <code>attendance</code>:</p>
+    <ul>
+      <li>Ngày làm việc</li>
+      <li>Giờ check-in, check-out</li>
+      <li>Shift_id (ca trực)</li>
+      <li>Status: present / late / absent / half_day</li>
+      <li>GPS coordinates</li>
+    </ul>
+
+    <h3><span class="h3-num">II.</span> Quy tắc tính đúng giờ</h3>
+    <table class="data-table">
+      <thead><tr><th>Chênh giờ</th><th>Status</th><th>Hậu quả</th></tr></thead>
+      <tbody>
+        <tr><td>Sớm 0–15 phút</td><td>Present</td><td>Bình thường</td></tr>
+        <tr><td>Đúng giờ ± 5 phút</td><td>Present</td><td>Bình thường</td></tr>
+        <tr><td>Muộn 5–15 phút</td><td>Late</td><td>Cảnh báo (nếu &gt; 3 lần/tháng → trừ KPI)</td></tr>
+        <tr><td>Muộn 15–60 phút</td><td>Late nặng</td><td>Trừ 100k/lần + ảnh hưởng KPI</td></tr>
+        <tr><td>Muộn &gt; 60 phút hoặc không đi</td><td>Absent</td><td>Trừ 1 ngày lương + biên bản</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">III.</span> Đơn nghỉ phép</h3>
+    <p>Loại đơn:</p>
+    <ul>
+      <li><strong>Phép năm</strong> — 12 ngày/năm (đủ 12 tháng) — có lương</li>
+      <li><strong>Phép ốm</strong> — BHXH chi trả 75% — cần giấy khám</li>
+      <li><strong>Phép thai sản</strong> — 6 tháng (nữ) — qua BHXH</li>
+      <li><strong>Phép kết hôn</strong> — 3 ngày — có lương</li>
+      <li><strong>Phép ma chay</strong> — 3 ngày (tứ thân) — có lương</li>
+      <li><strong>Không lương</strong> — thoả thuận</li>
+    </ul>
+
+    <h3><span class="h3-num">IV.</span> Quy trình duyệt đơn</h3>
+    <ol class="procedure">
+      <li><strong>KTV gửi đơn qua app</strong>Tối thiểu trước <strong>3 ngày</strong> (trừ ốm/cấp cứu). Chọn loại, ngày bắt đầu, kết thúc, lý do.</li>
+      <li><strong>HR nhận notification</strong>Trong vòng 4 giờ làm việc.</li>
+      <li><strong>Check điều kiện</strong>
+        <ul>
+          <li>Số phép còn lại trong năm</li>
+          <li>Ngày đó có session nào? Có người thay không?</li>
+          <li>Có quá nhiều người cùng nghỉ ngày đó không (max 30% team)?</li>
+        </ul>
+      </li>
+      <li><strong>Trao đổi với KTV Lead</strong>Nếu có session cần chuyển → KTV Lead arrange người thay.</li>
+      <li><strong>Duyệt / từ chối</strong>Bấm Duyệt → đơn auto cập nhật ktv_schedule status='off'.Nếu từ chối → ghi lý do rõ ràng, đề xuất ngày khác.</li>
+      <li><strong>KTV nhận thông báo</strong>Tự động qua Zalo + in-app notification.</li>
+    </ol>
+
+    <h3><span class="h3-num">V.</span> Đóng chấm công cuối tháng</h3>
+    <ol class="procedure">
+      <li><strong>Ngày 28–29:</strong> review bảng chấm công, fix sai sót (KTV quên check, GPS lỗi).</li>
+      <li><strong>Ngày 30:</strong> chốt số ngày công, ngày nghỉ phép, ngày vắng.</li>
+      <li><strong>Xuất Excel</strong> gửi kế toán làm lương.</li>
+      <li><strong>Đóng module chấm công</strong> — KTV không edit được nữa.</li>
+    </ol>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-009, SOP-011</dd></div>
+      <div><dt>Pháp lý</dt><dd>BLLĐ 2019 Đ. 113-115</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-013 ───────── -->
+  <article class="sop" id="sop-013">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-013</span>
+        <span class="sop-cat">Bảo mật · Account</span>
+      </div>
+      <h2 class="sop-title">Quản lý tài khoản & <em>xác thực 2 lớp</em></h2>
+      <p class="sop-purpose">Bảo vệ tài khoản hệ thống — đặc biệt tài khoản admin/kế toán có quyền truy cập dữ liệu nhạy cảm — khỏi rủi ro chiếm đoạt và rò rỉ.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Phạm vi</dt><dd>Toàn hệ thống</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>HR + Admin</dd></div>
+      <div class="spec-cell"><dt>Audit</dt><dd>Quý / lần</dd></div>
+      <div class="spec-cell"><dt>2FA</dt><dd>Bắt buộc admin/KT/HR</dd></div>
+      <div class="spec-cell"><dt>Pháp lý</dt><dd>NĐ 13/2023</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Quy tắc mật khẩu</h3>
+    <ul>
+      <li>Tối thiểu <strong>12 ký tự</strong> (admin/KT/HR), 8 ký tự (KTV)</li>
+      <li>Phải gồm: chữ hoa + chữ thường + số + ký tự đặc biệt</li>
+      <li>KHÔNG dùng mật khẩu cũ trong 5 lần gần nhất</li>
+      <li>KHÔNG share giữa các tài khoản</li>
+      <li>Đổi định kỳ <strong>3 tháng/lần</strong> (admin/KT/HR), 6 tháng (KTV)</li>
+      <li>KHÔNG ghi mật khẩu lên giấy dán màn hình</li>
+    </ul>
+
+    <h3><span class="h3-num">II.</span> Bắt buộc 2FA</h3>
+    <p>Các role sau BẮT BUỘC bật 2FA TOTP trong ngày đầu nhận tài khoản:</p>
+    <ul>
+      <li><code>admin</code> · Quản trị viên</li>
+      <li><code>accountant</code> · Kế toán</li>
+      <li><code>hr</code> · Nhân sự</li>
+    </ul>
+    <p>Các role KTV/lễ tân khuyến khích nhưng không bắt buộc.</p>
+
+    <h3><span class="h3-num">III.</span> Quy trình bật 2FA</h3>
+    <ol class="procedure">
+      <li><strong>Tải app Authenticator</strong>Google Authenticator / Authy / 1Password trên điện thoại.</li>
+      <li><strong>Vào Cài đặt → Bảo mật</strong>Bấm "Bật 2FA ngay".</li>
+      <li><strong>Quét QR code</strong>Trong app authenticator: Add account → quét QR hiện trên màn hình.</li>
+      <li><strong>Nhập mã 6 số</strong>App hiện mã đổi mỗi 30s. Nhập vào ô xác minh.</li>
+      <li><strong>Lưu secret key</strong>QUAN TRỌNG: copy secret key (chuỗi 32 ký tự) lưu vào két sắt / password manager (1Password, Bitwarden). Đây là phương án dự phòng khi mất điện thoại.</li>
+    </ol>
+
+    <h3><span class="h3-num">IV.</span> Xử lý mất điện thoại / mất quyền 2FA</h3>
+    <ol class="procedure">
+      <li><strong>Báo ngay HR/Admin</strong>Trong vòng 2 giờ phát hiện.</li>
+      <li><strong>Khoá tài khoản tạm thời</strong>Admin/HR vào Supabase → khoá tài khoản → tránh ai đó chiếm.</li>
+      <li><strong>Xác minh danh tính</strong>Gặp mặt trực tiếp, kiểm tra CCCD. KHÔNG xử lý qua điện thoại/Zalo.</li>
+      <li><strong>Gỡ MFA factor</strong>HQ Super-Admin vào Supabase Dashboard → Authentication → user → remove MFA factor.</li>
+      <li><strong>Setup 2FA mới</strong>User setup lại trên thiết bị mới, lưu secret mới.</li>
+    </ol>
+
+    <h3><span class="h3-num">V.</span> Audit định kỳ</h3>
+    <ul>
+      <li><strong>Hàng tháng:</strong> Review danh sách user active, khoá user không hoạt động &gt; 30 ngày</li>
+      <li><strong>Hàng quý:</strong> Kiểm tra audit_logs cho hoạt động bất thường (login từ IP lạ, đổi role, xoá data)</li>
+      <li><strong>Hàng năm:</strong> Đối chiếu danh sách user với danh sách nhân viên thực tế HR</li>
+    </ul>
+
+    <h3><span class="h3-num">VI.</span> Khi nhân viên nghỉ việc</h3>
+    <div class="callout critical">
+      <span class="callout-tag">Trong 24 giờ</span>
+      Khoá tài khoản hệ thống. KHÔNG xoá (giữ data lịch sử). Đổi mật khẩu mọi shared account (Zalo OA admin, email công ty, ngân hàng) mà nhân viên có access.
+    </div>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-011, SOP-015</dd></div>
+      <div><dt>Pháp lý</dt><dd>NĐ 13/2023, ISO 27001</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-014 ───────── -->
+  <article class="sop" id="sop-014">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-014</span>
+        <span class="sop-cat">Bảo mật · Data</span>
+      </div>
+      <h2 class="sop-title">Sao lưu & <em>khôi phục dữ liệu</em></h2>
+      <p class="sop-purpose">Đảm bảo dữ liệu hệ thống được sao lưu định kỳ, có khả năng khôi phục khi gặp sự cố — bảo vệ tài sản số quan trọng nhất của doanh nghiệp.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Tần suất</dt><dd>Hàng ngày auto</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>Admin / IT</dd></div>
+      <div class="spec-cell"><dt>Retention</dt><dd>30 ngày PITR + 1 năm cold</dd></div>
+      <div class="spec-cell"><dt>RTO</dt><dd>&lt; 4 giờ</dd></div>
+      <div class="spec-cell"><dt>RPO</dt><dd>&lt; 5 phút</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Chiến lược 3-2-1</h3>
+    <p>Áp dụng quy tắc <strong>3-2-1 backup</strong>:</p>
+    <ul>
+      <li><strong>3 bản</strong> dữ liệu (1 production + 2 backup)</li>
+      <li><strong>2 phương tiện</strong> lưu khác nhau (Supabase cloud + cloud thứ 2)</li>
+      <li><strong>1 bản ngoài site</strong> (vùng địa lý khác)</li>
+    </ul>
+
+    <h3><span class="h3-num">II.</span> Sao lưu tự động</h3>
+    <table class="data-table">
+      <thead><tr><th>Loại backup</th><th>Tần suất</th><th>Phương thức</th><th>Lưu trữ</th></tr></thead>
+      <tbody>
+        <tr><td>PITR (Point-in-Time Recovery)</td><td>Liên tục</td><td>Supabase Pro</td><td>30 ngày</td></tr>
+        <tr><td>Snapshot toàn DB</td><td>Hàng ngày 03:00</td><td>pg_dump tự động</td><td>S3 Singapore, 90 ngày</td></tr>
+        <tr><td>Snapshot tuần</td><td>Chủ nhật</td><td>pg_dump full</td><td>S3 Singapore, 1 năm</td></tr>
+        <tr><td>Snapshot tháng</td><td>Ngày 1</td><td>pg_dump + storage</td><td>Cold storage, 7 năm</td></tr>
+        <tr><td>Files (receipts, contracts)</td><td>Liên tục</td><td>Supabase Storage</td><td>Versioned, mirror</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">III.</span> Quy trình khôi phục</h3>
+    <ol class="procedure">
+      <li><strong>Phân loại sự cố</strong>
+        <ul>
+          <li>Cấp 1: Vài record xoá nhầm → restore từ audit_logs</li>
+          <li>Cấp 2: Mất 1 table → restore selective từ snapshot</li>
+          <li>Cấp 3: Mất toàn DB → PITR full restore</li>
+        </ul>
+      </li>
+      <li><strong>Báo cáo + freeze hệ thống</strong>Báo ngay Giám đốc + IT lead. Tạm ngừng app (maintenance mode) để không tạo data mới gây mâu thuẫn.</li>
+      <li><strong>Xác định timestamp cần khôi phục</strong>Từ audit_logs tìm thời điểm cuối cùng trước khi sự cố xảy ra.</li>
+      <li><strong>Restore vào DB staging</strong>KHÔNG restore thẳng vào production. Restore vào staging DB trước để verify.</li>
+      <li><strong>Verify dữ liệu</strong>Check các table chính, đếm record, sample 10 record để compare.</li>
+      <li><strong>Plan migration data delta</strong>Nếu có data mới giữa thời điểm restore và bây giờ (đã không thể tránh khỏi), plan migration thủ công.</li>
+      <li><strong>Cutover production</strong>Maintenance window. Swap staging → production. Smoke test.</li>
+      <li><strong>Mở lại hệ thống</strong>Bỏ maintenance mode. Thông báo nhân viên.</li>
+      <li><strong>Post-mortem</strong>Trong 48 giờ — viết báo cáo nguyên nhân, hành động khắc phục, prevent tương lai.</li>
+    </ol>
+
+    <h3><span class="h3-num">IV.</span> Test khôi phục (drill)</h3>
+    <div class="callout note">
+      <span class="callout-tag">Khuyến nghị mạnh</span>
+      Thực hiện <strong>1 lần / quý</strong>: restore snapshot vào DB test → verify. Nếu chưa từng test restore, bạn không thực sự có backup — chỉ có data đang nằm đâu đó.
+    </div>
+
+    <h3><span class="h3-num">V.</span> Data Residency (lưu trú dữ liệu)</h3>
+    <p>Tuân thủ Nghị định 53/2022:</p>
+    <ul>
+      <li>Dữ liệu cá nhân khách hàng VN → lưu Supabase region Singapore (gần VN nhất theo policy)</li>
+      <li>HOẶC self-host Postgres tại Data Center VN</li>
+      <li>Backup S3 → bucket region ap-southeast-1 (Singapore)</li>
+      <li>KHÔNG cho phép sync dữ liệu sang region Mỹ/EU không cần thiết</li>
+    </ul>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-013, SOP-015</dd></div>
+      <div><dt>Pháp lý</dt><dd>NĐ 53/2022, NĐ 13/2023</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0</dd></div>
+    </dl>
+  </article>
+
+  <!-- ───────── SOP-015 ───────── -->
+  <article class="sop" id="sop-015">
+    <header class="sop-head">
+      <div class="sop-id-row">
+        <span class="sop-id">SOP-015</span>
+        <span class="sop-cat">Khẩn cấp · Incident</span>
+      </div>
+      <h2 class="sop-title">Xử lý <em>sự cố khẩn cấp</em></h2>
+      <p class="sop-purpose">Phản ứng nhanh, đúng quy trình với các tình huống khẩn cấp — sức khoẻ khách, an ninh, cháy nổ, sự cố hệ thống — bảo vệ sinh mạng và tài sản.</p>
+    </header>
+
+    <dl class="sop-spec">
+      <div class="spec-cell"><dt>Ưu tiên</dt><dd>P0 — Tối cao</dd></div>
+      <div class="spec-cell"><dt>Phụ trách</dt><dd>Mọi nhân viên</dd></div>
+      <div class="spec-cell"><dt>Báo cáo</dt><dd>Giám đốc + 113/115</dd></div>
+      <div class="spec-cell"><dt>Đào tạo</dt><dd>Bắt buộc 100% NS</dd></div>
+      <div class="spec-cell"><dt>Drill</dt><dd>6 tháng / lần</dd></div>
+    </dl>
+
+    <h3><span class="h3-num">I.</span> Phân loại sự cố</h3>
+    <table class="data-table">
+      <thead><tr><th>Mã</th><th>Loại</th><th>Ví dụ</th><th>Liên hệ ngay</th></tr></thead>
+      <tbody>
+        <tr><td>P0-MED</td><td>Y tế khẩn cấp</td><td>Khách dị ứng nặng, té ngã chấn thương, ngất xỉu</td><td>115 + GĐ + BS đối tác</td></tr>
+        <tr><td>P0-FIRE</td><td>Cháy nổ</td><td>Hoả hoạn, rò rỉ khí</td><td>114 + GĐ + PCCC nội bộ</td></tr>
+        <tr><td>P0-SEC</td><td>An ninh</td><td>Trộm, đánh nhau, đe doạ</td><td>113 + GĐ + bảo vệ</td></tr>
+        <tr><td>P0-DATA</td><td>Mất / lộ data</td><td>Bị hack, server down, lộ DB khách</td><td>IT + GĐ + Luật sư</td></tr>
+        <tr><td>P1-OPS</td><td>Vận hành nghiêm trọng</td><td>Mất điện kéo dài, internet sập, hệ thống chậm</td><td>Quản lý + IT</td></tr>
+      </tbody>
+    </table>
+
+    <h3><span class="h3-num">II.</span> Quy trình SAFE (P0-MED — khẩn cấp y tế)</h3>
+    <ol class="procedure">
+      <li><strong>S — Stop everything</strong>Dừng ngay buổi phục vụ. KHÔNG di chuyển khách nếu nghi gãy/chấn thương.</li>
+      <li><strong>A — Assess & Alert</strong>Kiểm tra sinh hiệu (thở, mạch). Gọi 115 NGAY. Gọi đồng nghiệp gần nhất. Lấy hộp y tế.</li>
+      <li><strong>F — First aid</strong>Sơ cứu theo hướng dẫn 115 (qua điện thoại) hoặc theo training:
+        <ul>
+          <li>Dị ứng nặng: nâng chân, theo dõi hô hấp, có epinephrine thì dùng</li>
+          <li>Chấn thương: cố định, không di chuyển</li>
+          <li>Ngất xỉu: nằm nghiêng, kê chân cao 30°</li>
+          <li>Khó thở: nới quần áo, mở cửa thoáng</li>
+        </ul>
+      </li>
+      <li><strong>E — Escalate & Evacuate</strong>Báo Giám đốc CN trong 5 phút. Sẵn sàng đưa khách đi viện cùng với xe cấp cứu.</li>
+    </ol>
+
+    <h3><span class="h3-num">III.</span> Sau sự cố (trong 24 giờ)</h3>
+    <ol class="procedure">
+      <li><strong>Báo cáo chi tiết bằng văn bản</strong>Ai làm gì, lúc nào, ở đâu. Có hình ảnh/video nếu được.</li>
+      <li><strong>Liên hệ gia đình khách</strong>Nếu khách đã thông tin người thân, gọi ngay. Lịch sự, chân thành.</li>
+      <li><strong>Chi trả y tế</strong>Bella Spa chi trả 100% chi phí y tế phát sinh từ sự cố tại spa. KHÔNG để khách trả trước.</li>
+      <li><strong>Soạn thư xin lỗi chính thức</strong>Giám đốc ký, gửi gia đình trong 24h.</li>
+      <li><strong>Báo cáo Bảo hiểm</strong>Nếu có bảo hiểm trách nhiệm dân sự, báo cáo theo quy định bảo hiểm.</li>
+      <li><strong>Báo cáo cơ quan (nếu cần)</strong>Sự cố nghiêm trọng có thể yêu cầu báo cáo Sở Y tế, công an. Tham vấn luật sư.</li>
+    </ol>
+
+    <h3><span class="h3-num">IV.</span> Post-mortem (sau 1 tuần)</h3>
+    <ul>
+      <li>Họp toàn nhân viên review sự cố</li>
+      <li>Phân tích nguyên nhân gốc (5 Whys)</li>
+      <li>Đề xuất biện pháp ngăn chặn (training, sửa SOP, đầu tư thiết bị)</li>
+      <li>Update SOP nếu cần</li>
+      <li>Drill lại để chắc nhân viên nắm vững</li>
+    </ul>
+
+    <h3><span class="h3-num">V.</span> Số điện thoại khẩn cấp</h3>
+    <table class="data-table">
+      <thead><tr><th>Liên hệ</th><th>Số</th><th>Khi nào</th></tr></thead>
+      <tbody>
+        <tr><td>Cấp cứu y tế</td><td>115</td><td>Bất kỳ vấn đề sức khoẻ nghiêm trọng</td></tr>
+        <tr><td>Cảnh sát</td><td>113</td><td>An ninh, trộm cắp, đe doạ</td></tr>
+        <tr><td>Cứu hoả</td><td>114</td><td>Cháy nổ, rò rỉ</td></tr>
+        <tr><td>Tổng đài cứu nạn</td><td>112</td><td>Khẩn cấp chung</td></tr>
+        <tr><td>BS đối tác (Sản–Nhi)</td><td>0xxx-xxx-xxx</td><td>Tư vấn y tế mẹ-bé</td></tr>
+        <tr><td>Luật sư đối tác</td><td>0xxx-xxx-xxx</td><td>Vấn đề pháp lý</td></tr>
+        <tr><td>Giám đốc CN</td><td>(theo từng CN)</td><td>Mọi sự cố P0/P1</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout critical">
+      <span class="callout-tag">Quy tắc vàng</span>
+      Trong sự cố khẩn cấp, ưu tiên: <strong>1. An toàn tính mạng</strong> &gt; <strong>2. An toàn tài sản</strong> &gt; <strong>3. Danh tiếng thương hiệu</strong>. KHÔNG bao giờ đảo ngược thứ tự này.
+    </div>
+
+    <dl class="sop-foot">
+      <div><dt>Tham chiếu</dt><dd>SOP-005, SOP-006</dd></div>
+      <div><dt>Đào tạo</dt><dd>100% nhân viên / năm</dd></div>
+      <div><dt>Hiệu lực</dt><dd>26/05/2026</dd></div>
+      <div><dt>Lần sửa</dt><dd>v1.0 — Ban hành</dd></div>
+    </dl>
+  </article>
+
+  </div>
+</main>
+
+<!-- ════════════════════════ FOOTER ════════════════════════ -->
+<footer class="doc-foot">
+  <div class="container">
+    <h4>Bella Spa</h4>
+    <p>Tài liệu Quy trình Vận hành Tiêu chuẩn (SOP)</p>
+    <div class="divider"></div>
+    <p>15 quy trình · 7 lĩnh vực · Áp dụng toàn hệ thống chi nhánh<br>
+    Mọi nhân viên có trách nhiệm đọc, hiểu và tuân thủ.<br>
+    Cập nhật &amp; sửa đổi: Liên hệ Bộ phận Quy trình</p>
+    <div class="sign">
+      Document SOP-MASTER · v1.0 · Hiệu lực 26.05.2026 · © 2026 Bella Spa Group · Tài liệu nội bộ
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

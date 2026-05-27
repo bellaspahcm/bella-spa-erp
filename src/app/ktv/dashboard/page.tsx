@@ -1029,6 +1029,13 @@ export default function KTVDashboard() {
 
               {/* Action Buttons */}
               <div className="space-y-3 mt-auto">
+                <Link
+                  href="/ktv/guides"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 border border-slate-200/80 text-center"
+                >
+                  📖 Sổ tay & Hướng dẫn
+                </Link>
                 <button 
                   onClick={handleLogout}
                   className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-rose-100 dark:shadow-none"

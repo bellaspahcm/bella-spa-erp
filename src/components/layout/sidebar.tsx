@@ -22,7 +22,8 @@ import {
   Menu,
   X,
   Scale,
-  Wallet
+  Wallet,
+  HelpCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +55,7 @@ const menuItems = [
 
   { type: 'header', label: 'Hệ thống' },
   { icon: History,         label: 'Nhật ký hệ thống',    href: '/dashboard/audit' },
+  { icon: HelpCircle,      label: 'Hướng dẫn sử dụng',   href: '/dashboard/guides' },
   { icon: Settings,        label: 'Cài đặt',             href: '/dashboard/settings' },
 ];
 
