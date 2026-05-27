@@ -9,8 +9,22 @@ import { resolvePackageName } from '@/lib/utils';
  * Truy xuất thông tin booking qua Share Token (Dành cho khách hàng)
  */
 export async function getCustomerBookingByToken(token?: string) {
-  const supabase = await createClient();
-  
+  // When a token is provided, we use the service-role client to bypass RLS.
+  // The token itself (64-bit random hex) IS the security boundary — anyone
+  // with the token can read the booking, which is the magic-link model.
+  // Anon client cannot read public.bookings (RLS policy "Guest xem bookings (Blocked)").
+  let supabase: any;
+  if (token && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+    supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+  } else {
+    supabase = await createClient();
+  }
+
   let query = supabase
     .from('bookings')
     .select(`
@@ -83,7 +97,20 @@ export async function getCustomerBookingByToken(token?: string) {
  * Khách hàng gửi đánh giá cho một buổi chăm sóc
  */
 export async function submitCustomerRating(sessionId: string, rating: number, comment: string = '') {
-  const supabase = await createClient();
+  // Customer is anonymous (no auth session) — bypass RLS via service role.
+  // Security: sessionId is a non-enumerable UUID. Caller must have already
+  // obtained it via getCustomerBookingByToken (gated by share_token).
+  let supabase: any;
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
+    supabase = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+  } else {
+    supabase = await createClient();
+  }
 
   // 1. Lấy thông tin session để đồng bộ hóa
   const { data: session } = await supabase
