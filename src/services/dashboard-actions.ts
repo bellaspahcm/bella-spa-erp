@@ -654,10 +654,5 @@ export async function getFullDashboardData(startDate?: string, endDate?: string,
     getMonthlyPerformance()
   ]);
 
-  // Sync today's booking count with actual sessions fetched
-  if (statsData && statsData.todayBookings && sessionsData) {
-    statsData.todayBookings.value = sessionsData.length.toString();
-  }
-
   return { statsData, sessionsData, ktvsData, alertsData, perfData };
 }
