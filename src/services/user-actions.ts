@@ -39,6 +39,39 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   }
   
   if (!user) {
+    // Development bypass: proxy injects x-mock-user-email header when mock_user_email
+    // cookie is present, allowing E2E tests and local dev without real Supabase passwords.
+    if (process.env.NODE_ENV === 'development') {
+      const { headers } = await import('next/headers');
+      const mockEmail = (await headers()).get('x-mock-user-email');
+      if (mockEmail && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        // Anon client is blocked by RLS without a session — use service role to bypass.
+        const { createClient: createAdmin } = await import('@supabase/supabase-js');
+        const adminClient = createAdmin(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY,
+          { auth: { persistSession: false, autoRefreshToken: false } },
+        );
+        const { data: mockProfile } = await adminClient
+          .from('users')
+          .select('*')
+          .eq('email', mockEmail)
+          .single();
+        if (mockProfile) {
+          const profile = mockProfile as unknown as CurrentUser;
+          profile.role = profile.role?.toLowerCase();
+          if (profile.tenant_id) {
+            const { data: tenant } = await adminClient
+              .from('tenants')
+              .select('status')
+              .eq('id', profile.tenant_id)
+              .single();
+            if (tenant?.status === 'suspended') profile.isSuspended = true;
+          }
+          return profile;
+        }
+      }
+    }
     console.warn('[getCurrentUser] No active session found');
     return null;
   }
