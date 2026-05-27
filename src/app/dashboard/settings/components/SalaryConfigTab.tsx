@@ -2,7 +2,7 @@
 // Version: 1.4.0 - Added auto_consume_inventory toggle
 
 import React from "react";
-import { Coins, Star, Zap, Database } from "lucide-react";
+import { Coins, Star, Zap, Database, AlertOctagon } from "lucide-react";
 import { TenantGeneralSettings } from "@/types/domain";
 
 interface SalaryConfigTabProps {
@@ -20,6 +20,8 @@ export default function SalaryConfigTab({
     bonus_4_star: 10000,
     kpi_target_sessions: 30,
     kpi_bonus_amount: 1000000,
+    penalty_late_per_day: 50000,
+    penalty_absent_per_day: 200000,
     auto_consume_inventory: false,
   };
 
@@ -171,6 +173,68 @@ export default function SalaryConfigTab({
                 * KTV hoàn thành lớn hơn <strong className="text-primary">{salaryConfig.kpi_target_sessions} ca</strong> trong tháng sẽ tự động được cộng <strong className="text-primary">{(salaryConfig.kpi_bonus_amount || 0).toLocaleString('vi-VN')}₫</strong> vào tổng nhận.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Phạt Kỷ luật — auto trừ theo attendance */}
+        <div className="p-8 bg-white/40 rounded-[2.5rem] border border-white shadow-sm space-y-6 md:col-span-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">
+              <AlertOctagon className="w-5 h-5 text-rose-500" />
+            </div>
+            <h3 className="font-black text-lg text-slate-900">Phạt Kỷ luật (Tự động từ chấm công)</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
+                <span>Phạt mỗi ngày trễ</span>
+                <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full">Auto</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={(salaryConfig.penalty_late_per_day ?? 50000).toLocaleString('vi-VN')}
+                  onChange={(e) => {
+                    const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
+                    setGeneralSettings({
+                      ...generalSettings,
+                      salary_config: { ...salaryConfig, penalty_late_per_day: isNaN(numericValue) ? 0 : numericValue }
+                    });
+                  }}
+                  className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">₫</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
+                <span>Phạt mỗi ngày vắng không phép</span>
+                <span className="text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full">Auto</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={(salaryConfig.penalty_absent_per_day ?? 200000).toLocaleString('vi-VN')}
+                  onChange={(e) => {
+                    const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
+                    setGeneralSettings({
+                      ...generalSettings,
+                      salary_config: { ...salaryConfig, penalty_absent_per_day: isNaN(numericValue) ? 0 : numericValue }
+                    });
+                  }}
+                  className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">₫</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 bg-rose-50/50 border border-rose-100 rounded-2xl">
+            <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+              ⚠️ Hệ thống <strong className="text-primary">tự động</strong> trừ lương theo số ngày trễ/vắng từ chấm công tháng. Admin có thể override bằng cách chỉnh tay trong bảng lương — giá trị manual sẽ ghi đè giá trị tự động.
+            </p>
           </div>
         </div>
 
