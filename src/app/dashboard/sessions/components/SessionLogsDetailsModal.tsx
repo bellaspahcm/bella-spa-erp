@@ -108,8 +108,10 @@ export function SessionLogsDetailsModal({
 
     fetchSessionLogs(activeBooking.id);
 
-    // Real-time subscription optimized for this booking's logs
+    // Real-time subscription optimized for this booking's logs with debouncing to prevent event storms during bulk updates
     const supabase = createClient() as any;
+    let debounceTimer: NodeJS.Timeout;
+
     const channel = supabase
       .channel(`modal-realtime-${activeBooking.id}`)
       .on('postgres_changes', { 
@@ -118,11 +120,15 @@ export function SessionLogsDetailsModal({
         table: 'session_logs',
         filter: `booking_id=eq.${activeBooking.id}`
       }, () => {
-        fetchSessionLogs(activeBooking.id);
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          fetchSessionLogs(activeBooking.id);
+        }, 300);
       })
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [isOpen, activeBooking?.id]);
