@@ -123,7 +123,7 @@
 
 <header class="hero">
   <div class="container hero-content">
-    <span class="badge">Sổ tay sử dụng · Phiên bản 1.0</span>
+    <span class="badge">Sổ tay sử dụng · Phiên bản 1.1</span>
     <h1 class="hero-title">Nhân sự</h1>
     <p class="hero-subtitle">Quản lý toàn bộ vòng đời nhân viên — từ tuyển dụng, chấm công, đơn nghỉ phép, KPI, tính lương tự động đến offboarding khi nghỉ việc.</p>
     <div class="hero-meta">
@@ -432,6 +432,103 @@
             </table>
           </div>
 
+          <h3>Công thức tính lương tự động</h3>
+          <p>Hệ thống tính lương KTV theo công thức ghép từ <strong>6 thành phần</strong>. Bảng dưới đây là nguồn gốc mỗi con số hiển thị trong cột bảng lương:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Thành phần</th>
+                  <th>Cách tính</th>
+                  <th>Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>①</strong></td>
+                  <td>Lương cơ bản</td>
+                  <td>Lương hợp đồng ÷ 26 × số ngày công thực tế</td>
+                  <td>Tính theo chấm công tháng; nếu chưa có dữ liệu → tính nguyên lương</td>
+                </tr>
+                <tr>
+                  <td><strong>②</strong></td>
+                  <td>Hoa hồng ca</td>
+                  <td>Σ (hoa hồng từng session hoàn thành trong tháng)</td>
+                  <td>Mỗi booking có trường <code>ktv_commission</code>; mặc định 150.000đ/ca nếu chưa cấu hình</td>
+                </tr>
+                <tr>
+                  <td><strong>③</strong></td>
+                  <td>Thưởng chất lượng (★)</td>
+                  <td>Điểm đánh giá tổng hợp → mức thưởng/ca × số ca</td>
+                  <td>Xem bảng mức thưởng phía dưới</td>
+                </tr>
+                <tr>
+                  <td><strong>④</strong></td>
+                  <td>Thưởng KPI</td>
+                  <td>Nếu số ca ≥ chỉ tiêu → cộng thêm KPI bonus</td>
+                  <td>Chỉ tiêu & mức thưởng cấu hình tại <strong>Cài đặt → Lương & Thưởng</strong></td>
+                </tr>
+                <tr>
+                  <td><strong>⑤</strong></td>
+                  <td>Trừ vi phạm</td>
+                  <td>Số ngày trễ × mức phạt/ngày + Số ngày vắng × mức phạt/ngày</td>
+                  <td>Tự động từ chấm công; admin có thể override</td>
+                </tr>
+                <tr>
+                  <td><strong>⑥</strong></td>
+                  <td>Ứng lương / trừ khác</td>
+                  <td>Số tiền admin nhập tay</td>
+                  <td>Ứng trước, phạt biên bản, điều chỉnh đặc biệt</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:14px;color:var(--text-muted);font-weight:600;">
+            <strong style="color:var(--primary-deep)">Tổng nhận</strong> = ① + ② + ③ + ④ − ⑤ − ⑥
+          </p>
+
+          <h3>Điểm đánh giá tổng hợp (★) và thưởng chất lượng</h3>
+          <p>Hệ thống tính điểm tổng hợp theo công thức blended:</p>
+          <div class="callout info" style="margin-bottom:16px;">
+            <span class="callout-icon">📐</span>
+            <div>
+              <strong>Điểm tổng hợp = 0,6 × Điểm khách hàng + 0,4 × Điểm kỷ luật</strong><br/>
+              <span style="font-size:13px;margin-top:4px;display:block;">Điểm kỷ luật bắt đầu 5,0 — bị trừ theo số lần trễ/vắng trong tháng (tối thiểu 1,0).</span>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Điểm tổng hợp</th><th>Xếp loại</th><th>Thưởng/ca</th></tr></thead>
+              <tbody>
+                <tr><td>= 5,0</td><td>⭐ Xuất sắc hoàn hảo</td><td>Cấu hình (mặc định 50.000đ)</td></tr>
+                <tr><td>4,5 – 4,99</td><td>⭐ Xuất sắc</td><td>Cấu hình (mặc định 30.000đ)</td></tr>
+                <tr><td>4,0 – 4,49</td><td>✅ Tốt</td><td>Cấu hình (mặc định 10.000đ)</td></tr>
+                <tr><td>&lt; 4,0</td><td>Trung bình / Cần cải thiện</td><td>0đ</td></tr>
+                <tr><td>— (chưa có dữ liệu)</td><td>Chưa có trong tháng</td><td>0đ</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:13.5px;color:var(--text-muted);">Thay đổi mức thưởng tại <strong>Cài đặt → Lương & Thưởng → Thưởng Chất lượng</strong>.</p>
+
+          <h3>Tự động trừ vi phạm kỷ luật (từ chấm công)</h3>
+          <p>Hệ thống tự tính số tiền trừ dựa trên dữ liệu chấm công tháng, không cần admin nhập tay:</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Vi phạm</th><th>Cách tính</th><th>Mức mặc định</th></tr></thead>
+              <tbody>
+                <tr><td>Đi trễ (late)</td><td>Số ngày trễ × mức phạt/ngày trễ</td><td>50.000đ/ngày</td></tr>
+                <tr><td>Vắng không phép (absent)</td><td>Số ngày vắng × mức phạt/ngày vắng</td><td>200.000đ/ngày</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warn">
+            <span class="callout-icon">✏️</span>
+            <div>
+              <strong>Admin có thể override:</strong> Nếu muốn trừ theo biên bản kỷ luật (khác với auto), vào bảng lương → nhập trực tiếp số tiền trừ vào cột <strong>"Vi phạm/trừ"</strong>. Giá trị nhập tay sẽ ghi đè tính tự động, và hệ thống ghi chú lại trong <em>notes</em> để audit. Mức phạt trễ/vắng có thể điều chỉnh toàn chi nhánh tại <strong>Cài đặt → Lương & Thưởng → Phạt Kỷ luật</strong>.
+            </div>
+          </div>
+
           <h3>Quy trình duyệt lương</h3>
           <ol class="steps">
             <li>Sau khi KT chạy đối soát AI sạch, vào <strong>Bảng lương</strong>.</li>
@@ -447,7 +544,7 @@
               <ul>
                 <li>+ Ứng trước (đã trả từ trước)</li>
                 <li>+ Thưởng đặc biệt (sinh nhật KTV, khách khen đặc biệt)</li>
-                <li>− Phạt vi phạm (đã có biên bản)</li>
+                <li>− Phạt vi phạm (đã có biên bản, khác với auto)</li>
               </ul>
             </li>
             <li>Bấm <strong>"Duyệt tất cả"</strong>.</li>
@@ -598,7 +695,7 @@
 <footer>
   <div class="brand">Bella Spa</div>
   <p>Sổ tay Nhân sự (HR) · © 2026 Bella Spa Group</p>
-  <p style="margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Phiên bản 1.0 · Cập nhật 26/05/2026 · Tham chiếu Bộ luật Lao động 2019</p>
+  <p style="margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;">Phiên bản 1.1 · Cập nhật 27/05/2026 · Tham chiếu Bộ luật Lao động 2019</p>
 </footer>
 
 </body>
