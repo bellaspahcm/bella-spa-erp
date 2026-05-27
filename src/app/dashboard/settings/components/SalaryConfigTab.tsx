@@ -1,7 +1,8 @@
 "use client";
+// Version: 1.4.0 - Added auto_consume_inventory toggle
 
 import React from "react";
-import { Coins, Star, Zap } from "lucide-react";
+import { Coins, Star, Zap, Database } from "lucide-react";
 import { TenantGeneralSettings } from "@/types/domain";
 
 interface SalaryConfigTabProps {
@@ -19,6 +20,7 @@ export default function SalaryConfigTab({
     bonus_4_star: 10000,
     kpi_target_sessions: 30,
     kpi_bonus_amount: 1000000,
+    auto_consume_inventory: false,
   };
 
   return (
@@ -169,6 +171,39 @@ export default function SalaryConfigTab({
                 * KTV hoàn thành lớn hơn <strong className="text-primary">{salaryConfig.kpi_target_sessions} ca</strong> trong tháng sẽ tự động được cộng <strong className="text-primary">{(salaryConfig.kpi_bonus_amount || 0).toLocaleString('vi-VN')}₫</strong> vào tổng nhận.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Cấu hình Kho vận & Tiêu hao */}
+        <div className="p-8 bg-white/40 rounded-[2.5rem] border border-white shadow-sm space-y-6 md:col-span-2">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center text-primary">
+              <Database className="w-5 h-5 text-rose-500" />
+            </div>
+            <h3 className="font-black text-lg text-slate-900">Quản lý Tiêu hao Kho vận</h3>
+          </div>
+          
+          <div className="flex items-center justify-between p-6 bg-white/50 border border-pink-100 rounded-2xl gap-4">
+            <div className="flex-1">
+              <p className="font-black text-slate-900 text-sm">Tự động trừ kho vật tư theo ca trị liệu</p>
+              <p className="text-xs text-slate-500 font-semibold mt-1 leading-relaxed">
+                Tự động trừ vật tư trong kho HQ dựa trên định mức nguyên liệu quy định của mỗi liệu trình ngay khi KTV hoàn thành ca. Nếu tắt (mặc định), hệ thống sẽ chỉ quản lý kho tập trung tại HQ theo thực tế xuất nhập hàng ngày.
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+              <input
+                type="checkbox"
+                checked={!!salaryConfig.auto_consume_inventory}
+                onChange={(e) => {
+                  setGeneralSettings({
+                    ...generalSettings,
+                    salary_config: { ...salaryConfig, auto_consume_inventory: e.target.checked }
+                  });
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
           </div>
         </div>
       </div>

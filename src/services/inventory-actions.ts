@@ -261,6 +261,21 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
     const { supabase, tenantId } = await getSupabaseWithTenant();
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
 
+    // Đọc cấu hình từ bảng tenants để kiểm tra chế độ trừ kho tự động
+    const { data: tenantData } = await supabase
+      .from('tenants')
+      .select('salary_config')
+      .eq('id', tenantId)
+      .single();
+
+    const salaryConfig = (tenantData?.salary_config as any) || {};
+    const isAutoConsumeEnabled = !!salaryConfig.auto_consume_inventory;
+
+    if (!isAutoConsumeEnabled) {
+      console.log(`[autoConsumeForSession] Auto-consumption is disabled for tenant ${tenantId}. Bypassing.`);
+      return { success: true, bypassed: true };
+    }
+
     const materials = await getPackageMaterials(packageId);
     let totalCost = 0;
 
