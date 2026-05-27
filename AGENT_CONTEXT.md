@@ -1,6 +1,6 @@
 # 專案上下文 (Agent Context)：BELLA SPA ERP
 
-> **最後更新時間**：2026-05-27 06:56
+> **最後更新時間**：2026-05-27 07:02
 > **自動生成**：由 `prepare_context.py` 產生，供 AI Agent 快速掌握專案全局
 
 ---
@@ -492,6 +492,7 @@ BELLA SPA ERP/
 _(自動提取自最近日記 2026-05-27)_
 
 ### 🚧 待辦事項
+- [x] Đã khắc phục triệt để lỗi cắt chữ ThemeToggle trên PC và Mobile.
 - [ ] Tiếp tục theo dõi phản hồi thực tế từ khách hàng về giao diện đặt lịch.
 - [ ] Kiểm thử kỹ lưỡng hành vi đặt lịch trên các thiết bị di động để đảm bảo độ mượt mà khi cuộn và hiệu năng chuyển trang.
 
