@@ -50,7 +50,12 @@ export async function runCOOOrchestrator(
                       lowerCommand.includes("hoa hồng") ||
                       lowerCommand.includes("commission") ||
                       lowerCommand.includes("occupancy") ||
-                      lowerCommand.includes("kín lịch");
+                      lowerCommand.includes("kín lịch") ||
+                      lowerCommand.includes("sop") ||
+                      lowerCommand.includes("quy trình") ||
+                      lowerCommand.includes("compliance") ||
+                      lowerCommand.includes("tuân thủ") ||
+                      lowerCommand.includes("kỷ luật");
 
   const isFinanceRelated = lowerCommand.includes("tài chính") || 
                            lowerCommand.includes("kế toán") || 
@@ -70,7 +75,11 @@ export async function runCOOOrchestrator(
                            lowerCommand.includes("revenue") ||
                            lowerCommand.includes("net profit") ||
                            lowerCommand.includes("cashflow") ||
-                           lowerCommand.includes("chi phí lương");
+                           lowerCommand.includes("chi phí lương") ||
+                           lowerCommand.includes("ebitda") ||
+                           lowerCommand.includes("margin") ||
+                           lowerCommand.includes("biên lợi nhuận") ||
+                           lowerCommand.includes("dòng tiền thực");
 
   const isCpoRelated = lowerCommand.includes("kho") || 
                        lowerCommand.includes("vật tư") || 
@@ -79,7 +88,12 @@ export async function runCOOOrchestrator(
                        lowerCommand.includes("sku") || 
                        lowerCommand.includes("nhập kho") || 
                        lowerCommand.includes("tiêu hao") || 
-                       lowerCommand.includes("khăn");
+                       lowerCommand.includes("khăn") ||
+                       lowerCommand.includes("stockout") ||
+                       lowerCommand.includes("đứt hàng") ||
+                       lowerCommand.includes("vòng quay") ||
+                       lowerCommand.includes("turnover") ||
+                       lowerCommand.includes("hao hụt");
 
   const isCmoRelated = lowerCommand.includes("khách") ||      // bao gồm "khách hàng", "khách mới", "khách VIP"
                        lowerCommand.includes("customer") ||
@@ -107,13 +121,24 @@ export async function runCOOOrchestrator(
                        lowerCommand.includes("liệu trình") ||
                        lowerCommand.includes("package") ||
                        lowerCommand.includes("repeat booking") ||
-                       lowerCommand.includes("quay lại");
+                       lowerCommand.includes("quay lại") ||
+                       lowerCommand.includes("csat") ||
+                       lowerCommand.includes("nps") ||
+                       lowerCommand.includes("complaint") ||
+                       lowerCommand.includes("khiếu nại") ||
+                       lowerCommand.includes("refund") ||
+                       lowerCommand.includes("hoàn tiền") ||
+                       lowerCommand.includes("trả hàng");
 
   const isFranchiseRelated = lowerCommand.includes("nhượng quyền") || 
                              lowerCommand.includes("royalty") || 
                              lowerCommand.includes("đối soát chuỗi") || 
                              lowerCommand.includes("chi nhánh nhượng quyền") || 
-                             lowerCommand.includes("clearing");
+                             lowerCommand.includes("clearing") ||
+                             lowerCommand.includes("đóng góp") ||
+                             lowerCommand.includes("contribution") ||
+                             lowerCommand.includes("thương hiệu") ||
+                             lowerCommand.includes("brand");
 
   if (isCpoRelated) {
     routedTo = "cpo";
