@@ -834,7 +834,7 @@ export default function HqDashboardClient({
 
           {/* Sync, Theme Toggle & Logout — compact */}
           <div className="flex items-center gap-1.5 flex-nowrap">
-            <div className="w-28 shrink-0">
+            <div className="w-40 shrink-0">
               <ThemeToggle />
             </div>
             <button
