@@ -124,19 +124,27 @@ export async function publishSalaryRecord(ktvId: string) {
     const sessionBonus = sessionsTyped.reduce((acc: number, s) =>
       acc + (s.bookings?.ktv_commission || 150000), 0);
 
-    // 3. Calculate rating — aligned with leaderboard: COALESCE(approved_review, session.rating, 5.0)
-    const ratingValues: number[] = sessionsTyped.map((s) => {
-      const approvedReview = s.session_reviews?.find((sr) => sr.status === 'approved');
-      if (approvedReview?.rating) return approvedReview.rating;
-      if (s.rating) return s.rating;
-      return null;
-    }).filter((v: number | null): v is number => v !== null);
-    
-    const avgRating = ratingValues.length > 0
-      ? ratingValues.reduce((acc, v) => acc + v, 0) / ratingValues.length
-      : 5.0;
-    
-    const bonusPerSession = avgRating === 5.0 ? salaryConfig.bonus_5_star : avgRating >= 4.5 ? salaryConfig.bonus_4_5_star : avgRating >= 4.0 ? salaryConfig.bonus_4_star : 0;
+    // 3. Fetch blended composite rating from get_ktv_leaderboard RPC.
+    //    Single source of truth — same as leaderboard / dashboard / SalaryTable.
+    //    null (no activity in month) → no quality bonus paid.
+    const { data: leaderboardData, error: leaderboardError } = await supabase.rpc(
+      'get_ktv_leaderboard',
+      { p_tenant_id: tenantId, p_month: monthYear }
+    );
+    if (leaderboardError) {
+      console.error('[publishSalaryRecord] get_ktv_leaderboard failed:', leaderboardError);
+      return { success: false, error: `get_ktv_leaderboard failed: ${leaderboardError.message}` };
+    }
+    const leaderboard = (leaderboardData || []) as { ktv_id: string; average_rating: number | null }[];
+    const ktvRow = leaderboard.find((row) => row.ktv_id === ktvId);
+    const avgRating: number | null = ktvRow?.average_rating ?? null;
+
+    let bonusPerSession = 0;
+    if (avgRating !== null) {
+      if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
+      else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
+      else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
+    }
     const ratingBonus = sessionsCount * bonusPerSession;
 
     // 4. Get or init salary record for adjustments

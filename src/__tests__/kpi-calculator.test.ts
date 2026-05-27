@@ -32,6 +32,12 @@ describe('calculateSalaryDetails — Rating Bonus', () => {
     expect(result.bonusPerSession).toBe(0);
     expect(result.ratingBonus).toBe(0);
   });
+
+  it('Null rating (chưa có review hoặc chấm công nào trong tháng) gives 0 bonus', () => {
+    const result = calculateSalaryDetails(10, null, defaultConfig, 6000000, 0, 0, 0);
+    expect(result.bonusPerSession).toBe(0);
+    expect(result.ratingBonus).toBe(0);
+  });
 });
 
 describe('calculateSalaryDetails — KPI Bonus', () => {

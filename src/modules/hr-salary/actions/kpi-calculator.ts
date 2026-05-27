@@ -8,7 +8,7 @@ export interface SalaryConfig {
 
 export function calculateSalaryDetails(
   sessionsCount: number,
-  avgRating: number,
+  avgRating: number | null,
   salaryConfig: SalaryConfig,
   rawBaseSalary: number,
   deductions: number = 0,
@@ -16,12 +16,16 @@ export function calculateSalaryDetails(
   sessionBonus: number = 0,
   existingKpiBonus?: number
 ) {
-  // Rating bonus calculation
+  // Rating bonus calculation.
+  // When avgRating is null (no data yet) → no bonus paid.
+  // Tiered against composite rating (60% customer + 40% discipline) from get_ktv_leaderboard RPC.
   let bonusPerSession = 0;
-  if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
-  else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
-  else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
-  
+  if (avgRating !== null) {
+    if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
+    else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
+    else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
+  }
+
   const ratingBonus = sessionsCount * bonusPerSession;
 
   // KPI bonus calculation
