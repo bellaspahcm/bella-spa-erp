@@ -198,13 +198,26 @@ export async function createUser(formData: CreateUserInput) {
   // Without this, the public.users row was a dead record (no auth → no login).
   // Pattern mirrors registerNewTenant() in onboarding-actions.ts.
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // Use console.warn so production builds keep the log (compiler.removeConsole
+  // in next.config.ts excludes warn/error from stripping).
+  console.warn('[createUser] env check', {
+    hasServiceRoleKey: !!serviceRoleKey,
+    serviceRoleKeyLen: serviceRoleKey?.length ?? 0,
+    hasUrl: !!supabaseUrl,
+    email: formData.email,
+  });
+
   if (!serviceRoleKey) {
-    return { error: 'Hệ thống chưa cấu hình SUPABASE_SERVICE_ROLE_KEY — không thể tạo tài khoản đăng nhập. Vui lòng liên hệ kỹ thuật.' };
+    return { error: 'Hệ thống chưa cấu hình SUPABASE_SERVICE_ROLE_KEY ở Vercel — không thể tạo tài khoản đăng nhập. Vào Vercel → Settings → Environment Variables để thêm.' };
+  }
+  if (!supabaseUrl) {
+    return { error: 'Hệ thống chưa cấu hình NEXT_PUBLIC_SUPABASE_URL — không thể kết nối Supabase.' };
   }
 
   const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
   const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseUrl,
     serviceRoleKey,
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
@@ -216,8 +229,15 @@ export async function createUser(formData: CreateUserInput) {
     user_metadata: { full_name: formData.full_name },
   });
 
+  console.warn('[createUser] auth.admin.createUser result', {
+    hasUser: !!adminData?.user?.id,
+    authUserId: adminData?.user?.id ?? null,
+    errorMessage: adminError?.message ?? null,
+    errorStatus: (adminError as any)?.status ?? null,
+  });
+
   if (adminError) {
-    console.error('Error creating auth user:', adminError);
+    console.error('[createUser] Auth user creation failed:', adminError);
     if (adminError.message?.toLowerCase().includes('already') || adminError.message?.includes('registered')) {
       return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
     }
@@ -231,7 +251,9 @@ export async function createUser(formData: CreateUserInput) {
 
   // STEP 2 — Insert the profile row with id matching the auth user, so
   // getCurrentUser()'s primary id lookup (users.id = auth.uid) hits directly.
-  const { data, error } = await supabase
+  // Uses supabaseAdmin (service role) to bypass any RLS policy that might
+  // restrict cross-user inserts on public.users (id != auth.uid()).
+  const { data, error } = await supabaseAdmin
     .from('users')
     .insert([{
       id: authUserId,
@@ -247,7 +269,7 @@ export async function createUser(formData: CreateUserInput) {
   if (error) {
     // Rollback the auth user so we don't leave an orphan account hanging.
     await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => {});
-    console.error('Error creating user profile:', error);
+    console.error('[createUser] Profile insert failed:', error);
     if (error.code === '23505' || error.message?.includes('users_email_key')) {
       return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
     }
