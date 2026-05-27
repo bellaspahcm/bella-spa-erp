@@ -184,7 +184,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 <div>
                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Đã thanh toán hoàn tất</h4>
                   <p className="text-xs text-slate-500 font-bold mt-1">
-                    Cảm ơn chị! Lịch hẹn này đã được thanh toán đầy đủ ({formatCurrency(priceAfterDiscount)}).
+                    Cảm ơn chị! Liệu trình này đã được thanh toán đầy đủ ({formatCurrency(priceAfterDiscount)}).
                   </p>
                 </div>
               </div>
