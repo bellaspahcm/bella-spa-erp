@@ -75,13 +75,18 @@ export async function publishSalaryRecord(ktvId: string) {
     const ktv = ktvData as KtvUserDataAdmin | null;
 
     const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
-    const salaryConfig = (tenantData?.salary_config as unknown as TenantSalaryConfig) || {
-      bonus_5_star: 50000,
-      bonus_4_5_star: 30000,
-      bonus_4_star: 10000,
-      kpi_target_sessions: 30,
-      kpi_bonus_amount: 1000000
+    const stored = (tenantData?.salary_config as unknown as Partial<TenantSalaryConfig>) || {};
+    const salaryConfig: TenantSalaryConfig = {
+      bonus_5_star:          stored.bonus_5_star          ?? 50000,
+      bonus_4_5_star:        stored.bonus_4_5_star        ?? 30000,
+      bonus_4_star:          stored.bonus_4_star          ?? 10000,
+      kpi_target_sessions:   stored.kpi_target_sessions   ?? 30,
+      kpi_bonus_amount:      stored.kpi_bonus_amount      ?? 1000000,
+      penalty_late_per_day:  stored.penalty_late_per_day  ?? 50000,
+      penalty_absent_per_day: stored.penalty_absent_per_day ?? 200000,
     };
+    const penaltyLate   = salaryConfig.penalty_late_per_day   ?? 50000;
+    const penaltyAbsent = salaryConfig.penalty_absent_per_day ?? 200000;
 
     // 1.1 Fetch actual attendance records this month for pro-rata calculation
     const startOfMonthStr = monthYear;
@@ -135,9 +140,17 @@ export async function publishSalaryRecord(ktvId: string) {
       console.error('[publishSalaryRecord] get_ktv_leaderboard failed:', leaderboardError);
       return { success: false, error: `get_ktv_leaderboard failed: ${leaderboardError.message}` };
     }
-    const leaderboard = (leaderboardData || []) as { ktv_id: string; average_rating: number | null }[];
+    const leaderboard = (leaderboardData || []) as unknown as {
+      ktv_id: string;
+      average_rating: number | null;
+      late_days: number | null;
+      absent_days: number | null;
+    }[];
     const ktvRow = leaderboard.find((row) => row.ktv_id === ktvId);
     const avgRating: number | null = ktvRow?.average_rating ?? null;
+    const lateDays   = ktvRow?.late_days   ?? 0;
+    const absentDays = ktvRow?.absent_days ?? 0;
+    const autoAttendancePenalty = (lateDays * penaltyLate) + (absentDays * penaltyAbsent);
 
     let bonusPerSession = 0;
     if (avgRating !== null) {
@@ -159,7 +172,8 @@ export async function publishSalaryRecord(ktvId: string) {
 
     const rawBaseSalary = existing?.base_salary ?? ktv?.base_salary ?? 6000000;
     const kpiBonus = existing?.kpi_bonus ?? (sessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
-    const deductions = existing?.violations_deduction ?? 0;
+    // Deductions: nếu admin đã chốt manual → giữ; chưa có thì auto từ attendance.
+    const deductions = existing?.violations_deduction ?? autoAttendancePenalty;
     const advances = existing?.service_percentage_bonus ?? 0;
 
     // 5. Pro-rata if resigned
@@ -176,6 +190,11 @@ export async function publishSalaryRecord(ktvId: string) {
       // Fallback safeguard: if exactly 0 attendance records, pay full base salary
       finalBaseSalary = rawBaseSalary;
       proRataNote = `ℹ️ Áp dụng lương cứng mặc định (Chưa có dữ liệu chấm công). `;
+    }
+
+    // Trace nguồn phạt cho admin biết tiền trừ từ đâu
+    if (existing?.violations_deduction == null && (lateDays > 0 || absentDays > 0)) {
+      proRataNote += `⚠️ Tự động trừ ${autoAttendancePenalty.toLocaleString('vi-VN')}đ (trễ ${lateDays} ngày × ${penaltyLate.toLocaleString('vi-VN')}đ + vắng ${absentDays} ngày × ${penaltyAbsent.toLocaleString('vi-VN')}đ). `;
     }
 
     if (ktv?.resignation_date) {

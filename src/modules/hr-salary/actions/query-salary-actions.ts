@@ -92,13 +92,18 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
     }
 
     const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
-    const salaryConfig = (tenantData?.salary_config as unknown as TenantSalaryConfig) || {
-      bonus_5_star: 50000,
-      bonus_4_5_star: 30000,
-      bonus_4_star: 10000,
-      kpi_target_sessions: 30,
-      kpi_bonus_amount: 1000000
+    const stored = (tenantData?.salary_config as unknown as Partial<TenantSalaryConfig>) || {};
+    const salaryConfig: TenantSalaryConfig = {
+      bonus_5_star:          stored.bonus_5_star          ?? 50000,
+      bonus_4_5_star:        stored.bonus_4_5_star        ?? 30000,
+      bonus_4_star:          stored.bonus_4_star          ?? 10000,
+      kpi_target_sessions:   stored.kpi_target_sessions   ?? 30,
+      kpi_bonus_amount:      stored.kpi_bonus_amount      ?? 1000000,
+      penalty_late_per_day:  stored.penalty_late_per_day  ?? 50000,
+      penalty_absent_per_day: stored.penalty_absent_per_day ?? 200000,
     };
+    const penaltyLate   = salaryConfig.penalty_late_per_day   ?? 50000;
+    const penaltyAbsent = salaryConfig.penalty_absent_per_day ?? 200000;
 
     // Fetch KTVs
     const ktvQuery = supabase
@@ -145,9 +150,14 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       console.error('[getSalaryData] get_ktv_leaderboard failed:', leaderboardError);
       throw new Error(`get_ktv_leaderboard failed: ${leaderboardError.message}`);
     }
-    const leaderboard = (leaderboardData || []) as { ktv_id: string; average_rating: number | null }[];
-    const ratingByKtv = new Map<string, number | null>(
-      leaderboard.map((row) => [row.ktv_id, row.average_rating])
+    const leaderboard = (leaderboardData || []) as unknown as {
+      ktv_id: string;
+      average_rating: number | null;
+      late_days: number | null;
+      absent_days: number | null;
+    }[];
+    const leaderboardByKtv = new Map<string, typeof leaderboard[number]>(
+      leaderboard.map((row) => [row.ktv_id, row])
     );
 
     // Fetch all attendance logs this month
@@ -166,9 +176,12 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         // Use confirmed count from record if available, otherwise use live count
         const ktvSessionsCount = record?.total_sessions || ktvCompletedSessions.length;
         
-        // Blended composite rating (60% customer + 40% discipline) from RPC.
-        // null = KTV has no sessions and no attendance records yet → display "—", pay no bonus.
-        const avgRating: number | null = ratingByKtv.get(ktv.id) ?? null;
+        // Blended composite rating + attendance breakdown from RPC.
+        const ktvLb = leaderboardByKtv.get(ktv.id);
+        const avgRating: number | null = ktvLb?.average_rating ?? null;
+        const lateDays   = ktvLb?.late_days   ?? 0;
+        const absentDays = ktvLb?.absent_days ?? 0;
+        const autoAttendancePenalty = (lateDays * penaltyLate) + (absentDays * penaltyAbsent);
 
         let bonusPerSession = 0;
         if (avgRating !== null) {
@@ -218,8 +231,11 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         }
 
         const kpiBonus = record?.kpi_bonus ?? (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
-        const deductions = record?.violations_deduction || 0;
-        const advances = record?.service_percentage_bonus || 0; 
+        // Deductions priority:
+        //  1. Admin đã chốt manual (record.violations_deduction !== null) → giữ nguyên (đã review)
+        //  2. Chưa có record → auto-compute từ attendance (late × X + absent × Y)
+        const deductions = record?.violations_deduction ?? autoAttendancePenalty;
+        const advances = record?.service_percentage_bonus || 0;
         const totalSalary = baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances;
 
         return {

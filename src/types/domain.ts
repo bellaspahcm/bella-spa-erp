@@ -55,6 +55,10 @@ export interface TenantSalaryConfig {
   bonus_4_star: number;
   kpi_target_sessions: number;
   kpi_bonus_amount: number;
+  // Auto-deduction from attendance (per-day amounts).
+  // Late_days và absent_days pull từ get_ktv_leaderboard RPC.
+  penalty_late_per_day?: number;     // mặc định 50.000đ
+  penalty_absent_per_day?: number;   // mặc định 200.000đ
   auto_consume_inventory?: boolean;
 }
 
