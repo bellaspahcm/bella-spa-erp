@@ -48,6 +48,18 @@ const userManualsHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Strip console.log/info/debug in production builds. Keeps console.error/warn
+  // so real errors still surface in Sentry. Saves bundle size + runtime cost.
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production'
+      ? { exclude: ['error', 'warn'] }
+      : false,
+  },
+  // Tree-shake heavy barrel imports. lucide-react / date-fns / recharts are
+  // already optimized by default in Next 16; framer-motion is not, so add it.
+  experimental: {
+    optimizePackageImports: ['framer-motion'],
+  },
   async headers() {
     return [
       {

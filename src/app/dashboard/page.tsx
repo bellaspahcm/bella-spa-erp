@@ -44,11 +44,22 @@ import {
   CartesianGrid
 } from 'recharts';
 import { toast } from 'sonner';
-import { BookingModal } from '@/components/features/BookingModal';
+import dynamic from 'next/dynamic';
 import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
 import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
 import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
-import OnboardingTour from '@/components/features/dashboard/OnboardingTour';
+
+// Heavy modals — lazy-loaded so they don't bloat the dashboard's initial JS bundle.
+// BookingModal (~715 LOC + form deps) only opens on user click.
+// OnboardingTour (~276 LOC) only shows for first-time users.
+const BookingModal = dynamic(
+  () => import('@/components/features/BookingModal').then(m => ({ default: m.BookingModal })),
+  { ssr: false }
+);
+const OnboardingTour = dynamic(
+  () => import('@/components/features/dashboard/OnboardingTour'),
+  { ssr: false }
+);
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { 
