@@ -49,17 +49,26 @@ export async function checkSubscriptionLimit(
     subscription_tier: string | null;
     subscription_expires_at: string | null;
     sms_allotment_used: number | null;
+    franchise_agreement_date: string | null;
   }
 
   const { data: tenant, error: tenantErr } = await (supabase
     .from('tenants')
-    .select('subscription_tier, subscription_expires_at, sms_allotment_used')
+    .select('subscription_tier, subscription_expires_at, sms_allotment_used, franchise_agreement_date')
     .eq('id', tenantId)
     .single() as unknown as Promise<{ data: TenantSubscriptionRow | null; error: any }>);
 
   if (tenantErr || !tenant) {
     console.error('[checkSubscriptionLimit] Error fetching tenant subscription:', tenantErr);
     return { isBlocked: false, current: 0, max: 999999, tier: 'free_trial', isExpired: false, limits: SUBSCRIPTION_TIERS.free_trial };
+  }
+
+  // Subscription limits (KTV/customer/SMS quotas) apply ONLY to franchise
+  // branches. HQ-owned spas (spa trực thuộc) have no franchise agreement
+  // → bypass entirely, treated as unlimited.
+  const isFranchise = !!tenant.franchise_agreement_date;
+  if (!isFranchise) {
+    return { isBlocked: false, current: 0, max: 999999, tier: 'hq_owned', isExpired: false, limits: SUBSCRIPTION_TIERS.enterprise };
   }
 
   const tier = tenant.subscription_tier || 'free_trial';

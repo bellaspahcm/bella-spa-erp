@@ -87,6 +87,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
           subscription_tier: 'basic',
           subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
           sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
         },
         error: null,
       });
@@ -114,6 +115,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
           subscription_tier: 'basic',
           subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
           sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
         },
         error: null,
       });
@@ -140,6 +142,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
           subscription_tier: 'basic',
           subscription_expires_at: new Date(Date.now() - 100000).toISOString(), // expired in past
           sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
         },
         error: null,
       });
@@ -155,6 +158,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
           subscription_tier: 'basic',
           subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
           sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
         },
         error: null,
       });
@@ -180,6 +184,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
           subscription_tier: 'basic', // max SMS is 100
           subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
           sms_allotment_used: 100,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
         },
         error: null,
       });
@@ -188,6 +193,44 @@ describe('Subscription Constraints & Webhook Suite', () => {
       expect(res.isBlocked).toBe(true);
       expect(res.current).toBe(100);
       expect(res.max).toBe(100);
+    });
+
+    it('bypasses limits for HQ-owned spas (franchise_agreement_date IS NULL)', async () => {
+      // HQ-owned spa: subscription tier may be set but franchise_agreement_date
+      // is null → treated as unlimited regardless of tier or KTV count.
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: null,
+          sms_allotment_used: 999,
+          franchise_agreement_date: null,
+        },
+        error: null,
+      });
+
+      mockSupabaseServer.from = jest.fn().mockImplementation((table: string) => {
+        if (table === 'tenants') {
+          return createChainableMock({}, mockSingleTenant);
+        }
+        // Simulate already exceeding 'basic' limits — still must not block.
+        if (table === 'users') {
+          return createChainableMock({ count: 50, error: null });
+        }
+        if (table === 'customers') {
+          return createChainableMock({ count: 10000, error: null });
+        }
+        return {};
+      });
+
+      const ktv = await checkSubscriptionLimit('tenant-hq', 'ktv');
+      expect(ktv.isBlocked).toBe(false);
+      expect(ktv.tier).toBe('hq_owned');
+
+      const customer = await checkSubscriptionLimit('tenant-hq', 'customer');
+      expect(customer.isBlocked).toBe(false);
+
+      const sms = await checkSubscriptionLimit('tenant-hq', 'sms');
+      expect(sms.isBlocked).toBe(false);
     });
   });
 
