@@ -25,13 +25,14 @@ import {
   EyeOff
 } from 'lucide-react';
 import { 
-  getKTVActiveSessions, 
-  getKTVUpcomingSessions, 
-  startSession, 
-  completeKTVSession, 
+  getKTVActiveSessions,
+  getKTVUpcomingSessions,
+  startSession,
+  completeKTVSession,
   getKTVEarnings,
   getKTVNotifications,
-  markNotificationAsRead
+  markNotificationAsRead,
+  getKTVLeaderboard,
 } from '@/services/ktv-actions';
 import { getKTVTodayAttendance, ktvCheckIn, ktvCheckOut, submitKTVLeaveRequest, getKTVLeaveHistory } from '@/services/attendance-actions';
 import { getCurrentUser } from '@/services/user-actions';
@@ -47,6 +48,7 @@ export default function KTVDashboard() {
   const [activeSessions, setActiveSessions] = useState<any[]>([]);
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
   const [earnings, setEarnings] = useState({ total: 0, sessions: 0 });
+  const [myRating, setMyRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
   const [systemTime, setSystemTime] = useState<string>('');
@@ -272,13 +274,16 @@ export default function KTVDashboard() {
       if (u) {
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const [earn, notifs] = await Promise.all([
+        const [earn, notifs, lb] = await Promise.all([
           getKTVEarnings(monthStr),
           getKTVNotifications(),
-          fetchAttendance()
+          getKTVLeaderboard(monthStr),
         ]);
+        fetchAttendance();
         setEarnings(earn);
         setNotifications(notifs);
+        const myStats = lb.find((k: any) => k.ktv_id === u.id);
+        setMyRating(myStats?.average_rating ?? null);
       }
     } catch (error) {
       toast.error('Lỗi khi tải dữ liệu');
@@ -999,10 +1004,30 @@ export default function KTVDashboard() {
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between">
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Đánh giá trung bình</p>
-                    <p className="text-base font-black text-slate-800">5.0 / 5.0 ⭐</p>
+                    <p className="text-base font-black text-slate-800">
+                      {myRating !== null ? `${Number(myRating).toFixed(1)} / 5.0 ⭐` : '— / 5.0'}
+                    </p>
                   </div>
-                  <span className="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider">
-                    Xuất sắc
+                  <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                    myRating === null
+                      ? 'bg-slate-100 text-slate-400'
+                      : myRating >= 4.5
+                      ? 'bg-emerald-50 text-emerald-600'
+                      : myRating >= 3.5
+                      ? 'bg-blue-50 text-blue-600'
+                      : myRating >= 2.5
+                      ? 'bg-amber-50 text-amber-600'
+                      : 'bg-rose-50 text-rose-600'
+                  }`}>
+                    {myRating === null
+                      ? 'Chưa có'
+                      : myRating >= 4.5
+                      ? 'Xuất sắc'
+                      : myRating >= 3.5
+                      ? 'Tốt'
+                      : myRating >= 2.5
+                      ? 'Trung bình'
+                      : 'Cần cải thiện'}
                   </span>
                 </div>
               </div>
