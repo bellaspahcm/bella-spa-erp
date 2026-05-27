@@ -523,6 +523,15 @@
     margin-bottom: 8px;
   }
 
+  @media (max-width: 768px) {
+    .container { padding: 0 16px; }
+    .hero { padding: 48px 0 64px; }
+    .hero-meta { gap: 16px; margin-top: 24px; }
+    section.card { padding: 24px 16px; border-radius: 20px; }
+    .layout { gap: 24px; }
+    .grid-2, .grid-3, .menu-items { grid-template-columns: 1fr; }
+  }
+
   /* ───────── Print ───────── */
   @media print {
     aside.toc { display: none; }
