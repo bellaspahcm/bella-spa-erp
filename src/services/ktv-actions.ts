@@ -612,8 +612,10 @@ export async function getKTVLeaderboard(month: string) {
   });
 
   if (error) {
+    // Per AGENTS.md Rule 1: never silently swallow DB errors. The caller
+    // (KTVLeaderboardPage) already has a try/catch that surfaces a toast.
     console.error('Error fetching leaderboard:', error);
-    return [];
+    throw new Error(`get_ktv_leaderboard failed: ${error.message}`);
   }
 
   return data || [];
