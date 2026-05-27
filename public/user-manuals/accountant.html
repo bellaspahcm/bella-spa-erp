@@ -123,6 +123,15 @@
   footer { text-align: center; padding: 60px 24px; color: var(--text-muted); font-size: 13px; font-weight: 500; }
   footer .brand { font-family: 'Playfair Display', serif; font-style: italic; color: var(--primary-deep); font-size: 28px; margin-bottom: 8px; }
 
+  @media (max-width: 768px) {
+    .container { padding: 0 16px; }
+    .hero { padding: 48px 0 64px; }
+    .hero-meta { gap: 16px; margin-top: 24px; }
+    section.card { padding: 24px 16px; border-radius: 20px; }
+    .layout { gap: 24px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
   @media print { aside.toc { display: none; } .layout { grid-template-columns: 1fr; } .hero { padding: 40px 0; background: white; } section.card { box-shadow: none; page-break-inside: avoid; } }
 </style>
 </head>

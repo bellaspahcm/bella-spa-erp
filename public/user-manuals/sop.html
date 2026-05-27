@@ -628,6 +628,22 @@
   }
 
   /* Print */
+  @media (max-width: 768px) {
+    .container { padding: 0 16px !important; }
+    .cover { padding: 48px 0 60px !important; }
+    .cover h1 { font-size: clamp(32px, 8vw, 48px) !important; }
+    .cover-meta { gap: 16px !important; padding-top: 20px !important; }
+    .toc-section, .sop-stream { padding: 40px 0 !important; }
+    .toc-grid, .sop-spec, .sop-foot { grid-template-columns: 1fr !important; }
+    .sop { padding: 28px 16px !important; }
+    .sop h3 { font-size: 22px !important; margin: 28px 0 14px !important; }
+    .procedure > li { padding: 16px 16px 16px 56px !important; }
+    .procedure > li::before { left: 16px !important; font-size: 24px !important; }
+    .raci th, .raci td { padding: 8px 4px !important; font-size: 11px !important; }
+    .spec-cell { border-right: none !important; border-bottom: 1px solid var(--line) !important; }
+    .spec-cell:last-child { border-bottom: none !important; }
+  }
+
   @media print {
     body { background: white; }
     .cover { padding: 40px 0; background: white; border-bottom: 2px solid var(--rose-800); }
