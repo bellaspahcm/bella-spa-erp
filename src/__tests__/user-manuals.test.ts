@@ -1,4 +1,4 @@
-import { isManualPermitted } from '@/services/user-manuals';
+import { isManualPermitted } from '@/services/user-manuals-utils';
 
 describe('User Manuals Access Control Permissions', () => {
   // 1. SOP & Index are globally readable

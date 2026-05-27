@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getCurrentUser } from '@/services/user-actions';
-import { isManualPermitted } from '@/services/user-manuals';
+import { isManualPermitted } from '@/services/user-manuals-utils';
+
 import fs from 'fs';
 import path from 'path';
 
