@@ -63,6 +63,56 @@ export function SessionLogsDetailsModal({
   const [isReusingId, setIsReusingId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const calendarCells = useMemo(() => {
+    if (!sessionLogs || sessionLogs.length === 0) return [];
+    
+    // Fallback: If any log is missing assigned_date, just render consecutively
+    const hasMissingDates = sessionLogs.some(log => !log.assigned_date);
+    if (hasMissingDates) return sessionLogs;
+
+    const cells: (SessionLog | { isGap: boolean; dateString: string })[] = [];
+    
+    // Sort logs by date to ensure proper calendar chronological progression
+    const sortedLogs = [...sessionLogs].sort((a, b) => {
+      return new Date(a.assigned_date!).getTime() - new Date(b.assigned_date!).getTime();
+    });
+
+    const firstLog = sortedLogs[0];
+    const lastLog = sortedLogs[sortedLogs.length - 1];
+
+    const start = new Date(firstLog.assigned_date!);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(lastLog.assigned_date!);
+    end.setHours(0, 0, 0, 0);
+
+    // Map by YYYY-MM-DD for O(1) day check
+    const logMap = new Map<string, SessionLog>();
+    sortedLogs.forEach(log => {
+      logMap.set(log.assigned_date!, log);
+    });
+
+    const current = new Date(start);
+    let safetyCounter = 0;
+    while (current <= end && safetyCounter < 365) {
+      safetyCounter++;
+      const dateStr = current.toLocaleDateString('sv-SE');
+      const log = logMap.get(dateStr);
+      if (log) {
+        cells.push(log);
+      } else {
+        cells.push({ isGap: true, dateString: dateStr });
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    // Safe fallback to avoid browser crash on database typos (e.g. year 2099)
+    if (safetyCounter >= 365) {
+      return sessionLogs;
+    }
+
+    return cells;
+  }, [sessionLogs]);
+
   const fetchSessionLogs = async (bookingId: string) => {
     setIsLoadingLogs(true);
     try {
@@ -736,11 +786,25 @@ export function SessionLogsDetailsModal({
                         <div key={`empty-${i}`} className="aspect-square" />
                       ))}
                       
-                      {sessionLogs.map((log, i) => {
+                      {calendarCells.map((cell, i) => {
+                        if ('isGap' in cell && cell.isGap) {
+                          return (
+                            <div 
+                              key={`gap-${cell.dateString}`}
+                              className="aspect-square rounded-2xl flex flex-col items-center justify-center border border-dashed border-slate-100 bg-slate-50/10 text-slate-300/40 select-none cursor-default"
+                              title={`Ngày nghỉ/trống (${cell.dateString})`}
+                            >
+                              <span className="text-[10px] font-black opacity-30">•</span>
+                            </div>
+                          );
+                        }
+
+                        const log = cell as SessionLog;
                         const status = log.status;
                         const isUpdating = isSyncing && selectedSessionLog?.id === log.id;
+                        const logIndex = sessionLogs.findIndex(l => l.id === log.id);
                         const nextScheduledIndex = sessionLogs.findIndex(l => l.status === 'scheduled');
-                        const isNextToRun = status === 'scheduled' && i === nextScheduledIndex;
+                        const isNextToRun = status === 'scheduled' && logIndex === nextScheduledIndex;
                         const canEdit = userRole === 'admin' || isNextToRun;
                         const isReassigned = log.completed_by_ktv_id && log.completed_by_ktv_id !== activeBooking.assigned_ktv_id;
 
