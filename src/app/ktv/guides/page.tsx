@@ -14,7 +14,8 @@ import {
   ArrowRight,
   Maximize2
 } from 'lucide-react';
-import { getPermittedGuides, GuideListItem } from '@/services/user-manuals';
+import { ALL_GUIDES, isManualPermitted, GuideListItem } from '@/services/user-manuals-utils';
+import { getCurrentUser } from '@/services/user-actions';
 import { Loader2 } from 'lucide-react';
 
 export default function KtvGuidesPage() {
@@ -25,9 +26,11 @@ export default function KtvGuidesPage() {
   useEffect(() => {
     async function loadGuides() {
       try {
-        const data = await getPermittedGuides();
+        const user = await getCurrentUser();
+        const role = user?.role ?? null;
+        const permitted = ALL_GUIDES.filter((g) => isManualPermitted(role, g.slug));
         // For KTV, we only show 'ktv' and 'sop' (or whatever they are permitted)
-        setGuides(data.filter(g => ['ktv', 'sop'].includes(g.slug)));
+        setGuides(permitted.filter(g => ['ktv', 'sop'].includes(g.slug)));
       } catch (err) {
         console.error('Failed to load guides for KTV:', err);
       } finally {
@@ -150,7 +153,7 @@ export default function KtvGuidesPage() {
             {/* Iframe Reader viewport */}
             <div className="flex-grow bg-slate-50 overflow-hidden relative">
               <iframe
-                src={`/api/guides/${selectedSlug}`}
+                src={`/user-manuals/${selectedSlug}.html`}
                 className="w-full h-full border-none"
                 title={activeGuide?.title}
               />
