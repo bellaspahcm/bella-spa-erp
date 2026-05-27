@@ -43,7 +43,14 @@ export async function runCOOOrchestrator(
                       lowerCommand.includes("chấm công") || 
                       lowerCommand.includes("ktv") || 
                       lowerCommand.includes("kpi") || 
-                      lowerCommand.includes("ca làm");
+                      lowerCommand.includes("ca làm") ||
+                      lowerCommand.includes("năng suất") ||
+                      lowerCommand.includes("productivity") ||
+                      lowerCommand.includes("therapist") ||
+                      lowerCommand.includes("hoa hồng") ||
+                      lowerCommand.includes("commission") ||
+                      lowerCommand.includes("occupancy") ||
+                      lowerCommand.includes("kín lịch");
 
   const isFinanceRelated = lowerCommand.includes("tài chính") || 
                            lowerCommand.includes("kế toán") || 
@@ -59,7 +66,11 @@ export async function runCOOOrchestrator(
                            lowerCommand.includes("p&l") ||
                            lowerCommand.includes("trial balance") ||
                            lowerCommand.includes("income statement") ||
-                           lowerCommand.includes("cash flow");
+                           lowerCommand.includes("cash flow") ||
+                           lowerCommand.includes("revenue") ||
+                           lowerCommand.includes("net profit") ||
+                           lowerCommand.includes("cashflow") ||
+                           lowerCommand.includes("chi phí lương");
 
   const isCpoRelated = lowerCommand.includes("kho") || 
                        lowerCommand.includes("vật tư") || 
@@ -78,7 +89,25 @@ export async function runCOOOrchestrator(
                        lowerCommand.includes("hài lòng") ||
                        lowerCommand.includes("feedback") ||
                        lowerCommand.includes("nhận xét") ||
-                       lowerCommand.includes("review");
+                       lowerCommand.includes("review") ||
+                       lowerCommand.includes("marketing") ||
+                       lowerCommand.includes("ads") ||
+                       lowerCommand.includes("quảng cáo") ||
+                       lowerCommand.includes("roi") ||
+                       lowerCommand.includes("cac") ||
+                       lowerCommand.includes("ltv") ||
+                       lowerCommand.includes("no-show") ||
+                       lowerCommand.includes("no show") ||
+                       lowerCommand.includes("hủy lịch") ||
+                       lowerCommand.includes("lịch hẹn") ||
+                       lowerCommand.includes("booking") ||
+                       lowerCommand.includes("referral") ||
+                       lowerCommand.includes("giới thiệu") ||
+                       lowerCommand.includes("combo") ||
+                       lowerCommand.includes("liệu trình") ||
+                       lowerCommand.includes("package") ||
+                       lowerCommand.includes("repeat booking") ||
+                       lowerCommand.includes("quay lại");
 
   const isFranchiseRelated = lowerCommand.includes("nhượng quyền") || 
                              lowerCommand.includes("royalty") || 
