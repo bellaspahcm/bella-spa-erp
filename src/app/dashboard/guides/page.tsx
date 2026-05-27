@@ -13,25 +13,20 @@ import {
   FileText
 } from 'lucide-react';
 import { getPermittedGuides, GuideListItem } from '@/services/user-manuals';
-import { getCurrentUser } from '@/services/user-actions';
 import { Loader2 } from 'lucide-react';
 
 export default function UserManualsHub() {
   const [guides, setGuides] = useState<GuideListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
     async function loadGuides() {
       try {
-        const user = await getCurrentUser();
         const data = await getPermittedGuides();
         setGuides(data);
-        setDebugInfo(JSON.stringify({ user, guidesLength: data.length }));
-      } catch (err: any) {
+      } catch (err) {
         console.error('Failed to load guides:', err);
-        setDebugInfo(`Error: ${err.message || err}`);
       } finally {
         setIsLoading(false);
       }
@@ -153,11 +148,6 @@ export default function UserManualsHub() {
             <span>•</span>
             <a href="tel:02899999999" className="hover:underline">(028) 9999 9999</a>
           </div>
-          {debugInfo && (
-            <div className="mt-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] font-mono text-slate-400 select-all max-w-lg mx-auto break-all">
-              Debug Info: {debugInfo}
-            </div>
-          )}
         </footer>
       </div>
     </div>
