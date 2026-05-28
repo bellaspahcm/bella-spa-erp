@@ -42,6 +42,51 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [showChatMobile, setShowChatMobile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const onlineIdsRef = useRef<Set<string>>(new Set());
+
+  // Realtime Presence to track online customer statuses dynamically across the whole spa board
+  useEffect(() => {
+    const supabase = createClient();
+    const presenceChannel = supabase.channel('online_customers');
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const onlineIds = new Set<string>();
+        Object.values(state).forEach((presences: any) => {
+          presences.forEach((p: any) => {
+            if (p.customer_id) {
+              onlineIds.add(p.customer_id);
+            }
+          });
+        });
+
+        // Store active IDs in ref to resolve initial load race conditions
+        onlineIdsRef.current = onlineIds;
+
+        // Dynamically update chats state
+        setChats(prevChats => 
+          prevChats.map(c => ({
+            ...c,
+            online: onlineIds.has(c.id)
+          }))
+        );
+
+        // Dynamically update selectedChat state
+        setSelectedChat((prevSelected: any) => {
+          if (!prevSelected) return null;
+          return {
+            ...prevSelected,
+            online: onlineIds.has(prevSelected.id)
+          };
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, []);
 
   useEffect(() => {
     async function loadChats() {
@@ -62,7 +107,7 @@ export default function ChatPage() {
             lastMessage: 'Nhấn để xem tin nhắn...',
             time: new Date(c.created_at),
             unread: c.unread_count || 0,
-            online: false,
+            online: onlineIdsRef.current.has(c.id),
             level: c.customer_level || 'Thành viên',
             phone: c.phone || 'N/A',
             lastBooking: c.last_package_name || 'Chưa có',
