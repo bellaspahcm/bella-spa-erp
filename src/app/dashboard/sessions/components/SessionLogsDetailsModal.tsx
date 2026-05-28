@@ -159,7 +159,7 @@ export function SessionLogsDetailsModal({
     fetchSessionLogs(activeBooking.id);
 
     // Real-time subscription optimized for this booking's logs with debouncing to prevent event storms during bulk updates
-    const supabase = createClient() as any;
+    const supabase = createClient();
     let debounceTimer: NodeJS.Timeout;
 
     const channel = supabase

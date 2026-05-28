@@ -28,7 +28,8 @@ export default function PwaRegister() {
     // 2. Detect if the device is iOS (Safari doesn't support beforeinstallprompt)
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isAppleMobile = /iphone|ipad|ipod/.test(userAgent);
-    const isStandalone = (window.navigator as any).standalone === true;
+    // iOS Safari adds `standalone` to navigator when launched from Home Screen.
+    const isStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
     
     if (isAppleMobile && !isStandalone) {
       setIsIOS(true);

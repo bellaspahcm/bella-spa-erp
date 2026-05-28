@@ -20,7 +20,9 @@ import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
-const accountTypes = [
+type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+const ACCOUNT_TYPES_SET: ReadonlySet<AccountType> = new Set(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']);
+const accountTypes: { value: AccountType; label: string }[] = [
   { value: 'ASSET', label: '1xx, 2xx - TÀI SẢN (ASSETS)' },
   { value: 'LIABILITY', label: '3xx - NỢ PHẢI TRẢ (LIABILITY)' },
   { value: 'EQUITY', label: '4xx, 9xx - VỐN CHỦ SỞ HỮU (EQUITY)' },
@@ -40,7 +42,7 @@ export default function ChartOfAccountsPage() {
   const [newAccount, setNewAccount] = useState({
     account_code: '',
     account_name: '',
-    account_type: 'ASSET' as any,
+    account_type: 'ASSET' as AccountType,
     parent_id: '',
   });
 
@@ -318,7 +320,11 @@ export default function ChartOfAccountsPage() {
                   <label className="text-2xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Loại tài khoản</label>
                   <PremiumSelect
                     value={newAccount.account_type}
-                    onChange={(val) => setNewAccount(prev => ({ ...prev, account_type: val as any, parent_id: '' }))}
+                    onChange={(val) => {
+                      if (ACCOUNT_TYPES_SET.has(val as AccountType)) {
+                        setNewAccount(prev => ({ ...prev, account_type: val as AccountType, parent_id: '' }));
+                      }
+                    }}
                     options={accountTypes}
                     className="w-full"
                   />

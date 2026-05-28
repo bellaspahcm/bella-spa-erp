@@ -75,7 +75,8 @@ export default function FinancialReconciliationPage() {
         .single();
         
       if (profileErr || !profile?.tenant_id) {
-         // Fallback to profiles table
+         // Fallback to legacy `profiles` table (not in current Database schema)
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
          const { data: fallbackProfile } = await (supabase as any)
            .from('profiles')
            .select('tenant_id, role')
@@ -156,10 +157,12 @@ export default function FinancialReconciliationPage() {
 
       let { data: profile } = await supabase.from('users').select('tenant_id, role').eq('id', session.user.id).single();
       if (!profile?.tenant_id) {
+         // Legacy `profiles` table fallback (not in current schema)
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
          const { data: fallbackProfile } = await (supabase as any).from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
          profile = fallbackProfile;
       }
-      if (!profile || !['admin', 'accountant'].includes(profile.role)) {
+      if (!profile || !profile.role || !['admin', 'accountant'].includes(profile.role)) {
         throw new Error('Bạn không có quyền phân bổ tiền');
       }
 
@@ -199,10 +202,12 @@ export default function FinancialReconciliationPage() {
 
       let { data: profile } = await supabase.from('users').select('tenant_id, role').eq('id', session.user.id).single();
       if (!profile?.tenant_id) {
+         // Legacy `profiles` table fallback (not in current schema)
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
          const { data: fallbackProfile } = await (supabase as any).from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
          profile = fallbackProfile;
       }
-      if (!profile || !['admin', 'accountant'].includes(profile.role)) {
+      if (!profile || !profile.role || !['admin', 'accountant'].includes(profile.role)) {
         throw new Error('Bạn không có quyền thu tiền');
       }
 

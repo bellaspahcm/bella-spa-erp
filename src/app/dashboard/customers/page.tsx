@@ -86,7 +86,7 @@ export default function CustomersPage() {
           .eq('id', user.id)
           .single();
         if (userData?.role) {
-          setUserRole(userData.role as any);
+          setUserRole(userData.role === 'admin' ? 'admin' : 'ktv');
         }
       }
     }

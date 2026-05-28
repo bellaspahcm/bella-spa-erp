@@ -130,7 +130,7 @@ export default function DashboardPage() {
           router.replace('/ktv/dashboard');
           return;
         }
-        setUserRole((role as any) || 'ktv');
+        setUserRole(role === 'admin' ? 'admin' : 'ktv');
       } catch (error) {
         console.error('Error checking user role:', error);
         setUserRole('ktv');
@@ -160,7 +160,7 @@ export default function DashboardPage() {
       const now = new Date();
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       
-      const sb = createClient() as any;
+      const sb = createClient();
       const [{ statsData, sessionsData, ktvsData, alertsData, perfData }, invRes] = await Promise.all([
         getFullDashboardData(startDate, endDate, localToday),
         sb.from('inventory_items').select('id, stock_level, min_stock_level, price_per_unit')
@@ -169,8 +169,8 @@ export default function DashboardPage() {
       const invItems = invRes.data || [];
       const invSummary = {
         totalItems:    invItems.length,
-        lowStockCount: invItems.filter((i: any) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
-        totalValue:    invItems.reduce((s: number, i: any) => s + Number(i.stock_level || 0) * Number(i.price_per_unit || 0), 0)
+        lowStockCount: invItems.filter((i) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
+        totalValue:    invItems.reduce((s: number, i) => s + Number(i.stock_level || 0) * Number(i.price_per_unit || 0), 0)
       };
 
       const newStats = [
@@ -201,7 +201,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // REALTIME SUBSCRIPTION
-    const supabase = createClient() as any;
+    const supabase = createClient();
     const channel = supabase
       .channel('dashboard-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {

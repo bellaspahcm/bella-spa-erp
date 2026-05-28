@@ -1,5 +1,8 @@
 'use server';
 import { getCurrentUser } from './user-actions';
+import type { Database } from '@/types/database.types';
+
+type KtvLeaderboardRow = Database['public']['Functions']['get_ktv_leaderboard']['Returns'][number];
 
 export interface DashboardAlert {
   id?: string;
@@ -155,8 +158,8 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
 
     // Composite blended rating via RPC (60% customer + 40% discipline).
     // Run alongside other queries so we don't add round-trip latency.
-    const curMonthRpc  = tenantId ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: monthStart }) : Promise.resolve({ data: [] as any[] });
-    const prevMonthRpc = tenantId ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: prevStart })  : Promise.resolve({ data: [] as any[] });
+    const curMonthRpc  = tenantId ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: monthStart }) : Promise.resolve({ data: [] as KtvLeaderboardRow[] });
+    const prevMonthRpc = tenantId ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: prevStart })  : Promise.resolve({ data: [] as KtvLeaderboardRow[] });
 
     const [custRes, prevCustRes, revRes, prevRevRes, todayBookingsRes, yesterdayBookingsRes, curRpcRes, prevRpcRes] = await Promise.all([
       custQ, prevCustQ, revQ, prevRevQ, todayBookingsQ, yesterdayBookingsQ, curMonthRpc, prevMonthRpc
@@ -174,11 +177,11 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     // Average the composite blended rating across all KTVs in the month.
     // KTVs with NULL composite (no activity) are excluded so they don't
     // skew the average toward 0.
-    const composites = (xs: any[]): number[] =>
+    const composites = (xs: KtvLeaderboardRow[] | null | undefined): number[] =>
       (xs || []).map((k) => k?.average_rating).filter((r) => r !== null && r !== undefined).map(Number);
 
-    const curList  = composites((curRpcRes as any).data);
-    const prevList = composites((prevRpcRes as any).data);
+    const curList  = composites(curRpcRes.data);
+    const prevList = composites(prevRpcRes.data);
 
     const curAvgRating  = curList.length  ? curList.reduce((s, r) => s + r, 0)  / curList.length  : null;
     const prevAvgRating = prevList.length ? prevList.reduce((s, r) => s + r, 0) / prevList.length : null;
@@ -235,13 +238,6 @@ export async function getUpcomingSessions(date?: string) {
 }
 
 // ─── getTopTechnicians ────────────────────────────────────────────────────────
-interface KtvLeaderboardRow {
-  full_name: string;
-  sessions: number;
-  average_rating: number;
-  total_kpi_bonus: number;
-}
-
 export async function getTopTechnicians() {
   try {
     const { createClient } = await import('@/lib/supabase-server');
@@ -334,7 +330,7 @@ export async function getMonthlyPerformance() {
     const monthlyRpcCalls = months.map(mo =>
       tenantId
         ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: mo.start })
-        : Promise.resolve({ data: [] as any[] })
+        : Promise.resolve({ data: [] as KtvLeaderboardRow[] })
     );
 
     const [revData, expData, customerData, ...monthlyRpcResults] = await Promise.all([
@@ -370,10 +366,10 @@ export async function getMonthlyPerformance() {
 
       // Average composite rating across KTVs for this month.
       // Null when no KTV has activity → chart shows '—'.
-      const rpcRow = monthlyRpcResults[idx] as any;
-      const composites = ((rpcRow?.data || []) as any[])
+      const rpcRow = monthlyRpcResults[idx] as { data: KtvLeaderboardRow[] | null } | undefined;
+      const composites = (rpcRow?.data || [])
         .map((k) => k?.average_rating)
-        .filter((r) => r !== null && r !== undefined)
+        .filter((r): r is number => r !== null && r !== undefined)
         .map(Number);
       const avg = composites.length
         ? composites.reduce((s, r) => s + r, 0) / composites.length

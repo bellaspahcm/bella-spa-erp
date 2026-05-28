@@ -108,9 +108,10 @@ export default function PermissionsTab() {
     try {
       const data = await getTenantSettings();
       if (data?.role_permissions) {
+        const perms = data.role_permissions as Record<string, Record<string, boolean>>;
         setPermissions((prev: any) => ({
           ...prev,
-          ...(data.role_permissions as any)
+          ...perms
         }));
       }
     } catch (error) {
@@ -168,9 +169,7 @@ export default function PermissionsTab() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Use any to bypass TS error if role_permissions is not in the type definition yet
-      const settingsToSave = { role_permissions: permissions } as any;
-      const res = await saveTenantSettings(settingsToSave);
+      const res = await saveTenantSettings({ role_permissions: permissions });
       
       if (res.success) {
         toast.success("Đã lưu cấu hình phân quyền");

@@ -840,7 +840,7 @@ export async function syncLegacyToLedger() {
     await AccountingEngineService.postJournalEntry({
       tenant_id: tenantId,
       description: `[Đồng bộ lịch sử] ${rev.description || 'Doanh thu dịch vụ'}`,
-      reference_type: 'PACKAGE_SALE' as any,
+      reference_type: 'PACKAGE_SALE',
       reference_id: rev.id,
       entry_date: rev.received_date ? rev.received_date.slice(0, 10) : new Date().toISOString().slice(0, 10),
       lines: [
@@ -897,7 +897,7 @@ export async function syncLegacyToLedger() {
     await AccountingEngineService.postJournalEntry({
       tenant_id: tenantId,
       description: `[Đồng bộ lịch sử] ${exp.description || 'Chi phí vận hành'}`,
-      reference_type: 'EXPENSE' as any,
+      reference_type: 'EXPENSE',
       reference_id: exp.id,
       entry_date: exp.expense_date ? exp.expense_date.slice(0, 10) : new Date().toISOString().slice(0, 10),
       lines: [
@@ -948,7 +948,7 @@ export async function syncLegacyToLedger() {
       await AccountingEngineService.postJournalEntry({
         tenant_id: tenantId,
         description: `[Đồng bộ lịch sử] Hạch toán chi phí lương KTV - Kỳ ${sal.month_year}`,
-        reference_type: 'SALARY_PAID' as any,
+        reference_type: 'SALARY_PAYMENT',
         reference_id: sal.id,
         entry_date: sal.month_year ? sal.month_year.slice(0, 10) : new Date().toISOString().slice(0, 10),
         lines: [
@@ -962,7 +962,7 @@ export async function syncLegacyToLedger() {
       await AccountingEngineService.postJournalEntry({
         tenant_id: tenantId,
         description: `[Đồng bộ lịch sử] Chi trả lương KTV - Kỳ ${sal.month_year}`,
-        reference_type: 'SALARY_PAID' as any,
+        reference_type: 'SALARY_PAYMENT',
         reference_id: `${sal.id}-PAY`,
         entry_date: sal.month_year ? sal.month_year.slice(0, 10) : new Date().toISOString().slice(0, 10),
         lines: [

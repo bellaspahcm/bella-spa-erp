@@ -715,10 +715,11 @@ export default function ServicesPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-10">
-                <div className="flex items-center justify-between mb-10">
+              <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
+                {/* Header */}
+                <div className="p-10 pb-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
                   <div className="flex items-center gap-5">
                     <div className="w-14 h-14 bg-primary rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl shadow-rose-200 dark:shadow-none">
                       <Zap className="w-7 h-7" />
@@ -733,6 +734,7 @@ export default function ServicesPage() {
                     </div>
                   </div>
                   <button 
+                    type="button"
                     onClick={() => setIsModalOpen(false)}
                     className="p-3 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-all"
                   >
@@ -740,7 +742,8 @@ export default function ServicesPage() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Content */}
+                <div className="p-10 py-6 overflow-y-auto flex-1 space-y-6 scrollbar-thin">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 ml-1">Tên dịch vụ / Gói</label>
@@ -956,16 +959,18 @@ export default function ServicesPage() {
                     )}
                   </div>
 
-                  <div className="pt-6 flex gap-4">
-                    <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-[2rem] transition-all uppercase tracking-widest text-xs">
-                      Hủy bỏ
-                    </button>
-                    <button type="submit" className="flex-1 py-5 bg-primary hover:bg-rose-600 text-white font-black rounded-[2rem] shadow-2xl shadow-rose-200 dark:shadow-none transition-all uppercase tracking-widest text-xs">
-                      {modalMode === 'add' ? 'Lưu dịch vụ' : 'Cập nhật dịch vụ'}
-                    </button>
-                  </div>
-                </form>
-              </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-10 pt-6 border-t border-slate-100 bg-slate-50/50 flex gap-4 shrink-0">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-[2rem] transition-all uppercase tracking-widest text-xs">
+                    Hủy bỏ
+                  </button>
+                  <button type="submit" className="flex-1 py-5 bg-primary hover:bg-rose-600 text-white font-black rounded-[2rem] shadow-2xl shadow-rose-200 dark:shadow-none transition-all uppercase tracking-widest text-xs">
+                    {modalMode === 'add' ? 'Lưu dịch vụ' : 'Cập nhật dịch vụ'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

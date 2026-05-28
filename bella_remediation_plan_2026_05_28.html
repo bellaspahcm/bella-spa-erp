@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kế hoạch Khắc phục Bella SPA ERP · 28/05/2026</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --bg-card: #141821;
+    --bg-card-2: #1a1f2b;
+    --border: #232936;
+    --text: #e6e9ef;
+    --text-dim: #9aa3b2;
+    --text-muted: #6b7280;
+    --accent: #f472b6;
+    --accent-2: #ec4899;
+    --accent-dim: rgba(244, 114, 182, 0.12);
+    --green: #34d399;
+    --yellow: #fbbf24;
+    --orange: #fb923c;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #fdf2f8;
+      --bg-card: #ffffff;
+      --bg-card-2: #fef7fb;
+      --border: #f3e8f0;
+      --text: #1f2937;
+      --text-dim: #4b5563;
+      --text-muted: #9ca3af;
+      --shadow: 0 4px 20px rgba(236, 72, 153, 0.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "SF Pro Display", Roboto, "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+  }
+  .eyebrow {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: 36px;
+    margin: 0 0 12px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .meta {
+    color: var(--text-dim);
+    font-size: 14px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+  @media (max-width: 768px) { .hero { grid-template-columns: 1fr; } }
+  .hero-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: var(--shadow);
+  }
+  .hero-card h3 {
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: var(--text-dim);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .score-display {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .score-current {
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--yellow);
+    letter-spacing: -0.03em;
+  }
+  .score-arrow {
+    font-size: 28px;
+    color: var(--text-dim);
+  }
+  .score-target {
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--green);
+    letter-spacing: -0.03em;
+  }
+  .score-unit { color: var(--text-dim); font-weight: 500; font-size: 20px; }
+  .score-label { color: var(--text-dim); font-size: 14px; margin-top: 8px; }
+
+  h2 {
+    font-size: 26px;
+    margin: 56px 0 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  h2::before {
+    content: "";
+    width: 4px;
+    height: 28px;
+    background: linear-gradient(180deg, var(--accent), var(--purple));
+    border-radius: 2px;
+  }
+  h3 { font-size: 18px; margin: 24px 0 12px; font-weight: 600; }
+
+  /* Phase Card */
+  .phase {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 24px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .phase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    background: var(--bg-card-2);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .phase-header:hover { background: var(--accent-dim); }
+  .phase-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .phase-num {
+    background: var(--accent-dim);
+    color: var(--accent);
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+  }
+  .phase-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .phase-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .phase-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .badge {
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-week { background: var(--bg); color: var(--text-dim); border: 1px solid var(--border); }
+  .badge-effort-s { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+  .badge-effort-m { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .badge-effort-l { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .badge-priority-high { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .badge-priority-med { background: rgba(251, 191, 36, 0.15); color: var(--yellow); }
+  .badge-priority-low { background: rgba(96, 165, 250, 0.15); color: var(--blue); }
+
+  .phase-body { padding: 24px; }
+
+  .sprint {
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    background: var(--bg-card-2);
+    border-radius: 0 12px 12px 0;
+    margin-bottom: 16px;
+  }
+  .sprint-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    font-size: 15px;
+  }
+  .sprint-desc {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    background: var(--bg);
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  td:first-child { color: var(--text-dim); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; width: 60px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--accent-dim); }
+
+  .metric {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    display: inline-block;
+  }
+
+  .scoreboard {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+  .scoreboard table { margin: 0; }
+  .scoreboard td { font-size: 14px; }
+  .scoreboard td.num { text-align: right; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-weight: 600; }
+  .delta-up { color: var(--green); font-size: 11px; margin-left: 4px; }
+  .total-row td { font-weight: 700; background: var(--bg-card-2); font-size: 16px; }
+  .total-row td.num { color: var(--accent); }
+
+  .risk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .risk-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    border-left: 4px solid var(--orange);
+  }
+  .risk-card.high { border-left-color: var(--red); }
+  .risk-card.med { border-left-color: var(--yellow); }
+  .risk-card.low { border-left-color: var(--blue); }
+  .risk-title { font-weight: 600; margin-bottom: 4px; font-size: 14px; }
+  .risk-tags { display: flex; gap: 6px; margin-bottom: 8px; font-size: 11px; }
+  .risk-tag { padding: 2px 8px; background: var(--bg); border-radius: 4px; color: var(--text-dim); }
+  .risk-mitigation { color: var(--text-dim); font-size: 13px; }
+
+  .principles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin: 16px 0 32px;
+  }
+  .principle {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 14px;
+  }
+  .principle strong { color: var(--accent); display: block; margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .footer {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .cta {
+    background: linear-gradient(135deg, var(--accent-dim), rgba(167, 139, 250, 0.12));
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    padding: 28px;
+    margin: 40px 0;
+    text-align: center;
+  }
+  .cta h3 { margin: 0 0 8px; font-size: 20px; color: var(--text); }
+  .cta p { color: var(--text-dim); margin: 0; }
+
+  .toc {
+    position: sticky;
+    top: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 32px;
+    font-size: 13px;
+  }
+  .toc-title { font-weight: 600; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
+  .toc ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+    padding: 6px 12px;
+    background: var(--bg);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .toc a:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+  details > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  details[open] .phase-header { border-bottom: 1px solid var(--border); }
+  .toggle {
+    color: var(--text-dim);
+    font-size: 18px;
+    transition: transform 0.2s;
+  }
+  details[open] .toggle { transform: rotate(180deg); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="eyebrow">Roadmap · 90 ngày</div>
+    <h1>Kế hoạch Khắc phục Bella SPA ERP</h1>
+    <div class="meta">
+      <span>📅 Lập ngày 28/05/2026 · 07h00</span>
+      <span>🎯 Mục tiêu kết thúc 26/08/2026</span>
+      <span>🌿 Branch <code>main</code> · Commit <code>f9afb21</code></span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <div class="toc-title">Mục lục</div>
+    <ul>
+      <li><a href="#scoreboard">Scoreboard</a></li>
+      <li><a href="#principles">Nguyên tắc</a></li>
+      <li><a href="#phase-0">Phase 0 · Quick Wins</a></li>
+      <li><a href="#phase-1">Phase 1 · Tech Debt</a></li>
+      <li><a href="#phase-2">Phase 2 · Kiến trúc & Scale</a></li>
+      <li><a href="#phase-3">Phase 3 · Test & Observability</a></li>
+      <li><a href="#phase-4">Phase 4 · Cạnh tranh</a></li>
+      <li><a href="#risks">Rủi ro</a></li>
+    </ul>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-card">
+      <h3>Điểm hệ thống</h3>
+      <div class="score-display">
+        <span class="score-current">89.4<span class="score-unit">/100</span></span>
+        <span class="score-arrow">→</span>
+        <span class="score-target">97.0<span class="score-unit">/100</span></span>
+      </div>
+      <div class="score-label">Hạng A → Enterprise hàng đầu</div>
+    </div>
+    <div class="hero-card">
+      <h3>Phạm vi</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px;">
+        <div><div style="font-size: 24px; font-weight: 700; color: var(--accent);">4</div><div style="font-size: 12px; color: var(--text-dim);">Phase</div></div>
+        <div><div style="font-size: 24px; font-weight: 700; color: var(--accent);">13</div><div style="font-size: 12px; color: var(--text-dim);">Sprint</div></div>
+        <div><div style="font-size: 24px; font-weight: 700; color: var(--accent);">38</div><div style="font-size: 12px; color: var(--text-dim);">Task lớn</div></div>
+        <div><div style="font-size: 24px; font-weight: 700; color: var(--accent);">90</div><div style="font-size: 12px; color: var(--text-dim);">Ngày</div></div>
+      </div>
+    </div>
+  </section>
+
+  <h2 id="scoreboard">📊 Dự kiến tiến triển điểm số</h2>
+  <div class="scoreboard">
+    <table>
+      <thead>
+        <tr>
+          <th>Trục đánh giá</th>
+          <th class="num">Hiện tại</th>
+          <th class="num">P1</th>
+          <th class="num">P2</th>
+          <th class="num">P3</th>
+          <th class="num">P4</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Kiến trúc &amp; Codebase</td><td class="num">88</td><td class="num">90</td><td class="num">95</td><td class="num">95</td><td class="num">96 <span class="delta-up">+8</span></td></tr>
+        <tr><td>Tính năng nghiệp vụ</td><td class="num">94</td><td class="num">94</td><td class="num">94</td><td class="num">94</td><td class="num">98 <span class="delta-up">+4</span></td></tr>
+        <tr><td>Bảo mật</td><td class="num">95</td><td class="num">98</td><td class="num">98</td><td class="num">99</td><td class="num">99 <span class="delta-up">+4</span></td></tr>
+        <tr><td>Cấu trúc dữ liệu</td><td class="num">90</td><td class="num">92</td><td class="num">95</td><td class="num">95</td><td class="num">96 <span class="delta-up">+6</span></td></tr>
+        <tr><td>Scalability</td><td class="num">86</td><td class="num">89</td><td class="num">94</td><td class="num">94</td><td class="num">95 <span class="delta-up">+9</span></td></tr>
+        <tr><td>Maintainability</td><td class="num">84</td><td class="num">92</td><td class="num">94</td><td class="num">95</td><td class="num">95 <span class="delta-up">+11</span></td></tr>
+        <tr><td>Testing</td><td class="num">82</td><td class="num">84</td><td class="num">85</td><td class="num">92</td><td class="num">93 <span class="delta-up">+11</span></td></tr>
+        <tr><td>DevOps / Observability</td><td class="num">88</td><td class="num">88</td><td class="num">90</td><td class="num">95</td><td class="num">96 <span class="delta-up">+8</span></td></tr>
+        <tr class="total-row"><td>TỔNG (weighted)</td><td class="num">89.4</td><td class="num">91.5</td><td class="num">94.0</td><td class="num">95.6</td><td class="num">97.0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 id="principles">📌 Nguyên tắc tổ chức</h2>
+  <div class="principles">
+    <div class="principle"><strong>Đo lường</strong>Mỗi task có metric cụ thể: số `as any` còn lại, LOC/file, p95 latency, coverage %.</div>
+    <div class="principle"><strong>Không backwards-compat</strong>Theo CLAUDE.md — xoá thẳng code cũ thay vì thêm shim hay feature flag tạm.</div>
+    <div class="principle"><strong>Test trước, refactor sau</strong>File &gt;800 LOC bắt buộc có ≥1 E2E hoặc integration test bao phủ happy path trước khi tách.</div>
+    <div class="principle"><strong>Zero regression</strong>Mỗi PR phải pass đầy đủ 28 suites Jest + 5 specs Playwright trước khi merge.</div>
+  </div>
+
+  <!-- PHASE 0 -->
+  <h2 id="phase-0">🚦 Phase 0 — Quick Wins</h2>
+  <details class="phase" open>
+    <summary>
+      <div class="phase-header">
+        <div class="phase-title">
+          <div class="phase-num">0</div>
+          <div>
+            <h3 class="phase-name">Dọn dẹp tức thì</h3>
+            <div class="phase-sub">5 task · 1–3 ngày · Mở đường cho mọi sprint sau</div>
+          </div>
+        </div>
+        <div class="phase-meta">
+          <span class="badge badge-week">Tuần 0</span>
+          <span class="badge badge-effort-s">Effort: S</span>
+          <span class="toggle">▾</span>
+        </div>
+      </div>
+    </summary>
+    <div class="phase-body">
+      <table>
+        <thead><tr><th>#</th><th>Task</th><th>Metric thành công</th></tr></thead>
+        <tbody>
+          <tr><td>0.1</td><td>Dọn <code>scratch/</code> — giữ 3–5 script còn dùng, chuyển vào <code>scripts/debug/</code>, xoá phần còn lại</td><td><span class="metric">≤ 5 file trong scratch/</span></td></tr>
+          <tr><td>0.2</td><td>Đồng bộ test reporter — chốt 1 nguồn duy nhất (216 hay 397?), xoá <code>test-results-fresh.json</code> stale</td><td><span class="metric">CI in cùng 1 số mỗi lần</span></td></tr>
+          <tr><td>0.3</td><td>Thêm <code>--coverage</code> vào <code>npm test</code>, publish HTML report lên Vercel preview</td><td><span class="metric">Coverage baseline ≥70%</span></td></tr>
+          <tr><td>0.4</td><td>Chuẩn hoá timestamp migration: đổi tên file trùng prefix (3 file <code>20260526040000</code>) + viết <code>supabase/migrations/README.md</code></td><td><span class="metric">0 prefix trùng</span></td></tr>
+          <tr><td>0.5</td><td>Xoá <code>fix_as_any.ps1</code> ở root, thay bằng GH issue tracker đếm <code>as any</code> mỗi tuần</td><td><span class="metric">Baseline = 236</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <!-- PHASE 1 -->
+  <h2 id="phase-1">🔧 Phase 1 — Tech Debt</h2>
+  <details class="phase" open>
+    <summary>
+      <div class="phase-header">
+        <div class="phase-title">
+          <div class="phase-num">1</div>
+          <div>
+            <h3 class="phase-name">Diệt nợ kỹ thuật cốt lõi</h3>
+            <div class="phase-sub">3 sprint · Tuần 1–3 · 89.4 → 91.5</div>
+          </div>
+        </div>
+        <div class="phase-meta">
+          <span class="badge badge-week">Tuần 1–3</span>
+          <span class="badge badge-priority-high">Ưu tiên cao</span>
+          <span class="toggle">▾</span>
+        </div>
+      </div>
+    </summary>
+    <div class="phase-body">
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 1.1 — Diệt 236 lượt <code>as any</code> (Tuần 1–2)</div>
+        <div class="sprint-desc">Vi phạm trực diện rule "Strict Database Payload Typing" trong AGENTS.md. Trừ điểm Bảo mật + Maintainability.</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>1.1.1</td><td>Codemod ts-morph: scan 236 lượt, phân loại 3 nhóm (DB payload / RPC return / 3rd-party gap)</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">Báo cáo phân loại CSV</span></td></tr>
+            <tr><td>1.1.2</td><td>Nhóm DB payload (~110 lượt): thay bằng <code>Database['public']['Tables'][T]['Insert'|'Update']</code>. Ưu tiên <code>session-actions.ts</code> (17), <code>lifecycle-actions.ts</code> (18)</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">0 as any ở insert/update DB</span></td></tr>
+            <tr><td>1.1.3</td><td>Nhóm RPC return: tạo <code>src/types/rpc.ts</code> khai báo interface từng RPC</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">supabase.rpc(...) đều có generic</span></td></tr>
+            <tr><td>1.1.4</td><td>Nhóm 3rd-party: module augment cho xlsx, html-to-image</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">0 as any ngoài test mock</span></td></tr>
+            <tr><td>1.1.5</td><td>Bật ESLint rule <code>@typescript-eslint/no-explicit-any: error</code> (trừ <code>__tests__/</code>)</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">CI fail nếu as any mới</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 1.2 — Rate-limit phân tán (Tuần 2)</div>
+        <div class="sprint-desc">In-memory Map không an toàn cho Vercel serverless multi-region.</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>1.2.1</td><td>Tạo bảng <code>rate_limit_buckets</code> + RPC <code>consume_token()</code> với advisory lock SECURITY DEFINER</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">Migration + 4 unit test</span></td></tr>
+            <tr><td>1.2.2</td><td>Refactor <code>src/lib/rate-limit.ts</code> sang async, giữ L1 cache 5s</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">2 process share đúng bucket</span></td></tr>
+            <tr><td>1.2.3</td><td>(Optional) Upstash Redis adapter pluggable qua env</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">Switch backend không đổi caller</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 1.3 — Tách 4 file &gt;800 LOC (Tuần 3)</div>
+        <div class="sprint-desc">Mỗi file mới ≤350 LOC, giữ public API, chỉ tách internal.</div>
+        <table>
+          <thead><tr><th>File hiện tại</th><th>Tách thành</th><th>Effort</th></tr></thead>
+          <tbody>
+            <tr><td><code>finance-actions.ts</code> (1018)</td><td>finance/revenue, finance/expense, finance/lock-month, finance/reports</td><td><span class="badge badge-effort-m">M</span></td></tr>
+            <tr><td><code>accounting-actions.ts</code> (1003)</td><td>accounting/journals, periods, reports, coa</td><td><span class="badge badge-effort-m">M</span></td></tr>
+            <tr><td><code>crm-actions.ts</code> (942)</td><td>crm/leads, conversations, segments</td><td><span class="badge badge-effort-m">M</span></td></tr>
+            <tr><td><code>ai-coo-service.ts</code> (818)</td><td>ai/orchestrator + 5 sub-agent (chro/cpo/cmo/cfo/franchise)</td><td><span class="badge badge-effort-m">M</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </details>
+
+  <!-- PHASE 2 -->
+  <h2 id="phase-2">🏗️ Phase 2 — Kiến trúc &amp; Scale</h2>
+  <details class="phase">
+    <summary>
+      <div class="phase-header">
+        <div class="phase-title">
+          <div class="phase-num">2</div>
+          <div>
+            <h3 class="phase-name">Nâng cấp kiến trúc cho scale chuỗi</h3>
+            <div class="phase-sub">4 sprint · Tuần 4–7 · 91.5 → 94.0</div>
+          </div>
+        </div>
+        <div class="phase-meta">
+          <span class="badge badge-week">Tuần 4–7</span>
+          <span class="badge badge-priority-med">Ưu tiên TB</span>
+          <span class="toggle">▾</span>
+        </div>
+      </div>
+    </summary>
+    <div class="phase-body">
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 2.1 — DTO/ViewModel layer (Tuần 4)</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>2.1.1</td><td>Mở rộng <code>domain.ts</code> (172 → ~800 LOC) với DTO cho 12 entity nóng</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">DTO Read + Insert + Update + VM</span></td></tr>
+            <tr><td>2.1.2</td><td>Viết mapper db→domain đặt cùng entity (ví dụ <code>booking/booking.mapper.ts</code>)</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">0 import Database[...] ngoài service</span></td></tr>
+            <tr><td>2.1.3</td><td>Migrate 5 page nhiều round-trip nhất sang DTO</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">Lighthouse TTI +15%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 2.2 — Materialized view + dashboard performance (Tuần 5)</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>2.2.1</td><td>4 MV: daily_revenue, ktv_daily_kpi, inventory_low_stock, monthly_pnl_summary + refresh cron 5'</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">Dashboard p95 &lt;300ms</span></td></tr>
+            <tr><td>2.2.2</td><td>Refactor <code>dashboard-actions.ts</code> gọi MV</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">DB round-trip / page giảm 60%</span></td></tr>
+            <tr><td>2.2.3</td><td>React Cache + <code>unstable_cache</code> cho query nóng TTL 60s</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">Server time -30%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 2.3 — Background queue (Tuần 6)</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>2.3.1</td><td>Upstash QStash (HTTP-based, hợp Vercel) — wrapper <code>src/lib/queue.ts</code></td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">enqueue(job, payload, opts)</span></td></tr>
+            <tr><td>2.3.2</td><td>Migrate 3 workload khỏi cron polling: Zalo reminder, outbox event, AI autopilot</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">Latency trigger→exec &lt;30s</span></td></tr>
+            <tr><td>2.3.3</td><td>DLQ + retry exponential (max 5) + Sentry alert &gt;3 lần fail</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">0 job mất</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 2.4 — Migration hygiene (Tuần 7)</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>2.4.1</td><td>Test snapshot schema (<code>pg_dump --schema-only</code>) so với baseline — CI fail nếu drift</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">Migration kèm baseline update</span></td></tr>
+            <tr><td>2.4.2</td><td>Document quan hệ trong <code>docs/SCHEMA.md</code> + ERD Mermaid sinh tự động</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">ERD update mỗi migration</span></td></tr>
+            <tr><td>2.4.3</td><td>Audit RLS: viết <code>rls-audit.sql</code> liệt kê bảng RLS off hoặc <code>USING(true)</code></td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">0 bảng public chưa cover RLS</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </details>
+
+  <!-- PHASE 3 -->
+  <h2 id="phase-3">🧪 Phase 3 — Test &amp; Observability</h2>
+  <details class="phase">
+    <summary>
+      <div class="phase-header">
+        <div class="phase-title">
+          <div class="phase-num">3</div>
+          <div>
+            <h3 class="phase-name">Đào sâu kiểm thử & quan sát</h3>
+            <div class="phase-sub">3 sprint · Tuần 8–10 · 94.0 → 95.6</div>
+          </div>
+        </div>
+        <div class="phase-meta">
+          <span class="badge badge-week">Tuần 8–10</span>
+          <span class="badge badge-priority-med">Ưu tiên TB</span>
+          <span class="toggle">▾</span>
+        </div>
+      </div>
+    </summary>
+    <div class="phase-body">
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 3.1 — Integration test layer (Tuần 8)</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>3.1.1</td><td><code>jest.integration.config.ts</code> chạy với Supabase CLI local</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">npm run test:integration xanh</span></td></tr>
+            <tr><td>3.1.2</td><td>15 test RLS thực: 2 tenant + 3 role, assert isolation</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">100% pass, không mock</span></td></tr>
+            <tr><td>3.1.3</td><td>CI workflow mới: integration parallel với unit, label PR <code>integration: ✓</code></td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">Quality gate</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 3.2 — Coverage &amp; visual regression (Tuần 9)</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>3.2.1</td><td>Đẩy coverage Jest lên ≥80% line / ≥70% branch</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">CI fail nếu giảm</span></td></tr>
+            <tr><td>3.2.2</td><td>Playwright visual regression: 8 trang quan trọng, threshold 0.1%</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">Snapshot stored</span></td></tr>
+            <tr><td>3.2.3</td><td>Mở rộng E2E 5→10 spec: leave, inventory transfer, royalty, AI approval, multi-tenant</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">E2E suite &lt;8 phút</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 3.3 — Observability nâng cao (Tuần 10)</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>3.3.1</td><td>Checkly / UptimeRobot Pro: 5 synthetic check mỗi 5'</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">Alert &lt;1' khi luồng down</span></td></tr>
+            <tr><td>3.3.2</td><td>SLO: dashboard p95 &lt;500ms, booking p99 &lt;1s, availability 99.9%</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">SLO board công khai</span></td></tr>
+            <tr><td>3.3.3</td><td>CSP nonce-based: bỏ <code>unsafe-inline</code> script</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">Mozilla Observatory A+</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </details>
+
+  <!-- PHASE 4 -->
+  <h2 id="phase-4">🎯 Phase 4 — Cạnh tranh thị trường</h2>
+  <details class="phase">
+    <summary>
+      <div class="phase-header">
+        <div class="phase-title">
+          <div class="phase-num">4</div>
+          <div>
+            <h3 class="phase-name">Bù khoảng cách MISA + đối thủ chuyên</h3>
+            <div class="phase-sub">3 sprint · Tuần 11–13 · 95.6 → 97.0</div>
+          </div>
+        </div>
+        <div class="phase-meta">
+          <span class="badge badge-week">Tuần 11–13</span>
+          <span class="badge badge-priority-low">Tăng doanh thu</span>
+          <span class="toggle">▾</span>
+        </div>
+      </div>
+    </summary>
+    <div class="phase-body">
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 4.1 — Hoá đơn điện tử + chữ ký số (Tuần 11–12) · Bù MISA</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>4.1.1</td><td>Tích hợp 1 nhà cung cấp (đề xuất VNPT-Invoice hoặc Misa MeInvoice — REST tốt nhất)</td><td><span class="badge badge-effort-l">L</span></td><td><span class="metric">Đẩy hoá đơn lên GDT OK</span></td></tr>
+            <tr><td>4.1.2</td><td>Ký số: USB token (HSM proxy) + cloud signing (VNPT SmartCA)</td><td><span class="badge badge-effort-l">L</span></td><td><span class="metric">Ký + gửi 1 click</span></td></tr>
+            <tr><td>4.1.3</td><td>Báo cáo thuế TT200 / TT133, sổ cái, sổ chi tiết, bảng kê 01-1/GTGT</td><td><span class="badge badge-effort-l">L</span></td><td><span class="metric">XML đúng định dạng GDT</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 4.2 — POS hardware + in bill (Tuần 12)</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>4.2.1</td><td>Máy in nhiệt 58/80mm qua WebUSB hoặc print server local</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">In bill &lt;2s</span></td></tr>
+            <tr><td>4.2.2</td><td>Scan barcode (USB HID) cho inventory</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">EAN-13 vào form</span></td></tr>
+            <tr><td>4.2.3</td><td>Cash drawer trigger qua máy in</td><td><span class="badge badge-effort-s">S</span></td><td><span class="metric">Mở khay khi nhận tiền mặt</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sprint">
+        <div class="sprint-title">Sprint 4.3 — Marketing automation (Tuần 13) · Cạnh tranh Haravan/Bizfly</div>
+        <table>
+          <thead><tr><th>#</th><th>Task</th><th>Effort</th><th>Metric</th></tr></thead>
+          <tbody>
+            <tr><td>4.3.1</td><td>Zalo OA campaign: segment + schedule (birthday, sinh con N tháng, không quay lại 60 ngày)</td><td><span class="badge badge-effort-l">L</span></td><td><span class="metric">5 segment mặc định + UI</span></td></tr>
+            <tr><td>4.3.2</td><td>SMS brandname adapter (eSMS / Speedsms) pluggable</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">1 lệnh gửi + quota tracking</span></td></tr>
+            <tr><td>4.3.3</td><td>Email funnel cơ bản (welcome / abandoned / post-service) qua Resend</td><td><span class="badge badge-effort-m">M</span></td><td><span class="metric">Tỉ lệ open trackable</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </details>
+
+  <h2 id="risks">⚠️ Rủi ro &amp; Giảm thiểu</h2>
+  <div class="risk-grid">
+    <div class="risk-card med">
+      <div class="risk-title">Refactor 4 file lớn gây regression</div>
+      <div class="risk-tags"><span class="risk-tag">Khả năng: TB</span><span class="risk-tag">Tác động: Cao</span></div>
+      <div class="risk-mitigation">Bắt buộc E2E pass + canary deploy 10% traffic trong 24h trước khi roll-out toàn bộ.</div>
+    </div>
+    <div class="risk-card low">
+      <div class="risk-title">Rate-limit RPC chậm gây 5xx</div>
+      <div class="risk-tags"><span class="risk-tag">Khả năng: Thấp</span><span class="risk-tag">Tác động: TB</span></div>
+      <div class="risk-mitigation">Giữ L1 in-memory fallback + circuit breaker auto-disable rate-limit khi p95 RPC &gt;100ms.</div>
+    </div>
+    <div class="risk-card high">
+      <div class="risk-title">E-invoice provider chậm cấp tài khoản</div>
+      <div class="risk-tags"><span class="risk-tag">Khả năng: TB</span><span class="risk-tag">Tác động: Cao</span></div>
+      <div class="risk-mitigation">Bắt đầu paperwork ngay tuần 8, không đợi tới tuần 11. Có phương án dự phòng 2 nhà cung cấp.</div>
+    </div>
+    <div class="risk-card low">
+      <div class="risk-title">Coverage 80% không khả thi cho UI</div>
+      <div class="risk-tags"><span class="risk-tag">Khả năng: TB</span><span class="risk-tag">Tác động: Thấp</span></div>
+      <div class="risk-mitigation">Loại trừ <code>components/**/*.tsx</code> khỏi target nghiêm, chỉ enforce trên logic (services + lib + modules).</div>
+    </div>
+    <div class="risk-card low">
+      <div class="risk-title">Visual regression flaky</div>
+      <div class="risk-tags"><span class="risk-tag">Khả năng: Cao</span><span class="risk-tag">Tác động: Thấp</span></div>
+      <div class="risk-mitigation">Playwright <code>maxDiffPixelRatio: 0.01</code> + retry 2 + disable animation trong test mode.</div>
+    </div>
+    <div class="risk-card med">
+      <div class="risk-title">Migrate cron→queue làm mất event</div>
+      <div class="risk-tags"><span class="risk-tag">Khả năng: TB</span><span class="risk-tag">Tác động: TB</span></div>
+      <div class="risk-mitigation">Chạy song song cron cũ + queue mới trong 1 tuần, so sánh output rồi tắt cron.</div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h3>📍 Bước kế tiếp</h3>
+    <p>Chốt phase ưu tiên để khởi động Sprint đầu tiên. Đề xuất bắt đầu Phase 0 + Sprint 1.1 song song để giải phóng nợ kỹ thuật trước khi mở rộng.</p>
+  </div>
+
+  <div class="footer">
+    Tạo bởi Claude Opus 4.7 · 28/05/2026 07h00 · Bella SPA ERP Roadmap v1.0
+  </div>
+
+</div>
+</body>
+</html>

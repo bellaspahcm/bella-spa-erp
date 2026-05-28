@@ -502,7 +502,7 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
       .eq('id', tenantId)
       .single();
 
-    const salaryConfig = (tenantData?.salary_config as any) || {};
+    const salaryConfig = (tenantData?.salary_config as Record<string, unknown> | null) || {};
     const isAutoConsumeEnabled = !!salaryConfig.auto_consume_inventory;
 
     if (!isAutoConsumeEnabled) {

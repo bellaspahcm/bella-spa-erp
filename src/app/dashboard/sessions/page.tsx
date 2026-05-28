@@ -98,7 +98,7 @@ function SessionsContent() {
     fetchUser();
 
     // REALTIME SUBSCRIPTION
-    const supabase = createClient() as any;
+    const supabase = createClient();
     const channel = supabase
       .channel('sessions-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {

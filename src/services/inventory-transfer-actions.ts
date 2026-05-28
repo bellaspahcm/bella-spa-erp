@@ -44,7 +44,7 @@ export async function createInventoryRequest(items: TransferOrderItem[], notes?:
       return { success: false, error: 'Danh sách vật tư yêu cầu không được để trống' };
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) return { success: false, error: 'Chưa đăng nhập' };
     if (!user.tenant_id) return { success: false, error: 'Không xác định được chi nhánh hoạt động' };
@@ -59,7 +59,7 @@ export async function createInventoryRequest(items: TransferOrderItem[], notes?:
       .insert({
         order_number: orderNumber,
         requester_tenant_id: user.tenant_id,
-        items,
+        items: items as unknown as import('@/types/database.types').Database['public']['Tables']['inventory_transfer_orders']['Insert']['items'],
         notes: notes || '',
         status: 'pending'
       })
@@ -90,7 +90,7 @@ export async function createInventoryRequest(items: TransferOrderItem[], notes?:
  */
 export async function getInventoryTransferOrders(tenantId?: string): Promise<InventoryTransferOrder[]> {
   try {
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) return [];
 
@@ -141,7 +141,7 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
       return { success: false, error: 'Chỉ Admin Tổng bộ mới có quyền phê duyệt & xuất kho giao hàng' };
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) return { success: false, error: 'Chưa đăng nhập' };
 
@@ -172,7 +172,7 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
     }
 
     const hqTenantId = hqTenant.id;
-    const items = order.items as TransferOrderItem[];
+    const items = order.items as unknown as TransferOrderItem[];
 
     // 3. Kiểm tra số lượng tồn kho tại Tổng bộ trước khi trừ
     for (const item of items) {
@@ -218,7 +218,10 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
       }
 
       const { data: dbItem } = await query.single();
-      const newStock = dbItem.stock_level - item.qty;
+      if (!dbItem) {
+        return { success: false, error: `Vật tư "${item.name}" không tồn tại trong kho Tổng bộ.` };
+      }
+      const newStock = (dbItem.stock_level ?? 0) - item.qty;
 
       // Cập nhật tồn kho
       await supabase
@@ -317,7 +320,7 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
  */
 export async function confirmTransferReceipt(transferId: string) {
   try {
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) return { success: false, error: 'Chưa đăng nhập' };
 
@@ -341,7 +344,7 @@ export async function confirmTransferReceipt(transferId: string) {
       return { success: false, error: `Lệnh chuyển kho đang ở trạng thái "${order.status}", không thể xác nhận nhận hàng` };
     }
 
-    const items = order.items as TransferOrderItem[];
+    const items = order.items as unknown as TransferOrderItem[];
     const branchTenantId = user.tenant_id;
 
     // 2. Thực hiện cộng kho vật tư tại chi nhánh & ghi log lịch sử
@@ -438,7 +441,7 @@ export async function confirmTransferReceipt(transferId: string) {
  */
 export async function cancelTransferOrder(transferId: string, reason?: string) {
   try {
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) return { success: false, error: 'Chưa đăng nhập' };
 

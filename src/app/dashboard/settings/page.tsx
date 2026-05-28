@@ -83,12 +83,15 @@ export default function SettingsPage() {
             qr_bank_code: data.qr_bank_code || "",
             qr_account_number: data.qr_account_number || "",
             qr_account_name: data.qr_account_name || "",
-            salary_config: (data.salary_config as any) || {
-              bonus_5_star: 50000,
-              bonus_4_5_star: 30000,
-              bonus_4_star: 10000,
-              kpi_target_sessions: 30,
-              kpi_bonus_amount: 1000000,
+            salary_config: {
+              bonus_5_star: Number((data.salary_config as any)?.bonus_5_star ?? 50000),
+              bonus_4_5_star: Number((data.salary_config as any)?.bonus_4_5_star ?? 30000),
+              bonus_4_star: Number((data.salary_config as any)?.bonus_4_star ?? 10000),
+              kpi_target_sessions: Number((data.salary_config as any)?.kpi_target_sessions ?? 30),
+              kpi_bonus_amount: Number((data.salary_config as any)?.kpi_bonus_amount ?? 1000000),
+              penalty_late_per_day: (data.salary_config as any)?.penalty_late_per_day !== undefined ? Number((data.salary_config as any).penalty_late_per_day) : undefined,
+              penalty_absent_per_day: (data.salary_config as any)?.penalty_absent_per_day !== undefined ? Number((data.salary_config as any).penalty_absent_per_day) : undefined,
+              auto_consume_inventory: (data.salary_config as any)?.auto_consume_inventory !== undefined ? !!(data.salary_config as any).auto_consume_inventory : undefined,
             }
           });
         }

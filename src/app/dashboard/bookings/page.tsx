@@ -150,7 +150,7 @@ function BookingsContent() {
     fetchKtvs();
 
     const fetchSessionHistory = async (bookingId: string) => {
-      const supabase = createClient() as any;
+      const supabase = createClient();
       const { data } = await supabase
         .from('session_logs')
         .select('*')
@@ -161,7 +161,7 @@ function BookingsContent() {
     window.fetchSessionHistory = fetchSessionHistory;
 
     // REALTIME SUBSCRIPTION
-    const supabase = createClient() as any;
+    const supabase = createClient();
     const channel = supabase
       .channel('bookings-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
@@ -289,7 +289,7 @@ function BookingsContent() {
       // 1. Status transitions are now handled directly by updateSessionLog to avoid race conditions
 
       // 2. Update Booking KTV if changed
-      const supabase = createClient() as any;
+      const supabase = createClient();
       if (modalData.ktvId) {
         await supabase
           .from('bookings')
@@ -802,7 +802,7 @@ function BookingsContent() {
 
             {/* Specialty Filters tabs & arrow navigation */}
             {(() => {
-              const specialties = [
+              const specialties: { id: 'all' | 'facial' | 'nails' | 'body'; label: string; icon: React.ReactNode }[] = [
                 { id: 'all', label: 'Tất cả KTV', icon: <Users className="w-4 h-4" /> },
                 { id: 'facial', label: 'Chăm sóc Da mặt', icon: <Briefcase className="w-4 h-4 text-rose-400" /> },
                 { id: 'nails', label: 'Nails & Mi', icon: <Briefcase className="w-4 h-4 text-purple-400" /> },
@@ -818,7 +818,7 @@ function BookingsContent() {
                         <button
                           key={spec.id}
                           type="button"
-                          onClick={() => setKtvSpecialty(spec.id as any)}
+                          onClick={() => setKtvSpecialty(spec.id)}
                           className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all ${
                             isActive
                               ? 'bg-white text-slate-900 shadow-sm shadow-slate-100'

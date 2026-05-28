@@ -6,6 +6,10 @@
 
 # testing
 /coverage
+/test-results.json
+/test-results-fresh.json
+/test-summary.json
+/test-execution-report.html
 
 # playwright / e2e
 /playwright-report/

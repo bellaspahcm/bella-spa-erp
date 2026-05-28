@@ -158,5 +158,9 @@ export async function enqueueWithAutoClient<T extends { rpc: (...args: any[]) =>
   logPrefix?: string
 ): Promise<boolean> {
   const client = await getOutboxClient(fallback);
-  return enqueueAccountingEvent(client as any, params, logPrefix);
+  return enqueueAccountingEvent(
+    client as Parameters<typeof enqueueAccountingEvent>[0],
+    params,
+    logPrefix
+  );
 }

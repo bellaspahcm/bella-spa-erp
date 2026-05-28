@@ -67,14 +67,14 @@ export default function FinancePage() {
       ]);
 
       if (overviewResult.status === 'fulfilled' && overviewResult.value) {
-        setData(overviewResult.value as any);
+        setData(overviewResult.value);
       } else if (overviewResult.status === 'rejected') {
         console.error('Overview failed:', overviewResult.reason);
         toast.error('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');
       }
 
       if (pnlResult.status === 'fulfilled') setPnlData(pnlResult.value);
-      if (perfResult.status === 'fulfilled') setPerformanceData((perfResult.value as any) || []);
+      if (perfResult.status === 'fulfilled') setPerformanceData(perfResult.value || []);
     } catch (error) {
       console.error('Error fetching finance data:', error);
       toast.error('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');
@@ -143,7 +143,7 @@ export default function FinancePage() {
     fetchData();
 
     // REALTIME SUBSCRIPTION
-    const supabase = createClient() as any;
+    const supabase = createClient();
     const channel = supabase
       .channel('finance-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue' }, () => {
@@ -329,7 +329,7 @@ export default function FinancePage() {
             </div>
             <PremiumSelect
               value={filterType}
-              onChange={(val) => { setFilterType(val as any); setCurrentPage(1); }}
+              onChange={(val) => { setFilterType(val === 'revenue' || val === 'expense' ? val : 'all'); setCurrentPage(1); }}
               options={[
                 { value: 'all', label: 'Tất cả' },
                 { value: 'revenue', label: 'Thu vào' },

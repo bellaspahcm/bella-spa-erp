@@ -233,7 +233,7 @@ export async function createUser(formData: CreateUserInput) {
     hasUser: !!adminData?.user?.id,
     authUserId: adminData?.user?.id ?? null,
     errorMessage: adminError?.message ?? null,
-    errorStatus: (adminError as any)?.status ?? null,
+    errorStatus: (adminError as { status?: number } | null)?.status ?? null,
   });
 
   if (adminError) {
