@@ -130,6 +130,28 @@ export default function InventoryPage() {
     }
   };
 
+  const fetchReconciliation = async () => {
+    setReconLoading(true);
+    try {
+      const res = await getMonthlyReconciliation(reconYear, reconMonth + 1);
+      if (!res.success) {
+        toast.error(res.error || 'Lỗi tải báo cáo kiểm kê');
+        setReconRows([]);
+        return;
+      }
+      setReconRows(res.items.map(it => ({
+        ...it,
+        actual: '',
+        notes: '',
+      })));
+    } catch (e: any) {
+      console.error('[fetchReconciliation]', e);
+      toast.error(e?.message || 'Lỗi tải báo cáo kiểm kê');
+    } finally {
+      setReconLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Fetch tenant_id from browser auth session (for writes)
     const sb = getSupabase();
@@ -159,28 +181,6 @@ export default function InventoryPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reconMonth, reconYear]);
-
-  const fetchReconciliation = async () => {
-    setReconLoading(true);
-    try {
-      const res = await getMonthlyReconciliation(reconYear, reconMonth + 1);
-      if (!res.success) {
-        toast.error(res.error || 'Lỗi tải báo cáo kiểm kê');
-        setReconRows([]);
-        return;
-      }
-      setReconRows(res.items.map(it => ({
-        ...it,
-        actual: '',
-        notes: '',
-      })));
-    } catch (e: any) {
-      console.error('[fetchReconciliation]', e);
-      toast.error(e?.message || 'Lỗi tải báo cáo kiểm kê');
-    } finally {
-      setReconLoading(false);
-    }
-  };
 
   const handleSaveReconciliation = async () => {
     // Chỉ gửi các dòng đã nhập actual (kể cả 0 — nghĩa là hết hàng)
@@ -720,7 +720,7 @@ export default function InventoryPage() {
                     <ClipboardCheck className="text-primary w-5 h-5" /> Kiểm kê Tồn Kho Cuối Tháng
                   </h3>
                   <p className="text-slate-400 text-xs font-semibold mt-1 leading-relaxed">
-                    Nhập tồn thực tế đếm được vào cột bên phải. Hệ thống tự so với <span className="text-slate-700 font-bold">"Tồn dự kiến"</span> và ghi chênh lệch để đối soát hao hụt.
+                    Nhập tồn thực tế đếm được vào cột bên phải. Hệ thống tự so với <span className="text-slate-700 font-bold">&quot;Tồn dự kiến&quot;</span> và ghi chênh lệch để đối soát hao hụt.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

@@ -1029,7 +1029,7 @@ export default function CustomerDetailPage() {
                           </p>
                           {rev.notes && (
                             <p className="text-[11px] font-medium text-slate-500 mt-2 pl-3 border-l-2 border-slate-200 italic">
-                              "{rev.notes}"
+                              &quot;{rev.notes}&quot;
                             </p>
                           )}
                         </div>

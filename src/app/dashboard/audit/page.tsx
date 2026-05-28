@@ -257,7 +257,7 @@ const EXCLUDED_KEYS = [
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let formatReadableValueOuter = (key: string, val: any) => String(val);
+const formatReadableValueOuter = (key: string, val: any) => String(val);
 
 export default function AuditPage() {
   const supabase = createClient();

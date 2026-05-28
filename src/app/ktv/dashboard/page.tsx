@@ -1352,7 +1352,7 @@ export default function KTVDashboard() {
                     <button 
                       onClick={() => {
                         setSelectedNotif(null);
-                        toast.success('Hãy xem danh sách "Lịch hôm nay" bên dưới!');
+                        toast.success('Hãy xem danh sách \u0027Lịch hôm nay\u0027 bên dưới!');
                       }}
                       className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-3.5 rounded-2xl uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-indigo-100"
                     >

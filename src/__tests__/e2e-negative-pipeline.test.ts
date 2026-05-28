@@ -98,7 +98,7 @@ class MockQueryBuilder {
   then(onfulfilled?: (value: any) => any, onrejected?: (reason: any) => any) {
     this.applyPendingMutation();
     const list = this.execute();
-    let res: any = { data: list, error: null };
+    const res: any = { data: list, error: null };
     if (this.countOptions) { res.count = list.length; }
     return Promise.resolve(res).then(onfulfilled, onrejected);
   }

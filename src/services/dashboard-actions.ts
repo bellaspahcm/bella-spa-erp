@@ -335,17 +335,17 @@ export async function getMonthlyPerformance() {
 
     const [revData, expData, customerData, ...monthlyRpcResults] = await Promise.all([
       (() => {
-        let q = supabase.from('revenue').select('amount, received_date')
+        const q = supabase.from('revenue').select('amount, received_date')
           .eq('status', 'confirmed').gte('received_date', rangeStart).lt('received_date', rangeEnd);
         return tenantId ? q.eq('tenant_id', tenantId) : q;
       })(),
       (() => {
-        let q = supabase.from('expenses').select('amount, expense_date')
+        const q = supabase.from('expenses').select('amount, expense_date')
           .gte('expense_date', rangeStart).lt('expense_date', rangeEnd);
         return tenantId ? q.eq('tenant_id', tenantId) : q;
       })(),
       (() => {
-        let q = supabase.from('customers').select('id, created_at')
+        const q = supabase.from('customers').select('id, created_at')
           .gte('created_at', rangeStart).lt('created_at', rangeEnd);
         return tenantId ? q.eq('tenant_id', tenantId) : q;
       })(),

@@ -79,27 +79,6 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     assigned_ktv_id: '',
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      if (preselectedCustomer) {
-        setSelectedCustomer(preselectedCustomer);
-        setStep(2);
-        setMode('search');
-      } else {
-        setStep(1);
-        setMode('search');
-        setSelectedCustomer(null);
-      }
-      setSearchQuery('');
-      setNewCustomer({ name_mother: '', phone: '', address: '' });
-      setOriginalPrice(0);
-      setDiscountPercent('');
-      fetchCustomers();
-      fetchKtvs();
-      fetchPackages();
-    }
-  }, [isOpen, preselectedCustomer]);
-
   async function fetchPackages() {
     try {
       const supabase = createBrowserClient();
@@ -133,6 +112,47 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     }
   }
 
+  async function fetchCustomers() {
+    setIsLoading(true);
+    try {
+      const supabase = createBrowserClient();
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('status', 'active')
+        .order('name_mother', { ascending: true });
+        
+      if (error) throw error;
+      setCustomers(data || []);
+      setFilteredCustomers(data || []);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      toast.error('Không thể tải danh sách khách hàng');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      if (preselectedCustomer) {
+        setSelectedCustomer(preselectedCustomer);
+        setStep(2);
+        setMode('search');
+      } else {
+        setStep(1);
+        setMode('search');
+        setSelectedCustomer(null);
+      }
+      setSearchQuery('');
+      setNewCustomer({ name_mother: '', phone: '', address: '' });
+      setOriginalPrice(0);
+      setDiscountPercent('');
+      fetchCustomers();
+      fetchKtvs();
+      fetchPackages();
+    }
+  }, [isOpen, preselectedCustomer]);
 
   // Load draft booking when customer is selected
   useEffect(() => {
@@ -182,27 +202,6 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       loadDraft();
     }
   }, [selectedCustomer, step]);
-
-  async function fetchCustomers() {
-    setIsLoading(true);
-    try {
-      const supabase = createBrowserClient();
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('status', 'active')
-        .order('name_mother', { ascending: true });
-        
-      if (error) throw error;
-      setCustomers(data || []);
-      setFilteredCustomers(data || []);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-      toast.error('Không thể tải danh sách khách hàng');
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
 
   useEffect(() => {

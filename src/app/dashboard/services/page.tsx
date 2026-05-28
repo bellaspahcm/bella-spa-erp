@@ -883,7 +883,7 @@ export default function ServicesPage() {
                             <div className="space-y-2">
                               {materialRows.length === 0 ? (
                                 <div className="text-center py-4 bg-white/60 border border-dashed border-rose-200 rounded-xl text-xs font-semibold text-slate-400 italic">
-                                  Chưa có vật tư nào trong định mức. Bấm "+ Thêm vật tư" để bắt đầu.
+                                  Chưa có vật tư nào trong định mức. Bấm &quot;+ Thêm vật tư&quot; để bắt đầu.
                                 </div>
                               ) : (
                                 <div className="space-y-2">

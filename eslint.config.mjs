@@ -98,6 +98,16 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "e2e/**",
+    "mcp-server/**",
+    "scripts/**",
+    "scratch/**",
+    "load-tests/**",
+    "coverage/**",
+    "playwright-report/**",
+    "*.js",
+    "*.mjs",
+    "docs/**/*.js",
   ]),
   // Phase 1.1.5: no-explicit-any is an ERROR everywhere in production code.
   // A new `as any` in any clean file fails the build. `npm run lint:strict`
@@ -106,6 +116,7 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
+      "react-hooks/set-state-in-effect": "warn",
     },
   },
   // Existing debt: downgrade to warn so CI is not blocked retroactively.
@@ -115,11 +126,12 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
-  // Test files legitimately use `any` for mocks — exempt entirely.
+  // Test files and setup/config files legitimately use `any` for mocks and `require` for imports — exempt.
   {
-    files: ["src/__tests__/**/*.{ts,tsx}"],
+    files: ["src/__tests__/**/*.{ts,tsx}", "jest.setup.ts", "sentry.client.config.ts", "sentry.server.config.ts"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
 ]);

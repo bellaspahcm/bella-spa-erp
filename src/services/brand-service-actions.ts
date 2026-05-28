@@ -312,7 +312,7 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
           updateData.price = template.price;
         } else {
           // Verify existing price is within floor/cap
-          let price = Number(existingPkg.price);
+          const price = Number(existingPkg.price);
           if (template.price_floor && price < Number(template.price_floor)) {
             updateData.price = template.price_floor;
           } else if (template.price_cap && price > Number(template.price_cap)) {

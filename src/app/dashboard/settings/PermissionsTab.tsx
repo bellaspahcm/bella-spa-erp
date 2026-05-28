@@ -97,13 +97,7 @@ export default function PermissionsTab() {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadPermissions();
-    }
-  }, [isAuthenticated]);
-
-  const loadPermissions = async () => {
+  async function loadPermissions() {
     setIsLoading(true);
     try {
       const data = await getTenantSettings();
@@ -120,7 +114,13 @@ export default function PermissionsTab() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadPermissions();
+    }
+  }, [isAuthenticated]);
 
   const handleAuthenticate = async (e: React.FormEvent) => {
     e.preventDefault();

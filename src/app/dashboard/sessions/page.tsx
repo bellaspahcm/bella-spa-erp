@@ -84,6 +84,15 @@ function SessionsContent() {
     }
   };
 
+  const loadSessions = async () => {
+    setIsSyncing(true);
+    const data = await getSessionsWithDetails() as SessionBooking[];
+    setSessions(data || []);
+    applyFilters(data || [], searchQuery, statusFilter, sortFilter);
+    setIsSyncing(false);
+    return data;
+  };
+
   useEffect(() => {
     loadSessions();
     const fetchUser = async () => {
@@ -114,15 +123,6 @@ function SessionsContent() {
     };
   }, []);
 
-  const loadSessions = async () => {
-    setIsSyncing(true);
-    const data = await getSessionsWithDetails() as SessionBooking[];
-    setSessions(data || []);
-    applyFilters(data || [], searchQuery, statusFilter, sortFilter);
-    setIsSyncing(false);
-    return data;
-  };
-
   // Dedicated Effect for Auto-opening from URL - Runs once after first data load
   useEffect(() => {
     if (initialBookingId && sessions.length > 0 && !hasAutoOpened) {
@@ -143,7 +143,7 @@ function SessionsContent() {
     router.replace(newPath, { scroll: false });
   };
 
-  const applyFilters = (data: SessionBooking[], query: string, status: string, sort: string) => {
+  function applyFilters(data: SessionBooking[], query: string, status: string, sort: string) {
     let result = [...data];
     
     if (query) {

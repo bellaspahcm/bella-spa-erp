@@ -410,7 +410,7 @@ export function SessionLogsDetailsModal({
                           if (lastLog) {
                             return (
                               <>
-                                <p className="text-[10px] font-bold text-slate-500 italic mb-4">"{lastLog.notes || 'Không có ghi chú'}"</p>
+                                <p className="text-[10px] font-bold text-slate-500 italic mb-4">&quot;{lastLog.notes || 'Không có ghi chú'}&quot;</p>
                                 <div className="bg-white px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest text-primary shadow-sm border border-pink-50">
                                   Đã làm buổi {lastLog.session_number} vào {lastLog.completed_date || lastLog.assigned_date || 'N/A'}
                                 </div>
@@ -574,7 +574,7 @@ export function SessionLogsDetailsModal({
                                   {selectedSessionLog.duration_warning_type === 'under_time' && selectedSessionLog.ktv_checkout_note && (
                                     <div className="mt-2 pt-2 border-t border-rose-200/50 text-[11px] text-rose-700 italic">
                                       <span className="font-black not-italic block uppercase text-[8px] text-rose-600 tracking-wider mb-0.5">Lý do KTV báo cáo:</span>
-                                      "{selectedSessionLog.ktv_checkout_note}"
+                                      &quot;{selectedSessionLog.ktv_checkout_note}&quot;
                                     </div>
                                   )}
                                 </div>
@@ -631,7 +631,7 @@ export function SessionLogsDetailsModal({
                           {selectedSessionLog.rating && selectedSessionLog.rating > 0 ? (
                             <div className="bg-white/80 p-3.5 rounded-xl border border-amber-100/40 shadow-inner">
                               <p className="text-xs font-bold text-slate-700 italic leading-relaxed">
-                                "{selectedSessionLog.rating_comment || 'Không có ý kiến đóng góp thêm'}"
+                                &quot;{selectedSessionLog.rating_comment || 'Không có ý kiến đóng góp thêm'}&quot;
                               </p>
                             </div>
                           ) : (

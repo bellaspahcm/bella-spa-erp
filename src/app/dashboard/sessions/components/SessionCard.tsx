@@ -171,7 +171,7 @@ export function SessionCard({
                   <History className="w-3 h-3 text-amber-500" />
                   <span className="text-[9px] font-black text-amber-700 uppercase tracking-tighter">Ghi chú buổi {lastLog.session_number}</span>
                 </div>
-                <p className="text-[10px] font-medium text-slate-600 line-clamp-2 leading-tight italic">"{lastLog.notes}"</p>
+                <p className="text-[10px] font-medium text-slate-600 line-clamp-2 leading-tight italic">&quot;{lastLog.notes}&quot;</p>
               </div>
             );
           }

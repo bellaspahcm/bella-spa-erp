@@ -1256,7 +1256,7 @@ export default function HqDashboardClient({
               <div className="mt-4 flex items-start gap-2 bg-indigo-50/50 border border-indigo-100/40 rounded-xl p-3 text-[11px] text-slate-500 font-bold">
                 <Info size={14} className="text-indigo-500 shrink-0 mt-0.5" />
                 <p>
-                  <span className="text-slate-700 font-black">Hướng dẫn kiểm tra:</span> Chủ chi nhánh (Branch Admin) có thể kiểm tra định mức tài nguyên đã dùng, số KTV đang hoạt động, và gia hạn nâng cấp các gói dịch vụ này trực tiếp trong phần <span className="text-slate-900 font-black">"Cấu hình hệ thống" → Tab "Gói dịch vụ"</span> của trang quản lý chi nhánh. Tổng bộ HQ có thể theo dõi phân loại gói của từng chi nhánh ngay tại danh sách bên dưới.
+                  <span className="text-slate-700 font-black">Hướng dẫn kiểm tra:</span> Chủ chi nhánh (Branch Admin) có thể kiểm tra định mức tài nguyên đã dùng, số KTV đang hoạt động, và gia hạn nâng cấp các gói dịch vụ này trực tiếp trong phần <span className="text-slate-900 font-black">&quot;Cấu hình hệ thống&quot; → Tab &quot;Gói dịch vụ&quot;</span> của trang quản lý chi nhánh. Tổng bộ HQ có thể theo dõi phân loại gói của từng chi nhánh ngay tại danh sách bên dưới.
                 </p>
               </div>
             </section>
