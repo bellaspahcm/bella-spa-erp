@@ -68,11 +68,12 @@ export default function FinancialReconciliationPage() {
       if (!session?.user) throw new Error('Không tìm thấy phiên đăng nhập');
       
       // First try users table
-      let { data: profile, error: profileErr } = await supabase
+      const { data: userData, error: profileErr } = await supabase
         .from('users')
         .select('tenant_id, role')
         .eq('id', session.user.id)
         .single();
+      let profile = userData;
         
       if (profileErr || !profile?.tenant_id) {
          // Fallback to legacy `profiles` table (not in current Database schema)

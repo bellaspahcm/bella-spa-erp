@@ -94,12 +94,6 @@ export default function CustomersPage() {
   }, []);
 
 
-  useEffect(() => {
-
-    loadCustomers();
-    loadPackages();
-  }, []);
-
   const loadPackages = async () => {
     try {
       const supabase = createBrowserClient();
@@ -147,6 +141,12 @@ export default function CustomersPage() {
       setIsSyncing(false);
     }
   };
+
+  useEffect(() => {
+
+    loadCustomers();
+    loadPackages();
+  }, []);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -288,7 +288,7 @@ export default function CustomersPage() {
   useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter, monthFilter, yearFilter, sortBy]);
 
   const filteredCustomers = useMemo(() => {
-    let result = customers.filter(customer => {
+    const result = customers.filter(customer => {
       const q = searchQuery.toLowerCase().trim();
       const matchesSearch = !q || [
         customer.name_mother,

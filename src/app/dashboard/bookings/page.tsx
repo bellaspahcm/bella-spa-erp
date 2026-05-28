@@ -144,6 +144,11 @@ function BookingsContent() {
     }
   };
 
+  const fetchKtvs = async () => {
+    const data = await getUsers();
+    setKtvs(data.filter((u: any) => u.role?.toLowerCase() === 'ktv'));
+  };
+
   useEffect(() => {
     fetchSessions();
     fetchAllBookings();
@@ -178,11 +183,6 @@ function BookingsContent() {
     };
   }, []);
 
-  const fetchKtvs = async () => {
-    const data = await getUsers();
-    setKtvs(data.filter((u: any) => u.role?.toLowerCase() === 'ktv'));
-  };
-
   const getMonthDays = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -201,7 +201,7 @@ function BookingsContent() {
     endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
     
     const days = [];
-    let current = new Date(startDate);
+    const current = new Date(startDate);
     
     while (current <= endDate) {
       days.push(new Date(current));
@@ -1258,7 +1258,7 @@ function BookingsContent() {
                                   <span className="text-[10px] font-black text-primary uppercase tracking-tighter">Buổi {s.session_number}</span>
                                   <span className="text-[10px] font-bold text-slate-400">{new Date(s.completed_date || s.assigned_date).toLocaleDateString('vi-VN')}</span>
                                 </div>
-                                <p className="text-xs text-slate-600 font-bold italic leading-relaxed">"{s.notes || 'Không có ghi chú'}"</p>
+                                <p className="text-xs text-slate-600 font-bold italic leading-relaxed">&quot;{s.notes || 'Không có ghi chú'}&quot;</p>
                               </div>
                             ))
                         ) : (

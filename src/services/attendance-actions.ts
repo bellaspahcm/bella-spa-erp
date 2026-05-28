@@ -39,7 +39,7 @@ export async function ktvCheckIn() {
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Không có quyền truy cập' };
 
-  let tenantId = user.tenant_id;
+  const tenantId = user.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   const todayStr = await getVNTodayString();
@@ -210,7 +210,7 @@ export async function adminOverrideAttendance(payload: {
     return { success: false, error: 'Không có quyền thực hiện' };
   }
 
-  let tenantId = currentUser.tenant_id;
+  const tenantId = currentUser.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   // Check if existing record
@@ -310,7 +310,7 @@ export async function submitKTVLeaveRequest(payload: {
     return { success: false, error: 'Không có quyền thực hiện' };
   }
 
-  let tenantId = user.tenant_id;
+  const tenantId = user.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   // Check if there is already a request for this date

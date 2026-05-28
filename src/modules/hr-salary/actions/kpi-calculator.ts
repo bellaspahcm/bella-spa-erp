@@ -29,7 +29,7 @@ export function calculateSalaryDetails(
   const ratingBonus = sessionsCount * bonusPerSession;
 
   // KPI bonus calculation
-  let kpiBonus = existingKpiBonus !== undefined 
+  const kpiBonus = existingKpiBonus !== undefined 
     ? existingKpiBonus 
     : (sessionsCount >= salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
 

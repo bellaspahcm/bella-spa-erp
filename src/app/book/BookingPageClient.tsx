@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useTransition, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import {
   submitOnlineBooking,
   type OnlineBookingFormData,
@@ -241,9 +242,9 @@ function SuccessScreen({ bookingNumber }: { bookingNumber: string }) {
           📞 Liên hệ hotline để xác nhận
         </a>
 
-        <a href="/" className="block mt-3 text-sm font-medium" style={{ color: '#9D174D' }}>
+        <Link href="/" className="block mt-3 text-sm font-medium" style={{ color: '#9D174D' }}>
           Quay về trang chủ →
-        </a>
+        </Link>
       </div>
     </div>
   );

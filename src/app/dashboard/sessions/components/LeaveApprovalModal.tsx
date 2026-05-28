@@ -286,7 +286,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
                           <div className="pt-2 border-t border-slate-200/60">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Lý do xin nghỉ</p>
                             <p className="text-xs text-slate-700 italic bg-white p-2.5 rounded-xl border border-slate-200/50">
-                              "{selectedLeave.reason || 'Không có lý do'}"
+                              &quot;{selectedLeave.reason || 'Không có lý do'}&quot;
                             </p>
                           </div>
                         </div>

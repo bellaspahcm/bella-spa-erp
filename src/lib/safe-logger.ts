@@ -36,20 +36,20 @@ function emit(level: LogLevel, args: unknown[]): void {
   switch (level) {
     case "debug":
       if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
+         
         console.debug(...safe);
       }
       break;
     case "info":
-      // eslint-disable-next-line no-console
+       
       console.info(...safe);
       break;
     case "warn":
-      // eslint-disable-next-line no-console
+       
       console.warn(...safe);
       break;
     case "error":
-      // eslint-disable-next-line no-console
+       
       console.error(...safe);
       break;
   }

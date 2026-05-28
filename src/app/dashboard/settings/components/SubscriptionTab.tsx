@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useMemo } from 'react';
 import { 
   CreditCard, 
   Users, 
@@ -95,6 +95,21 @@ export default function SubscriptionTab() {
   const [pendingInvoice, setPendingInvoice] = useState<any>(null);
   const [isPending, startTransition] = useTransition();
   const [isSimulating, setIsSimulating] = useState(false);
+
+  const [expiryDateString, setExpiryDateString] = useState('');
+
+  useEffect(() => {
+    if (!status) {
+      setExpiryDateString('');
+      return;
+    }
+    if (status.limits?.maxKtv === 999999 && status.limits?.maxCustomers === 999999) {
+      setExpiryDateString('Vô thời hạn (Unlimited)');
+      return;
+    }
+    const days = status.limits?.maxKtv === 1 ? 30 : 365;
+    setExpiryDateString(new Date(Date.now() + days * 86400000).toLocaleDateString('vi-VN'));
+  }, [status]);
 
   async function loadData() {
     try {
@@ -220,9 +235,7 @@ export default function SubscriptionTab() {
               <span>Hạn dùng:</span>
               <span className="text-foreground">
                 {status?.isExpired ? 'Hết hạn ngày: ' : 'Hạn sử dụng đến: '}
-                {status?.limits?.maxKtv === 999999 && status?.limits?.maxCustomers === 999999
-                  ? 'Vô thời hạn (Unlimited)'
-                  : new Date(status?.limits?.maxKtv === 1 ? Date.now() + 30 * 86400000 : Date.now() + 365 * 86400000).toLocaleDateString('vi-VN')}
+                {expiryDateString}
               </span>
             </p>
           </div>

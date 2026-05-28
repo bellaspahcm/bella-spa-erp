@@ -293,8 +293,9 @@ export async function createBooking(formData: any) {
 
   if (validatedData.deposit_amount > 0 && booking?.id) {
     let insertedRev: { id: string } | null = null;
+    let revFailed = false;
 
-    let { data: revData, error: revError } = await supabase
+    const { data: revData, error: revError } = await supabase
       .from('revenue')
       .insert([{
         booking_id: booking.id,
@@ -339,12 +340,15 @@ export async function createBooking(formData: any) {
 
         if (adminRevError) {
           console.error('Error recording initial deposit revenue with admin client as well:', adminRevError);
+          revFailed = true;
         } else {
           console.log('Successfully recorded initial deposit revenue with admin client fallback');
-          revError = null;
         }
+      } else {
+        revFailed = true;
       }
     }
+    void revFailed; // tracked for future error propagation if needed
 
     // ⭐ Ghi nhận vào hàng đợi Accounting Outbox nếu tạo revenue thành công
     if (insertedRev?.id && tenantId) {
@@ -666,7 +670,7 @@ export async function reusePackage(bookingId: string) {
     .insert([bookingData])
     .select();
 
-  let newBooking = newBookingData?.[0];
+  const newBooking = newBookingData?.[0];
 
   if (createError) {
     if (createError.message?.includes('package_name')) {
@@ -781,7 +785,7 @@ export async function recordRemainingPayment(params: {
 
     let insertedRev: { id: string; status: string } | null = null;
 
-    let { data: revData, error: revError } = await supabase
+    const { data: revData, error: revError } = await supabase
       .from('revenue')
       .insert([{
         booking_id: params.booking_id,
@@ -831,7 +835,7 @@ export async function recordRemainingPayment(params: {
           throw new Error('Không thể ghi nhận giao dịch tài chính: ' + adminRevError.message);
         } else {
           console.log('Successfully recorded remaining payment revenue with admin client fallback');
-          revError = null;
+          // Admin client succeeded — error from standard client is resolved
         }
       } else {
         throw new Error('Không thể ghi nhận giao dịch tài chính do phân quyền (RLS): ' + revError.message);
@@ -917,7 +921,7 @@ export async function recordRemainingPayment(params: {
     }
 
     if (params.status === 'confirmed' || newStatus === 'booked') {
-      let { error: syncError } = await supabase
+      const { error: syncError } = await supabase
         .from('revenue')
         .update({ status: 'confirmed' })
         .eq('booking_id', params.booking_id)
