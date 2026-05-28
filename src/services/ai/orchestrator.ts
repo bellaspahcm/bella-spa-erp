@@ -7,6 +7,34 @@ import { runFranchiseAgent } from './agents/franchise';
 import { runCHROAgent } from './agents/chro';
 import { runCFOAgent } from './agents/cfo';
 
+function cleanAndParseJson(text: string): any {
+  let cleaned = text.trim();
+  // Remove markdown code blocks if present
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+  }
+  cleaned = cleaned.trim();
+
+  // Find the first '{' and last '}' to isolate the JSON object
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    // Attempt to repair common JSON syntax issues like trailing commas
+    const repairAttempt = cleaned.replace(/,\s*([\]}])/g, "$1");
+    try {
+      return JSON.parse(repairAttempt);
+    } catch {
+      throw e; // throw the original error if repair fails
+    }
+  }
+}
+
 function detectRouting(lowerCommand: string): string {
   const isHrRelated = lowerCommand.includes("nhân sự") ||
     lowerCommand.includes("lương") || lowerCommand.includes("chấm công") ||
@@ -291,7 +319,7 @@ Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa 
         const resData = await response.json();
         const textResponse = resData.candidates?.[0]?.content?.parts?.[0]?.text;
         if (textResponse) {
-          const parsed = JSON.parse(textResponse);
+          const parsed = cleanAndParseJson(textResponse);
           if (parsed.executiveSummary) executiveSummary = parsed.executiveSummary;
           if (parsed.anomaliesFound) anomaliesFound = parsed.anomaliesFound;
           if (parsed.strategicRecommendations) strategicRecommendations = parsed.strategicRecommendations;
@@ -319,7 +347,7 @@ Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa 
     analysis: {
       executiveSummary,
       anomaliesFound,
-      fullData: Array.isArray(subAgentResponse.data) ? subAgentResponse.data as unknown[] : []
+      fullData: subAgentResponse.data ? (Array.isArray(subAgentResponse.data) ? subAgentResponse.data as unknown[] : [subAgentResponse.data]) : []
     },
     draftActions,
     strategicRecommendations
