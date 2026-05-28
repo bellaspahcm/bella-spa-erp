@@ -105,14 +105,25 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32" />
         
         <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-rose-100 dark:shadow-none">
-               <Heart className="white w-6 h-6 fill-current text-white" />
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-rose-100 dark:shadow-none">
+                 <Heart className="white w-6 h-6 fill-current text-white" />
+              </div>
+              <div>
+                 <h1 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Bella Spa Portal</h1>
+                 <p className="text-xl sm:text-2xl font-black text-primary leading-tight">Chào mừng chị {booking.customers?.name_mother}</p>
+              </div>
             </div>
-            <div>
-               <h1 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Bella Spa Portal</h1>
-               <p className="text-xl sm:text-2xl font-black text-primary leading-tight">Chào mừng chị {booking.customers?.name_mother}</p>
-            </div>
+
+            {/* Refresh Button */}
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center border border-slate-200 text-slate-500 hover:text-primary transition-all active:scale-95 flex-shrink-0"
+              title="Làm mới dữ liệu"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
           </div>
 
           <div className="mb-6">

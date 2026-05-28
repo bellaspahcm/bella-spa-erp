@@ -588,6 +588,15 @@ export default function KTVDashboard() {
               </AnimatePresence>
             </div>
 
+            {/* Refresh Button */}
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center border border-slate-200 text-slate-500 hover:text-primary transition-all active:scale-95"
+              title="Làm mới dữ liệu"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+
             {/* Profile Settings Button */}
             <button 
               onClick={() => setIsProfileOpen(true)}
