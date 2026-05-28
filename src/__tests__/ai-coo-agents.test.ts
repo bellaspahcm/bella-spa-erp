@@ -271,6 +271,36 @@ describe("AI CMO Sub-Agent (Customer & Marketing)", () => {
           })
         } as any;
       }
+      if (table === "session_logs") {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          gte: jest.fn().mockReturnThis(),
+          order: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue({
+            data: [
+              {
+                id: "sl-1",
+                booking_id: "b-1",
+                session_number: 1,
+                assigned_date: new Date().toISOString().split('T')[0],
+                assigned_time: "15:00:00",
+                completed_date: new Date().toISOString().split('T')[0],
+                status: "completed",
+                notes: "Tốt",
+                completed_by_ktv: { full_name: "Cao Thị Thuý Vân" },
+                booking: {
+                  package_name: "Tắm Bé Chuẩn Y Khoa Tại Nhà",
+                  total_sessions: 30,
+                  completed_sessions: 2,
+                  customer: { name_mother: "Nguyễn Thị Lan" }
+                }
+              }
+            ],
+            error: null
+          })
+        } as any;
+      }
       if (table === "session_reviews") {
         return {
           select: jest.fn().mockReturnThis(),
