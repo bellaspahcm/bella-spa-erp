@@ -12,6 +12,9 @@
 import { createBooking, recordRemainingPayment } from '../modules/booking/actions/lifecycle-actions';
 import { completeSession } from '../modules/booking/actions/session-actions';
 import { getMonthlyPnL, lockMonth } from '../services/finance-actions';
+import { autoConsumeForSession } from '../services/inventory-actions';
+import { recordAuditLog } from '../services/audit-actions';
+import { enqueueWithAutoClient } from '../lib/accounting-outbox';
 
 // --- Global Mock Store ---
 interface MockStore {
@@ -360,6 +363,10 @@ jest.mock('@/services/audit-actions', () => ({
   recordAuditLog: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('@/lib/accounting-outbox', () => ({
+  enqueueWithAutoClient: jest.fn().mockResolvedValue(true),
+}));
+
 // --- Test Suite Execution ---
 describe('End-to-End Business Pipeline Integration Suite', () => {
   beforeEach(() => {
@@ -382,6 +389,7 @@ describe('End-to-End Business Pipeline Integration Suite', () => {
     // ----------------------------------------------------
     const bookingFormData = {
       customer_id: 'cust-123',
+      package_id: 'pkg-123',
       package_name: 'Gói Chăm Sóc Bầu VIP',
       full_price: 5000000,
       deposit_amount: 1000000, // Pays 1M VND deposit first
@@ -405,6 +413,15 @@ describe('End-to-End Business Pipeline Integration Suite', () => {
     expect(mockStore.revenue[0].amount).toBe(1000000);
     expect(mockStore.revenue[0].revenue_type).toBe('deposit');
     expect(mockStore.revenue[0].tenant_id).toBe('tenant-a');
+
+    expect(enqueueWithAutoClient).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        eventType: 'PACKAGE_SALE',
+        referenceType: 'REVENUE',
+      }),
+      expect.any(String)
+    );
 
     // Assert that 15 scheduled sessions were automatically generated
     const scheduledSessions = mockStore.session_logs.filter(s => s.booking_id === createdBooking.id);
@@ -459,6 +476,9 @@ describe('End-to-End Business Pipeline Integration Suite', () => {
     // Verify session log status is 'completed' and belongs to KTV
     expect(session1.status).toBe('completed');
     expect(session1.completed_by_ktv_id).toBe('ktv-1');
+
+    expect(autoConsumeForSession).toHaveBeenCalledWith(createdBooking.package_id, session1.id);
+    expect(recordAuditLog).toHaveBeenCalled();
 
     // Verify that a session review with rating 0 / 'pending_review' was auto-created
     expect(mockStore.session_reviews).toHaveLength(1);

@@ -64,6 +64,12 @@ export async function publishSalaryRecord(ktvId: string) {
   const now = new Date();
   const monthYear = getMonthStart(now);
 
+  const { checkMonthLock } = await import('@/services/audit-actions');
+  const { isLocked } = await checkMonthLock(monthYear);
+  if (isLocked) {
+    return { success: false, error: 'Tháng lương đã bị khóa, không thể phát hành bảng lương.' };
+  }
+
   try {
     // 1. Get KTV info (base_salary, resignation_date)
     const { data: ktvData } = await supabase
@@ -213,7 +219,7 @@ export async function publishSalaryRecord(ktvId: string) {
       }
     }
 
-    const totalSalary = finalBaseSalary + sessionBonus + finalRatingBonus + finalKpiBonus - deductions - advances;
+    const totalSalary = Math.max(0, finalBaseSalary + sessionBonus + finalRatingBonus + finalKpiBonus - deductions - advances);
 
     // 6. Upsert salary record
     const payload = {
@@ -274,6 +280,12 @@ export async function adminConfirmOnBehalf(ktvId: string) {
   const supabase = await createClient();
   const monthYear = getMonthStart();
 
+  const { checkMonthLock } = await import('@/services/audit-actions');
+  const { isLocked } = await checkMonthLock(monthYear);
+  if (isLocked) {
+    return { success: false, error: 'Tháng lương đã bị khóa, không thể xác nhận hộ.' };
+  }
+
   const { error } = await supabase
     .from('salary_records')
     .update({ status: 'confirmed', ktv_confirmed_at: new Date().toISOString(), confirmed_by_admin: true })
@@ -297,6 +309,12 @@ export async function finalizeSalaryRecord(ktvId: string) {
   const now = new Date();
   const monthYear = getMonthStart(now);
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+
+  const { checkMonthLock } = await import('@/services/audit-actions');
+  const { isLocked } = await checkMonthLock(monthYear);
+  if (isLocked) {
+    return { success: false, error: 'Tháng lương đã bị khóa, không thể hoàn tất.' };
+  }
 
   const { data: recordData, error: fetchError } = await supabase
     .from('salary_records')
@@ -390,6 +408,12 @@ export async function approveSalary(ktvId: string) {
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
   const supabase = await createClient();
 
+  const { checkMonthLock } = await import('@/services/audit-actions');
+  const { isLocked } = await checkMonthLock(monthYear);
+  if (isLocked) {
+    return { success: false, error: 'Tháng lương đã bị khóa, không thể phê duyệt.' };
+  }
+
   try {
     // 1. Get KTV info for description
     const { data: ktvData, error: ktvError } = await supabase
@@ -457,7 +481,7 @@ export async function approveSalary(ktvId: string) {
     const ratingBonus = existing?.rating_bonus || 0;
     const deductions = existing?.violations_deduction || 0;
     const advances = existing?.service_percentage_bonus || 0;
-    const totalSalary = baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances;
+    const totalSalary = Math.max(0, baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances);
 
     let salaryRecordId = existing?.id;
 
@@ -533,6 +557,12 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
   const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const supabase = await createClient();
 
+  const { checkMonthLock } = await import('@/services/audit-actions');
+  const { isLocked } = await checkMonthLock(monthYear);
+  if (isLocked) {
+    return { success: false, error: 'Tháng lương đã bị khóa, không thể chỉnh sửa cấu hình lương.' };
+  }
+
   try {
     // Check if record exists
     const { data: existing } = await supabase
@@ -601,6 +631,12 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+
+  const { checkMonthLock } = await import('@/services/audit-actions');
+  const { isLocked } = await checkMonthLock(currentMonthYear);
+  if (isLocked) {
+    return { success: false, error: 'Tháng lương đã bị khóa, không thể xác nhận số buổi.' };
+  }
   
   console.log(`Confirming sessions for KTV: ${ktvId}, Total: ${totalSessions}`);
   

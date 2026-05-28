@@ -34,6 +34,10 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     .eq('id', sessionId)
     .single();
 
+  if (existingLog?.status === 'completed') {
+    return { error: 'Buổi dịch vụ này đã hoàn thành trước đó (Idempotent)' };
+  }
+
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status ?? '')) {
     return { error: 'Bạn không có quyền thực hiện thao tác này (Unauthorized)' };
   }
@@ -41,12 +45,16 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   // 1. Get current booking to check assigned KTV and package
   const { data: bookingData, error: bookingError } = await supabase
     .from('bookings')
-    .select('assigned_ktv_id, package_id')
+    .select('assigned_ktv_id, package_id, status')
     .eq('id', bookingId)
     .single();
 
   if (bookingError || !bookingData) {
     return { error: 'Không tìm thấy thông tin booking liên quan.' };
+  }
+
+  if (bookingData.status === 'cancelled') {
+    return { error: 'Không thể hoàn thành buổi dịch vụ cho booking đã hủy.' };
   }
 
   if (!bookingData.assigned_ktv_id) {
@@ -112,7 +120,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   // 4. Update booking status transition and completed sessions count
   const { data: currentBooking } = await supabase
     .from('bookings')
-    .select('total_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, discount_percent')
+    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, discount_percent')
     .eq('id', bookingId)
     .single();
 
@@ -160,13 +168,15 @@ export async function completeSession(sessionId: string, bookingId: string, cust
       .eq('month_year', monthYear)
       .single();
 
+    let salaryError = null;
     if (salaryRec) {
-      await supabase.from('salary_records').update({
+      const { error } = await supabase.from('salary_records').update({
         total_sessions: (salaryRec.total_sessions || 0) + 1,
         service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission
       }).eq('id', salaryRec.id);
+      salaryError = error;
     } else {
-      await supabase.from('salary_records').insert([{
+      const { error } = await supabase.from('salary_records').insert([{
         ktv_id: ktvId,
         month_year: monthYear,
         total_sessions: 1,
@@ -175,6 +185,23 @@ export async function completeSession(sessionId: string, bookingId: string, cust
         status: 'draft',
         tenant_id: tenantId
       }]);
+      salaryError = error;
+    }
+
+    if (salaryError) {
+      console.error('[completeSession] Error updating salary record, rolling back session_logs status:', salaryError);
+      await supabase.from('session_logs').update({
+        status: existingLog?.status || 'scheduled',
+        completed_date: null,
+        completed_by_ktv_id: null
+      }).eq('id', sessionId);
+      
+      await supabase.from('bookings').update({
+        completed_sessions: currentBooking?.completed_sessions || 0,
+        status: currentBooking?.status || 'booked'
+      }).eq('id', bookingId);
+
+      return { error: 'Không thể ghi nhận lương cho KTV. Đã hoàn tác cập nhật buổi: ' + salaryError.message };
     }
   }
 

@@ -9,8 +9,9 @@
  *
  * Mục tiêu phát hiện:
  *   - Memory leak ở server (Next.js / Supabase)
- *   - Connection pool exhaustion
+ *   - Connection pool exhaustion (Theo dõi qua Supabase Dashboard / PGAdmin)
  *   - DB index slow degradation khi outbox queue lớn
+ *   - Mức tiêu thụ RAM và CPU trên container được ghi nhận định kỳ qua console logs
  *
  * Stages:
  *   0:00 → 1:00:  ramp 0  → 10 VU
