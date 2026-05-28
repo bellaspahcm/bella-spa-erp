@@ -67,3 +67,69 @@ describe('Token Bucket Rate Limiting', () => {
     expect(rateLimit(ip2, 2, 1)).toBe(false);
   });
 });
+
+describe('rateLimitAsync — backend selection', () => {
+  const ORIGINAL_ENV = process.env.RATE_LIMIT_BACKEND;
+
+  afterEach(() => {
+    process.env.RATE_LIMIT_BACKEND = ORIGINAL_ENV;
+    jest.resetModules();
+    jest.clearAllMocks();
+  });
+
+  it('uses in-memory backend when RATE_LIMIT_BACKEND is unset', async () => {
+    delete process.env.RATE_LIMIT_BACKEND;
+    let rateLimitAsync!: typeof import('../lib/rate-limit').rateLimitAsync;
+    await jest.isolateModulesAsync(async () => {
+      ({ rateLimitAsync } = await import('../lib/rate-limit'));
+    });
+
+    const ip = 'async_mem_1';
+    expect(await rateLimitAsync(ip, 2, 1)).toBe(true);
+    expect(await rateLimitAsync(ip, 2, 1)).toBe(true);
+    expect(await rateLimitAsync(ip, 2, 1)).toBe(false);
+  });
+
+  it('uses Supabase RPC backend and respects its boolean result', async () => {
+    process.env.RATE_LIMIT_BACKEND = 'supabase';
+
+    const rpcMock = jest.fn().mockResolvedValue({ data: true, error: null });
+    jest.doMock('@/types/rpc', () => ({ callPendingRpc: rpcMock }));
+    jest.doMock('@/lib/supabase-server', () => ({ createClient: jest.fn().mockResolvedValue({}) }));
+
+    let rateLimitAsync!: typeof import('../lib/rate-limit').rateLimitAsync;
+    await jest.isolateModulesAsync(async () => {
+      ({ rateLimitAsync } = await import('../lib/rate-limit'));
+    });
+
+    const allowed = await rateLimitAsync('async_rpc_allow', 5, 1);
+    expect(allowed).toBe(true);
+    expect(rpcMock).toHaveBeenCalledWith({}, 'consume_token', {
+      p_key: 'async_rpc_allow',
+      p_capacity: 5,
+      p_refill_per_sec: 1,
+    });
+
+    rpcMock.mockResolvedValueOnce({ data: false, error: null });
+    expect(await rateLimitAsync('async_rpc_block', 5, 1)).toBe(false);
+  });
+
+  it('falls back to in-memory when the Supabase RPC errors', async () => {
+    process.env.RATE_LIMIT_BACKEND = 'supabase';
+
+    const rpcMock = jest.fn().mockResolvedValue({ data: null, error: { message: 'db down' } });
+    jest.doMock('@/types/rpc', () => ({ callPendingRpc: rpcMock }));
+    jest.doMock('@/lib/supabase-server', () => ({ createClient: jest.fn().mockResolvedValue({}) }));
+
+    let rateLimitAsync!: typeof import('../lib/rate-limit').rateLimitAsync;
+    await jest.isolateModulesAsync(async () => {
+      ({ rateLimitAsync } = await import('../lib/rate-limit'));
+    });
+
+    // RPC errors → fallback to in-memory, which allows within capacity then blocks.
+    const ip = 'async_fallback_1';
+    expect(await rateLimitAsync(ip, 2, 1)).toBe(true);
+    expect(await rateLimitAsync(ip, 2, 1)).toBe(true);
+    expect(await rateLimitAsync(ip, 2, 1)).toBe(false);
+  });
+});

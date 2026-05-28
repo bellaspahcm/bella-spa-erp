@@ -66,12 +66,10 @@ async function rateLimitSupabase(
 
   try {
     const { createClient } = await import('@/lib/supabase-server');
+    const { callPendingRpc } = await import('@/types/rpc');
     const supabase = await createClient();
 
-    // consume_token is not yet in the auto-generated DB types (migration 20260528010000
-    // must be applied and `supabase gen types` re-run before this cast can be removed).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.rpc as any)('consume_token', {
+    const { data, error } = await callPendingRpc(supabase, 'consume_token', {
       p_key: identifier,
       p_capacity: capacity,
       p_refill_per_sec: refillRatePerSecond,
