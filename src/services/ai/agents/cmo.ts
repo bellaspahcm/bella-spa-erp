@@ -102,6 +102,7 @@ export async function runCMOAgent(
       ktv:users!session_reviews_ktv_id_fkey(full_name)
     `)
     .eq("tenant_id", tenantId)
+    .eq("status", "approved")
     .order("created_at", { ascending: false });
 
   if (reviewsError) {
