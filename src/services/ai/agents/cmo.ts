@@ -111,7 +111,7 @@ export async function runCMOAgent(
 
   const typedReviews = (reviews ?? []) as unknown as ReviewWithJoins[];
   const ratings = typedReviews.map(r => Number(r.rating || 0)).filter(r => r > 0);
-  const avgRating = ratings.length > 0 ? Number((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2)) : 5.0;
+  const avgRating = ratings.length > 0 ? Number((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2)) : 0;
   const badReviews = typedReviews.filter(r => Number(r.rating || 0) < 4);
 
   const newCustCount = (newCustomersThisMonth || []).length;
