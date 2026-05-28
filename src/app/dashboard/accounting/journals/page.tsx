@@ -126,7 +126,11 @@ export default function JournalsPage() {
             <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/50 uppercase tracking-wider block">Trạng thái</span>
             <PremiumSelect
               value={statusFilter}
-              onChange={(val) => setStatusFilter(val as any)}
+              onChange={(val) => {
+                if (val === 'DRAFT' || val === 'POSTED' || val === 'CANCELED' || val === 'ALL') {
+                  setStatusFilter(val);
+                }
+              }}
               options={[
                 { value: 'ALL', label: 'Tất cả trạng thái' },
                 { value: 'DRAFT', label: 'Nháp (DRAFT)' },

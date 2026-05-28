@@ -37,7 +37,7 @@ export interface InterBranchClearingRecord {
  */
 export async function getInterBranchClearingRecords(tenantId?: string): Promise<InterBranchClearingRecord[]> {
   try {
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) throw new Error('Chưa đăng nhập');
 
@@ -79,7 +79,7 @@ export async function getInterBranchClearingRecords(tenantId?: string): Promise<
  */
 export async function clearInterBranchRecord(recordId: string, paymentMethod: string) {
   try {
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) return { success: false, error: 'Chưa đăng nhập' };
 
@@ -140,7 +140,7 @@ export async function updateTenantClearingRate(tenantId: string, rate: number) {
       return { success: false, error: 'Chỉ Admin Tổng bộ mới có quyền chỉnh sửa cấu hình đơn giá đối soát.' };
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const { error } = await supabase
       .from('tenants')
       .update({

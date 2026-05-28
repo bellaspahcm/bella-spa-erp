@@ -47,7 +47,7 @@ export default function ChatPage() {
     async function loadChats() {
       try {
         const supabase = createClient();
-        const { data: customers, error } = await (supabase as any).rpc('get_chat_customers');
+        const { data: customers, error } = await supabase.rpc('get_chat_customers');
         
         if (error) {
           console.error('Error fetching chat customers:', error);
@@ -89,7 +89,7 @@ export default function ChatPage() {
     async function loadMessages() {
       try {
         const supabase = createClient();
-        const { data, error } = await (supabase.from('chat_messages') as any)
+        const { data, error } = await supabase.from('chat_messages')
           .select('*')
           .eq('customer_id', selectedChat.id)
           .order('created_at', { ascending: true });
@@ -110,8 +110,8 @@ export default function ChatPage() {
           setMessages(mappedMessages);
           
           // Mark as read without awaiting to prevent blocking UI
-          (supabase.from('chat_messages') as any)
-            .update({ is_read: true } as any)
+          supabase.from('chat_messages')
+            .update({ is_read: true })
             .eq('customer_id', selectedChat.id)
             .eq('sender_type', 'customer')
             .eq('is_read', false)
@@ -152,8 +152,8 @@ export default function ChatPage() {
             return [...prev, newMessage];
           });
           if (payload.new.sender_type === 'customer') {
-            (supabase.from('chat_messages') as any)
-              .update({ is_read: true } as any)
+            supabase.from('chat_messages')
+              .update({ is_read: true })
               .eq('customer_id', selectedChat.id)
               .eq('sender_type', 'customer')
               .eq('is_read', false)
@@ -197,7 +197,7 @@ export default function ChatPage() {
       
       const { data: { user: authUser } } = await supabase.auth.getUser();
 
-      const { data: sentMsg, error } = await (supabase.from('chat_messages') as any)
+      const { data: sentMsg, error } = await supabase.from('chat_messages')
         .insert({
           customer_id: selectedChat.id,
           message: messageText,
@@ -438,7 +438,7 @@ export default function ChatPage() {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
-                        handleSendMessage(e as any);
+                        handleSendMessage(e as unknown as React.FormEvent);
                       }
                     }}
                     placeholder="Nhập tin nhắn của bạn..."

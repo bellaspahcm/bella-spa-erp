@@ -497,7 +497,7 @@ export default function InventoryPage() {
                   <div className="flex items-center gap-3">
                     <PremiumSelect 
                       value={stockFilter}
-                      onChange={(val) => setStockFilter(val as any)}
+                      onChange={(val) => setStockFilter(val === 'low' || val === 'ok' ? val : 'all')}
                       options={[
                         { value: 'all', label: `Tất cả (${items.length})` },
                         { value: 'low', label: `⚠️ Sắp hết (${lowCount})` },
@@ -1142,8 +1142,8 @@ export default function InventoryPage() {
                       placeholder={f.placeholder}
                       min={f.type === 'number' ? 0 : undefined}
                       value={f.type === 'number'
-                        ? ((newItem as any)[f.key] === 0 ? '' : (newItem as any)[f.key])
-                        : (newItem as any)[f.key]
+                        ? ((newItem as Record<string, unknown>)[f.key] === 0 ? '' : String((newItem as Record<string, unknown>)[f.key] ?? ''))
+                        : String((newItem as Record<string, unknown>)[f.key] ?? '')
                       }
                       onFocus={f.type === 'number' ? e => e.target.select() : undefined}
                       onChange={e => setNewItem(prev => ({

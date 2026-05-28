@@ -732,8 +732,8 @@ export async function getServicePerformance() {
 export async function lockMonth(month: string) {
   try {
     const { createClient } = await import('@/lib/supabase-server');
-    const supabase = await createClient() as any;
-    
+    const supabase = await createClient();
+
     const { getCurrentUser } = await import('./user-actions');
     const user = await getCurrentUser();
     
@@ -879,6 +879,7 @@ export async function lockMonth(month: string) {
         for (const session of interBranchSessions) {
           const debtor = session.bookings.tenant_id;
           const creditor = session.tenant_id;
+          if (!debtor || !creditor) continue;
           const key = `${debtor}_${creditor}`;
           if (!pairs[key]) {
             pairs[key] = {

@@ -268,15 +268,15 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
-      expect(result.data.order_number).toMatch(/^TRF-\d{6}-\d{4}$/);
-      expect(result.data.requester_tenant_id).toBe('tenant-branch-a');
-      expect(result.data.status).toBe('pending');
-      expect(result.data.items).toEqual(items);
-      expect(result.data.notes).toBe('Cần bổ sung gấp');
+      expect(result.data!.order_number).toMatch(/^TRF-\d{6}-\d{4}$/);
+      expect(result.data!.requester_tenant_id).toBe('tenant-branch-a');
+      expect(result.data!.status).toBe('pending');
+      expect(result.data!.items).toEqual(items);
+      expect(result.data!.notes).toBe('Cần bổ sung gấp');
 
       // Verify insertion in mock database
       expect(mockDb.inventory_transfer_orders.length).toBe(1);
-      expect(mockDb.inventory_transfer_orders[0].order_number).toBe(result.data.order_number);
+      expect(mockDb.inventory_transfer_orders[0].order_number).toBe(result.data!.order_number);
     });
   });
 

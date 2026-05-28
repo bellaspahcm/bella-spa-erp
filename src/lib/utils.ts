@@ -30,13 +30,22 @@ export function formatNumberWithSeparator(value: number | string) {
 
 
 
-export function resolvePackageName(booking: any): string {
-  // 1. Priority: Dynamic name from joined packages table
-  if (booking?.packages?.name) return booking.packages.name;
-  
-  // 2. Secondary: Hardcoded name in booking record (legacy)
-  if (booking?.package_name) return booking.package_name;
-  
+export interface BookingForPackageName {
+  packages?: { name?: string | null } | { name?: string | null }[] | null;
+  package_name?: string | null;
+}
+
+export function resolvePackageName(booking: BookingForPackageName | null | undefined): string {
+  if (!booking) return 'Dịch vụ lẻ';
+  const pkg = booking.packages;
+  if (pkg) {
+    if (Array.isArray(pkg)) {
+      if (pkg[0]?.name) return pkg[0].name;
+    } else if (pkg.name) {
+      return pkg.name;
+    }
+  }
+  if (booking.package_name) return booking.package_name;
   return 'Dịch vụ lẻ';
 }
 

@@ -16,7 +16,7 @@ export async function getHqPackageTemplates(): Promise<HqPackageTemplate[]> {
       throw new Error(authResult.error || 'Quyền truy cập bị từ chối');
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from('packages')
       .select('*')
@@ -45,8 +45,12 @@ export async function createHqPackageTemplate(templateData: Partial<HqPackageTem
       return { success: false, error: authResult.error || 'Unauthorized' };
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const hqTenantId = authResult.user?.tenant_id;
+
+    if (!templateData.name) {
+      return { success: false, error: 'Tên gói dịch vụ là bắt buộc.' };
+    }
 
     const dbData = {
       name: templateData.name,
@@ -111,7 +115,7 @@ export async function updateHqPackageTemplate(id: string, templateData: Partial<
       return { success: false, error: authResult.error || 'Unauthorized' };
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
 
     // Fetch old data for audit log
     const { data: oldPackage } = await supabase
@@ -209,7 +213,7 @@ export async function deleteHqPackageTemplate(id: string) {
       return { success: false, error: authResult.error || 'Unauthorized' };
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
 
     // Fetch old data for audit log
     const { data: oldPackage } = await supabase
@@ -260,7 +264,7 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
       return { success: false, error: authResult.error || 'Unauthorized' };
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
 
     // Fetch the template package
     const { data: template, error: tErr } = await supabase
@@ -370,7 +374,7 @@ export async function overrideTenantPackagePrice(packageId: string, newPrice: nu
       return { success: false, error: 'Chưa đăng nhập.' };
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
 
     // Fetch package to verify ownership and template constraints
     const { data: pkg, error: pErr } = await supabase
@@ -454,7 +458,7 @@ export async function getBrandDistributionMatrix() {
       throw new Error(authResult.error || 'Quyền truy cập bị từ chối');
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
 
     // 1. Fetch templates
     const { data: templates } = await supabase

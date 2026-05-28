@@ -291,6 +291,27 @@ export async function runCOOOrchestrator(
       throw reviewsError; // Zero Silent DB Failures
     }
 
+    type ReviewWithJoins = {
+      id: string;
+      rating: number | null;
+      note: string | null;
+      created_at: string | null;
+      status: string | null;
+      reviewer: { name_mother: string | null } | { name_mother: string | null }[] | null;
+      ktv: { full_name: string | null } | { full_name: string | null }[] | null;
+    };
+    const pickName = (x: ReviewWithJoins['reviewer']): string | null => {
+      if (!x) return null;
+      if (Array.isArray(x)) return x[0]?.name_mother ?? null;
+      return x.name_mother ?? null;
+    };
+    const pickKtv = (x: ReviewWithJoins['ktv']): string | null => {
+      if (!x) return null;
+      if (Array.isArray(x)) return x[0]?.full_name ?? null;
+      return x.full_name ?? null;
+    };
+    const typedReviews = (reviews ?? []) as unknown as ReviewWithJoins[];
+
     // Tính điểm CSAT
     const ratings = (reviews || []).map(r => Number(r.rating || 0)).filter(r => r > 0);
     const avgRating = ratings.length > 0 ? Number((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2)) : 5.0;
@@ -316,20 +337,28 @@ export async function runCOOOrchestrator(
         recent_reviews: reviews || [],
         bad_reviews: badReviews
       },
-      anomalies: badReviews.map((r) => ({
-        type: "negative_feedback",
-        customer_name: (r.reviewer as any)?.name_mother || "Khách hàng ẩn danh",
-        ktv_name: (r.ktv as any)?.full_name || "Chưa phân công",
-        rating: r.rating,
-        note: r.note,
-        message: `Khách hàng ${(r.reviewer as any)?.name_mother || "ẩn danh"} đánh giá KTV ${(r.ktv as any)?.full_name || "ẩn danh"} mức ${r.rating} sao. Ý kiến: "${r.note || 'Không có bình luận'}"`
-      })),
-      draftProposals: badReviews.map((r) => ({
-        type: "customer_apology",
-        recipient: (r.reviewer as any)?.name_mother || "Khách hàng",
-        reason: `Phản hồi tiêu cực ${r.rating} sao về ca trị liệu thực hiện bởi KTV ${(r.ktv as any)?.full_name}.`,
-        draftMessage: `[Chăm sóc khách hàng Bella Spa] Kính gửi chị ${(r.reviewer as any)?.name_mother || "Khách hàng"}, bộ phận CSKH Bella Spa vô cùng xin lỗi vì trải nghiệm chưa trọn vẹn của chị trong buổi chăm sóc vừa qua (đánh giá ${r.rating} sao). Chúng em đã ghi nhận phản hồi của chị về KTV ${(r.ktv as any)?.full_name || "ẩn danh"} và cam kết chấn chỉnh dịch vụ. Bella Spa xin phép gửi tặng chị voucher giảm giá 15% cho buổi trị liệu tiếp theo và rất mong nhận được sự thông cảm từ chị.`
-      }))
+      anomalies: badReviews.map((r) => {
+        const reviewerName = pickName((r as ReviewWithJoins).reviewer);
+        const ktvName = pickKtv((r as ReviewWithJoins).ktv);
+        return {
+          type: "negative_feedback",
+          customer_name: reviewerName || "Khách hàng ẩn danh",
+          ktv_name: ktvName || "Chưa phân công",
+          rating: r.rating,
+          note: r.note,
+          message: `Khách hàng ${reviewerName || "ẩn danh"} đánh giá KTV ${ktvName || "ẩn danh"} mức ${r.rating} sao. Ý kiến: "${r.note || 'Không có bình luận'}"`
+        };
+      }),
+      draftProposals: badReviews.map((r) => {
+        const reviewerName = pickName((r as ReviewWithJoins).reviewer);
+        const ktvName = pickKtv((r as ReviewWithJoins).ktv);
+        return {
+          type: "customer_apology",
+          recipient: reviewerName || "Khách hàng",
+          reason: `Phản hồi tiêu cực ${r.rating} sao về ca trị liệu thực hiện bởi KTV ${ktvName || "ẩn danh"}.`,
+          draftMessage: `[Chăm sóc khách hàng Bella Spa] Kính gửi chị ${reviewerName || "Khách hàng"}, bộ phận CSKH Bella Spa vô cùng xin lỗi vì trải nghiệm chưa trọn vẹn của chị trong buổi chăm sóc vừa qua (đánh giá ${r.rating} sao). Chúng em đã ghi nhận phản hồi của chị về KTV ${ktvName || "ẩn danh"} và cam kết chấn chỉnh dịch vụ. Bella Spa xin phép gửi tặng chị voucher giảm giá 15% cho buổi trị liệu tiếp theo và rất mong nhận được sự thông cảm từ chị.`
+        };
+      })
     };
 
   } else if (isFranchiseRelated) {

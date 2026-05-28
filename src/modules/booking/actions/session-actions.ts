@@ -3,10 +3,11 @@
 import { resolvePackageName, getLocalDateString, sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { syncBookingProgress } from './lifecycle-actions';
+import type { Database } from '@/types/database.types';
 
 export async function getSessionLogs(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('session_logs')
     .select('*, ktv:users!session_logs_completed_by_ktv_id_fkey(full_name)')
@@ -22,7 +23,7 @@ export async function getSessionLogs(bookingId: string) {
 
 export async function completeSession(sessionId: string, bookingId: string, customNote?: string) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
 
@@ -33,7 +34,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     .eq('id', sessionId)
     .single();
 
-  if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
+  if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status ?? '')) {
     return { error: 'Bạn không có quyền thực hiện thao tác này (Unauthorized)' };
   }
 
@@ -52,7 +53,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     return { error: 'Chưa phân công KTV chính. Vui lòng phân công KTV trước khi xác nhận hoàn thành buổi.' };
   }
 
-  const updatePayload: any = { 
+  const updatePayload: Database['public']['Tables']['session_logs']['Update'] = {
     status: 'completed',
     completed_date: new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Ho_Chi_Minh',
@@ -70,7 +71,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   // 2. Update session log status with KTV snapshot
   const { error: sessionError } = await supabase
     .from('session_logs')
-    .update(updatePayload as any)
+    .update(updatePayload)
     .eq('id', sessionId);
 
   if (sessionError) {
@@ -111,20 +112,20 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   // 4. Update booking status transition and completed sessions count
   const { data: currentBooking } = await supabase
     .from('bookings')
-    .select('total_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id')
+    .select('total_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, discount_percent')
     .eq('id', bookingId)
     .single();
-  
-  const bUpdates: any = { 
+
+  const bUpdates: Database['public']['Tables']['bookings']['Update'] = {
     completed_sessions: count || 0,
     last_updated_date: today,
     updated_at: new Date().toISOString()
   };
-  
+
   if (count && count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
     bUpdates.status = 'in_progress';
   }
-  
+
   if (currentBooking?.total_sessions && count && count >= currentBooking.total_sessions) {
     bUpdates.status = 'completed';
   }
@@ -162,8 +163,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     if (salaryRec) {
       await supabase.from('salary_records').update({
         total_sessions: (salaryRec.total_sessions || 0) + 1,
-        service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission,
-        updated_at: new Date().toISOString()
+        service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission
       }).eq('id', salaryRec.id);
     } else {
       await supabase.from('salary_records').insert([{
@@ -196,7 +196,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
           rating: 0,
           status: 'pending_review',
           tenant_id: currentBooking?.tenant_id
-        } as any]);
+        }]);
     }
   } catch (reviewErr) {
     console.error('Error creating pending review:', reviewErr);
@@ -237,7 +237,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
 
 export async function getSessionsWithDetails() {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
 
@@ -312,7 +312,7 @@ export async function getSessionsWithDetails() {
 
 export async function getCalendarSessions() {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
@@ -408,7 +408,7 @@ export async function getCalendarSessions() {
 
 export async function updateSessionLog(id: string, payload: any) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   
@@ -418,7 +418,7 @@ export async function updateSessionLog(id: string, payload: any) {
     .eq('id', id)
     .single();
 
-  if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
+  if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status ?? '')) {
     return { error: 'Bạn không có quyền thực hiện thao tác này (Unauthorized)' };
   }
 
@@ -494,19 +494,20 @@ export async function updateSessionLog(id: string, payload: any) {
     .eq('status', 'completed');
 
   if (!countError) {
-    const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id').eq('id', bookingId).single();
+    const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, discount_percent').eq('id', bookingId).single();
     const today = getLocalDateString();
-    const bUpdates: any = { 
-      completed_sessions: count || 0,
+    const safeCount = count ?? 0;
+    const bUpdates: Database['public']['Tables']['bookings']['Update'] = {
+      completed_sessions: safeCount,
       last_updated_date: today,
       updated_at: new Date().toISOString()
     };
-    
-    if (count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
+
+    if (safeCount > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
       bUpdates.status = 'in_progress';
     }
-    
-    if (currentBooking?.total_sessions && count >= currentBooking.total_sessions) {
+
+    if (currentBooking?.total_sessions && safeCount >= currentBooking.total_sessions) {
       bUpdates.status = 'completed';
     }
 
@@ -547,8 +548,7 @@ export async function updateSessionLog(id: string, payload: any) {
         if (salaryRec) {
           await supabase.from('salary_records').update({
             total_sessions: (salaryRec.total_sessions || 0) + 1,
-            service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission,
-            updated_at: new Date().toISOString()
+            service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission
           }).eq('id', salaryRec.id);
         } else {
           await supabase.from('salary_records').insert([{
@@ -580,7 +580,7 @@ export async function updateSessionLog(id: string, payload: any) {
               rating: 0,
               status: 'pending_review',
               tenant_id: currentBooking.tenant_id
-            } as any]);
+            }]);
         }
       }
 
@@ -637,7 +637,7 @@ export async function updateSessionLog(id: string, payload: any) {
 
 export async function saveSessionNote(sessionId: string, note: string) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
 
@@ -647,13 +647,13 @@ export async function saveSessionNote(sessionId: string, note: string) {
     .eq('id', sessionId)
     .single();
 
-  if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status)) {
+  if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status ?? '')) {
     return { error: `DEBUG: ID: ${currentUser?.id || 'null'}, Role: ${currentUser?.role || 'null'}, Email: ${currentUser?.email || 'null'}` };
   }
   
   const { error } = await supabase
     .from('session_logs')
-    .update({ notes: note } as any)
+    .update({ notes: note })
     .eq('id', sessionId);
 
   if (error) {
@@ -702,7 +702,7 @@ export async function saveSessionNote(sessionId: string, note: string) {
 
 export async function addExtraSession(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { data: booking, error: fetchError } = await supabase
     .from('bookings')
@@ -714,7 +714,7 @@ export async function addExtraSession(bookingId: string) {
   
   const newTotal = (booking.total_sessions || 0) + 1;
   
-  await supabase.from('bookings').update({ total_sessions: newTotal } as any).eq('id', bookingId);
+  await supabase.from('bookings').update({ total_sessions: newTotal }).eq('id', bookingId);
 
   try {
     const { recordAuditLog } = await import('@/services/audit-actions');
@@ -733,7 +733,7 @@ export async function addExtraSession(bookingId: string) {
     booking_id: bookingId,
     session_number: newTotal,
     status: 'scheduled'
-  } as any);
+  });
   
   const { data: bookingData } = await supabase
     .from('bookings')
@@ -752,7 +752,7 @@ export async function addExtraSession(bookingId: string) {
 
 export async function createSessionLog(data: any) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { count, error: countError } = await supabase
     .from('session_logs')
@@ -774,7 +774,7 @@ export async function createSessionLog(data: any) {
         assigned_time: sanitizeTime(data.assigned_time),
         notes: data.notes || null,
         status: data.status || 'scheduled'
-      } as any,
+      },
     ])
     .select();
 
@@ -803,7 +803,7 @@ export async function createSessionLog(data: any) {
 
 export async function rescheduleSession(sessionId: string, newDate: string) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   const { data: session, error: sessionError } = await supabase
     .from('session_logs')
@@ -872,7 +872,7 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
 
     return supabase
       .from('session_logs')
-      .update({ assigned_date: newAssignedDate } as any)
+      .update({ assigned_date: newAssignedDate })
       .eq('id', s.id);
   });
 

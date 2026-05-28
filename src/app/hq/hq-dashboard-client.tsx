@@ -259,7 +259,7 @@ export default function HqDashboardClient({
       const logs = await getHqAuditLogs({
         tenantId: selectedTenant,
         userId: selectedUser,
-        action: selectedAction as any,
+        action: (selectedAction === 'INSERT' || selectedAction === 'UPDATE' || selectedAction === 'DELETE' ? selectedAction : '') as 'INSERT' | 'UPDATE' | 'DELETE' | '',
         tableName: selectedTable,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
@@ -2021,7 +2021,12 @@ export default function HqDashboardClient({
                   <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Trạng thái đơn</label>
                   <select
                     value={transferFilterStatus}
-                    onChange={(e) => setTransferFilterStatus(e.target.value as any)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === 'pending' || v === 'shipped' || v === 'completed' || v === 'cancelled' || v === 'all') {
+                        setTransferFilterStatus(v);
+                      }
+                    }}
                     className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-xs font-bold text-slate-700"
                   >
                     <option value="all">Tất cả trạng thái</option>

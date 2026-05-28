@@ -39,7 +39,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
 
   const loadPendingLeaves = async () => {
     try {
-      const leaves = await getPendingLeaveRequests() as any[];
+      const leaves = (await getPendingLeaveRequests()) as LeaveRequest[];
       setPendingLeaves(leaves);
     } catch (err) {
       console.error("Failed to load pending leaves:", err);
@@ -48,8 +48,8 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
 
   const loadKTVs = async () => {
     try {
-      const users = await getUsers() as any[];
-      const activeKTVs = users.filter((u: any) => u.role === 'ktv' && u.status === 'active');
+      const users = (await getUsers()) as KtvUser[];
+      const activeKTVs = users.filter((u) => u.role === 'ktv' && u.status === 'active');
       setAllKTVs(activeKTVs);
     } catch (err) {
       console.error("Failed to load KTVs:", err);
@@ -77,7 +77,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
     setRejectionReason('');
     
     try {
-      const conflicts = await getKTVConflictSessions(leave.user_id, leave.leave_date, leave.leave_type) as any[];
+      const conflicts = (await getKTVConflictSessions(leave.user_id, leave.leave_date, leave.leave_type)) as unknown as ConflictSession[];
       setConflictSessions(conflicts);
     } catch (err) {
       console.error("Failed to load conflict sessions:", err);

@@ -236,7 +236,7 @@ export default function CRMPage() {
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
+            onClick={() => setActiveTab(tab.id as 'overview' | 'reminders' | 'marketing' | 'logs')}
             className={`flex items-center gap-2.5 px-6 py-3.5 rounded-[1.25rem] transition-all duration-300 font-black text-xs uppercase tracking-wider ${
               activeTab === tab.id
                 ? 'bg-primary text-white shadow-md'

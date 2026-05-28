@@ -337,7 +337,7 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
 
     if (sessionsTyped) {
       sessionsTyped.forEach((s) => {
-        const pkgName = s.bookings ? resolvePackageName(s.bookings as any) : 'Dịch vụ lẻ';
+        const pkgName = s.bookings ? resolvePackageName(s.bookings) : 'Dịch vụ lẻ';
         dynamicPackageNames.add(pkgName);
       });
     }
@@ -349,7 +349,7 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
         const ktvId = s.completed_by_ktv_id;
         if (!ktvId) return;
 
-        const pkgName = s.bookings ? resolvePackageName(s.bookings as any) : 'Dịch vụ lẻ';
+        const pkgName = s.bookings ? resolvePackageName(s.bookings) : 'Dịch vụ lẻ';
         
         if (!matrix[ktvId]) matrix[ktvId] = {};
         matrix[ktvId][pkgName] = (matrix[ktvId][pkgName] || 0) + 1;

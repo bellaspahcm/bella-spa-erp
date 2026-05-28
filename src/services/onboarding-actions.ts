@@ -65,7 +65,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
       authUser = adminData?.user;
     } else {
       console.log('[registerNewTenant] SUPABASE_SERVICE_ROLE_KEY not found. Attempting custom RPC create_onboarding_user to bypass rate limits');
-      const { data: userId, error: rpcErr } = await (supabase.rpc as any)('create_onboarding_user', {
+      const { data: userId, error: rpcErr } = await supabase.rpc('create_onboarding_user', {
         p_email: input.adminEmail,
         p_password: password,
         p_full_name: input.adminName

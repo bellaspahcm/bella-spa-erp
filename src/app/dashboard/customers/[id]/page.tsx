@@ -84,7 +84,8 @@ export default function CustomerDetailPage() {
     async function checkRole() {
       const user = await getCurrentUser();
       if (user?.role) {
-        setUserRole(user.role?.toLowerCase() as any);
+        const r = user.role.toLowerCase();
+        setUserRole(r === 'admin' ? 'admin' : 'ktv');
       }
     }
     checkRole();
@@ -133,7 +134,7 @@ export default function CustomerDetailPage() {
                     data.gender_baby === 'girl' ? 'Bé Gái' : 
                     'Chưa xác định'
           },
-          sessions: (data as any).sessions || [],
+          sessions: (data as { sessions?: unknown[] }).sessions || [],
           allBookings: bookings || []
         });
         

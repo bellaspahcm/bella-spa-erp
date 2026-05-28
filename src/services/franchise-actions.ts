@@ -34,7 +34,7 @@ export interface FranchiseRoyaltyInvoice {
  */
 export async function getFranchiseRoyaltyInvoices(tenantId?: string): Promise<FranchiseRoyaltyInvoice[]> {
   try {
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) throw new Error('Chưa đăng nhập');
 
@@ -78,7 +78,7 @@ export async function getFranchiseRoyaltyInvoices(tenantId?: string): Promise<Fr
  */
 export async function payFranchiseRoyaltyInvoice(invoiceNumber: string, paymentMethod: string) {
   try {
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) return { success: false, error: 'Chưa đăng nhập' };
 
@@ -144,7 +144,7 @@ export async function updateFranchiseRoyaltyConfig(
       return { success: false, error: 'Chỉ Admin Tổng bộ mới có quyền chỉnh sửa cấu hình nhượng quyền.' };
     }
 
-    const supabase = await createClient() as any;
+    const supabase = await createClient();
     const updatePayload: any = {
       royalty_type: type,
       royalty_fixed_amount: fixedAmount !== undefined ? fixedAmount : 0.00

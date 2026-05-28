@@ -68,7 +68,7 @@ export default function CustomerDashboard() {
       setSelectedRating(0);
       setComment('');
     } else {
-      alert('Lỗi: ' + (result as any).error);
+      alert('Lỗi: ' + (result as { error?: string }).error);
     }
   };
 
