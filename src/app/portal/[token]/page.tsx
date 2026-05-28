@@ -543,6 +543,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
       {/* Floating Chat Widget */}
       <PortalChatWidget 
         token={token} 
+        customerId={booking.customer_id}
         customerName={booking.customers?.name_mother}
         phoneHotline="0865701493"
       />

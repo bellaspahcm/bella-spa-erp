@@ -19,15 +19,18 @@ import {
   markPortalMessagesAsRead 
 } from '@/services/portal-chat-actions';
 import { toast } from 'sonner';
+import { createClient } from '@/lib/supabase-client';
 
 interface PortalChatWidgetProps {
   token: string;
+  customerId?: string;
   customerName?: string;
   phoneHotline?: string;
 }
 
 export default function PortalChatWidget({ 
   token, 
+  customerId,
   customerName = 'Khách hàng',
   phoneHotline = '0865701493'
 }: PortalChatWidgetProps) {
@@ -170,6 +173,32 @@ export default function PortalChatWidget({
 
     return () => clearInterval(interval);
   }, [token, isOpen]);
+
+  // Realtime Presence for tracking online status
+  useEffect(() => {
+    if (!customerId) return;
+
+    try {
+      const supabase = createClient();
+      const channel = supabase.channel('online_customers');
+
+      channel.subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            customer_id: customerId,
+            online_at: new Date().toISOString()
+          });
+        }
+      });
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    } catch (error) {
+      console.error('Lỗi khởi tạo Presence:', error);
+    }
+  }, [customerId]);
+
 
   // Handle open state change
   useEffect(() => {
