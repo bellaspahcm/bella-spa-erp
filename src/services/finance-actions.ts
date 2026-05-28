@@ -496,9 +496,9 @@ export async function recordTransaction(data: {
       revalidatePath('/dashboard/finance');
       return result;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[recordTransaction] failure:', error);
-    throw new Error(error.message || 'Lỗi hệ thống khi ghi nhận giao dịch');
+    throw new Error(error instanceof Error ? error.message : 'Lỗi hệ thống khi ghi nhận giao dịch');
   }
 }
 
@@ -783,7 +783,7 @@ export async function lockMonth(month: string) {
         if (revError) {
           console.error('[lockMonth] Failed to fetch revenues for royalty calculation:', revError);
         } else {
-          const grossRevenue = (revenues || []).reduce((sum: number, r: any) => sum + (Number(r.amount) || 0), 0);
+          const grossRevenue = (revenues || []).reduce((sum: number, r) => sum + (Number(r.amount) || 0), 0);
           
           const royaltyType = tenant.royalty_type || 'percentage';
           let calculatedAmount = 0;
@@ -868,7 +868,7 @@ export async function lockMonth(month: string) {
       if (sessionErr) {
         console.error('[lockMonth] Failed to fetch session logs for clearing:', sessionErr);
       } else {
-        const interBranchSessions = (sessionLogs || []).filter((s: any) => {
+        const interBranchSessions = (sessionLogs || []).filter((s) => {
           const sessionTenantId = s.tenant_id;
           const bookingTenantId = s.bookings?.tenant_id;
           return sessionTenantId && bookingTenantId && sessionTenantId !== bookingTenantId &&
@@ -905,7 +905,7 @@ export async function lockMonth(month: string) {
             console.error('[lockMonth] Failed to fetch tenants for clearing:', tenantsErr);
           } else {
             const tenantMap: Record<string, { name: string; internal_clearing_rate: number }> = {};
-            (tenants || []).forEach((t: any) => {
+            (tenants || []).forEach((t) => {
               tenantMap[t.id] = {
                 name: t.name || 'Branch',
                 internal_clearing_rate: Number(t.internal_clearing_rate) || 150000.00
@@ -970,7 +970,7 @@ export async function lockMonth(month: string) {
 
     revalidatePath('/dashboard/finance');
     return { success: true, month };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[lockMonth]', e);
     Sentry.captureException(e);
     return { success: false, error: 'Lỗi hệ thống' };
@@ -1011,7 +1011,7 @@ export async function unlockMonth(month: string) {
 
     revalidatePath('/dashboard/finance');
     return { success: true, month };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[unlockMonth]', e);
     Sentry.captureException(e);
     return { success: false, error: 'Lỗi hệ thống' };

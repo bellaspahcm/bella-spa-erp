@@ -105,8 +105,8 @@ export async function getInventorySummary() {
 
     return {
       totalItems: data.length,
-      lowStockCount: data.filter((i: any) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
-      totalValue: data.reduce((sum: number, i: any) => sum + Number(i.stock_level) * Number(i.price_per_unit), 0)
+      lowStockCount: data.filter((i) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
+      totalValue: data.reduce((sum: number, i) => sum + Number(i.stock_level) * Number(i.price_per_unit), 0)
     };
   } catch (e) {
     console.error('[getInventorySummary]', e);
