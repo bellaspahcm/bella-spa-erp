@@ -348,7 +348,11 @@ export async function createBooking(formData: any) {
         revFailed = true;
       }
     }
-    void revFailed; // tracked for future error propagation if needed
+
+    if (revFailed) {
+      await supabase.from('bookings').delete().eq('id', booking.id);
+      return { error: 'Không thể ghi nhận doanh thu đặt cọc. Đã hủy tạo booking.' };
+    }
 
     // ⭐ Ghi nhận vào hàng đợi Accounting Outbox nếu tạo revenue thành công
     if (insertedRev?.id && tenantId) {
@@ -765,6 +769,10 @@ export async function recordRemainingPayment(params: {
     if (fetchError || !booking) throw new Error('Không tìm thấy booking: ' + fetchError?.message);
 
     // Bắt đầu luồng kiểm tra rủi ro (Negative Test Checks)
+    if (params.amount <= 0) {
+      throw new Error('Số tiền thanh toán phải lớn hơn 0');
+    }
+
     const currentDebt = (booking.full_price * (1 - (booking.discount_percent || 0)/100)) - (booking.deposit_amount || 0);
     if (params.amount > currentDebt) {
       throw new Error(`Số tiền thanh toán vượt quá số tiền còn nợ của gói (${currentDebt.toLocaleString()} đ)`);

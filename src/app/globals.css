@@ -371,3 +371,27 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
   color: #CDBCAB !important;
   border-color: #3E3A35 !important;
 }
+
+/* =========================================================================
+   MOBILE INPUT AUTO-ZOOM PREVENT
+   Sets font-size to 16px for input, select, and textarea on mobile to stop iOS
+   Safari and mobile browsers from auto-zooming. Desktop layout remains unchanged.
+   ========================================================================= */
+@media (max-width: 767px) {
+  input, 
+  textarea, 
+  select,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="time"],
+  .premium-select,
+  .form-input {
+    font-size: 16px !important;
+  }
+}

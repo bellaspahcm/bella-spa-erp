@@ -307,4 +307,34 @@ describe('E2E Negative Business Pipeline Suite', () => {
     expect(salaryRecordResult.error).toBeDefined();
     expect(salaryRecordResult.error).toContain('Audit thất bại');
   });
+
+  it('Lỗi Xuyên Suốt Luồng 6: Thanh toán với số tiền = 0', async () => {
+    const bookingId = 'bk-5';
+    mockStore.bookings.push({ id: bookingId, full_price: 5000000, deposit_amount: 1000000 });
+
+    let paymentResult: any = {};
+    try {
+      paymentResult = await recordRemainingPayment({
+        booking_id: bookingId, customer_id: 'cust-999', amount: 0, payment_method: 'card'
+      });
+    } catch (e: any) {
+      paymentResult = { error: e.message };
+    }
+
+    expect(paymentResult.error).toBeDefined();
+    expect(paymentResult.error).toContain('Số tiền thanh toán phải lớn hơn 0');
+  });
+
+  it('Lỗi Xuyên Suốt Luồng 7: Payload booking thiếu trường bắt buộc', async () => {
+    const bookingFormData = {
+      // Thiếu customer_id bắt buộc
+      package_name: 'Gói VIP',
+      full_price: 5000000,
+      deposit_amount: 1000000,
+    } as any;
+
+    const result = await createBooking(bookingFormData);
+    expect(result.error).toBeDefined();
+    expect(result.error).toContain('Dữ liệu booking không hợp lệ');
+  });
 });
