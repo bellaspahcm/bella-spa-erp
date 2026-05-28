@@ -24,6 +24,7 @@ import {
 import { getCustomerBookingByToken, submitCustomerRating } from '@/services/customer-actions';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
+import PortalChatWidget from '@/components/features/portal/PortalChatWidget';
 
 export default function CustomerPortal({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
@@ -538,6 +539,13 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
             Liên hệ hỗ trợ ngay
          </a>
       </div>
+
+      {/* Floating Chat Widget */}
+      <PortalChatWidget 
+        token={token} 
+        customerName={booking.customers?.name_mother}
+        phoneHotline="0865701493"
+      />
     </div>
   </div>
 );
