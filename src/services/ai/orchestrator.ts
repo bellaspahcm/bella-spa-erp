@@ -7,7 +7,7 @@ import { runFranchiseAgent } from './agents/franchise';
 import { runCHROAgent } from './agents/chro';
 import { runCFOAgent } from './agents/cfo';
 
-function cleanAndParseJson(text: string): any {
+function cleanAndParseJson(text: string): Record<string, unknown> {
   let cleaned = text.trim();
   // Remove markdown code blocks if present
   if (cleaned.startsWith("```")) {
@@ -23,12 +23,12 @@ function cleanAndParseJson(text: string): any {
   }
 
   try {
-    return JSON.parse(cleaned);
+    return JSON.parse(cleaned) as Record<string, unknown>;
   } catch (e) {
     // Attempt to repair common JSON syntax issues like trailing commas
     const repairAttempt = cleaned.replace(/,\s*([\]}])/g, "$1");
     try {
-      return JSON.parse(repairAttempt);
+      return JSON.parse(repairAttempt) as Record<string, unknown>;
     } catch {
       throw e; // throw the original error if repair fails
     }
@@ -337,10 +337,10 @@ Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa 
         const textResponse = resData.candidates?.[0]?.content?.parts?.[0]?.text;
         if (textResponse) {
           const parsed = cleanAndParseJson(textResponse);
-          if (parsed.executiveSummary) executiveSummary = parsed.executiveSummary;
-          if (parsed.anomaliesFound) anomaliesFound = parsed.anomaliesFound;
-          if (parsed.strategicRecommendations) strategicRecommendations = parsed.strategicRecommendations;
-          if (parsed.draftActions) draftActions = parsed.draftActions;
+          if (parsed.executiveSummary) executiveSummary = parsed.executiveSummary as string;
+          if (parsed.anomaliesFound) anomaliesFound = parsed.anomaliesFound as unknown[];
+          if (parsed.strategicRecommendations) strategicRecommendations = parsed.strategicRecommendations as string[];
+          if (parsed.draftActions) draftActions = parsed.draftActions as unknown[];
           console.log("[AI COO Service] Gọi Gemini thành công và phân tích số liệu thành công!");
         }
       } else {

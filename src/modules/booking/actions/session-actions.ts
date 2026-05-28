@@ -4,6 +4,7 @@ import { resolvePackageName, getLocalDateString, sanitizeTime } from '@/lib/util
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { syncBookingProgress } from './lifecycle-actions';
 import type { Database } from '@/types/database.types';
+import { FINANCE_CONSTANTS } from '@/constants/finance';
 
 export async function getSessionLogs(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
@@ -19,6 +20,278 @@ export async function getSessionLogs(bookingId: string) {
   }
 
   return data;
+}
+
+/**
+ * Logic dùng chung để chốt ca làm việc, xử lý trừ kho, tính lương KTV và rollback toàn diện khi lỗi
+ */
+export async function processSessionCompletion(
+  supabase: any,
+  sessionId: string,
+  bookingId: string,
+  tenantId: any,
+  ktvId: any,
+  today: string,
+  packageId: any,
+  existingLog: any,
+  currentUser: any
+) {
+  // 1. Tự động trừ kho vật tư tiêu hao nếu có định mức
+  let isInventoryConsumed = false;
+  if (packageId) {
+    const { autoConsumeForSession } = await import('@/services/inventory-actions');
+    const consumeResult = await autoConsumeForSession(packageId, sessionId);
+    
+    // Chặn đứng (halt) quy trình nếu kho không đủ nguyên liệu
+    if (consumeResult && consumeResult.success === false) {
+      return { error: consumeResult.error || 'Kho không đủ nguyên liệu để thực hiện ca dịch vụ này.' };
+    }
+    isInventoryConsumed = consumeResult && consumeResult.success && !consumeResult.bypassed;
+  }
+
+  // 2. Đếm lại số buổi hoàn thành thực tế
+  const { count, error: countError } = await supabase
+    .from('session_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('booking_id', bookingId)
+    .eq('status', 'completed');
+
+  if (countError) {
+    console.error('Error counting completed sessions:', countError);
+  }
+
+  const { data: currentBooking } = await supabase
+    .from('bookings')
+    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, discount_percent')
+    .eq('id', bookingId)
+    .single();
+
+  const bUpdates: Database['public']['Tables']['bookings']['Update'] = {
+    completed_sessions: count || 0,
+    last_updated_date: today,
+    updated_at: new Date().toISOString()
+  };
+
+  if (count && count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
+    bUpdates.status = 'in_progress';
+  }
+
+  if (currentBooking?.total_sessions && count && count >= currentBooking.total_sessions) {
+    bUpdates.status = 'completed';
+  }
+
+  const { error: bookingUpdateErr } = await supabase.from('bookings').update(bUpdates).eq('id', bookingId);
+  if (bookingUpdateErr) {
+    console.error('Error updating booking progress:', bookingUpdateErr);
+    if (isInventoryConsumed) {
+      const { rollbackInventoryConsumption } = await import('@/services/inventory-actions');
+      await rollbackInventoryConsumption(sessionId);
+    }
+    return { error: 'Lỗi cập nhật tiến trình booking: ' + bookingUpdateErr.message };
+  }
+
+  // 3. Ghi nhận doanh thu dịch vụ lẻ
+  let isRevenueCreated = false;
+  if (currentBooking?.package_name?.toLowerCase().includes('lẻ')) {
+    const { error: revErr } = await supabase.from('revenue').insert([{
+      booking_id: bookingId,
+      amount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
+      revenue_type: 'package_payment',
+      payment_method: 'bank_transfer',
+      received_date: today,
+      status: 'confirmed',
+      notes: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
+      tenant_id: tenantId
+    }]);
+
+    if (revErr) {
+      console.error('Error auto-creating revenue:', revErr);
+      // Rollback booking
+      await supabase.from('bookings').update({
+        completed_sessions: currentBooking?.completed_sessions || 0,
+        status: currentBooking?.status || 'booked'
+      }).eq('id', bookingId);
+      if (isInventoryConsumed) {
+        const { rollbackInventoryConsumption } = await import('@/services/inventory-actions');
+        await rollbackInventoryConsumption(sessionId);
+      }
+      return { error: 'Không thể ghi nhận doanh thu tự động cho gói lẻ: ' + revErr.message };
+    }
+    isRevenueCreated = true;
+  }
+
+  // 4. Cộng lương KTV vào salary_records
+  if (ktvId && tenantId) {
+    const monthYear = `${today.substring(0, 7)}-01`;
+    const commission = Number(currentBooking?.ktv_commission) || FINANCE_CONSTANTS.DEFAULT_KTV_COMMISSION;
+
+    const { data: salaryRec } = await supabase
+      .from('salary_records')
+      .select('id, total_sessions, service_percentage_bonus')
+      .eq('ktv_id', ktvId)
+      .eq('month_year', monthYear)
+      .single();
+
+    let salaryError = null;
+    let originalSalarySessions = salaryRec?.total_sessions || 0;
+    let originalSalaryBonus = Number(salaryRec?.service_percentage_bonus) || 0;
+    let isNewSalaryRecord = !salaryRec;
+
+    if (salaryRec) {
+      const { error } = await supabase.from('salary_records').update({
+        total_sessions: (salaryRec.total_sessions || 0) + 1,
+        service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission
+      }).eq('id', salaryRec.id);
+      salaryError = error;
+    } else {
+      const { error } = await supabase.from('salary_records').insert([{
+        ktv_id: ktvId,
+        month_year: monthYear,
+        total_sessions: 1,
+        service_percentage_bonus: commission,
+        base_salary: FINANCE_CONSTANTS.DEFAULT_BASE_SALARY,
+        status: 'draft',
+        tenant_id: tenantId
+      }]);
+      salaryError = error;
+    }
+
+    if (salaryError) {
+      console.error('[processSessionCompletion] Error updating salary record, rolling back...:', salaryError);
+      
+      // Rollback revenue nếu có tạo
+      if (isRevenueCreated) {
+        await supabase
+          .from('revenue')
+          .delete()
+          .eq('booking_id', bookingId)
+          .eq('amount', FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE)
+          .eq('notes', `Tự động: Thu phí dịch vụ lẻ - ${currentBooking?.package_name}`);
+      }
+
+      // Rollback booking
+      await supabase.from('bookings').update({
+        completed_sessions: currentBooking?.completed_sessions || 0,
+        status: currentBooking?.status || 'booked'
+      }).eq('id', bookingId);
+
+      // Rollback kho
+      if (isInventoryConsumed) {
+        const { rollbackInventoryConsumption } = await import('@/services/inventory-actions');
+        await rollbackInventoryConsumption(sessionId);
+      }
+
+      return { error: 'Không thể ghi nhận lương cho KTV. Đã hoàn tác ca làm: ' + salaryError.message };
+    }
+  }
+
+  // 5. Tạo placeholder review cho khách hàng
+  try {
+    if (currentBooking?.assigned_ktv_id) {
+      const { data: existingReview } = await supabase
+        .from('session_reviews')
+        .select('id')
+        .eq('session_log_id', sessionId)
+        .maybeSingle();
+
+      if (!existingReview) {
+        await supabase
+          .from('session_reviews')
+          .insert([{
+            session_log_id: sessionId,
+            reviewer_id: currentBooking.assigned_ktv_id, // Gán tạm thời reviewer chính làm placeholder
+            ktv_id: ktvId,
+            rating: 5,
+            note: 'Chờ khách hàng đánh giá',
+            status: 'pending_review',
+            tenant_id: tenantId
+          }]);
+      }
+    }
+  } catch (reviewErr) {
+    console.warn('Failed to auto-create review placeholder:', reviewErr);
+  }
+
+  // 6. Ghi nhận vào hàng đợi Accounting Outbox cho sự kiện SESSION_DONE
+  if (sessionId && tenantId) {
+    try {
+      const fullPrice = Number(currentBooking?.full_price || 0);
+      const discountPercent = Number(currentBooking?.discount_percent || 0);
+      const targetPrice = fullPrice * (1 - discountPercent / 100);
+      const totalSessions = Number(currentBooking?.total_sessions || 1);
+      const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
+      const commission = Number(currentBooking?.ktv_commission) || 0;
+
+      const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+      await enqueueWithAutoClient(
+        supabase,
+        {
+          tenantId,
+          eventType: 'SESSION_DONE',
+          referenceType: 'SESSION_LOG',
+          referenceId: sessionId,
+          payload: {
+            earnedRevenueAmount,
+            commissionAmount: commission,
+            ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
+            branchId: tenantId,
+            description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`,
+          },
+        },
+        '[processSessionCompletion]'
+      );
+    } catch (outboxError: any) {
+      console.error('[processSessionCompletion] Error enqueuing accounting outbox event, rolling back...', outboxError);
+      
+      // Rollback KTV salary record
+      if (ktvId && tenantId) {
+        const monthYear = `${today.substring(0, 7)}-01`;
+        const commission = Number(currentBooking?.ktv_commission) || FINANCE_CONSTANTS.DEFAULT_KTV_COMMISSION;
+        const { data: salaryRec } = await supabase
+          .from('salary_records')
+          .select('id, total_sessions, service_percentage_bonus')
+          .eq('ktv_id', ktvId)
+          .eq('month_year', monthYear)
+          .single();
+        if (salaryRec) {
+          if (salaryRec.total_sessions <= 1) {
+            await supabase.from('salary_records').delete().eq('id', salaryRec.id);
+          } else {
+            await supabase.from('salary_records').update({
+              total_sessions: salaryRec.total_sessions - 1,
+              service_percentage_bonus: Math.max(0, (Number(salaryRec.service_percentage_bonus) || 0) - commission)
+            }).eq('id', salaryRec.id);
+          }
+        }
+      }
+
+      // Rollback revenue nếu có tạo
+      if (isRevenueCreated) {
+        await supabase
+          .from('revenue')
+          .delete()
+          .eq('booking_id', bookingId)
+          .eq('amount', FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE)
+          .eq('notes', `Tự động: Thu phí dịch vụ lẻ - ${currentBooking?.package_name}`);
+      }
+
+      // Rollback booking
+      await supabase.from('bookings').update({
+        completed_sessions: currentBooking?.completed_sessions || 0,
+        status: currentBooking?.status || 'booked'
+      }).eq('id', bookingId);
+
+      // Rollback kho
+      if (isInventoryConsumed) {
+        const { rollbackInventoryConsumption } = await import('@/services/inventory-actions');
+        await rollbackInventoryConsumption(sessionId);
+      }
+
+      return { error: 'Không thể ghi nhận hàng đợi kế toán. Đã hoàn tác ca làm: ' + outboxError.message };
+    }
+  }
+
+  return { success: true };
 }
 
 export async function completeSession(sessionId: string, bookingId: string, customNote?: string) {
@@ -87,177 +360,41 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     return { error: sessionError.message };
   }
 
-  // 2.5 Tự động trừ kho vật tư tiêu hao nếu có định mức
-  if (bookingData?.package_id) {
-    try {
-      const { autoConsumeForSession } = await import('@/services/inventory-actions');
-      const consumeResult = await autoConsumeForSession(bookingData.package_id, sessionId);
-      
-      // Chặn đứng (halt) quy trình nếu kho không đủ nguyên liệu
-      if (consumeResult && consumeResult.success === false) {
-        return { error: consumeResult.error || 'Kho không đủ nguyên liệu để thực hiện ca dịch vụ này.' };
-      }
-      console.log(`[completeSession] Successfully auto-consumed materials for package ${bookingData.package_id} and session ${sessionId}`);
-    } catch (consumeErr: any) {
-      console.error('[completeSession] Error in autoConsumeForSession:', consumeErr);
-      return { error: consumeErr.message || 'Lỗi hệ thống khi kiểm tra kho vật tư.' };
-    }
-  }
-
+  // 3. Gọi helper dùng chung để chốt ca làm việc, trừ kho, tính lương KTV
   const today = getLocalDateString();
-
-  // 3. Re-calculate actual completed sessions to avoid race conditions
-  const { count, error: countError } = await supabase
-    .from('session_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('booking_id', bookingId)
-    .eq('status', 'completed');
-
-  if (countError) {
-    console.error('Error counting completed sessions:', countError);
-  }
-  
-  // 4. Update booking status transition and completed sessions count
-  const { data: currentBooking } = await supabase
-    .from('bookings')
-    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, discount_percent')
-    .eq('id', bookingId)
-    .single();
-
-  const bUpdates: Database['public']['Tables']['bookings']['Update'] = {
-    completed_sessions: count || 0,
-    last_updated_date: today,
-    updated_at: new Date().toISOString()
-  };
-
-  if (count && count > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
-    bUpdates.status = 'in_progress';
-  }
-
-  if (currentBooking?.total_sessions && count && count >= currentBooking.total_sessions) {
-    bUpdates.status = 'completed';
-  }
-
-  await supabase.from('bookings').update(bUpdates).eq('id', bookingId);
-
-  // --- AUTOMATION: Financial Recognition ---
+  const tenantId = currentUser?.tenant_id || existingLog?.tenant_id;
   const ktvId = bookingData.assigned_ktv_id;
-  const tenantId = currentBooking?.tenant_id || currentUser?.tenant_id;
 
-  if (currentBooking?.package_name?.toLowerCase().includes('lẻ')) {
-    await supabase.from('revenue').insert([{
-      booking_id: bookingId,
-      amount: 350000,
-      revenue_type: 'package_payment',
-      payment_method: 'bank_transfer',
-      received_date: today,
-      status: 'confirmed',
-      notes: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
-      tenant_id: tenantId
-    }]);
+  const result = await processSessionCompletion(
+    supabase,
+    sessionId,
+    bookingId,
+    tenantId,
+    ktvId,
+    today,
+    bookingData.package_id,
+    existingLog,
+    currentUser
+  );
+
+  if (result.error) {
+    console.error('[completeSession] Failed to process session completion, rolling back status:', result.error);
+    // Rollback session status
+    await supabase.from('session_logs').update({
+      status: existingLog?.status || 'scheduled',
+      completed_date: null,
+      completed_by_ktv_id: null
+    }).eq('id', sessionId);
+    
+    return { error: result.error };
   }
 
-  if (ktvId && tenantId) {
-    const monthYear = `${today.substring(0, 7)}-01`;
-    const commission = Number(currentBooking?.ktv_commission) || 150000;
-
-    const { data: salaryRec } = await supabase
-      .from('salary_records')
-      .select('id, total_sessions, service_percentage_bonus')
-      .eq('ktv_id', ktvId)
-      .eq('month_year', monthYear)
-      .single();
-
-    let salaryError = null;
-    if (salaryRec) {
-      const { error } = await supabase.from('salary_records').update({
-        total_sessions: (salaryRec.total_sessions || 0) + 1,
-        service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission
-      }).eq('id', salaryRec.id);
-      salaryError = error;
-    } else {
-      const { error } = await supabase.from('salary_records').insert([{
-        ktv_id: ktvId,
-        month_year: monthYear,
-        total_sessions: 1,
-        service_percentage_bonus: commission,
-        base_salary: 6000000,
-        status: 'draft',
-        tenant_id: tenantId
-      }]);
-      salaryError = error;
-    }
-
-    if (salaryError) {
-      console.error('[completeSession] Error updating salary record, rolling back session_logs status:', salaryError);
-      await supabase.from('session_logs').update({
-        status: existingLog?.status || 'scheduled',
-        completed_date: null,
-        completed_by_ktv_id: null
-      }).eq('id', sessionId);
-      
-      await supabase.from('bookings').update({
-        completed_sessions: currentBooking?.completed_sessions || 0,
-        status: currentBooking?.status || 'booked'
-      }).eq('id', bookingId);
-
-      return { error: 'Không thể ghi nhận lương cho KTV. Đã hoàn tác cập nhật buổi: ' + salaryError.message };
-    }
-  }
-
-  // 6. Create a pending review for the customer to fill out
-  try {
-    const { data: bookingDetails } = await supabase
-      .from('bookings')
-      .select('customer_id, assigned_ktv_id')
-      .eq('id', bookingId)
-      .single();
-
-    if (bookingDetails && bookingDetails.assigned_ktv_id) {
-      await supabase
-        .from('session_reviews')
-        .insert([{
-          session_log_id: sessionId,
-          reviewer_id: null,
-          ktv_id: bookingDetails.assigned_ktv_id,
-          rating: 0,
-          status: 'pending_review',
-          tenant_id: currentBooking?.tenant_id
-        }]);
-    }
-  } catch (reviewErr) {
-    console.error('Error creating pending review:', reviewErr);
-  }
-
-  // ⭐ Ghi nhận vào hàng đợi Accounting Outbox cho sự kiện SESSION_DONE
-  if (sessionId && tenantId) {
-    const fullPrice = Number(currentBooking?.full_price || 0);
-    const discountPercent = Number(currentBooking?.discount_percent || 0);
-    const targetPrice = fullPrice * (1 - discountPercent / 100);
-    const totalSessions = Number(currentBooking?.total_sessions || 1);
-    const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
-    const commission = Number(currentBooking?.ktv_commission) || 0;
-
-    const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-    await enqueueWithAutoClient(
-      supabase,
-      {
-        tenantId,
-        eventType: 'SESSION_DONE',
-        referenceType: 'SESSION_LOG',
-        referenceId: sessionId,
-        payload: {
-          earnedRevenueAmount,
-          commissionAmount: commission,
-          ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
-          // TODO Phase 29: dùng branch_id thực khi multi-branch
-          branchId: tenantId,
-          description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`,
-        },
-      },
-      '[completeSession]'
-    );
-  }
+  const revalPaths = [
+    '/dashboard/bookings',
+    '/dashboard/sessions',
+    '/dashboard/customers'
+  ];
+  await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
 
   return { success: true };
 }
@@ -514,132 +651,73 @@ export async function updateSessionLog(id: string, payload: any) {
     }
   }
 
-  const { count, error: countError } = await supabase
-    .from('session_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('booking_id', bookingId)
-    .eq('status', 'completed');
-
-  if (!countError) {
-    const { data: currentBooking } = await supabase.from('bookings').select('total_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, discount_percent').eq('id', bookingId).single();
-    const today = getLocalDateString();
-    const safeCount = count ?? 0;
-    const bUpdates: Database['public']['Tables']['bookings']['Update'] = {
-      completed_sessions: safeCount,
-      last_updated_date: today,
-      updated_at: new Date().toISOString()
-    };
-
-    if (safeCount > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
-      bUpdates.status = 'in_progress';
-    }
-
-    if (currentBooking?.total_sessions && safeCount >= currentBooking.total_sessions) {
-      bUpdates.status = 'completed';
-    }
-
-    await supabase
+  if (safeUpdates.status === 'completed' && existingLog?.status !== 'completed') {
+    const { data: bookingData } = await supabase
       .from('bookings')
-      .update(bUpdates)
-      .eq('id', bookingId);
+      .select('assigned_ktv_id, package_id')
+      .eq('id', bookingId)
+      .single();
 
-    // --- AUTOMATION START: Financial Recognition ---
-    if (safeUpdates.status === 'completed' && existingLog?.status !== 'completed') {
-      const ktvId = safeUpdates.completed_by_ktv_id || null;
-      const tenantId = currentUser?.tenant_id || currentBooking?.tenant_id;
-      
-      if (currentBooking?.package_name?.toLowerCase().includes('lẻ')) {
-        await supabase.from('revenue').insert([{
-          booking_id: bookingId,
-          amount: 350000,
-          revenue_type: 'package_payment',
-          payment_method: 'bank_transfer',
-          received_date: today,
-          status: 'confirmed',
-          notes: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
-          tenant_id: tenantId
-        }]);
+    const today = getLocalDateString();
+    const tenantId = currentUser?.tenant_id || existingLog?.tenant_id;
+    const ktvId = safeUpdates.completed_by_ktv_id || bookingData?.assigned_ktv_id || null;
+
+    const result = await processSessionCompletion(
+      supabase,
+      id,
+      bookingId,
+      tenantId,
+      ktvId,
+      today,
+      bookingData?.package_id,
+      existingLog,
+      currentUser
+    );
+
+    if (result.error) {
+      console.error('[updateSessionLog] Failed to process session completion, rolling back status:', result.error);
+      // Rollback session status
+      await supabase.from('session_logs').update({
+        status: existingLog?.status || 'scheduled',
+        completed_date: existingLog?.completed_date || null,
+        completed_by_ktv_id: existingLog?.completed_by_ktv_id || null
+      }).eq('id', id);
+
+      return { error: result.error };
+    }
+  } else {
+    const { count, error: countError } = await supabase
+      .from('session_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('booking_id', bookingId)
+      .eq('status', 'completed');
+
+    if (!countError) {
+      const { data: currentBooking } = await supabase
+        .from('bookings')
+        .select('total_sessions, status, package_name')
+        .eq('id', bookingId)
+        .single();
+      const today = getLocalDateString();
+      const safeCount = count ?? 0;
+      const bUpdates: Database['public']['Tables']['bookings']['Update'] = {
+        completed_sessions: safeCount,
+        last_updated_date: today,
+        updated_at: new Date().toISOString()
+      };
+
+      if (safeCount > 0 && (currentBooking?.status === 'deposit_pending' || currentBooking?.status === 'booked' || currentBooking?.status === 'deposit')) {
+        bUpdates.status = 'in_progress';
       }
 
-      if (ktvId && tenantId) {
-        const monthYear = `${today.substring(0, 7)}-01`;
-        const commission = Number(currentBooking?.ktv_commission) || 150000;
-
-        const { data: salaryRec } = await supabase
-          .from('salary_records')
-          .select('id, total_sessions, service_percentage_bonus')
-          .eq('ktv_id', ktvId)
-          .eq('month_year', monthYear)
-          .single();
-
-        if (salaryRec) {
-          await supabase.from('salary_records').update({
-            total_sessions: (salaryRec.total_sessions || 0) + 1,
-            service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission
-          }).eq('id', salaryRec.id);
-        } else {
-          await supabase.from('salary_records').insert([{
-            ktv_id: ktvId,
-            month_year: monthYear,
-            total_sessions: 1,
-            service_percentage_bonus: commission,
-            base_salary: 6000000,
-            status: 'draft',
-            tenant_id: tenantId
-          }]);
-        }
+      if (currentBooking?.total_sessions && safeCount >= currentBooking.total_sessions) {
+        bUpdates.status = 'completed';
       }
 
-      if (currentBooking?.assigned_ktv_id) {
-        const { data: existingReview } = await supabase
-          .from('session_reviews')
-          .select('id')
-          .eq('session_log_id', id)
-          .single();
-
-        if (!existingReview) {
-          await supabase
-            .from('session_reviews')
-            .insert([{
-              session_log_id: id,
-              reviewer_id: null,
-              ktv_id: currentBooking.assigned_ktv_id,
-              rating: 0,
-              status: 'pending_review',
-              tenant_id: currentBooking.tenant_id
-            }]);
-        }
-      }
-
-      // ⭐ Ghi nhận vào hàng đợi Accounting Outbox cho sự kiện SESSION_DONE
-      if (id && tenantId) {
-        const fullPrice = Number(currentBooking?.full_price || 0);
-        const discountPercent = Number(currentBooking?.discount_percent || 0);
-        const targetPrice = fullPrice * (1 - discountPercent / 100);
-        const totalSessions = Number(currentBooking?.total_sessions || 1);
-        const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
-        const commission = Number(currentBooking?.ktv_commission) || 0;
-
-        const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-        await enqueueWithAutoClient(
-          supabase,
-          {
-            tenantId,
-            eventType: 'SESSION_DONE',
-            referenceType: 'SESSION_LOG',
-            referenceId: id,
-            payload: {
-              earnedRevenueAmount,
-              commissionAmount: commission,
-              ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
-              // TODO Phase 29: dùng branch_id thực khi multi-branch
-              branchId: tenantId,
-              description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`,
-            },
-          },
-          '[updateSessionLog]'
-        );
-      }
+      await supabase
+        .from('bookings')
+        .update(bUpdates)
+        .eq('id', bookingId);
     }
   }
 
@@ -675,7 +753,7 @@ export async function saveSessionNote(sessionId: string, note: string) {
     .single();
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status ?? '')) {
-    return { error: `DEBUG: ID: ${currentUser?.id || 'null'}, Role: ${currentUser?.role || 'null'}, Email: ${currentUser?.email || 'null'}` };
+    return { error: 'Unauthorized' };
   }
   
   const { error } = await supabase

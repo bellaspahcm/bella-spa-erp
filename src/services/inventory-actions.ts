@@ -454,14 +454,18 @@ export async function consumeInventory(
 
     const { data: item, error: fetchError } = await supabase
       .from('inventory_items')
-      .select('stock_level')
+      .select('name, stock_level')
       .eq('id', itemId)
       .eq('tenant_id', tenantId)
       .single();
 
     if (fetchError || !item) return { success: false, error: 'Không tìm thấy vật tư' };
 
-    const newStock = Math.max(0, Number(item.stock_level) - Number(amount));
+    if (Number(item.stock_level) < Number(amount)) {
+      return { success: false, error: `Mặt hàng "${item.name}" không đủ tồn kho (Hiện có: ${item.stock_level}, Cần tiêu hao: ${amount})` };
+    }
+
+    const newStock = Number(item.stock_level) - Number(amount);
 
     const { error: updateError } = await supabase
       .from('inventory_items')
@@ -512,19 +516,31 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
 
     const materials = await getPackageMaterials(packageId);
     let totalCost = 0;
+    const consumedItems: Array<{ id: string; qty: number }> = [];
 
-    const results = await Promise.allSettled(
-      materials.map((mat: any) => {
-        const cost = Number(mat.quantity_per_session || 0) * Number(mat.inventory_items?.price_per_unit || 0);
-        totalCost += cost;
-        return consumeInventory(
-          mat.inventory_items?.id,
-          mat.quantity_per_session,
-          sessionLogId,
-          'Tự động tiêu hao buổi liệu trình'
-        );
-      })
-    );
+    for (const mat of materials) {
+      const qty = Number(mat.quantity_per_session || 0);
+      const itemId = mat.inventory_items?.id;
+      if (!itemId || qty <= 0) continue;
+
+      const cost = qty * Number(mat.inventory_items?.price_per_unit || 0);
+      totalCost += cost;
+
+      const consumeResult = await consumeInventory(
+        itemId,
+        qty,
+        sessionLogId,
+        'Tự động tiêu hao buổi liệu trình'
+      );
+
+      if (!consumeResult.success) {
+        console.warn(`[autoConsumeForSession] Consume failed for item ${itemId}, rolling back consumed items...`);
+        // Rollback lại các mặt hàng đã trừ của session này
+        await rollbackInventoryConsumption(sessionLogId);
+        return { success: false, error: consumeResult.error || 'Kho không đủ nguyên liệu' };
+      }
+      consumedItems.push({ id: itemId, qty });
+    }
 
     // Enqueue INVENTORY_CONSUMED outbox event if totalCost > 0
     if (totalCost > 0) {
@@ -547,9 +563,74 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
       );
     }
 
-    return { success: true, processed: results.length, totalCost };
-  } catch (e) {
+    return { success: true, processed: consumedItems.length, totalCost };
+  } catch (e: any) {
     console.error('[autoConsumeForSession]', e);
-    return { success: false, error: 'Lỗi tiêu hao tự động' };
+    // Hủy bỏ và hoàn kho nếu gặp lỗi hệ thống giữa chừng
+    await rollbackInventoryConsumption(sessionLogId);
+    return { success: false, error: e?.message || 'Lỗi tiêu hao tự động' };
+  }
+}
+
+/**
+ * Hoàn trả tồn kho vật tư khi hoàn tác ca làm việc (Rollback)
+ */
+export async function rollbackInventoryConsumption(sessionLogId: string) {
+  try {
+    const { supabase, tenantId } = await getSupabaseWithTenant();
+    if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
+
+    // 1. Lấy toàn bộ logs tiêu hao của session này
+    const { data: logs, error: fetchErr } = await supabase
+      .from('inventory_logs')
+      .select('id, item_id, change_amount')
+      .eq('session_log_id', sessionLogId)
+      .eq('reason', 'session_consumption')
+      .eq('tenant_id', tenantId);
+
+    if (fetchErr) {
+      console.error('[rollbackInventoryConsumption] Error fetching logs:', fetchErr);
+      return { success: false, error: fetchErr.message };
+    }
+
+    if (!logs || logs.length === 0) {
+      return { success: true, processed: 0 };
+    }
+
+    // 2. Hoàn trả kho cho từng mặt hàng
+    for (const log of logs) {
+      const { data: item, error: itemErr } = await supabase
+        .from('inventory_items')
+        .select('stock_level')
+        .eq('id', log.item_id)
+        .eq('tenant_id', tenantId)
+        .single();
+
+      if (!itemErr && item) {
+        const restoredStock = Number(item.stock_level) + Math.abs(Number(log.change_amount));
+        await supabase
+          .from('inventory_items')
+          .update({ stock_level: restoredStock })
+          .eq('id', log.item_id)
+          .eq('tenant_id', tenantId);
+      }
+    }
+
+    // 3. Xóa các logs này
+    const logIds = logs.map(l => l.id);
+    const { error: deleteErr } = await supabase
+      .from('inventory_logs')
+      .delete()
+      .in('id', logIds);
+
+    if (deleteErr) {
+      console.error('[rollbackInventoryConsumption] Error deleting logs:', deleteErr);
+      return { success: false, error: deleteErr.message };
+    }
+
+    return { success: true, processed: logs.length };
+  } catch (e: any) {
+    console.error('[rollbackInventoryConsumption] Error:', e);
+    return { success: false, error: e.message || 'Lỗi hệ thống' };
   }
 }
