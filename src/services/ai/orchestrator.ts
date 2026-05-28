@@ -280,9 +280,18 @@ CÔNG THỨC & NGUYÊN TẮC PHÂN TÍCH NGHIỆP VỤ BẮT BUỘC:
 1. Nguyên tắc Đánh giá CSAT:
    - Điểm số CSAT trung bình và danh sách phản hồi tiêu cực (dưới 4 sao) chỉ được tính từ các đánh giá có trạng thái đã phê duyệt ("status": "approved").
    - Tuyệt đối KHÔNG được nhận diện các bản ghi nháp/đang chờ đánh giá có trạng thái chờ duyệt ("status": "pending_review") với điểm số mặc định là 0 ("rating": 0 hoặc null) là "đánh giá tiêu cực 0 sao". Đây chỉ là các placeholder được tạo tự động để chờ khách hàng đánh giá.
-2. Nguyên tắc Trạng thái Lịch hẹn & Gói liệu trình:
-   - Khi báo cáo về lịch hẹn của khách hàng trong ngày, hãy kiểm tra xem ca hôm nay đã hoàn thành chưa (trạng thái "status": "completed").
-   - Báo cáo rõ ràng tiến độ thực tế của gói liệu trình dưới dạng: "Đã hoàn thành X / Y buổi" (dựa vào completed_sessions / total_sessions của booking tương ứng).
+
+2. Nguyên tắc Trạng thái Lịch hẹn & Tiến độ Gói Liệu Trình:
+   - Dữ liệu "today_sessions" trong payload chứa DANH SÁCH CHÍNH XÁC các ca được lên lịch hôm nay.
+   - Mỗi ca trong "today_sessions.sessions" có trường "status": "completed" (đã hoàn thành) hoặc "scheduled"/"in_progress" (chưa hoàn thành).
+   - Trường "progress" trong mỗi ca đã được tính sẵn dưới dạng "Buổi X/Y (Đã hoàn thành A/Y buổi)" - hãy trích dẫn NGUYÊN VĂN con số này, KHÔNG được tự tính lại.
+   - Trường "completed_by_ktv" là tên KTV đã thực hiện ca đó (nếu null = chưa có KTV thực hiện).
+   - Báo cáo bắt buộc phải nêu: ca hôm nay đã hoàn thành hay chưa, KTV nào thực hiện, và tiến độ gói là buổi thứ bao nhiêu trên tổng số buổi.
+
+3. Nguyên tắc Phân tích Dữ liệu Thực tế:
+   - CHỈ phân tích và báo cáo những con số có thực trong payload dữ liệu được cung cấp.
+   - KHÔNG được suy diễn, ước tính hoặc bịa đặt số liệu không có trong dữ liệu thô.
+   - Nếu một trường là null hoặc không có dữ liệu, hãy báo cáo "Chưa có dữ liệu" thay vì đặt giả định.
 
 Thông tin ngữ cảnh:
 - Câu lệnh của Tổng Giám Đốc: "${command}"
