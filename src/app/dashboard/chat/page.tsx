@@ -462,7 +462,7 @@ export default function ChatPage() {
 
               {/* Input Area */}
               <div className="p-6 bg-white/50 backdrop-blur-md border-t border-pink-50">
-                <form onSubmit={handleSendMessage} className="flex items-end gap-4 bg-pink-50/50 p-3 rounded-[2rem] border border-pink-100/50 focus-within:ring-4 focus-within:ring-primary/5 transition-all">
+                <form onSubmit={handleSendMessage} className="flex items-end gap-4 bg-pink-50/50 p-3 rounded-[2rem] border border-pink-100/80 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/20 transition-all">
                   <div className="flex items-center gap-1 pb-1">
                     <button type="button" className="p-3 hover:bg-white rounded-full text-muted-foreground hover:text-primary transition-all active:scale-90">
                       <Paperclip className="w-5 h-5" />
@@ -487,7 +487,7 @@ export default function ChatPage() {
                       }
                     }}
                     placeholder="Nhập tin nhắn của bạn..."
-                    className="flex-1 bg-transparent border-none focus:ring-0 text-[15px] font-semibold placeholder:text-muted-foreground/60 py-3 resize-none min-h-[44px] max-h-32 custom-scrollbar"
+                    className="flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-[15px] font-semibold placeholder:text-muted-foreground/60 py-3 resize-none min-h-[44px] max-h-32 custom-scrollbar"
                   />
                   
                   <div className="flex items-center gap-2 pb-1">
