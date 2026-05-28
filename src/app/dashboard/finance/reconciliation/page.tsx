@@ -378,16 +378,18 @@ export default function FinancialReconciliationPage() {
       {/* TABS & SEARCH */}
       <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-2 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex flex-wrap gap-1 p-1 bg-slate-50 rounded-[24px] w-full md:w-auto">
-          {[
-            { id: 'debt', label: 'Công Nợ Khách Hàng', count: data.debt_alerts.length, color: 'text-rose-500', bg: 'bg-rose-50' },
-            { id: 'orphan', label: 'Tiền Treo (Chưa gán)', count: data.orphaned_revenue.length, color: 'text-amber-500', bg: 'bg-amber-50' },
-            { id: 'mismatch', label: 'Lệch Doanh Thu', count: data.mismatch_alerts.length, color: 'text-purple-500', bg: 'bg-purple-50' },
-            { id: 'clearing', label: 'Bù trừ Chi nhánh', count: clearingRecords.filter(c => c.status === 'pending').length, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-            { id: 'history', label: 'Lịch Sử Thu Nợ', count: data.collection_history.length, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-          ].map((tab) => (
+          {(
+            [
+              { id: 'debt', label: 'Công Nợ Khách Hàng', count: data.debt_alerts.length, color: 'text-rose-500', bg: 'bg-rose-50' },
+              { id: 'orphan', label: 'Tiền Treo (Chưa gán)', count: data.orphaned_revenue.length, color: 'text-amber-500', bg: 'bg-amber-50' },
+              { id: 'mismatch', label: 'Lệch Doanh Thu', count: data.mismatch_alerts.length, color: 'text-purple-500', bg: 'bg-purple-50' },
+              { id: 'clearing', label: 'Bù trừ Chi nhánh', count: clearingRecords.filter(c => c.status === 'pending').length, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+              { id: 'history', label: 'Lịch Sử Thu Nợ', count: data.collection_history.length, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+            ] as { id: 'debt' | 'orphan' | 'mismatch' | 'clearing' | 'history'; label: string; count: number; color: string; bg: string }[]
+          ).map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={cn(
                 "relative flex-1 md:flex-none px-6 py-4 rounded-[20px] text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2",
                 activeTab === tab.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"

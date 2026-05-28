@@ -12,7 +12,19 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Test files are excluded from strict any rule — mocks legitimately use any
+    "src/__tests__/**",
   ]),
+  // Track as-any debt in production code.
+  // Phase 1.1.5: warn (baseline ~100 files). Promote to error in Phase 1.3 after file splits.
+  // Run `npm run lint:strict` for a hard failure audit at any time.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/__tests__/**"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;
