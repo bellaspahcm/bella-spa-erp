@@ -237,10 +237,10 @@ export default function CustomersPage() {
         toast.success('Xóa hồ sơ thành công');
         loadCustomers();
       } else {
-        toast.error('Lỗi khi xóa hồ sơ');
+        toast.error(result.error || 'Lỗi khi xóa hồ sơ');
       }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
+    } catch (error: any) {
+      toast.error(error?.message || 'Có lỗi xảy ra');
     }
     setActiveMenuId(null);
   };

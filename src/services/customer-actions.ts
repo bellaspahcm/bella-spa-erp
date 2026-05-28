@@ -364,7 +364,11 @@ export async function deleteCustomer(id: string) {
   
   if (error) {
     console.error('Error deleting customer:', error);
-    return { error: error.message };
+    let userMessage = error.message;
+    if (error.code === '23503') {
+      userMessage = 'Không thể xóa khách hàng đã có dịch vụ';
+    }
+    return { success: false, error: userMessage };
   }
 
   try {
