@@ -919,8 +919,8 @@ function BookingsContent() {
                             <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">{col.full_name}</h3>
                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
                               {col.isUnassigned 
-                                ? `${sessions.filter(s => isSameDay(new Date(s.assigned_date), selectedDate) && !s.bookings?.assigned_ktv_id).length} ca`
-                                : `${sessions.filter(s => isSameDay(new Date(s.assigned_date), selectedDate) && s.bookings?.assigned_ktv_id === col.id).length} ca`
+                                ? `${sessions.filter(s => isSameDay(new Date(s.assigned_date), selectedDate) && !(s.completed_by_ktv_id || s.bookings?.assigned_ktv_id)).length} ca`
+                                : `${sessions.filter(s => isSameDay(new Date(s.assigned_date), selectedDate) && (s.completed_by_ktv_id || s.bookings?.assigned_ktv_id) === col.id).length} ca`
                               }
                             </span>
                           </div>
@@ -969,9 +969,10 @@ function BookingsContent() {
                                 };
 
                                 const cellSessions = sessions.filter(session => {
+                                  const activeKtvId = session.completed_by_ktv_id || session.bookings?.assigned_ktv_id;
                                   const isKtvMatch = col.isUnassigned 
-                                    ? !session.bookings?.assigned_ktv_id 
-                                    : (session.bookings?.assigned_ktv_id === col.id);
+                                    ? !activeKtvId 
+                                    : (activeKtvId === col.id);
                                   return isKtvMatch && 
                                          isSameDay(new Date(session.assigned_date), selectedDate) && 
                                          getSessionHourBlock(session.assigned_time) === hour;
