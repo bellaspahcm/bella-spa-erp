@@ -435,12 +435,23 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                     {session.status === 'completed' ? (
                       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50 w-fit">
                         <span>KTV thực hiện:</span>
-                        <span className="text-primary font-black">{session.completed_by_ktv?.full_name || 'Bella Spa'}</span>
+                        <span className="text-primary font-black">
+                          {session.completed_by_ktv?.full_name || 'Bella Spa'}
+                          {session.completed_by_ktv?.id !== booking.assigned_ktv?.id && ' (Làm thay)'}
+                        </span>
                       </div>
                     ) : (
-                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50 w-fit">
-                        <span>KTV phụ trách:</span>
-                        <span className="text-slate-800 font-black">{booking.assigned_ktv?.full_name || 'Đang sắp xếp KTV'}</span>
+                      <div className="mt-2 flex flex-col gap-1.5 w-fit">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50">
+                          <span>KTV phụ trách:</span>
+                          <span className="text-slate-800 font-black">{booking.assigned_ktv?.full_name || 'Đang sắp xếp KTV'}</span>
+                        </div>
+                        {session.completed_by_ktv && session.completed_by_ktv.id !== booking.assigned_ktv?.id && (
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-amber-700 font-bold bg-amber-50/70 rounded-2xl px-4 py-1.5 border border-amber-200/50 animate-pulse">
+                            <span>🔄 KTV làm thay:</span>
+                            <span className="text-primary font-black">{session.completed_by_ktv.full_name}</span>
+                          </div>
+                        )}
                       </div>
                     )}
                     
