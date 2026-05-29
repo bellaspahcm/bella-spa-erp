@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   RefreshCw,
   Wallet,
-  ArrowLeftRight
+  ArrowLeftRight,
+  ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -39,6 +40,7 @@ export default function FinancialReconciliationPage() {
   const [activeTab, setActiveTab] = useState<'debt' | 'orphan' | 'mismatch' | 'history' | 'clearing'>('debt');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState(''); // YYYY-MM-DD
+  const [isTabDropdownOpen, setIsTabDropdownOpen] = useState(false);
 
   // Inter-branch clearing state
   const [clearingRecords, setClearingRecords] = useState<any[]>([]);
@@ -332,8 +334,8 @@ export default function FinancialReconciliationPage() {
       </div>
 
       {/* KPI CARDS */}
-      <div className="flex sm:grid overflow-x-auto no-scrollbar flex-nowrap sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-2 sm:pb-0">
-        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-rose-200 dark:shadow-none relative overflow-hidden shrink-0 w-[280px] sm:w-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-rose-200 dark:shadow-none relative overflow-hidden w-full">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -347,7 +349,7 @@ export default function FinancialReconciliationPage() {
           <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
 
-        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden shrink-0 w-[280px] sm:w-auto">
+        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden w-full">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -361,7 +363,7 @@ export default function FinancialReconciliationPage() {
           <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-purple-200 relative overflow-hidden shrink-0 w-[280px] sm:w-auto">
+        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-purple-200 relative overflow-hidden w-full">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -378,7 +380,90 @@ export default function FinancialReconciliationPage() {
 
       {/* TABS & SEARCH */}
       <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-2 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex overflow-x-auto no-scrollbar flex-nowrap gap-1 p-1 bg-slate-50 rounded-[24px] w-full md:w-auto">
+        {/* Mobile Tab Dropdown Select */}
+        <div className="block md:hidden w-full relative">
+          <button
+            type="button"
+            onClick={() => setIsTabDropdownOpen(!isTabDropdownOpen)}
+            className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border border-slate-100 bg-slate-50 text-slate-800 shadow-sm hover:shadow-md active:scale-[0.98] outline-none"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              {(() => {
+                const tabsList = [
+                  { id: 'debt', label: 'Công Nợ Khách Hàng', count: data.debt_alerts.length, color: 'text-rose-500', bg: 'bg-rose-50' },
+                  { id: 'orphan', label: 'Tiền Treo (Chưa gán)', count: data.orphaned_revenue.length, color: 'text-amber-500', bg: 'bg-amber-50' },
+                  { id: 'mismatch', label: 'Lệch Doanh Thu', count: data.mismatch_alerts.length, color: 'text-purple-500', bg: 'bg-purple-50' },
+                  { id: 'clearing', label: 'Bù trừ Chi nhánh', count: clearingRecords.filter(c => c.status === 'pending').length, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+                  { id: 'history', label: 'Lịch Sử Thu Nợ', count: data.collection_history.length, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                ];
+                const activeTabObj = tabsList.find(t => t.id === activeTab) || tabsList[0];
+                return (
+                  <>
+                    <span className="text-xs font-black uppercase tracking-widest truncate">{activeTabObj.label}</span>
+                    <span className={cn("px-2 py-0.5 rounded-lg text-[10px]", activeTabObj.bg + ' ' + activeTabObj.color)}>
+                      {activeTabObj.count}
+                    </span>
+                  </>
+                );
+              })()}
+            </div>
+            <ChevronDown className={cn(
+              "w-4 h-4 text-slate-400 transition-transform duration-300 shrink-0",
+              isTabDropdownOpen && "rotate-180 text-primary"
+            )} />
+          </button>
+
+          <AnimatePresence>
+            {isTabDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsTabDropdownOpen(false)} />
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden py-2"
+                >
+                  {(
+                    [
+                      { id: 'debt', label: 'Công Nợ Khách Hàng', count: data.debt_alerts.length, color: 'text-rose-500', bg: 'bg-rose-50' },
+                      { id: 'orphan', label: 'Tiền Treo (Chưa gán)', count: data.orphaned_revenue.length, color: 'text-amber-500', bg: 'bg-amber-50' },
+                      { id: 'mismatch', label: 'Lệch Doanh Thu', count: data.mismatch_alerts.length, color: 'text-purple-500', bg: 'bg-purple-50' },
+                      { id: 'clearing', label: 'Bù trừ Chi nhánh', count: clearingRecords.filter(c => c.status === 'pending').length, color: 'text-indigo-500', bg: 'bg-indigo-50' },
+                      { id: 'history', label: 'Lịch Sử Thu Nợ', count: data.collection_history.length, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                    ] as { id: 'debt' | 'orphan' | 'mismatch' | 'clearing' | 'history'; label: string; count: number; color: string; bg: string }[]
+                  ).map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          setIsTabDropdownOpen(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center justify-between px-5 py-3.5 text-left transition-colors",
+                          isActive
+                            ? "bg-rose-50/50 text-primary font-black"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        )}
+                      >
+                        <span className="text-xs font-bold uppercase tracking-wider truncate">{tab.label}</span>
+                        <span className={cn("px-2 py-0.5 rounded-lg text-[10px]", isActive ? tab.bg + ' ' + tab.color : "bg-slate-100 text-slate-400")}>
+                          {tab.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Desktop Tabs List */}
+        <div className="hidden md:flex gap-1 p-1 bg-slate-50 rounded-[24px] w-full md:w-auto">
           {(
             [
               { id: 'debt', label: 'Công Nợ Khách Hàng', count: data.debt_alerts.length, color: 'text-rose-500', bg: 'bg-rose-50' },
