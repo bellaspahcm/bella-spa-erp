@@ -1052,7 +1052,7 @@ function BookingsContent() {
                                                 setShowDetailModal(true);
                                                 if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
                                               }}
-                                              className={`p-3 rounded-2xl border transition-all cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-[0.99] select-none text-left ${
+                                              className={`p-3 rounded-2xl border transition-all cursor-pointer hover:shadow-md select-none text-left ${
                                                 isCompleted 
                                                   ? 'bg-emerald-50/80 border-emerald-100/80 hover:border-emerald-300 hover:bg-emerald-50' 
                                                   : isInProgress 
