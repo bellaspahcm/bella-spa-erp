@@ -391,7 +391,7 @@ export default function LandingPage() {
 
 
   return (
-    <div className="min-h-screen bg-background relative overflow-x-hidden font-sans selection:bg-rose-100 selection:text-primary">
+    <div className="landing-page-wrapper min-h-screen bg-background relative overflow-x-hidden font-sans selection:bg-rose-100 selection:text-primary">
       
       {/* ── Background Gradients ── */}
       <div className="absolute top-[-10%] left-[-20%] w-[60%] h-[50%] rounded-full bg-gradient-to-tr from-pink-300/10 to-rose-200/20 blur-[120px] pointer-events-none -z-10" />
