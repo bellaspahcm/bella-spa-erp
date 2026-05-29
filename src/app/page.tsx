@@ -884,7 +884,7 @@ export default function LandingPage() {
                                 {pkg.name}
                               </h4>
                               <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                                <Clock className="w-3.5 h-3.5" /> {pkg.duration} / buổi
+                                <Clock className="w-3.5 h-3.5" /> {pkg.duration}
                               </span>
 
                               <div className="mt-6 mb-6">
@@ -993,7 +993,7 @@ export default function LandingPage() {
                         <div>
                           <h4 className="text-xl font-serif font-black text-slate-800 dark:text-slate-200 tracking-tight group-hover:text-primary transition-colors">{pkg.name}</h4>
                           <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">
-                            <Clock className="w-3 h-3" /> {pkg.duration} / buổi
+                            <Clock className="w-3 h-3" /> {pkg.duration}
                           </span>
                         </div>
                         <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0 flex flex-col items-start sm:items-end">
