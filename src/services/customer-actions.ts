@@ -90,6 +90,28 @@ export async function getCustomerBookingByToken(token?: string) {
   // Resolve package_name correctly using resolvePackageName helper
   data.package_name = resolvePackageName(data);
 
+  // Fetch active promotions for this tenant
+  if (data.tenant_id) {
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const { data: promotions, error: promoError } = await supabase
+      .from('promotions')
+      .select('*')
+      .eq('tenant_id', data.tenant_id)
+      .eq('is_active', true);
+      
+    if (!promoError && promotions) {
+      data.active_promotions = promotions.filter((promo: any) => {
+        const startValid = !promo.start_date || promo.start_date <= todayStr;
+        const endValid = !promo.end_date || promo.end_date >= todayStr;
+        return startValid && endValid;
+      });
+    } else {
+      data.active_promotions = [];
+    }
+  } else {
+    data.active_promotions = [];
+  }
+
   return data;
 }
 

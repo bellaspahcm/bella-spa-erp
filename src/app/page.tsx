@@ -28,7 +28,8 @@ import {
   Zap,
   Info,
   Gift,
-  Check
+  Check,
+  Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { HeroSection } from '@/components/features/landing/HeroSection';
@@ -315,6 +316,40 @@ export default function LandingPage() {
 
     fetchActivePackages();
   }, []);
+
+  const [promotions, setPromotions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchPromotions = async () => {
+      try {
+        const supabase = createBrowserClient();
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const { data, error } = await supabase
+          .from('promotions')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          const active = data.filter((promo: any) => {
+            const startValid = !promo.start_date || promo.start_date <= todayStr;
+            const endValid = !promo.end_date || promo.end_date >= todayStr;
+            return startValid && endValid;
+          });
+          setPromotions(active);
+        }
+      } catch (err) {
+        console.error('Fetch promotions error:', err);
+      }
+    };
+
+    fetchPromotions();
+  }, []);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Đã sao chép mã ưu đãi vào bộ nhớ tạm 🌸');
+  };
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -673,6 +708,72 @@ export default function LandingPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* ── DYNAMIC PROMOTIONS SECTION ── */}
+      {promotions && promotions.length > 0 && (
+        <section className="py-12 bg-gradient-to-b from-[#FFF5F6] to-white relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <span className="text-xs font-black tracking-widest text-primary uppercase block mb-3">Chương trình ưu đãi</span>
+              <h3 className="text-2xl sm:text-3xl font-serif font-black text-slate-800 tracking-tight">
+                Khuyến Mãi Đặc Biệt Đang Diễn Ra 🌸
+              </h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {promotions.map((promo: any) => (
+                <motion.div
+                  key={promo.id}
+                  whileHover={{ y: -6 }}
+                  className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-pink-100 shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-300"
+                >
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -mr-12 -mt-12 pointer-events-none" />
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
+                        <Sparkles className="w-6 h-6" />
+                      </div>
+                      {promo.discount_percent && (
+                        <span className="bg-primary text-white text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+                          Giảm {promo.discount_percent}%
+                        </span>
+                      )}
+                    </div>
+                    
+                    <h4 className="text-lg font-black text-slate-800 leading-snug tracking-tight group-hover:text-primary transition-colors">
+                      {promo.title}
+                    </h4>
+                    <p className="text-slate-500 text-sm font-semibold leading-relaxed">
+                      {promo.description}
+                    </p>
+                  </div>
+                  
+                  {promo.discount_code && (
+                    <div className="mt-6 pt-6 border-t border-pink-50 flex items-center justify-between gap-4">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mã ưu đãi</span>
+                        <code className="text-sm font-black text-primary tracking-wider font-mono bg-pink-50 px-2 py-0.5 rounded">
+                          {promo.discount_code}
+                        </code>
+                      </div>
+                      
+                      <button
+                        onClick={() => copyToClipboard(promo.discount_code)}
+                        className="bg-primary/5 hover:bg-primary hover:text-white text-primary px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-sm flex items-center gap-1.5 shrink-0"
+                        title="Sao chép mã giảm giá"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        Sao chép mã
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── PREMIUM PACKAGES SECTION ── */}
       <section id="services" className="py-24 relative">
