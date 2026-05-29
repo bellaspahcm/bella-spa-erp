@@ -332,8 +332,8 @@ export default function FinancialReconciliationPage() {
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-rose-200 dark:shadow-none relative overflow-hidden">
+      <div className="flex sm:grid overflow-x-auto no-scrollbar flex-nowrap sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pb-2 sm:pb-0">
+        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-rose-200 dark:shadow-none relative overflow-hidden shrink-0 w-[280px] sm:w-auto">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -347,7 +347,7 @@ export default function FinancialReconciliationPage() {
           <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
 
-        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden shrink-0 w-[280px] sm:w-auto">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -361,7 +361,7 @@ export default function FinancialReconciliationPage() {
           <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-purple-200 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-purple-200 relative overflow-hidden shrink-0 w-[280px] sm:w-auto">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
@@ -378,7 +378,7 @@ export default function FinancialReconciliationPage() {
 
       {/* TABS & SEARCH */}
       <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-2 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex flex-wrap gap-1 p-1 bg-slate-50 rounded-[24px] w-full md:w-auto">
+        <div className="flex overflow-x-auto no-scrollbar flex-nowrap gap-1 p-1 bg-slate-50 rounded-[24px] w-full md:w-auto">
           {(
             [
               { id: 'debt', label: 'Công Nợ Khách Hàng', count: data.debt_alerts.length, color: 'text-rose-500', bg: 'bg-rose-50' },
@@ -392,7 +392,7 @@ export default function FinancialReconciliationPage() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "relative flex-1 md:flex-none px-6 py-4 rounded-[20px] text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2",
+                "relative flex-1 md:flex-none px-6 py-4 rounded-[20px] text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 shrink-0 whitespace-nowrap",
                 activeTab === tab.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"
               )}
             >

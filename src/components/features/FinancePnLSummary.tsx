@@ -121,8 +121,8 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
   return (
     <div className="space-y-8 mb-10">
       {/* Month Selection Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Chi tiết báo cáo tháng</h3>
            {pnl.is_locked ? (
               <div className="flex items-center gap-2">
@@ -150,8 +150,8 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
               </button>
            )}
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-32">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="w-full sm:w-32">
             <PremiumSelect
               value={String(parseInt(selectedMonth.split('-')[1]) - 1)}
               options={['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'].map((m, i) => ({ value: String(i), label: m }))}
@@ -162,7 +162,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
               }}
             />
           </div>
-          <div className="w-28">
+          <div className="w-full sm:w-28">
             <PremiumSelect
               value={selectedMonth.split('-')[0]}
               options={Array.from({ length: 5 }, (_, i) => {

@@ -27,6 +27,7 @@ import { FinancePnLSummary } from '@/components/features/FinancePnLSummary';
 import { createClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import PremiumExportButton from '@/components/ui/PremiumExportButton';
 
 export default function FinancePage() {
   const [data, setData] = useState<any>({
@@ -196,10 +197,7 @@ export default function FinancePage() {
           <p className="text-slate-500 font-medium mt-1">Theo dõi dòng tiền và hiệu quả kinh doanh</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center justify-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-3 rounded-2xl font-bold transition-all shadow-sm">
-            <Download className="w-5 h-5 text-slate-400" />
-            <span>Xuất báo cáo</span>
-          </button>
+          <PremiumExportButton />
           <button 
             onClick={() => setIsModalOpen(true)}
             className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none uppercase tracking-widest text-xs active:scale-95"
