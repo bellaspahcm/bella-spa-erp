@@ -574,56 +574,56 @@ export default function LandingPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
                 {/* Box 1: Chăm sóc từ tâm */}
-                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-square flex items-center justify-center p-8 text-center relative group">
+                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-square flex items-center justify-center p-5 text-center relative group">
                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/newborn_mother_love.png")' }} />
                   <div className="absolute inset-0 bg-black/55 transition-colors duration-300 group-hover:bg-black/60" />
                   <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
                   <div className="relative z-10 p-2">
-                    <Heart className="w-12 h-12 text-rose-300 mx-auto mb-3 fill-rose-300/30 animate-pulse" />
-                    <h5 className="font-serif font-black !text-white text-base sm:text-lg tracking-tight">Chăm sóc từ tâm</h5>
-                    <p className="text-[10px] !text-rose-100/90 mt-2 font-bold leading-relaxed px-2">Tận tụy chăm chút từng bữa ăn giấc ngủ của mẹ & bé</p>
+                    <Heart className="w-8 h-8 text-rose-300 mx-auto mb-2 fill-rose-300/30 animate-pulse" />
+                    <h5 className="font-serif font-black !text-white text-sm sm:text-base tracking-tight">Chăm sóc từ tâm</h5>
+                    <p className="text-[9px] !text-rose-100/90 mt-1.5 font-bold leading-relaxed px-2">Tận tụy chăm chút từng bữa ăn giấc ngủ của mẹ & bé</p>
                   </div>
                 </div>
 
                 {/* Box 2: Không gian Hoàng Gia */}
-                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] flex flex-col justify-end p-6 text-white text-left relative group">
+                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] flex flex-col justify-end p-5 text-white text-left relative group">
                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/newborn_family_happy.png")' }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent" />
                   <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
-                  <div className="absolute inset-x-0 top-0 p-6 flex justify-between items-start z-10">
-                    <Award className="w-8 h-8 text-amber-400" />
-                    <span className="text-[9px] bg-white/10 backdrop-blur px-2.5 py-1 rounded-full font-black uppercase tracking-wider">Premium</span>
+                  <div className="absolute inset-x-0 top-0 p-5 flex justify-between items-start z-10">
+                    <Award className="w-6 h-6 text-amber-400" />
+                    <span className="text-[8px] bg-white/10 backdrop-blur px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Premium</span>
                   </div>
                   <div className="relative z-10 p-2">
-                    <h5 className="font-serif font-black text-lg sm:text-xl mb-1 leading-tight !text-white">Hoàng Gia</h5>
-                    <p className="text-[10px] !text-rose-100/90 font-bold leading-relaxed mt-1.5">Không gian và trang thiết bị chuẩn spa y khoa cao cấp bậc nhất.</p>
+                    <h5 className="font-serif font-black text-sm sm:text-base mb-1 leading-tight !text-white">Hoàng Gia</h5>
+                    <p className="text-[9px] !text-rose-100/90 font-bold leading-relaxed mt-1">Không gian và trang thiết bị chuẩn spa y khoa cao cấp bậc nhất.</p>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4 pt-8">
                 {/* Box 3: Thời gian linh hoạt */}
-                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] flex flex-col justify-end p-6 text-left relative group">
+                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-[3/4] flex flex-col justify-end p-5 text-left relative group">
                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/home_baby_care.png")' }} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent" />
                   <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
                   <div className="relative z-10 p-2 text-white">
-                    <Clock className="w-8 h-8 text-rose-300 mb-4" />
-                    <h5 className="font-serif font-black !text-white text-base sm:text-lg mb-1">Thời gian linh hoạt</h5>
-                    <p className="text-[10px] !text-rose-100/90 font-bold leading-relaxed mt-1.5">Đặt lịch 24/7. Điều phối kỹ thuật viên đến tận nhà chăm sóc đúng giờ.</p>
+                    <Clock className="w-6 h-6 text-rose-300 mb-2" />
+                    <h5 className="font-serif font-black !text-white text-sm sm:text-base mb-1">Thời gian linh hoạt</h5>
+                    <p className="text-[9px] !text-rose-100/90 font-bold leading-relaxed mt-1">Đặt lịch 24/7. Điều phối kỹ thuật viên đến tận nhà chăm sóc đúng giờ.</p>
                   </div>
                 </div>
 
                 {/* Box 4: Đánh giá 5★ */}
-                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-square flex items-center justify-center p-8 text-center relative group">
+                <div className="rounded-[2.5rem] overflow-hidden shadow-md aspect-square flex items-center justify-center p-5 text-center relative group">
                   <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: 'url("/newborn_baby_hand.png")' }} />
                   <div className="absolute inset-0 bg-[#9D174D]/80 mix-blend-multiply transition-colors duration-300 group-hover:bg-[#831843]/85" />
                   <div className="absolute inset-0 bg-gradient-to-br from-[#831843]/45 via-transparent to-black/35" />
                   <div className="absolute inset-3 border-2 border-primary/45 rounded-[1.8rem] pointer-events-none z-20" />
                   <div className="relative z-10 text-white p-2">
-                    <h4 className="text-4xl sm:text-5xl font-serif font-black mb-1 leading-none !text-white">5★</h4>
-                    <span className="text-[9px] font-black uppercase tracking-widest block !text-rose-100/90">Đánh Giá Phản Hồi</span>
-                    <p className="text-[10px] !text-white/95 mt-2 font-bold leading-relaxed px-2">99.8% các mẹ cực kỳ hài lòng với chất lượng chăm sóc.</p>
+                    <h4 className="text-2xl sm:text-3xl font-serif font-black mb-1 leading-none !text-white">5★</h4>
+                    <span className="text-[8px] font-black uppercase tracking-widest block !text-rose-100/90">Đánh Giá Phản Hồi</span>
+                    <p className="text-[9px] !text-white/95 mt-1.5 font-bold leading-relaxed px-2">99.8% các mẹ cực kỳ hài lòng với chất lượng chăm sóc.</p>
                   </div>
                 </div>
               </div>
