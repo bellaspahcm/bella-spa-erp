@@ -691,8 +691,8 @@ export default function LandingPage() {
             <div 
               className="absolute inset-0 bg-no-repeat bg-center transition-transform duration-700 group-hover:scale-[1.02]" 
               style={{ 
-                backgroundImage: 'url("/bella_real_4.jpg")',
-                backgroundSize: '70% auto'
+                backgroundImage: 'url("/banner_tam_be.png")',
+                backgroundSize: 'contain'
               }} 
             />
             {/* Delicate overlay */}
