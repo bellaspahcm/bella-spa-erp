@@ -506,21 +506,11 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                             <p className="font-bold text-slate-700">
                               {session.start_time ? new Date(session.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                             </p>
-                            <p className="text-[9px] text-slate-400 font-mono">
-                              {session.checkin_lat && session.checkin_lon 
-                                ? `${Number(session.checkin_lat).toFixed(5)}, ${Number(session.checkin_lon).toFixed(5)}` 
-                                : 'Không có GPS'}
-                            </p>
                           </div>
                           <div className="space-y-1 border-l border-slate-200 pl-4">
                             <p className="font-black text-slate-400 tracking-wider uppercase">🏁 Check-out</p>
                             <p className="font-bold text-slate-700">
                               {session.end_time ? new Date(session.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                            </p>
-                            <p className="text-[9px] text-slate-400 font-mono">
-                              {session.checkout_lat && session.checkout_lon 
-                                ? `${Number(session.checkout_lat).toFixed(5)}, ${Number(session.checkout_lon).toFixed(5)}` 
-                                : 'Không có GPS'}
                             </p>
                           </div>
                         </div>
