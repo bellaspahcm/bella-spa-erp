@@ -689,8 +689,11 @@ export default function LandingPage() {
           >
             {/* Background Image: Image 4 */}
             <div 
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.02]" 
-              style={{ backgroundImage: 'url("/bella_real_4.jpg")' }} 
+              className="absolute inset-0 bg-no-repeat bg-center transition-transform duration-700 group-hover:scale-[1.02]" 
+              style={{ 
+                backgroundImage: 'url("/bella_real_4.jpg")',
+                backgroundSize: '70% auto'
+              }} 
             />
             {/* Delicate overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-black/15 via-transparent to-transparent pointer-events-none" />
