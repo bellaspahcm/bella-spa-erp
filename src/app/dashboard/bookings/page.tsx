@@ -13,6 +13,7 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   LayoutGrid,
   List,
   X,
@@ -32,7 +33,7 @@ import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { getLocalDateString } from '@/lib/utils';
+import { getLocalDateString, cn } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -55,6 +56,7 @@ function BookingsContent() {
 
   const [view, setView] = useState<'calendar' | 'timeline'>('timeline');
   const [ktvSpecialty, setKtvSpecialty] = useState<'all' | 'combo' | 'baby' | 'pregnancy' | 'lactation'>('all');
+  const [isSpecialtyDropdownOpen, setIsSpecialtyDropdownOpen] = useState(false);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -812,7 +814,73 @@ function BookingsContent() {
 
               return (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 select-none">
-                  <div className="flex items-center gap-2 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/50 w-full sm:w-auto overflow-x-auto no-scrollbar flex-nowrap py-1">
+                  {/* Mobile Dropdown Select */}
+                  <div className="block sm:hidden w-full relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsSpecialtyDropdownOpen(!isSpecialtyDropdownOpen)}
+                      className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300 bg-white border-slate-200 text-slate-800 shadow-sm hover:shadow-md active:scale-[0.98] outline-none"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {(() => {
+                          const currentSpec = specialties.find(s => s.id === ktvSpecialty) || specialties[0];
+                          return (
+                            <>
+                              {currentSpec.icon}
+                              <span className="text-xs font-black uppercase tracking-wider truncate">
+                                {currentSpec.label}
+                              </span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                      <ChevronDown className={cn(
+                        "w-4 h-4 text-slate-400 transition-transform duration-300 shrink-0",
+                        isSpecialtyDropdownOpen && "rotate-180 text-primary"
+                      )} />
+                    </button>
+
+                    <AnimatePresence>
+                      {isSpecialtyDropdownOpen && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={() => setIsSpecialtyDropdownOpen(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            transition={{ duration: 0.2, ease: "easeOut" }}
+                            className="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden py-2"
+                          >
+                            {specialties.map((spec) => {
+                              const isActive = ktvSpecialty === spec.id;
+                              return (
+                                <button
+                                  key={spec.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setKtvSpecialty(spec.id);
+                                    setIsSpecialtyDropdownOpen(false);
+                                  }}
+                                  className={cn(
+                                    "w-full flex items-center gap-3 px-5 py-3 text-left transition-colors",
+                                    isActive
+                                      ? "bg-rose-50/50 text-[#BE185D] font-black"
+                                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                  )}
+                                >
+                                  {spec.icon}
+                                  <span className="text-xs font-bold uppercase tracking-wider truncate">{spec.label}</span>
+                                </button>
+                              );
+                            })}
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Desktop tabs list */}
+                  <div className="hidden sm:flex items-center gap-2 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/50 w-full sm:w-auto overflow-x-auto no-scrollbar flex-nowrap py-1">
                     {specialties.map((spec) => {
                       const isActive = ktvSpecialty === spec.id;
                       return (
