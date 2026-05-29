@@ -50,7 +50,7 @@ interface ServicePackage {
 }
 
 export default function LandingPage() {
-  const [activeTab, setActiveTab] = useState<' bầu' | 'sau-sinh' | 'baby' | 'combo'>(' bầu');
+  const [activeTab, setActiveTab] = useState<' bầu' | 'sau-sinh' | 'baby' | 'combo'>('combo');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [bookingName, setBookingName] = useState('');
@@ -806,16 +806,10 @@ export default function LandingPage() {
           {/* Navigation Tabs */}
           <div className="inline-flex p-1.5 bg-rose-50/50 backdrop-blur rounded-3xl sm:rounded-full border border-rose-100/50 mb-16 flex-wrap justify-center">
             <button
-              onClick={() => setActiveTab(' bầu')}
-              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === ' bầu' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
+              onClick={() => setActiveTab('combo')}
+              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'combo' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
             >
-              Chăm sóc Mẹ Bầu
-            </button>
-            <button
-              onClick={() => setActiveTab('sau-sinh')}
-              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'sau-sinh' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
-            >
-              Phục hồi Sau Sinh
+              Combo Mẹ & Bé
             </button>
             <button
               onClick={() => setActiveTab('baby')}
@@ -824,10 +818,16 @@ export default function LandingPage() {
               Tắm & Massage Bé
             </button>
             <button
-              onClick={() => setActiveTab('combo')}
-              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'combo' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
+              onClick={() => setActiveTab('sau-sinh')}
+              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'sau-sinh' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
             >
-              Combo Mẹ & Bé
+              Phục hồi Sau Sinh
+            </button>
+            <button
+              onClick={() => setActiveTab(' bầu')}
+              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === ' bầu' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
+            >
+              Chăm sóc Mẹ Bầu
             </button>
           </div>
 
