@@ -33,3 +33,6 @@ CREATE POLICY "Public can read promotions"
     FOR SELECT
     TO anon, authenticated
     USING (is_active = true);
+
+-- Grant permissions for roles
+GRANT ALL ON TABLE public.promotions TO postgres, service_role, authenticated, anon;
