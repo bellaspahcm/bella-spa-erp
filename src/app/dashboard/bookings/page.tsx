@@ -54,7 +54,7 @@ function BookingsContent() {
   const customerName = searchParams.get('name');
 
   const [view, setView] = useState<'calendar' | 'timeline'>('timeline');
-  const [ktvSpecialty, setKtvSpecialty] = useState<'all' | 'facial' | 'nails' | 'body'>('all');
+  const [ktvSpecialty, setKtvSpecialty] = useState<'all' | 'combo' | 'baby' | 'pregnancy' | 'lactation'>('all');
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -802,16 +802,17 @@ function BookingsContent() {
 
             {/* Specialty Filters tabs & arrow navigation */}
             {(() => {
-              const specialties: { id: 'all' | 'facial' | 'nails' | 'body'; label: string; icon: React.ReactNode }[] = [
+              const specialties: { id: 'all' | 'combo' | 'baby' | 'pregnancy' | 'lactation'; label: string; icon: React.ReactNode }[] = [
                 { id: 'all', label: 'Tất cả KTV', icon: <Users className="w-4 h-4" /> },
-                { id: 'facial', label: 'Chăm sóc Da mặt', icon: <Briefcase className="w-4 h-4 text-rose-400" /> },
-                { id: 'nails', label: 'Nails & Mi', icon: <Briefcase className="w-4 h-4 text-purple-400" /> },
-                { id: 'body', label: 'Massage & Body', icon: <Briefcase className="w-4 h-4 text-indigo-400" /> }
+                { id: 'combo', label: 'Combo Mẹ Bé', icon: <Briefcase className="w-4 h-4 text-rose-400" /> },
+                { id: 'baby', label: 'Tắm Bé', icon: <Briefcase className="w-4 h-4 text-purple-400" /> },
+                { id: 'pregnancy', label: 'Massage Bầu', icon: <Briefcase className="w-4 h-4 text-indigo-400" /> },
+                { id: 'lactation', label: 'Thông tia sữa/Kích sữa', icon: <Briefcase className="w-4 h-4 text-emerald-400" /> }
               ];
 
               return (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 select-none">
-                  <div className="flex items-center gap-2 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/50 w-fit">
+                  <div className="flex items-center gap-2 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/50 w-full sm:w-auto overflow-x-auto no-scrollbar flex-nowrap py-1">
                     {specialties.map((spec) => {
                       const isActive = ktvSpecialty === spec.id;
                       return (
@@ -819,7 +820,7 @@ function BookingsContent() {
                           key={spec.id}
                           type="button"
                           onClick={() => setKtvSpecialty(spec.id)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all ${
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all shrink-0 whitespace-nowrap ${
                             isActive
                               ? 'bg-white text-slate-900 shadow-sm shadow-slate-100'
                               : 'text-slate-500 hover:text-slate-700'
@@ -862,10 +863,10 @@ function BookingsContent() {
             {(() => {
               const getKtvSpecialty = (ktvName: string) => {
                 const name = ktvName.toLowerCase();
-                if (name.includes('hoa') || name.includes('hà') || name.includes('ha')) return 'facial';
-                if (name.includes('tuyết') || name.includes('tuyet') || name.includes('thanh')) return 'nails';
-                if (name.includes('mai')) return 'body';
-                return 'facial';
+                if (name.includes('hoa') || name.includes('hà') || name.includes('ha')) return 'combo';
+                if (name.includes('tuyết') || name.includes('tuyet') || name.includes('thanh')) return 'baby';
+                if (name.includes('mai')) return 'pregnancy';
+                return 'lactation';
               };
 
               const filteredKtvs = ktvs.filter(ktv => {
