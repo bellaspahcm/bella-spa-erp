@@ -280,6 +280,15 @@ export async function createCustomer(customerData: any) {
     customerData.tenant_id = currentUser.tenant_id;
   }
 
+  // Tự động geocode lấy tọa độ nếu địa chỉ được nhập và admin không truyền sẵn tọa độ
+  if (customerData.address && (customerData.latitude === undefined || customerData.latitude === null)) {
+    const coords = await geocodeAddress(customerData.address);
+    if (coords) {
+      customerData.latitude = coords.latitude;
+      customerData.longitude = coords.longitude;
+    }
+  }
+
   const { data, error } = await supabase
     .from('customers')
     .insert([customerData])
@@ -325,6 +334,16 @@ export async function updateCustomer(id: string, customerData: any) {
     oldCustomer = existing;
   } catch (err) {
     console.warn('Failed to fetch old customer for audit trail:', err);
+  }
+
+  // Tự động geocode nếu địa chỉ thay đổi và admin không chủ động truyền sẵn tọa độ mới
+  if (customerData.address && customerData.address !== oldCustomer?.address && 
+      (customerData.latitude === undefined || customerData.latitude === null)) {
+    const coords = await geocodeAddress(customerData.address);
+    if (coords) {
+      customerData.latitude = coords.latitude;
+      customerData.longitude = coords.longitude;
+    }
   }
 
   const { data, error } = await supabase
@@ -414,3 +433,36 @@ export async function deleteCustomer(id: string) {
  */
 export const submitSessionRating = submitCustomerRating;
 export const getCustomerPortalData = getCustomerBookingByToken;
+
+/**
+ * Tự động chuyển đổi địa chỉ thành tọa độ GPS sử dụng OpenStreetMap Nominatim API
+ */
+export async function geocodeAddress(address: string): Promise<{ latitude: number; longitude: number } | null> {
+  if (!address) return null;
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
+      {
+        headers: {
+          'User-Agent': 'BellaSpaERP/1.0 (contact@bellaspa.com.vn)'
+        }
+      }
+    );
+    if (!response.ok) {
+      console.warn('Geocoding response error:', response.statusText);
+      return null;
+    }
+    const data = await response.json();
+    if (Array.isArray(data) && data.length > 0) {
+      const lat = parseFloat(data[0].lat);
+      const lon = parseFloat(data[0].lon);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        return { latitude: lat, longitude: lon };
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Error during geocoding address:', error);
+    return null;
+  }
+}

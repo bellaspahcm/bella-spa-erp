@@ -837,7 +837,8 @@ export async function addExtraSession(bookingId: string) {
   await supabase.from('session_logs').insert({
     booking_id: bookingId,
     session_number: newTotal,
-    status: 'scheduled'
+    status: 'scheduled',
+    tenant_id: booking.tenant_id
   });
   
   const { data: bookingData } = await supabase
@@ -869,6 +870,13 @@ export async function createSessionLog(data: any) {
     return { error: countError.message };
   }
 
+  // Lấy tenant_id từ booking (required field cho session_logs)
+  const { data: bookingRow } = await supabase
+    .from('bookings')
+    .select('tenant_id')
+    .eq('id', data.booking_id)
+    .single();
+
   const { data: session, error } = await supabase
     .from('session_logs')
     .insert([
@@ -878,7 +886,8 @@ export async function createSessionLog(data: any) {
         assigned_date: data.assigned_date || null,
         assigned_time: sanitizeTime(data.assigned_time),
         notes: data.notes || null,
-        status: data.status || 'scheduled'
+        status: data.status || 'scheduled',
+        tenant_id: data.tenant_id || bookingRow?.tenant_id
       },
     ])
     .select();

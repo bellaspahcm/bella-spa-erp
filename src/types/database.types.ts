@@ -14,59 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      promotions: {
-        Row: {
-          id: string
-          title: string
-          description: string
-          image_url: string | null
-          discount_code: string | null
-          discount_percent: number | null
-          is_active: boolean
-          start_date: string | null
-          end_date: string | null
-          tenant_id: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          title: string
-          description: string
-          image_url?: string | null
-          discount_code?: string | null
-          discount_percent?: number | null
-          is_active?: boolean
-          start_date?: string | null
-          end_date?: string | null
-          tenant_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          title?: string
-          description?: string
-          image_url?: string | null
-          discount_code?: string | null
-          discount_percent?: number | null
-          is_active?: boolean
-          start_date?: string | null
-          end_date?: string | null
-          tenant_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "promotions_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       _prisma_migrations: {
         Row: {
           applied_steps_count: number
@@ -146,6 +93,13 @@ export type Database = {
             foreignKeyName: "accounting_accounts_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "accounting_accounts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -212,6 +166,13 @@ export type Database = {
             foreignKeyName: "accounting_outbox_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "accounting_outbox_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -249,6 +210,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "accounting_periods_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "accounting_periods_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -294,9 +262,16 @@ export type Database = {
             foreignKeyName: "ai_agent_configs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: true
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "ai_agent_configs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
             referencedRelation: "tenants"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       ai_agent_logs: {
@@ -332,16 +307,16 @@ export type Database = {
             foreignKeyName: "ai_agent_logs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "ai_agent_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "ai_agent_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
         ]
       }
       app_notifications: {
@@ -376,6 +351,13 @@ export type Database = {
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "app_notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "app_notifications_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -435,6 +417,13 @@ export type Database = {
             foreignKeyName: "attendance_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "attendance_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -486,6 +475,13 @@ export type Database = {
             foreignKeyName: "audit_logs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "audit_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -515,7 +511,7 @@ export type Database = {
           share_token: string | null
           start_date: string | null
           status: string | null
-          tenant_id: string | null
+          tenant_id: string
           total_sessions: number | null
           updated_at: string | null
         }
@@ -542,7 +538,7 @@ export type Database = {
           share_token?: string | null
           start_date?: string | null
           status?: string | null
-          tenant_id?: string | null
+          tenant_id: string
           total_sessions?: number | null
           updated_at?: string | null
         }
@@ -569,7 +565,7 @@ export type Database = {
           share_token?: string | null
           start_date?: string | null
           status?: string | null
-          tenant_id?: string | null
+          tenant_id?: string
           total_sessions?: number | null
           updated_at?: string | null
         }
@@ -594,6 +590,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "packages"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "bookings_tenant_id_fkey"
@@ -654,6 +657,13 @@ export type Database = {
             foreignKeyName: "chat_messages_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "chat_messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -667,6 +677,8 @@ export type Database = {
           dob_expected: string | null
           gender_baby: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           loyalty_points: number | null
           name_baby: string | null
           name_mother: string
@@ -674,7 +686,7 @@ export type Database = {
           phone: string
           referrer_id: string | null
           status: string | null
-          tenant_id: string | null
+          tenant_id: string
           updated_at: string | null
           zalo_oa_id: string | null
         }
@@ -685,6 +697,8 @@ export type Database = {
           dob_expected?: string | null
           gender_baby?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           loyalty_points?: number | null
           name_baby?: string | null
           name_mother: string
@@ -692,7 +706,7 @@ export type Database = {
           phone: string
           referrer_id?: string | null
           status?: string | null
-          tenant_id?: string | null
+          tenant_id: string
           updated_at?: string | null
           zalo_oa_id?: string | null
         }
@@ -703,6 +717,8 @@ export type Database = {
           dob_expected?: string | null
           gender_baby?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           loyalty_points?: number | null
           name_baby?: string | null
           name_mother?: string
@@ -710,7 +726,7 @@ export type Database = {
           phone?: string
           referrer_id?: string | null
           status?: string | null
-          tenant_id?: string | null
+          tenant_id?: string
           updated_at?: string | null
           zalo_oa_id?: string | null
         }
@@ -721,6 +737,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "customers_tenant_id_fkey"
@@ -790,6 +813,13 @@ export type Database = {
             foreignKeyName: "expenses_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "expenses_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -845,6 +875,13 @@ export type Database = {
           tenant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "franchise_royalty_invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "franchise_royalty_invoices_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -905,8 +942,22 @@ export type Database = {
             foreignKeyName: "inter_branch_clearing_records_creditor_tenant_id_fkey"
             columns: ["creditor_tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "inter_branch_clearing_records_creditor_tenant_id_fkey"
+            columns: ["creditor_tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inter_branch_clearing_records_debtor_tenant_id_fkey"
+            columns: ["debtor_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "inter_branch_clearing_records_debtor_tenant_id_fkey"
@@ -961,6 +1012,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "inventory_items_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1030,6 +1088,13 @@ export type Database = {
             foreignKeyName: "inventory_logs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "inventory_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1092,6 +1157,13 @@ export type Database = {
             foreignKeyName: "inventory_transfer_orders_requester_tenant_id_fkey"
             columns: ["requester_tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "inventory_transfer_orders_requester_tenant_id_fkey"
+            columns: ["requester_tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1144,6 +1216,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "accounting_periods"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "journal_entries_tenant_id_fkey"
@@ -1260,6 +1339,13 @@ export type Database = {
             foreignKeyName: "kpi_records_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "kpi_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1300,6 +1386,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ktv_schedule_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "ktv_schedule_tenant_id_fkey"
@@ -1357,6 +1450,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "membership_records_tenant_id_fkey"
@@ -1447,6 +1547,13 @@ export type Database = {
             foreignKeyName: "package_materials_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "package_materials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1526,6 +1633,66 @@ export type Database = {
           },
         ]
       }
+      promotions: {
+        Row: {
+          created_at: string
+          description: string
+          discount_code: string | null
+          discount_percent: number | null
+          end_date: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          start_date: string | null
+          tenant_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          discount_code?: string | null
+          discount_percent?: number | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          start_date?: string | null
+          tenant_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_code?: string | null
+          discount_percent?: number | null
+          end_date?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          start_date?: string | null
+          tenant_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "promotions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       revenue: {
         Row: {
           amount: number
@@ -1539,7 +1706,7 @@ export type Database = {
           recorded_by_id: string | null
           revenue_type: string | null
           status: string | null
-          tenant_id: string | null
+          tenant_id: string
         }
         Insert: {
           amount: number
@@ -1553,7 +1720,7 @@ export type Database = {
           recorded_by_id?: string | null
           revenue_type?: string | null
           status?: string | null
-          tenant_id?: string | null
+          tenant_id: string
         }
         Update: {
           amount?: number
@@ -1567,7 +1734,7 @@ export type Database = {
           recorded_by_id?: string | null
           revenue_type?: string | null
           status?: string | null
-          tenant_id?: string | null
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -1583,6 +1750,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenue_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "revenue_tenant_id_fkey"
@@ -1641,6 +1815,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salary_records"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_disputes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "salary_disputes_tenant_id_fkey"
@@ -1739,6 +1920,13 @@ export type Database = {
             foreignKeyName: "salary_records_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "salary_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -1753,6 +1941,8 @@ export type Database = {
           booking_id: string
           checkin_lat: number | null
           checkin_lon: number | null
+          checkout_lat: number | null
+          checkout_lon: number | null
           completed_by_ktv_id: string | null
           completed_date: string | null
           created_at: string | null
@@ -1768,7 +1958,7 @@ export type Database = {
           standard_duration: number | null
           start_time: string | null
           status: string | null
-          tenant_id: string | null
+          tenant_id: string
           time_deviation: number | null
           zalo_reminder_sent: boolean | null
           zalo_reminder_time: string | null
@@ -1781,6 +1971,8 @@ export type Database = {
           booking_id: string
           checkin_lat?: number | null
           checkin_lon?: number | null
+          checkout_lat?: number | null
+          checkout_lon?: number | null
           completed_by_ktv_id?: string | null
           completed_date?: string | null
           created_at?: string | null
@@ -1796,7 +1988,7 @@ export type Database = {
           standard_duration?: number | null
           start_time?: string | null
           status?: string | null
-          tenant_id?: string | null
+          tenant_id: string
           time_deviation?: number | null
           zalo_reminder_sent?: boolean | null
           zalo_reminder_time?: string | null
@@ -1809,6 +2001,8 @@ export type Database = {
           booking_id?: string
           checkin_lat?: number | null
           checkin_lon?: number | null
+          checkout_lat?: number | null
+          checkout_lon?: number | null
           completed_by_ktv_id?: string | null
           completed_date?: string | null
           created_at?: string | null
@@ -1824,7 +2018,7 @@ export type Database = {
           standard_duration?: number | null
           start_time?: string | null
           status?: string | null
-          tenant_id?: string | null
+          tenant_id?: string
           time_deviation?: number | null
           zalo_reminder_sent?: boolean | null
           zalo_reminder_time?: string | null
@@ -1843,6 +2037,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "session_logs_tenant_id_fkey"
@@ -1914,6 +2115,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "session_logs"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_reviews_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "session_reviews_tenant_id_fkey"
@@ -2005,6 +2213,13 @@ export type Database = {
             foreignKeyName: "shifts_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "shifts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -2057,6 +2272,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_leaves_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
           },
           {
             foreignKeyName: "staff_leaves_tenant_id_fkey"
@@ -2116,6 +2338,13 @@ export type Database = {
             foreignKeyName: "subscription_invoices_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "subscription_invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -2123,12 +2352,14 @@ export type Database = {
       }
       tenants: {
         Row: {
+          accounting_mode: string | null
           address: string | null
           contact_name: string | null
           contact_phone: string | null
           created_at: string | null
           email: string | null
           franchise_agreement_date: string | null
+          gps_threshold_m: number | null
           id: string
           internal_clearing_rate: number | null
           name: string
@@ -2145,6 +2376,8 @@ export type Database = {
           status: string | null
           subscription_expires_at: string | null
           subscription_tier: string | null
+          tenant_lat: number | null
+          tenant_lon: number | null
           updated_at: string | null
           zalo_access_token: string | null
           zalo_app_id: string | null
@@ -2155,15 +2388,16 @@ export type Database = {
           zalo_template_birthday_id: string | null
           zalo_template_reminder_id: string | null
           zalo_token_expires_at: string | null
-          accounting_mode: string | null
         }
         Insert: {
+          accounting_mode?: string | null
           address?: string | null
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string | null
           email?: string | null
           franchise_agreement_date?: string | null
+          gps_threshold_m?: number | null
           id?: string
           internal_clearing_rate?: number | null
           name: string
@@ -2180,6 +2414,8 @@ export type Database = {
           status?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
+          tenant_lat?: number | null
+          tenant_lon?: number | null
           updated_at?: string | null
           zalo_access_token?: string | null
           zalo_app_id?: string | null
@@ -2190,15 +2426,16 @@ export type Database = {
           zalo_template_birthday_id?: string | null
           zalo_template_reminder_id?: string | null
           zalo_token_expires_at?: string | null
-          accounting_mode?: string | null
         }
         Update: {
+          accounting_mode?: string | null
           address?: string | null
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string | null
           email?: string | null
           franchise_agreement_date?: string | null
+          gps_threshold_m?: number | null
           id?: string
           internal_clearing_rate?: number | null
           name?: string
@@ -2215,6 +2452,8 @@ export type Database = {
           status?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
+          tenant_lat?: number | null
+          tenant_lon?: number | null
           updated_at?: string | null
           zalo_access_token?: string | null
           zalo_app_id?: string | null
@@ -2225,9 +2464,15 @@ export type Database = {
           zalo_template_birthday_id?: string | null
           zalo_template_reminder_id?: string | null
           zalo_token_expires_at?: string | null
-          accounting_mode?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tenants_parent_tenant_id_fkey"
+            columns: ["parent_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
           {
             foreignKeyName: "tenants_parent_tenant_id_fkey"
             columns: ["parent_tenant_id"]
@@ -2288,6 +2533,13 @@ export type Database = {
             foreignKeyName: "users_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
@@ -2322,17 +2574,72 @@ export type Database = {
             foreignKeyName: "accounting_outbox_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "accounting_outbox_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
       }
+      reconciliation_health_today: {
+        Row: {
+          check_date: string | null
+          has_ledger_entries: boolean | null
+          has_legacy_revenue: boolean | null
+          tenant_id: string | null
+          tenant_name: string | null
+        }
+        Insert: {
+          check_date?: never
+          has_ledger_entries?: never
+          has_legacy_revenue?: never
+          tenant_id?: string | null
+          tenant_name?: string | null
+        }
+        Update: {
+          check_date?: never
+          has_ledger_entries?: never
+          has_legacy_revenue?: never
+          tenant_id?: string | null
+          tenant_name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      acc_balance_at: {
+        Args: {
+          p_account_code_prefix: string
+          p_as_of_date: string
+          p_tenant_id: string
+        }
+        Returns: number
+      }
       apply_rating_bonus: { Args: { p_session_id: string }; Returns: undefined }
       auto_confirm_stale_salary_records: {
         Args: { p_tenant_id: string }
         Returns: number
+      }
+      calculate_ktv_salary_sheet: {
+        Args: { p_month_year: string }
+        Returns: {
+          advances: number
+          base_salary: number
+          deductions: number
+          kpi_bonus: number
+          ktv_id: string
+          ktv_name: string
+          rating_bonus: number
+          session_bonus: number
+          status: string
+          total_salary: number
+          total_sessions: number
+        }[]
       }
       claim_outbox_batch: {
         Args: { p_limit?: number }
@@ -2370,6 +2677,14 @@ export type Database = {
         Args: { p_date: string; p_tenant_id: string }
         Returns: string
       }
+      generate_closing_entries: {
+        Args: { p_period_id: string }
+        Returns: {
+          entry_id: string
+          step: string
+          total_amount: number
+        }[]
+      }
       get_account_ledger: {
         Args: {
           p_account_id: string
@@ -2387,6 +2702,18 @@ export type Database = {
           reference_id: string
           reference_type: string
           running_balance: number
+        }[]
+      }
+      get_ai_attendance_kpis: {
+        Args: { p_month_year: string }
+        Returns: {
+          absent_count: number
+          gps_anomaly_count: number
+          ktv_id: string
+          ktv_name: string
+          late_count: number
+          present_count: number
+          total_shifts: number
         }[]
       }
       get_auth_tenant_id: { Args: never; Returns: string }
@@ -2410,6 +2737,30 @@ export type Database = {
           total_equity_and_liabilities: number
           total_liabilities: number
           unearned_revenue: number
+        }[]
+      }
+      get_cash_flow_statement: {
+        Args: { p_from_date: string; p_tenant_id: string; p_to_date: string }
+        Returns: {
+          change_in_inventory: number
+          change_in_payables: number
+          change_in_receivables: number
+          change_in_unearned_revenue: number
+          closing_cash: number
+          depreciation: number
+          fixed_assets_purchased: number
+          fixed_assets_sold: number
+          loans_received: number
+          loans_repaid: number
+          net_cash_financing: number
+          net_cash_investing: number
+          net_cash_operating: number
+          net_change_in_cash: number
+          opening_cash: number
+          owner_contributions: number
+          profit_before_tax: number
+          tax_paid: number
+          verification_diff: number
         }[]
       }
       get_chat_customers:
@@ -2439,6 +2790,30 @@ export type Database = {
               unread_count: number
             }[]
           }
+      get_consolidated_pnl: {
+        Args: { p_from_date: string; p_to_date: string }
+        Returns: {
+          cost_of_goods_sold: number
+          deductions: number
+          financial_expense: number
+          financial_income: number
+          gross_profit: number
+          gross_revenue: number
+          net_margin_percent: number
+          net_profit: number
+          net_revenue: number
+          operating_expense: number
+          operating_profit: number
+          other_expense: number
+          other_income: number
+          profit_before_tax: number
+          tax_expense: number
+          tenant_id: string
+          tenant_name: string
+          total_bookings_count: number
+          total_sessions_completed: number
+        }[]
+      }
       get_dashboard_summary: { Args: { p_tenant_id: string }; Returns: Json }
       get_financial_anomalies: { Args: { p_tenant_id: string }; Returns: Json }
       get_income_statement: {
@@ -2463,10 +2838,15 @@ export type Database = {
       get_ktv_leaderboard: {
         Args: { p_month: string; p_tenant_id: string }
         Returns: {
+          absent_days: number
           average_rating: number
           commissions: number
+          customer_rating: number
+          discipline_score: number
           full_name: string
           ktv_id: string
+          late_days: number
+          max_late_streak: number
           rank: number
           sessions: number
           total_kpi_bonus: number
@@ -2505,6 +2885,32 @@ export type Database = {
         }[]
       }
       get_my_tenant_id: { Args: never; Returns: string }
+      get_reconciliation_report: {
+        Args: { p_from_date: string; p_tenant_id: string; p_to_date: string }
+        Returns: {
+          category: string
+          category_label: string
+          diff_amount: number
+          diff_percent: number
+          ledger_amount: number
+          legacy_amount: number
+          status: string
+        }[]
+      }
+      get_salary_reconciliation: {
+        Args: { p_month_year: string }
+        Returns: {
+          ai_total: number
+          diff_amount: number
+          diff_percent: number
+          has_legacy_record: boolean
+          ktv_id: string
+          ktv_name: string
+          legacy_status: string
+          legacy_total: number
+          status: string
+        }[]
+      }
       get_service_performance: {
         Args: { p_tenant_id: string }
         Returns: {
@@ -2549,9 +2955,11 @@ export type Database = {
         Returns: undefined
       }
       increment_tenant_sms: { Args: { p_tenant_id: string }; Returns: number }
+      is_accountant: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_hq_admin: { Args: never; Returns: boolean }
       is_hq_super_admin: { Args: never; Returns: boolean }
+      is_hr: { Args: never; Returns: boolean }
       is_valid_tenant: { Args: { t_id: string }; Returns: boolean }
       lock_monthly_records: {
         Args: { p_month: string; p_tenant_id: string }
@@ -2577,6 +2985,17 @@ export type Database = {
         }
         Returns: string
       }
+      preview_closing_entries: {
+        Args: { p_period_id: string }
+        Returns: {
+          amount: number
+          credit_account_code: string
+          debit_account_code: string
+          description: string
+          step: number
+          step_name: string
+        }[]
+      }
       renew_tenant_subscription: {
         Args: { p_invoice_number: string; p_payment_method: string }
         Returns: boolean
@@ -2586,156 +3005,7 @@ export type Database = {
         Returns: undefined
       }
       seed_default_coa: { Args: { p_tenant_id: string }; Returns: number }
-      preview_closing_entries: {
-        Args: { p_period_id: string }
-        Returns: {
-          step: number
-          step_name: string
-          description: string
-          debit_account_code: string
-          credit_account_code: string
-          amount: number
-        }[]
-      }
-      generate_closing_entries: {
-        Args: { p_period_id: string }
-        Returns: {
-          entry_id: string | null
-          step: string
-          total_amount: number
-        }[]
-      }
-      get_cash_flow_statement: {
-        Args: { p_tenant_id: string; p_from_date: string; p_to_date: string }
-        Returns: {
-          opening_cash: number
-          closing_cash: number
-          profit_before_tax: number
-          depreciation: number
-          change_in_receivables: number
-          change_in_inventory: number
-          change_in_payables: number
-          change_in_unearned_revenue: number
-          tax_paid: number
-          net_cash_operating: number
-          fixed_assets_purchased: number
-          fixed_assets_sold: number
-          net_cash_investing: number
-          owner_contributions: number
-          loans_received: number
-          loans_repaid: number
-          net_cash_financing: number
-          net_change_in_cash: number
-          verification_diff: number
-        }[]
-      }
-      acc_balance_at: {
-        Args: { p_tenant_id: string; p_account_code_prefix: string; p_as_of_date: string }
-        Returns: number
-      }
-      get_salary_reconciliation: {
-        Args: { p_month_year: string }
-        Returns: {
-          ktv_id: string
-          ktv_name: string
-          legacy_total: number
-          ai_total: number
-          diff_amount: number
-          diff_percent: number | null
-          status: string
-          legacy_status: string
-          has_legacy_record: boolean
-        }[]
-      }
-      get_reconciliation_report: {
-        Args: { p_tenant_id: string; p_from_date: string; p_to_date: string }
-        Returns: {
-          category: string
-          category_label: string
-          legacy_amount: number
-          ledger_amount: number
-          diff_amount: number
-          diff_percent: number
-          status: string
-        }[]
-      }
-      get_salary_reconciliation_report: {
-        Args: { p_tenant_id: string; p_month_year: string }
-        Returns: {
-          ktv_id: string
-          ktv_name: string
-          legacy_base_salary: number
-          legacy_session_bonus: number
-          legacy_kpi_bonus: number
-          legacy_deductions: number
-          legacy_total: number
-          legacy_status: string
-          ai_base_salary: number
-          ai_session_bonus: number
-          ai_kpi_bonus: number
-          ai_deductions: number
-          ai_total: number
-          diff_total: number
-          diff_percent: number
-          status: string
-        }[]
-      }
-      get_consolidated_pnl: {
-        Args: { p_from_date: string; p_to_date: string }
-        Returns: {
-          tenant_id: string
-          tenant_name: string
-          gross_revenue: number
-          deductions: number
-          net_revenue: number
-          cost_of_goods_sold: number
-          gross_profit: number
-          financial_income: number
-          financial_expense: number
-          operating_expense: number
-          operating_profit: number
-          other_income: number
-          other_expense: number
-          profit_before_tax: number
-          tax_expense: number
-          net_profit: number
-          net_margin_percent: number
-          total_bookings_count: number
-          total_sessions_completed: number
-        }[]
-      }
-      get_ai_attendance_kpis: {
-        Args: { p_month_year: string }
-        Returns: {
-          ktv_id: string
-          ktv_name: string
-          total_shifts: number
-          present_count: number
-          late_count: number
-          absent_count: number
-          gps_anomaly_count: number
-        }[]
-      }
-      calculate_ktv_salary_sheet: {
-        Args: { p_month_year: string }
-        Returns: {
-          ktv_id: string
-          ktv_name: string
-          base_salary: number
-          session_bonus: number
-          rating_bonus: number
-          kpi_bonus: number
-          deductions: number
-          advances: number
-          total_salary: number
-          total_sessions: number
-          status: string
-        }[]
-      }
-      set_session_tenant: {
-        Args: { p_tenant_id: string }
-        Returns: undefined
-      }
+      set_session_tenant: { Args: { p_tenant_id: string }; Returns: undefined }
     }
     Enums: {
       AttendanceStatus: "present" | "late" | "absent" | "half_day"
@@ -2751,7 +3021,7 @@ export type Database = {
       MessageType: "text" | "system" | "file"
       PaymentMethod: "cash" | "bank_transfer" | "zalo_pay" | "momo"
       RevenueType: "deposit" | "session_completed" | "additional_service"
-      Role: "admin" | "ktv_lead" | "ktv" | "admin_staff" | "accountant" | "hr"
+      Role: "admin" | "ktv_lead" | "ktv" | "admin_staff" | "accountant"
       SalaryStatus: "draft" | "pending_approval" | "approved" | "paid"
       SessionStatus: "scheduled" | "completed" | "cancelled"
       ShiftStatus: "scheduled" | "completed" | "cancelled"

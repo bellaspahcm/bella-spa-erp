@@ -140,7 +140,7 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
   if (!serviceKey) {
     console.warn('[getSalaryReconciliationReport] SUPABASE_SERVICE_ROLE_KEY is missing. Using user client fallback.');
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc('get_salary_reconciliation_report', {
+    const { data, error } = await (supabase.rpc as any)('get_salary_reconciliation_report', {
       p_tenant_id: user.tenant_id,
       p_month_year: monthYear,
     });
@@ -151,7 +151,7 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
       }, null, 2));
       throw error; // Zero Silent Database Failures
     }
-    return (data as SalaryReconciliationRow[]) || [];
+    return (data as unknown as SalaryReconciliationRow[]) || [];
   }
 
   // Sử dụng adminClient chính thức (service role)
@@ -163,7 +163,7 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
   // Set tenant context (calculate_ktv_salary_sheet requires it for service_role)
   await adminClient.rpc('set_session_tenant', { p_tenant_id: user.tenant_id });
 
-  const { data, error } = await adminClient.rpc('get_salary_reconciliation_report', {
+  const { data, error } = await (adminClient.rpc as any)('get_salary_reconciliation_report', {
     p_tenant_id: user.tenant_id,
     p_month_year: monthYear,
   });
@@ -174,5 +174,5 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
     }, null, 2));
     throw error; // Zero Silent Database Failures
   }
-  return (data as SalaryReconciliationRow[]) || [];
+  return (data as unknown as SalaryReconciliationRow[]) || [];
 }

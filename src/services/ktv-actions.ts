@@ -362,10 +362,10 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Unauthorized' };
 
-  // 1. Lấy thông tin session để tìm booking_id
+  // 1. Lấy thông tin session để tìm booking_id và tọa độ của khách hàng
   const { data: session } = await supabase
     .from('session_logs')
-    .select('booking_id, session_number, bookings(total_sessions, completed_sessions, status)')
+    .select('booking_id, session_number, bookings(customer_id, total_sessions, completed_sessions, status, customers(latitude, longitude))')
     .eq('id', sessionId)
     .single();
 
@@ -373,7 +373,7 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
 
   // Guard: check that the booking is not completed and the session number is within the booking's total_sessions
   const bookingData = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
-  const booking = bookingData as { status?: string; completed_sessions?: number; total_sessions?: number } | null;
+  const booking = bookingData as { customer_id: string; status?: string; completed_sessions?: number; total_sessions?: number; customers?: { latitude: number | null; longitude: number | null } | { latitude: number | null; longitude: number | null }[] } | null;
   if (booking) {
     if (booking.status === 'completed' || (booking.completed_sessions || 0) >= (booking.total_sessions || 0)) {
       return { success: false, error: 'Liệu trình này đã hoàn thành toàn bộ số buổi. Không thể bắt đầu buổi mới.' };
@@ -410,6 +410,26 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
     })
     .eq('id', session.booking_id);
 
+  // 4. Nếu KTV check-in có tọa độ GPS và khách hàng chưa có tọa độ chuẩn trong DB -> tự động gán làm tọa độ chuẩn
+  if (lat !== undefined && lon !== undefined && booking?.customer_id) {
+    const customer = Array.isArray(booking.customers) ? booking.customers[0] : booking.customers;
+    if (!customer || customer.latitude === null || customer.longitude === null) {
+      const { error: customerGpsError } = await supabase
+        .from('customers')
+        .update({
+          latitude: lat,
+          longitude: lon
+        })
+        .eq('id', booking.customer_id);
+      
+      if (customerGpsError) {
+        console.warn('Failed to auto-assign customer GPS coordinates from KTV check-in:', customerGpsError);
+      } else {
+        console.log(`[startSession] Automatically assigned coordinates (${lat}, ${lon}) for customer ${booking.customer_id} based on first KTV check-in.`);
+      }
+    }
+  }
+
   revalidatePath('/ktv/dashboard');
   return { success: true };
 }
@@ -417,7 +437,7 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
 /**
  * Hoàn thành một buổi chăm sóc (Check-out)
  */
-export async function completeKTVSession(sessionId: string, notes: string = '', ktvCheckoutNote: string = '') {
+export async function completeKTVSession(sessionId: string, notes: string = '', ktvCheckoutNote: string = '', lat?: number, lon?: number) {
   const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user || user.role !== 'ktv') return { success: false, error: 'Unauthorized' };
@@ -489,7 +509,8 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     actual_duration: actualDuration,
     time_deviation: timeDeviation,
     duration_warning_type: durationWarningType,
-    ktv_checkout_note: ktvCheckoutNote
+    ktv_checkout_note: ktvCheckoutNote,
+    ...(lat !== undefined && lon !== undefined ? { checkout_lat: lat, checkout_lon: lon } : {})
   };
 
   const untypedSupabase = supabase as unknown as SupabaseClient;
