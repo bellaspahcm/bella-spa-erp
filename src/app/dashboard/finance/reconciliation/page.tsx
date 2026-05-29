@@ -334,7 +334,7 @@ export default function FinancialReconciliationPage() {
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-rose-200 dark:shadow-none relative overflow-hidden w-full">
           <div className="relative z-10">
             <div className="flex justify-between items-center mb-4">
@@ -379,9 +379,9 @@ export default function FinancialReconciliationPage() {
       </div>
 
       {/* TABS & SEARCH */}
-      <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-2 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-2 flex flex-col lg:flex-row justify-between items-center gap-4">
         {/* Mobile Tab Dropdown Select */}
-        <div className="block md:hidden w-full relative">
+        <div className="block lg:hidden w-full relative">
           <button
             type="button"
             onClick={() => setIsTabDropdownOpen(!isTabDropdownOpen)}
@@ -463,7 +463,7 @@ export default function FinancialReconciliationPage() {
         </div>
 
         {/* Desktop Tabs List */}
-        <div className="hidden md:flex gap-1 p-1 bg-slate-50 rounded-[24px] w-full md:w-auto">
+        <div className="hidden lg:flex gap-1 p-1 bg-slate-50 rounded-[24px] w-full md:w-auto">
           {(
             [
               { id: 'debt', label: 'Công Nợ Khách Hàng', count: data.debt_alerts.length, color: 'text-rose-500', bg: 'bg-rose-50' },
@@ -489,7 +489,7 @@ export default function FinancialReconciliationPage() {
           ))}
         </div>
         
-        <div className="w-full md:w-auto px-4">
+        <div className="w-full lg:w-auto px-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -497,7 +497,7 @@ export default function FinancialReconciliationPage() {
               placeholder="Tìm kiếm..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:w-[250px] pl-10 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              className="w-full lg:w-[250px] pl-10 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>
         </div>
