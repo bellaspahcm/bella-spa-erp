@@ -199,7 +199,7 @@ export default function PromotionsTab() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block flex items-center gap-1">
                   <Calendar className="w-3 h-3 text-slate-400" /> Ngày bắt đầu
@@ -208,7 +208,7 @@ export default function PromotionsTab() {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
+                  className="w-full px-4 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
                 />
               </div>
 
@@ -220,7 +220,7 @@ export default function PromotionsTab() {
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
+                  className="w-full px-4 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
                 />
               </div>
             </div>
