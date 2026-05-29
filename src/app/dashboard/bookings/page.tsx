@@ -861,17 +861,50 @@ function BookingsContent() {
 
             {/* Daily Timeline Grid Container */}
             {(() => {
-              const getKtvSpecialty = (ktvName: string) => {
-                const name = ktvName.toLowerCase();
+              const getSessionCategory = (session: any) => {
+                const nameLower = (
+                  session.bookings?.packages?.name || 
+                  session.bookings?.package_name || 
+                  ''
+                ).toLowerCase();
+                
+                if (nameLower.includes('combo') || nameLower.includes('home-care') || nameLower.includes('signature')) {
+                  return 'combo';
+                }
+                if (nameLower.includes('bé') || nameLower.includes('tắm') || nameLower.includes('hydrotherapy') || nameLower.includes('con yêu')) {
+                  return 'baby';
+                }
+                if (nameLower.includes('bầu') || nameLower.includes('thai')) {
+                  return 'pregnancy';
+                }
+                if (nameLower.includes('sữa') || nameLower.includes('thông') || nameLower.includes('kích')) {
+                  return 'lactation';
+                }
+                return 'combo';
+              };
+
+              const getKtvSpecialty = (ktv: any) => {
+                // 1. Dynamic check: check if this KTV has a session on the selected date
+                const ktvSessions = sessions.filter(s => {
+                  const activeKtvId = s.completed_by_ktv_id || s.bookings?.assigned_ktv_id;
+                  return activeKtvId === ktv.id && isSameDay(new Date(s.assigned_date), selectedDate);
+                });
+                
+                if (ktvSessions.length > 0) {
+                  return getSessionCategory(ktvSessions[0]);
+                }
+                
+                // 2. Fallback to name-based mapping
+                const name = (ktv.full_name || '').toLowerCase();
                 if (name.includes('hoa') || name.includes('hà') || name.includes('ha')) return 'combo';
-                if (name.includes('tuyết') || name.includes('tuyet') || name.includes('thanh')) return 'baby';
+                if (name.includes('tuyết') || name.includes('tuyet') || name.includes('thanh') || name.includes('bella')) return 'baby';
                 if (name.includes('mai')) return 'pregnancy';
                 return 'lactation';
               };
 
               const filteredKtvs = ktvs.filter(ktv => {
                 if (ktvSpecialty === 'all') return true;
-                return getKtvSpecialty(ktv.full_name) === ktvSpecialty;
+                return getKtvSpecialty(ktv) === ktvSpecialty;
               });
 
               const columns = [
