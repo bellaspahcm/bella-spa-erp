@@ -711,63 +711,75 @@ export default function LandingPage() {
 
       {/* ── DYNAMIC PROMOTIONS SECTION ── */}
       {promotions && promotions.length > 0 && (
-        <section className="py-12 bg-gradient-to-b from-[#FFF5F6] to-white relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-10">
-              <span className="text-xs font-black tracking-widest text-primary uppercase block mb-3">Chương trình ưu đãi</span>
+        <section className="py-16 sm:py-20 bg-gradient-to-b from-[#FFF5F6] via-white to-white relative overflow-hidden">
+          {/* Decorative blobs */}
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-pink-100/40 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-56 h-56 bg-rose-100/30 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="text-center mb-10 sm:mb-14">
+              <span className="text-[10px] font-black tracking-[0.25em] text-primary uppercase block mb-3">Chương trình ưu đãi</span>
               <h3 className="text-2xl sm:text-3xl font-serif font-black text-slate-800 tracking-tight">
                 Khuyến Mãi Đặc Biệt Đang Diễn Ra 🌸
               </h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="space-y-6">
               {promotions.map((promo: any) => (
                 <motion.div
                   key={promo.id}
-                  whileHover={{ y: -6 }}
-                  className="bg-white/80 backdrop-blur-md rounded-[2.5rem] p-8 border border-pink-100 shadow-xl flex flex-col justify-between relative overflow-hidden transition-all duration-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5 }}
+                  className="bg-white/90 backdrop-blur-xl rounded-3xl sm:rounded-[2rem] border border-pink-100/80 shadow-lg shadow-pink-50/50 relative overflow-hidden group"
                 >
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl -mr-12 -mt-12 pointer-events-none" />
+                  {/* Top accent bar */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-400 via-primary to-rose-400" />
                   
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
-                        <Sparkles className="w-6 h-6" />
-                      </div>
-                      {promo.discount_percent && (
-                        <span className="bg-primary text-white text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
-                          Giảm {promo.discount_percent}%
-                        </span>
-                      )}
-                    </div>
-                    
-                    <h4 className="text-lg font-black text-slate-800 leading-snug tracking-tight group-hover:text-primary transition-colors">
-                      {promo.title}
-                    </h4>
-                    <p className="text-slate-500 text-sm font-semibold leading-relaxed">
-                      {promo.description}
-                    </p>
-                  </div>
-                  
-                  {promo.discount_code && (
-                    <div className="mt-6 pt-6 border-t border-pink-50 flex items-center justify-between gap-4">
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Mã ưu đãi</span>
-                        <code className="text-sm font-black text-primary tracking-wider font-mono bg-pink-50 px-2 py-0.5 rounded">
-                          {promo.discount_code}
-                        </code>
+                  <div className="p-6 sm:p-8 md:p-10 flex flex-col md:flex-row md:items-center gap-6 md:gap-10">
+                    {/* Left: Icon + Content */}
+                    <div className="flex-grow flex gap-4 sm:gap-5 items-start">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-primary/15 to-rose-100 rounded-2xl sm:rounded-3xl flex items-center justify-center text-primary shrink-0 shadow-sm group-hover:scale-105 transition-transform duration-300">
+                        <Sparkles className="w-7 h-7 sm:w-8 sm:h-8" />
                       </div>
                       
-                      <button
-                        onClick={() => copyToClipboard(promo.discount_code)}
-                        className="bg-primary/5 hover:bg-primary hover:text-white text-primary px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-sm flex items-center gap-1.5 shrink-0"
-                        title="Sao chép mã giảm giá"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        Sao chép mã
-                      </button>
+                      <div className="flex-grow min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <h4 className="text-base sm:text-lg font-black text-slate-800 leading-snug tracking-tight">
+                            {promo.title}
+                          </h4>
+                          {promo.discount_percent && (
+                            <span className="bg-gradient-to-r from-primary to-rose-500 text-white text-[10px] sm:text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">
+                              Giảm {promo.discount_percent}%
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-slate-500 text-sm font-semibold leading-relaxed">
+                          {promo.description}
+                        </p>
+                      </div>
                     </div>
-                  )}
+                    
+                    {/* Right: Discount Code CTA */}
+                    {promo.discount_code && (
+                      <div className="md:border-l md:border-pink-100 md:pl-8 flex items-center gap-4 shrink-0">
+                        <div className="flex flex-col items-start md:items-center">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1.5">Mã ưu đãi</span>
+                          <code className="text-base sm:text-lg font-black text-primary tracking-widest font-mono bg-pink-50/80 border border-pink-100 px-4 py-1.5 rounded-xl">
+                            {promo.discount_code}
+                          </code>
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(promo.discount_code)}
+                          className="bg-primary hover:bg-primary-hover text-white p-3 sm:p-3.5 rounded-2xl active:scale-90 transition-all shadow-md shadow-pink-100/50 group/btn"
+                          title="Sao chép mã giảm giá"
+                        >
+                          <Copy className="w-4 h-4 sm:w-5 sm:h-5 group-hover/btn:scale-110 transition-transform" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </motion.div>
               ))}
             </div>
