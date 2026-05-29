@@ -834,67 +834,114 @@ export default function LandingPage() {
           {/* Packages Display with smooth animation */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left max-w-5xl mx-auto">
             <AnimatePresence mode="wait">
-              {(categories || serviceCategories)[activeTab].packages.map((pkg: any) => (
-                <motion.div
-                  key={pkg.id}
-                  initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.98, y: -10 }}
-                  transition={{ duration: 0.4 }}
-                  className="bg-white rounded-[2.5rem] shadow-xl border border-rose-50 overflow-hidden flex flex-col justify-between hover:border-primary/20 transition-all group hover:shadow-2xl relative"
-                >
-                  <div className="p-6 sm:p-10">
-                    {pkg.tag && (
-                      <span className="inline-block bg-pink-100 text-primary text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-rose-200/50 mb-3 w-fit">
-                        {pkg.tag}
-                      </span>
-                    )}
-                    
-                    <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
-                      <div>
-                        <h4 className="text-xl font-serif font-black text-slate-800 tracking-tight group-hover:text-primary transition-colors">{pkg.name}</h4>
-                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
-                          <Clock className="w-3 h-3" /> {pkg.duration} / buổi
+              {(categories || serviceCategories)[activeTab].packages.map((pkg: any) => {
+                const isFeatured = pkg.name.includes('Hạnh Phúc');
+                return (
+                  <motion.div
+                    key={pkg.id}
+                    initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98, y: -10 }}
+                    transition={{ duration: 0.4 }}
+                    className={`rounded-[2.5rem] overflow-hidden flex flex-col justify-between transition-all duration-300 group relative ${
+                      isFeatured
+                        ? 'bg-white dark:bg-[#1C1B19] border-2 border-amber-300 dark:border-amber-700/60 shadow-2xl lg:scale-[1.02] z-10 shadow-pink-100/50 dark:shadow-none'
+                        : 'bg-white dark:bg-[#1C1B19] shadow-xl border border-rose-50 dark:border-[#2E2B27] hover:border-primary/20'
+                    } hover:shadow-2xl`}
+                  >
+                    <div className="p-6 sm:p-10">
+                      {(pkg.tag || isFeatured) && (
+                        <span className={`inline-block text-[9px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full border mb-3 w-fit shadow-xs ${
+                          isFeatured
+                            ? 'bg-gradient-to-r from-amber-500 via-rose-500 to-primary text-white border-transparent'
+                            : 'bg-pink-100 text-primary border-rose-200/50 dark:bg-pink-950/30 dark:text-rose-300 dark:border-rose-900/50'
+                        }`}>
+                          {isFeatured ? '🏆 GÓI BÁN CHẠY / ĐƯỢC YÊU THÍCH NHẤT' : pkg.tag}
                         </span>
+                      )}
+                      
+                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+                        <div>
+                          <h4 className={`font-serif font-black tracking-tight transition-colors ${
+                            isFeatured 
+                              ? 'text-primary dark:text-rose-400 text-2xl' 
+                              : 'text-slate-800 dark:text-slate-200 group-hover:text-primary'
+                          }`}>{pkg.name}</h4>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">
+                            <Clock className="w-3 h-3" /> {pkg.duration} / buổi
+                          </span>
+                        </div>
+                        <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0 flex flex-col items-start sm:items-end">
+                          <span className="text-2xl font-serif font-black text-primary dark:text-rose-400 block">{pkg.price}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-2">Trọn gói</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBookingService(pkg.name);
+                              const el = document.getElementById('booking');
+                              if (el) el.scrollIntoView({ behavior: 'smooth' });
+                              setBookingNotes(`Đăng ký nhận Ưu đãi đặc quyền cho gói: ${pkg.name} (Voucher giảm 1.000.000đ / Quà tặng đặc biệt).`);
+                              toast.success(`🎁 Đã kích hoạt Ưu đãi độc quyền cho gói ${pkg.name}! Mời mẹ điền thông tin đăng ký để nhận mã ưu đãi.`);
+                            }}
+                            className="inline-flex items-center gap-1.5 text-[9px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-2.5 py-1 rounded-lg border border-amber-200/50 dark:border-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-all cursor-pointer animate-pulse shadow-xs"
+                          >
+                            <Gift className="w-3 h-3 text-amber-500" />
+                            Nhận Ưu đãi độc quyền
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0">
-                        <span className="text-2xl font-serif font-black text-primary block">{pkg.price}</span>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Trọn gói</span>
-                      </div>
+
+                      <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold leading-relaxed mb-6 pb-6 border-b border-rose-50 dark:border-rose-950/20">
+                        {pkg.description || `Liệu trình ${pkg.total_sessions || 20} buổi chăm sóc chuyên sâu chuẩn y khoa của Bella Spa.`}
+                      </p>
+
+                      <h5 className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest mb-4">Quy trình liệu trình gồm:</h5>
+                      <ul className="space-y-3">
+                        {pkg.benefits.map((benefit: any, i: number) => {
+                          const isLastLine = i === 7;
+                          return (
+                            <li 
+                              key={i} 
+                              className={`flex gap-3 text-xs font-semibold ${
+                                isLastLine 
+                                  ? 'text-primary dark:text-rose-300 font-extrabold mt-4 pt-4 border-t border-dashed border-rose-200 dark:border-rose-900/50' 
+                                  : 'text-slate-600 dark:text-slate-300 font-medium'
+                              }`}
+                            >
+                              <div className={`w-4 h-4 rounded-full flex items-center justify-center mt-0.5 shrink-0 ${
+                                isLastLine 
+                                  ? 'bg-pink-100 dark:bg-pink-950 text-primary dark:text-rose-400' 
+                                  : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                              }`}>
+                                {isLastLine ? <Info className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
+                              </div>
+                              <span>{benefit}</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
 
-                    <p className="text-slate-500 text-xs font-semibold leading-relaxed mb-6 pb-6 border-b border-rose-50">
-                      {pkg.description}
-                    </p>
-
-                    <h5 className="text-xs font-bold text-slate-700 uppercase tracking-widest mb-4">Quy trình liệu trình gồm:</h5>
-                    <ul className="space-y-3">
-                      {pkg.benefits.map((benefit: any, i: number) => (
-                        <li key={i} className="flex gap-3 text-slate-600 text-xs font-medium">
-                          <div className="w-4 h-4 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mt-0.5 shrink-0">
-                            <Check className="w-2.5 h-2.5" />
-                          </div>
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="p-6 sm:p-10 pt-0">
-                    <button
-                      onClick={() => {
-                        setBookingService(pkg.name);
-                        const el = document.getElementById('booking');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
-                        toast.info(`Mẹ đã chọn gói: ${pkg.name}. Mời điền thông tin đăng ký bên dưới! 🌸`);
-                      }}
-                      className="w-full bg-slate-50 hover:bg-primary hover:text-white text-slate-700 text-xs font-black uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm group-hover:shadow-md"
-                    >
-                      Đặt lịch gói này ngay <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                    <div className="p-6 sm:p-10 pt-0">
+                      <button
+                        onClick={() => {
+                          setBookingService(pkg.name);
+                          const el = document.getElementById('booking');
+                          if (el) el.scrollIntoView({ behavior: 'smooth' });
+                          toast.info(`Mẹ đã chọn gói: ${pkg.name}. Mời điền thông tin đăng ký bên dưới! 🌸`);
+                        }}
+                        className={`w-full text-xs font-black uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm group-hover:shadow-md ${
+                          isFeatured
+                            ? 'bg-primary hover:bg-primary-hover text-white dark:bg-rose-900/60 dark:hover:bg-rose-800'
+                            : 'bg-slate-50 hover:bg-primary hover:text-white text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-primary'
+                        }`}
+                      >
+                        Đặt lịch gói này ngay <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
 
