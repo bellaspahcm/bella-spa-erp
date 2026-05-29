@@ -392,10 +392,29 @@ export default function KTVDashboard() {
   const handleComplete = async (sessionId: string, notes: string, checkoutNoteVal: string = '') => {
     setIsActionLoading(sessionId);
     try {
+      let lat: number | undefined;
+      let lon: number | undefined;
+
+      try {
+        if ('geolocation' in navigator) {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 10000,
+              enableHighAccuracy: true
+            });
+          });
+          lat = position.coords.latitude;
+          lon = position.coords.longitude;
+        }
+      } catch (geoError) {
+        console.warn('Geolocation checkout failed:', geoError);
+        toast.warning('Không thể xác định vị trí GPS check-out. Ca làm việc vẫn được hoàn tất.');
+      }
+
       const res = await executeAction(
         'CHECKOUT',
-        { sessionId, notes, ktvCheckoutNote: checkoutNoteVal },
-        () => completeKTVSession(sessionId, notes, checkoutNoteVal)
+        { sessionId, notes, ktvCheckoutNote: checkoutNoteVal, lat, lon },
+        () => completeKTVSession(sessionId, notes, checkoutNoteVal, lat, lon)
       );
       if (res && res.offline) {
         setCheckoutSession(null);

@@ -491,12 +491,39 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                     </h4>
                     
                     {session.status === 'completed' ? (
-                      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50 w-fit">
-                        <span>KTV thực hiện:</span>
-                        <span className="text-primary font-black">
-                          {session.completed_by_ktv?.full_name || 'Bella Spa'}
-                          {session.completed_by_ktv?.id !== booking.assigned_ktv?.id && ' (Làm thay)'}
-                        </span>
+                      <div className="space-y-2">
+                        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50 w-fit">
+                          <span>KTV thực hiện:</span>
+                          <span className="text-primary font-black">
+                            {session.completed_by_ktv?.full_name || 'Bella Spa'}
+                            {session.completed_by_ktv?.id !== booking.assigned_ktv?.id && ' (Làm thay)'}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-100/60 rounded-2xl p-3 text-[10px] text-slate-500 font-medium">
+                          <div className="space-y-1">
+                            <p className="font-black text-slate-400 uppercase tracking-wider">📍 Check-in</p>
+                            <p className="font-bold text-slate-700">
+                              {session.start_time ? new Date(session.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                            </p>
+                            <p className="text-[9px] text-slate-400 font-mono">
+                              {session.checkin_lat && session.checkin_lon 
+                                ? `${Number(session.checkin_lat).toFixed(5)}, ${Number(session.checkin_lon).toFixed(5)}` 
+                                : 'Không có GPS'}
+                            </p>
+                          </div>
+                          <div className="space-y-1 border-l border-slate-200 pl-4">
+                            <p className="font-black text-slate-400 tracking-wider uppercase">🏁 Check-out</p>
+                            <p className="font-bold text-slate-700">
+                              {session.end_time ? new Date(session.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                            </p>
+                            <p className="text-[9px] text-slate-400 font-mono">
+                              {session.checkout_lat && session.checkout_lon 
+                                ? `${Number(session.checkout_lat).toFixed(5)}, ${Number(session.checkout_lon).toFixed(5)}` 
+                                : 'Không có GPS'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="mt-2 flex flex-col gap-1.5 w-fit">

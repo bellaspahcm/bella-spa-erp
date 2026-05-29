@@ -29,7 +29,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
-import { getCustomerById, updateCustomer } from '@/services/customer-actions';
+import { getCustomerById, updateCustomer, geocodeAddress } from '@/services/customer-actions';
 import { getBookingsByCustomerId, updateBooking, reusePackage, recordRemainingPayment, generateShareToken } from '@/modules/booking/actions/lifecycle-actions';
 import { completeSession } from '@/modules/booking/actions/session-actions';
 import { getUsers, getCurrentUser } from '@/services/user-actions';
@@ -101,7 +101,9 @@ export default function CustomerDetailPage() {
     dob_baby: '',
     address: '',
     notes: '',
-    gender_baby: 'unknown'
+    gender_baby: 'unknown',
+    latitude: null as number | null,
+    longitude: null as number | null
   });
 
   const [isEditBookingModalOpen, setIsEditBookingModalOpen] = useState(false);
@@ -498,7 +500,12 @@ export default function CustomerDetailPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-[10px] font-black text-slate-400 uppercase">Địa chỉ</p>
-                    <p className="font-bold text-slate-700 truncate max-w-[150px]">{customer.address}</p>
+                    <p className="font-bold text-slate-700 truncate max-w-[150px]" title={customer.address}>{customer.address}</p>
+                    {customer.latitude && customer.longitude && (
+                      <p className="text-[9px] font-black text-rose-500 mt-0.5">
+                        GPS: {customer.latitude.toFixed(4)}, {customer.longitude.toFixed(4)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -513,7 +520,9 @@ export default function CustomerDetailPage() {
                     dob_baby: customer.dob_baby || '',
                     address: customer.address || '',
                     notes: customer.notes || '',
-                    gender_baby: customer.gender_baby || 'unknown'
+                    gender_baby: customer.gender_baby || 'unknown',
+                    latitude: customer.latitude || null,
+                    longitude: customer.longitude || null
                   });
                   setIsEditModalOpen(true);
                 }}
@@ -955,6 +964,30 @@ export default function CustomerDetailPage() {
                         {session.notes && (
                           <p className="text-[11px] font-medium text-slate-500 mt-2 pl-3 border-l-2 border-slate-200">{session.notes}</p>
                         )}
+                        <div className="mt-3 grid grid-cols-2 gap-4 bg-white border border-slate-100 rounded-2xl p-3 text-[10px] text-slate-500 font-medium max-w-sm">
+                          <div className="space-y-1">
+                            <p className="font-black text-slate-400 uppercase tracking-wider">📍 Check-in</p>
+                            <p className="font-bold text-slate-700">
+                              {session.start_time ? new Date(session.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                            </p>
+                            <p className="text-[9px] text-slate-400 font-mono">
+                              {session.checkin_lat && session.checkin_lon 
+                                ? `${Number(session.checkin_lat).toFixed(5)}, ${Number(session.checkin_lon).toFixed(5)}` 
+                                : 'Không có GPS'}
+                            </p>
+                          </div>
+                          <div className="space-y-1 border-l border-slate-100 pl-4">
+                            <p className="font-black text-slate-400 tracking-wider uppercase">🏁 Check-out</p>
+                            <p className="font-bold text-slate-700">
+                              {session.end_time ? new Date(session.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                            </p>
+                            <p className="text-[9px] text-slate-400 font-mono">
+                              {session.checkout_lat && session.checkout_lon 
+                                ? `${Number(session.checkout_lat).toFixed(5)}, ${Number(session.checkout_lon).toFixed(5)}` 
+                                : 'Không có GPS'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1103,7 +1136,34 @@ export default function CustomerDetailPage() {
 }
 
 function EditCustomerModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData }: any) {
+  const [isGeocoding, setIsGeocoding] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleAutoGeocode = async () => {
+    if (!data.address) {
+      toast.error('Vui lòng nhập địa chỉ trước khi lấy tọa độ');
+      return;
+    }
+    setIsGeocoding(true);
+    try {
+      const coords = await geocodeAddress(data.address);
+      if (coords) {
+        setData({
+          ...data,
+          latitude: coords.latitude,
+          longitude: coords.longitude
+        });
+        toast.success(`Đã tìm thấy tọa độ: ${coords.latitude}, ${coords.longitude}`);
+      } else {
+        toast.error('Không tìm thấy tọa độ cho địa chỉ này. Vui lòng nhập thủ công.');
+      }
+    } catch (err) {
+      toast.error('Lỗi khi định vị địa chỉ');
+    } finally {
+      setIsGeocoding(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
@@ -1201,12 +1261,57 @@ function EditCustomerModal({ isOpen, onClose, onConfirm, isSubmitting, data, set
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Địa chỉ</label>
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Địa chỉ</label>
+              <button
+                type="button"
+                onClick={handleAutoGeocode}
+                disabled={isGeocoding}
+                className="text-[9px] font-black text-primary hover:text-rose-600 uppercase tracking-widest flex items-center gap-1 transition-colors disabled:opacity-50"
+              >
+                {isGeocoding ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Đang tìm...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3 h-3" />
+                    Tự động lấy tọa độ
+                  </>
+                )}
+              </button>
+            </div>
             <textarea 
               value={data.address}
               onChange={(e) => setData({ ...data, address: e.target.value })}
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700 h-24 resize-none"
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700 h-20 resize-none"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vĩ độ nhà khách (Latitude)</label>
+              <input 
+                type="number" 
+                step="any"
+                placeholder="Ví dụ: 10.7756"
+                value={data.latitude === null || data.latitude === undefined ? '' : data.latitude}
+                onChange={(e) => setData({ ...data, latitude: e.target.value ? parseFloat(e.target.value) : null })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Kinh độ nhà khách (Longitude)</label>
+              <input 
+                type="number" 
+                step="any"
+                placeholder="Ví dụ: 106.7019"
+                value={data.longitude === null || data.longitude === undefined ? '' : data.longitude}
+                onChange={(e) => setData({ ...data, longitude: e.target.value ? parseFloat(e.target.value) : null })}
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
+              />
+            </div>
           </div>
         </div>
 
