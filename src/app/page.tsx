@@ -836,6 +836,143 @@ export default function LandingPage() {
             <AnimatePresence mode="wait">
               {(categories || serviceCategories)[activeTab].packages.map((pkg: any) => {
                 const isFeatured = pkg.name.includes('Hạnh Phúc');
+                const maxVisible = 7;
+                const totalBenefits = pkg.benefits.length;
+                const visibleBenefits = pkg.benefits.slice(0, maxVisible);
+                const remainingCount = totalBenefits - maxVisible;
+
+                /* ────── FEATURED CARD (Full-width, premium layout) ────── */
+                if (isFeatured) {
+                  return (
+                    <motion.div
+                      key={pkg.id}
+                      initial={{ opacity: 0, scale: 0.96, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96, y: -20 }}
+                      transition={{ duration: 0.5, ease: 'easeOut' }}
+                      className="lg:col-span-2 rounded-[2.5rem] overflow-hidden relative group"
+                    >
+                      {/* Animated gradient border */}
+                      <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-amber-400 via-rose-500 to-primary p-[3px] z-0">
+                        <div className="absolute inset-[3px] bg-white dark:bg-[#1C1B19] rounded-[calc(2.5rem-3px)]" />
+                      </div>
+
+                      {/* Sheen effect on hover */}
+                      <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden rounded-[2.5rem]">
+                        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                      </div>
+
+                      <div className="relative z-[2] flex flex-col">
+                        {/* Top decorative bar */}
+                        <div className="h-2 bg-gradient-to-r from-amber-400 via-rose-500 to-primary" />
+
+                        {/* Badge row */}
+                        <div className="px-8 sm:px-12 pt-8 sm:pt-10">
+                          <span className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-primary text-white shadow-lg shadow-rose-200/50 dark:shadow-none">
+                            <Star className="w-4 h-4 fill-amber-300 text-amber-300" />
+                            GÓI BÁN CHẠY / ĐƯỢC YÊU THÍCH NHẤT
+                            <Star className="w-4 h-4 fill-amber-300 text-amber-300" />
+                          </span>
+                        </div>
+
+                        {/* Main content: 2-column on desktop */}
+                        <div className="flex flex-col lg:flex-row">
+                          {/* Left column: Info + CTA */}
+                          <div className="lg:w-[45%] p-8 sm:p-12 flex flex-col justify-between">
+                            <div>
+                              <h4 className="text-2xl sm:text-3xl font-serif font-black text-primary dark:text-rose-400 tracking-tight leading-tight mb-2">
+                                {pkg.name}
+                              </h4>
+                              <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                                <Clock className="w-3.5 h-3.5" /> {pkg.duration} / buổi
+                              </span>
+
+                              <div className="mt-6 mb-6">
+                                <span className="text-3xl sm:text-4xl font-serif font-black text-primary dark:text-rose-400">{pkg.price}</span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider ml-2">Trọn gói</span>
+                              </div>
+
+                              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-semibold leading-relaxed mb-6">
+                                {pkg.description || `Liệu trình ${pkg.total_sessions || 20} buổi chăm sóc chuyên sâu chuẩn y khoa của Bella Spa.`}
+                              </p>
+
+                              {/* Exclusive offer button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setBookingService(pkg.name);
+                                  const el = document.getElementById('booking');
+                                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                                  setBookingNotes(`Đăng ký nhận Ưu đãi đặc quyền cho gói: ${pkg.name} (Voucher giảm 1.000.000đ / Quà tặng đặc biệt).`);
+                                  toast.success(`🎁 Đã kích hoạt Ưu đãi độc quyền cho gói ${pkg.name}! Mời mẹ điền thông tin đăng ký để nhận mã ưu đãi.`);
+                                }}
+                                className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-extrabold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 px-4 py-2.5 rounded-xl border-2 border-amber-300/60 dark:border-amber-700/50 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all cursor-pointer animate-pulse shadow-sm"
+                              >
+                                <Gift className="w-4 h-4 text-amber-500" />
+                                Nhận Ưu đãi độc quyền
+                              </button>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setBookingService(pkg.name);
+                                const el = document.getElementById('booking');
+                                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                                toast.info(`Mẹ đã chọn gói: ${pkg.name}. Mời điền thông tin đăng ký bên dưới! 🌸`);
+                              }}
+                              className="w-full mt-8 bg-primary hover:bg-primary-hover text-white dark:bg-rose-900/60 dark:hover:bg-rose-800 text-xs font-black uppercase tracking-widest py-4.5 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-pink-200/50 dark:shadow-none hover:shadow-pink-300/40 dark:hover:shadow-none"
+                            >
+                              Đặt lịch gói này ngay <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {/* Vertical divider */}
+                          <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-rose-200 dark:via-rose-900/50 to-transparent my-8" />
+
+                          {/* Right column: Benefits */}
+                          <div className="lg:w-[55%] p-8 sm:p-12 lg:pl-10">
+                            <h5 className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                              Quy trình liệu trình gồm:
+                            </h5>
+                            <ul className="space-y-3.5">
+                              {visibleBenefits.map((benefit: any, i: number) => (
+                                <li key={i} className="flex gap-3 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-medium">
+                                  <div className="w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mt-0.5 shrink-0">
+                                    <Check className="w-3 h-3" />
+                                  </div>
+                                  <span>{benefit}</span>
+                                </li>
+                              ))}
+                            </ul>
+
+                            {/* "And more..." indicator */}
+                            {remainingCount > 0 && (
+                              <div className="mt-5 pt-5 border-t border-dashed border-rose-200 dark:border-rose-900/50">
+                                <button
+                                  onClick={() => {
+                                    setBookingService(pkg.name);
+                                    const el = document.getElementById('booking');
+                                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                                    toast.info(`Gói ${pkg.name} còn ${remainingCount}+ quy trình nữa! Để lại SĐT, Bella Spa sẽ tư vấn chi tiết ngay 🌸`);
+                                  }}
+                                  className="flex items-center gap-3 text-primary dark:text-rose-300 font-extrabold text-xs sm:text-sm cursor-pointer hover:underline underline-offset-4 transition-all group/more"
+                                >
+                                  <div className="w-5 h-5 rounded-full bg-pink-100 dark:bg-pink-950 text-primary dark:text-rose-400 flex items-center justify-center shrink-0">
+                                    <Sparkles className="w-3 h-3" />
+                                  </div>
+                                  <span>...và {remainingCount}+ quy trình khác → <span className="underline group-hover/more:text-primary-hover">Liên hệ để xem chi tiết gói</span></span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                }
+
+                /* ────── STANDARD CARD (Compact, 8-line limit) ────── */
                 return (
                   <motion.div
                     key={pkg.id}
@@ -843,30 +980,18 @@ export default function LandingPage() {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98, y: -10 }}
                     transition={{ duration: 0.4 }}
-                    className={`rounded-[2.5rem] overflow-hidden flex flex-col justify-between transition-all duration-300 group relative ${
-                      isFeatured
-                        ? 'bg-white dark:bg-[#1C1B19] border-2 border-amber-300 dark:border-amber-700/60 shadow-2xl lg:scale-[1.02] z-10 shadow-pink-100/50 dark:shadow-none'
-                        : 'bg-white dark:bg-[#1C1B19] shadow-xl border border-rose-50 dark:border-[#2E2B27] hover:border-primary/20'
-                    } hover:shadow-2xl`}
+                    className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] shadow-xl border border-rose-50 dark:border-[#2E2B27] overflow-hidden flex flex-col justify-between hover:border-primary/20 transition-all group hover:shadow-2xl relative"
                   >
                     <div className="p-6 sm:p-10">
-                      {(pkg.tag || isFeatured) && (
-                        <span className={`inline-block text-[9px] font-black uppercase tracking-widest px-3.5 py-1.5 rounded-full border mb-3 w-fit shadow-xs ${
-                          isFeatured
-                            ? 'bg-gradient-to-r from-amber-500 via-rose-500 to-primary text-white border-transparent'
-                            : 'bg-pink-100 text-primary border-rose-200/50 dark:bg-pink-950/30 dark:text-rose-300 dark:border-rose-900/50'
-                        }`}>
-                          {isFeatured ? '🏆 GÓI BÁN CHẠY / ĐƯỢC YÊU THÍCH NHẤT' : pkg.tag}
+                      {pkg.tag && (
+                        <span className="inline-block bg-pink-100 dark:bg-pink-950/30 text-primary dark:text-rose-300 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-rose-200/50 dark:border-rose-900/50 mb-3 w-fit">
+                          {pkg.tag}
                         </span>
                       )}
                       
                       <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
                         <div>
-                          <h4 className={`font-serif font-black tracking-tight transition-colors ${
-                            isFeatured 
-                              ? 'text-primary dark:text-rose-400 text-2xl' 
-                              : 'text-slate-800 dark:text-slate-200 group-hover:text-primary'
-                          }`}>{pkg.name}</h4>
+                          <h4 className="text-xl font-serif font-black text-slate-800 dark:text-slate-200 tracking-tight group-hover:text-primary transition-colors">{pkg.name}</h4>
                           <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">
                             <Clock className="w-3 h-3" /> {pkg.duration} / buổi
                           </span>
@@ -897,29 +1022,35 @@ export default function LandingPage() {
 
                       <h5 className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest mb-4">Quy trình liệu trình gồm:</h5>
                       <ul className="space-y-3">
-                        {pkg.benefits.map((benefit: any, i: number) => {
-                          const isLastLine = i === 7;
-                          return (
-                            <li 
-                              key={i} 
-                              className={`flex gap-3 text-xs font-semibold ${
-                                isLastLine 
-                                  ? 'text-primary dark:text-rose-300 font-extrabold mt-4 pt-4 border-t border-dashed border-rose-200 dark:border-rose-900/50' 
-                                  : 'text-slate-600 dark:text-slate-300 font-medium'
-                              }`}
-                            >
-                              <div className={`w-4 h-4 rounded-full flex items-center justify-center mt-0.5 shrink-0 ${
-                                isLastLine 
-                                  ? 'bg-pink-100 dark:bg-pink-950 text-primary dark:text-rose-400' 
-                                  : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
-                              }`}>
-                                {isLastLine ? <Info className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
-                              </div>
-                              <span>{benefit}</span>
-                            </li>
-                          );
-                        })}
+                        {visibleBenefits.map((benefit: any, i: number) => (
+                          <li key={i} className="flex gap-3 text-slate-600 dark:text-slate-300 text-xs font-medium">
+                            <div className="w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mt-0.5 shrink-0">
+                              <Check className="w-2.5 h-2.5" />
+                            </div>
+                            <span>{benefit}</span>
+                          </li>
+                        ))}
                       </ul>
+
+                      {/* "And more..." indicator */}
+                      {remainingCount > 0 && (
+                        <div className="mt-4 pt-4 border-t border-dashed border-rose-200 dark:border-rose-900/50">
+                          <button
+                            onClick={() => {
+                              setBookingService(pkg.name);
+                              const el = document.getElementById('booking');
+                              if (el) el.scrollIntoView({ behavior: 'smooth' });
+                              toast.info(`Gói ${pkg.name} còn ${remainingCount}+ quy trình nữa! Để lại SĐT, Bella Spa sẽ tư vấn chi tiết ngay 🌸`);
+                            }}
+                            className="flex items-center gap-3 text-primary dark:text-rose-300 font-extrabold text-xs cursor-pointer hover:underline underline-offset-4 transition-all"
+                          >
+                            <div className="w-4 h-4 rounded-full bg-pink-100 dark:bg-pink-950 text-primary dark:text-rose-400 flex items-center justify-center shrink-0">
+                              <Sparkles className="w-2.5 h-2.5" />
+                            </div>
+                            <span>...và {remainingCount}+ quy trình khác → Liên hệ để xem chi tiết</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-6 sm:p-10 pt-0">
@@ -930,11 +1061,7 @@ export default function LandingPage() {
                           if (el) el.scrollIntoView({ behavior: 'smooth' });
                           toast.info(`Mẹ đã chọn gói: ${pkg.name}. Mời điền thông tin đăng ký bên dưới! 🌸`);
                         }}
-                        className={`w-full text-xs font-black uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm group-hover:shadow-md ${
-                          isFeatured
-                            ? 'bg-primary hover:bg-primary-hover text-white dark:bg-rose-900/60 dark:hover:bg-rose-800'
-                            : 'bg-slate-50 hover:bg-primary hover:text-white text-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-primary'
-                        }`}
+                        className="w-full bg-slate-50 dark:bg-slate-800 hover:bg-primary hover:text-white text-slate-700 dark:text-slate-300 dark:hover:bg-primary text-xs font-black uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm group-hover:shadow-md"
                       >
                         Đặt lịch gói này ngay <ChevronRight className="w-4 h-4" />
                       </button>
