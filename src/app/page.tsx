@@ -691,7 +691,7 @@ export default function LandingPage() {
             <div 
               className="absolute inset-0 bg-no-repeat bg-center transition-transform duration-700 group-hover:scale-[1.02]" 
               style={{ 
-                backgroundImage: 'url("/1.png")',
+                backgroundImage: 'url("/bella_banner.png")',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center center'
               }} 
