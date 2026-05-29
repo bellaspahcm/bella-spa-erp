@@ -175,6 +175,64 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
           </div>
         </div>
       <div className="px-6 mt-10 space-y-8">
+        {/* Active Promotions - Subtle & Delicate Exclusive Offer */}
+        {booking.active_promotions && booking.active_promotions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-gradient-to-br from-pink-500/10 via-amber-500/5 to-rose-500/10 border border-pink-100 rounded-[32px] p-6 shadow-sm shadow-pink-50 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+            
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary flex-shrink-0 animate-pulse">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div className="flex-grow space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+                    Ưu đãi độc quyền của chị
+                    <span className="w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping shrink-0" />
+                  </h4>
+                </div>
+                
+                <div className="space-y-4">
+                  {booking.active_promotions.map((promo: any) => (
+                    <div key={promo.id} className="border-b border-pink-100/40 last:border-0 pb-3 last:pb-0 space-y-1.5">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <h5 className="text-sm font-black text-primary leading-snug">{promo.title}</h5>
+                        {promo.discount_percent && (
+                          <span className="bg-primary hover:bg-primary-hover text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                            -{promo.discount_percent}%
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 font-bold leading-relaxed">{promo.description}</p>
+                      
+                      {promo.discount_code && (
+                        <div className="flex items-center gap-2 mt-2 w-fit">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã ưu đãi:</span>
+                          <div className="flex items-center bg-white border border-pink-100 rounded-xl pl-3 pr-1.5 py-1">
+                            <code className="text-xs font-black text-rose-500 tracking-wider font-mono mr-3">{promo.discount_code}</code>
+                            <button
+                              onClick={() => copyToClipboard(promo.discount_code)}
+                              className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-primary active:scale-90 transition-all"
+                              title="Sao chép mã"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Premium VietQR Dynamic Payment Card */}
         {(() => {
           const fullPrice = booking.full_price || 0;

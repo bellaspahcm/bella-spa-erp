@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      promotions: {
+        Row: {
+          id: string
+          title: string
+          description: string
+          image_url: string | null
+          discount_code: string | null
+          discount_percent: number | null
+          is_active: boolean
+          start_date: string | null
+          end_date: string | null
+          tenant_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          description: string
+          image_url?: string | null
+          discount_code?: string | null
+          discount_percent?: number | null
+          is_active?: boolean
+          start_date?: string | null
+          end_date?: string | null
+          tenant_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string
+          image_url?: string | null
+          discount_code?: string | null
+          discount_percent?: number | null
+          is_active?: boolean
+          start_date?: string | null
+          end_date?: string | null
+          tenant_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       _prisma_migrations: {
         Row: {
           applied_steps_count: number

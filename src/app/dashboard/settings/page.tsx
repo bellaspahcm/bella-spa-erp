@@ -33,6 +33,7 @@ import SubscriptionTab from "./components/SubscriptionTab";
 import HqBillingTab from "./components/HqBillingTab";
 import SecurityTab from "./components/SecurityTab";
 import AccountingConfigTab from "./components/AccountingConfigTab";
+import PromotionsTab from "./components/PromotionsTab";
 
 const TABS = [
   { id: "general", label: "Thông tin chung", icon: Store },
@@ -45,6 +46,7 @@ const TABS = [
   { id: "security", label: "Bảo mật & Mật khẩu", icon: KeyRound },
   { id: "notifications", label: "Thông báo", icon: Bell },
   { id: "appearance", label: "Giao diện", icon: Palette },
+  { id: "promotions", label: "Khuyến mãi", icon: Sparkles },
 ];
 
 export default function SettingsPage() {
@@ -237,6 +239,10 @@ export default function SettingsPage() {
 
               {activeTab === "appearance" && (
                 <AppearanceTab />
+              )}
+
+              {activeTab === "promotions" && (
+                <PromotionsTab />
               )}
             </motion.div>
           </AnimatePresence>
