@@ -302,7 +302,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Thanh toán VietQR động</h3>
-                  <p className="text-[10px] text-slate-400 font-bold">Hệ thống gạch nợ tự động trong 30 giây</p>
+                  <p className="text-[10px] text-slate-400 font-bold">Hệ thống đối soát tự động trong 30 giây</p>
                 </div>
               </div>
 
@@ -334,7 +334,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                 {/* QR Code */}
                 <div className="flex flex-col items-center justify-center bg-slate-50/50 border border-slate-100 p-6 rounded-[2rem] relative">
-                  <div className="w-[180px] h-[180px] bg-white rounded-3xl p-3 border border-pink-100 flex items-center justify-center shadow-md shadow-pink-50 dark:shadow-none relative overflow-hidden group">
+                  <div className="h-[216px] w-[216px] max-w-full bg-white rounded-3xl p-3 border border-pink-100 flex items-center justify-center shadow-md shadow-pink-50 dark:shadow-none relative overflow-hidden group">
                     <img
                       src={qrUrl}
                       alt="VietQR Code"
@@ -407,7 +407,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
               <div className="p-4 bg-rose-50/30 rounded-2xl border border-rose-100/40 text-[10px] text-slate-500 font-bold leading-relaxed flex gap-2">
                 <span className="text-rose-500 font-black text-xs">💡</span>
                 <span>
-                  <strong>Hướng dẫn:</strong> Quét mã QR trên bằng ứng dụng ngân hàng hoặc chuyển khoản chính xác <strong>Số tài khoản</strong>, <strong>Nội dung</strong> và <strong>Số tiền</strong> ở trên để hệ thống tự động gạch nợ ngay lập tức.
+                  <strong>Hướng dẫn:</strong> Quét mã QR trên bằng ứng dụng ngân hàng hoặc chuyển khoản chính xác <strong>Số tài khoản</strong>, <strong>Nội dung</strong> và <strong>Số tiền</strong> ở trên để hệ thống tự động đối soát thanh toán ngay lập tức.
                 </span>
               </div>
             </div>
