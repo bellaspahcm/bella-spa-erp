@@ -919,30 +919,6 @@ export async function recordRemainingPayment(params: {
 
     const tenantId = booking.tenant_id || currentUser?.tenant_id;
     const receivedDate = getLocalDateString();
-    await assertOpenAccountingPeriod(supabase, {
-      tenantId,
-      date: receivedDate,
-      context: 'Record remaining payment',
-    });
-
-    let insertedRev: { id: string; status: string } | null = null;
-    const rollbackRemainingPayment = async () => {
-      if (insertedRev?.id) {
-        await supabase
-          .from('revenue')
-          .delete()
-          .eq('id', insertedRev.id);
-      }
-
-      await supabase
-        .from('bookings')
-        .update({
-          deposit_amount: booking.deposit_amount,
-          status: booking.status
-        } as any)
-        .eq('id', params.booking_id);
-    };
-
     const revenueType = params.revenue_type || 'remaining_payment';
     const businessEventType = inferBusinessEventType({
       sourceTable: 'revenue',
@@ -955,186 +931,34 @@ export async function recordRemainingPayment(params: {
       reason: params.notes,
     };
 
-    const { data: revData, error: revError } = await supabase
-      .from('revenue')
-      .insert([{
-        booking_id: params.booking_id,
-        amount: params.amount,
-        revenue_type: revenueType,
-        payment_method: params.payment_method,
-        received_date: receivedDate,
-        status: params.status || 'pending',
-        notes: params.notes || `Thanh toán nốt phần còn lại.`,
-        receipt_url: params.receipt_url || null,
-        tenant_id: tenantId,
-        business_event_type: businessEventType,
-        accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
-        accounting_metadata: accountingPayload
-      }])
-      .select('id, status')
-      .single();
+    const outboxPayload = {
+      totalAmount: params.amount,
+      vatRate: 0,
+      description: params.notes || 'Thanh toán nốt phần còn lại.',
+      branchId: tenantId,
+    };
 
-    if (revData) insertedRev = revData;
-
-    if (revError) {
-      console.warn('Error recording revenue with standard client, trying with admin client fallback:', revError);
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (serviceRoleKey) {
-        const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-        const supabaseAdmin = createSupabaseClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          serviceRoleKey
-        );
-        const { data: adminRevData, error: adminRevError } = await supabaseAdmin
-          .from('revenue')
-          .insert([{
-            booking_id: params.booking_id,
-            amount: params.amount,
-            revenue_type: revenueType,
-            payment_method: params.payment_method,
-            received_date: receivedDate,
-            status: params.status || 'pending',
-            notes: params.notes || `Thanh toán nốt phần còn lại.`,
-            receipt_url: params.receipt_url || null,
-            tenant_id: tenantId,
-            business_event_type: businessEventType,
-            accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
-            accounting_metadata: accountingPayload
-          }])
-          .select('id, status')
-          .single();
-        
-        if (adminRevData) insertedRev = adminRevData;
-
-        if (adminRevError) {
-          console.error('Error recording revenue with admin client as well:', adminRevError);
-          throw new Error('Không thể ghi nhận giao dịch tài chính: ' + adminRevError.message);
-        } else {
-          console.log('Successfully recorded remaining payment revenue with admin client fallback');
-          // Admin client succeeded — error from standard client is resolved
-        }
-      } else {
-        throw new Error('Không thể ghi nhận giao dịch tài chính do phân quyền (RLS): ' + revError.message);
+    const { data: rpcResult, error: rpcError } = await supabase.rpc(
+      'record_remaining_payment_atomic',
+      {
+        p_booking_id: params.booking_id,
+        p_amount: params.amount,
+        p_payment_method: params.payment_method,
+        p_received_date: receivedDate,
+        p_status: params.status || 'pending',
+        p_revenue_type: revenueType,
+        p_notes: params.notes || null,
+        p_receipt_url: params.receipt_url || null,
+        p_actor_id: currentUser?.id || null,
+        p_business_event_type: businessEventType,
+        p_accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+        p_accounting_metadata: accountingPayload,
+        p_outbox_payload: outboxPayload,
       }
-    }
+    );
 
-    // ⭐ Ghi nhận vào hàng đợi Accounting Outbox nếu tạo revenue thành công và đã confirmed
-    if (insertedRev?.id && insertedRev.status === 'confirmed' && tenantId) {
-      const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-      try {
-        await enqueueWithAutoClient(
-          supabase,
-          {
-            tenantId,
-            eventType: 'PACKAGE_SALE',
-            referenceType: 'REVENUE',
-            referenceId: insertedRev.id,
-            payload: {
-              totalAmount: params.amount,
-              vatRate: 0,
-              description: params.notes || 'Thanh toán nốt phần còn lại.',
-              // TODO Phase 29: dùng branch_id thực khi multi-branch
-              branchId: tenantId,
-            },
-          },
-          '[recordRemainingPayment]'
-        );
-      } catch (outboxErr) {
-        await rollbackRemainingPayment();
-        throw new Error(outboxErr instanceof Error ? outboxErr.message : 'Không thể ghi nhận accounting outbox');
-      }
-    }
-
-    const newTotalPaid = (booking.deposit_amount || 0) + params.amount;
-    
-    let newStatus = booking.status;
-    const targetPrice = booking.full_price * (1 - (booking.discount_percent || 0)/100);
-    if (newTotalPaid >= targetPrice && (booking.status === 'deposit_pending' || booking.status === 'deposit')) {
-      newStatus = 'booked';
-    }
-
-    let { error: updateError } = await supabase
-      .from('bookings')
-      .update({ 
-        deposit_amount: newTotalPaid,
-        status: newStatus
-      } as any)
-      .eq('id', params.booking_id);
-
-    if (updateError) {
-      console.warn('Error updating booking with standard client, trying with admin client fallback:', updateError);
-      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      if (serviceRoleKey) {
-        const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-        const supabaseAdmin = createSupabaseClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          serviceRoleKey
-        );
-        const { error: adminUpdateError } = await supabaseAdmin
-          .from('bookings')
-          .update({ 
-            deposit_amount: newTotalPaid,
-            status: newStatus
-          } as any)
-          .eq('id', params.booking_id);
-        if (adminUpdateError) {
-          console.error('Error updating booking with admin client as well:', adminUpdateError);
-          await rollbackRemainingPayment();
-          throw new Error('Không thể cập nhật số tiền thanh toán của gói: ' + adminUpdateError.message);
-        } else {
-          updateError = null;
-        }
-      } else {
-        await rollbackRemainingPayment();
-        throw new Error('Không thể cập nhật số tiền thanh toán của gói do phân quyền: ' + updateError.message);
-      }
-    }
-
-    try {
-      const { recordAuditLog } = await import('@/services/audit-actions');
-      await recordAuditLog({
-        action: 'UPDATE',
-        table_name: 'bookings',
-        record_id: params.booking_id,
-        old_data: booking,
-        new_data: { deposit_amount: newTotalPaid, status: newStatus }
-      });
-    } catch (auditErr) {
-      await rollbackRemainingPayment();
-      throw new Error(auditErr instanceof Error ? auditErr.message : 'Failed to record recordRemainingPayment audit log');
-    }
-
-    if (params.status === 'confirmed' || newStatus === 'booked') {
-      const { error: syncError } = await supabase
-        .from('revenue')
-        .update({ status: 'confirmed' })
-        .eq('booking_id', params.booking_id)
-        .eq('status', 'pending');
-      
-      if (syncError) {
-        console.warn('Error syncing revenue status with standard client, trying with admin client fallback:', syncError);
-        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (serviceRoleKey) {
-          const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-          const supabaseAdmin = createSupabaseClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            serviceRoleKey
-          );
-          const { error: adminSyncError } = await supabaseAdmin
-            .from('revenue')
-            .update({ status: 'confirmed' })
-            .eq('booking_id', params.booking_id)
-            .eq('status', 'pending');
-          if (adminSyncError) {
-            console.error('Error syncing revenue status with admin client as well:', adminSyncError);
-            await rollbackRemainingPayment();
-            throw new Error('Không thể đồng bộ trạng thái doanh thu: ' + adminSyncError.message);
-          }
-        } else {
-          await rollbackRemainingPayment();
-          throw new Error('Không thể đồng bộ trạng thái doanh thu: ' + syncError.message);
-        }
-      }
+    if (rpcError) {
+      throw new Error('Không thể ghi nhận giao dịch tài chính: ' + rpcError.message);
     }
 
     const revalPaths = [
@@ -1143,7 +967,7 @@ export async function recordRemainingPayment(params: {
     ];
     await Promise.all(revalPaths.map(path => safeRevalidatePath(path)));
 
-    return { success: true };
+    return { success: true, data: rpcResult };
   } catch (error: any) {
     console.error('Error recording remaining payment:', error);
     return { error: error.message };
