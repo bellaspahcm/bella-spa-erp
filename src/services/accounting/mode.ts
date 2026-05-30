@@ -5,7 +5,7 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from '../audit-actions';
 import { getCurrentUser } from '../user-actions';
 import { calculateReadinessScore } from './template-rules';
-import type { ProfessionalModeReadinessGate } from './types';
+import type { LegacyLedgerSyncPreview, ProfessionalModeReadinessGate } from './types';
 import type { Database, Json } from '@/types/database.types';
 
 type AccountingMode = 'SIMPLE' | 'PROFESSIONAL';
@@ -17,6 +17,15 @@ type ReadinessRpcRow = {
   missing_business_event: number | string | null;
   needs_review: number | string | null;
   posting_failed: number | string | null;
+};
+const EMPTY_SYNC_PREVIEW: LegacyLedgerSyncPreview = {
+  pending_revenue_count: 0,
+  pending_expense_count: 0,
+  pending_salary_count: 0,
+  journal_entries_to_create: 0,
+  revenue_amount: 0,
+  expense_amount: 0,
+  salary_amount: 0,
 };
 
 function toNumber(value: number | string | null | undefined) {
@@ -163,6 +172,33 @@ export async function getProfessionalModeReadinessGate(): Promise<ProfessionalMo
   }
 
   return loadProfessionalModeReadinessGate(supabase, user.tenant_id);
+}
+
+export async function getLegacyLedgerSyncPreview(): Promise<LegacyLedgerSyncPreview> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
+    throw new Error('Unauthorized: chỉ admin/kế toán mới được xem preview đồng bộ sổ cái.');
+  }
+
+  const { data, error } = await supabase.rpc('preview_legacy_ledger_sync', {
+    p_tenant_id: user.tenant_id,
+  });
+
+  if (error) throw error;
+
+  const row = data?.[0];
+  if (!row) return EMPTY_SYNC_PREVIEW;
+
+  return {
+    pending_revenue_count: toNumber(row.pending_revenue_count),
+    pending_expense_count: toNumber(row.pending_expense_count),
+    pending_salary_count: toNumber(row.pending_salary_count),
+    journal_entries_to_create: toNumber(row.journal_entries_to_create),
+    revenue_amount: toNumber(row.revenue_amount),
+    expense_amount: toNumber(row.expense_amount),
+    salary_amount: toNumber(row.salary_amount),
+  };
 }
 
 export async function updateAccountingMode(mode: AccountingMode) {

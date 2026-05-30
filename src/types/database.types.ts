@@ -2936,6 +2936,18 @@ export type Database = {
           synced_salary_count: number
         }[]
       }
+      preview_legacy_ledger_sync: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          expense_amount: number
+          journal_entries_to_create: number
+          pending_expense_count: number
+          pending_revenue_count: number
+          pending_salary_count: number
+          revenue_amount: number
+          salary_amount: number
+        }[]
+      }
       resolve_accounting_review_item: {
         Args: { p_review_item_id: string; p_status: string }
         Returns: {

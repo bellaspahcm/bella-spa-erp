@@ -12,32 +12,53 @@ import {
 import { toast } from "sonner";
 import {
   getAccountingMode,
+  getLegacyLedgerSyncPreview,
   getProfessionalModeReadinessGate,
   syncLegacyToLedger,
   updateAccountingMode,
 } from "@/services/accounting-actions";
-import type { ProfessionalModeReadinessGate } from "@/services/accounting/types";
+import type { LegacyLedgerSyncPreview, ProfessionalModeReadinessGate } from "@/services/accounting/types";
 
 type AccountingMode = "SIMPLE" | "PROFESSIONAL";
+const EMPTY_SYNC_PREVIEW: LegacyLedgerSyncPreview = {
+  pending_revenue_count: 0,
+  pending_expense_count: 0,
+  pending_salary_count: 0,
+  journal_entries_to_create: 0,
+  revenue_amount: 0,
+  expense_amount: 0,
+  salary_amount: 0,
+};
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 export default function AccountingConfigTab() {
   const [mode, setMode] = useState<AccountingMode>("SIMPLE");
   const [readinessGate, setReadinessGate] = useState<ProfessionalModeReadinessGate | null>(null);
+  const [syncPreview, setSyncPreview] = useState<LegacyLedgerSyncPreview>(EMPTY_SYNC_PREVIEW);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   async function refreshConfig() {
-    const [currentMode, gate] = await Promise.all([
+    const [currentMode, gate, preview] = await Promise.all([
       getAccountingMode(),
       getProfessionalModeReadinessGate(),
+      getLegacyLedgerSyncPreview(),
     ]);
     setMode(currentMode);
     setReadinessGate(gate);
+    setSyncPreview(preview);
   }
 
   useEffect(() => {
@@ -54,7 +75,15 @@ export default function AccountingConfigTab() {
   }, []);
 
   const handleSync = async () => {
-    if (!confirm("Bạn có chắc chắn muốn đồng bộ dữ liệu lịch sử vào Sổ cái và bật Professional Core?")) return;
+    const message = [
+      "Bạn có chắc chắn muốn đồng bộ dữ liệu lịch sử vào Sổ cái và bật Professional Core?",
+      "",
+      `Dự kiến tạo ${syncPreview.journal_entries_to_create} bút toán:`,
+      `- ${syncPreview.pending_revenue_count} dòng doanh thu (${formatCurrency(syncPreview.revenue_amount)})`,
+      `- ${syncPreview.pending_expense_count} dòng chi phí (${formatCurrency(syncPreview.expense_amount)})`,
+      `- ${syncPreview.pending_salary_count} bảng lương (${formatCurrency(syncPreview.salary_amount)})`,
+    ].join("\n");
+    if (!confirm(message)) return;
 
     setIsSyncing(true);
     try {
@@ -93,6 +122,7 @@ export default function AccountingConfigTab() {
   }
 
   const professionalReady = Boolean(readinessGate?.can_enable_professional);
+  const hasPendingSync = syncPreview.journal_entries_to_create > 0;
 
   return (
     <div className="space-y-8">
@@ -208,9 +238,38 @@ export default function AccountingConfigTab() {
             <p className="text-amber-800/80 text-sm font-medium mb-4">
               Đồng bộ chỉ chạy khi readiness đạt yêu cầu. Nếu còn dòng cần duyệt hoặc lỗi hạch toán, hệ thống sẽ chặn để tránh bật Professional trên dữ liệu chưa chuẩn.
             </p>
+
+            <div className="mb-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="rounded-2xl bg-white/80 border border-amber-100 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider font-black text-amber-700">Bút toán</p>
+                <p className="text-xl font-black text-slate-900">{syncPreview.journal_entries_to_create}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 border border-amber-100 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider font-black text-amber-700">Doanh thu</p>
+                <p className="text-xl font-black text-slate-900">{syncPreview.pending_revenue_count}</p>
+                <p className="text-[11px] font-bold text-slate-500">{formatCurrency(syncPreview.revenue_amount)}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 border border-amber-100 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider font-black text-amber-700">Chi phí</p>
+                <p className="text-xl font-black text-slate-900">{syncPreview.pending_expense_count}</p>
+                <p className="text-[11px] font-bold text-slate-500">{formatCurrency(syncPreview.expense_amount)}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 border border-amber-100 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider font-black text-amber-700">Bảng lương</p>
+                <p className="text-xl font-black text-slate-900">{syncPreview.pending_salary_count}</p>
+                <p className="text-[11px] font-bold text-slate-500">{formatCurrency(syncPreview.salary_amount)}</p>
+              </div>
+            </div>
+
+            {!hasPendingSync && professionalReady && mode !== "PROFESSIONAL" && (
+              <p className="mb-4 rounded-2xl border border-emerald-100 bg-white/80 px-4 py-3 text-sm font-bold text-emerald-700">
+                Không còn dữ liệu lịch sử cần tạo bút toán. Bạn có thể chuyển sang Professional nếu đã kiểm tra báo cáo.
+              </p>
+            )}
+
             <button
               onClick={handleSync}
-              disabled={isSyncing || isUpdating || !professionalReady}
+              disabled={isSyncing || isUpdating || !professionalReady || !hasPendingSync}
               className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <RefreshCw className={`w-5 h-5 ${isSyncing ? "animate-spin" : ""}`} />
