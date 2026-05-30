@@ -98,8 +98,7 @@ describe('HQ Audit Explorer System', () => {
       mockGetCurrentUser.mockResolvedValue(regularUser);
       mockCheckHqAuth.mockResolvedValue({ authorized: false, error: 'Quyền truy cập bị từ chối' });
 
-      const result = await getHqAuditLogs({});
-      expect(result).toEqual([]);
+      await expect(getHqAuditLogs({})).rejects.toThrow();
       expect(mockFrom).not.toHaveBeenCalled();
     });
 
@@ -164,8 +163,7 @@ describe('HQ Audit Explorer System', () => {
   describe('getAuditTables', () => {
     it('should block unauthorized users from listing audit tables', async () => {
       mockCheckHqAuth.mockResolvedValue({ authorized: false });
-      const result = await getAuditTables();
-      expect(result).toEqual([]);
+      await expect(getAuditTables()).rejects.toThrow('Quyen truy cap bi tu choi');
     });
 
     it('should list and sort all unique tables present in audit logs', async () => {
@@ -186,8 +184,7 @@ describe('HQ Audit Explorer System', () => {
   describe('getAuditUsers', () => {
     it('should block unauthorized users from listing system users', async () => {
       mockCheckHqAuth.mockResolvedValue({ authorized: false });
-      const result = await getAuditUsers();
-      expect(result).toEqual([]);
+      await expect(getAuditUsers()).rejects.toThrow('Quyen truy cap bi tu choi');
     });
 
     it('should return all users ordered by full_name', async () => {
