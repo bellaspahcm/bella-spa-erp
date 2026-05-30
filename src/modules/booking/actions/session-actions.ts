@@ -123,37 +123,13 @@ export async function processSessionCompletion(
   // 4. Cộng lương KTV vào salary_records
   if (ktvId && tenantId) {
     const monthYear = `${today.substring(0, 7)}-01`;
-    const commission = Number(currentBooking?.ktv_commission) || FINANCE_CONSTANTS.DEFAULT_KTV_COMMISSION;
-
-    const { data: salaryRec } = await supabase
-      .from('salary_records')
-      .select('id, total_sessions, service_percentage_bonus')
-      .eq('ktv_id', ktvId)
-      .eq('month_year', monthYear)
-      .single();
-
     let salaryError = null;
-    let originalSalarySessions = salaryRec?.total_sessions || 0;
-    let originalSalaryBonus = Number(salaryRec?.service_percentage_bonus) || 0;
-    let isNewSalaryRecord = !salaryRec;
 
-    if (salaryRec) {
-      const { error } = await supabase.from('salary_records').update({
-        total_sessions: (salaryRec.total_sessions || 0) + 1,
-        service_percentage_bonus: (Number(salaryRec.service_percentage_bonus) || 0) + commission
-      }).eq('id', salaryRec.id);
-      salaryError = error;
-    } else {
-      const { error } = await supabase.from('salary_records').insert([{
-        ktv_id: ktvId,
-        month_year: monthYear,
-        total_sessions: 1,
-        service_percentage_bonus: commission,
-        base_salary: FINANCE_CONSTANTS.DEFAULT_BASE_SALARY,
-        status: 'draft',
-        tenant_id: tenantId
-      }]);
-      salaryError = error;
+    try {
+      const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+      await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+    } catch (e: any) {
+      salaryError = e;
     }
 
     if (salaryError) {
@@ -246,22 +222,11 @@ export async function processSessionCompletion(
       // Rollback KTV salary record
       if (ktvId && tenantId) {
         const monthYear = `${today.substring(0, 7)}-01`;
-        const commission = Number(currentBooking?.ktv_commission) || FINANCE_CONSTANTS.DEFAULT_KTV_COMMISSION;
-        const { data: salaryRec } = await supabase
-          .from('salary_records')
-          .select('id, total_sessions, service_percentage_bonus')
-          .eq('ktv_id', ktvId)
-          .eq('month_year', monthYear)
-          .single();
-        if (salaryRec) {
-          if (salaryRec.total_sessions <= 1) {
-            await supabase.from('salary_records').delete().eq('id', salaryRec.id);
-          } else {
-            await supabase.from('salary_records').update({
-              total_sessions: salaryRec.total_sessions - 1,
-              service_percentage_bonus: Math.max(0, (Number(salaryRec.service_percentage_bonus) || 0) - commission)
-            }).eq('id', salaryRec.id);
-          }
+        try {
+          const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+          await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+        } catch (e) {
+          console.error('[processSessionCompletion] Error rolling back KTV salary record:', e);
         }
       }
 

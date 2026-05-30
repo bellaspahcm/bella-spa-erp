@@ -29,7 +29,7 @@ interface AttendanceLogAdmin {
 interface SessionLogAdmin {
   id: string;
   rating: number | null;
-  bookings: { ktv_commission: number | null } | null;
+  bookings: { ktv_commission: number | null; package_name: string | null } | null;
   session_reviews: { rating: number | null; status: string | null }[];
 }
 
@@ -58,7 +58,7 @@ interface SalaryRecordDbAdmin {
  * rating-based quality bonus, KPI bonus from kpi_records, and attendance deductions.
  * Respects overrides from manual admin adjustments.
  */
-async function recalculateAndSaveSalaryRecord(
+export async function recalculateAndSaveSalaryRecord(
   supabase: any,
   ktvId: string,
   monthYear: string,
@@ -87,7 +87,7 @@ async function recalculateAndSaveSalaryRecord(
     .from('tenants')
     .select('salary_config')
     .eq('id', tenantId)
-    .single();
+    .maybeSingle();
 
   if (tenantError) throw tenantError;
   const stored = (tenantData?.salary_config as unknown as Partial<TenantSalaryConfig>) || {};
@@ -131,7 +131,7 @@ async function recalculateAndSaveSalaryRecord(
   // 4. Fetch completed sessions this month
   const { data: sessions, error: sessionsError } = await supabase
     .from('session_logs')
-    .select('id, rating, bookings(ktv_commission), session_reviews(rating, status)')
+    .select('id, rating, bookings(ktv_commission, package_name), session_reviews(rating, status)')
     .eq('completed_by_ktv_id', ktvId)
     .eq('status', 'completed')
     .gte('completed_date', startOfMonthStr)
@@ -140,9 +140,30 @@ async function recalculateAndSaveSalaryRecord(
   if (sessionsError) throw sessionsError;
   const sessionsTyped = (sessions || []) as unknown as SessionLogAdmin[];
 
+  // Fetch packages for multiplier mapping
+  const { data: packagesData, error: packagesError } = await supabase
+    .from('packages')
+    .select('name, session_multiplier')
+    .eq('tenant_id', tenantId);
+
+  if (packagesError) throw packagesError;
+  const packagesList = packagesData || [];
+
+  // Create a map of package name -> multiplier
+  const packageMultiplierMap = new Map<string, number>();
+  packagesList.forEach((pkg: any) => {
+    if (pkg.name) {
+      packageMultiplierMap.set(pkg.name, Number(pkg.session_multiplier ?? 1.0));
+    }
+  });
+
   const sessionsCount = overrides?.total_sessions !== undefined
     ? overrides.total_sessions
-    : sessionsTyped.length;
+    : sessionsTyped.reduce((acc: number, s) => {
+        const pkgName = s.bookings?.package_name || '';
+        const multiplier = packageMultiplierMap.get(pkgName) ?? 1.0;
+        return acc + multiplier;
+      }, 0);
 
   const sessionBonus = sessionsTyped.reduce((acc: number, s) =>
     acc + (s.bookings?.ktv_commission || 150000), 0);

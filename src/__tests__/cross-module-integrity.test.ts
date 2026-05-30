@@ -45,6 +45,32 @@ jest.mock('@/services/inventory-actions', () => ({
   autoConsumeForSession: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
+  recalculateAndSaveSalaryRecord: jest.fn().mockImplementation(async (supabase, ktvId, monthYear, tenantId) => {
+    const { data: salaryRec } = await supabase
+      .from('salary_records')
+      .select('id, total_sessions')
+      .eq('ktv_id', ktvId)
+      .eq('month_year', monthYear)
+      .single();
+
+    if (salaryRec) {
+      await supabase.from('salary_records').update({
+        total_sessions: (salaryRec.total_sessions || 0) + 1,
+      }).eq('id', salaryRec.id);
+    } else {
+      await supabase.from('salary_records').insert({
+        ktv_id: ktvId,
+        month_year: monthYear,
+        total_sessions: 1,
+        tenant_id: tenantId,
+        status: 'draft',
+      });
+    }
+    return { success: true, totalSalary: 6000000 };
+  })
+}));
+
 jest.mock('@/lib/accounting-outbox', () => ({
   enqueueWithAutoClient: jest.fn().mockResolvedValue(true),
 }));

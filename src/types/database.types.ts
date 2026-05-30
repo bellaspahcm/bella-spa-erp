@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -1575,6 +1575,7 @@ export type Database = {
           price: number | null
           price_cap: number | null
           price_floor: number | null
+          session_multiplier: number | null
           status: string | null
           template_id: string | null
           tenant_id: string | null
@@ -1596,6 +1597,7 @@ export type Database = {
           price?: number | null
           price_cap?: number | null
           price_floor?: number | null
+          session_multiplier?: number | null
           status?: string | null
           template_id?: string | null
           tenant_id?: string | null
@@ -1617,6 +1619,7 @@ export type Database = {
           price?: number | null
           price_cap?: number | null
           price_floor?: number | null
+          session_multiplier?: number | null
           status?: string | null
           template_id?: string | null
           tenant_id?: string | null
@@ -2911,6 +2914,27 @@ export type Database = {
           status: string
         }[]
       }
+      get_salary_reconciliation_report: {
+        Args: { p_month_year: string; p_tenant_id: string }
+        Returns: {
+          ai_base_salary: number
+          ai_deductions: number
+          ai_kpi_bonus: number
+          ai_session_bonus: number
+          ai_total: number
+          diff_percent: number
+          diff_total: number
+          ktv_id: string
+          ktv_name: string
+          legacy_base_salary: number
+          legacy_deductions: number
+          legacy_kpi_bonus: number
+          legacy_session_bonus: number
+          legacy_status: string
+          legacy_total: number
+          status: string
+        }[]
+      }
       get_service_performance: {
         Args: { p_tenant_id: string }
         Returns: {
@@ -3181,3 +3205,4 @@ export const Constants = {
     },
   },
 } as const
+

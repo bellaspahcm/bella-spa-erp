@@ -490,7 +490,7 @@ KTV sử dụng giao diện Mobile Portal tối ưu trên điện thoại để 
 
 #### Bước 4: Đối soát thu nhập cá nhân
 * Vào mục **"Thu nhập"** trên thanh menu dưới di động.
-* **Bảng lương tháng**: Xem chi tiết Lương cứng, Tổng số ca đã làm, Tiền hoa hồng tích lũy và Điểm thưởng đánh giá sao của tháng hiện tại.
+* **Bảng lương tháng**: Xem chi tiết Lương cứng, Tổng số ca đã quy đổi (ví dụ: ca VIP tính hệ số 2.0, ca Hạnh Phúc tính hệ số 1.5, ca Tiết Kiệm/cơ bản tính hệ số 1.0), Tiền hoa hồng tích lũy và Điểm thưởng đánh giá sao của tháng hiện tại. Hệ số quy đổi giúp phản ánh chính xác công sức trị liệu của bạn trên các gói liệu trình có độ dài và độ phức tạp khác nhau (được chốt dưới dạng số thập phân, ví dụ: 14.5 ca).
 * **Bento card "Đối soát theo gói dịch vụ"**: Giúp bạn xem chi tiết mình đã làm bao nhiêu buổi cho gói *Chăm Sóc Chuyên Sâu*, bao nhiêu buổi cho gói *Massage Bầu Body & Mặt*, và số hoa hồng tương ứng của từng gói để tự đối soát chéo bất kỳ lúc nào.
 
 ---
@@ -615,6 +615,11 @@ Trong quá trình xây dựng hệ thống, đội ngũ phát triển đã thự
 18. **Admin-Only Active Service Package Edit Feature**: Tích hợp toàn diện modal `EditBookingModal` sang trọng, màu sắc HSL cao cấp, hỗ trợ chỉnh sửa toàn bộ thông số hợp đồng đang chạy của khách bầu.
 19. **Transaction & Reconciliation Audit Trail Card**: Thiết lập thẻ nhật ký giao dịch dòng tiền chi tiết dành riêng cho Admin ngay dưới danh sách ca chăm sóc tại trang khách hàng.
 20. **Negative Refund Transaction Support**: Nâng cấp định dạng ô tiền tệ và các hàm server-side để hỗ trợ ghi nhận giao dịch số tiền âm (Refund) giúp giải quyết triệt để và nhanh chóng các lỗi báo lệch đối soát dòng tiền.
+21. **Package-Based Session Multiplier & Central Recalculation (Hệ số quy đổi số ca làm theo gói dịch vụ & Đồng bộ tính lương tập trung)**:
+    - Tích hợp cột `session_multiplier NUMERIC(3,2) DEFAULT 1.0` vào bảng `packages` (mặc định Gói VIP = `2.0`, Gói Hạnh Phúc = `1.5`, các gói khác = `1.0`).
+    - Nâng cấp cột `total_sessions` trong bảng `salary_records` sang kiểu `NUMERIC(5,2)` để lưu trữ số ca quy đổi dưới dạng số thập phân (ví dụ: `14.5` ca) thay vì số nguyên.
+    - Cập nhật các hàm RPC trên database (`calculate_ktv_salary_sheet`, `get_salary_reconciliation_report`, `get_salary_reconciliation`) cùng với các Server Actions backend/frontend (`recalculateAndSaveSalaryRecord`, `getSalaryData`) để đồng bộ việc nhân hệ số quy đổi khi tính tổng số ca làm việc thực tế của KTV.
+    - Đồng bộ hóa toàn diện Quy tắc số 4 (Atomic Recalculations) bằng cách gỡ bỏ toàn bộ các lệnh cập nhật cơ sở dữ liệu riêng lẻ trong `session-actions.ts` và thay thế bằng việc gọi trực tiếp hàm recalculation tập trung khi hoàn thành hoặc hoàn tác ca.
 
 ---
 
