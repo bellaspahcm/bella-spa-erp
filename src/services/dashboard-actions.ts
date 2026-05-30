@@ -219,22 +219,17 @@ interface UpcomingSession {
 }
 
 export async function getUpcomingSessions(date?: string) {
-  try {
-    const { getCalendarSessions } = await import('@/modules/booking/actions/session-actions');
-    const allSessions = await getCalendarSessions();
+  const { getCalendarSessions } = await import('@/modules/booking/actions/session-actions');
+  const allSessions = await getCalendarSessions();
 
-    const todayStr = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const todayStr = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
-    const typedSessions = allSessions as unknown as UpcomingSession[];
+  const typedSessions = allSessions as unknown as UpcomingSession[];
 
-    const todaySessions = typedSessions.filter((s) =>
-      s.assigned_date === todayStr && s.status !== 'completed'
-    );
-    return todaySessions.sort((a, b) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
-  } catch (e) {
-    console.error('[getUpcomingSessions]', e);
-    return [];
-  }
+  const todaySessions = typedSessions.filter((s) =>
+    s.assigned_date === todayStr && s.status !== 'completed'
+  );
+  return todaySessions.sort((a, b) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
 }
 
 // ─── getTopTechnicians ────────────────────────────────────────────────────────
@@ -256,8 +251,7 @@ export async function getTopTechnicians() {
     });
 
     if (error) {
-      console.error('[getTopTechnicians] RPC error:', error);
-      return [];
+      throw new Error(`Failed to fetch top technicians: ${error.message}`);
     }
 
     const leaderData = (data as unknown as KtvLeaderboardRow[]) || [];
@@ -270,8 +264,7 @@ export async function getTopTechnicians() {
       bonus: formatCurrency(Number(u.total_kpi_bonus || 0))
     }));
   } catch (e) {
-    console.error('[getTopTechnicians]', e);
-    return [];
+    throw e instanceof Error ? e : new Error('Failed to fetch top technicians');
   }
 }
 

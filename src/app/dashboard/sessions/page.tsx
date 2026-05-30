@@ -86,11 +86,20 @@ function SessionsContent() {
 
   const loadSessions = async () => {
     setIsSyncing(true);
-    const data = await getSessionsWithDetails() as SessionBooking[];
-    setSessions(data || []);
-    applyFilters(data || [], searchQuery, statusFilter, sortFilter);
-    setIsSyncing(false);
-    return data;
+    try {
+      const data = await getSessionsWithDetails() as SessionBooking[];
+      setSessions(data || []);
+      applyFilters(data || [], searchQuery, statusFilter, sortFilter);
+      return data;
+    } catch (error: any) {
+      console.error('Failed to load sessions:', error);
+      setSessions([]);
+      applyFilters([], searchQuery, statusFilter, sortFilter);
+      toast.error('Khong the tai danh sach buoi dich vu: ' + (error.message || 'Loi khong xac dinh'));
+      return [];
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   useEffect(() => {

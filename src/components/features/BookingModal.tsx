@@ -158,7 +158,16 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   useEffect(() => {
     if (selectedCustomer?.id) {
       const loadDraft = async () => {
-        const draft = await getDraftBooking(selectedCustomer.id);
+        let draft = null;
+        try {
+          draft = await getDraftBooking(selectedCustomer.id);
+        } catch (error) {
+          console.error('Error loading draft booking:', error);
+          toast.error('Khong the tai booking nhap cua khach hang');
+          setDraftBooking(null);
+          return;
+        }
+
         if (draft) {
           setDraftBooking(draft);
           // Pre-fill form data if draft exists

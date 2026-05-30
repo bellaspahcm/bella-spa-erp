@@ -1,4 +1,4 @@
-import { createPackage } from '../services/package-actions';
+import { createPackage, getPackages } from '../services/package-actions';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
@@ -18,6 +18,7 @@ class MockQueryBuilder {
 
   insert() { return this; }
   select() { return this; }
+  order() { return this; }
   eq() { return this; }
   delete() {
     this.deleteCalled = true;
@@ -56,5 +57,11 @@ describe('package actions transaction safety', () => {
 
     expect(result.error).toBe('Audit write failed');
     expect(packagesQueryBuilder.deleteCalled).toBe(true);
+  });
+
+  it('propagates package query failures instead of returning an empty list', async () => {
+    mockSupabase.from.mockReturnValue(new MockQueryBuilder(null, { message: 'package query failed' }));
+
+    await expect(getPackages()).rejects.toThrow('Failed to fetch packages: package query failed');
   });
 });

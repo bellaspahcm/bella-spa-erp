@@ -18,8 +18,7 @@ export async function getPackages() {
     .order('name', { ascending: true });
 
   if (error) {
-    console.error('Error fetching packages:', error);
-    return [];
+    throw new Error(`Failed to fetch active packages: ${error.message}`);
   }
   return data || [];
 }
@@ -33,8 +32,7 @@ export async function getBookings() {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching bookings:', error);
-    return [];
+    throw new Error(`Failed to fetch bookings: ${error.message}`);
   }
   
   if (!data || data.length === 0) return [];
@@ -70,8 +68,7 @@ export async function getBookingsByCustomerId(customerId: string) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching bookings by customer ID:', error);
-    return [];
+    throw new Error(`Failed to fetch bookings for customer ${customerId}: ${error.message}`);
   }
   
   if (!data || data.length === 0) return [];
@@ -460,7 +457,11 @@ export async function getDraftBooking(customerId: string) {
     .order('created_at', { ascending: false })
     .limit(1);
 
-  if (error || !data || data.length === 0) return null;
+  if (error) {
+    throw new Error(`Failed to fetch draft booking for customer ${customerId}: ${error.message}`);
+  }
+
+  if (!data || data.length === 0) return null;
   
   const b = data[0];
   if (b.status === 'deposit_pending' || b.status === 'lead') {

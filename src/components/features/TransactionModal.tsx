@@ -40,8 +40,14 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
     if (isOpen) {
       if (type === 'revenue') {
         const fetchBookings = async () => {
-          const data = await getBookings();
-          setBookings(data || []);
+          try {
+            const data = await getBookings();
+            setBookings(data || []);
+          } catch (error) {
+            console.error('Error fetching bookings:', error);
+            setBookings([]);
+            toast.error('Khong the tai danh sach booking');
+          }
         };
         fetchBookings();
         setCategory('package_payment');

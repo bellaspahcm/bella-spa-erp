@@ -10,29 +10,23 @@ import { getCurrentUser } from './user-actions';
  * Fetches all package templates designed by HQ
  */
 export async function getHqPackageTemplates(): Promise<HqPackageTemplate[]> {
-  try {
-    const authResult = await checkHqAuth();
-    if (!authResult.authorized) {
-      throw new Error(authResult.error || 'Quyền truy cập bị từ chối');
-    }
-
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('packages')
-      .select('*')
-      .eq('is_hq_template', true)
-      .order('name', { ascending: true });
-
-    if (error) {
-      console.error('[getHqPackageTemplates] Error:', error);
-      throw error;
-    }
-
-    return (data || []) as HqPackageTemplate[];
-  } catch (error) {
-    console.error('[getHqPackageTemplates] Exception:', error);
-    return [];
+  const authResult = await checkHqAuth();
+  if (!authResult.authorized) {
+    throw new Error(authResult.error || 'Unauthorized');
   }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('is_hq_template', true)
+    .order('name', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to fetch HQ package templates: ${error.message}`);
+  }
+
+  return (data || []) as HqPackageTemplate[];
 }
 
 /**
@@ -491,48 +485,52 @@ export async function overrideTenantPackagePrice(packageId: string, newPrice: nu
  * Returns a matrix of HQ templates and how they are distributed to all tenants
  */
 export async function getBrandDistributionMatrix() {
-  try {
-    const authResult = await checkHqAuth();
-    if (!authResult.authorized) {
-      throw new Error(authResult.error || 'Quyền truy cập bị từ chối');
-    }
-
-    const supabase = await createClient();
-
-    // 1. Fetch templates
-    const { data: templates } = await supabase
-      .from('packages')
-      .select('*')
-      .eq('is_hq_template', true)
-      .order('name', { ascending: true });
-
-    // 2. Fetch distributed packages
-    const { data: distributed } = await supabase
-      .from('packages')
-      .select('*, tenants(name)')
-      .not('template_id', 'is', null);
-
-    // 3. Fetch all active tenants
-    const { data: tenants } = await supabase
-      .from('tenants')
-      .select('id, name')
-      .order('name', { ascending: true });
-
-    return {
-      templates: (templates || []) as HqPackageTemplate[],
-      distributed: (distributed || []).map((d: any) => ({
-        id: d.id,
-        name: d.name,
-        price: Number(d.price),
-        tenant_id: d.tenant_id,
-        tenant_name: d.tenants?.name || 'Chi nhánh',
-        template_id: d.template_id,
-        status: d.status
-      })),
-      tenants: tenants || []
-    };
-  } catch (error) {
-    console.error('[getBrandDistributionMatrix] Error:', error);
-    return { templates: [], distributed: [], tenants: [] };
+  const authResult = await checkHqAuth();
+  if (!authResult.authorized) {
+    throw new Error(authResult.error || 'Unauthorized');
   }
+
+  const supabase = await createClient();
+
+  const { data: templates, error: templatesError } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('is_hq_template', true)
+    .order('name', { ascending: true });
+
+  if (templatesError) {
+    throw new Error(`Failed to fetch HQ package templates for distribution matrix: ${templatesError.message}`);
+  }
+
+  const { data: distributed, error: distributedError } = await supabase
+    .from('packages')
+    .select('*, tenants(name)')
+    .not('template_id', 'is', null);
+
+  if (distributedError) {
+    throw new Error(`Failed to fetch distributed packages: ${distributedError.message}`);
+  }
+
+  const { data: tenants, error: tenantsError } = await supabase
+    .from('tenants')
+    .select('id, name')
+    .order('name', { ascending: true });
+
+  if (tenantsError) {
+    throw new Error(`Failed to fetch tenants for distribution matrix: ${tenantsError.message}`);
+  }
+
+  return {
+    templates: (templates || []) as HqPackageTemplate[],
+    distributed: (distributed || []).map((d: any) => ({
+      id: d.id,
+      name: d.name,
+      price: Number(d.price),
+      tenant_id: d.tenant_id,
+      tenant_name: d.tenants?.name || 'Chi nhánh',
+      template_id: d.template_id,
+      status: d.status
+    })),
+    tenants: tenants || []
+  };
 }

@@ -23,118 +23,104 @@ async function getSupabaseWithTenant() {
 // ─── READ: apply tenant filter when available, never early-return ──────────────
 
 export async function getInventoryItems() {
-  try {
-    const { supabase, tenantId } = await getSupabaseWithTenant();
+  const { supabase, tenantId } = await getSupabaseWithTenant();
 
-    let query = supabase.from('inventory_items').select('*').order('name');
-    if (tenantId) query = query.eq('tenant_id', tenantId);
+  let query = supabase.from('inventory_items').select('*').order('name');
+  if (tenantId) query = query.eq('tenant_id', tenantId);
 
-    const { data, error } = await query;
-    if (error) { console.error('[getInventoryItems]', error); return []; }
-    return data || [];
-  } catch (e) {
-    console.error('[getInventoryItems]', e);
-    return [];
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch inventory items: ${error.message}`);
   }
+  return data || [];
 }
 
 export async function getInventoryLogs(limit = 50) {
-  try {
-    const { supabase, tenantId } = await getSupabaseWithTenant();
+  const { supabase, tenantId } = await getSupabaseWithTenant();
 
-    let query = supabase
-      .from('inventory_logs')
-      .select(`
-        id, change_amount, reason, notes, created_at,
-        inventory_items!inventory_logs_item_id_fkey(name, unit)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+  let query = supabase
+    .from('inventory_logs')
+    .select(`
+      id, change_amount, reason, notes, created_at,
+      inventory_items!inventory_logs_item_id_fkey(name, unit)
+    `)
+    .order('created_at', { ascending: false })
+    .limit(limit);
 
-    if (tenantId) query = query.eq('tenant_id', tenantId);
+  if (tenantId) query = query.eq('tenant_id', tenantId);
 
-    const { data, error } = await query;
-    if (error) { console.error('[getInventoryLogs]', error); return []; }
-    return data || [];
-  } catch (e) {
-    console.error('[getInventoryLogs]', e);
-    return [];
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch inventory logs: ${error.message}`);
   }
+  return data || [];
 }
 
 export async function getInventoryLogsByDateRange(dateFrom: string, dateTo: string) {
-  try {
-    const { supabase, tenantId } = await getSupabaseWithTenant();
+  const { supabase, tenantId } = await getSupabaseWithTenant();
 
-    // dateTo: extend to end of day
-    const dateToEnd = dateTo + 'T23:59:59';
+  // dateTo: extend to end of day
+  const dateToEnd = dateTo + 'T23:59:59';
 
-    let query = supabase
-      .from('inventory_logs')
-      .select(`
-        id, change_amount, reason, notes, created_at,
-        inventory_items!inventory_logs_item_id_fkey(name, unit)
-      `)
-      .gte('created_at', dateFrom)
-      .lte('created_at', dateToEnd)
-      .order('created_at', { ascending: false });
+  let query = supabase
+    .from('inventory_logs')
+    .select(`
+      id, change_amount, reason, notes, created_at,
+      inventory_items!inventory_logs_item_id_fkey(name, unit)
+    `)
+    .gte('created_at', dateFrom)
+    .lte('created_at', dateToEnd)
+    .order('created_at', { ascending: false });
 
-    if (tenantId) query = query.eq('tenant_id', tenantId);
+  if (tenantId) query = query.eq('tenant_id', tenantId);
 
-    const { data, error } = await query;
-    if (error) { console.error('[getInventoryLogsByDateRange]', error); return []; }
-    return data || [];
-  } catch (e) {
-    console.error('[getInventoryLogsByDateRange]', e);
-    return [];
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch inventory logs by date range: ${error.message}`);
   }
+  return data || [];
 }
 
 export async function getInventorySummary() {
-  try {
-    const { supabase, tenantId } = await getSupabaseWithTenant();
+  const { supabase, tenantId } = await getSupabaseWithTenant();
 
-    let query = supabase
-      .from('inventory_items')
-      .select('stock_level, min_stock_level, price_per_unit');
+  let query = supabase
+    .from('inventory_items')
+    .select('stock_level, min_stock_level, price_per_unit');
 
-    if (tenantId) query = query.eq('tenant_id', tenantId);
+  if (tenantId) query = query.eq('tenant_id', tenantId);
 
-    const { data, error } = await query;
-    if (error || !data) return { totalItems: 0, lowStockCount: 0, totalValue: 0 };
-
-    return {
-      totalItems: data.length,
-      lowStockCount: data.filter((i) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
-      totalValue: data.reduce((sum: number, i) => sum + Number(i.stock_level) * Number(i.price_per_unit), 0)
-    };
-  } catch (e) {
-    console.error('[getInventorySummary]', e);
-    return { totalItems: 0, lowStockCount: 0, totalValue: 0 };
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch inventory summary: ${error.message}`);
   }
+  if (!data) return { totalItems: 0, lowStockCount: 0, totalValue: 0 };
+
+  return {
+    totalItems: data.length,
+    lowStockCount: data.filter((i) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
+    totalValue: data.reduce((sum: number, i) => sum + Number(i.stock_level) * Number(i.price_per_unit), 0)
+  };
 }
 
 export async function getPackageMaterials(packageId: string) {
-  try {
-    const { supabase, tenantId } = await getSupabaseWithTenant();
+  const { supabase, tenantId } = await getSupabaseWithTenant();
 
-    let query = supabase
-      .from('package_materials')
-      .select(`
-        id, quantity_per_session, item_id,
-        inventory_items!package_materials_item_id_fkey(id, name, unit, stock_level, price_per_unit)
-      `)
-      .eq('package_id', packageId);
+  let query = supabase
+    .from('package_materials')
+    .select(`
+      id, quantity_per_session, item_id,
+      inventory_items!package_materials_item_id_fkey(id, name, unit, stock_level, price_per_unit)
+    `)
+    .eq('package_id', packageId);
 
-    if (tenantId) query = query.eq('tenant_id', tenantId);
+  if (tenantId) query = query.eq('tenant_id', tenantId);
 
-    const { data, error } = await query;
-    if (error) { console.error('[getPackageMaterials]', error); return []; }
-    return data || [];
-  } catch (e) {
-    console.error('[getPackageMaterials]', e);
-    return [];
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Failed to fetch package materials for package ${packageId}: ${error.message}`);
   }
+  return data || [];
 }
 
 // ─── CRUD: Định mức tiêu hao vật tư theo gói ───────────────────────────────────
