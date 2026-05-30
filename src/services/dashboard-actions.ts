@@ -165,6 +165,15 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
       custQ, prevCustQ, revQ, prevRevQ, todayBookingsQ, yesterdayBookingsQ, curMonthRpc, prevMonthRpc
     ]);
 
+    if (custRes.error) throw new Error(`Failed to fetch dashboard customer count: ${custRes.error.message}`);
+    if (prevCustRes.error) throw new Error(`Failed to fetch previous dashboard customer count: ${prevCustRes.error.message}`);
+    if (revRes.error) throw new Error(`Failed to fetch dashboard revenue: ${revRes.error.message}`);
+    if (prevRevRes.error) throw new Error(`Failed to fetch previous dashboard revenue: ${prevRevRes.error.message}`);
+    if (todayBookingsRes.error) throw new Error(`Failed to fetch today's dashboard bookings: ${todayBookingsRes.error.message}`);
+    if (yesterdayBookingsRes.error) throw new Error(`Failed to fetch yesterday's dashboard bookings: ${yesterdayBookingsRes.error.message}`);
+    if ('error' in curRpcRes && curRpcRes.error) throw new Error(`Failed to fetch current KTV leaderboard for dashboard stats: ${curRpcRes.error.message}`);
+    if ('error' in prevRpcRes && prevRpcRes.error) throw new Error(`Failed to fetch previous KTV leaderboard for dashboard stats: ${prevRpcRes.error.message}`);
+
     const totalCustomers = custRes.count ?? 0;
     const prevCustomers = prevCustRes.count ?? 0;
 
@@ -201,13 +210,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
       avgRating:      { value: curAvgRating !== null ? curAvgRating.toFixed(2) : '—', trend: ratingTrend }
     };
   } catch (e) {
-    console.error('[getDashboardStats]', e);
-    return {
-      totalCustomers: { value: '0', trend: 0 },
-      todayBookings:  { value: '0', trend: 0 },
-      totalRevenue:   { value: '0M', trend: 0 },
-      avgRating:      { value: '—', trend: 0 }
-    };
+    throw e instanceof Error ? e : new Error('Failed to fetch dashboard stats');
   }
 }
 
@@ -345,6 +348,15 @@ export async function getMonthlyPerformance() {
       ...monthlyRpcCalls
     ]);
 
+    if (revData.error) throw new Error(`Failed to fetch monthly dashboard revenue: ${revData.error.message}`);
+    if (expData.error) throw new Error(`Failed to fetch monthly dashboard expenses: ${expData.error.message}`);
+    if (customerData.error) throw new Error(`Failed to fetch monthly dashboard customers: ${customerData.error.message}`);
+    monthlyRpcResults.forEach((result, idx) => {
+      if ('error' in result && result.error) {
+        throw new Error(`Failed to fetch monthly KTV leaderboard for ${months[idx].start}: ${result.error.message}`);
+      }
+    });
+
     const revTyped = (revData.data as unknown as RevenuePerformanceRow[]) || [];
     const expTyped = (expData.data as unknown as ExpensePerformanceRow[]) || [];
     const customerTyped = (customerData.data as unknown as CustomerPerformanceRow[]) || [];
@@ -379,8 +391,7 @@ export async function getMonthlyPerformance() {
       };
     });
   } catch (e) {
-    console.error('[getMonthlyPerformance]', e);
-    return [];
+    throw e instanceof Error ? e : new Error('Failed to fetch monthly performance');
   }
 }
 
@@ -433,7 +444,10 @@ export async function getImportantAlerts() {
       .order('end_time', { ascending: false, nullsFirst: false })
       .limit(30);
     if (tenantId) completedQ = completedQ.eq('tenant_id', tenantId);
-    const { data: completedSessions } = await completedQ;
+    const { data: completedSessions, error: completedSessionsError } = await completedQ;
+    if (completedSessionsError) {
+      throw new Error(`Failed to fetch completed session alerts: ${completedSessionsError.message}`);
+    }
 
     const completedSessionsData = (completedSessions as unknown as CompletedSessionDBRow[]) || [];
 
@@ -528,7 +542,10 @@ export async function getImportantAlerts() {
       .not('status', 'eq', 'completed')
       .limit(20);
     if (tenantId) overdueQ = overdueQ.eq('tenant_id', tenantId);
-    const { data: overdue } = await overdueQ;
+    const { data: overdue, error: overdueError } = await overdueQ;
+    if (overdueError) {
+      throw new Error(`Failed to fetch overdue session alerts: ${overdueError.message}`);
+    }
 
     const overdueData = (overdue as unknown as OverdueSessionDBRow[]) || [];
 
@@ -551,7 +568,10 @@ export async function getImportantAlerts() {
       .eq('status', 'in_progress')
       .limit(20);
     if (tenantId) bookingQ = bookingQ.eq('tenant_id', tenantId);
-    const { data: nearEnd } = await bookingQ;
+    const { data: nearEnd, error: nearEndError } = await bookingQ;
+    if (nearEndError) {
+      throw new Error(`Failed to fetch near-end booking alerts: ${nearEndError.message}`);
+    }
 
     const nearEndData = (nearEnd as unknown as NearEndBookingDBRow[]) || [];
 
@@ -588,7 +608,7 @@ export async function getImportantAlerts() {
         }
       }
     } catch (err) {
-      console.error('[getImportantAlerts] Error fetching pending leaves:', err);
+      throw err instanceof Error ? err : new Error('Failed to fetch pending leave alerts');
     }
 
     // 5. App Notifications (e.g. online bookings)
@@ -601,7 +621,10 @@ export async function getImportantAlerts() {
           .limit(20);
         if (tenantId) notifQ = notifQ.eq('tenant_id', tenantId);
         
-        const { data: appNotifs } = await notifQ;
+        const { data: appNotifs, error: appNotifsError } = await notifQ;
+        if (appNotifsError) {
+          throw new Error(`Failed to fetch app notification alerts: ${appNotifsError.message}`);
+        }
         const appNotifsData = (appNotifs as unknown as AppNotificationDBRow[]) || [];
         
         for (const notif of appNotifsData) {
@@ -633,7 +656,7 @@ export async function getImportantAlerts() {
         }
       }
     } catch (err) {
-      console.error('[getImportantAlerts] Error fetching app notifications:', err);
+      throw err instanceof Error ? err : new Error('Failed to fetch app notification alerts');
     }
 
     // Sort by timestamp descending so newer alerts/completed sessions are at the top
@@ -641,8 +664,7 @@ export async function getImportantAlerts() {
 
     return alerts;
   } catch (e) {
-    console.error('[getImportantAlerts]', e);
-    return [];
+    throw e instanceof Error ? e : new Error('Failed to fetch important alerts');
   }
 }
 
