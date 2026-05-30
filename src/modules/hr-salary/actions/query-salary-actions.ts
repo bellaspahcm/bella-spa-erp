@@ -155,6 +155,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       average_rating: number | null;
       late_days: number | null;
       absent_days: number | null;
+      total_kpi_bonus: number | null;
     }[];
     const leaderboardByKtv = new Map<string, typeof leaderboard[number]>(
       leaderboard.map((row) => [row.ktv_id, row])
