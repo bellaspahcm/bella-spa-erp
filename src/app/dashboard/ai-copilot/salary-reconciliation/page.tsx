@@ -99,7 +99,7 @@ export default async function SalaryReconciliationPage({
           { label: 'Tổng KTV', value: totalKtv,     icon: Users,      cls: 'from-slate-600 to-slate-500' },
           { label: 'Khớp',     value: matchCount,   icon: CheckCircle2, cls: 'from-emerald-600 to-emerald-500' },
           { label: 'Lệch nhỏ', value: minorCount,   icon: AlertTriangle, cls: 'from-amber-600 to-amber-500' },
-          { label: 'Lệch lớn', value: majorCount + noLegacyCount, icon: XCircle, cls: 'from-rose-600 to-rose-500' },
+          { label: 'Lệch lớn', value: majorCount,   icon: XCircle,      cls: 'from-rose-600 to-rose-500' },
         ].map(({ label, value, icon: Icon, cls }) => (
           <div key={label} className="bg-card/60 border border-border rounded-2xl p-5 flex items-center gap-4 shadow-sm">
             <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cls} flex items-center justify-center shrink-0`}>
