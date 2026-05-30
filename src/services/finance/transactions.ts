@@ -5,6 +5,13 @@ import { getLocalDateString } from '@/lib/utils';
 import { resolveTenantId } from './shared';
 import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import type { MappedTransaction, RevenueDBRow, ExpenseDBRow } from './types';
+import type { Database } from '@/types/database.types';
+
+type RevenueInsert = Database['public']['Tables']['revenue']['Insert'];
+type RevenueUpdate = Database['public']['Tables']['revenue']['Update'];
+type ExpenseInsert = Database['public']['Tables']['expenses']['Insert'];
+type ExpenseUpdate = Database['public']['Tables']['expenses']['Update'];
+type SalaryRecordUpdate = Database['public']['Tables']['salary_records']['Update'];
 
 function resolveReviewStatus(
   businessEventType: ReturnType<typeof inferBusinessEventType>,
@@ -152,16 +159,17 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       booking_id: existingRev?.booking_id,
       reason: existingRev?.notes,
     };
+    const revenueUpdatePayload: RevenueUpdate = {
+      status: 'confirmed',
+      received_date: today,
+      business_event_type: businessEventType,
+      accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
+      accounting_metadata: accountingPayload,
+    };
 
     const { data: updatedRev, error } = await supabase
       .from('revenue')
-      .update({
-        status: 'confirmed',
-        received_date: today,
-        business_event_type: businessEventType,
-        accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
-        accounting_metadata: accountingPayload,
-      })
+      .update(revenueUpdatePayload)
       .eq('id', id)
       .select('*')
       .single();
@@ -214,16 +222,17 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       expense_date: today,
       description: existingExpense?.description,
     };
+    const expenseUpdatePayload: ExpenseUpdate = {
+      status: 'approved',
+      expense_date: today,
+      business_event_type: businessEventType,
+      accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
+      accounting_metadata: accountingPayload,
+    };
 
     const { data: updatedExpense, error } = await supabase
       .from('expenses')
-      .update({
-        status: 'approved',
-        expense_date: today,
-        business_event_type: businessEventType,
-        accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
-        accounting_metadata: accountingPayload,
-      })
+      .update(expenseUpdatePayload)
       .eq('id', id)
       .select('*')
       .single();
@@ -254,18 +263,19 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
             ktv_id: ktvId,
             month_year: today.slice(0, 7),
           };
+          const salaryRecordUpdatePayload: SalaryRecordUpdate = {
+            status: 'paid',
+            paid_date: today,
+            paid_method: 'bank_transfer',
+            business_event_type: salaryBusinessEventType,
+            accounting_review_status: resolveReviewStatus(salaryBusinessEventType, salaryAccountingPayload),
+            accounting_metadata: salaryAccountingPayload,
+          };
 
           // Update salary record status to 'paid'
           const { error: salaryRecordUpdateError } = await supabase
             .from('salary_records')
-            .update({
-              status: 'paid',
-              paid_date: today,
-              paid_method: 'bank_transfer',
-              business_event_type: salaryBusinessEventType,
-              accounting_review_status: resolveReviewStatus(salaryBusinessEventType, salaryAccountingPayload),
-              accounting_metadata: salaryAccountingPayload,
-            })
+            .update(salaryRecordUpdatePayload)
             .eq('id', salaryRecordId);
 
           if (salaryRecordUpdateError) {
@@ -360,21 +370,21 @@ export async function recordTransaction(data: {
         expense_date: expenseDate,
         description: data.notes,
       };
+      const expenseInsertPayload: ExpenseInsert = {
+        amount: Math.abs(data.amount),
+        category: dbCategory,
+        description: data.notes,
+        status: dbStatus,
+        expense_date: expenseDate,
+        tenant_id: tenantId,
+        business_event_type: businessEventType,
+        accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
+        accounting_metadata: accountingPayload,
+      };
 
       const { data: result, error } = await supabase
         .from('expenses')
-        .insert({
-          amount: Math.abs(data.amount),
-          category: dbCategory,
-          description: data.notes,
-          status: dbStatus,                           // ✓ 'approved' | 'pending'
-          expense_date: expenseDate,
-          tenant_id: tenantId,
-          business_event_type: businessEventType,
-          accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
-          accounting_metadata: accountingPayload
-          // No: expense_number, payment_status (don't exist in schema)
-        })
+        .insert(expenseInsertPayload)
         .select()
         .single();
 
@@ -426,22 +436,23 @@ export async function recordTransaction(data: {
         booking_id: data.booking_id || null,
         reason: data.notes,
       };
+      const revenueInsertPayload: RevenueInsert = {
+        amount: Math.abs(data.amount),
+        notes: data.notes,
+        booking_id: data.booking_id || null,
+        revenue_type: dbRevenueType,
+        payment_method: 'bank_transfer',
+        status: dbStatus,
+        received_date: receivedDate,
+        tenant_id: tenantId,
+        business_event_type: businessEventType,
+        accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
+        accounting_metadata: accountingPayload,
+      };
 
       const { data: result, error } = await supabase
         .from('revenue')
-        .insert({
-          amount: Math.abs(data.amount),
-          notes: data.notes,
-          booking_id: data.booking_id || null,
-          revenue_type: dbRevenueType,
-          payment_method: 'bank_transfer',
-          status: dbStatus,
-          received_date: receivedDate,
-          tenant_id: tenantId,
-          business_event_type: businessEventType,
-          accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
-          accounting_metadata: accountingPayload
-        })
+        .insert(revenueInsertPayload)
         .select()
         .single();
 
