@@ -150,6 +150,10 @@ export interface AccountingReadinessSummary {
   can_enable_professional: boolean;
 }
 
+export interface ProfessionalModeReadinessGate extends AccountingReadinessSummary {
+  blocking_reasons: string[];
+}
+
 export interface AccountingBackfillResult {
   source_table: string;
   scanned_records: number;
