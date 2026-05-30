@@ -68,3 +68,6 @@ next-env.d.ts
 .vercel
 
 .vercel
+.env
+.env.*
+!.env.example
