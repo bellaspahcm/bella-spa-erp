@@ -2,11 +2,22 @@
 
 import { resolvePackageName, getLocalDateString, sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { syncBookingProgress } from './lifecycle-actions';
 import type { Database } from '@/types/database.types';
 import { FINANCE_CONSTANTS } from '@/constants/finance';
 
 type SessionLogInsert = Database['public']['Tables']['session_logs']['Insert'];
+
+function resolveAccountingReviewStatus(
+  businessEventType: ReturnType<typeof inferBusinessEventType>,
+  payload: Record<string, unknown>
+) {
+  if (!businessEventType) return 'NEEDS_REVIEW';
+  return findMissingRequiredFields(businessEventType, payload).length > 0
+    ? 'NEEDS_REVIEW'
+    : 'UNREVIEWED';
+}
 
 export async function getSessionLogs(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
@@ -103,6 +114,17 @@ export async function processSessionCompletion(
   // 3. Ghi nhận doanh thu dịch vụ lẻ
   let isRevenueCreated = false;
   if (currentBooking?.package_name?.toLowerCase().includes('lẻ')) {
+    const businessEventType = inferBusinessEventType({
+      sourceTable: 'revenue',
+      revenueType: 'package_payment',
+    });
+    const accountingPayload = {
+      amount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
+      payment_method: 'bank_transfer',
+      booking_id: bookingId,
+      reason: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
+    };
+
     const { error: revErr } = await supabase.from('revenue').insert([{
       booking_id: bookingId,
       amount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
@@ -111,7 +133,10 @@ export async function processSessionCompletion(
       received_date: today,
       status: 'confirmed',
       notes: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
-      tenant_id: tenantId
+      tenant_id: tenantId,
+      business_event_type: businessEventType,
+      accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+      accounting_metadata: accountingPayload
     }]);
 
     if (revErr) {

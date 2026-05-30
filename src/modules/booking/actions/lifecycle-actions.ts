@@ -6,7 +6,18 @@
 import { resolvePackageName, getLocalDateString, sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { bookingSchema } from '@/lib/validations';
+import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveKtvCommission } from './commission-actions';
+
+function resolveAccountingReviewStatus(
+  businessEventType: ReturnType<typeof inferBusinessEventType>,
+  payload: Record<string, unknown>
+) {
+  if (!businessEventType) return 'NEEDS_REVIEW';
+  return findMissingRequiredFields(businessEventType, payload).length > 0
+    ? 'NEEDS_REVIEW'
+    : 'UNREVIEWED';
+}
 
 export async function getPackages() {
   const { createClient } = await import('@/lib/supabase-server');
@@ -310,17 +321,32 @@ export async function createBooking(formData: any) {
     let insertedRev: { id: string } | null = null;
     let revFailed = false;
 
+    const revenueType = 'deposit';
+    const businessEventType = inferBusinessEventType({
+      sourceTable: 'revenue',
+      revenueType,
+    });
+    const accountingPayload = {
+      amount: validatedData.deposit_amount,
+      payment_method: 'bank_transfer',
+      booking_id: booking.id,
+      reason: `Cọc gói ${resolvePackageName(booking)}`,
+    };
+
     const { data: revData, error: revError } = await supabase
       .from('revenue')
       .insert([{
         booking_id: booking.id,
         amount: validatedData.deposit_amount,
-        revenue_type: 'deposit',
+        revenue_type: revenueType,
         payment_method: 'bank_transfer',
         received_date: getLocalDateString(),
         status: 'confirmed',
         notes: `Cọc gói ${resolvePackageName(booking)}`,
-        tenant_id: tenantId
+        tenant_id: tenantId,
+        business_event_type: businessEventType,
+        accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+        accounting_metadata: accountingPayload
       }])
       .select('id')
       .single();
@@ -341,12 +367,15 @@ export async function createBooking(formData: any) {
           .insert([{
             booking_id: booking.id,
             amount: validatedData.deposit_amount,
-            revenue_type: 'deposit',
+            revenue_type: revenueType,
             payment_method: 'bank_transfer',
             received_date: getLocalDateString(),
             status: 'confirmed',
             notes: `Cọc gói ${resolvePackageName(booking)}`,
-            tenant_id: tenantId
+            tenant_id: tenantId,
+            business_event_type: businessEventType,
+            accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+            accounting_metadata: accountingPayload
           }])
           .select('id')
           .single();
@@ -892,18 +921,33 @@ export async function recordRemainingPayment(params: {
         .eq('id', params.booking_id);
     };
 
+    const revenueType = params.revenue_type || 'remaining_payment';
+    const businessEventType = inferBusinessEventType({
+      sourceTable: 'revenue',
+      revenueType,
+    });
+    const accountingPayload = {
+      amount: params.amount,
+      payment_method: params.payment_method,
+      booking_id: params.booking_id,
+      reason: params.notes,
+    };
+
     const { data: revData, error: revError } = await supabase
       .from('revenue')
       .insert([{
         booking_id: params.booking_id,
         amount: params.amount,
-        revenue_type: params.revenue_type || 'remaining_payment',
+        revenue_type: revenueType,
         payment_method: params.payment_method,
         received_date: getLocalDateString(),
         status: params.status || 'pending',
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
         receipt_url: params.receipt_url || null,
-        tenant_id: tenantId
+        tenant_id: tenantId,
+        business_event_type: businessEventType,
+        accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+        accounting_metadata: accountingPayload
       }])
       .select('id, status')
       .single();
@@ -924,13 +968,16 @@ export async function recordRemainingPayment(params: {
           .insert([{
             booking_id: params.booking_id,
             amount: params.amount,
-            revenue_type: 'remaining_payment',
+            revenue_type: revenueType,
             payment_method: params.payment_method,
             received_date: getLocalDateString(),
             status: params.status || 'pending',
             notes: params.notes || `Thanh toán nốt phần còn lại.`,
             receipt_url: params.receipt_url || null,
-            tenant_id: tenantId
+            tenant_id: tenantId,
+            business_event_type: businessEventType,
+            accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+            accounting_metadata: accountingPayload
           }])
           .select('id, status')
           .single();
