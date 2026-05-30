@@ -349,16 +349,16 @@ export function SessionLogsDetailsModal({
         className="bg-white w-full max-w-6xl h-full max-h-[90vh] rounded-[3.5rem] shadow-2xl relative z-10 overflow-hidden flex flex-col border border-white"
       >
         {/* Modal Header */}
-        <div className="p-8 pb-4 flex items-center justify-between border-b border-slate-100 flex-shrink-0">
-          <div className="flex items-center gap-5">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-              <Flower2 className="w-8 h-8" />
+        <div className="p-5 md:p-8 md:pb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-100 flex-shrink-0">
+          <div className="flex items-center gap-4 md:gap-5 min-w-0">
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary shrink-0">
+              <Flower2 className="w-6 h-6 md:w-8 md:h-8" />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+            <div className="min-w-0">
+              <h2 className="text-lg md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-tight break-words">
                 Thẻ liệu trình: Mẹ {activeBooking.customers?.name_mother} {activeBooking.customers?.name_baby ? `& Bé ${activeBooking.customers.name_baby}` : ''}
               </h2>
-              <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] flex items-center gap-3">
+              <p className="mt-2 md:mt-0 text-slate-500 font-bold uppercase text-[9px] md:text-[10px] tracking-[0.16em] md:tracking-[0.2em] flex flex-wrap items-center gap-x-2 gap-y-1 md:gap-3">
                 <span className="text-primary">{activeBooking.package_name}</span>
                 <span className="text-slate-300">•</span>
                 <span>KTV: {activeBooking.assigned_ktv_name}</span>
@@ -367,9 +367,9 @@ export function SessionLogsDetailsModal({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between md:justify-end gap-2 md:gap-3">
             <div className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl border font-black text-[10px] uppercase tracking-widest",
+              "flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl border font-black text-[9px] md:text-[10px] uppercase tracking-widest",
               userRole === 'admin' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-slate-50 text-slate-400 border-slate-100"
             )}>
               {userRole === 'admin' ? <ShieldCheck className="w-3 h-3" /> : <UserCircle className="w-3 h-3" />}
@@ -377,15 +377,15 @@ export function SessionLogsDetailsModal({
             </div>
             <Link
               href={`/dashboard/customers/${activeBooking.customers?.id}?bookingId=${activeBooking.id}`}
-              className="px-4 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-pink-100 dark:shadow-none active:scale-95 flex items-center gap-2"
+              className="px-3 md:px-4 py-2 bg-primary text-white rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-pink-100 dark:shadow-none active:scale-95 flex items-center gap-2 whitespace-nowrap"
             >
               <UserCircle className="w-3.5 h-3.5" /> Hồ sơ
             </Link>
             <button 
               onClick={onClose}
-              className="w-12 h-12 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all"
+              className="w-10 h-10 md:w-12 md:h-12 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 transition-all shrink-0"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 md:w-6 md:h-6" />
             </button>
           </div>
         </div>
@@ -429,7 +429,7 @@ export function SessionLogsDetailsModal({
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Ngày dự kiến</label>
                           <div className="relative">
@@ -439,7 +439,7 @@ export function SessionLogsDetailsModal({
                               value={selectedDate}
                               onChange={(e) => setSelectedDate(e.target.value)}
                               disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
-                              className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                              className="w-full min-w-0 pl-10 pr-3 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                             />
                           </div>
                         </div>
@@ -452,7 +452,7 @@ export function SessionLogsDetailsModal({
                               value={selectedTime}
                               onChange={(e) => setSelectedTime(e.target.value)}
                               disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
-                              className="w-full pl-8 pr-2 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                              className="w-full min-w-0 pl-10 pr-3 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                             />
                           </div>
                         </div>
