@@ -117,28 +117,28 @@ export default function FinancialOverviewClient({
           </div>
 
           {/* Date range filter */}
-          <div className="bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-4 rounded-[2rem] shadow-sm w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-2 justify-between sm:justify-start w-full sm:w-auto">
+          <div className="bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-4 rounded-[2rem] shadow-sm w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-3 overflow-hidden">
+            <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center sm:gap-2 sm:justify-start w-full sm:w-auto min-w-0">
               {/* From Date */}
-              <div className="relative flex-1 sm:w-40">
+              <div className="relative w-full sm:w-40 min-w-0">
                 <input
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
+                  className="w-full min-w-0 pl-10 pr-3 py-3 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
                 />
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary dark:text-[#A67D44]" />
               </div>
               
-              <span className="text-slate-400 font-bold text-xs shrink-0">→</span>
+              <span className="hidden sm:inline text-slate-400 font-bold text-xs shrink-0">→</span>
               
               {/* To Date */}
-              <div className="relative flex-1 sm:w-40">
+              <div className="relative w-full sm:w-40 min-w-0">
                 <input
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
+                  className="w-full min-w-0 pl-10 pr-3 py-3 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
                 />
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary dark:text-[#A67D44]" />
               </div>
