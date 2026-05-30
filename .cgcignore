@@ -1,0 +1,12 @@
+# Keep local code graph data out of source control.
+
+/node_modules/
+/.next/
+/.swc/
+/coverage/
+/playwright-report/
+/test-results/
+/dist/
+/build/
+
+*.log

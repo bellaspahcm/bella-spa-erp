@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { safeStringify } from "@/lib/log-redactor";
 
 // Initialize standard Supabase client without cookies for webhook execution
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    console.log("[Payment Webhook] Request body:", JSON.stringify(body));
+    console.log("[Payment Webhook] Request body:", safeStringify(body));
 
     const transactions = extractTransactions(body);
     console.log("[Payment Webhook] Extracted transactions count:", transactions.length);

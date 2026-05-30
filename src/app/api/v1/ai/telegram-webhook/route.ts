@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { runCOOOrchestrator } from "@/services/ai-coo-service";
 import { decrypt } from "@/lib/crypto";
+import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,14 @@ function getAdminClient() {
   });
 }
 
+function secureCompare(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
+
 /**
  * API Telegram Webhook
  * Tiếp nhận tin nhắn `/coo <lệnh>` từ CEO qua Group Telegram, phân tích và phản hồi lập tức.
@@ -25,6 +34,19 @@ export async function POST(request: NextRequest) {
   console.log("[Telegram Webhook] Nhận update từ Telegram...");
 
   try {
+    const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const authHeader = request.headers.get("authorization");
+      const headerSecret = request.headers.get("x-telegram-webhook-secret");
+      const bearerSecret = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
+      const providedSecret = headerSecret || bearerSecret;
+
+      if (!secureCompare(webhookSecret, providedSecret || "")) {
+        console.warn("[Telegram Webhook] Unauthorized request.");
+        return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
     const payload = await request.json();
     const message = payload?.message;
 

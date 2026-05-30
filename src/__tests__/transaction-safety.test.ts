@@ -4,10 +4,11 @@
  * Verifies that partial failures result in clean rollbacks to keep the database consistent:
  * 1. createBooking succeeds but insert revenue fails -> rollback booking insert (delete the booking).
  * 2. completeSession succeeds but upsert salary fails -> rollback session completed status & bookings count.
+ * 3. createBooking succeeds but audit logging fails -> rollback booking insert.
  */
 
-import { createBooking } from '../modules/booking/actions/lifecycle-actions';
-import { completeSession } from '../modules/booking/actions/session-actions';
+import { createBooking, recordRemainingPayment, reusePackage, submitOnlineBooking, updateBooking } from '../modules/booking/actions/lifecycle-actions';
+import { addExtraSession, completeSession } from '../modules/booking/actions/session-actions';
 
 // Setup environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
@@ -30,13 +31,15 @@ jest.mock('@/services/user-actions', () => ({
   getCurrentUser: () => mockGetCurrentUser(),
 }));
 
+const mockRecordAuditLog = jest.fn();
 jest.mock('@/services/audit-actions', () => ({
-  recordAuditLog: jest.fn().mockResolvedValue({ success: true }),
+  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
   checkMonthLock: jest.fn().mockResolvedValue({ isLocked: false }),
 }));
 
 jest.mock('@/services/inventory-actions', () => ({
   autoConsumeForSession: jest.fn().mockResolvedValue({ success: true }),
+  rollbackInventoryConsumption: jest.fn().mockResolvedValue({ success: true }),
 }));
 
 jest.mock('next/headers', () => ({
@@ -75,6 +78,10 @@ class MockQueryBuilder {
     return this;
   }
 
+  gt(field: string, value: any) {
+    return this;
+  }
+
   order(field: string, options?: any) {
     return this;
   }
@@ -92,10 +99,15 @@ class MockQueryBuilder {
             total_sessions: 15,
             completed_sessions: 0,
             status: 'booked',
+            deposit_amount: 1000000,
             package_name: 'Gói VIP',
             ktv_commission: 150000,
             assigned_ktv_id: 'ktv-1',
-            tenant_id: 'tenant-a'
+            tenant_id: 'tenant-a',
+            customer_id: 'cust-123',
+            full_price: 5000000,
+            package_id: 'pkg-1',
+            start_date: '2026-05-10'
           },
           error: null
         });
@@ -134,18 +146,26 @@ class MockQueryBuilder {
   insert(payload: any) {
     this.insertCalled = true;
     const inserted = Array.isArray(payload) ? payload : [payload];
-    const res = this.forceError
+    const singleRes = this.forceError
       ? { data: null, error: { message: 'Forced DB Insert Error' } }
       : { data: { id: 'mock-inserted-id', ...inserted[0] }, error: null };
+    const chainRes = this.forceError
+      ? singleRes
+      : {
+          data: this.table === 'bookings'
+            ? [{ id: 'mock-inserted-id', ...inserted[0] }]
+            : singleRes.data,
+          error: null
+        };
 
     const node: any = {
       eq: () => node,
       select: () => node,
-      single: () => Promise.resolve(res),
-      maybeSingle: () => Promise.resolve(res),
-      then: (cb: any) => Promise.resolve(res).then(cb),
-      data: res.data,
-      error: res.error
+      single: () => Promise.resolve(singleRes),
+      maybeSingle: () => Promise.resolve(singleRes),
+      then: (cb: any) => Promise.resolve(chainRes).then(cb),
+      data: chainRes.data,
+      error: chainRes.error
     };
     return node;
   }
@@ -155,7 +175,12 @@ class MockQueryBuilder {
     this.updatePayloads.push(payload);
     const res = this.forceError 
       ? { data: null, error: { message: 'Forced DB Update Error' } }
-      : { data: payload, error: null };
+      : {
+          data: this.table === 'bookings'
+            ? [{ id: 'mock-booking-id', tenant_id: 'tenant-a', start_date: '2026-05-10', ...payload }]
+            : payload,
+          error: null
+        };
     
     const node: any = {
       eq: () => node,
@@ -220,6 +245,8 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
       tenant_id: 'tenant-a',
       full_name: 'Admin Bella'
     });
+    process.env.DEFAULT_TENANT_ID = 'tenant-a';
+    mockRecordAuditLog.mockResolvedValue({ success: true });
   });
 
   it('rolls back booking insertion when revenue registration fails', async () => {
@@ -247,6 +274,161 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
     
     // Assert rollback happened (booking delete was called)
     expect(bookingQueryBuilder.deleteCalled).toBe(true);
+  });
+
+  it('rolls back booking insertion when createBooking audit logging fails', async () => {
+    const bookingQueryBuilder = new MockQueryBuilder('bookings');
+    mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'bookings') return bookingQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const bookingFormData = {
+      customer_id: 'cust-123',
+      package_name: 'Gói VIP',
+      full_price: 5000000,
+      deposit_amount: 0,
+      total_sessions: 15,
+      start_date: '2026-05-10'
+    };
+
+    const result = await createBooking(bookingFormData);
+
+    expect(result.error).toBe('Audit write failed');
+    expect(bookingQueryBuilder.deleteCalled).toBe(true);
+  });
+
+  it('rolls back booking update when updateBooking audit logging fails', async () => {
+    const bookingsQueryBuilder = new MockQueryBuilder('bookings');
+    mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'bookings') return bookingsQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await updateBooking('mock-booking-id', { status: 'completed' });
+
+    expect(result.error).toBe('Audit write failed');
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual({ status: 'completed' });
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual(expect.objectContaining({
+      id: 'mock-booking-id',
+      total_sessions: 15,
+      status: 'booked'
+    }));
+  });
+
+  it('rolls back booking update when session log synchronization fails', async () => {
+    const bookingsQueryBuilder = new MockQueryBuilder('bookings');
+    const sessionLogsQueryBuilder = new MockQueryBuilder('session_logs', true);
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'bookings') return bookingsQueryBuilder;
+      if (table === 'session_logs') return sessionLogsQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await updateBooking('mock-booking-id', { total_sessions: 16 });
+
+    expect(result.error).toBe('Forced DB Insert Error');
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual({ total_sessions: 16 });
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual(expect.objectContaining({
+      id: 'mock-booking-id',
+      total_sessions: 15,
+      status: 'booked'
+    }));
+  });
+
+  it('rolls back reused package booking when generated session logs fail', async () => {
+    const bookingsQueryBuilder = new MockQueryBuilder('bookings');
+    const sessionLogsQueryBuilder = new MockQueryBuilder('session_logs', true);
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'bookings') return bookingsQueryBuilder;
+      if (table === 'session_logs') return sessionLogsQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await reusePackage('mock-booking-id');
+
+    expect(result.error).toContain('Forced DB Insert Error');
+    expect(bookingsQueryBuilder.deleteCalled).toBe(true);
+  });
+
+  it('rolls back reused package booking and generated session logs when audit logging fails', async () => {
+    const bookingsQueryBuilder = new MockQueryBuilder('bookings');
+    const sessionLogsQueryBuilder = new MockQueryBuilder('session_logs');
+    mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'bookings') return bookingsQueryBuilder;
+      if (table === 'session_logs') return sessionLogsQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await reusePackage('mock-booking-id');
+
+    expect(result.error).toBe('Audit write failed');
+    expect(sessionLogsQueryBuilder.deleteCalled).toBe(true);
+    expect(bookingsQueryBuilder.deleteCalled).toBe(true);
+  });
+
+  it('rolls back remaining payment revenue and booking totals when audit logging fails', async () => {
+    const bookingsQueryBuilder = new MockQueryBuilder('bookings');
+    const revenueQueryBuilder = new MockQueryBuilder('revenue');
+    mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'bookings') return bookingsQueryBuilder;
+      if (table === 'revenue') return revenueQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await recordRemainingPayment({
+      booking_id: 'mock-booking-id',
+      customer_id: 'cust-123',
+      amount: 1000000,
+      payment_method: 'cash',
+      status: 'pending'
+    });
+
+    expect(result.error).toBe('Audit write failed');
+    expect(revenueQueryBuilder.deleteCalled).toBe(true);
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual(expect.objectContaining({
+      deposit_amount: 2000000,
+      status: 'booked'
+    }));
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual(expect.objectContaining({
+      deposit_amount: 1000000,
+      status: 'booked'
+    }));
+  });
+
+  it('rolls back online booking and new customer when booking audit logging fails', async () => {
+    const customersQueryBuilder = new MockQueryBuilder('customers');
+    const bookingsQueryBuilder = new MockQueryBuilder('bookings');
+    mockRecordAuditLog
+      .mockResolvedValueOnce({ success: true })
+      .mockRejectedValueOnce(new Error('Audit write failed'));
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'customers') return customersQueryBuilder;
+      if (table === 'bookings') return bookingsQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await submitOnlineBooking({
+      name_mother: 'Nguyen Thi A',
+      phone: '0901234567',
+      start_date: '2026-05-10',
+      package_name: 'Gói VIP'
+    });
+
+    expect(result.error).toBe('Audit write failed');
+    expect(bookingsQueryBuilder.deleteCalled).toBe(true);
+    expect(customersQueryBuilder.deleteCalled).toBe(true);
   });
 
   it('rolls back session completed status and completed count in booking when salary update fails', async () => {
@@ -278,5 +460,41 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
       completed_sessions: 0,
       status: 'booked'
     }));
+  });
+
+  it('rolls back extra session count when the generated session log insert fails', async () => {
+    const bookingsQueryBuilder = new MockQueryBuilder('bookings');
+    const sessionLogsQueryBuilder = new MockQueryBuilder('session_logs', true);
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'bookings') return bookingsQueryBuilder;
+      if (table === 'session_logs') return sessionLogsQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await addExtraSession('mock-booking-id');
+
+    expect(result.error).toBe('Forced DB Insert Error');
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual({ total_sessions: 16 });
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual({ total_sessions: 15 });
+  });
+
+  it('rolls back extra session count and generated session log when audit logging fails', async () => {
+    const bookingsQueryBuilder = new MockQueryBuilder('bookings');
+    const sessionLogsQueryBuilder = new MockQueryBuilder('session_logs');
+    mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'bookings') return bookingsQueryBuilder;
+      if (table === 'session_logs') return sessionLogsQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await addExtraSession('mock-booking-id');
+
+    expect(result.error).toBe('Audit write failed');
+    expect(sessionLogsQueryBuilder.deleteCalled).toBe(true);
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual({ total_sessions: 16 });
+    expect(bookingsQueryBuilder.updatePayloads).toContainEqual({ total_sessions: 15 });
   });
 });
