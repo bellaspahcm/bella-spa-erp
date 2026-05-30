@@ -5,10 +5,12 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/services/user-actions';
 import { recordAuditLog } from '@/services/audit-actions';
 import { getLocalDateString } from '@/lib/utils';
+import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { calcProRataBaseSalary } from './base-salary-actions';
 import { getMonthStart } from '@/lib/utils';
 import { TenantSalaryConfig } from '@/types/domain';
 import { Database } from '@/types/database.types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Interfaces for Database Records
 interface KtvUserDataAdmin {
@@ -33,6 +35,15 @@ interface SessionLogAdmin {
   session_reviews: { rating: number | null; status: string | null }[];
 }
 
+interface PackageMultiplierRow {
+  name: string | null;
+  session_multiplier: number | null;
+}
+
+interface KpiBonusRow {
+  bonus_amount: number | null;
+}
+
 interface SalaryRecordDbAdmin {
   id: string;
   ktv_id: string;
@@ -52,6 +63,16 @@ interface SalaryRecordDbAdmin {
   users?: { full_name: string | null } | null;
 }
 
+function resolveAccountingReviewStatus(
+  businessEventType: ReturnType<typeof inferBusinessEventType>,
+  payload: Record<string, unknown>
+) {
+  if (!businessEventType) return 'NEEDS_REVIEW';
+  return findMissingRequiredFields(businessEventType, payload).length > 0
+    ? 'NEEDS_REVIEW'
+    : 'UNREVIEWED';
+}
+
 /**
  * Helper to recalculate and save a KTV salary record.
  * Handles pro-rata base salary, actual sessions count, session bonus commission,
@@ -59,7 +80,7 @@ interface SalaryRecordDbAdmin {
  * Respects overrides from manual admin adjustments.
  */
 export async function recalculateAndSaveSalaryRecord(
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   ktvId: string,
   monthYear: string,
   tenantId: string,
@@ -147,11 +168,11 @@ export async function recalculateAndSaveSalaryRecord(
     .eq('tenant_id', tenantId);
 
   if (packagesError) throw packagesError;
-  const packagesList = packagesData || [];
+  const packagesList = (packagesData || []) as PackageMultiplierRow[];
 
   // Create a map of package name -> multiplier
   const packageMultiplierMap = new Map<string, number>();
-  packagesList.forEach((pkg: any) => {
+  packagesList.forEach((pkg) => {
     if (pkg.name) {
       packageMultiplierMap.set(pkg.name, Number(pkg.session_multiplier ?? 1.0));
     }
@@ -203,7 +224,8 @@ export async function recalculateAndSaveSalaryRecord(
     .eq('month_year', monthYear);
   
   if (kpiError) throw kpiError;
-  const dbKpiBonus = kpiRecords?.reduce((acc: number, k: any) => acc + Number(k.bonus_amount || 0), 0) ?? 0;
+  const kpiRecordsTyped = (kpiRecords || []) as KpiBonusRow[];
+  const dbKpiBonus = kpiRecordsTyped.reduce((acc, k) => acc + Number(k.bonus_amount || 0), 0);
 
   // 7. Get existing salary record
   const { data: existingData, error: existingError } = await supabase
@@ -449,17 +471,33 @@ export async function finalizeSalaryRecord(ktvId: string) {
   if (sessionError) throw sessionError;
 
   // Create expense for Finance
-  const { error: expenseError } = await supabase.from('expenses').insert({
-    amount: record.total_salary || 0,
+  const expenseAmount = record.total_salary || 0;
+  const expenseDate = new Date().toISOString();
+  const expenseDescription = `Lương T${monthLabel} - ${record.users?.full_name || 'KTV'} [salary_record_id:${record.id}] [ktv_id:${ktvId}]`;
+  const businessEventType = inferBusinessEventType({
+    sourceTable: 'expenses',
     category: 'salary',
-    description: `Lương T${monthLabel} - ${record.users?.full_name || 'KTV'} [salary_record_id:${record.id}] [ktv_id:${ktvId}]`,
-    status: 'submitted',
-    expense_date: new Date().toISOString(),
-    tenant_id: tenantId,
   });
+  const accountingPayload = {
+    amount: expenseAmount,
+    payment_method: 'bank_transfer',
+    expense_date: expenseDate,
+    description: expenseDescription,
+  };
+  const expensePayload: Database['public']['Tables']['expenses']['Insert'] = {
+    amount: expenseAmount,
+    category: 'salary',
+    description: expenseDescription,
+    status: 'submitted',
+    expense_date: expenseDate,
+    tenant_id: tenantId,
+    business_event_type: businessEventType,
+    accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+    accounting_metadata: accountingPayload,
+  };
+  const { error: expenseError } = await supabase.from('expenses').insert(expensePayload);
 
   if (expenseError) throw expenseError;
-
   await recordAuditLog({ action: 'UPDATE', table_name: 'salary_records', record_id: ktvId, new_data: { status: 'finalized', amount: record.total_salary } });
   revalidatePath('/dashboard/salary');
   revalidatePath('/dashboard/finance');
@@ -549,19 +587,33 @@ export async function approveSalary(ktvId: string) {
     if (fetchError) throw fetchError;
 
     // 4. Create expense record in Finance dashboard
-    const { error: expenseError } = await supabase
-      .from('expenses')
-      .insert({
-        amount: res.totalSalary,
-        category: 'salary',
-        description: `Thanh toán lương T${monthLabel} - KTV ${ktv?.full_name || 'Nhân viên'} [salary_record_id:${recordData.id}] [ktv_id:${ktvId}]`,
-        status: 'submitted', // Will appear as "Chờ duyệt" in Finance
-        expense_date: new Date().toISOString(),
-        tenant_id: tenantId
-      });
+    const expenseAmount = res.totalSalary;
+    const expenseDate = new Date().toISOString();
+    const expenseDescription = `Thanh toán lương T${monthLabel} - KTV ${ktv?.full_name || 'Nhân viên'} [salary_record_id:${recordData.id}] [ktv_id:${ktvId}]`;
+    const businessEventType = inferBusinessEventType({
+      sourceTable: 'expenses',
+      category: 'salary',
+    });
+    const accountingPayload = {
+      amount: expenseAmount,
+      payment_method: 'bank_transfer',
+      expense_date: expenseDate,
+      description: expenseDescription,
+    };
+    const expensePayload: Database['public']['Tables']['expenses']['Insert'] = {
+      amount: expenseAmount,
+      category: 'salary',
+      description: expenseDescription,
+      status: 'submitted', // Will appear as "Chờ duyệt" in Finance
+      expense_date: expenseDate,
+      tenant_id: tenantId,
+      business_event_type: businessEventType,
+      accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+      accounting_metadata: accountingPayload,
+    };
+    const { error: expenseError } = await supabase.from('expenses').insert(expensePayload);
 
     if (expenseError) throw expenseError;
-
     // Record Audit Log
     await recordAuditLog({
       action: 'UPDATE',
