@@ -57,6 +57,7 @@ import {
   syncLegacyToLedger,
 } from '../services/accounting-actions';
 import { recordTransaction, confirmTransaction } from '../services/finance-actions';
+import { safeRevalidatePath } from '../lib/revalidate';
 
 const TENANT_ID = 'tenant-uuid-123';
 const ADMIN_USER = { id: 'admin-1', tenant_id: TENANT_ID, role: 'admin' };
@@ -237,6 +238,8 @@ describe('Legacy Syncing Engine', () => {
       p_tenant_id: TENANT_ID,
       p_created_by: ADMIN_USER.id,
     });
+    expect(safeRevalidatePath).toHaveBeenCalledWith('/dashboard/accounting/reconciliation');
+    expect(safeRevalidatePath).toHaveBeenCalledWith('/dashboard/accounting/readiness');
   });
 
   it('propagates atomic sync RPC failures without silently succeeding', async () => {

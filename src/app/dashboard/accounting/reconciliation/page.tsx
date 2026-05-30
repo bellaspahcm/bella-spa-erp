@@ -11,12 +11,11 @@ import {
   Calendar,
   ArrowRight,
   HelpCircle,
-  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { getReconciliationReport, getAccountingMode, syncLegacyToLedger, type ReconciliationRow } from '@/services/accounting-actions';
 import { toast } from 'sonner';
-import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', {
@@ -24,6 +23,9 @@ const fmtVND = (n: number) =>
     currency: 'VND',
     maximumFractionDigits: 0,
   }).format(Number(n) || 0);
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error ? error.message : fallback;
 
 const STATUS_CONFIG = {
   MATCH: {
@@ -52,6 +54,48 @@ const STATUS_CONFIG = {
   },
 };
 
+type PostSyncSummary = {
+  syncedRevenueCount: number;
+  syncedExpenseCount: number;
+  syncedSalaryCount: number;
+  totalChecks: number;
+  matchCount: number;
+  minorDiffCount: number;
+  majorDiffCount: number;
+  matchRate: number;
+  majorDiffLabels: string[];
+  checkedFrom: string;
+  checkedTo: string;
+};
+
+function buildPostSyncSummary(params: {
+  rows: ReconciliationRow[];
+  syncedRevenueCount: number;
+  syncedExpenseCount: number;
+  syncedSalaryCount: number;
+  checkedFrom: string;
+  checkedTo: string;
+}): PostSyncSummary {
+  const totalChecks = params.rows.length;
+  const matchCount = params.rows.filter((row) => row.status === 'MATCH').length;
+  const minorDiffCount = params.rows.filter((row) => row.status === 'MINOR_DIFF').length;
+  const majorDiffRows = params.rows.filter((row) => row.status === 'MAJOR_DIFF');
+
+  return {
+    syncedRevenueCount: params.syncedRevenueCount,
+    syncedExpenseCount: params.syncedExpenseCount,
+    syncedSalaryCount: params.syncedSalaryCount,
+    totalChecks,
+    matchCount,
+    minorDiffCount,
+    majorDiffCount: majorDiffRows.length,
+    matchRate: totalChecks > 0 ? (matchCount / totalChecks) * 100 : 0,
+    majorDiffLabels: majorDiffRows.map((row) => row.category_label),
+    checkedFrom: params.checkedFrom,
+    checkedTo: params.checkedTo,
+  };
+}
+
 export default function ReconciliationPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,13 +107,18 @@ export default function ReconciliationPage() {
   const [accountingMode, setAccountingMode] = useState<'SIMPLE' | 'PROFESSIONAL'>('SIMPLE');
   const [syncing, setSyncing] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
+  const [postSyncSummary, setPostSyncSummary] = useState<PostSyncSummary | null>(null);
 
   // Khởi tạo ngày tháng an toàn sau khi mount ở Client để tránh Hydration Mismatch về múi giờ
   useEffect(() => {
     const d = new Date();
     d.setDate(1);
-    setFromDate(d.toISOString().slice(0, 10));
-    setToDate(new Date().toISOString().slice(0, 10));
+    const defaultFromDate = d.toISOString().slice(0, 10);
+    const defaultToDate = new Date().toISOString().slice(0, 10);
+    queueMicrotask(() => {
+      setFromDate(defaultFromDate);
+      setToDate(defaultToDate);
+    });
 
     // Đọc cấu hình chế độ kế toán
     getAccountingMode()
@@ -77,15 +126,20 @@ export default function ReconciliationPage() {
       .catch((err) => console.error('Lỗi khi đọc chế độ kế toán:', err));
   }, []);
 
-  const fetchData = async (fromStr: string, toStr: string) => {
-    if (!fromStr || !toStr) return;
+  const fetchData = async (fromStr: string, toStr: string, options?: { toastOnError?: boolean }) => {
+    if (!fromStr || !toStr) return [];
     setRefreshing(true);
     try {
       const data = await getReconciliationReport(fromStr, toStr);
-      setRows(data || []);
-    } catch (err: any) {
+      const nextRows = data || [];
+      setRows(nextRows);
+      return nextRows;
+    } catch (err: unknown) {
       console.error('Error fetching reconciliation:', err);
-      toast.error(err?.message || 'Không thể tải báo cáo đối soát.');
+      if (options?.toastOnError !== false) {
+        toast.error(getErrorMessage(err, 'Không thể tải báo cáo đối soát.'));
+      }
+      throw err;
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -101,12 +155,32 @@ export default function ReconciliationPage() {
         setAccountingMode('PROFESSIONAL');
         setShowSyncModal(false);
         if (fromDate && toDate) {
-          fetchData(fromDate, toDate);
+          try {
+            const refreshedRows = await fetchData(fromDate, toDate, { toastOnError: false });
+            const summary = buildPostSyncSummary({
+              rows: refreshedRows,
+              syncedRevenueCount: res.syncedRevenueCount,
+              syncedExpenseCount: res.syncedExpenseCount,
+              syncedSalaryCount: res.syncedSalaryCount,
+              checkedFrom: fromDate,
+              checkedTo: toDate,
+            });
+            setPostSyncSummary(summary);
+
+            if (summary.majorDiffCount > 0) {
+              toast.warning(`Đồng bộ xong nhưng còn ${summary.majorDiffCount} chỉ tiêu lệch lớn. Vui lòng xử lý trước khi dùng báo cáo CFO.`);
+            } else {
+              toast.success('Đối soát sau sync không phát hiện lệch lớn.');
+            }
+          } catch (reportError: unknown) {
+            console.error('Post-sync reconciliation failed:', reportError);
+            toast.error(getErrorMessage(reportError, 'Đồng bộ thành công nhưng không tải được báo cáo đối soát sau sync.'));
+          }
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error during migration:', err);
-      toast.error(err?.message || 'Có lỗi xảy ra trong quá trình đồng bộ kế toán.');
+      toast.error(getErrorMessage(err, 'Có lỗi xảy ra trong quá trình đồng bộ kế toán.'));
     } finally {
       setSyncing(false);
     }
@@ -114,7 +188,9 @@ export default function ReconciliationPage() {
 
   useEffect(() => {
     if (fromDate && toDate) {
-      fetchData(fromDate, toDate);
+      Promise.resolve()
+        .then(() => fetchData(fromDate, toDate))
+        .catch(() => undefined);
     }
   }, [fromDate, toDate]);
 
@@ -192,6 +268,57 @@ export default function ReconciliationPage() {
       )}
 
       {/* ── FILTER + SUMMARY ── */}
+      {postSyncSummary && (
+        <div
+          className={`rounded-[2rem] border p-6 shadow-sm ${
+            postSyncSummary.majorDiffCount > 0
+              ? 'bg-rose-50/70 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30'
+              : 'bg-emerald-50/70 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30'
+          }`}
+        >
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+            <div className="flex items-start gap-3">
+              {postSyncSummary.majorDiffCount > 0 ? (
+                <AlertTriangle className="w-6 h-6 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              ) : (
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <h5 className={`text-xs font-black uppercase tracking-wider ${postSyncSummary.majorDiffCount > 0 ? 'text-rose-800 dark:text-rose-300' : 'text-emerald-800 dark:text-emerald-300'}`}>
+                  Kiểm tra sau đồng bộ Professional
+                </h5>
+                <p className={`mt-1 text-2xs font-semibold leading-relaxed ${postSyncSummary.majorDiffCount > 0 ? 'text-rose-700/80 dark:text-rose-300/80' : 'text-emerald-700/80 dark:text-emerald-300/80'}`}>
+                  Kỳ đối soát {postSyncSummary.checkedFrom} → {postSyncSummary.checkedTo}: khớp {postSyncSummary.matchCount}/{postSyncSummary.totalChecks} chỉ tiêu ({postSyncSummary.matchRate.toFixed(0)}%).
+                </p>
+                {postSyncSummary.majorDiffCount > 0 ? (
+                  <p className="mt-2 text-2xs font-bold text-rose-800 dark:text-rose-200">
+                    Không nên dùng báo cáo CFO/Professional cho quyết định vận hành cho tới khi xử lý: {postSyncSummary.majorDiffLabels.join(', ')}.
+                  </p>
+                ) : (
+                  <p className="mt-2 text-2xs font-bold text-emerald-800 dark:text-emerald-200">
+                    Không phát hiện lệch lớn sau sync. Có thể tiếp tục kiểm tra báo cáo Professional.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 min-w-full lg:min-w-[360px]">
+              <div className="rounded-2xl bg-white/70 dark:bg-[#11100F]/40 border border-white/70 dark:border-[#3E3A35]/50 p-3">
+                <p className="text-[10px] uppercase tracking-wider font-black opacity-60">Doanh thu</p>
+                <p className="text-lg font-mono font-black">{postSyncSummary.syncedRevenueCount}</p>
+              </div>
+              <div className="rounded-2xl bg-white/70 dark:bg-[#11100F]/40 border border-white/70 dark:border-[#3E3A35]/50 p-3">
+                <p className="text-[10px] uppercase tracking-wider font-black opacity-60">Chi phí</p>
+                <p className="text-lg font-mono font-black">{postSyncSummary.syncedExpenseCount}</p>
+              </div>
+              <div className="rounded-2xl bg-white/70 dark:bg-[#11100F]/40 border border-white/70 dark:border-[#3E3A35]/50 p-3">
+                <p className="text-[10px] uppercase tracking-wider font-black opacity-60">Lương</p>
+                <p className="text-lg font-mono font-black">{postSyncSummary.syncedSalaryCount}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Date filter */}
         <div className="lg:col-span-2 bg-white dark:bg-[#1C1B19] rounded-2xl border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 shadow-sm">
@@ -273,7 +400,7 @@ export default function ReconciliationPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-sans text-xs">
-                {rows.map((row, idx) => {
+                {rows.map((row) => {
                   // Chuẩn hóa status và fallback an toàn tránh crash render
                   const statusKey = (row.status || '').toUpperCase() as keyof typeof STATUS_CONFIG;
                   const cfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.MAJOR_DIFF;
