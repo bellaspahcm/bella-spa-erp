@@ -138,6 +138,21 @@ describe('getSalaryReconciliationReport', () => {
     });
   });
 
+  it('propagates tenant context errors before loading the report', async () => {
+    mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'tenant context failed' },
+    });
+
+    await expect(getSalaryReconciliationReport(MONTH)).rejects.toMatchObject({
+      message: expect.stringContaining('tenant context failed'),
+    });
+
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledWith('set_session_tenant', { p_tenant_id: TENANT_ID });
+  });
+
   it('returns empty array when RPC data is null', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
     mockRpc
