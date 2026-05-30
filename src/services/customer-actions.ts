@@ -77,8 +77,11 @@ export async function getCustomerBookingByToken(token?: string) {
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) {
-    if (error) console.error('Error fetching customer booking:', error);
+  if (error) {
+    throw new Error(`Failed to fetch customer booking: ${error.message}`);
+  }
+
+  if (!data) {
     return null;
   }
 
@@ -99,15 +102,15 @@ export async function getCustomerBookingByToken(token?: string) {
       .eq('tenant_id', data.tenant_id)
       .eq('is_active', true);
       
-    if (!promoError && promotions) {
-      data.active_promotions = promotions.filter((promo: any) => {
-        const startValid = !promo.start_date || promo.start_date <= todayStr;
-        const endValid = !promo.end_date || promo.end_date >= todayStr;
-        return startValid && endValid;
-      });
-    } else {
-      data.active_promotions = [];
+    if (promoError) {
+      throw new Error(`Failed to fetch active promotions for customer booking: ${promoError.message}`);
     }
+
+    data.active_promotions = (promotions || []).filter((promo: any) => {
+      const startValid = !promo.start_date || promo.start_date <= todayStr;
+      const endValid = !promo.end_date || promo.end_date >= todayStr;
+      return startValid && endValid;
+    });
   } else {
     data.active_promotions = [];
   }
@@ -135,11 +138,15 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
   }
 
   // 1. Lấy thông tin session để đồng bộ hóa
-  const { data: session } = await supabase
+  const { data: session, error: sessionError } = await supabase
     .from('session_logs')
-    .select('completed_by_ktv_id, tenant_id, bookings(customer_id)')
+    .select('completed_by_ktv_id, tenant_id, rating, rating_comment, bookings(customer_id)')
     .eq('id', sessionId)
     .single();
+
+  if (sessionError) {
+    throw new Error(`Failed to fetch session before customer rating: ${sessionError.message}`);
+  }
 
   // 2. Cập nhật rating vào session_log (Legacy support & quick read)
   const { error: updateError } = await supabase
@@ -151,18 +158,37 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
     .eq('id', sessionId);
 
   if (updateError) {
-    console.error('Rating update error:', updateError);
-    throw new Error('Không thể gửi đánh giá');
+    throw new Error(`Failed to update session rating: ${updateError.message}`);
   }
+
+  const rollbackSessionRating = async (message: string) => {
+    const { error: rollbackError } = await supabase
+      .from('session_logs')
+      .update({
+        rating: session?.rating ?? null,
+        rating_comment: session?.rating_comment ?? null
+      })
+      .eq('id', sessionId);
+
+    if (rollbackError) {
+      throw new Error(`${message}; failed to roll back session rating: ${rollbackError.message}`);
+    }
+
+    throw new Error(message);
+  };
 
   // 3. Tạo/Cập nhật bản ghi review chính thức (Analytics source)
   if (session) {
     // Check if a placeholder review already exists for this session log
-    const { data: existingReview } = await supabase
+    const { data: existingReview, error: existingReviewError } = await supabase
       .from('session_reviews')
       .select('id')
       .eq('session_log_id', sessionId)
       .maybeSingle();
+
+    if (existingReviewError) {
+      await rollbackSessionRating(`Failed to fetch existing session review: ${existingReviewError.message}`);
+    }
 
     const reviewPayload = {
       session_log_id: sessionId,
@@ -180,14 +206,14 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
         .update(reviewPayload)
         .eq('id', existingReview.id);
       if (reviewError) {
-        console.error('Error updating session review:', reviewError);
+        await rollbackSessionRating(`Failed to update session review: ${reviewError.message}`);
       }
     } else {
       const { error: reviewError } = await supabase
         .from('session_reviews')
         .insert([reviewPayload]);
       if (reviewError) {
-        console.error('Error inserting session review:', reviewError);
+        await rollbackSessionRating(`Failed to insert session review: ${reviewError.message}`);
       }
     }
   }
@@ -198,7 +224,7 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
   });
 
   if (rpcError) {
-    console.error('Bonus RPC error:', rpcError);
+    await rollbackSessionRating(`Failed to apply rating bonus: ${rpcError.message}`);
   }
 
   await Promise.all([
@@ -225,8 +251,12 @@ export async function addLoyaltyPoints(customerId: string, amount: number) {
       p_points: pointsToAdd
     });
     
-    if (error) console.error('Error adding loyalty points:', error);
+    if (error) {
+      throw new Error(`Failed to add loyalty points: ${error.message}`);
+    }
   }
+
+  return { success: true };
 }
 
 /**
@@ -240,10 +270,9 @@ export async function getCustomers() {
     .order('created_at', { ascending: false });
   
   if (error) {
-    console.error('Error fetching customers:', error);
-    return [];
+    throw new Error(`Failed to fetch customers: ${error.message}`);
   }
-  return data;
+  return data || [];
 }
 
 /**
@@ -255,11 +284,10 @@ export async function getCustomerById(id: string) {
     .from('customers')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
   
   if (error) {
-    console.error('Error fetching customer:', error);
-    return null;
+    throw new Error(`Failed to fetch customer ${id}: ${error.message}`);
   }
   return data;
 }
