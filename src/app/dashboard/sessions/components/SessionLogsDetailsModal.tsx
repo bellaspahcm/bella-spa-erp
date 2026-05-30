@@ -433,26 +433,26 @@ export function SessionLogsDetailsModal({
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Ngày dự kiến</label>
                           <div className="relative">
-                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <Calendar className="absolute left-4 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-slate-400 md:block" />
                             <input 
                               type="date"
                               value={selectedDate}
                               onChange={(e) => setSelectedDate(e.target.value)}
                               disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
-                              className="w-full min-w-0 pl-10 pr-3 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                              className="w-full min-w-0 pl-4 pr-3 py-3 md:pl-10 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                             />
                           </div>
                         </div>
                         <div>
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Giờ hẹn</label>
                           <div className="relative">
-                            <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <Clock className="absolute left-4 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-slate-400 md:block" />
                             <input 
                               type="time"
                               value={selectedTime}
                               onChange={(e) => setSelectedTime(e.target.value)}
                               disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
-                              className="w-full min-w-0 pl-10 pr-3 py-3 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
+                              className="w-full min-w-0 pl-4 pr-3 py-3 md:pl-10 bg-slate-50 rounded-xl border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-xs disabled:opacity-50"
                             />
                           </div>
                         </div>

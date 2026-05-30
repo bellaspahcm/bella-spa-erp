@@ -124,9 +124,9 @@ export default function FinancialOverviewClient({
                   type="date"
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="w-full min-w-0 pl-10 pr-3 py-3 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
+                  className="w-full min-w-0 pl-4 pr-3 py-3 md:pl-10 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
                 />
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary dark:text-[#A67D44]" />
+                <Calendar className="absolute left-4 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-primary dark:text-[#A67D44] md:block" />
               </div>
               
               <span className="hidden sm:inline text-slate-400 font-bold text-xs shrink-0">→</span>
@@ -137,9 +137,9 @@ export default function FinancialOverviewClient({
                   type="date"
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="w-full min-w-0 pl-10 pr-3 py-3 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
+                  className="w-full min-w-0 pl-4 pr-3 py-3 md:pl-10 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35]/50 rounded-2xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1] shadow-sm hover:border-rose-200 focus:border-rose-300 transition-all cursor-pointer"
                 />
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary dark:text-[#A67D44]" />
+                <Calendar className="absolute left-4 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-primary dark:text-[#A67D44] md:block" />
               </div>
             </div>
 
