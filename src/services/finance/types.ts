@@ -49,10 +49,13 @@ export interface KtvDBRow {
 export interface SalaryRecordDBRow {
   id: string;
   ktv_id: string;
-  base_salary?: number | null;
-  kpi_bonus?: number | null;
-  violations_deduction?: number | null;
-  service_percentage_bonus?: number | null;
+  base_salary?: number | string | null;
+  kpi_bonus?: number | string | null;
+  violations_deduction?: number | string | null;
+  service_percentage_bonus?: number | string | null;
+  total_salary?: number | string | null;
+  session_bonus?: number | string | null;
+  rating_bonus?: number | string | null;
 }
 
 export interface SessionReviewDBRow {
