@@ -154,6 +154,16 @@ export interface ProfessionalModeReadinessGate extends AccountingReadinessSummar
   blocking_reasons: string[];
 }
 
+export interface LegacyLedgerSyncPreview {
+  pending_revenue_count: number;
+  pending_expense_count: number;
+  pending_salary_count: number;
+  journal_entries_to_create: number;
+  revenue_amount: number;
+  expense_amount: number;
+  salary_amount: number;
+}
+
 export interface AccountingBackfillResult {
   source_table: string;
   scanned_records: number;

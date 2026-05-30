@@ -50,7 +50,12 @@ jest.mock('../services/user-actions', () => ({
   getCurrentUser: () => mockGetCurrentUser(),
 }));
 
-import { getAccountingMode, updateAccountingMode, syncLegacyToLedger } from '../services/accounting-actions';
+import {
+  getAccountingMode,
+  getLegacyLedgerSyncPreview,
+  updateAccountingMode,
+  syncLegacyToLedger,
+} from '../services/accounting-actions';
 import { recordTransaction, confirmTransaction } from '../services/finance-actions';
 
 const TENANT_ID = 'tenant-uuid-123';
@@ -133,6 +138,22 @@ beforeEach(() => {
         error: null,
       });
     }
+    if (fnName === 'preview_legacy_ledger_sync') {
+      return Promise.resolve({
+        data: [
+          {
+            pending_revenue_count: 1,
+            pending_expense_count: 0,
+            pending_salary_count: 0,
+            journal_entries_to_create: 1,
+            revenue_amount: 500000,
+            expense_amount: 0,
+            salary_amount: 0,
+          },
+        ],
+        error: null,
+      });
+    }
     return Promise.resolve({ data: null, error: null });
   });
 });
@@ -186,6 +207,21 @@ describe('Dual-Mode Accounting Configuration', () => {
   it('blocks non-admin users from changing accounting mode', async () => {
     mockGetCurrentUser.mockResolvedValue(KTV_USER);
     await expect(updateAccountingMode('PROFESSIONAL')).rejects.toThrow(/Unauthorized/);
+  });
+
+  it('returns legacy ledger sync preview for admin users', async () => {
+    mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
+
+    const preview = await getLegacyLedgerSyncPreview();
+
+    expect(preview).toMatchObject({
+      pending_revenue_count: 1,
+      journal_entries_to_create: 1,
+      revenue_amount: 500000,
+    });
+    expect(mockRpc).toHaveBeenCalledWith('preview_legacy_ledger_sync', {
+      p_tenant_id: TENANT_ID,
+    });
   });
 });
 
