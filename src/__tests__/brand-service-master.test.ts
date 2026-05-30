@@ -20,6 +20,7 @@ jest.mock('server-only', () => ({}), { virtual: true });
 const mockGetCurrentUser = jest.fn();
 const mockCheckHqAuth = jest.fn();
 const mockFrom = jest.fn();
+const mockRecordAuditLog = jest.fn();
 
 (global as any).mockGetCurrentUser = mockGetCurrentUser;
 (global as any).mockCheckHqAuth = mockCheckHqAuth;
@@ -31,6 +32,10 @@ jest.mock('@/services/user-actions', () => ({
 
 jest.mock('@/services/hq-actions', () => ({
   checkHqAuth: (...args: any[]) => (global as any).mockCheckHqAuth(...args),
+}));
+
+jest.mock('@/services/audit-actions', () => ({
+  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
 }));
 
 jest.mock('@/lib/supabase-server', () => ({
@@ -95,6 +100,7 @@ describe('Brand Service Master System (Phase 2)', () => {
 
     packageQueryMock = new MockQueryBuilder();
     tenantQueryMock = new MockQueryBuilder();
+    mockRecordAuditLog.mockResolvedValue({ success: true });
 
     mockFrom.mockImplementation((table: string) => {
       if (table === 'packages') return packageQueryMock;
@@ -158,6 +164,29 @@ describe('Brand Service Master System (Phase 2)', () => {
       const result = await createHqPackageTemplate(invalidData);
       expect(result.success).toBe(false);
       expect(result.error).toContain('Giá sàn không được lớn hơn giá trần');
+    });
+    it('should roll back created template when audit logging fails', async () => {
+      mockCheckHqAuth.mockResolvedValue({ authorized: true, user: hqAdminUser });
+      mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+
+      const insertedRecord = {
+        id: 't-audit-fail',
+        name: 'Audit Fail Template',
+        price: 1500000,
+        is_hq_template: true,
+        tenant_id: 'hq-tenant-id'
+      };
+      packageQueryMock = new MockQueryBuilder(insertedRecord);
+
+      const result = await createHqPackageTemplate({
+        name: 'Audit Fail Template',
+        price: 1500000
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Audit write failed');
+      expect(packageQueryMock.deleteSpy).toHaveBeenCalled();
+      expect(packageQueryMock.eqSpy).toHaveBeenCalledWith('id', 't-audit-fail');
     });
   });
 
