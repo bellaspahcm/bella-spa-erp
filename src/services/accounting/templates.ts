@@ -13,6 +13,7 @@ import type {
   AccountingEventTemplate,
   AccountingReadinessSummary,
   AccountingReviewItem,
+  AccountingReviewResolutionStatus,
   AccountingSourceTable,
   AccountingStandardProfile,
   BusinessEventType,
@@ -206,6 +207,39 @@ export async function createAccountingReviewItem(params: {
 
   await safeRevalidatePath('/dashboard/accounting/reconciliation');
   return { success: true, data };
+}
+
+export async function resolveAccountingReviewItem(params: {
+  reviewItemId: string;
+  status: AccountingReviewResolutionStatus;
+}) {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
+    throw new Error('Unauthorized: chỉ admin/kế toán mới được xử lý hàng chờ kế toán.');
+  }
+
+  const { data, error } = await supabase.rpc('resolve_accounting_review_item', {
+    p_review_item_id: params.reviewItemId,
+    p_status: params.status,
+  });
+
+  if (error) throw error;
+
+  await recordAuditLog({
+    action: 'UPDATE',
+    table_name: 'accounting_review_queue',
+    record_id: params.reviewItemId,
+    new_data: {
+      status: params.status,
+      resolved_result: data?.[0] ?? null,
+    },
+  });
+
+  await safeRevalidatePath('/dashboard/accounting/readiness');
+  await safeRevalidatePath('/dashboard/accounting/reconciliation');
+
+  return { success: true, data: data?.[0] ?? null };
 }
 
 export async function classifyAccountingSourcePreview(input: {

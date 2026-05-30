@@ -2915,6 +2915,16 @@ export type Database = {
           total_records: number
         }[]
       }
+      resolve_accounting_review_item: {
+        Args: { p_review_item_id: string; p_status: string }
+        Returns: {
+          review_item_id: string
+          review_status: string
+          source_id: string
+          source_review_status: string
+          source_table: string
+        }[]
+      }
       get_ai_attendance_kpis: {
         Args: { p_month_year: string }
         Returns: {

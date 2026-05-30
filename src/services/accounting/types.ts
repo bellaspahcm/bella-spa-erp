@@ -79,6 +79,8 @@ export type AccountingReviewStatus =
   | 'REJECTED'
   | 'POSTING_FAILED';
 
+export type AccountingReviewResolutionStatus = 'APPROVED_FOR_POSTING' | 'REJECTED';
+
 export type AccountingSourceTable =
   | 'revenue'
   | 'expenses'
