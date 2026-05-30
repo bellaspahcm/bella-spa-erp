@@ -777,7 +777,7 @@ export default function HqDashboardClient({
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-[#11100F] pb-20 font-sans antialiased text-slate-800 dark:text-[#EFE9E1] transition-colors duration-300">
       {/* Super Top Premium Navigation Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-white/70 dark:bg-[#11100F]/80 border-b border-slate-100 dark:border-[#3E3A35] px-4 sm:px-6 py-3 md:py-4 shadow-sm flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 transition-colors duration-300">
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-white/70 dark:bg-[#11100F]/80 border-b border-slate-100 dark:border-[#3E3A35] px-4 sm:px-6 py-3 md:py-4 shadow-sm flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 transition-colors duration-300 overflow-hidden">
         <div className="flex items-center gap-3 min-w-0">
           <motion.div 
             whileHover={{ scale: 1.05 }}
@@ -795,9 +795,9 @@ export default function HqDashboardClient({
           </div>
         </div>
 
-        <div className="w-full md:w-auto grid grid-cols-1 gap-3 md:flex md:items-center md:gap-2 md:flex-wrap">
+        <div className="w-full max-w-[420px] mx-auto px-1 grid grid-cols-1 gap-3 md:max-w-none md:mx-0 md:px-0 md:w-auto md:flex md:items-center md:gap-2 md:flex-wrap">
           {/* Active Admin Profile */}
-          <div className="w-full md:w-auto flex items-center justify-start gap-2 bg-white/90 dark:bg-[#1C1B19]/90 border border-slate-100 dark:border-[#3E3A35] rounded-2xl md:rounded-full py-2 md:py-1 pl-2 pr-3 shadow-sm transition-colors duration-300">
+          <div className="w-full md:w-auto flex items-center justify-start gap-2 bg-white/90 dark:bg-[#1C1B19]/90 border border-slate-100 dark:border-[#3E3A35] rounded-2xl md:rounded-full py-2 md:py-1 pl-3 pr-4 md:pl-2 md:pr-3 shadow-sm transition-colors duration-300">
             <div className="w-7 h-7 rounded-full bg-rose-100 dark:bg-[#5D1C34] flex items-center justify-center font-black text-[10px] text-primary dark:text-[#EFE9E1]">
               {currentUser.full_name?.charAt(0) || 'A'}
             </div>
@@ -808,24 +808,24 @@ export default function HqDashboardClient({
           </div>
 
           {/* Compact Action Buttons — premium layout */}
-          <div className="w-full md:w-auto grid grid-cols-2 gap-2">
+          <div className="w-full md:w-auto grid grid-cols-2 gap-2.5 md:gap-2">
             <a
               href="/hq/financial-overview"
-              className="flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider px-3 md:px-3.5 py-2 md:py-2 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider px-3 md:px-3.5 py-2.5 md:py-2 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <PieChart size={10} className="md:w-3.5 md:h-3.5" />
               Tổng quan
             </a>
             <a 
               href="/dashboard"
-              className="flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider px-3 md:px-3.5 py-2 md:py-2 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider px-3 md:px-3.5 py-2.5 md:py-2 rounded-xl shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <ExternalLink size={10} className="md:w-3.5 md:h-3.5" />
               Spa chính
             </a>
             <a
               href="/signup"
-              className="col-span-2 flex items-center justify-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-650 hover:from-rose-600 hover:to-pink-700 text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider px-3 md:px-3.5 py-2.5 md:py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+              className="col-span-2 flex items-center justify-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-650 hover:from-rose-600 hover:to-pink-700 text-white text-[9px] md:text-[10px] font-black uppercase tracking-wider px-3 md:px-3.5 py-3 md:py-2.5 rounded-xl shadow-md transition-all active:scale-95 cursor-pointer whitespace-nowrap"
             >
               <Plus size={10} className="md:w-3.5 md:h-3.5" />
               Đăng ký Chi nhánh
@@ -833,21 +833,21 @@ export default function HqDashboardClient({
           </div>
 
           {/* Sync, Theme Toggle & Logout — compact */}
-          <div className="w-full md:w-auto grid grid-cols-[1fr_auto_auto] items-center gap-2 md:flex md:gap-1.5 md:flex-nowrap">
+          <div className="w-full md:w-auto grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2.5 md:flex md:gap-1.5 md:flex-nowrap">
             <div className="min-w-0 md:w-40 md:shrink-0">
               <ThemeToggle />
             </div>
             <button
               onClick={refreshData}
               disabled={loading}
-              className="w-10 h-10 md:w-8 md:h-8 rounded-xl md:rounded-lg border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#1C1B19] flex items-center justify-center text-slate-500 dark:text-[#CDBCAB] hover:text-primary dark:hover:text-primary transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+              className="w-11 h-11 md:w-8 md:h-8 rounded-xl md:rounded-lg border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#1C1B19] flex items-center justify-center text-slate-500 dark:text-[#CDBCAB] hover:text-primary dark:hover:text-primary transition-all active:scale-95 disabled:opacity-50 shadow-sm"
               title="Đồng bộ lại"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin text-primary' : ''} />
             </button>
             <button
               onClick={handleLogout}
-              className="w-10 h-10 md:w-8 md:h-8 rounded-xl md:rounded-lg border border-rose-100 dark:border-[#3E3A35] bg-rose-50 dark:bg-[#5D1C34]/30 hover:bg-rose-100 dark:hover:bg-[#5D1C34]/50 flex items-center justify-center text-rose-500 dark:text-rose-400 transition-all active:scale-95 shadow-sm"
+              className="w-11 h-11 md:w-8 md:h-8 rounded-xl md:rounded-lg border border-rose-100 dark:border-[#3E3A35] bg-rose-50 dark:bg-[#5D1C34]/30 hover:bg-rose-100 dark:hover:bg-[#5D1C34]/50 flex items-center justify-center text-rose-500 dark:text-rose-400 transition-all active:scale-95 shadow-sm"
               title="Đăng xuất"
             >
               <LogOut size={14} />
