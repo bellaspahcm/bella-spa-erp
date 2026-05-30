@@ -9,6 +9,10 @@ export interface SessionLog {
   completed_date: string | null;
   start_time: string | null;
   end_time: string | null;
+  checkin_lat: number | null;
+  checkin_lon: number | null;
+  checkout_lat: number | null;
+  checkout_lon: number | null;
   duration_warning_type: 'normal' | 'under_time' | 'over_time' | null;
   time_deviation: number | null;
   standard_duration: number | null;
