@@ -73,7 +73,7 @@ export async function getMonthlyPnL(month?: string) {
 
       const typedKtvs = (ktvs as unknown as KtvDBRow[]) || [];
 
-      // 2. Fetch salary records for adjustments (KPI, deductions, advances)
+      // 2. Fetch salary records
       const { data: salaryRecords } = await supabase
         .from('salary_records')
         .select('*')
@@ -82,44 +82,55 @@ export async function getMonthlyPnL(month?: string) {
 
       const typedSalaryRecords = (salaryRecords as unknown as SalaryRecordDBRow[]) || [];
 
-      // NOTE: Reviews are now nested in session_logs query above (no separate fetch by created_at)
-      // This mirrors get_ktv_leaderboard RPC: reviews joined on sl.id, not created_at
+      // 3. Fetch attendance for pro-rata calculation (for KTVs without salary records)
+      const { data: attendanceRows } = await supabase
+        .from('attendance')
+        .select('ktv_id, status')
+        .eq('tenant_id', tenantId)
+        .gte('date', startDate)
+        .lt('date', endDate);
 
-      // 3. Calculate accrued salaries dynamically
+      const attendanceData = (attendanceRows || []) as { ktv_id: string; status: string }[];
+
+      // 4. Calculate accrued salaries
       let accruedSalaries = 0;
       typedKtvs.forEach((ktv) => {
         const record = typedSalaryRecords.find((r) => r.ktv_id === ktv.id);
-        
-        // Sum commission for completed sessions by this KTV in target month
+
+        // RULE: If KTV already has a salary_record → use total_salary directly
+        // This respects the saved calculation (including pro-rata, deductions, KPI, etc.)
+        if (record) {
+          accruedSalaries += Number(record.total_salary || 0);
+          return;
+        }
+
+        // RULE: No salary_record → calculate pro-rata from attendance
+        // Only count days where status is NOT 'absent' (present, late, etc.)
+        const ktvAttendance = attendanceData.filter(
+          (a) => a.ktv_id === ktv.id && a.status !== 'absent'
+        );
+        const actualDays = ktvAttendance.length;
+
+        // If no attendance at all → no salary accrued (KTV hasn't worked this month)
+        if (actualDays === 0) {
+          // Still add session commissions if any (edge case: completed session without checkin)
+          const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
+          const sessionCommissions = ktvSessions
+            .reduce((sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || 150000), 0);
+          accruedSalaries += sessionCommissions;
+          return;
+        }
+
+        // Pro-rata base salary: (base_salary / 26) × actual working days
+        const baseSalary = Number(ktv.base_salary || 6000000);
+        const proRataBase = Math.round((baseSalary / 26) * actualDays);
+
+        // Session commissions for this KTV
         const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
         const sessionCommissions = ktvSessions
           .reduce((sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || 150000), 0);
 
-        const baseVal = record?.base_salary ?? ktv.base_salary ?? 6000000;
-        const sessionsCount = ktvSessions.length;
-
-        // Rating bonus — COALESCE(approved_review.rating, session.rating, 5.0)
-        const ratingValues: number[] = ktvSessions.map((s) => {
-          const reviewsArray = Array.isArray(s.session_reviews) ? s.session_reviews : [];
-          const approvedReview = reviewsArray.find((sr) => sr.status === 'approved');
-          if (approvedReview?.rating) return approvedReview.rating as number;
-          if (s.rating) return s.rating as number;
-          return null;
-        }).filter((v: number | null): v is number => v !== null);
-        const avgRating = ratingValues.length > 0
-          ? ratingValues.reduce((acc, v) => acc + v, 0) / ratingValues.length
-          : 5.0;
-        let bonusPerSession = 0;
-        if (avgRating === 5.0) bonusPerSession = 50000;
-        else if (avgRating >= 4.5) bonusPerSession = 30000;
-        else if (avgRating >= 4.0) bonusPerSession = 10000;
-        const ratingBonus = sessionsCount * bonusPerSession;
-
-        const kpiBonus = record?.kpi_bonus ?? (sessionsCount > 30 ? 1000000 : 0);
-        const deductions = record?.violations_deduction ?? 0;
-        const advances = record?.service_percentage_bonus ?? 0;
-
-        const ktvTotal = baseVal + sessionCommissions + kpiBonus + ratingBonus - deductions - advances;
+        const ktvTotal = proRataBase + sessionCommissions;
         accruedSalaries += ktvTotal;
       });
 
