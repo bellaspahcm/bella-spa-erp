@@ -161,7 +161,16 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
   });
 
   // Set tenant context (calculate_ktv_salary_sheet requires it for service_role)
-  await adminClient.rpc('set_session_tenant', { p_tenant_id: user.tenant_id });
+  const { error: tenantContextError } = await adminClient.rpc('set_session_tenant', { p_tenant_id: user.tenant_id });
+  if (tenantContextError) {
+    console.error('[getSalaryReconciliationReport] Failed to set tenant context:', JSON.stringify({
+      message: tenantContextError.message,
+      code: tenantContextError.code,
+      details: tenantContextError.details,
+      hint: tenantContextError.hint,
+    }, null, 2));
+    throw tenantContextError;
+  }
 
   const { data, error } = await (adminClient.rpc as any)('get_salary_reconciliation_report', {
     p_tenant_id: user.tenant_id,
