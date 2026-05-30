@@ -15,6 +15,9 @@ export interface KtvSalaryRecord {
   hireDate?: string | null;
   resignationDate?: string | null;
   disputeReason?: string | null;
+  /** Actual attendance-based work days for pro-rata base salary calculation */
+  actualDays?: number;
+  ktvStatus?: string;
 }
 
 export interface KtvAttendanceLog {
