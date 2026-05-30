@@ -1,55 +1,83 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { BookOpen, RefreshCw, AlertTriangle, CheckCircle2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  BookOpen,
+  CheckCircle2,
+  ClipboardCheck,
+  RefreshCw,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
-import { getAccountingMode, syncLegacyToLedger, updateAccountingMode } from "@/services/accounting-actions";
+import {
+  getAccountingMode,
+  getProfessionalModeReadinessGate,
+  syncLegacyToLedger,
+  updateAccountingMode,
+} from "@/services/accounting-actions";
+import type { ProfessionalModeReadinessGate } from "@/services/accounting/types";
+
+type AccountingMode = "SIMPLE" | "PROFESSIONAL";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function AccountingConfigTab() {
-  const [mode, setMode] = useState<"SIMPLE" | "PROFESSIONAL">("SIMPLE");
+  const [mode, setMode] = useState<AccountingMode>("SIMPLE");
+  const [readinessGate, setReadinessGate] = useState<ProfessionalModeReadinessGate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  async function refreshConfig() {
+    const [currentMode, gate] = await Promise.all([
+      getAccountingMode(),
+      getProfessionalModeReadinessGate(),
+    ]);
+    setMode(currentMode);
+    setReadinessGate(gate);
+  }
+
   useEffect(() => {
-    async function loadMode() {
+    async function loadConfig() {
       try {
-        const currentMode = await getAccountingMode();
-        setMode(currentMode);
+        await refreshConfig();
       } catch (error) {
-        console.error(error);
+        toast.error(getErrorMessage(error, "Không tải được cấu hình kế toán."));
       } finally {
         setIsLoading(false);
       }
     }
-    loadMode();
+    loadConfig();
   }, []);
 
   const handleSync = async () => {
-    if (!confirm("Bạn có chắc chắn muốn đồng bộ toàn bộ dữ liệu lịch sử vào Sổ cái Kế toán? Thao tác này sẽ mất vài phút và không thể hoàn tác.")) return;
-    
+    if (!confirm("Bạn có chắc chắn muốn đồng bộ dữ liệu lịch sử vào Sổ cái và bật Professional Core?")) return;
+
     setIsSyncing(true);
     try {
       const result = await syncLegacyToLedger();
       if (result.success) {
-        toast.success(`Đồng bộ thành công! Đã hạch toán ${result.syncedRevenueCount} doanh thu, ${result.syncedExpenseCount} chi phí, ${result.syncedSalaryCount} bảng lương.`);
-        setMode("PROFESSIONAL");
+        toast.success(`Đồng bộ thành công: ${result.syncedRevenueCount} doanh thu, ${result.syncedExpenseCount} chi phí, ${result.syncedSalaryCount} bảng lương.`);
+        await refreshConfig();
       }
-    } catch (error: any) {
-      toast.error(error.message || "Đã xảy ra lỗi trong quá trình đồng bộ.");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Đã xảy ra lỗi trong quá trình đồng bộ."));
     } finally {
       setIsSyncing(false);
     }
   };
 
-  const handleToggleMode = async (newMode: "SIMPLE" | "PROFESSIONAL") => {
+  const handleToggleMode = async (newMode: AccountingMode) => {
     setIsUpdating(true);
     try {
       await updateAccountingMode(newMode);
-      setMode(newMode);
-      toast.success(`Đã chuyển đổi sang chế độ Kế toán ${newMode === "PROFESSIONAL" ? "Sổ cái (Professional)" : "Đơn giản (Simple)"}.`);
-    } catch (error: any) {
-      toast.error(error.message || "Lỗi khi chuyển đổi chế độ.");
+      await refreshConfig();
+      toast.success(`Đã chuyển sang chế độ ${newMode === "PROFESSIONAL" ? "Professional Core" : "Simple Finance"}.`);
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Lỗi khi chuyển đổi chế độ."));
     } finally {
       setIsUpdating(false);
     }
@@ -64,6 +92,8 @@ export default function AccountingConfigTab() {
     );
   }
 
+  const professionalReady = Boolean(readinessGate?.can_enable_professional);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-4 mb-6">
@@ -73,13 +103,12 @@ export default function AccountingConfigTab() {
         <div>
           <h2 className="text-2xl font-bold text-foreground">Hệ thống Kế toán Song song</h2>
           <p className="text-sm text-muted-foreground font-semibold">
-            Chuyển đổi giữa Kế toán Thu/Chi Đơn giản (Simple Finance) và Kế toán Sổ cái (Professional Core)
+            Chuyển đổi giữa Simple Finance và Professional Core theo mức sẵn sàng dữ liệu.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Simple Mode */}
         <div
           className={`relative p-8 rounded-3xl border-2 transition-all ${
             mode === "SIMPLE"
@@ -94,7 +123,7 @@ export default function AccountingConfigTab() {
           )}
           <h3 className="text-xl font-bold mb-2">Simple Finance</h3>
           <p className="text-muted-foreground font-medium text-sm mb-6">
-            Phù hợp cho chi nhánh nhỏ, chỉ ghi nhận Thu (Doanh thu) và Chi (Chi phí) cơ bản. Không có hạch toán bút toán kép.
+            Dùng cho vận hành thu chi hằng ngày, không yêu cầu admin/lễ tân hiểu đầy đủ bút toán kép.
           </p>
           <button
             onClick={() => handleToggleMode("SIMPLE")}
@@ -109,7 +138,6 @@ export default function AccountingConfigTab() {
           </button>
         </div>
 
-        {/* Professional Mode */}
         <div
           className={`relative p-8 rounded-3xl border-2 transition-all ${
             mode === "PROFESSIONAL"
@@ -124,13 +152,43 @@ export default function AccountingConfigTab() {
           )}
           <h3 className="text-xl font-bold mb-2">Professional Core</h3>
           <p className="text-muted-foreground font-medium text-sm mb-6">
-            Hệ thống kế toán Sổ cái (Ledger) với bút toán kép chuẩn TT133. Tự động hạch toán doanh thu, chi phí, lương.
+            Sổ cái bút toán kép theo chuẩn cấu hình kế toán. Chỉ bật khi dữ liệu nguồn đã qua kiểm tra readiness.
           </p>
+
+          <div className={`mb-6 rounded-2xl border p-4 ${professionalReady ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 font-black text-sm text-slate-900">
+                {professionalReady ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <XCircle className="w-5 h-5 text-amber-600" />}
+                Readiness {readinessGate?.readiness_score ?? 0}/100
+              </div>
+              <a
+                href="/dashboard/accounting/readiness"
+                className="text-xs font-black uppercase tracking-wider text-primary hover:underline"
+              >
+                Xem chi tiết
+              </a>
+            </div>
+            {readinessGate?.blocking_reasons?.length ? (
+              <ul className="mt-3 space-y-2 text-xs font-semibold text-amber-900">
+                {readinessGate.blocking_reasons.map((reason) => (
+                  <li key={reason} className="flex gap-2">
+                    <AlertTriangle className="mt-0.5 w-3.5 h-3.5 shrink-0" />
+                    <span>{reason}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-3 text-xs font-semibold text-emerald-800">
+                Dữ liệu đã đủ điều kiện bật Professional Core.
+              </p>
+            )}
+          </div>
+
           <button
             onClick={() => handleToggleMode("PROFESSIONAL")}
-            disabled={mode === "PROFESSIONAL" || isUpdating || isSyncing}
+            disabled={mode === "PROFESSIONAL" || isUpdating || isSyncing || !professionalReady}
             className={`w-full py-3 rounded-xl font-bold transition-all ${
-              mode === "PROFESSIONAL"
+              mode === "PROFESSIONAL" || !professionalReady
                 ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                 : "bg-primary text-white hover:bg-primary-hover active:scale-95 shadow-md shadow-pink-200 dark:shadow-none"
             }`}
@@ -140,21 +198,20 @@ export default function AccountingConfigTab() {
         </div>
       </div>
 
-      {/* Sync Legacy Data Section */}
       <div className="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-3xl">
         <div className="flex items-start gap-4">
           <div className="p-3 bg-amber-100 text-amber-600 rounded-2xl">
-            <AlertTriangle className="w-6 h-6" />
+            <ClipboardCheck className="w-6 h-6" />
           </div>
           <div className="flex-1">
-            <h4 className="text-lg font-bold text-amber-900 mb-2">Đồng bộ Dữ liệu Lịch sử (Sync to Ledger)</h4>
+            <h4 className="text-lg font-bold text-amber-900 mb-2">Đồng bộ dữ liệu lịch sử vào Sổ cái</h4>
             <p className="text-amber-800/80 text-sm font-medium mb-4">
-              Nếu bạn vừa nâng cấp lên hệ thống Kế toán Sổ cái (Professional Core), hãy nhấn nút bên dưới để tự động hạch toán toàn bộ dữ liệu Thu/Chi/Lương cũ vào sổ cái. Quá trình này hoàn toàn an toàn (Idempotent) và sẽ không tạo ra các bút toán trùng lặp.
+              Đồng bộ chỉ chạy khi readiness đạt yêu cầu. Nếu còn dòng cần duyệt hoặc lỗi hạch toán, hệ thống sẽ chặn để tránh bật Professional trên dữ liệu chưa chuẩn.
             </p>
             <button
               onClick={handleSync}
-              disabled={isSyncing || isUpdating}
-              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-bold transition-all active:scale-95 disabled:opacity-50"
+              disabled={isSyncing || isUpdating || !professionalReady}
+              className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-bold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <RefreshCw className={`w-5 h-5 ${isSyncing ? "animate-spin" : ""}`} />
               {isSyncing ? "Đang đồng bộ dữ liệu..." : "Chạy đồng bộ Sổ cái ngay"}

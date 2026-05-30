@@ -12,6 +12,7 @@ export type {
   BusinessEventType,
   CreateAccountInput,
   ManualJournalInput,
+  ProfessionalModeReadinessGate,
   ReconciliationRow,
   SalaryReconciliationRow,
 } from './accounting/types';
@@ -21,7 +22,7 @@ export {
 } from './accounting/coa';
 
 export {
-  getAccountingMode, updateAccountingMode, syncLegacyToLedger,
+  getAccountingMode, getProfessionalModeReadinessGate, updateAccountingMode, syncLegacyToLedger,
 } from './accounting/mode';
 
 export {

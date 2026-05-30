@@ -56,6 +56,16 @@ import { recordTransaction, confirmTransaction } from '../services/finance-actio
 const TENANT_ID = 'tenant-uuid-123';
 const ADMIN_USER = { id: 'admin-1', tenant_id: TENANT_ID, role: 'admin' };
 const KTV_USER = { id: 'ktv-1', tenant_id: TENANT_ID, role: 'ktv' };
+const READY_ACCOUNTING_ROWS = [
+  {
+    source_table: 'revenue',
+    total_records: 10,
+    classified_records: 10,
+    missing_business_event: 0,
+    needs_review: 0,
+    posting_failed: 0,
+  },
+];
 
 function createMockChain(table: string) {
   const chain: any = {};
@@ -107,7 +117,12 @@ function createMockChain(table: string) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockFrom.mockImplementation((table: string) => createMockChain(table));
-  mockRpc.mockResolvedValue({ data: null, error: null });
+  mockRpc.mockImplementation((fnName: string) => {
+    if (fnName === 'get_accounting_readiness') {
+      return Promise.resolve({ data: READY_ACCOUNTING_ROWS, error: null });
+    }
+    return Promise.resolve({ data: null, error: null });
+  });
 });
 
 describe('Dual-Mode Accounting Configuration', () => {
@@ -127,6 +142,33 @@ describe('Dual-Mode Accounting Configuration', () => {
 
     const res = await updateAccountingMode('PROFESSIONAL');
     expect(res.success).toBe(true);
+    expect(mockRpc).toHaveBeenCalledWith('get_accounting_readiness', {
+      p_tenant_id: TENANT_ID,
+    });
+  });
+
+  it('blocks PROFESSIONAL mode when accounting readiness is not clean', async () => {
+    mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
+    mockRpc.mockImplementationOnce((fnName: string) => {
+      if (fnName === 'get_accounting_readiness') {
+        return Promise.resolve({
+          data: [
+            {
+              source_table: 'expenses',
+              total_records: 4,
+              classified_records: 2,
+              missing_business_event: 1,
+              needs_review: 1,
+              posting_failed: 0,
+            },
+          ],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    await expect(updateAccountingMode('PROFESSIONAL')).rejects.toThrow(/Chưa thể bật Professional Core/);
   });
 
   it('blocks non-admin users from changing accounting mode', async () => {
@@ -143,7 +185,12 @@ describe('Legacy Syncing Engine', () => {
     mockNot.mockResolvedValueOnce({ data: [], error: null });
 
     // Mock postJournalEntry (through RPC journal_entries insert)
-    mockRpc.mockResolvedValue({ data: 'entry-uuid-1', error: null });
+    mockRpc.mockImplementation((fnName: string) => {
+      if (fnName === 'get_accounting_readiness') {
+        return Promise.resolve({ data: READY_ACCOUNTING_ROWS, error: null });
+      }
+      return Promise.resolve({ data: 'entry-uuid-1', error: null });
+    });
 
     const res = await syncLegacyToLedger();
     expect(res.success).toBe(true);
