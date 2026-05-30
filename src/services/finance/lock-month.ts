@@ -37,7 +37,7 @@ export async function lockMonth(month: string) {
         .single();
 
       if (tenantErr || !tenant) {
-        console.warn('[lockMonth] Failed to retrieve tenant config for royalty calculations:', tenantErr);
+        throw new Error(`[lockMonth] Failed to retrieve tenant config for royalty calculations: ${tenantErr?.message || 'Tenant not found'}`);
       } else {
         const startDate = new Date(month);
         const startYear = startDate.getFullYear();
@@ -55,7 +55,7 @@ export async function lockMonth(month: string) {
           .lte('received_date', endDateStr);
 
         if (revError) {
-          console.error('[lockMonth] Failed to fetch revenues for royalty calculation:', revError);
+          throw new Error(`[lockMonth] Failed to fetch revenues for royalty calculation: ${revError.message}`);
         } else {
           const grossRevenue = (revenues || []).reduce((sum: number, r) => sum + (Number(r.amount) || 0), 0);
           
@@ -83,7 +83,7 @@ export async function lockMonth(month: string) {
 
           if (existingInvoice) {
             if (existingInvoice.status !== 'paid') {
-              await supabase
+              const { error: invoiceUpdateError } = await supabase
                 .from('franchise_royalty_invoices')
                 .update({
                   gross_revenue: grossRevenue,
@@ -94,9 +94,12 @@ export async function lockMonth(month: string) {
                   status: 'pending'
                 })
                 .eq('id', existingInvoice.id);
+              if (invoiceUpdateError) {
+                throw new Error(`[lockMonth] Failed to update royalty invoice: ${invoiceUpdateError.message}`);
+              }
             }
           } else {
-            await supabase
+            const { error: invoiceInsertError } = await supabase
               .from('franchise_royalty_invoices')
               .insert({
                 tenant_id: user.tenant_id,
@@ -109,11 +112,15 @@ export async function lockMonth(month: string) {
                 calculated_amount: calculatedAmount,
                 status: 'pending'
               });
+            if (invoiceInsertError) {
+              throw new Error(`[lockMonth] Failed to create royalty invoice: ${invoiceInsertError.message}`);
+            }
           }
         }
       }
     } catch (royaltyErr) {
       console.error('[lockMonth] Royalty system error:', royaltyErr);
+      throw royaltyErr;
     }
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -140,7 +147,7 @@ export async function lockMonth(month: string) {
         .lte('completed_date', endDateStr);
 
       if (sessionErr) {
-        console.error('[lockMonth] Failed to fetch session logs for clearing:', sessionErr);
+        throw new Error(`[lockMonth] Failed to fetch session logs for clearing: ${sessionErr.message}`);
       } else {
         const interBranchSessions = (sessionLogs || []).filter((s) => {
           const sessionTenantId = s.tenant_id;
@@ -176,7 +183,7 @@ export async function lockMonth(month: string) {
             .in('id', allInvolvedTenantIds);
 
           if (tenantsErr) {
-            console.error('[lockMonth] Failed to fetch tenants for clearing:', tenantsErr);
+            throw new Error(`[lockMonth] Failed to fetch tenants for clearing: ${tenantsErr.message}`);
           } else {
             const tenantMap: Record<string, { name: string; internal_clearing_rate: number }> = {};
             (tenants || []).forEach((t) => {
@@ -209,7 +216,7 @@ export async function lockMonth(month: string) {
 
               if (existingRecord) {
                 if (existingRecord.status !== 'cleared') {
-                  await supabase
+                  const { error: clearingUpdateError } = await supabase
                     .from('inter_branch_clearing_records')
                     .update({
                       session_count: pair.session_count,
@@ -218,9 +225,12 @@ export async function lockMonth(month: string) {
                       status: 'pending'
                     })
                     .eq('id', existingRecord.id);
+                  if (clearingUpdateError) {
+                    throw new Error(`[lockMonth] Failed to update inter-branch clearing record: ${clearingUpdateError.message}`);
+                  }
                 }
               } else {
-                await supabase
+                const { error: clearingInsertError } = await supabase
                   .from('inter_branch_clearing_records')
                   .insert({
                     clearing_number: clearingNumber,
@@ -232,6 +242,9 @@ export async function lockMonth(month: string) {
                     calculated_amount: calculatedAmount,
                     status: 'pending'
                   });
+                if (clearingInsertError) {
+                  throw new Error(`[lockMonth] Failed to create inter-branch clearing record: ${clearingInsertError.message}`);
+                }
               }
             }
           }
@@ -239,6 +252,7 @@ export async function lockMonth(month: string) {
       }
     } catch (clearingErr) {
       console.error('[lockMonth] Inter-branch clearing error:', clearingErr);
+      throw clearingErr;
     }
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -273,7 +287,7 @@ export async function unlockMonth(month: string) {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0] + 'T23:59:59';
 
-    await Promise.all([
+    const unlockResults = await Promise.all([
       supabase.from('revenue').update({ is_locked: false })
         .eq('tenant_id', user.tenant_id).gte('received_date', startDateStr).lte('received_date', endDateStr),
       supabase.from('expenses').update({ is_locked: false })
@@ -281,6 +295,11 @@ export async function unlockMonth(month: string) {
       supabase.from('salary_records').update({ is_locked: false })
         .eq('tenant_id', user.tenant_id).eq('month_year', startDateStr)
     ]);
+
+    const unlockError = unlockResults.find((result) => result?.error)?.error;
+    if (unlockError) {
+      return { success: false, error: 'Lỗi mở khóa sổ: ' + unlockError.message };
+    }
 
     revalidatePath('/dashboard/finance');
     return { success: true, month };
