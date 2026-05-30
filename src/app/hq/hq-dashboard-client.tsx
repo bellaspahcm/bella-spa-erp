@@ -703,9 +703,9 @@ export default function HqDashboardClient({
     }
   };
 
-  // Filtered tenants (excluding Headquarter itself)
+  // Filtered tenants displayed in the branch registry.
+  // Keep HQ visible here because the table has explicit HQ status/badge/actions.
   const filteredTenants = tenants.filter(t => {
-    if (t.name === 'Bella Spa Headquarter') return false;
     const matchSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         (t.contact_phone && t.contact_phone.includes(searchTerm)) ||
                         (t.email && t.email.toLowerCase().includes(searchTerm.toLowerCase()));
