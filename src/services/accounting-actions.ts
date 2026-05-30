@@ -4,6 +4,7 @@
 
 export type {
   AccountingEventTemplate,
+  AccountingBackfillResult,
   AccountingReadinessSummary,
   AccountingReviewItem,
   AccountingReviewResolutionStatus,
@@ -44,5 +45,6 @@ export {
   getAccountingReadinessSummary,
   createAccountingReviewItem,
   resolveAccountingReviewItem,
+  runAccountingMetadataBackfill,
   classifyAccountingSourcePreview,
 } from './accounting/templates';

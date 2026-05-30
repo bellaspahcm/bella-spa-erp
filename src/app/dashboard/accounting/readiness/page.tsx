@@ -20,6 +20,8 @@ import {
   getAccountingReadinessSummary,
   getAccountingReviewQueue,
   resolveAccountingReviewItem,
+  runAccountingMetadataBackfill,
+  type AccountingBackfillResult,
   type AccountingEventTemplate,
   type AccountingReadinessSummary,
   type AccountingReviewItem,
@@ -102,6 +104,8 @@ export default function AccountingReadinessPage() {
   const [reviewItems, setReviewItems] = useState<AccountingReviewItem[]>([]);
   const [templates, setTemplates] = useState<AccountingEventTemplate[]>([]);
   const [resolvingItemId, setResolvingItemId] = useState<string | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
+  const [lastBackfillResult, setLastBackfillResult] = useState<AccountingBackfillResult[]>([]);
 
   const loadData = async () => {
     setRefreshing(true);
@@ -145,6 +149,23 @@ export default function AccountingReadinessPage() {
       toast.error(message);
     } finally {
       setResolvingItemId(null);
+    }
+  };
+
+  const handleRunBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const result = await runAccountingMetadataBackfill({ limit: 500 });
+      setLastBackfillResult(result);
+      const scanned = result.reduce((sum, row) => sum + row.scanned_records, 0);
+      const review = result.reduce((sum, row) => sum + row.review_created, 0);
+      toast.success(`Đã quét ${scanned} dòng dữ liệu cũ. ${review} dòng cần kế toán review.`);
+      await loadData();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể chạy backfill metadata kế toán.';
+      toast.error(message);
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -201,6 +222,45 @@ export default function AccountingReadinessPage() {
             )}
           </div>
         </div>
+      </section>
+
+      <section className="rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 md:p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">
+              Backfill dữ liệu lịch sử
+            </h3>
+            <p className="mt-1 max-w-3xl text-2xs font-medium leading-relaxed text-slate-500 dark:text-[#CDBCAB]/65">
+              Quét dữ liệu cũ chưa có accounting metadata, tự phân loại dòng rõ ràng và đưa dòng thiếu thông tin vào hàng chờ kế toán review. Mỗi lần chạy tối đa 500 dòng để tránh ảnh hưởng vận hành.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleRunBackfill}
+            disabled={backfilling || refreshing}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-3xs font-black uppercase tracking-widest text-white shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw className={cn('h-4 w-4', backfilling && 'animate-spin')} />
+            {backfilling ? 'Đang quét...' : 'Chạy backfill'}
+          </button>
+        </div>
+
+        {lastBackfillResult.length > 0 && (
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+            {lastBackfillResult.map((row) => (
+              <div key={row.source_table} className="rounded-xl bg-slate-50 dark:bg-[#11100F] px-4 py-3">
+                <div className="text-3xs font-black uppercase tracking-widest text-slate-400">
+                  {SOURCE_LABELS[row.source_table]?.label ?? row.source_table}
+                </div>
+                <div className="mt-2 flex items-center justify-between text-2xs font-bold text-slate-600 dark:text-[#CDBCAB]">
+                  <span>Quét {row.scanned_records}</span>
+                  <span className="text-emerald-600">Map {row.classified_records}</span>
+                  <span className="text-amber-600">Review {row.review_created}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-4 gap-4">

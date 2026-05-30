@@ -10,6 +10,7 @@ import {
   inferBusinessEventType,
 } from './template-rules';
 import type {
+  AccountingBackfillResult,
   AccountingEventTemplate,
   AccountingReadinessSummary,
   AccountingReviewItem,
@@ -240,6 +241,48 @@ export async function resolveAccountingReviewItem(params: {
   await safeRevalidatePath('/dashboard/accounting/reconciliation');
 
   return { success: true, data: data?.[0] ?? null };
+}
+
+export async function runAccountingMetadataBackfill(params?: {
+  limit?: number;
+  tenantId?: string | null;
+}): Promise<AccountingBackfillResult[]> {
+  const supabase = await createClient();
+  const user = await getCurrentUser();
+  if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
+    throw new Error('Unauthorized: chỉ admin/kế toán mới được chạy backfill metadata kế toán.');
+  }
+  if (params?.tenantId && params.tenantId !== user.tenant_id && user.role !== 'super_admin') {
+    throw new Error('Unauthorized: không được chạy backfill cho tenant khác.');
+  }
+
+  const limit = Math.min(Math.max(params?.limit ?? 500, 1), 2000);
+  const { data, error } = await supabase.rpc('backfill_accounting_metadata', {
+    p_tenant_id: params?.tenantId ?? user.tenant_id,
+    p_limit: limit,
+  });
+
+  if (error) throw error;
+
+  await recordAuditLog({
+    action: 'UPDATE',
+    table_name: 'accounting_metadata_backfill',
+    record_id: user.tenant_id,
+    new_data: {
+      limit,
+      result: data ?? [],
+    },
+  });
+
+  await safeRevalidatePath('/dashboard/accounting/readiness');
+  await safeRevalidatePath('/dashboard/accounting/reconciliation');
+
+  return (data ?? []).map((row) => ({
+    source_table: row.source_table,
+    scanned_records: Number(row.scanned_records || 0),
+    classified_records: Number(row.classified_records || 0),
+    review_created: Number(row.review_created || 0),
+  }));
 }
 
 export async function classifyAccountingSourcePreview(input: {
