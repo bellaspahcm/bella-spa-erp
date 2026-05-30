@@ -458,88 +458,91 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
             {booking.session_logs.map((session: any) => (
               <div 
                 key={session.id} 
-                className={`bg-white p-5 rounded-[32px] border ${session.status === 'completed' ? 'border-emerald-100' : 'border-slate-100'} shadow-sm relative overflow-hidden`}
+                className={`bg-white rounded-[32px] border ${session.status === 'completed' ? 'border-emerald-100' : 'border-slate-100'} shadow-sm relative overflow-hidden`}
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                    session.status === 'completed' ? 'bg-emerald-50 text-emerald-500' : 'bg-slate-50 text-slate-300'
-                  }`}>
-                    {session.status === 'completed' ? <CheckCircle2 className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
-                  </div>
-                  
-                  <div className="flex-grow min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buổi {session.session_number}</p>
-                       {session.status === 'completed' && !session.rating && (
-                          <button 
-                            onClick={() => setSelectedSession(session)}
-                            className="bg-amber-400 hover:bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md shadow-amber-100/50 animate-bounce active:scale-95 transition-all"
-                          >
-                             Đánh giá ngay
-                          </button>
-                       )}
-                       {session.rating && (
-                          <div className="flex items-center gap-0.5 text-amber-400">
-                             {Array.from({ length: session.rating }).map((_, i) => (
-                               <Star key={i} className="w-2.5 h-2.5 fill-current" />
-                             ))}
-                          </div>
-                       )}
+                {/* Header: Icon + Session Number + Action */}
+                <div className={`px-6 pt-5 pb-4 flex items-center justify-between ${session.status === 'completed' ? 'bg-gradient-to-r from-emerald-50/60 to-white' : 'bg-gradient-to-r from-slate-50/60 to-white'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      session.status === 'completed' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : 'bg-slate-200 text-slate-400'
+                    }`}>
+                      {session.status === 'completed' ? <CheckCircle2 className="w-5 h-5" /> : <Clock className="w-5 h-5" />}
                     </div>
-                    <h4 className="text-sm font-black text-slate-900 mt-0.5">
-                       {session.status === 'completed' ? 'Đã chăm sóc' : 'Chưa diễn ra'}
-                    </h4>
-                    
-                    {session.status === 'completed' ? (
-                      <div className="space-y-2">
-                        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50 w-fit">
-                          <span>KTV thực hiện:</span>
-                          <span className="text-primary font-black">
-                            {session.completed_by_ktv?.full_name || 'Bella Spa'}
-                            {session.completed_by_ktv?.id !== booking.assigned_ktv?.id && ' (Làm thay)'}
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-100/60 rounded-2xl p-3 text-[10px] text-slate-500 font-medium">
-                          <div className="space-y-1">
-                            <p className="font-black text-slate-400 uppercase tracking-wider">📍 Check-in</p>
-                            <p className="font-bold text-slate-700">
-                              {session.start_time ? new Date(session.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                            </p>
-                          </div>
-                          <div className="space-y-1 border-l border-slate-200 pl-4">
-                            <p className="font-black text-slate-400 tracking-wider uppercase">🏁 Check-out</p>
-                            <p className="font-bold text-slate-700">
-                              {session.end_time ? new Date(session.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-2 flex flex-col gap-1.5 w-fit">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 font-bold bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100/50">
-                          <span>KTV phụ trách:</span>
-                          <span className="text-slate-800 font-black">{booking.assigned_ktv?.full_name || 'Đang sắp xếp KTV'}</span>
-                        </div>
-                        {session.completed_by_ktv && session.completed_by_ktv.id !== booking.assigned_ktv?.id && (
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-amber-700 font-bold bg-amber-50/70 rounded-2xl px-4 py-1.5 border border-amber-200/50 animate-pulse">
-                            <span>🔄 KTV làm thay:</span>
-                            <span className="text-primary font-black">{session.completed_by_ktv.full_name}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    <p className="text-[10px] text-slate-400 font-medium mt-2">
-                       {session.completed_date ? 'Chăm sóc lúc: ' : 'Thời gian dự kiến: '}
-                       <span className="font-bold text-slate-600">
-                         {session.completed_date 
-                           ? new Date(session.completed_date).toLocaleDateString('vi-VN') 
-                           : (session.assigned_date || 'Đang cập nhật')
-                         }
-                       </span>
-                    </p>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Buổi {session.session_number}</p>
+                      <h4 className="text-sm font-black text-slate-900 leading-tight">
+                        {session.status === 'completed' ? 'Đã chăm sóc' : 'Chưa diễn ra'}
+                      </h4>
+                    </div>
                   </div>
+                  {session.status === 'completed' && !session.rating && (
+                    <button 
+                      onClick={() => setSelectedSession(session)}
+                      className="bg-amber-400 hover:bg-amber-500 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-md shadow-amber-100/50 animate-bounce active:scale-95 transition-all"
+                    >
+                      ⭐ Đánh giá
+                    </button>
+                  )}
+                  {session.rating && (
+                    <div className="flex items-center gap-0.5 text-amber-400">
+                      {Array.from({ length: session.rating }).map((_, i) => (
+                        <Star key={i} className="w-3 h-3 fill-current" />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Body */}
+                <div className="px-6 pb-5 space-y-3">
+                  {session.status === 'completed' ? (
+                    <>
+                      {/* KTV Info */}
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 font-bold">
+                        <span>KTV thực hiện:</span>
+                        <span className="text-primary font-black">
+                          {session.completed_by_ktv?.full_name || 'Bella Spa'}
+                          {session.completed_by_ktv?.id !== booking.assigned_ktv?.id && ' (Làm thay)'}
+                        </span>
+                      </div>
+                      
+                      {/* Check-in / Check-out — full width */}
+                      <div className="grid grid-cols-2 bg-slate-50 border border-slate-100/60 rounded-2xl overflow-hidden">
+                        <div className="p-4 text-center">
+                          <p className="text-[10px] font-black text-emerald-500 uppercase tracking-wider mb-1">📍 Check-in</p>
+                          <p className="text-lg font-black text-slate-800">
+                            {session.start_time ? new Date(session.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                          </p>
+                        </div>
+                        <div className="p-4 text-center border-l border-slate-200">
+                          <p className="text-[10px] font-black text-rose-400 uppercase tracking-wider mb-1">🏁 Check-out</p>
+                          <p className="text-lg font-black text-slate-800">
+                            {session.end_time ? new Date(session.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Date */}
+                      <p className="text-[10px] text-slate-400 font-medium text-center">
+                        Chăm sóc ngày <span className="font-bold text-slate-600">{session.completed_date ? new Date(session.completed_date).toLocaleDateString('vi-VN') : 'Đang cập nhật'}</span>
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 font-bold">
+                        <span>KTV phụ trách:</span>
+                        <span className="text-slate-800 font-black">{booking.assigned_ktv?.full_name || 'Đang sắp xếp KTV'}</span>
+                      </div>
+                      {session.completed_by_ktv && session.completed_by_ktv.id !== booking.assigned_ktv?.id && (
+                        <div className="flex items-center gap-2 text-[11px] text-amber-700 font-bold bg-amber-50/70 rounded-2xl px-4 py-1.5 border border-amber-200/50 animate-pulse">
+                          <span>🔄 KTV làm thay:</span>
+                          <span className="text-primary font-black">{session.completed_by_ktv.full_name}</span>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        Thời gian dự kiến: <span className="font-bold text-slate-600">{session.assigned_date || 'Đang cập nhật'}</span>
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
