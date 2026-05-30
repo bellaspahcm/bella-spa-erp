@@ -28,6 +28,9 @@
 /.next/
 /out/
 
+# code graph local index data
+/.codegraph/
+
 # production
 /build
 

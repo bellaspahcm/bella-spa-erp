@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "lint:strict": "eslint \"src/**/*.{ts,tsx}\" --rule '{\"@typescript-eslint/no-explicit-any\": \"error\"}' --ignore-pattern \"src/__tests__/**\"",
+    "lint:strict": "eslint --config eslint.strict.config.mjs \"src/**/*.{ts,tsx}\"",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:report": "jest --json --outputFile=test-results.json && node generate-report.js",

@@ -4,44 +4,48 @@ import { resolveTenantId } from './shared';
 import type { RevenueDBRow, ExpenseDBRow, KtvDBRow, SalaryRecordDBRow, SessionLogDBRow, BookingDBRow, ServiceBookingDBRow } from './types';
 
 export async function getMonthlyPnL(month?: string) {
-  try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = await createClient();
-    const tenantId = await resolveTenantId();
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = await createClient();
+  const tenantId = await resolveTenantId();
 
-    const now = new Date();
-    const targetMonthStr = month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    const [y, m] = targetMonthStr.split('-').map(Number);
-    const startDate = `${y}-${String(m).padStart(2, '0')}-01`;
-    const endDate = m === 12
-      ? `${y + 1}-01-01`
-      : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+  const now = new Date();
+  const targetMonthStr = month || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const [y, m] = targetMonthStr.split('-').map(Number);
+  const startDate = `${y}-${String(m).padStart(2, '0')}-01`;
+  const endDate = m === 12
+    ? `${y + 1}-01-01`
+    : `${y}-${String(m + 1).padStart(2, '0')}-01`;
 
-    const [revRes, expRes, bookingRes, sessionRes] = await Promise.all([
-      supabase
-        .from('revenue')
-        .select('amount, status, revenue_type, received_date')
-        .eq('tenant_id', tenantId)
-        .gte('received_date', startDate)
-        .lt('received_date', endDate),
-      supabase
-        .from('expenses')
-        .select('amount, category, expense_date, status')
-        .eq('tenant_id', tenantId)
-        .gte('expense_date', startDate)
-        .lt('expense_date', endDate),
-      supabase
-        .from('bookings')
-        .select('id, status, full_price, completed_sessions, total_sessions, ktv_commission')
-        .eq('tenant_id', tenantId),
-      supabase
-        .from('session_logs')
-        .select('id, completed_by_ktv_id, status, completed_date, rating, booking_id, bookings!inner(tenant_id, ktv_commission), session_reviews(rating, status)')
-        .eq('bookings.tenant_id', tenantId)
-        .eq('status', 'completed')
-        .gte('completed_date', startDate)
-        .lt('completed_date', endDate)
-    ]);
+  const [revRes, expRes, bookingRes, sessionRes] = await Promise.all([
+    supabase
+      .from('revenue')
+      .select('amount, status, revenue_type, received_date')
+      .eq('tenant_id', tenantId)
+      .gte('received_date', startDate)
+      .lt('received_date', endDate),
+    supabase
+      .from('expenses')
+      .select('amount, category, expense_date, status')
+      .eq('tenant_id', tenantId)
+      .gte('expense_date', startDate)
+      .lt('expense_date', endDate),
+    supabase
+      .from('bookings')
+      .select('id, status, full_price, completed_sessions, total_sessions, ktv_commission')
+      .eq('tenant_id', tenantId),
+    supabase
+      .from('session_logs')
+      .select('id, completed_by_ktv_id, status, completed_date, rating, booking_id, bookings!inner(tenant_id, ktv_commission), session_reviews(rating, status)')
+      .eq('bookings.tenant_id', tenantId)
+      .eq('status', 'completed')
+      .gte('completed_date', startDate)
+      .lt('completed_date', endDate)
+  ]);
+
+  if (revRes.error) throw new Error(`[getMonthlyPnL] revenue query failed: ${revRes.error.message}`);
+  if (expRes.error) throw new Error(`[getMonthlyPnL] expenses query failed: ${expRes.error.message}`);
+  if (bookingRes.error) throw new Error(`[getMonthlyPnL] bookings query failed: ${bookingRes.error.message}`);
+  if (sessionRes.error) throw new Error(`[getMonthlyPnL] session_logs query failed: ${sessionRes.error.message}`);
 
     const revenues = (revRes.data as unknown as RevenueDBRow[]) || [];
     const expenses = (expRes.data as unknown as ExpenseDBRow[]) || [];
@@ -65,30 +69,33 @@ export async function getMonthlyPnL(month?: string) {
 
     if (totalKtvSalaries === 0) {
       // 1. Fetch KTVs
-      const { data: ktvs } = await supabase
+      const { data: ktvs, error: ktvsError } = await supabase
         .from('users')
         .select('id, base_salary')
         .eq('role', 'ktv')
         .eq('tenant_id', tenantId);
+      if (ktvsError) throw new Error(`[getMonthlyPnL] ktv query failed: ${ktvsError.message}`);
 
       const typedKtvs = (ktvs as unknown as KtvDBRow[]) || [];
 
       // 2. Fetch salary records
-      const { data: salaryRecords } = await supabase
+      const { data: salaryRecords, error: salaryRecordsError } = await supabase
         .from('salary_records')
         .select('*')
         .eq('month_year', startDate)
         .eq('tenant_id', tenantId);
+      if (salaryRecordsError) throw new Error(`[getMonthlyPnL] salary_records query failed: ${salaryRecordsError.message}`);
 
       const typedSalaryRecords = (salaryRecords as unknown as SalaryRecordDBRow[]) || [];
 
       // 3. Fetch attendance for pro-rata calculation (for KTVs without salary records)
-      const { data: attendanceRows } = await supabase
+      const { data: attendanceRows, error: attendanceError } = await supabase
         .from('attendance')
         .select('ktv_id, status')
         .eq('tenant_id', tenantId)
         .gte('date', startDate)
         .lt('date', endDate);
+      if (attendanceError) throw new Error(`[getMonthlyPnL] attendance query failed: ${attendanceError.message}`);
 
       const attendanceData = (attendanceRows || []) as { ktv_id: string; status: string }[];
 
@@ -157,28 +164,20 @@ export async function getMonthlyPnL(month?: string) {
       total_sessions_completed: totalSessionsCompleted,  // matches PnLData.total_sessions_completed
       is_locked: false                                   // matches PnLData.is_locked
     };
-  } catch (e) {
-    console.error('[getMonthlyPnL] error:', e);
-    return null;
-  }
 }
 
 export async function getServicePerformance() {
-  try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = await createClient();
-    const tenantId = await resolveTenantId();
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = await createClient();
+  const tenantId = await resolveTenantId();
 
-    const { data: bookings, error } = await supabase
-      .from('bookings')
-      .select('package_name, full_price, discount_percent, completed_sessions, total_sessions, ktv_commission, status')
-      .eq('tenant_id', tenantId)
-      .not('status', 'eq', 'cancelled');
+  const { data: bookings, error } = await supabase
+    .from('bookings')
+    .select('package_name, full_price, discount_percent, completed_sessions, total_sessions, ktv_commission, status')
+    .eq('tenant_id', tenantId)
+    .not('status', 'eq', 'cancelled');
 
-    if (error) {
-      console.error('[getServicePerformance] error:', error);
-      return [];
-    }
+  if (error) throw new Error(`[getServicePerformance] bookings query failed: ${error.message}`);
 
     const typedBookings = (bookings as unknown as ServiceBookingDBRow[]) || [];
 
@@ -230,8 +229,4 @@ export async function getServicePerformance() {
           profit_margin_percent: Math.round(profitMargin * 10) / 10  // ✓
         };
       });
-  } catch (e) {
-    console.error('[getServicePerformance] error:', e);
-    return [];
-  }
 }

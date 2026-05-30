@@ -74,8 +74,19 @@ export default function FinancePage() {
         toast.error('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');
       }
 
-      if (pnlResult.status === 'fulfilled') setPnlData(pnlResult.value);
-      if (perfResult.status === 'fulfilled') setPerformanceData(perfResult.value || []);
+      if (pnlResult.status === 'fulfilled') {
+        setPnlData(pnlResult.value);
+      } else {
+        console.error('P&L failed:', pnlResult.reason);
+        toast.error('Không thể tải báo cáo P&L. Vui lòng thử lại.');
+      }
+
+      if (perfResult.status === 'fulfilled') {
+        setPerformanceData(perfResult.value || []);
+      } else {
+        console.error('Service performance failed:', perfResult.reason);
+        toast.error('Không thể tải phân tích hiệu quả dịch vụ.');
+      }
     } catch (error) {
       console.error('Error fetching finance data:', error);
       toast.error('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');

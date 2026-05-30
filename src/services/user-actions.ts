@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
 import { CurrentUser, StaffRecord } from '@/types/domain';
+import { randomBytes } from 'crypto';
 
 interface UserWithLogsAndReviews {
   id: string;
@@ -174,15 +175,11 @@ export async function getUsers(): Promise<StaffRecord[]> {
 
 import { checkSubscriptionLimit } from '@/lib/subscription';
 
-/**
- * Default password assigned to newly-created staff. Communicated to admin
- * via the createUser response so they can pass it to the employee. The
- * employee should change it on first login (frontend will surface this).
- */
-const DEFAULT_NEW_STAFF_PASSWORD = 'Bella@2026';
+function generateTemporaryPassword() {
+  return `Bella-${randomBytes(9).toString('base64url')}1aA!`;
+}
 
 export async function createUser(formData: CreateUserInput) {
-  const supabase = await createClient();
   const currentUser = await getCurrentUser();
 
   const targetRole = formData.role || 'ktv';
@@ -199,13 +196,9 @@ export async function createUser(formData: CreateUserInput) {
   // Pattern mirrors registerNewTenant() in onboarding-actions.ts.
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  // Use console.warn so production builds keep the log (compiler.removeConsole
-  // in next.config.ts excludes warn/error from stripping).
   console.warn('[createUser] env check', {
     hasServiceRoleKey: !!serviceRoleKey,
-    serviceRoleKeyLen: serviceRoleKey?.length ?? 0,
     hasUrl: !!supabaseUrl,
-    email: formData.email,
   });
 
   if (!serviceRoleKey) {
@@ -222,9 +215,11 @@ export async function createUser(formData: CreateUserInput) {
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
+  const temporaryPassword = generateTemporaryPassword();
+
   const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.createUser({
     email: formData.email,
-    password: DEFAULT_NEW_STAFF_PASSWORD,
+    password: temporaryPassword,
     email_confirm: true, // bypass confirmation email (rate limit + UX)
     user_metadata: { full_name: formData.full_name },
   });
@@ -288,7 +283,7 @@ export async function createUser(formData: CreateUserInput) {
   });
 
   await safeRevalidatePath('/dashboard/settings');
-  return { data, defaultPassword: DEFAULT_NEW_STAFF_PASSWORD };
+  return { data, defaultPassword: temporaryPassword };
 }
 
 export async function updateUserStatus(id: string, status: 'active' | 'inactive') {

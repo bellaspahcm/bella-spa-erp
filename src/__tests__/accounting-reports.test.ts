@@ -103,8 +103,11 @@ const activeAdminUser = { id: 'admin-uuid-1', role: 'admin', tenant_id: 'tenant-
 describe('Accounting Core Reports & Server Actions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockFrom.mockReset();
+    mockRpc.mockReset();
     mockGetCurrentUser.mockResolvedValue(activeAdminUser);
     mockRpc.mockResolvedValue({ data: [], error: null });
+    mockFrom.mockImplementation(() => new MockQueryBuilder([]));
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -165,6 +168,12 @@ describe('Accounting Core Reports & Server Actions', () => {
   // ═══════════════════════════════════════════════════════════════════════════
   describe('Manual Adjusting Entries', () => {
     it('creates a manual adjusting journal entry successfully', async () => {
+      const auditLogsQueryBuilder = new MockQueryBuilder({ id: 'audit-log-1' });
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'audit_logs') return auditLogsQueryBuilder;
+        return new MockQueryBuilder([]);
+      });
+
       const input = {
         description: 'Chi phí khấu hao TSCĐ cuối tháng 5',
         lines: [
@@ -177,6 +186,13 @@ describe('Accounting Core Reports & Server Actions', () => {
 
       expect(result.success).toBe(true);
       expect(result.entryId).toBe('reversal-journal-uuid-1');
+      expect(mockFrom).toHaveBeenCalledWith('audit_logs');
+      expect(auditLogsQueryBuilder.insertSpy).toHaveBeenCalledWith(expect.objectContaining({
+        action: 'INSERT',
+        table_name: 'journal_entries',
+        record_id: 'reversal-journal-uuid-1',
+        tenant_id: 'tenant-uuid-1',
+      }));
       expect(AccountingEngineService.postJournalEntry).toHaveBeenCalledWith(expect.objectContaining({
         reference_type: 'MANUAL',
         description: 'Chi phí khấu hao TSCĐ cuối tháng 5',

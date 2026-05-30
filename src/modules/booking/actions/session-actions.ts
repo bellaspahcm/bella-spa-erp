@@ -6,6 +6,8 @@ import { syncBookingProgress } from './lifecycle-actions';
 import type { Database } from '@/types/database.types';
 import { FINANCE_CONSTANTS } from '@/constants/finance';
 
+type SessionLogInsert = Database['public']['Tables']['session_logs']['Insert'];
+
 export async function getSessionLogs(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
@@ -782,9 +784,38 @@ export async function addExtraSession(bookingId: string) {
 
   if (fetchError || !booking) return { error: fetchError?.message || 'Không tìm thấy booking' };
   
-  const newTotal = (booking.total_sessions || 0) + 1;
+  const previousTotal = booking.total_sessions || 0;
+  const newTotal = previousTotal + 1;
   
-  await supabase.from('bookings').update({ total_sessions: newTotal }).eq('id', bookingId);
+  const { error: updateBookingError } = await supabase
+    .from('bookings')
+    .update({ total_sessions: newTotal })
+    .eq('id', bookingId);
+
+  if (updateBookingError) {
+    return { error: updateBookingError.message };
+  }
+
+  const sessionPayload: SessionLogInsert = {
+    booking_id: bookingId,
+    session_number: newTotal,
+    status: 'scheduled',
+    tenant_id: booking.tenant_id
+  };
+
+  const { data: insertedSession, error: insertSessionError } = await supabase
+    .from('session_logs')
+    .insert(sessionPayload)
+    .select('id')
+    .single();
+
+  if (insertSessionError) {
+    await supabase
+      .from('bookings')
+      .update({ total_sessions: previousTotal })
+      .eq('id', bookingId);
+    return { error: insertSessionError.message };
+  }
 
   try {
     const { recordAuditLog } = await import('@/services/audit-actions');
@@ -796,15 +827,19 @@ export async function addExtraSession(bookingId: string) {
       new_data: { total_sessions: newTotal, notes: 'Thêm 01 buổi liệu trình phát sinh' }
     });
   } catch (auditErr) {
-    console.warn('Failed to record addExtraSession audit log:', auditErr);
+    await supabase
+      .from('session_logs')
+      .delete()
+      .eq('id', insertedSession.id);
+    await supabase
+      .from('bookings')
+      .update({ total_sessions: previousTotal })
+      .eq('id', bookingId);
+
+    return {
+      error: auditErr instanceof Error ? auditErr.message : 'Failed to record addExtraSession audit log'
+    };
   }
-  
-  await supabase.from('session_logs').insert({
-    booking_id: bookingId,
-    session_number: newTotal,
-    status: 'scheduled',
-    tenant_id: booking.tenant_id
-  });
   
   const { data: bookingData } = await supabase
     .from('bookings')

@@ -1,8 +1,11 @@
-import { getMonthlyPnL } from '../services/finance-actions';
+import { getMonthlyPnL, getServicePerformance } from '../services/finance-actions';
 
 // Mock MockQueryBuilder for Supabase chains
 class MockQueryBuilder {
-  constructor(private data: any) {}
+  static errorsByTable: Record<string, { message: string } | null> = {};
+
+  constructor(private table: string, private data: any) {}
+
   select() { return this; }
   eq() { return this; }
   gte() { return this; }
@@ -11,7 +14,10 @@ class MockQueryBuilder {
   order() { return this; }
   
   then(onfulfilled: any) {
-    return Promise.resolve(onfulfilled({ data: this.data, error: null }));
+    return Promise.resolve(onfulfilled({
+      data: this.data,
+      error: MockQueryBuilder.errorsByTable[this.table] ?? null,
+    }));
   }
 }
 
@@ -20,26 +26,26 @@ jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => ({
     from: jest.fn((table: string) => {
       if (table === 'revenue') {
-        return new MockQueryBuilder([
+        return new MockQueryBuilder(table, [
           { amount: 1000000, status: 'confirmed', revenue_type: 'package_payment', received_date: '2026-05-10' },
           { amount: 500000, status: 'pending', revenue_type: 'additional', received_date: '2026-05-12' }, // should be ignored since not 'confirmed'
         ]);
       } else if (table === 'expenses') {
-        return new MockQueryBuilder([
+        return new MockQueryBuilder(table, [
           { amount: 200000, category: 'rent', expense_date: '2026-05-01', status: 'approved' },
           { amount: 100000, category: 'utilities', expense_date: '2026-05-05', status: 'approved' },
           { amount: 1500000, category: 'salary', expense_date: '2026-05-20', status: 'approved' }, // KTV salary expense
         ]);
       } else if (table === 'bookings') {
-        return new MockQueryBuilder([
+        return new MockQueryBuilder(table, [
           { id: 'b1', status: 'completed', full_price: 1000000, completed_sessions: 10, total_sessions: 10, ktv_commission: 150000 }
         ]);
       } else if (table === 'session_logs') {
-        return new MockQueryBuilder([
+        return new MockQueryBuilder(table, [
           { id: 's1', completed_by_ktv_id: 'ktv1', status: 'completed', completed_date: '2026-05-15', booking_id: 'b1', bookings: { tenant_id: 'tenant1', ktv_commission: 150000 } }
         ]);
       }
-      return new MockQueryBuilder([]);
+      return new MockQueryBuilder(table, []);
     })
   }))
 }));
@@ -55,6 +61,10 @@ jest.mock('../services/user-actions', () => ({
 }));
 
 describe('getMonthlyPnL', () => {
+  beforeEach(() => {
+    MockQueryBuilder.errorsByTable = {};
+  });
+
   it('should calculate P&L correctly based on confirmed revenues and expenses', async () => {
     const result = await getMonthlyPnL('2026-05-01');
     
@@ -74,5 +84,27 @@ describe('getMonthlyPnL', () => {
       
       expect(result.is_locked).toBe(false);
     }
+  });
+
+  it('propagates database query errors instead of returning null', async () => {
+    MockQueryBuilder.errorsByTable.revenue = { message: 'revenue table unavailable' };
+
+    await expect(getMonthlyPnL('2026-05-01')).rejects.toThrow(
+      '[getMonthlyPnL] revenue query failed: revenue table unavailable'
+    );
+  });
+});
+
+describe('getServicePerformance', () => {
+  beforeEach(() => {
+    MockQueryBuilder.errorsByTable = {};
+  });
+
+  it('propagates database query errors instead of returning an empty array', async () => {
+    MockQueryBuilder.errorsByTable.bookings = { message: 'bookings query failed' };
+
+    await expect(getServicePerformance()).rejects.toThrow(
+      '[getServicePerformance] bookings query failed: bookings query failed'
+    );
   });
 });

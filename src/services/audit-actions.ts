@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 import { checkHqAuth } from './hq-actions';
 import { HqAuditLogFilters, HqAuditLogRecord } from '@/types/domain';
+import type { Database, Json } from '@/types/database.types';
 
 export async function getHqAuditLogs(filters: HqAuditLogFilters = {}): Promise<HqAuditLogRecord[]> {
   try {
@@ -165,35 +166,34 @@ export async function recordAuditLog(payload: {
   action: 'INSERT' | 'UPDATE' | 'DELETE';
   table_name: string;
   record_id: string;
-  old_data?: any;
-  new_data?: any;
+  old_data?: Json;
+  new_data?: Json;
 }) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 
   if (!tenantId) {
-    console.warn('[recordAuditLog] Không tìm thấy tenantId cho người dùng hiện tại, bỏ qua ghi log');
-    return;
+    throw new Error('[recordAuditLog] Missing tenantId for current user');
   }
 
-  try {
-    const { error } = await supabase.from('audit_logs').insert({
-      changed_by_id: currentUser?.id,
-      action: payload.action,
-      table_name: payload.table_name,
-      record_id: payload.record_id,
-      old_data: payload.old_data,
-      new_data: payload.new_data,
-      tenant_id: tenantId
-    });
+  const auditPayload: Database['public']['Tables']['audit_logs']['Insert'] = {
+    changed_by_id: currentUser?.id,
+    action: payload.action,
+    table_name: payload.table_name,
+    record_id: payload.record_id,
+    old_data: payload.old_data,
+    new_data: payload.new_data,
+    tenant_id: tenantId
+  };
 
-    if (error) {
-      console.warn('Failed to record audit log:', error.message);
-    }
-  } catch (err) {
-    console.error('Audit log recording failed:', err);
+  const { error } = await supabase.from('audit_logs').insert(auditPayload);
+
+  if (error) {
+    throw new Error(`[recordAuditLog] Failed to insert audit log: ${error.message}`);
   }
+
+  return { success: true };
 }
 
 export async function checkMonthLock(month?: string): Promise<{ isLocked: boolean }> {

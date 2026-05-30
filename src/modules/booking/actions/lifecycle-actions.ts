@@ -153,7 +153,12 @@ export async function createBooking(formData: any) {
         new_data: customer
       });
     } catch (auditErr) {
-      console.warn('Failed to record customer audit log in createBooking:', auditErr);
+      await supabase.from('customers').delete().eq('id', customer.id);
+      return {
+        error: auditErr instanceof Error
+          ? auditErr.message
+          : 'Failed to record customer audit log in createBooking'
+      };
     }
   }
 
@@ -259,7 +264,15 @@ export async function createBooking(formData: any) {
           new_data: bookingPayload
         });
       } catch (auditErr) {
-        console.warn('Failed to record createBooking update audit log:', auditErr);
+        await supabase
+          .from('bookings')
+          .update(existingBooking)
+          .eq('id', existingBooking.id);
+        return {
+          error: auditErr instanceof Error
+            ? auditErr.message
+            : 'Failed to record createBooking update audit log'
+        };
       }
     }
   } else {
@@ -281,7 +294,12 @@ export async function createBooking(formData: any) {
           new_data: inserted
         });
       } catch (auditErr) {
-        console.warn('Failed to record createBooking insert audit log:', auditErr);
+        await supabase.from('bookings').delete().eq('id', inserted.id);
+        return {
+          error: auditErr instanceof Error
+            ? auditErr.message
+            : 'Failed to record createBooking insert audit log'
+        };
       }
     }
   }
@@ -462,14 +480,19 @@ export async function updateBooking(id: string, payload: any) {
   
   let oldBooking = null;
   try {
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('bookings')
       .select('*')
       .eq('id', id)
       .single();
+    if (existingError) {
+      return { error: existingError.message };
+    }
     oldBooking = existing;
   } catch (err) {
-    console.warn('Failed to fetch old booking for audit trail:', err);
+    return {
+      error: err instanceof Error ? err.message : 'Failed to fetch old booking for audit trail'
+    };
   }
 
   const { data, error } = await supabase
@@ -503,7 +526,17 @@ export async function updateBooking(id: string, payload: any) {
             new_data: retryPayload
           });
         } catch (auditErr) {
-          console.warn('Failed to record updateBooking retry audit log:', auditErr);
+          if (oldBooking) {
+            await supabase
+              .from('bookings')
+              .update(oldBooking)
+              .eq('id', id);
+          }
+          return {
+            error: auditErr instanceof Error
+              ? auditErr.message
+              : 'Failed to record updateBooking retry audit log'
+          };
         }
       }
       return { data: retryData };
@@ -524,29 +557,46 @@ export async function updateBooking(id: string, payload: any) {
         new_data: payload
       });
     } catch (auditErr) {
-      console.warn('Failed to record updateBooking audit log:', auditErr);
+      if (oldBooking) {
+        await supabase
+          .from('bookings')
+          .update(oldBooking)
+          .eq('id', id);
+      }
+      return {
+        error: auditErr instanceof Error
+          ? auditErr.message
+          : 'Failed to record updateBooking audit log'
+      };
     }
   }
 
   if (payload.total_sessions !== undefined) {
     try {
       const newTotal = Number(payload.total_sessions);
-      const { data: existingLogs } = await supabase
+      const { data: existingLogs, error: existingLogsError } = await supabase
         .from('session_logs')
         .select('session_number, assigned_date, status')
         .eq('booking_id', id)
         .order('session_number', { ascending: true });
 
+      if (existingLogsError) {
+        throw new Error(existingLogsError.message);
+      }
+
       const logs = existingLogs || [];
       const maxSessionNumber = logs.length > 0 ? Math.max(...logs.map((l: any) => l.session_number || 0)) : 0;
 
       if (newTotal < maxSessionNumber) {
-        await supabase
+        const { error: deleteLogsError } = await supabase
           .from('session_logs')
           .delete()
           .eq('booking_id', id)
           .gt('session_number', newTotal)
           .eq('status', 'scheduled');
+        if (deleteLogsError) {
+          throw new Error(deleteLogsError.message);
+        }
       } else if (newTotal > maxSessionNumber) {
         const newLogs = [];
         let baseDateStr = payload.start_date || data?.[0]?.start_date;
@@ -584,13 +634,29 @@ export async function updateBooking(id: string, payload: any) {
         }
 
         if (newLogs.length > 0) {
-          await supabase.from('session_logs').insert(newLogs);
+          const { error: insertLogsError } = await supabase.from('session_logs').insert(newLogs);
+          if (insertLogsError) {
+            throw new Error(insertLogsError.message);
+          }
         }
       }
 
-      await syncBookingProgress(id);
+      const syncResult = await syncBookingProgress(id);
+      if (syncResult.error) {
+        throw new Error(syncResult.error);
+      }
     } catch (syncErr) {
-      console.error('Error synchronizing session logs inside updateBooking:', syncErr);
+      if (oldBooking) {
+        await supabase
+          .from('bookings')
+          .update(oldBooking)
+          .eq('id', id);
+      }
+      return {
+        error: syncErr instanceof Error
+          ? syncErr.message
+          : 'Error synchronizing session logs inside updateBooking'
+      };
     }
   }
 
@@ -720,6 +786,10 @@ async function finalizeReuse(newBooking: any, total: number, supabase: any) {
     .insert(sessionLogs as any);
 
   if (sessionsError) {
+    await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', newBooking.id);
     return { error: 'Đã tạo gói mới nhưng lỗi khởi tạo lịch trình: ' + sessionsError.message };
   }
 
@@ -732,7 +802,19 @@ async function finalizeReuse(newBooking: any, total: number, supabase: any) {
       new_data: newBooking
     });
   } catch (auditErr) {
-    console.warn('Failed to record reusePackage/finalizeReuse audit log:', auditErr);
+    await supabase
+      .from('session_logs')
+      .delete()
+      .eq('booking_id', newBooking.id);
+    await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', newBooking.id);
+    return {
+      error: auditErr instanceof Error
+        ? auditErr.message
+        : 'Failed to record reusePackage/finalizeReuse audit log'
+    };
   }
 
   const revalPaths = [
@@ -792,6 +874,22 @@ export async function recordRemainingPayment(params: {
     const tenantId = booking.tenant_id || currentUser?.tenant_id;
 
     let insertedRev: { id: string; status: string } | null = null;
+    const rollbackRemainingPayment = async () => {
+      if (insertedRev?.id) {
+        await supabase
+          .from('revenue')
+          .delete()
+          .eq('id', insertedRev.id);
+      }
+
+      await supabase
+        .from('bookings')
+        .update({
+          deposit_amount: booking.deposit_amount,
+          status: booking.status
+        } as any)
+        .eq('id', params.booking_id);
+    };
 
     const { data: revData, error: revError } = await supabase
       .from('revenue')
@@ -853,23 +951,28 @@ export async function recordRemainingPayment(params: {
     // ⭐ Ghi nhận vào hàng đợi Accounting Outbox nếu tạo revenue thành công và đã confirmed
     if (insertedRev?.id && insertedRev.status === 'confirmed' && tenantId) {
       const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-      await enqueueWithAutoClient(
-        supabase,
-        {
-          tenantId,
-          eventType: 'PACKAGE_SALE',
-          referenceType: 'REVENUE',
-          referenceId: insertedRev.id,
-          payload: {
-            totalAmount: params.amount,
-            vatRate: 0,
-            description: params.notes || 'Thanh toán nốt phần còn lại.',
-            // TODO Phase 29: dùng branch_id thực khi multi-branch
-            branchId: tenantId,
+      try {
+        await enqueueWithAutoClient(
+          supabase,
+          {
+            tenantId,
+            eventType: 'PACKAGE_SALE',
+            referenceType: 'REVENUE',
+            referenceId: insertedRev.id,
+            payload: {
+              totalAmount: params.amount,
+              vatRate: 0,
+              description: params.notes || 'Thanh toán nốt phần còn lại.',
+              // TODO Phase 29: dùng branch_id thực khi multi-branch
+              branchId: tenantId,
+            },
           },
-        },
-        '[recordRemainingPayment]'
-      );
+          '[recordRemainingPayment]'
+        );
+      } catch (outboxErr) {
+        await rollbackRemainingPayment();
+        throw new Error(outboxErr instanceof Error ? outboxErr.message : 'Không thể ghi nhận accounting outbox');
+      }
     }
 
     const newTotalPaid = (booking.deposit_amount || 0) + params.amount;
@@ -906,11 +1009,13 @@ export async function recordRemainingPayment(params: {
           .eq('id', params.booking_id);
         if (adminUpdateError) {
           console.error('Error updating booking with admin client as well:', adminUpdateError);
+          await rollbackRemainingPayment();
           throw new Error('Không thể cập nhật số tiền thanh toán của gói: ' + adminUpdateError.message);
         } else {
           updateError = null;
         }
       } else {
+        await rollbackRemainingPayment();
         throw new Error('Không thể cập nhật số tiền thanh toán của gói do phân quyền: ' + updateError.message);
       }
     }
@@ -925,7 +1030,8 @@ export async function recordRemainingPayment(params: {
         new_data: { deposit_amount: newTotalPaid, status: newStatus }
       });
     } catch (auditErr) {
-      console.warn('Failed to record recordRemainingPayment audit log:', auditErr);
+      await rollbackRemainingPayment();
+      throw new Error(auditErr instanceof Error ? auditErr.message : 'Failed to record recordRemainingPayment audit log');
     }
 
     if (params.status === 'confirmed' || newStatus === 'booked') {
@@ -951,7 +1057,12 @@ export async function recordRemainingPayment(params: {
             .eq('status', 'pending');
           if (adminSyncError) {
             console.error('Error syncing revenue status with admin client as well:', adminSyncError);
+            await rollbackRemainingPayment();
+            throw new Error('Không thể đồng bộ trạng thái doanh thu: ' + adminSyncError.message);
           }
+        } else {
+          await rollbackRemainingPayment();
+          throw new Error('Không thể đồng bộ trạng thái doanh thu: ' + syncError.message);
         }
       }
     }
@@ -1082,6 +1193,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
 
   // 2. Look up existing customer by phone
   let customerId: string;
+  let createdCustomerId: string | null = null;
 
   const { data: existingCustomer, error: lookupError } = await supabase
     .from('customers')
@@ -1126,6 +1238,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
     }
 
     customerId = newCustomer.id;
+    createdCustomerId = newCustomer.id;
     console.log('[submitOnlineBooking] Created new lead customer:', customerId);
 
     // Audit log for new customer
@@ -1138,7 +1251,15 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
         new_data: newCustomer,
       });
     } catch (auditErr) {
-      console.warn('[submitOnlineBooking] Audit log (customer) failed:', auditErr);
+      await supabase
+        .from('customers')
+        .delete()
+        .eq('id', customerId);
+      return {
+        error: auditErr instanceof Error
+          ? auditErr.message
+          : '[submitOnlineBooking] Audit log (customer) failed'
+      };
     }
   }
 
@@ -1167,8 +1288,28 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
 
   if (bookingError || !booking) {
     console.error('[submitOnlineBooking] Create booking error:', bookingError);
+    if (createdCustomerId) {
+      await supabase
+        .from('customers')
+        .delete()
+        .eq('id', createdCustomerId);
+    }
     return { error: 'Không thể đặt lịch. Vui lòng thử lại hoặc liên hệ hotline.' };
   }
+
+  const rollbackOnlineBooking = async () => {
+    await supabase
+      .from('bookings')
+      .delete()
+      .eq('id', booking.id);
+
+    if (createdCustomerId) {
+      await supabase
+        .from('customers')
+        .delete()
+        .eq('id', createdCustomerId);
+    }
+  };
 
   // Audit log for booking
   try {
@@ -1180,7 +1321,12 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
       new_data: booking,
     });
   } catch (auditErr) {
-    console.warn('[submitOnlineBooking] Audit log (booking) failed:', auditErr);
+    await rollbackOnlineBooking();
+    return {
+      error: auditErr instanceof Error
+        ? auditErr.message
+        : '[submitOnlineBooking] Audit log (booking) failed'
+    };
   }
   // Create notification
   try {
@@ -1198,9 +1344,16 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
 
     if (notifErr) {
       console.error('[submitOnlineBooking] Supabase insert error for notification:', notifErr);
+      await rollbackOnlineBooking();
+      return { error: 'Không thể tạo thông báo đặt lịch online: ' + notifErr.message };
     }
   } catch (notifErr) {
-    console.warn('[submitOnlineBooking] Exception while creating notification:', notifErr);
+    await rollbackOnlineBooking();
+    return {
+      error: notifErr instanceof Error
+        ? notifErr.message
+        : '[submitOnlineBooking] Exception while creating notification'
+    };
   }
 
   // Revalidate admin pages
