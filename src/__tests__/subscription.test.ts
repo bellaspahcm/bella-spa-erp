@@ -41,12 +41,19 @@ jest.mock('@/lib/supabase-server', () => ({
 
 // 2. Mock @supabase/supabase-js for webhook route
 const mockRouteRpc = jest.fn();
+const mockRouteFrom = jest.fn();
 const mockRouteSupabase = {
   rpc: mockRouteRpc,
+  from: mockRouteFrom,
 };
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => mockRouteSupabase),
+}));
+
+const mockEnqueueWithAutoClient = jest.fn();
+jest.mock('@/lib/accounting-outbox', () => ({
+  enqueueWithAutoClient: (...args: any[]) => mockEnqueueWithAutoClient(...args),
 }));
 
 // Mock next/server dependencies or other things if necessary
@@ -66,6 +73,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockEnqueueWithAutoClient.mockResolvedValue(true);
     process.env = {
       ...originalEnv,
       NEXT_PUBLIC_SUPABASE_URL: 'https://mock.supabase.co',
@@ -308,6 +316,180 @@ describe('Subscription Constraints & Webhook Suite', () => {
         p_invoice_number: 'INV-12345',
         p_payment_method: 'VietQR',
       });
+    });
+
+    it('should record BELLA booking payments with accounting metadata, audit log, and outbox', async () => {
+      const booking = {
+        id: 'booking-1',
+        booking_number: 'BK-1001',
+        tenant_id: 'tenant-1',
+        status: 'deposit_pending',
+      };
+      const revenueInsertPayloads: any[] = [];
+      const auditInsertPayloads: any[] = [];
+      const bookingStatusUpdates: any[] = [];
+
+      mockRouteFrom.mockImplementation((table: string) => {
+        const chain: any = {
+          select: jest.fn(() => chain),
+          eq: jest.fn(() => chain),
+          not: jest.fn(() => chain),
+          like: jest.fn(() => chain),
+          maybeSingle: jest.fn(() => {
+            if (table === 'bookings') return Promise.resolve({ data: booking, error: null });
+            if (table === 'revenue') return Promise.resolve({ data: null, error: null });
+            return Promise.resolve({ data: null, error: null });
+          }),
+          update: jest.fn((payload: any) => {
+            bookingStatusUpdates.push(payload);
+            return { eq: jest.fn(() => Promise.resolve({ error: null })) };
+          }),
+          delete: jest.fn(() => ({ eq: jest.fn(() => Promise.resolve({ error: null })) })),
+          insert: jest.fn((payload: any) => {
+            if (table === 'revenue') {
+              revenueInsertPayloads.push(payload);
+              return {
+                select: jest.fn(() => ({
+                  single: jest.fn(() => Promise.resolve({
+                    data: { id: 'rev-1', ...payload[0] },
+                    error: null,
+                  })),
+                })),
+              };
+            }
+            if (table === 'audit_logs') {
+              auditInsertPayloads.push(payload);
+              return Promise.resolve({ error: null });
+            }
+            return Promise.resolve({ error: null });
+          }),
+        };
+        return chain;
+      });
+
+      const req = createMockRequest({
+        transferAmount: 1000000,
+        content: 'BELLA BK-1001',
+        code: 'TX-BELLA-1',
+        transactionDate: '2026-05-21T12:00:00.000Z',
+      }, {
+        authorization: 'Bearer super-secret-webhook-key',
+      });
+
+      const response = await POST(req);
+      const resData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(resData.success).toBe(true);
+      expect(resData.processedCount).toBe(1);
+      expect(bookingStatusUpdates).toContainEqual({ status: 'booked' });
+
+      expect(revenueInsertPayloads).toHaveLength(1);
+      const revenuePayload = revenueInsertPayloads[0][0];
+      expect(revenuePayload).toMatchObject({
+        booking_id: 'booking-1',
+        amount: 1000000,
+        revenue_type: 'deposit',
+        payment_method: 'VietQR',
+        status: 'confirmed',
+        tenant_id: 'tenant-1',
+        business_event_type: 'CUSTOMER_DEPOSIT',
+        accounting_review_status: 'UNREVIEWED',
+      });
+      expect(revenuePayload.accounting_metadata).toMatchObject({
+        amount: 1000000,
+        payment_method: 'VietQR',
+        booking_id: 'booking-1',
+      });
+
+      expect(auditInsertPayloads).toHaveLength(1);
+      expect(auditInsertPayloads[0]).toMatchObject({
+        action: 'INSERT',
+        table_name: 'revenue',
+        record_id: 'rev-1',
+        tenant_id: 'tenant-1',
+      });
+      expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+        mockRouteSupabase,
+        expect.objectContaining({
+          tenantId: 'tenant-1',
+          eventType: 'PACKAGE_SALE',
+          referenceType: 'REVENUE',
+          referenceId: 'rev-1',
+        }),
+        '[Payment Webhook]'
+      );
+    });
+
+    it('should rollback booking payment side effects if audit logging fails', async () => {
+      const booking = {
+        id: 'booking-1',
+        booking_number: 'BK-1001',
+        tenant_id: 'tenant-1',
+        status: 'deposit_pending',
+      };
+      const bookingStatusUpdates: any[] = [];
+      const deletedRevenueIds: string[] = [];
+
+      mockRouteFrom.mockImplementation((table: string) => {
+        const chain: any = {
+          select: jest.fn(() => chain),
+          eq: jest.fn((field: string, value: string) => {
+            if (table === 'revenue' && field === 'id') deletedRevenueIds.push(value);
+            return chain;
+          }),
+          not: jest.fn(() => chain),
+          like: jest.fn(() => chain),
+          maybeSingle: jest.fn(() => {
+            if (table === 'bookings') return Promise.resolve({ data: booking, error: null });
+            if (table === 'revenue') return Promise.resolve({ data: null, error: null });
+            return Promise.resolve({ data: null, error: null });
+          }),
+          update: jest.fn((payload: any) => {
+            bookingStatusUpdates.push(payload);
+            return { eq: jest.fn(() => Promise.resolve({ error: null })) };
+          }),
+          delete: jest.fn(() => chain),
+          insert: jest.fn((payload: any) => {
+            if (table === 'revenue') {
+              return {
+                select: jest.fn(() => ({
+                  single: jest.fn(() => Promise.resolve({
+                    data: { id: 'rev-rollback', ...payload[0] },
+                    error: null,
+                  })),
+                })),
+              };
+            }
+            if (table === 'audit_logs') {
+              return Promise.resolve({ error: { message: 'audit unavailable' } });
+            }
+            return Promise.resolve({ error: null });
+          }),
+        };
+        return chain;
+      });
+
+      const req = createMockRequest({
+        transferAmount: 1000000,
+        content: 'BELLA BK-1001',
+        code: 'TX-BELLA-ROLLBACK',
+      }, {
+        authorization: 'Bearer super-secret-webhook-key',
+      });
+
+      const response = await POST(req);
+      const resData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(resData.processedCount).toBe(0);
+      expect(resData.details[0]).toMatchObject({
+        status: 'failed',
+        reason: 'Failed to insert audit log',
+      });
+      expect(bookingStatusUpdates).toEqual([{ status: 'booked' }, { status: 'deposit_pending' }]);
+      expect(deletedRevenueIds).toContain('rev-rollback');
+      expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
     });
   });
 });

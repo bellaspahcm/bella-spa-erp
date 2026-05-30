@@ -1,11 +1,14 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { enqueueWithAutoClient } from "@/lib/accounting-outbox";
 import { safeStringify } from "@/lib/log-redactor";
+import { findMissingRequiredFields, inferBusinessEventType } from "@/services/accounting/template-rules";
+import type { Database } from "@/types/database.types";
 
 // Initialize standard Supabase client without cookies for webhook execution
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey, {
+const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   auth: {
     persistSession: false,
     autoRefreshToken: false,
@@ -17,6 +20,16 @@ interface Transaction {
   description: string;
   transactionId: string;
   receivedDate: string;
+}
+
+function resolveAccountingReviewStatus(
+  businessEventType: ReturnType<typeof inferBusinessEventType>,
+  payload: Record<string, unknown>
+) {
+  if (!businessEventType) return "NEEDS_REVIEW";
+  return findMissingRequiredFields(businessEventType, payload).length > 0
+    ? "NEEDS_REVIEW"
+    : "UNREVIEWED";
 }
 
 // Extract transactions from multiple platforms: Casso, SePay, PayOS
@@ -156,7 +169,7 @@ export async function POST(request: NextRequest) {
         console.log(`[Payment Webhook] Match found! Subscription Invoice Number: "${invoiceNumber}"`);
         
         // Execute the RPC to renew the subscription
-        const { data: renewSuccess, error: renewErr } = await supabase.rpc('renew_tenant_subscription', {
+        const { error: renewErr } = await supabase.rpc('renew_tenant_subscription', {
           p_invoice_number: invoiceNumber,
           p_payment_method: "VietQR"
         });
@@ -215,7 +228,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 4. Update booking status and record revenue
-      let revenueType = "additional";
+      let revenueType: NonNullable<Database["public"]["Tables"]["revenue"]["Insert"]["revenue_type"]> = "additional";
       const oldStatus = booking.status;
 
       // If the booking is in deposit_pending or inquiry state, change status to 'booked' and set revenueType to 'deposit'
@@ -237,18 +250,32 @@ export async function POST(request: NextRequest) {
 
       // 5. Insert revenue entry
       const cleanDate = receivedDate ? new Date(receivedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      const businessEventType = inferBusinessEventType({
+        sourceTable: "revenue",
+        revenueType,
+      });
+      const accountingPayload = {
+        amount,
+        payment_method: "VietQR",
+        booking_id: booking.id,
+        reason: `Webhook VietQR transaction ${transactionId}: ${description}`,
+      };
+      const revenuePayload: Database["public"]["Tables"]["revenue"]["Insert"] = {
+        booking_id: booking.id,
+        amount,
+        revenue_type: revenueType,
+        payment_method: "VietQR",
+        received_date: cleanDate,
+        status: "confirmed",
+        notes: `[Đối soát Webhook] Tự động đối soát thành công qua VietQR. Mã GD ngân hàng: ${transactionId}. Nội dung CK: ${description}`,
+        tenant_id: booking.tenant_id,
+        business_event_type: businessEventType,
+        accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+        accounting_metadata: accountingPayload,
+      };
       const { data: newRevenue, error: revErr } = await supabase
         .from("revenue")
-        .insert([{
-          booking_id: booking.id,
-          amount: amount,
-          revenue_type: revenueType,
-          payment_method: "VietQR",
-          received_date: cleanDate,
-          status: "confirmed",
-          notes: `[Đối soát Webhook] Tự động gạch nợ thành công qua VietQR. Mã GD ngân hàng: ${transactionId}. Nội dung CK: ${description}`,
-          tenant_id: booking.tenant_id
-        }])
+        .insert([revenuePayload])
         .select()
         .single();
 
@@ -259,23 +286,67 @@ export async function POST(request: NextRequest) {
       }
       console.log(`[Payment Webhook] Successfully inserted revenue ID: ${newRevenue.id}`);
 
-      // 6. Record Audit Log
-      try {
-        const { error: auditErr } = await supabase.from('audit_logs').insert({
-          action: "INSERT",
-          table_name: "revenue",
-          record_id: newRevenue.id,
-          new_data: newRevenue,
-          tenant_id: booking.tenant_id,
-          changed_by_id: null // Webhook auto execution
-        });
-        if (auditErr) {
-          console.warn("[Payment Webhook] Failed to insert audit log:", auditErr.message);
-        } else {
-          console.log(`[Payment Webhook] Audit log recorded successfully`);
+      const rollbackWebhookRevenue = async (reason: string) => {
+        const { error: deleteRevenueErr } = await supabase
+          .from("revenue")
+          .delete()
+          .eq("id", newRevenue.id);
+
+        if (deleteRevenueErr) {
+          throw new Error(`[Payment Webhook] Failed to rollback revenue ${newRevenue.id}: ${deleteRevenueErr.message}`);
         }
-      } catch (auditErr) {
-        console.warn(`[Payment Webhook] Non-critical warning: Failed to record audit log:`, auditErr);
+
+        if (oldStatus === "deposit_pending" || oldStatus === "inquiry") {
+          const { error: rollbackBookingErr } = await supabase
+            .from("bookings")
+            .update({ status: oldStatus })
+            .eq("id", booking.id);
+
+          if (rollbackBookingErr) {
+            throw new Error(`[Payment Webhook] Failed to rollback booking ${booking.id}: ${rollbackBookingErr.message}`);
+          }
+        }
+
+        results.push({ transactionId, bookingNumber, status: "failed", reason });
+      };
+
+      // 6. Record Audit Log
+      const auditPayload: Database["public"]["Tables"]["audit_logs"]["Insert"] = {
+        action: "INSERT",
+        table_name: "revenue",
+        record_id: newRevenue.id,
+        new_data: newRevenue,
+        tenant_id: booking.tenant_id,
+        changed_by_id: null,
+      };
+      const { error: auditErr } = await supabase.from("audit_logs").insert(auditPayload);
+      if (auditErr) {
+        console.error("[Payment Webhook] Failed to insert audit log:", auditErr.message);
+        await rollbackWebhookRevenue("Failed to insert audit log");
+        continue;
+      }
+      console.log(`[Payment Webhook] Audit log recorded successfully`);
+
+      const outboxEnqueued = await enqueueWithAutoClient(
+        supabase,
+        {
+          tenantId: booking.tenant_id,
+          eventType: "PACKAGE_SALE",
+          referenceType: "REVENUE",
+          referenceId: newRevenue.id,
+          payload: {
+            totalAmount: amount,
+            vatRate: 0,
+            description: revenuePayload.notes || "VietQR webhook payment",
+            branchId: booking.tenant_id,
+          },
+        },
+        "[Payment Webhook]"
+      );
+
+      if (!outboxEnqueued) {
+        await rollbackWebhookRevenue("Failed to enqueue accounting outbox");
+        continue;
       }
 
       results.push({ transactionId, bookingNumber, status: "success", revenueId: newRevenue.id });
