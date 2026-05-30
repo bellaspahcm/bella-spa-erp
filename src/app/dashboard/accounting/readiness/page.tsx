@@ -19,9 +19,11 @@ import {
   getAccountingEventTemplates,
   getAccountingReadinessSummary,
   getAccountingReviewQueue,
+  resolveAccountingReviewItem,
   type AccountingEventTemplate,
   type AccountingReadinessSummary,
   type AccountingReviewItem,
+  type AccountingReviewResolutionStatus,
 } from '@/services/accounting-actions';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { cn } from '@/lib/utils';
@@ -99,6 +101,7 @@ export default function AccountingReadinessPage() {
   const [summary, setSummary] = useState<AccountingReadinessSummary | null>(null);
   const [reviewItems, setReviewItems] = useState<AccountingReviewItem[]>([]);
   const [templates, setTemplates] = useState<AccountingEventTemplate[]>([]);
+  const [resolvingItemId, setResolvingItemId] = useState<string | null>(null);
 
   const loadData = async () => {
     setRefreshing(true);
@@ -123,6 +126,27 @@ export default function AccountingReadinessPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleResolveReviewItem = async (
+    reviewItemId: string,
+    status: AccountingReviewResolutionStatus
+  ) => {
+    setResolvingItemId(reviewItemId);
+    try {
+      await resolveAccountingReviewItem({ reviewItemId, status });
+      toast.success(
+        status === 'APPROVED_FOR_POSTING'
+          ? 'Đã duyệt dòng dữ liệu cho hạch toán.'
+          : 'Đã từ chối dòng review kế toán.'
+      );
+      await loadData();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể xử lý review item.';
+      toast.error(message);
+    } finally {
+      setResolvingItemId(null);
+    }
+  };
 
   const classifiedRate = useMemo(() => {
     if (!summary?.total_records) return 0;
@@ -341,7 +365,8 @@ export default function AccountingReadinessPage() {
                   <th className="py-3 pr-4 text-3xs font-black uppercase tracking-widest text-slate-400">Nguồn</th>
                   <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400">Nghiệp vụ</th>
                   <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400">Lý do</th>
-                  <th className="py-3 pl-4 text-3xs font-black uppercase tracking-widest text-slate-400 text-right">Mức độ</th>
+                  <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400 text-right">Mức độ</th>
+                  <th className="py-3 pl-4 text-3xs font-black uppercase tracking-widest text-slate-400 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/30">
@@ -367,10 +392,32 @@ export default function AccountingReadinessPage() {
                         </div>
                       )}
                     </td>
-                    <td className="py-4 pl-4 text-right">
+                    <td className="py-4 px-4 text-right">
                       <span className={cn('inline-flex rounded-full border px-3 py-1 text-4xs font-black uppercase tracking-widest', SEVERITY_CLASS[item.severity])}>
                         {item.severity}
                       </span>
+                    </td>
+                    <td className="py-4 pl-4">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          disabled={resolvingItemId === item.id}
+                          onClick={() => handleResolveReviewItem(item.id, 'APPROVED_FOR_POSTING')}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-4xs font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          Duyệt
+                        </button>
+                        <button
+                          type="button"
+                          disabled={resolvingItemId === item.id}
+                          onClick={() => handleResolveReviewItem(item.id, 'REJECTED')}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-3 py-1.5 text-4xs font-black uppercase tracking-widest text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                        >
+                          <XCircle className="h-3 w-3" />
+                          Từ chối
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

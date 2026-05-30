@@ -6,6 +6,7 @@ export type {
   AccountingEventTemplate,
   AccountingReadinessSummary,
   AccountingReviewItem,
+  AccountingReviewResolutionStatus,
   AccountingStandardProfile,
   BusinessEventType,
   CreateAccountInput,
@@ -42,5 +43,6 @@ export {
   getAccountingReviewQueue,
   getAccountingReadinessSummary,
   createAccountingReviewItem,
+  resolveAccountingReviewItem,
   classifyAccountingSourcePreview,
 } from './accounting/templates';
