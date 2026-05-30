@@ -195,51 +195,56 @@ async function recalculateAndSaveSalaryRecord(
   if (existingError) throw existingError;
   const existing = existingData as SalaryRecordDbAdmin | null;
 
-  // Determine base salary
-  const rawBaseSalary = overrides?.base_salary !== undefined
-    ? overrides.base_salary
-    : (existing?.base_salary !== null && existing?.base_salary !== undefined
-        ? existing.base_salary
-        : (ktv?.base_salary ?? 6000000));
+  // Determine raw base salary from user profile (source of truth)
+  const rawBaseSalary = ktv?.base_salary ?? 6000000;
+  let proRataNote = '';
 
-  let finalBaseSalary = rawBaseSalary;
-  let proRataNote = existing?.notes || '';
+  const isDraft = !existing || existing.status === 'draft';
 
-  // Only calculate pro-rata if base salary has never been saved yet and no override provided
-  if (overrides?.base_salary === undefined && existing?.base_salary == null) {
-    if (attendanceListTyped.length > 0) {
-      finalBaseSalary = Math.round((rawBaseSalary / 26) * actualDays);
-      proRataNote = `📊 Công thực tế: ${actualDays}/26 ngày. ` + proRataNote;
-    } else {
-      finalBaseSalary = rawBaseSalary;
-      proRataNote = `ℹ️ Áp dụng lương cứng mặc định (Chưa có dữ liệu chấm công). ` + proRataNote;
-    }
+  // Base salary calculation: Recalculate if it's draft or new record,
+  // but preserve if it has manual/approved/published values.
+  let finalBaseSalary: number;
+  if (overrides?.base_salary !== undefined) {
+    finalBaseSalary = overrides.base_salary;
+  } else if (existing && !isDraft && existing.base_salary !== null && existing.base_salary !== undefined) {
+    finalBaseSalary = Number(existing.base_salary);
+    if (existing.notes) proRataNote = existing.notes;
+  } else if (attendanceListTyped.length > 0) {
+    // Pro-rata: (rawBaseSalary / 26) × actual work days
+    finalBaseSalary = Math.round((rawBaseSalary / 26) * actualDays);
+    proRataNote = `📊 Công thực tế: ${actualDays}/26 ngày. `;
+  } else {
+    // No attendance data yet → use full base salary as default
+    finalBaseSalary = rawBaseSalary;
+    proRataNote = `ℹ️ Áp dụng lương cứng mặc định (Chưa có dữ liệu chấm công). `;
   }
 
-  // Deductions: prioritize overrides, then existing saved, then auto attendance penalty
-  const deductions = overrides?.violations_deduction !== undefined
-    ? overrides.violations_deduction
-    : (existing?.violations_deduction !== null && existing?.violations_deduction !== undefined
-        ? existing.violations_deduction
-        : autoAttendancePenalty);
+  // Deductions calculation: Recalculate if it's draft or new record,
+  // but preserve if it has manual/approved/published values.
+  let deductions: number;
+  if (overrides?.violations_deduction !== undefined) {
+    deductions = overrides.violations_deduction;
+  } else if (existing && !isDraft && existing.violations_deduction !== null && existing.violations_deduction !== undefined) {
+    deductions = Number(existing.violations_deduction);
+    if (existing.notes && !proRataNote) proRataNote = existing.notes;
+  } else {
+    deductions = autoAttendancePenalty;
+  }
 
-  if (overrides?.violations_deduction === undefined && existing?.violations_deduction == null && (lateDays > 0 || absentDays > 0)) {
+  if (overrides?.violations_deduction === undefined && isDraft && (lateDays > 0 || absentDays > 0)) {
     proRataNote += `⚠️ Tự động trừ ${autoAttendancePenalty.toLocaleString('vi-VN')}đ (trễ ${lateDays} ngày × ${penaltyLate.toLocaleString('vi-VN')}đ + vắng ${absentDays} ngày × ${penaltyAbsent.toLocaleString('vi-VN')}đ). `;
   }
 
-  // Advances (Tạm ứng)
+  // Advances (Tạm ứng) — preserve existing value since this is always manually entered
   const advances = overrides?.service_percentage_bonus !== undefined
     ? overrides.service_percentage_bonus
-    : (existing?.service_percentage_bonus !== null && existing?.service_percentage_bonus !== undefined
-        ? existing.service_percentage_bonus
-        : 0);
+    : (existing?.service_percentage_bonus ?? 0);
 
-  // KPI Bonus
+  // KPI Bonus — ALWAYS sync from kpi_records (source of truth),
+  // UNLESS admin explicitly provides an override or it's preserved for non-drafts.
   const finalKpiBonus = overrides?.kpi_bonus !== undefined
     ? overrides.kpi_bonus
-    : (existing?.kpi_bonus !== null && existing?.kpi_bonus !== undefined
-        ? existing.kpi_bonus
-        : dbKpiBonus);
+    : (existing && !isDraft && existing.kpi_bonus !== null && existing.kpi_bonus !== undefined ? Number(existing.kpi_bonus) : dbKpiBonus);
 
   // Pro-rata if resigned
   if (ktv?.resignation_date) {

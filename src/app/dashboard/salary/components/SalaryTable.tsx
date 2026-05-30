@@ -64,6 +64,7 @@ export default function SalaryTable({
             <tr className="bg-slate-50/80 backdrop-blur-md">
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[220px]">Kỹ thuật viên</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[100px]">Số buổi</th>
+              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[100px]">Ngày công</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[100px]">Đánh giá</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Lương cứng</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[150px]">Hoa hồng ca</th>
@@ -102,6 +103,12 @@ export default function SalaryTable({
                         Đã Chốt
                       </div>
                     )}
+                  </div>
+                </td>
+                <td className="px-8 py-6 whitespace-nowrap">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-slate-600">{s.actualDays ?? '—'}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">/26</span>
                   </div>
                 </td>
                 <td className="px-8 py-6 whitespace-nowrap">

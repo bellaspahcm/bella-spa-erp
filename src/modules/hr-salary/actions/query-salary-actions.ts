@@ -209,18 +209,22 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           }
         });
 
-        const rawBaseSalary = record?.base_salary ?? ktv.base_salary ?? 6000000;
-        let baseSalary = rawBaseSalary;
-        if (record?.base_salary !== undefined && record.base_salary !== null) {
-          baseSalary = record.base_salary;
+        const isDraft = !record || record.status === 'draft';
+
+        const rawBaseSalary = ktv.base_salary ?? 6000000;
+        let baseSalary: number;
+
+        // Base salary display: Use record value if not draft, or recalculate if draft
+        if (record?.base_salary !== undefined && record.base_salary !== null && !isDraft) {
+          baseSalary = Number(record.base_salary);
         } else if (ktvAttendance.length > 0) {
           baseSalary = Math.round((rawBaseSalary / 26) * actualDays);
         } else {
           baseSalary = rawBaseSalary;
         }
 
-        // Cap by resignation date in draft if resignation is active
-        if ((record?.base_salary === undefined || record?.base_salary === null) && ktv.resignation_date) {
+        // Cap by resignation date if active
+        if (ktv.resignation_date) {
           const resignDate = new Date(ktv.resignation_date);
           const monthDate = new Date(currentMonthYear);
           if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
@@ -231,17 +235,25 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           }
         }
 
-        const kpiBonus = record?.kpi_bonus !== null && record?.kpi_bonus !== undefined
+        const kpiBonus = record?.kpi_bonus !== null && record?.kpi_bonus !== undefined && !isDraft
           ? Number(record.kpi_bonus)
           : (ktvLb?.total_kpi_bonus !== null && ktvLb?.total_kpi_bonus !== undefined
               ? Number(ktvLb.total_kpi_bonus)
               : (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0));
-        // Deductions priority:
-        //  1. Admin đã chốt manual (record.violations_deduction !== null) → giữ nguyên (đã review)
-        //  2. Chưa có record → auto-compute từ attendance (late × X + absent × Y)
-        const deductions = record?.violations_deduction ?? autoAttendancePenalty;
-        const advances = record?.service_percentage_bonus || 0;
-        const totalSalary = baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances;
+
+        // Deductions display: Use record value if not draft, or recalculate if draft
+        let deductions: number;
+        if (record?.violations_deduction !== undefined && record.violations_deduction !== null && !isDraft) {
+          deductions = Number(record.violations_deduction);
+        } else {
+          deductions = autoAttendancePenalty;
+        }
+
+        const advances = record?.service_percentage_bonus !== undefined && record.service_percentage_bonus !== null
+          ? Number(record.service_percentage_bonus)
+          : 0;
+
+        const totalSalary = Math.max(0, baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances);
 
         return {
           id: ktv.id,
