@@ -43,6 +43,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
       setPendingLeaves(leaves);
     } catch (err) {
       console.error("Failed to load pending leaves:", err);
+      toast.error("Khong the tai danh sach don nghi phep");
     }
   };
 
