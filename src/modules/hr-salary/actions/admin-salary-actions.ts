@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/services/user-actions';
 import { recordAuditLog } from '@/services/audit-actions';
 import { getLocalDateString } from '@/lib/utils';
+import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { calcProRataBaseSalary } from './base-salary-actions';
 import { getMonthStart } from '@/lib/utils';
@@ -484,6 +485,11 @@ export async function finalizeSalaryRecord(ktvId: string) {
     expense_date: expenseDate,
     description: expenseDescription,
   };
+  await assertOpenAccountingPeriod(supabase, {
+    tenantId,
+    date: expenseDate,
+    context: 'Finalize salary expense',
+  });
   const expensePayload: Database['public']['Tables']['expenses']['Insert'] = {
     amount: expenseAmount,
     category: 'salary',
@@ -600,6 +606,11 @@ export async function approveSalary(ktvId: string) {
       expense_date: expenseDate,
       description: expenseDescription,
     };
+    await assertOpenAccountingPeriod(supabase, {
+      tenantId,
+      date: expenseDate,
+      context: 'Approve salary expense',
+    });
     const expensePayload: Database['public']['Tables']['expenses']['Insert'] = {
       amount: expenseAmount,
       category: 'salary',

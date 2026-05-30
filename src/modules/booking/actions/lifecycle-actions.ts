@@ -6,6 +6,7 @@
 import { resolvePackageName, getLocalDateString, sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { bookingSchema } from '@/lib/validations';
+import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveKtvCommission } from './commission-actions';
 
@@ -322,6 +323,7 @@ export async function createBooking(formData: any) {
     let revFailed = false;
 
     const revenueType = 'deposit';
+    const receivedDate = getLocalDateString();
     const businessEventType = inferBusinessEventType({
       sourceTable: 'revenue',
       revenueType,
@@ -332,6 +334,20 @@ export async function createBooking(formData: any) {
       booking_id: booking.id,
       reason: `Cọc gói ${resolvePackageName(booking)}`,
     };
+    try {
+      await assertOpenAccountingPeriod(supabase, {
+        tenantId,
+        date: receivedDate,
+        context: 'Create booking deposit',
+      });
+    } catch (periodErr) {
+      await supabase.from('bookings').delete().eq('id', booking.id);
+      return {
+        error: periodErr instanceof Error
+          ? periodErr.message
+          : 'Accounting period is closed or unavailable',
+      };
+    }
 
     const { data: revData, error: revError } = await supabase
       .from('revenue')
@@ -340,7 +356,7 @@ export async function createBooking(formData: any) {
         amount: validatedData.deposit_amount,
         revenue_type: revenueType,
         payment_method: 'bank_transfer',
-        received_date: getLocalDateString(),
+        received_date: receivedDate,
         status: 'confirmed',
         notes: `Cọc gói ${resolvePackageName(booking)}`,
         tenant_id: tenantId,
@@ -369,7 +385,7 @@ export async function createBooking(formData: any) {
             amount: validatedData.deposit_amount,
             revenue_type: revenueType,
             payment_method: 'bank_transfer',
-            received_date: getLocalDateString(),
+            received_date: receivedDate,
             status: 'confirmed',
             notes: `Cọc gói ${resolvePackageName(booking)}`,
             tenant_id: tenantId,
@@ -902,6 +918,12 @@ export async function recordRemainingPayment(params: {
     }
 
     const tenantId = booking.tenant_id || currentUser?.tenant_id;
+    const receivedDate = getLocalDateString();
+    await assertOpenAccountingPeriod(supabase, {
+      tenantId,
+      date: receivedDate,
+      context: 'Record remaining payment',
+    });
 
     let insertedRev: { id: string; status: string } | null = null;
     const rollbackRemainingPayment = async () => {
@@ -940,7 +962,7 @@ export async function recordRemainingPayment(params: {
         amount: params.amount,
         revenue_type: revenueType,
         payment_method: params.payment_method,
-        received_date: getLocalDateString(),
+        received_date: receivedDate,
         status: params.status || 'pending',
         notes: params.notes || `Thanh toán nốt phần còn lại.`,
         receipt_url: params.receipt_url || null,
@@ -970,7 +992,7 @@ export async function recordRemainingPayment(params: {
             amount: params.amount,
             revenue_type: revenueType,
             payment_method: params.payment_method,
-            received_date: getLocalDateString(),
+            received_date: receivedDate,
             status: params.status || 'pending',
             notes: params.notes || `Thanh toán nốt phần còn lại.`,
             receipt_url: params.receipt_url || null,
