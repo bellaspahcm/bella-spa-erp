@@ -502,15 +502,6 @@ export async function getBrandDistributionMatrix() {
     throw new Error(`Failed to fetch HQ package templates for distribution matrix: ${templatesError.message}`);
   }
 
-  const { data: distributed, error: distributedError } = await supabase
-    .from('packages')
-    .select('*, tenants(name)')
-    .not('template_id', 'is', null);
-
-  if (distributedError) {
-    throw new Error(`Failed to fetch distributed packages: ${distributedError.message}`);
-  }
-
   const { data: tenants, error: tenantsError } = await supabase
     .from('tenants')
     .select('id, name')
@@ -520,6 +511,17 @@ export async function getBrandDistributionMatrix() {
     throw new Error(`Failed to fetch tenants for distribution matrix: ${tenantsError.message}`);
   }
 
+  const { data: distributed, error: distributedError } = await supabase
+    .from('packages')
+    .select('*')
+    .not('template_id', 'is', null);
+
+  if (distributedError) {
+    throw new Error(`Failed to fetch distributed packages: ${distributedError.message}`);
+  }
+
+  const tenantNamesById = new Map((tenants || []).map((tenant: any) => [tenant.id, tenant.name]));
+
   return {
     templates: (templates || []) as HqPackageTemplate[],
     distributed: (distributed || []).map((d: any) => ({
@@ -527,7 +529,7 @@ export async function getBrandDistributionMatrix() {
       name: d.name,
       price: Number(d.price),
       tenant_id: d.tenant_id,
-      tenant_name: d.tenants?.name || 'Chi nhánh',
+      tenant_name: tenantNamesById.get(d.tenant_id) || 'Chi nhanh',
       template_id: d.template_id,
       status: d.status
     })),
