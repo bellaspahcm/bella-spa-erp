@@ -27,8 +27,7 @@ export async function getKTVTodayAttendance() {
     .maybeSingle();
 
   if (error) {
-    console.error('Error fetching today attendance:', error);
-    return null;
+    throw new Error(`Failed to fetch today's KTV attendance: ${error.message}`);
   }
   return data;
 }
@@ -51,12 +50,16 @@ export async function ktvCheckIn() {
   const status = isLate ? 'late' : 'present';
 
   // Check if already checked in
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('attendance')
     .select('id')
     .eq('ktv_id', user.id)
     .eq('date', todayStr)
     .maybeSingle();
+
+  if (existingError) {
+    return { success: false, error: existingError.message };
+  }
 
   if (existing) {
     return { success: false, error: 'Bạn đã check-in ngày hôm nay rồi!' };
@@ -140,19 +143,26 @@ export async function getMonthlyAttendanceSummary(monthStr: string) {
   const endOfMonth = getLocalDateString(new Date(new Date(startOfMonth).getFullYear(), new Date(startOfMonth).getMonth() + 1, 1));
 
   // 1. Fetch all KTVs
-  const { data: ktvs } = await supabase
+  const { data: ktvs, error: ktvsError } = await supabase
     .from('users')
     .select('id, full_name, base_salary, hire_date, resignation_date, status')
     .eq('role', 'ktv');
 
+  if (ktvsError) {
+    throw new Error(`Failed to fetch KTVs for monthly attendance summary: ${ktvsError.message}`);
+  }
   if (!ktvs) return [];
 
   // 2. Fetch all attendance logs this month
-  const { data: logs } = await supabase
+  const { data: logs, error: logsError } = await supabase
     .from('attendance')
     .select('*')
     .gte('date', startOfMonth)
     .lt('date', endOfMonth);
+
+  if (logsError) {
+    throw new Error(`Failed to fetch monthly attendance logs: ${logsError.message}`);
+  }
 
   const logsList = logs || [];
 
@@ -214,12 +224,16 @@ export async function adminOverrideAttendance(payload: {
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   // Check if existing record
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('attendance')
     .select('id')
     .eq('ktv_id', payload.ktvId)
     .eq('date', payload.date)
     .maybeSingle();
+
+  if (existingError) {
+    return { success: false, error: existingError.message };
+  }
 
   const recordData = {
     ktv_id: payload.ktvId,
@@ -314,12 +328,16 @@ export async function submitKTVLeaveRequest(payload: {
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
   // Check if there is already a request for this date
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('staff_leaves')
     .select('id')
     .eq('user_id', user.id)
     .eq('leave_date', payload.leave_date)
     .maybeSingle();
+
+  if (existingError) {
+    return { success: false, error: existingError.message };
+  }
 
   if (existing) {
     return { success: false, error: 'Bạn đã đăng ký nghỉ phép ngày hôm nay rồi!' };
@@ -364,8 +382,7 @@ export async function getKTVLeaveHistory() {
     .order('leave_date', { ascending: false });
 
   if (error) {
-    console.error('Error fetching leave history:', error);
-    return [];
+    throw new Error(`Failed to fetch KTV leave history: ${error.message}`);
   }
   return data || [];
 }
@@ -391,8 +408,7 @@ export async function getPendingLeaveRequests() {
     .order('leave_date', { ascending: true });
 
   if (error) {
-    console.error('Error fetching pending leave requests:', error);
-    return [];
+    throw new Error(`Failed to fetch pending leave requests: ${error.message}`);
   }
   return data || [];
 }
@@ -429,8 +445,7 @@ export async function getKTVConflictSessions(
     .eq('assigned_date', dateStr);
 
   if (error) {
-    console.error('Error querying conflict sessions:', error);
-    return [];
+    throw new Error(`Failed to fetch KTV conflict sessions: ${error.message}`);
   }
 
   const sessions = data || [];
@@ -590,4 +605,3 @@ export async function rejectLeaveRequest(leaveId: string, rejectReason?: string)
   revalidatePath('/ktv/dashboard');
   return { success: true };
 }
-
