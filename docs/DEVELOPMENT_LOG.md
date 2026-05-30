@@ -1,11 +1,36 @@
 # 📔 Nhật ký Phát triển & Bảo trì Tổng hợp (Development & Maintenance Log)
 **Dự án**: Bella Spa Enterprise Resource Planning (ERP) System  
-**Ngày cập nhật**: 29/05/2026  
+**Ngày cập nhật**: 30/05/2026  
 **Mục tiêu**: Gom và tổng hợp tất cả các nhật ký làm việc hàng ngày của AI Agent và nhà phát triển để giúp việc tra cứu lịch sử được dễ dàng, tránh làm tràn context của AI Coding.
 
 ---
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
+
+### 🟢 Ngày 30/05/2026: Hardening DB, GPS KTV, Salary/P&L và tối ưu UI HQ/Mobile
+* **Nghiệp vụ thực hiện**:
+  * Chuẩn hóa bộ quy tắc chống hồi quy trong `AGENTS.md`: Zero Silent DB Failures, side-effect assertions, strict DB payload typing, salary recalculation engine, trạng thái P&L, salary reconciliation legacy consistency, và package-based KTV session multipliers.
+  * Hoàn thiện logic lương KTV: tính session quy đổi theo `packages.session_multiplier`, đồng bộ KPI từ `kpi_records`, bảo toàn manual approvals khi salary record không còn draft, và loại `NO_LEGACY/PENDING_LEGACY` khỏi nhóm lệch lớn trong salary reconciliation.
+  * Siết báo cáo tài chính/P&L: chỉ ghi nhận doanh thu `confirmed`, chỉ tính chi phí `approved/paid`, dùng salary record đã lưu nếu có, và pro-rata lương KTV cho record chưa lưu.
+  * Đảm bảo KTV vẫn check-in/check-out được khi GPS lỗi: GPS trở thành thao tác phụ trợ, chỉ trả warning; lỗi quan trọng như cập nhật booking, trừ kho, đếm session vẫn rollback để tránh dữ liệu nửa vời.
+  * Sửa các màn HQ và financial overview: danh sách chi nhánh hiển thị đúng Bella Spa/HQ, loại bỏ số liệu fallback giả, sửa matrix phân phối liệu trình chuẩn, và chỉnh responsive mobile cho header/date filter/thẻ liệu trình.
+  * Bổ sung hiển thị GPS check-in/check-out trong thẻ liệu trình đã hoàn thành của admin, kèm link Google Maps khi có tọa độ.
+* **Kỹ thuật**:
+  * Harden nhiều Server Actions để không nuốt lỗi DB: audit actions, brand service, customer/package audit rollback, session audit rollback, dashboard/customer/attendance/KTV reads, và KTV session start/complete rollback.
+  * Cập nhật `.gitignore` để bỏ qua `.env`, `.env.*`, vẫn cho phép `.env.example`; cấu hình Vercel đúng project `bella-spa-s-projects/bella-spa-erp`.
+  * Sửa `getBrandDistributionMatrix()` không dùng embed `packages.select('*, tenants(name)')` khi schema không có FK trực tiếp; fetch tenants riêng rồi map bằng `tenant_id`.
+  * Sửa financial chart legend bằng legend thủ công để màu chú thích khớp màu cột (`Doanh thu thuần` hồng, `Lợi nhuận sau thuế` xanh).
+  * Thêm/điều chỉnh Jest coverage cho HQ actions, brand distribution matrix, KTV GPS warning/rollback, GPS geocode attendance, salary/reconciliation/P&L regression cases.
+  * Kết quả kiểm tra cuối ngày: `npx.cmd tsc --noEmit` pass; full Jest đạt **51 test suites / 519 tests pass**.
+* **Commit nổi bật trong ngày**:
+  * `9531578` nâng cấp GPS day-by-day check-in/out và customer geolocation.
+  * `aab12d7`, `2ed15c1`, `cce05fe` chuẩn hóa salary recalculation và package session multipliers.
+  * `2f5c153`, `6afdec7` sửa strict P&L filters và dynamic KTV salary fund.
+  * `955121f`, `b4a15d5`, `6b7c254` sửa salary reconciliation legacy/discrepancy logic.
+  * `08e5039` đến `6c0d9ac` hardening audit/transaction/read failures.
+  * `497a2f6` cho phép KTV check-in/check-out khi GPS lỗi, chỉ warning.
+  * `0e4b774`, `e22c7ce` sửa HQ branch list và brand distribution matrix.
+  * `125fcf2`, `c175d89`, `9852cda`, `2827429`, `a32f4fa` tối ưu UI HQ/mobile, financial chart và thẻ liệu trình.
 
 ### 🟢 Ngày 29/05/2026: Tích hợp nút Refresh (F5)
 * **Nghiệp vụ thực hiện**:

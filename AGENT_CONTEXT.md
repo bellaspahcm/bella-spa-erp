@@ -1,6 +1,6 @@
 # 👑 BẢN ĐỒ DỰ ÁN & QUY TẮC PHÁT TRIỂN (AGENT CONTEXT)
 **Dự án**: Bella Spa Enterprise Resource Planning (ERP) System  
-**Ngày cập nhật**: 29/05/2026  
+**Ngày cập nhật**: 30/05/2026  
 **Mục tiêu**: Giúp AI Coding Assistants và lập trình viên con người nhanh chóng hiểu toàn diện dự án trong 30 giây và tuyệt đối tuân thủ các quy tắc lập trình an toàn để chống lỗi hồi quy.
 
 ---
@@ -12,6 +12,17 @@ Hệ thống quản lý chu kỳ khép kín từ Đăng ký khách hàng $\right
 
 ---
 
+## 🧭 1.1. Cập nhật trạng thái mới nhất ngày 30/05/2026
+* **Độ an toàn dữ liệu**: Đã harden hàng loạt Server Actions theo nguyên tắc Zero Silent DB Failures. Các lỗi DB trong audit, brand service, customer/package actions, dashboard/customer/attendance/KTV reads và session lifecycle phải throw hoặc trả explicit failure, không được `console.error` rồi tiếp tục thành công giả.
+* **GPS KTV**: Check-in/check-out vẫn phải thành công khi GPS lỗi. GPS check-in/out được lưu như side-effect phụ trợ và chỉ trả warning nếu lỗi; lỗi cập nhật booking, trừ kho, đếm session hoặc hậu xử lý quan trọng vẫn rollback để tránh dữ liệu nửa vời.
+* **Salary/P&L**: Salary engine dùng `recalculateAndSaveSalaryRecord`, đồng bộ KPI từ `kpi_records`, bảo toàn record không còn `draft`, tính session quy đổi theo `packages.session_multiplier`, và P&L chỉ ghi nhận doanh thu/chi phí đúng trạng thái.
+* **Salary reconciliation**: Legacy total phải dùng đủ `base_salary`, `session_bonus`, `kpi_bonus`, `rating_bonus`, trừ `violations_deduction` và xử lý `service_percentage_bonus`; `NO_LEGACY/PENDING_LEGACY` không được tính là lệch lớn.
+* **HQ/Multi-tenant**: HQ branch list dùng cùng tập tenant với KPI, không loại nhầm Bella Spa Headquarter; không tạo số liệu fallback giả khi load lỗi. Brand distribution matrix không dùng embed `tenants(name)` trên `packages`, mà fetch tenants riêng rồi map bằng `tenant_id`.
+* **UI mới sửa**: Header HQ mobile, date filter financial overview, chart legend financial overview, thẻ liệu trình mobile, GPS trong thẻ liệu trình completed, và các nút HQ desktop/mobile đã được chỉnh responsive cục bộ để không ảnh hưởng màn khác.
+* **Triển khai**: Repo đúng là `bellaspahcm/bella-spa-erp`, Vercel đúng project `bella-spa-s-projects/bella-spa-erp`. Từ cuối ngày 30/05/2026 ưu tiên chỉ `git push` để Vercel auto-deploy, tránh chạy thêm `vercel --prod` gây 2 deployment cùng commit.
+
+---
+
 ## 🛠️ 2. Công nghệ & Lệnh điều khiển chính (Scripts)
 * **Frontend**: Next.js 16 (App Router, Server Components), Tailwind CSS v4, Framer Motion.
 * **Backend**: Serverless Route Handlers, Supabase SSR.
@@ -20,7 +31,7 @@ Hệ thống quản lý chu kỳ khép kín từ Đăng ký khách hàng $\right
 * **Các lệnh chính**:
   - `npm run dev`: Chạy môi trường Local Development.
   - `npm run build`: Biên dịch dự án hoàn chỉnh.
-  - `npm run test`: Chạy toàn bộ 445 unit/logic test suites bằng Jest.
+  - `npm run test`: Chạy toàn bộ Jest test suites. Mốc mới nhất 30/05/2026: 51 suites / 519 tests pass.
   - `npx tsc --noEmit`: Kiểm tra biên dịch và kiểu dữ liệu TypeScript.
   - `npx playwright test`: Chạy các test E2E Playwright.
 
@@ -71,3 +82,25 @@ _(Bắt buộc tất cả AI và lập trình viên phải tuân thủ tuyệt �
 3. **Strict Database Payload Typing (Ép kiểu DB tĩnh):**
    - **CẤM TUYỆT ĐỐI** ép kiểu `as any` hoặc dùng object lỏng lẻo khi chèn/cập nhật dữ liệu vào Supabase.
    - Luôn sử dụng kiểu dữ liệu tự động tạo từ Supabase (ví dụ: `Database['public']['Tables']['revenue']['Insert']`) để TypeScript compiler tự động chặn đứng lỗi sai cột hoặc mismatch kiểu tại thời điểm build.
+
+4. **Salary Engine là nguồn sự thật duy nhất:**
+   - Mọi thay đổi liên quan `salary_records` phải đi qua `recalculateAndSaveSalaryRecord`.
+   - Draft salary được tính động theo attendance/pro-rata/deductions; record không còn `draft` phải bảo toàn manual approvals nếu không có override rõ ràng.
+   - KPI bonus phải đồng bộ từ `kpi_records`, không tự tính lệch ở display layer.
+
+5. **P&L và báo cáo tài chính phải lọc trạng thái nghiêm ngặt:**
+   - Doanh thu chỉ tính khi `status === 'confirmed'`.
+   - Chi phí chỉ tính khi `status === 'approved' || status === 'paid'`.
+   - KTV salary fund dùng `salary_records.total_salary` nếu đã có record; nếu chưa có record thì pro-rata theo ngày làm thực tế.
+
+6. **Salary reconciliation không được tạo false alarm:**
+   - Legacy total phải bao gồm đủ base salary, session bonus, KPI bonus, rating bonus, trừ violation deduction và service percentage bonus nếu được dùng như ứng trước.
+   - `NO_LEGACY` / `PENDING_LEGACY` là “Chưa chốt lương”, không phải “Lệch lớn”.
+
+7. **Package-based KTV session multipliers:**
+   - Các module lương/report/RPC phải dùng `packages.session_multiplier` để tính session quy đổi.
+   - `salary_records.total_sessions` là numeric/number có thể có số thập phân, ví dụ `14.5`.
+
+8. **GPS không được chặn trải nghiệm KTV:**
+   - KTV vẫn phải check-in/check-out được nếu GPS hoặc lưu tọa độ lỗi.
+   - GPS failure chỉ warning; các lỗi dữ liệu trọng yếu như booking update, inventory consume, count completed sessions vẫn phải rollback hoặc explicit failure.

@@ -391,10 +391,10 @@ export function SessionLogsDetailsModal({
         </div>
 
         {/* Modal Content */}
-        <div className="flex-1 overflow-auto p-8 bg-slate-50/50">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="flex-1 overflow-auto p-4 md:p-8 bg-slate-50/50">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
             {/* Left: Info & Notes */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="hidden md:block lg:col-span-1 space-y-6">
               <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
                   <FileEdit className="w-4 h-4 text-primary" /> 
@@ -792,12 +792,12 @@ export function SessionLogsDetailsModal({
 
             {/* Right: Calendar Grid */}
             <div className="lg:col-span-2">
-              <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 h-full">
-                <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                    <Calendar className="w-6 h-6 text-primary" /> Lịch trình
+              <div className="bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] shadow-sm border border-slate-100 h-full">
+                <div className="flex items-center justify-between mb-5 md:mb-8">
+                  <h3 className="text-lg md:text-xl font-black text-slate-900 flex items-center gap-3">
+                    <Calendar className="w-5 h-5 md:w-6 md:h-6 text-primary" /> Lịch trình
                   </h3>
-                  <div className="flex gap-4">
+                  <div className="flex gap-2 md:gap-4">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                       <span className="text-[10px] font-black uppercase text-slate-400">Xong</span>
@@ -813,7 +813,7 @@ export function SessionLogsDetailsModal({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-7 gap-3">
+                <div className="grid grid-cols-7 gap-2 md:gap-3">
                   {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map(day => (
                     <div key={day} className="text-center py-2">
                       <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{day}</span>
