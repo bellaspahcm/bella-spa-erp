@@ -8,6 +8,7 @@ import { getLocalDateString } from '@/lib/utils';
 import { calcProRataBaseSalary } from './base-salary-actions';
 import { getMonthStart } from '@/lib/utils';
 import { TenantSalaryConfig } from '@/types/domain';
+import { Database } from '@/types/database.types';
 
 // Interfaces for Database Records
 interface KtvUserDataAdmin {
@@ -52,6 +53,246 @@ interface SalaryRecordDbAdmin {
 }
 
 /**
+ * Helper to recalculate and save a KTV salary record.
+ * Handles pro-rata base salary, actual sessions count, session bonus commission,
+ * rating-based quality bonus, KPI bonus from kpi_records, and attendance deductions.
+ * Respects overrides from manual admin adjustments.
+ */
+async function recalculateAndSaveSalaryRecord(
+  supabase: any,
+  ktvId: string,
+  monthYear: string,
+  tenantId: string,
+  overrides?: {
+    base_salary?: number;
+    kpi_bonus?: number;
+    violations_deduction?: number;
+    service_percentage_bonus?: number;
+    status?: string;
+    total_sessions?: number;
+  }
+) {
+  // 1. Get KTV info (base_salary, resignation_date)
+  const { data: ktvData, error: ktvError } = await supabase
+    .from('users')
+    .select('id, full_name, base_salary, resignation_date')
+    .eq('id', ktvId)
+    .single();
+
+  if (ktvError) throw ktvError;
+  const ktv = ktvData as KtvUserDataAdmin | null;
+
+  // 2. Get salary config of tenant
+  const { data: tenantData, error: tenantError } = await supabase
+    .from('tenants')
+    .select('salary_config')
+    .eq('id', tenantId)
+    .single();
+
+  if (tenantError) throw tenantError;
+  const stored = (tenantData?.salary_config as unknown as Partial<TenantSalaryConfig>) || {};
+  const salaryConfig: TenantSalaryConfig = {
+    bonus_5_star:          stored.bonus_5_star          ?? 50000,
+    bonus_4_5_star:        stored.bonus_4_5_star        ?? 30000,
+    bonus_4_star:          stored.bonus_4_star          ?? 10000,
+    kpi_target_sessions:   stored.kpi_target_sessions   ?? 30,
+    kpi_bonus_amount:      stored.kpi_bonus_amount      ?? 1000000,
+    penalty_late_per_day:  stored.penalty_late_per_day  ?? 50000,
+    penalty_absent_per_day: stored.penalty_absent_per_day ?? 200000,
+  };
+  const penaltyLate   = salaryConfig.penalty_late_per_day   ?? 50000;
+  const penaltyAbsent = salaryConfig.penalty_absent_per_day ?? 200000;
+
+  // 3. Fetch attendance list for pro-rata base salary and auto deductions
+  const startOfMonthStr = monthYear;
+  const endOfMonthStr = getLocalDateString(new Date(new Date(monthYear).getFullYear(), new Date(monthYear).getMonth() + 1, 1));
+
+  const { data: attendanceList, error: attError } = await supabase
+    .from('attendance')
+    .select('status, date')
+    .eq('ktv_id', ktvId)
+    .gte('date', startOfMonthStr)
+    .lt('date', endOfMonthStr);
+
+  if (attError) throw attError;
+  const attendanceListTyped = (attendanceList || []) as unknown as AttendanceLogAdmin[];
+
+  let actualDays = 0;
+  if (attendanceListTyped.length > 0) {
+    attendanceListTyped.forEach((att) => {
+      if (att.status === 'present' || att.status === 'late') {
+        actualDays += 1.0;
+      } else if (att.status === 'half_day') {
+        actualDays += 0.5;
+      }
+    });
+  }
+
+  // 4. Fetch completed sessions this month
+  const { data: sessions, error: sessionsError } = await supabase
+    .from('session_logs')
+    .select('id, rating, bookings(ktv_commission), session_reviews(rating, status)')
+    .eq('completed_by_ktv_id', ktvId)
+    .eq('status', 'completed')
+    .gte('completed_date', startOfMonthStr)
+    .lt('completed_date', endOfMonthStr);
+
+  if (sessionsError) throw sessionsError;
+  const sessionsTyped = (sessions || []) as unknown as SessionLogAdmin[];
+
+  const sessionsCount = overrides?.total_sessions !== undefined
+    ? overrides.total_sessions
+    : sessionsTyped.length;
+
+  const sessionBonus = sessionsTyped.reduce((acc: number, s) =>
+    acc + (s.bookings?.ktv_commission || 150000), 0);
+
+  // 5. Fetch blended composite rating from get_ktv_leaderboard RPC
+  const { data: leaderboardData, error: leaderboardError } = await supabase.rpc(
+    'get_ktv_leaderboard',
+    { p_tenant_id: tenantId, p_month: monthYear }
+  );
+  if (leaderboardError) throw leaderboardError;
+
+  const leaderboard = (leaderboardData || []) as unknown as {
+    ktv_id: string;
+    average_rating: number | null;
+    late_days: number | null;
+    absent_days: number | null;
+  }[];
+  const ktvRow = leaderboard.find((row) => row.ktv_id === ktvId);
+  const avgRating: number | null = ktvRow?.average_rating ?? null;
+  const lateDays   = ktvRow?.late_days   ?? 0;
+  const absentDays = ktvRow?.absent_days ?? 0;
+  const autoAttendancePenalty = (lateDays * penaltyLate) + (absentDays * penaltyAbsent);
+
+  let bonusPerSession = 0;
+  if (avgRating !== null) {
+    if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
+    else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
+    else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
+  }
+  const ratingBonus = sessionsCount * bonusPerSession;
+
+  // 6. Fetch KPI bonus from kpi_records
+  const { data: kpiRecords, error: kpiError } = await supabase
+    .from('kpi_records')
+    .select('bonus_amount')
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear);
+  
+  if (kpiError) throw kpiError;
+  const dbKpiBonus = kpiRecords?.reduce((acc: number, k: any) => acc + Number(k.bonus_amount || 0), 0) ?? 0;
+
+  // 7. Get existing salary record
+  const { data: existingData, error: existingError } = await supabase
+    .from('salary_records')
+    .select('*')
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  const existing = existingData as SalaryRecordDbAdmin | null;
+
+  // Determine base salary
+  const rawBaseSalary = overrides?.base_salary !== undefined
+    ? overrides.base_salary
+    : (existing?.base_salary !== null && existing?.base_salary !== undefined
+        ? existing.base_salary
+        : (ktv?.base_salary ?? 6000000));
+
+  let finalBaseSalary = rawBaseSalary;
+  let proRataNote = existing?.notes || '';
+
+  // Only calculate pro-rata if base salary has never been saved yet and no override provided
+  if (overrides?.base_salary === undefined && existing?.base_salary == null) {
+    if (attendanceListTyped.length > 0) {
+      finalBaseSalary = Math.round((rawBaseSalary / 26) * actualDays);
+      proRataNote = `📊 Công thực tế: ${actualDays}/26 ngày. ` + proRataNote;
+    } else {
+      finalBaseSalary = rawBaseSalary;
+      proRataNote = `ℹ️ Áp dụng lương cứng mặc định (Chưa có dữ liệu chấm công). ` + proRataNote;
+    }
+  }
+
+  // Deductions: prioritize overrides, then existing saved, then auto attendance penalty
+  const deductions = overrides?.violations_deduction !== undefined
+    ? overrides.violations_deduction
+    : (existing?.violations_deduction !== null && existing?.violations_deduction !== undefined
+        ? existing.violations_deduction
+        : autoAttendancePenalty);
+
+  if (overrides?.violations_deduction === undefined && existing?.violations_deduction == null && (lateDays > 0 || absentDays > 0)) {
+    proRataNote += `⚠️ Tự động trừ ${autoAttendancePenalty.toLocaleString('vi-VN')}đ (trễ ${lateDays} ngày × ${penaltyLate.toLocaleString('vi-VN')}đ + vắng ${absentDays} ngày × ${penaltyAbsent.toLocaleString('vi-VN')}đ). `;
+  }
+
+  // Advances (Tạm ứng)
+  const advances = overrides?.service_percentage_bonus !== undefined
+    ? overrides.service_percentage_bonus
+    : (existing?.service_percentage_bonus !== null && existing?.service_percentage_bonus !== undefined
+        ? existing.service_percentage_bonus
+        : 0);
+
+  // KPI Bonus
+  const finalKpiBonus = overrides?.kpi_bonus !== undefined
+    ? overrides.kpi_bonus
+    : (existing?.kpi_bonus !== null && existing?.kpi_bonus !== undefined
+        ? existing.kpi_bonus
+        : dbKpiBonus);
+
+  // Pro-rata if resigned
+  if (ktv?.resignation_date) {
+    const resignDate = new Date(ktv.resignation_date);
+    const monthDate = new Date(monthYear);
+    const now = new Date();
+    if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
+      const resignCap = await calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
+      if (finalBaseSalary > resignCap) {
+        finalBaseSalary = resignCap;
+      }
+      proRataNote += `⚠️ KTV nghỉ việc từ ngày ${resignDate.toLocaleDateString('vi-VN')}`;
+    }
+  }
+
+  const totalSalary = Math.max(0, finalBaseSalary + sessionBonus + ratingBonus + finalKpiBonus - deductions - advances);
+  const status = overrides?.status || existing?.status || 'draft';
+
+  const payload: Database['public']['Tables']['salary_records']['Insert'] = {
+    ktv_id: ktvId,
+    month_year: monthYear,
+    base_salary: finalBaseSalary,
+    session_bonus: sessionBonus,
+    rating_bonus: ratingBonus,
+    kpi_bonus: finalKpiBonus,
+    violations_deduction: deductions,
+    service_percentage_bonus: advances,
+    total_sessions: sessionsCount,
+    total_salary: totalSalary,
+    status,
+    published_at: overrides?.status === 'published' ? new Date().toISOString() : (existing?.published_at || null),
+    notes: proRataNote || null,
+    tenant_id: tenantId,
+  };
+
+  let result;
+  if (existing) {
+    result = await supabase
+      .from('salary_records')
+      .update(payload as Database['public']['Tables']['salary_records']['Update'])
+      .eq('id', existing.id);
+  } else {
+    result = await supabase
+      .from('salary_records')
+      .insert(payload);
+  }
+
+  if (result.error) throw result.error;
+
+  return { success: true, totalSalary };
+}
+
+/**
  * ADMIN: Publish salary record to KTV for confirmation.
  * Calculates final salary breakdown and sets status to 'published'.
  */
@@ -71,185 +312,21 @@ export async function publishSalaryRecord(ktvId: string) {
   }
 
   try {
-    // 1. Get KTV info (base_salary, resignation_date)
-    const { data: ktvData } = await supabase
-      .from('users')
-      .select('id, full_name, base_salary, resignation_date')
-      .eq('id', ktvId)
-      .single();
+    const res = await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, {
+      status: 'published'
+    });
 
-    const ktv = ktvData as KtvUserDataAdmin | null;
-
-    const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
-    const stored = (tenantData?.salary_config as unknown as Partial<TenantSalaryConfig>) || {};
-    const salaryConfig: TenantSalaryConfig = {
-      bonus_5_star:          stored.bonus_5_star          ?? 50000,
-      bonus_4_5_star:        stored.bonus_4_5_star        ?? 30000,
-      bonus_4_star:          stored.bonus_4_star          ?? 10000,
-      kpi_target_sessions:   stored.kpi_target_sessions   ?? 30,
-      kpi_bonus_amount:      stored.kpi_bonus_amount      ?? 1000000,
-      penalty_late_per_day:  stored.penalty_late_per_day  ?? 50000,
-      penalty_absent_per_day: stored.penalty_absent_per_day ?? 200000,
-    };
-    const penaltyLate   = salaryConfig.penalty_late_per_day   ?? 50000;
-    const penaltyAbsent = salaryConfig.penalty_absent_per_day ?? 200000;
-
-    // 1.1 Fetch actual attendance records this month for pro-rata calculation
-    const startOfMonthStr = monthYear;
-    const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
-
-    const { data: attendanceList } = await supabase
-      .from('attendance')
-      .select('status, date')
-      .eq('ktv_id', ktvId)
-      .gte('date', startOfMonthStr)
-      .lt('date', endOfMonthStr);
-
-    const attendanceListTyped = (attendanceList || []) as unknown as AttendanceLogAdmin[];
-
-    let actualDays = 0;
-    if (attendanceListTyped.length > 0) {
-      attendanceListTyped.forEach((att) => {
-        if (att.status === 'present' || att.status === 'late') {
-          actualDays += 1.0;
-        } else if (att.status === 'half_day') {
-          actualDays += 0.5;
-        }
-      });
-    }
-
-    // 2. Fetch completed sessions this month with nested reviews joined by session_log_id
-    const startOfMonth = monthYear;
-    const endOfMonth = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
-    const { data: sessions } = await supabase
-      .from('session_logs')
-      .select('id, rating, bookings(ktv_commission), session_reviews(rating, status)')
-      .eq('completed_by_ktv_id', ktvId)
-      .eq('status', 'completed')
-      .gte('completed_date', startOfMonth)
-      .lt('completed_date', endOfMonth);
-
-    const sessionsTyped = (sessions || []) as unknown as SessionLogAdmin[];
-
-    const sessionsCount = sessionsTyped.length;
-    const sessionBonus = sessionsTyped.reduce((acc: number, s) =>
-      acc + (s.bookings?.ktv_commission || 150000), 0);
-
-    // 3. Fetch blended composite rating from get_ktv_leaderboard RPC.
-    //    Single source of truth — same as leaderboard / dashboard / SalaryTable.
-    //    null (no activity in month) → no quality bonus paid.
-    const { data: leaderboardData, error: leaderboardError } = await supabase.rpc(
-      'get_ktv_leaderboard',
-      { p_tenant_id: tenantId, p_month: monthYear }
-    );
-    if (leaderboardError) {
-      console.error('[publishSalaryRecord] get_ktv_leaderboard failed:', leaderboardError);
-      return { success: false, error: `get_ktv_leaderboard failed: ${leaderboardError.message}` };
-    }
-    const leaderboard = (leaderboardData || []) as unknown as {
-      ktv_id: string;
-      average_rating: number | null;
-      late_days: number | null;
-      absent_days: number | null;
-    }[];
-    const ktvRow = leaderboard.find((row) => row.ktv_id === ktvId);
-    const avgRating: number | null = ktvRow?.average_rating ?? null;
-    const lateDays   = ktvRow?.late_days   ?? 0;
-    const absentDays = ktvRow?.absent_days ?? 0;
-    const autoAttendancePenalty = (lateDays * penaltyLate) + (absentDays * penaltyAbsent);
-
-    let bonusPerSession = 0;
-    if (avgRating !== null) {
-      if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
-      else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
-      else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
-    }
-    const ratingBonus = sessionsCount * bonusPerSession;
-
-    // 4. Get or init salary record for adjustments
-    const { data: existingData } = await supabase
-      .from('salary_records')
-      .select('*')
-      .eq('ktv_id', ktvId)
-      .eq('month_year', monthYear)
-      .maybeSingle();
-
-    const existing = existingData as SalaryRecordDbAdmin | null;
-
-    const rawBaseSalary = existing?.base_salary ?? ktv?.base_salary ?? 6000000;
-    const kpiBonus = existing?.kpi_bonus ?? (sessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
-    // Deductions: nếu admin đã chốt manual → giữ; chưa có thì auto từ attendance.
-    const deductions = existing?.violations_deduction ?? autoAttendancePenalty;
-    const advances = existing?.service_percentage_bonus ?? 0;
-
-    // 5. Pro-rata if resigned
-    let finalBaseSalary = rawBaseSalary;
-    let finalKpiBonus = kpiBonus;
-    let finalRatingBonus = ratingBonus;
-    let proRataNote = '';
-
-    if (attendanceListTyped.length > 0) {
-      // Pro-rata based on actual working days (Target = 26 days)
-      finalBaseSalary = Math.round((rawBaseSalary / 26) * actualDays);
-      proRataNote = `📊 Công thực tế: ${actualDays}/26 ngày. `;
-    } else {
-      // Fallback safeguard: if exactly 0 attendance records, pay full base salary
-      finalBaseSalary = rawBaseSalary;
-      proRataNote = `ℹ️ Áp dụng lương cứng mặc định (Chưa có dữ liệu chấm công). `;
-    }
-
-    // Trace nguồn phạt cho admin biết tiền trừ từ đâu
-    if (existing?.violations_deduction == null && (lateDays > 0 || absentDays > 0)) {
-      proRataNote += `⚠️ Tự động trừ ${autoAttendancePenalty.toLocaleString('vi-VN')}đ (trễ ${lateDays} ngày × ${penaltyLate.toLocaleString('vi-VN')}đ + vắng ${absentDays} ngày × ${penaltyAbsent.toLocaleString('vi-VN')}đ). `;
-    }
-
-    if (ktv?.resignation_date) {
-      const resignDate = new Date(ktv.resignation_date);
-      const monthDate = new Date(monthYear);
-      if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
-        const resignCap = await calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
-        if (finalBaseSalary > resignCap) {
-          finalBaseSalary = resignCap;
-        }
-        finalKpiBonus = 0;
-        finalRatingBonus = 0;
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const daysWorked = resignDate.getDate();
-        proRataNote += `⚠️ KTV nghỉ việc từ ngày ${resignDate.toLocaleDateString('vi-VN')} (Giới hạn tối đa ${daysWorked}/${daysInMonth} ngày)`;
-      }
-    }
-
-    const totalSalary = Math.max(0, finalBaseSalary + sessionBonus + finalRatingBonus + finalKpiBonus - deductions - advances);
-
-    // 6. Upsert salary record
-    const payload = {
-      ktv_id: ktvId,
-      month_year: monthYear,
-      base_salary: finalBaseSalary,
-      session_bonus: sessionBonus,
-      rating_bonus: finalRatingBonus,
-      kpi_bonus: finalKpiBonus,
-      violations_deduction: deductions,
-      service_percentage_bonus: advances,
-      total_sessions: sessionsCount,
-      total_salary: totalSalary,
-      status: 'published',
-      published_at: new Date().toISOString(),
-      notes: proRataNote || null,
-      tenant_id: tenantId,
-    };
-
-    if (existing) {
-      await supabase.from('salary_records').update(payload).eq('id', existing.id);
-    } else {
-      await supabase.from('salary_records').insert(payload);
-    }
-
-    await recordAuditLog({ action: 'UPDATE', table_name: 'salary_records', record_id: ktvId, new_data: { status: 'published', totalSalary } });
+    await recordAuditLog({ 
+      action: 'UPDATE', 
+      table_name: 'salary_records', 
+      record_id: ktvId, 
+      new_data: { status: 'published', totalSalary: res.totalSalary } 
+    });
     revalidatePath('/dashboard/salary');
     return { success: true };
   } catch (e: unknown) {
     const err = e as Error;
+    console.error('Error in publishSalaryRecord:', err);
     return { success: false, error: err.message || 'Lỗi không xác định' };
   }
 }
@@ -423,8 +500,7 @@ export async function approveSalary(ktvId: string) {
       .single();
 
     if (ktvError) throw ktvError;
-
-    const ktv = ktvData as KtvUserDataAdmin | null;
+    const ktv = ktvData;
 
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id || ktv?.tenant_id;
@@ -432,94 +508,27 @@ export async function approveSalary(ktvId: string) {
       return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
     }
 
-    const { data: tenantData, error: tenantError } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
-    if (tenantError) throw tenantError;
+    // 2. Recalculate and update status to 'approved'
+    const res = await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, {
+      status: 'approved'
+    });
 
-    const salaryConfig = (tenantData?.salary_config as unknown as TenantSalaryConfig) || {
-      bonus_5_star: 50000,
-      bonus_4_5_star: 30000,
-      bonus_4_star: 10000,
-      kpi_target_sessions: 30,
-      kpi_bonus_amount: 1000000
-    };
-
-    const endOfMonth = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
-
-    // 2. Fetch completed sessions with booking details to get the locked commission rate
-    const { data: sessions, error: sessionsError } = await supabase
-      .from('session_logs')
-      .select('id, bookings(ktv_commission)')
-      .eq('completed_by_ktv_id', ktvId)
-      .eq('status', 'completed')
-      .gte('completed_date', monthYear)
-      .lt('completed_date', endOfMonth);
-    
-    if (sessionsError) throw sessionsError;
-
-    const sessionsTyped = (sessions || []) as unknown as SessionLogAdmin[];
-    
-    const ktvSessionsCount = sessionsTyped.length;
-    
-    const sessionBonus = sessionsTyped.reduce((acc: number, s) => {
-      return acc + (s.bookings?.ktv_commission || 150000);
-    }, 0);
-
-    // 3. Get/Calculate salary details
-    const { data: existingData, error: existingError } = await supabase
+    // 3. Fetch the updated record to get its ID for expense description
+    const { data: recordData, error: fetchError } = await supabase
       .from('salary_records')
-      .select('*')
+      .select('id')
       .eq('ktv_id', ktvId)
       .eq('month_year', monthYear)
-      .maybeSingle();
+      .single();
+    if (fetchError) throw fetchError;
 
-    if (existingError) throw existingError;
-
-    const existing = existingData as SalaryRecordDbAdmin | null;
-
-    const baseSalary = existing?.base_salary || 6000000;
-    const kpiBonus = existing?.kpi_bonus ?? (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
-    const ratingBonus = existing?.rating_bonus || 0;
-    const deductions = existing?.violations_deduction || 0;
-    const advances = existing?.service_percentage_bonus || 0;
-    const totalSalary = Math.max(0, baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances);
-
-    let salaryRecordId = existing?.id;
-
-    // 4. Update or Insert salary record
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from('salary_records')
-        .update({ status: 'approved' })
-        .eq('id', existing.id);
-      
-      if (updateError) throw updateError;
-    } else {
-      const { data: insertedRecord, error: insertError } = await supabase
-        .from('salary_records')
-        .insert([{
-          ktv_id: ktvId,
-          month_year: monthYear,
-          base_salary: baseSalary,
-          kpi_bonus: kpiBonus,
-          violations_deduction: deductions,
-          service_percentage_bonus: advances,
-          status: 'approved',
-          tenant_id: tenantId
-        }])
-        .select()
-        .single();
-      
-      if (insertError) throw insertError;
-      salaryRecordId = insertedRecord?.id;
-    }
-
-    // 5. Create expense record in Finance dashboard
+    // 4. Create expense record in Finance dashboard
     const { error: expenseError } = await supabase
       .from('expenses')
       .insert({
-        amount: totalSalary,
+        amount: res.totalSalary,
         category: 'salary',
-        description: `Thanh toán lương T${monthLabel} - KTV ${ktv?.full_name || 'Nhân viên'} [salary_record_id:${salaryRecordId || ''}] [ktv_id:${ktvId}]`,
+        description: `Thanh toán lương T${monthLabel} - KTV ${ktv?.full_name || 'Nhân viên'} [salary_record_id:${recordData.id}] [ktv_id:${ktvId}]`,
         status: 'submitted', // Will appear as "Chờ duyệt" in Finance
         expense_date: new Date().toISOString(),
         tenant_id: tenantId
@@ -534,7 +543,7 @@ export async function approveSalary(ktvId: string) {
       record_id: ktvId,
       new_data: { 
         status: 'approved', 
-        amount: totalSalary, 
+        amount: res.totalSalary, 
         ktv_name: ktv?.full_name 
       }
     });
@@ -564,52 +573,21 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
   }
 
   try {
-    // Check if record exists
-    const { data: existing } = await supabase
-      .from('salary_records')
-      .select('id')
-      .eq('ktv_id', ktvId)
-      .eq('month_year', monthYear)
-      .single();
-
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
     if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
-    if (existing) {
-      const { error } = await supabase
-        .from('salary_records')
-        .update({
-          base_salary: payload.baseSalary,
-          kpi_bonus: payload.kpiBonus,
-          violations_deduction: payload.deductions,
-          service_percentage_bonus: payload.advances,
-          status: 'pending_approval' // Change status to "Chờ duyệt"
-        })
-        .eq('id', existing.id);
-
-      if (error) return { success: false, error: error.message };
-    } else {
-      // Insert new
-      const { error } = await supabase
-        .from('salary_records')
-        .insert([{
-          ktv_id: ktvId,
-          month_year: monthYear,
-          base_salary: payload.baseSalary,
-          kpi_bonus: payload.kpiBonus,
-          violations_deduction: payload.deductions,
-          service_percentage_bonus: payload.advances,
-          status: 'pending_approval', // Set as "Chờ duyệt"
-          tenant_id: tenantId
-        }]);
-
-      if (error) return { success: false, error: error.message };
-    }
+    await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, {
+      base_salary: payload.baseSalary,
+      kpi_bonus: payload.kpiBonus,
+      violations_deduction: payload.deductions,
+      service_percentage_bonus: payload.advances,
+      status: 'pending_approval'
+    });
 
     // Record Audit Log
     await recordAuditLog({
-      action: existing ? 'UPDATE' : 'INSERT',
+      action: 'UPDATE',
       table_name: 'salary_records',
       record_id: ktvId,
       new_data: payload
@@ -650,48 +628,14 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
 
     if (sessionError) {
       console.error('Error updating session_logs:', sessionError);
+      throw sessionError;
     }
 
-    // 2. Check for existing salary record
-    const { data: existing, error: fetchError } = await supabase
-      .from('salary_records')
-      .select('id')
-      .eq('ktv_id', ktvId)
-      .eq('month_year', currentMonthYear)
-      .maybeSingle();
-
-    if (fetchError) {
-      console.error('Error fetching existing salary record:', fetchError);
-      return { success: false, error: fetchError.message };
-    }
-
-    let result;
-    if (existing) {
-      console.log(`Updating existing salary record: ${existing.id}`);
-      result = await supabase
-        .from('salary_records')
-        .update({ 
-          total_sessions: totalSessions,
-          status: 'pending_approval'
-        })
-        .eq('id', existing.id);
-    } else {
-      console.log(`Inserting new salary record for KTV: ${ktvId}`);
-      result = await supabase
-        .from('salary_records')
-        .insert({
-          ktv_id: ktvId,
-          month_year: currentMonthYear,
-          total_sessions: totalSessions,
-          status: 'pending_approval',
-          tenant_id: tenantId // Crucial: add tenant_id for consistency
-        });
-    }
-
-    if (result.error) {
-      console.error('Error updating/inserting salary record:', result.error);
-      return { success: false, error: result.error.message };
-    }
+    // 2. Recalculate and update the salary record
+    await recalculateAndSaveSalaryRecord(supabase, ktvId, currentMonthYear, tenantId, {
+      total_sessions: totalSessions,
+      status: 'pending_approval'
+    });
 
     console.log('Session confirmation successful');
     revalidatePath('/dashboard/salary');

@@ -230,7 +230,11 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           }
         }
 
-        const kpiBonus = record?.kpi_bonus ?? (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0);
+        const kpiBonus = record?.kpi_bonus !== null && record?.kpi_bonus !== undefined
+          ? Number(record.kpi_bonus)
+          : (ktvLb?.total_kpi_bonus !== null && ktvLb?.total_kpi_bonus !== undefined
+              ? Number(ktvLb.total_kpi_bonus)
+              : (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0));
         // Deductions priority:
         //  1. Admin đã chốt manual (record.violations_deduction !== null) → giữ nguyên (đã review)
         //  2. Chưa có record → auto-compute từ attendance (late × X + absent × Y)
