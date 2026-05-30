@@ -1,4 +1,4 @@
-import { getMonthlyPnL, getServicePerformance } from '../services/finance-actions';
+import { getFinancialOverview, getMonthlyPnL, getServicePerformance } from '../services/finance-actions';
 
 // Mock MockQueryBuilder for Supabase chains
 class MockQueryBuilder {
@@ -91,6 +91,28 @@ describe('getMonthlyPnL', () => {
 
     await expect(getMonthlyPnL('2026-05-01')).rejects.toThrow(
       '[getMonthlyPnL] revenue query failed: revenue table unavailable'
+    );
+  });
+});
+
+describe('getFinancialOverview', () => {
+  beforeEach(() => {
+    MockQueryBuilder.errorsByTable = {};
+  });
+
+  it('propagates revenue query errors instead of returning partial totals', async () => {
+    MockQueryBuilder.errorsByTable.revenue = { message: 'revenue overview failed' };
+
+    await expect(getFinancialOverview()).rejects.toThrow(
+      '[getFinancialOverview] revenue query failed: revenue overview failed'
+    );
+  });
+
+  it('propagates expenses query errors instead of returning partial totals', async () => {
+    MockQueryBuilder.errorsByTable.expenses = { message: 'expenses overview failed' };
+
+    await expect(getFinancialOverview()).rejects.toThrow(
+      '[getFinancialOverview] expenses query failed: expenses overview failed'
     );
   });
 });

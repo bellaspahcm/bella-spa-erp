@@ -40,10 +40,10 @@ export async function getFinancialOverview() {
   ]);
 
   if (revenueResponse.error) {
-    console.error('[getFinancialOverview] revenue error:', revenueResponse.error);
+    throw new Error(`[getFinancialOverview] revenue query failed: ${revenueResponse.error.message}`);
   }
   if (expensesResponse.error) {
-    console.error('[getFinancialOverview] expenses error:', expensesResponse.error);
+    throw new Error(`[getFinancialOverview] expenses query failed: ${expensesResponse.error.message}`);
   }
 
   const revenueData = (revenueResponse.data as unknown as RevenueDBRow[]) || [];
