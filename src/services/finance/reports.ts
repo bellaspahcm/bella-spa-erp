@@ -53,14 +53,14 @@ export async function getMonthlyPnL(month?: string) {
       .filter((r) => r.status === 'confirmed')
       .reduce((s: number, r) => s + Number(r.amount || 0), 0);
 
-    // Operating expenses: exclude 'salary' category (that's KTV salary)
+    // Operating expenses: exclude 'salary' category (that's KTV salary) and only count approved or paid expenses
     const totalOperatingExpenses = expenses
-      .filter((e) => e.category !== 'salary')
+      .filter((e) => e.category !== 'salary' && (e.status === 'approved' || e.status === 'paid'))
       .reduce((s: number, e) => s + Number(e.amount || 0), 0);
 
     // Salary expenses (dynamic real-time calculation if not locked / no salary expenses in DB yet)
     let totalKtvSalaries = expenses
-      .filter((e) => e.category === 'salary')
+      .filter((e) => e.category === 'salary' && (e.status === 'approved' || e.status === 'paid'))
       .reduce((s: number, e) => s + Number(e.amount || 0), 0);
 
     if (totalKtvSalaries === 0) {
