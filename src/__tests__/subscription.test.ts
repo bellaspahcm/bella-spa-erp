@@ -73,6 +73,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRouteRpc.mockResolvedValue({ data: null, error: null });
     mockEnqueueWithAutoClient.mockResolvedValue(true);
     process.env = {
       ...originalEnv,
@@ -419,6 +420,70 @@ describe('Subscription Constraints & Webhook Suite', () => {
         }),
         '[Payment Webhook]'
       );
+    });
+
+    it('should reject BELLA booking payments when the accounting period is closed', async () => {
+      const booking = {
+        id: 'booking-1',
+        booking_number: 'BK-1001',
+        tenant_id: 'tenant-1',
+        status: 'deposit_pending',
+      };
+      const bookingStatusUpdates: any[] = [];
+      const revenueInsertPayloads: any[] = [];
+
+      mockRouteRpc.mockImplementation((fnName: string) => {
+        if (fnName === 'ensure_open_period') {
+          return Promise.resolve({
+            data: null,
+            error: { message: 'Accounting period is closed' },
+          });
+        }
+        return Promise.resolve({ data: null, error: null });
+      });
+      mockRouteFrom.mockImplementation((table: string) => {
+        const chain: any = {
+          select: jest.fn(() => chain),
+          eq: jest.fn(() => chain),
+          not: jest.fn(() => chain),
+          like: jest.fn(() => chain),
+          maybeSingle: jest.fn(() => {
+            if (table === 'bookings') return Promise.resolve({ data: booking, error: null });
+            if (table === 'revenue') return Promise.resolve({ data: null, error: null });
+            return Promise.resolve({ data: null, error: null });
+          }),
+          update: jest.fn((payload: any) => {
+            bookingStatusUpdates.push(payload);
+            return { eq: jest.fn(() => Promise.resolve({ error: null })) };
+          }),
+          insert: jest.fn((payload: any) => {
+            revenueInsertPayloads.push(payload);
+            return Promise.resolve({ error: null });
+          }),
+        };
+        return chain;
+      });
+
+      const req = createMockRequest({
+        transferAmount: 1000000,
+        content: 'BELLA BK-1001',
+        code: 'TX-CLOSED-PERIOD',
+        transactionDate: '2026-05-21T12:00:00.000Z',
+      }, {
+        authorization: 'Bearer super-secret-webhook-key',
+      });
+
+      const response = await POST(req);
+      const resData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(resData.processedCount).toBe(0);
+      expect(resData.details[0]).toMatchObject({
+        status: 'failed',
+      });
+      expect(resData.details[0].reason).toMatch(/accounting period is closed/i);
+      expect(bookingStatusUpdates).toEqual([]);
+      expect(revenueInsertPayloads).toEqual([]);
     });
 
     it('should rollback booking payment side effects if audit logging fails', async () => {
