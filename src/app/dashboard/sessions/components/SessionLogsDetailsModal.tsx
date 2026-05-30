@@ -63,6 +63,11 @@ export function SessionLogsDetailsModal({
   const [isReusingId, setIsReusingId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const formatGps = (lat: number | null, lon: number | null) => {
+    if (lat === null || lon === null) return null;
+    return `${Number(lat).toFixed(5)}, ${Number(lon).toFixed(5)}`;
+  };
+
   const calendarCells = useMemo(() => {
     if (!sessionLogs || sessionLogs.length === 0) return [];
     
@@ -526,6 +531,49 @@ export function SessionLogsDetailsModal({
                                 ) : 'Không ghi nhận (admin cập nhật)'}
                               </p>
                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            {([
+                              {
+                                label: 'GPS Check-in',
+                                lat: selectedSessionLog.checkin_lat,
+                                lon: selectedSessionLog.checkin_lon,
+                                tone: 'emerald'
+                              },
+                              {
+                                label: 'GPS Check-out',
+                                lat: selectedSessionLog.checkout_lat,
+                                lon: selectedSessionLog.checkout_lon,
+                                tone: 'rose'
+                              }
+                            ] as const).map((gps) => {
+                              const coords = formatGps(gps.lat, gps.lon);
+                              return (
+                                <div key={gps.label} className="bg-white/60 p-2.5 rounded-xl border border-emerald-100/40 min-w-0">
+                                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5 flex items-center gap-1">
+                                    <span className={cn(
+                                      "w-1.5 h-1.5 rounded-full",
+                                      gps.tone === 'emerald' ? "bg-emerald-500" : "bg-rose-500"
+                                    )}></span>
+                                    {gps.label}
+                                  </p>
+                                  {coords ? (
+                                    <a
+                                      href={`https://www.google.com/maps?q=${gps.lat},${gps.lon}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block text-[10px] font-mono font-black text-slate-700 truncate hover:text-primary transition-colors"
+                                      title={coords}
+                                    >
+                                      {coords}
+                                    </a>
+                                  ) : (
+                                    <p className="text-[10px] font-black text-slate-400">KhÃ´ng cÃ³ GPS</p>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
 
                           {selectedSessionLog.start_time && selectedSessionLog.end_time && (
