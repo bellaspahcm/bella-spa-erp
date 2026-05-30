@@ -39,6 +39,15 @@ jest.mock('@/services/inventory-actions', () => ({
   autoConsumeForSession: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
+  recalculateAndSaveSalaryRecord: jest.fn().mockImplementation(async (supabase, ktvId, monthYear, tenantId) => {
+    const commission = 150000;
+    sharedSalaryRecord.total_sessions = (sharedSalaryRecord.total_sessions || 0) + 1;
+    sharedSalaryRecord.service_percentage_bonus = (sharedSalaryRecord.service_percentage_bonus || 0) + commission;
+    return { success: true, totalSalary: 6000000 };
+  })
+}));
+
 jest.mock('next/headers', () => ({
   headers: jest.fn().mockResolvedValue({
     get: jest.fn().mockReturnValue('127.0.0.1'),

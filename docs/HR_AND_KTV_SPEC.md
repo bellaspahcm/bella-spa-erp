@@ -52,9 +52,17 @@ erDiagram
   > Quyết định này chỉ thay đổi các buổi chưa diễn ra. Các buổi đã hoàn thành trước đó (Buổi 1, 2) trong bảng `session_logs` **hoàn toàn giữ nguyên**, đảm bảo KTV cũ vẫn nhận đủ hoa hồng cho phần công sức của mình.
 * **Bước 4: KTV B thực hiện các ca sau**: Các ca sau tự động ghi nhận `completed_by_ktv_id = KTV B`.
 
+### Quy đổi số ca làm việc theo gói dịch vụ (Session Multipliers):
+Để phản ánh chính xác công sức của KTV khi thực hiện các gói dịch vụ có thời gian lâu hơn và yêu cầu chuẩn bị đồ đạc phức tạp hơn, hệ thống áp dụng hệ số quy đổi ca tự động từ cột `session_multiplier` của bảng `packages`:
+* **Gói Combo Tiết Kiệm (hoặc gói cơ bản)**: Hệ số **1.0** (1 buổi hoàn thành = 1.0 ca làm việc).
+* **Gói Combo Hạnh Phúc**: Hệ số **1.5** (1 buổi hoàn thành = 1.5 ca làm việc).
+* **Gói Combo VIP Toàn Diện**: Hệ số **2.0** (1 buổi hoàn thành = 2.0 ca làm việc).
+
+Số ca chốt lương (`total_sessions`) của KTV được lưu trữ dưới dạng số thập phân `NUMERIC(5,2)` thay vì số nguyên để bảo toàn độ chính xác tuyệt đối (ví dụ: KTV làm 5 ca VIP và 3 ca Hạnh Phúc sẽ được tính tổng cộng $5 \times 2.0 + 3 \times 1.5 = 14.5$ ca).
+
 ### Công thức tính hoa hồng chốt lương cuối tháng:
-$$\text{Hoa hồng tháng} = \sum_{i=1}^{M} (\text{Đơn giá hoa hồng của Gói dịch vụ } i)$$
-*(Lấy từ `bookings.ktv_commission`, mặc định 150.000 VNĐ/buổi nếu không có thiết lập).*
+$$\text{Hoa hồng tháng} = \sum_{j=1}^{N} \left( \text{Đơn giá hoa hồng ca làm}_j \times \text{Hệ số quy đổi gói}_j \right)$$
+*(Trong đó $N$ là tổng số buổi làm thực tế, đơn giá hoa hồng ca làm lấy từ `bookings.ktv_commission`, và hệ số quy đổi gói dịch vụ được tra cứu trực tiếp từ bảng `packages` thông qua tên gói).*
 
 ---
 

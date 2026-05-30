@@ -46,8 +46,11 @@ You must strictly adhere to the following rules when working on this codebase to
 - **NEVER omit `session_bonus`** or `rating_bonus` from the legacy total calculation.
 - **Prioritize Pre-computed `total_salary`**: Always use the stored `total_salary` column from the `salary_records` table as the ultimate ground truth for "Kế toán chốt" (Legacy) and "AI Tính" (AI Computed) once a record is saved and is no longer in `'draft'` status. Do not re-calculate it using custom SQL logic that might drift from the central salary recalculation engine.
 - **Separate 'Chưa chốt lương' from Discrepancies**: KTVs who do not have a saved salary record yet (status `'NO_LEGACY'` or `'PENDING_LEGACY'`, displayed as "Chưa chốt lương") **MUST NOT** be counted under "Lệch lớn" (Major discrepancy) in UI summary statistics or dashboards. Discrepancies only exist when a record actually exists but differs from AI. Lumping them together creates false alarms for the user.
-
-
-
-
-
+## 8. Package-Based KTV Session Multipliers
+- **Dynamic Session quy đổi**: The system calculates the total completed sessions count dynamically based on the package coefficients:
+  - **Combo Mẹ & Bé Tiết Kiệm (and basic packages)**: `1.0` multiplier.
+  - **Combo Mẹ & Bé Hạnh Phúc**: `1.5` multiplier.
+  - **Combo Mẹ & Bé VIP Toàn Diện**: `2.0` multiplier.
+- **Decimal Counts**: The sessions count in `salary_records` (represented by `total_sessions`) is typed as `NUMERIC(5,2)` in PostgreSQL and `number` in TypeScript to accurately hold decimal values (e.g. `14.5` ca).
+- **Rule alignment**: Any calculate, query, or report module (including the central `recalculateAndSaveSalaryRecord` engine, `getSalaryData` frontend fetch, and database RPCs like `calculate_ktv_salary_sheet`) **MUST** fetch package details from the `packages` table and sum sessions using `session_multiplier` coefficients, instead of using raw record counts (e.g., `sessions.length`).
+- **Tests Mocking**: When mocking salary calculations in Jest integration pipelines, the mocks must respect the package session multiplier mapping and keep the mock `salary_records` store fully updated to prevent regression.

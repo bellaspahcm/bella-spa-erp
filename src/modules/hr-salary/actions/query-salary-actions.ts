@@ -36,6 +36,7 @@ interface SessionReviewDb {
 
 interface BookingDb {
   ktv_commission: number | null;
+  package_name: string | null;
 }
 
 interface SessionLogDb {
@@ -132,7 +133,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
     // Fetch completed sessions with booking details + rating fallback
     const { data: sessionsData } = await supabase
       .from('session_logs')
-      .select('id, completed_by_ktv_id, status, is_confirmed, rating, bookings(ktv_commission), session_reviews(rating, status)')
+      .select('id, completed_by_ktv_id, status, is_confirmed, rating, bookings(ktv_commission, package_name), session_reviews(rating, status)')
       .eq('status', 'completed')
       .gte('completed_date', startOfMonthStr)
       .lt('completed_date', endOfMonthStr);
@@ -170,12 +171,35 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
     const attendanceLogsTyped = (attendanceLogs || []) as unknown as AttendanceLogDb[];
 
+    // Fetch packages for multiplier mapping
+    const { data: packagesData, error: packagesError } = await supabase
+      .from('packages')
+      .select('name, session_multiplier')
+      .eq('tenant_id', tenantId);
+
+    if (packagesError) throw packagesError;
+    const packagesList = packagesData || [];
+
+    // Create a map of package name -> multiplier
+    const packageMultiplierMap = new Map<string, number>();
+    packagesList.forEach((pkg: any) => {
+      if (pkg.name) {
+        packageMultiplierMap.set(pkg.name, Number(pkg.session_multiplier ?? 1.0));
+      }
+    });
+
     const ktvSalaries = await Promise.all(realKtvs.map(async (ktv) => {
         const record = salaryRecords.find((r) => r.ktv_id === ktv.id);
         
         const ktvCompletedSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
-        // Use confirmed count from record if available, otherwise use live count
-        const ktvSessionsCount = record?.total_sessions || ktvCompletedSessions.length;
+        // Use confirmed count from record if available, otherwise use live count with multipliers
+        const ktvSessionsCount = record?.total_sessions !== undefined && record.total_sessions !== null
+          ? Number(record.total_sessions)
+          : ktvCompletedSessions.reduce((acc: number, s) => {
+              const pkgName = s.bookings?.package_name || '';
+              const multiplier = packageMultiplierMap.get(pkgName) ?? 1.0;
+              return acc + multiplier;
+            }, 0);
         
         // Blended composite rating + attendance breakdown from RPC.
         const ktvLb = leaderboardByKtv.get(ktv.id);
