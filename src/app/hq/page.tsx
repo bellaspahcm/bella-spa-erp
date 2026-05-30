@@ -25,8 +25,8 @@ export default async function HqPage() {
     console.error('Error loading HQ data:', error);
     // Fallback default structure to prevent layout crash
     stats = {
-      totalSpas: 1,
-      activeSpas: 1,
+      totalSpas: 0,
+      activeSpas: 0,
       suspendedSpas: 0,
       totalRevenue: 0,
       totalSessions: 0,

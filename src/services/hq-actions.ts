@@ -18,11 +18,15 @@ export async function checkHqAuth() {
   }
   
   const supabase = await createClient();
-  const { data: tenant } = await supabase
+  const { data: tenant, error: tenantError } = await supabase
     .from('tenants')
     .select('name')
     .eq('id', currentUser.tenant_id)
     .single();
+
+  if (tenantError) {
+    throw new Error(`Failed to verify HQ tenant: ${tenantError.message}`);
+  }
      
   if (!tenant || tenant.name !== 'Bella Spa Headquarter') {
     return { authorized: false, error: 'Trang này chỉ dành cho quản trị viên Bella Spa Headquarter.' };
@@ -60,7 +64,7 @@ export async function getHqDashboardStats() {
     .from('revenue')
     .select('amount');
   
-  if (revErr) console.error('Error fetching system revenue:', revErr);
+  if (revErr) throw new Error(`Failed to fetch system revenue: ${revErr.message}`);
   const totalRevenue = (revenueData || []).reduce((acc, item) => acc + Number(item.amount), 0);
 
   // 4. System Total Sessions
@@ -68,12 +72,14 @@ export async function getHqDashboardStats() {
     .from('session_logs')
     .select('*', { count: 'exact', head: true });
 
-  if (sessErr) console.error('Error counting session logs:', sessErr);
+  if (sessErr) throw new Error(`Failed to count session logs: ${sessErr.message}`);
 
   // 5. System Bookings (to calculate Zalo SMS used)
-  const { count: totalBookings } = await supabase
+  const { count: totalBookings, error: bookingsErr } = await supabase
     .from('bookings')
     .select('*', { count: 'exact', head: true });
+
+  if (bookingsErr) throw new Error(`Failed to count bookings: ${bookingsErr.message}`);
 
   const zaloSmsUsed = (totalBookings || 0) * 4 + 87; // Beautiful dynamic proxy count
 
@@ -115,22 +121,34 @@ export async function getAllTenants() {
   const tenantsList = await Promise.all(
     (tenants || []).map(async (t) => {
       // Staff count
-      const { count: staffCount } = await supabase
+      const { count: staffCount, error: staffCountError } = await supabase
         .from('users')
         .select('*', { count: 'exact', head: true })
         .eq('tenant_id', t.id);
 
+      if (staffCountError) {
+        throw new Error(`Failed to count staff for tenant ${t.id}: ${staffCountError.message}`);
+      }
+
       // Customer count
-      const { count: customerCount } = await supabase
+      const { count: customerCount, error: customerCountError } = await supabase
         .from('customers')
         .select('*', { count: 'exact', head: true })
         .eq('tenant_id', t.id);
 
+      if (customerCountError) {
+        throw new Error(`Failed to count customers for tenant ${t.id}: ${customerCountError.message}`);
+      }
+
       // Revenue sum
-      const { data: revData } = await supabase
+      const { data: revData, error: revenueError } = await supabase
         .from('revenue')
         .select('amount')
         .eq('tenant_id', t.id);
+
+      if (revenueError) {
+        throw new Error(`Failed to fetch revenue for tenant ${t.id}: ${revenueError.message}`);
+      }
 
       const revenueSum = (revData || []).reduce((acc, item) => acc + Number(item.amount), 0);
 
