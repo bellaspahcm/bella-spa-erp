@@ -113,6 +113,7 @@ export async function processSessionCompletion(
 
   // 3. Ghi nhận doanh thu dịch vụ lẻ
   let isRevenueCreated = false;
+  let createdRevenueId: string | null = null;
   if (currentBooking?.package_name?.toLowerCase().includes('lẻ')) {
     const businessEventType = inferBusinessEventType({
       sourceTable: 'revenue',
@@ -125,7 +126,7 @@ export async function processSessionCompletion(
       reason: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
     };
 
-    const { error: revErr } = await supabase.from('revenue').insert([{
+    const { data: createdRevenue, error: revErr } = await supabase.from('revenue').insert([{
       booking_id: bookingId,
       amount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
       revenue_type: 'package_payment',
@@ -137,7 +138,7 @@ export async function processSessionCompletion(
       business_event_type: businessEventType,
       accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
       accounting_metadata: accountingPayload
-    }]);
+    }]).select('id').single();
 
     if (revErr) {
       console.error('Error auto-creating revenue:', revErr);
@@ -153,6 +154,46 @@ export async function processSessionCompletion(
       return { error: 'Không thể ghi nhận doanh thu tự động cho gói lẻ: ' + revErr.message };
     }
     isRevenueCreated = true;
+    createdRevenueId = createdRevenue?.id || null;
+
+    if (createdRevenueId) {
+      const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+      const outboxEnqueued = await enqueueWithAutoClient(
+        supabase,
+        {
+          tenantId,
+          eventType: 'PACKAGE_SALE',
+          referenceType: 'REVENUE',
+          referenceId: createdRevenueId,
+          payload: {
+            totalAmount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
+            vatRate: 0,
+            description: accountingPayload.reason,
+            branchId: tenantId,
+          },
+        },
+        '[processSessionCompletion:single-session-revenue]'
+      );
+
+      if (!outboxEnqueued) {
+        await supabase
+          .from('revenue')
+          .delete()
+          .eq('id', createdRevenueId);
+
+        await supabase.from('bookings').update({
+          completed_sessions: currentBooking?.completed_sessions || 0,
+          status: currentBooking?.status || 'booked'
+        }).eq('id', bookingId);
+
+        if (isInventoryConsumed) {
+          const { rollbackInventoryConsumption } = await import('@/services/inventory-actions');
+          await rollbackInventoryConsumption(sessionId);
+        }
+
+        return { error: 'Không thể ghi nhận hàng đợi kế toán cho doanh thu gói lẻ. Đã hoàn tác ca làm.' };
+      }
+    }
   }
 
   // 4. Cộng lương KTV vào salary_records
