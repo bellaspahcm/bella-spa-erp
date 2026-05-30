@@ -12,6 +12,7 @@ import {
   PenTool,
   BarChart3,
   GitCompareArrows,
+  ClipboardCheck,
   ChevronDown,
   Check
 } from 'lucide-react';
@@ -23,6 +24,7 @@ const tabs = [
   { label: 'Nhật ký chung', href: '/dashboard/accounting/journals', icon: Activity },
   { label: 'Bút toán thủ công', href: '/dashboard/accounting/manual-entry', icon: PenTool },
   { label: 'Kỳ kế toán', href: '/dashboard/accounting/periods', icon: Calendar },
+  { label: 'Sẵn sàng dữ liệu', href: '/dashboard/accounting/readiness', icon: ClipboardCheck },
   { label: 'Đối soát chéo', href: '/dashboard/accounting/reconciliation', icon: GitCompareArrows },
   { label: 'Đối soát lương', href: '/dashboard/accounting/salary-reconciliation', icon: GitCompareArrows },
   { label: 'Báo cáo tài chính', href: '/dashboard/accounting/reports', icon: BarChart3 },
