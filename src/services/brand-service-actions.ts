@@ -94,7 +94,14 @@ export async function createHqPackageTemplate(templateData: Partial<HqPackageTem
         new_data: data
       });
     } catch (auditErr) {
-      console.warn('Failed to record createHqPackageTemplate audit log:', auditErr);
+      await supabase
+        .from('packages')
+        .delete()
+        .eq('id', data.id);
+      return {
+        success: false,
+        error: auditErr instanceof Error ? auditErr.message : 'Failed to record createHqPackageTemplate audit log'
+      };
     }
 
     safeRevalidatePath('/hq');
@@ -118,11 +125,15 @@ export async function updateHqPackageTemplate(id: string, templateData: Partial<
     const supabase = await createClient();
 
     // Fetch old data for audit log
-    const { data: oldPackage } = await supabase
+    const { data: oldPackage, error: oldPackageError } = await supabase
       .from('packages')
       .select('*')
       .eq('id', id)
       .single();
+
+    if (oldPackageError) {
+      return { success: false, error: oldPackageError.message };
+    }
 
     const dbData = {
       name: templateData.name,
@@ -166,7 +177,16 @@ export async function updateHqPackageTemplate(id: string, templateData: Partial<
         new_data: data
       });
     } catch (auditErr) {
-      console.warn('Failed to record updateHqPackageTemplate audit log:', auditErr);
+      if (oldPackage) {
+        await supabase
+          .from('packages')
+          .update(oldPackage)
+          .eq('id', id);
+      }
+      return {
+        success: false,
+        error: auditErr instanceof Error ? auditErr.message : 'Failed to record updateHqPackageTemplate audit log'
+      };
     }
 
     // Also auto-propagate non-overrideable configuration changes to distributed packages
@@ -216,11 +236,15 @@ export async function deleteHqPackageTemplate(id: string) {
     const supabase = await createClient();
 
     // Fetch old data for audit log
-    const { data: oldPackage } = await supabase
+    const { data: oldPackage, error: oldPackageError } = await supabase
       .from('packages')
       .select('*')
       .eq('id', id)
       .single();
+
+    if (oldPackageError) {
+      return { success: false, error: oldPackageError.message };
+    }
 
     // Delete
     const { error } = await supabase
@@ -243,7 +267,15 @@ export async function deleteHqPackageTemplate(id: string) {
         old_data: oldPackage
       });
     } catch (auditErr) {
-      console.warn('Failed to record deleteHqPackageTemplate audit log:', auditErr);
+      if (oldPackage) {
+        await supabase
+          .from('packages')
+          .insert([oldPackage]);
+      }
+      return {
+        success: false,
+        error: auditErr instanceof Error ? auditErr.message : 'Failed to record deleteHqPackageTemplate audit log'
+      };
     }
 
     safeRevalidatePath('/hq');
@@ -437,7 +469,14 @@ export async function overrideTenantPackagePrice(packageId: string, newPrice: nu
         new_data: updatedPkg
       });
     } catch (auditErr) {
-      console.warn('Failed to record overrideTenantPackagePrice audit log:', auditErr);
+      await supabase
+        .from('packages')
+        .update(pkg)
+        .eq('id', packageId);
+      return {
+        success: false,
+        error: auditErr instanceof Error ? auditErr.message : 'Failed to record overrideTenantPackagePrice audit log'
+      };
     }
 
     safeRevalidatePath('/dashboard/services');
