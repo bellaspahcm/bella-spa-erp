@@ -12,7 +12,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   Cell,
 } from 'recharts';
 import {
@@ -204,30 +203,41 @@ export default function FinancialOverviewClient({
               Chưa có dữ liệu kế toán cho kỳ này. Hãy đảm bảo các chi nhánh đã có bút toán POSTED.
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={chartData} margin={{ top: 20, right: 10, left: -15, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#FFE4E6" className="dark:stroke-[#3E3A35]/30" />
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis tickFormatter={fmtCompact} tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <Tooltip
-                  formatter={(value) => fmtVND(Number(value))}
-                  labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
-                  contentStyle={{
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    border: '1px solid #FFE4E6',
-                    borderRadius: 12,
-                    fontSize: 12,
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="revenue" name="Doanh thu thuần" fill="#BE185D" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="profit" name="Lợi nhuận sau thuế" radius={[8, 8, 0, 0]}>
-                  {chartData.map((entry, idx) => (
-                    <Cell key={idx} fill={entry.profit >= 0 ? '#10b981' : '#ef4444'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={chartData} margin={{ top: 20, right: 10, left: -15, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#FFE4E6" className="dark:stroke-[#3E3A35]/30" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                  <YAxis tickFormatter={fmtCompact} tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                  <Tooltip
+                    formatter={(value) => fmtVND(Number(value))}
+                    labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
+                    contentStyle={{
+                      background: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #FFE4E6',
+                      borderRadius: 12,
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar dataKey="revenue" name="Doanh thu thuần" fill="#BE185D" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="profit" name="Lợi nhuận sau thuế" fill="#10b981" radius={[8, 8, 0, 0]}>
+                    {chartData.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.profit >= 0 ? '#10b981' : '#ef4444'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-700 dark:text-[#CDBCAB]">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-3 h-3 bg-[#BE185D]" />
+                  Doanh thu thuần
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="w-3 h-3 bg-[#10b981]" />
+                  Lợi nhuận sau thuế
+                </span>
+              </div>
+            </>
           )}
         </div>
 
