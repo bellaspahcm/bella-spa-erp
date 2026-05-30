@@ -390,8 +390,7 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
   const updatePayload = {
     status: 'in_progress' as const,
     start_time: new Date().toISOString(),
-    completed_by_ktv_id: user.id,
-    ...(lat !== undefined && lon !== undefined ? { checkin_lat: lat, checkin_lon: lon } : {})
+    completed_by_ktv_id: user.id
   };
 
   const { error } = await supabase
@@ -438,6 +437,19 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
     return rollbackStartedSession(`Failed to update booking after session start: ${bookingUpdateError.message}`);
   }
 
+  const warnings: string[] = [];
+
+  if (lat !== undefined && lon !== undefined) {
+    const { error: sessionGpsError } = await supabase
+      .from('session_logs')
+      .update({ checkin_lat: lat, checkin_lon: lon })
+      .eq('id', sessionId);
+
+    if (sessionGpsError) {
+      warnings.push(`check-in GPS was not saved: ${sessionGpsError.message}`);
+    }
+  }
+
   // 4. Nếu KTV check-in có tọa độ GPS và khách hàng chưa có tọa độ chuẩn trong DB -> tự động gán làm tọa độ chuẩn
   if (lat !== undefined && lon !== undefined && booking?.customer_id) {
     const customer = Array.isArray(booking.customers) ? booking.customers[0] : booking.customers;
@@ -451,11 +463,7 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
         .eq('id', booking.customer_id);
       
       if (customerGpsError) {
-        revalidatePath('/ktv/dashboard');
-        return {
-          success: true,
-          warning: `Session started, but customer GPS coordinates were not saved: ${customerGpsError.message}`
-        };
+        warnings.push(`customer GPS coordinates were not saved: ${customerGpsError.message}`);
       } else {
         console.log(`[startSession] Automatically assigned coordinates (${lat}, ${lon}) for customer ${booking.customer_id} based on first KTV check-in.`);
       }
@@ -463,6 +471,9 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
   }
 
   revalidatePath('/ktv/dashboard');
+  if (warnings.length > 0) {
+    return { success: true, warning: `Session started, but ${warnings.join('; ')}` };
+  }
   return { success: true };
 }
 
@@ -475,11 +486,22 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   if (!user || user.role !== 'ktv') return { success: false, error: 'Unauthorized' };
 
   // 1. Lấy thông tin session để tìm booking_id, start_time và package_id
-  const { data: session } = await supabase
+  const { data: session, error: sessionFetchError } = await supabase
     .from('session_logs')
     .select(`
       booking_id, 
       start_time,
+      status,
+      end_time,
+      completed_date,
+      notes,
+      standard_duration,
+      actual_duration,
+      time_deviation,
+      duration_warning_type,
+      ktv_checkout_note,
+      checkout_lat,
+      checkout_lon,
       bookings (
         package_id,
         packages (
@@ -490,6 +512,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     .eq('id', sessionId)
     .single();
 
+  if (sessionFetchError) return { success: false, error: sessionFetchError.message };
   if (!session) return { success: false, error: 'Session not found' };
 
   const bookingsData = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
@@ -541,8 +564,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     actual_duration: actualDuration,
     time_deviation: timeDeviation,
     duration_warning_type: durationWarningType,
-    ktv_checkout_note: ktvCheckoutNote,
-    ...(lat !== undefined && lon !== undefined ? { checkout_lat: lat, checkout_lon: lon } : {})
+    ktv_checkout_note: ktvCheckoutNote
   };
 
   const untypedSupabase = supabase as unknown as SupabaseClient;
@@ -553,6 +575,47 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
 
   if (sessionError) return { success: false, error: 'Failed to complete session' };
 
+  const checkoutWarnings: string[] = [];
+
+  const rollbackCompletedSession = async (reason: string) => {
+    const { error: rollbackError } = await untypedSupabase
+      .from('session_logs')
+      .update({
+        status: session.status,
+        end_time: session.end_time,
+        completed_date: session.completed_date,
+        notes: session.notes,
+        standard_duration: session.standard_duration,
+        actual_duration: session.actual_duration,
+        time_deviation: session.time_deviation,
+        duration_warning_type: session.duration_warning_type,
+        ktv_checkout_note: session.ktv_checkout_note,
+        checkout_lat: session.checkout_lat,
+        checkout_lon: session.checkout_lon
+      })
+      .eq('id', sessionId);
+
+    if (rollbackError) {
+      return {
+        success: false,
+        error: `${reason}; failed to roll back completed session: ${rollbackError.message}`
+      };
+    }
+
+    return { success: false, error: reason };
+  };
+
+  if (lat !== undefined && lon !== undefined) {
+    const { error: checkoutGpsError } = await untypedSupabase
+      .from('session_logs')
+      .update({ checkout_lat: lat, checkout_lon: lon })
+      .eq('id', sessionId);
+
+    if (checkoutGpsError) {
+      checkoutWarnings.push(`checkout GPS was not saved: ${checkoutGpsError.message}`);
+    }
+  }
+
   // 2.5 Tự động trừ kho vật tư tiêu hao nếu có định mức
   const packageId = bookingsData?.package_id;
   if (packageId) {
@@ -561,12 +624,12 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
       const consumeResult = await autoConsumeForSession(packageId, sessionId);
       
       if (consumeResult && consumeResult.success === false) {
-        return { success: false, error: consumeResult.error || 'Kho không đủ nguyên liệu để thực hiện ca dịch vụ này.' };
+        return rollbackCompletedSession(consumeResult.error || 'Kho khong du nguyen lieu de thuc hien ca dich vu nay.');
       }
       console.log(`[completeKTVSession] Successfully auto-consumed materials for package ${packageId} and session ${sessionId}`);
     } catch (consumeErr: any) {
       console.error('[completeKTVSession] Error in autoConsumeForSession:', consumeErr);
-      return { success: false, error: consumeErr.message || 'Lỗi hệ thống khi kiểm tra kho vật tư.' };
+      return rollbackCompletedSession(consumeErr.message || 'Loi he thong khi kiem tra kho vat tu.');
     }
   }
 
@@ -578,14 +641,18 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     .eq('status', 'completed');
 
   if (countError) {
-    console.error('Error counting completed sessions:', countError);
+    return rollbackCompletedSession(`Failed to count completed sessions: ${countError.message}`);
   }
 
-  const { data: booking } = await supabase
+  const { data: booking, error: bookingFetchError } = await supabase
     .from('bookings')
     .select('total_sessions')
     .eq('id', session.booking_id)
     .single();
+
+  if (bookingFetchError) {
+    return rollbackCompletedSession(`Failed to fetch booking after completing session: ${bookingFetchError.message}`);
+  }
 
   if (booking) {
     const actualCompletedCount = count || 0;
@@ -600,7 +667,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
       .eq('id', session.booking_id);
 
     if (bookingError) {
-      console.error('Error updating booking status:', bookingError);
+      return rollbackCompletedSession(`Failed to update booking after completing session: ${bookingError.message}`);
     }
 
     if (isFinished) {
@@ -616,6 +683,9 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
 
   revalidatePath('/ktv/dashboard');
   revalidatePath('/dashboard/bookings');
+  if (checkoutWarnings.length > 0) {
+    return { success: true, warning: `Session completed, but ${checkoutWarnings.join('; ')}` };
+  }
   return { success: true };
 }
 
