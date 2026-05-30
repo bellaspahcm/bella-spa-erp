@@ -28,6 +28,7 @@ const mockFrom = jest.fn();
 const mockSelect = jest.fn();
 const mockEq = jest.fn();
 const mockNot = jest.fn();
+const mockIs = jest.fn();
 const mockSingle = jest.fn();
 const mockUpdate = jest.fn();
 const mockInsert = jest.fn();
@@ -57,6 +58,7 @@ import {
   syncLegacyToLedger,
 } from '../services/accounting-actions';
 import { recordTransaction, confirmTransaction } from '../services/finance-actions';
+import { allocateOrphanedRevenue, collectDebtPayment } from '../services/reconciliation-actions';
 import { safeRevalidatePath } from '../lib/revalidate';
 
 const TENANT_ID = 'tenant-uuid-123';
@@ -85,6 +87,7 @@ function createMockChain(table: string) {
   });
   chain.update = mockUpdate.mockImplementation(() => chain);
   chain.eq = mockEq.mockImplementation(() => chain);
+  chain.is = mockIs.mockImplementation(() => Promise.resolve({ data: null, error: null }));
   chain.not = mockNot.mockImplementation(() => Promise.resolve({ data: [], error: null }));
   chain.single = mockSingle.mockImplementation(() => {
     if (table === 'tenants') {
@@ -202,7 +205,7 @@ describe('Dual-Mode Accounting Configuration', () => {
       return Promise.resolve({ data: null, error: null });
     });
 
-    await expect(updateAccountingMode('PROFESSIONAL')).rejects.toThrow(/Chưa thể bật Professional Core/);
+    await expect(updateAccountingMode('PROFESSIONAL')).rejects.toThrow(/Professional Core/);
   });
 
   it('blocks non-admin users from changing accounting mode', async () => {
@@ -276,7 +279,7 @@ describe('Application Layer protection', () => {
         category: 'other_admin',
         notes: 'Mua khăn giấy',
       })
-    ).rejects.toThrow(/chế độ Kế toán Chuyên nghiệp/);
+    ).rejects.toThrow(/Professional Core/);
   });
 
   it('blocks manually confirmTransaction if mode is PROFESSIONAL', async () => {
@@ -284,6 +287,33 @@ describe('Application Layer protection', () => {
     // Mock accounting_mode is PROFESSIONAL
     mockSingle.mockResolvedValueOnce({ data: { accounting_mode: 'PROFESSIONAL' }, error: null });
 
-    await expect(confirmTransaction('rev-1', 'revenue')).rejects.toThrow(/chế độ Kế toán Chuyên nghiệp/);
+    await expect(confirmTransaction('rev-1', 'revenue')).rejects.toThrow(/Professional Core/);
+  });
+  it('blocks reconciliation debt collection if mode is PROFESSIONAL', async () => {
+    mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
+    mockSingle.mockResolvedValueOnce({ data: { accounting_mode: 'PROFESSIONAL' }, error: null });
+
+    const res = await collectDebtPayment({
+      bookingId: 'booking-1',
+      amount: 100000,
+      paymentMethod: 'bank_transfer',
+      customerName: 'Me Linh',
+      packageName: 'Goi cham soc',
+    });
+
+    expect(res.success).toBe(false);
+    expect(res.error).toMatch(/Professional Core/);
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('blocks orphan revenue allocation if mode is PROFESSIONAL', async () => {
+    mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
+    mockSingle.mockResolvedValueOnce({ data: { accounting_mode: 'PROFESSIONAL' }, error: null });
+
+    const res = await allocateOrphanedRevenue('rev-1', 'booking-1');
+
+    expect(res.success).toBe(false);
+    expect(res.error).toMatch(/Professional Core/);
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });
