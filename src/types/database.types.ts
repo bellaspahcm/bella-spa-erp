@@ -2825,6 +2825,19 @@ export type Database = {
         Args: { p_tenant_id: string }
         Returns: number
       }
+      accounting_missing_required_fields: {
+        Args: { p_business_event_type: string; p_payload: Json }
+        Returns: string[]
+      }
+      backfill_accounting_metadata: {
+        Args: { p_limit?: number; p_tenant_id?: string | null }
+        Returns: {
+          classified_records: number
+          review_created: number
+          scanned_records: number
+          source_table: string
+        }[]
+      }
       calculate_ktv_salary_sheet: {
         Args: { p_month_year: string }
         Returns: {

@@ -149,3 +149,10 @@ export interface AccountingReadinessSummary {
   readiness_score: number;
   can_enable_professional: boolean;
 }
+
+export interface AccountingBackfillResult {
+  source_table: string;
+  scanned_records: number;
+  classified_records: number;
+  review_created: number;
+}
