@@ -72,3 +72,4 @@ Supabase CLI sort migration theo **filename string** (alphabetical sau prefix). 
 | `20260525170000_period_closing_workflow.sql` | Workflow lock-month 3 bước |
 | `20260526000000_ai_agent_infrastructure.sql` | Khai sinh AI COO + sub-agents |
 | `20260526050000_dual_mode_accounting.sql` | Dual-mode SIMPLE/PROFESSIONAL |
+| `20260531010000_atomic_legacy_ledger_sync.sql` | RPC atomic cho sync legacy sang so cai va bat Professional |

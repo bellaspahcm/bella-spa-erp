@@ -121,6 +121,18 @@ beforeEach(() => {
     if (fnName === 'get_accounting_readiness') {
       return Promise.resolve({ data: READY_ACCOUNTING_ROWS, error: null });
     }
+    if (fnName === 'sync_legacy_to_ledger_atomic') {
+      return Promise.resolve({
+        data: [
+          {
+            synced_revenue_count: 1,
+            synced_expense_count: 0,
+            synced_salary_count: 0,
+          },
+        ],
+        error: null,
+      });
+    }
     return Promise.resolve({ data: null, error: null });
   });
 });
@@ -181,21 +193,34 @@ describe('Legacy Syncing Engine', () => {
   it('syncs legacy data to ledger idempotent-safely and upgrades tenant to PROFESSIONAL', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
 
-    // Mock existing entries (none)
-    mockNot.mockResolvedValueOnce({ data: [], error: null });
-
-    // Mock postJournalEntry (through RPC journal_entries insert)
-    mockRpc.mockImplementation((fnName: string) => {
-      if (fnName === 'get_accounting_readiness') {
-        return Promise.resolve({ data: READY_ACCOUNTING_ROWS, error: null });
-      }
-      return Promise.resolve({ data: 'entry-uuid-1', error: null });
-    });
-
     const res = await syncLegacyToLedger();
     expect(res.success).toBe(true);
     expect(res.syncedRevenueCount).toBe(1);
     expect(res.syncedExpenseCount).toBe(0);
+    expect(mockRpc).toHaveBeenCalledWith('sync_legacy_to_ledger_atomic', {
+      p_tenant_id: TENANT_ID,
+      p_created_by: ADMIN_USER.id,
+    });
+  });
+
+  it('propagates atomic sync RPC failures without silently succeeding', async () => {
+    mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
+    mockRpc.mockImplementation((fnName: string) => {
+      if (fnName === 'get_accounting_readiness') {
+        return Promise.resolve({ data: READY_ACCOUNTING_ROWS, error: null });
+      }
+      if (fnName === 'sync_legacy_to_ledger_atomic') {
+        return Promise.resolve({
+          data: null,
+          error: { message: 'Missing required COA accounts 111, 112 or 5111.' },
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    await expect(syncLegacyToLedger()).rejects.toMatchObject({
+      message: 'Missing required COA accounts 111, 112 or 5111.',
+    });
   });
 });
 

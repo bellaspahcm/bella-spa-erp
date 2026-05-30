@@ -2928,6 +2928,14 @@ export type Database = {
           total_records: number
         }[]
       }
+      sync_legacy_to_ledger_atomic: {
+        Args: { p_tenant_id: string; p_created_by?: string | null }
+        Returns: {
+          synced_expense_count: number
+          synced_revenue_count: number
+          synced_salary_count: number
+        }[]
+      }
       resolve_accounting_review_item: {
         Args: { p_review_item_id: string; p_status: string }
         Returns: {
