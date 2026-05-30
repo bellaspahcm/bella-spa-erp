@@ -164,6 +164,16 @@ export async function getAccountingMode(): Promise<AccountingMode> {
   return (data.accounting_mode as AccountingMode) || 'SIMPLE';
 }
 
+export async function assertLegacyFinanceWriteAllowed(actionLabel = 'Legacy finance write') {
+  const mode = await getAccountingMode();
+  if (mode === 'PROFESSIONAL') {
+    throw new Error(
+      `${actionLabel} bị chặn vì hệ thống đang ở Professional Core. ` +
+      'Vui lòng ghi nhận qua phân hệ Accounting Ledger thay vì sửa trực tiếp revenue/expenses legacy.'
+    );
+  }
+}
+
 export async function getProfessionalModeReadinessGate(): Promise<ProfessionalModeReadinessGate> {
   const supabase = await createClient();
   const user = await getCurrentUser();

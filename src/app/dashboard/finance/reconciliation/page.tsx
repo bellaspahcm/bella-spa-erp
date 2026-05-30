@@ -14,15 +14,15 @@ import {
   CheckCircle2,
   RefreshCw,
   Wallet,
-  ArrowLeftRight,
   ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
-import { formatCurrency, getLocalDateString } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { getInterBranchClearingRecords, simulateInterBranchClearing } from '@/services/clearing-actions';
+import { allocateOrphanedRevenue, collectDebtPayment } from '@/services/reconciliation-actions';
 
 export default function FinancialReconciliationPage() {
   const [data, setData] = useState<{
@@ -152,41 +152,22 @@ export default function FinancialReconciliationPage() {
       toast.error('Vui lòng nhập Booking ID hợp lệ');
       return;
     }
+
     setIsAllocating(true);
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Chưa đăng nhập');
-
-      let { data: profile } = await supabase.from('users').select('tenant_id, role').eq('id', session.user.id).single();
-      if (!profile?.tenant_id) {
-         // Legacy `profiles` table fallback (not in current schema)
-         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-         const { data: fallbackProfile } = await (supabase as any).from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
-         profile = fallbackProfile;
-      }
-      if (!profile || !profile.role || !['admin', 'accountant'].includes(profile.role)) {
-        throw new Error('Bạn không có quyền phân bổ tiền');
-      }
-
-      const { error } = await supabase
-        .from('revenue')
-        .update({ booking_id: targetBookingId.trim(), status: 'confirmed' })
-        .eq('id', selectedOrphan.revenue_id)
-        .eq('tenant_id', profile.tenant_id as string)
-        .is('booking_id', null);
-
-      if (error) throw error;
+      const res = await allocateOrphanedRevenue(selectedOrphan.revenue_id, targetBookingId.trim());
+      if (!res.success) throw new Error(res.error || 'Không thể phân bổ khoản tiền');
 
       toast.success('Đã phân bổ khoản tiền thành công!');
       setShowAllocateModal(false);
       setSelectedOrphan(null);
       setTargetBookingId('');
-      fetchData(); // Refresh
+      fetchData();
     } catch (error: any) {
       toast.error('Lỗi phân bổ: ' + error.message);
+    } finally {
+      setIsAllocating(false);
     }
-    setIsAllocating(false);
   };
 
   const handlePayment = async () => {
@@ -194,53 +175,31 @@ export default function FinancialReconciliationPage() {
       toast.error('Vui lòng nhập số tiền hợp lệ');
       return;
     }
+
     setIsPaying(true);
     try {
       const cleanAmount = Number(paymentAmount.replace(/\D/g, ''));
       if (!cleanAmount) throw new Error('Số tiền không hợp lệ');
 
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Chưa đăng nhập');
-
-      let { data: profile } = await supabase.from('users').select('tenant_id, role').eq('id', session.user.id).single();
-      if (!profile?.tenant_id) {
-         // Legacy `profiles` table fallback (not in current schema)
-         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-         const { data: fallbackProfile } = await (supabase as any).from('profiles').select('tenant_id, role').eq('id', session.user.id).single();
-         profile = fallbackProfile;
-      }
-      if (!profile || !profile.role || !['admin', 'accountant'].includes(profile.role)) {
-        throw new Error('Bạn không có quyền thu tiền');
-      }
-
-      const customerStr = selectedDebt.customer_name || 'Khách hàng';
-      const packageStr = selectedDebt.package_name || 'Gói Dịch Vụ';
-      const shortBookingId = selectedDebt.booking_id?.split('-')[0]?.toUpperCase() || 'N/A';
-
-      const { error } = await supabase.from('revenue').insert({
-        tenant_id: profile.tenant_id as string,
-        booking_id: selectedDebt.booking_id,
+      const res = await collectDebtPayment({
+        bookingId: selectedDebt.booking_id,
         amount: cleanAmount,
-        revenue_type: 'additional',
-        notes: `Thu nợ đối soát - KH: ${customerStr} - Gói: ${packageStr} (Booking: ${shortBookingId})`,
-        status: 'confirmed',
-        payment_method: paymentMethod,
-        received_date: getLocalDateString(),
-        recorded_by_id: session.user.id
+        paymentMethod,
+        customerName: selectedDebt.customer_name,
+        packageName: selectedDebt.package_name,
       });
+      if (!res.success) throw new Error(res.error || 'Không thể thu tiền');
 
-      if (error) throw error;
-
-      toast.success('Thu nợ thành công!');
+      toast.success('Thu tiền thành công!');
       setShowPaymentModal(false);
       setSelectedDebt(null);
       setPaymentAmount('');
-      fetchData(); // Refresh data
+      fetchData();
     } catch (error: any) {
-      toast.error('Lỗi thu nợ: ' + error.message);
+      toast.error('Lỗi thu tiền: ' + error.message);
+    } finally {
+      setIsPaying(false);
     }
-    setIsPaying(false);
   };
 
   const handlePayClearing = async (recordId: string) => {

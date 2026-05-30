@@ -23,6 +23,7 @@ export {
 } from './accounting/coa';
 
 export {
+  assertLegacyFinanceWriteAllowed,
   getAccountingMode, getLegacyLedgerSyncPreview, getProfessionalModeReadinessGate, updateAccountingMode, syncLegacyToLedger,
 } from './accounting/mode';
 
