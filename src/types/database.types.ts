@@ -429,6 +429,143 @@ export type Database = {
           },
         ]
       }
+      accounting_event_templates: {
+        Row: {
+          auto_post_allowed: boolean
+          business_event_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          required_fields: string[]
+          requires_review: boolean
+          source_module: string
+          standard_profile: string
+          template_lines: Json
+          template_name: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_post_allowed?: boolean
+          business_event_type: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          required_fields?: string[]
+          requires_review?: boolean
+          source_module?: string
+          standard_profile?: string
+          template_lines?: Json
+          template_name: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_post_allowed?: boolean
+          business_event_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          required_fields?: string[]
+          requires_review?: boolean
+          source_module?: string
+          standard_profile?: string
+          template_lines?: Json
+          template_name?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_event_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounting_review_queue: {
+        Row: {
+          business_event_type: string | null
+          created_at: string
+          id: string
+          message: string
+          missing_fields: string[]
+          payload: Json
+          reason_code: string
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          source_id: string
+          source_table: string
+          status: string
+          suggested_template_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          business_event_type?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          missing_fields?: string[]
+          payload?: Json
+          reason_code: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source_id: string
+          source_table: string
+          status?: string
+          suggested_template_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          business_event_type?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          missing_fields?: string[]
+          payload?: Json
+          reason_code?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          source_id?: string
+          source_table?: string
+          status?: string
+          suggested_template_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_review_queue_suggested_template_id_fkey"
+            columns: ["suggested_template_id"]
+            isOneToOne: false
+            referencedRelation: "accounting_event_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounting_review_queue_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -756,8 +893,12 @@ export type Database = {
       }
       expenses: {
         Row: {
+          accounting_metadata: Json
+          accounting_review_status: string
+          accounting_template_id: string | null
           amount: number
           approved_by_id: string | null
+          business_event_type: string | null
           category: string
           description: string | null
           expense_date: string
@@ -769,8 +910,12 @@ export type Database = {
           tenant_id: string | null
         }
         Insert: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
           amount: number
           approved_by_id?: string | null
+          business_event_type?: string | null
           category: string
           description?: string | null
           expense_date: string
@@ -782,8 +927,12 @@ export type Database = {
           tenant_id?: string | null
         }
         Update: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
           amount?: number
           approved_by_id?: string | null
+          business_event_type?: string | null
           category?: string
           description?: string | null
           expense_date?: string
@@ -1030,6 +1179,10 @@ export type Database = {
       }
       inventory_logs: {
         Row: {
+          accounting_metadata: Json
+          accounting_review_status: string
+          accounting_template_id: string | null
+          business_event_type: string | null
           change_amount: number
           created_at: string | null
           created_by: string | null
@@ -1041,6 +1194,10 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
+          business_event_type?: string | null
           change_amount: number
           created_at?: string | null
           created_by?: string | null
@@ -1052,6 +1209,10 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
+          business_event_type?: string | null
           change_amount?: number
           created_at?: string | null
           created_by?: string | null
@@ -1698,8 +1859,12 @@ export type Database = {
       }
       revenue: {
         Row: {
+          accounting_metadata: Json
+          accounting_review_status: string
+          accounting_template_id: string | null
           amount: number
           booking_id: string | null
+          business_event_type: string | null
           id: string
           is_locked: boolean | null
           notes: string | null
@@ -1712,8 +1877,12 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
           amount: number
           booking_id?: string | null
+          business_event_type?: string | null
           id?: string
           is_locked?: boolean | null
           notes?: string | null
@@ -1726,8 +1895,12 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
           amount?: number
           booking_id?: string | null
+          business_event_type?: string | null
           id?: string
           is_locked?: boolean | null
           notes?: string | null
@@ -1837,7 +2010,11 @@ export type Database = {
       }
       salary_records: {
         Row: {
+          accounting_metadata: Json
+          accounting_review_status: string
+          accounting_template_id: string | null
           base_salary: number | null
+          business_event_type: string | null
           confirmed_by_admin: boolean | null
           dispute_reason: string | null
           dispute_resolved_at: string | null
@@ -1862,7 +2039,11 @@ export type Database = {
           violations_deduction: number | null
         }
         Insert: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
           base_salary?: number | null
+          business_event_type?: string | null
           confirmed_by_admin?: boolean | null
           dispute_reason?: string | null
           dispute_resolved_at?: string | null
@@ -1887,7 +2068,11 @@ export type Database = {
           violations_deduction?: number | null
         }
         Update: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
           base_salary?: number | null
+          business_event_type?: string | null
           confirmed_by_admin?: boolean | null
           dispute_reason?: string | null
           dispute_resolved_at?: string | null
@@ -1937,11 +2122,15 @@ export type Database = {
       }
       session_logs: {
         Row: {
+          accounting_metadata: Json
+          accounting_review_status: string
+          accounting_template_id: string | null
           actual_duration: number | null
           address: string | null
           assigned_date: string | null
           assigned_time: string | null
           booking_id: string
+          business_event_type: string | null
           checkin_lat: number | null
           checkin_lon: number | null
           checkout_lat: number | null
@@ -1967,11 +2156,15 @@ export type Database = {
           zalo_reminder_time: string | null
         }
         Insert: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
           actual_duration?: number | null
           address?: string | null
           assigned_date?: string | null
           assigned_time?: string | null
           booking_id: string
+          business_event_type?: string | null
           checkin_lat?: number | null
           checkin_lon?: number | null
           checkout_lat?: number | null
@@ -1997,11 +2190,15 @@ export type Database = {
           zalo_reminder_time?: string | null
         }
         Update: {
+          accounting_metadata?: Json
+          accounting_review_status?: string
+          accounting_template_id?: string | null
           actual_duration?: number | null
           address?: string | null
           assigned_date?: string | null
           assigned_time?: string | null
           booking_id?: string
+          business_event_type?: string | null
           checkin_lat?: number | null
           checkin_lon?: number | null
           checkout_lat?: number | null
@@ -2705,6 +2902,17 @@ export type Database = {
           reference_id: string
           reference_type: string
           running_balance: number
+        }[]
+      }
+      get_accounting_readiness: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          classified_records: number
+          missing_business_event: number
+          needs_review: number
+          posting_failed: number
+          source_table: string
+          total_records: number
         }[]
       }
       get_ai_attendance_kpis: {
