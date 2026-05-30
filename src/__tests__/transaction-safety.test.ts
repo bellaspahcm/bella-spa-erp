@@ -375,10 +375,13 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
     expect(bookingsQueryBuilder.deleteCalled).toBe(true);
   });
 
-  it('rolls back remaining payment revenue and booking totals when audit logging fails', async () => {
+  it('returns remaining payment RPC failure without app-layer partial writes', async () => {
     const bookingsQueryBuilder = new MockQueryBuilder('bookings');
     const revenueQueryBuilder = new MockQueryBuilder('revenue');
-    mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+    mockSupabase.rpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'Audit write failed' },
+    });
 
     mockSupabase.from.mockImplementation((table: string) => {
       if (table === 'bookings') return bookingsQueryBuilder;
@@ -394,16 +397,19 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
       status: 'pending'
     });
 
-    expect(result.error).toBe('Audit write failed');
-    expect(revenueQueryBuilder.deleteCalled).toBe(true);
-    expect(bookingsQueryBuilder.updatePayloads).toContainEqual(expect.objectContaining({
-      deposit_amount: 2000000,
-      status: 'booked'
-    }));
-    expect(bookingsQueryBuilder.updatePayloads).toContainEqual(expect.objectContaining({
-      deposit_amount: 1000000,
-      status: 'booked'
-    }));
+    expect(result.error).toBe('Không thể ghi nhận giao dịch tài chính: Audit write failed');
+    expect(mockSupabase.rpc).toHaveBeenCalledWith(
+      'record_remaining_payment_atomic',
+      expect.objectContaining({
+        p_booking_id: 'mock-booking-id',
+        p_amount: 1000000,
+        p_payment_method: 'cash',
+        p_status: 'pending',
+      })
+    );
+    expect(revenueQueryBuilder.insertCalled).toBe(false);
+    expect(revenueQueryBuilder.deleteCalled).toBe(false);
+    expect(bookingsQueryBuilder.updatePayloads).toHaveLength(0);
   });
 
   it('rolls back online booking and new customer when booking audit logging fails', async () => {

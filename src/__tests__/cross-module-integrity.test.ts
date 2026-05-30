@@ -249,9 +249,69 @@ class MockQueryBuilder {
   }
 }
 
+function recordRemainingPaymentAtomicMock(params: any) {
+  const booking = mockStore.bookings.find((b) => b.id === params.p_booking_id);
+  if (!booking) {
+    return Promise.resolve({ data: null, error: { message: 'Booking not found' } });
+  }
+
+  const targetPrice = (booking.full_price || 0) * (1 - (booking.discount_percent || 0) / 100);
+  const currentDebt = targetPrice - (booking.deposit_amount || 0);
+  if (params.p_amount <= 0 || params.p_amount > currentDebt) {
+    return Promise.resolve({ data: null, error: { message: 'Invalid remaining payment amount' } });
+  }
+
+  const revenueId = `rev-remaining-${mockStore.revenue.length + 1}`;
+  const newTotalPaid = (booking.deposit_amount || 0) + params.p_amount;
+  const newStatus = newTotalPaid >= targetPrice && ['deposit_pending', 'deposit'].includes(booking.status)
+    ? 'booked'
+    : booking.status;
+  const revenueStatus = params.p_status === 'confirmed' || newStatus === 'booked'
+    ? 'confirmed'
+    : (params.p_status || 'pending');
+
+  mockStore.revenue.push({
+    id: revenueId,
+    booking_id: params.p_booking_id,
+    amount: params.p_amount,
+    revenue_type: params.p_revenue_type || 'remaining_payment',
+    payment_method: params.p_payment_method,
+    received_date: params.p_received_date,
+    status: revenueStatus,
+    notes: params.p_notes,
+    receipt_url: params.p_receipt_url,
+    tenant_id: booking.tenant_id,
+    business_event_type: params.p_business_event_type,
+    accounting_review_status: params.p_accounting_review_status,
+    accounting_metadata: params.p_accounting_metadata,
+    is_locked: false,
+  });
+
+  Object.assign(booking, {
+    deposit_amount: newTotalPaid,
+    status: newStatus,
+    updated_at: new Date().toISOString(),
+  });
+
+  return Promise.resolve({
+    data: {
+      booking_id: params.p_booking_id,
+      revenue_id: revenueId,
+      booking_status: newStatus,
+      deposit_amount: newTotalPaid,
+      revenue_status: revenueStatus,
+    },
+    error: null,
+  });
+}
+
 const mockSupabase = {
   from: jest.fn((table: string) => new MockQueryBuilder(table)),
   rpc: jest.fn().mockImplementation((name, params) => {
+    if (name === 'record_remaining_payment_atomic') {
+      return recordRemainingPaymentAtomicMock(params);
+    }
+
     if (name === 'lock_monthly_records') {
       const monthStart = params.p_month;
       const monthEnd = `${monthStart.substring(0, 7)}-31`;
