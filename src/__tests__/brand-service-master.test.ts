@@ -145,6 +145,30 @@ describe('Brand Service Master System (Phase 2)', () => {
         'Failed to fetch HQ package templates for distribution matrix: matrix templates failed'
       );
     });
+
+    it('maps distributed package tenant names without relying on embedded tenant relationships', async () => {
+      mockCheckHqAuth.mockResolvedValue({ authorized: true, user: hqAdminUser });
+      const templatesQuery = new MockQueryBuilder([
+        { id: 'template-1', name: 'VIP Template', price: 1000000, is_hq_template: true }
+      ]);
+      const tenantsQuery = new MockQueryBuilder([
+        { id: 'branch-1', name: 'Bella Spa HCM' }
+      ]);
+      const distributedQuery = new MockQueryBuilder([
+        { id: 'pkg-1', name: 'VIP Branch', price: 900000, tenant_id: 'branch-1', template_id: 'template-1', status: 'active' }
+      ]);
+
+      mockFrom
+        .mockReturnValueOnce(templatesQuery)
+        .mockReturnValueOnce(tenantsQuery)
+        .mockReturnValueOnce(distributedQuery);
+
+      const result = await getBrandDistributionMatrix();
+
+      expect(distributedQuery.selectSpy).toHaveBeenCalledWith('*');
+      expect(distributedQuery.selectSpy).not.toHaveBeenCalledWith('*, tenants(name)');
+      expect(result.distributed[0].tenant_name).toBe('Bella Spa HCM');
+    });
   });
 
   describe('createHqPackageTemplate', () => {
