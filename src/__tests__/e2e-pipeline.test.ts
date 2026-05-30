@@ -25,6 +25,9 @@ interface MockStore {
   users: any[];
   salary_records: any[];
   session_reviews: any[];
+  franchise_royalty_invoices: any[];
+  inter_branch_clearing_records: any[];
+  tenants: any[];
 }
 
 let mockStore: MockStore = {
@@ -35,6 +38,9 @@ let mockStore: MockStore = {
   users: [],
   salary_records: [],
   session_reviews: [],
+  franchise_royalty_invoices: [],
+  inter_branch_clearing_records: [],
+  tenants: [],
 };
 
 function resetMockStore() {
@@ -62,6 +68,11 @@ function resetMockStore() {
     ],
     salary_records: [],
     session_reviews: [],
+    franchise_royalty_invoices: [],
+    inter_branch_clearing_records: [],
+    tenants: [
+      { id: 'tenant-a', name: 'Bella Spa Branch A', royalty_type: 'percentage', royalty_rate: 10, internal_clearing_rate: 150000 },
+    ],
   };
 }
 

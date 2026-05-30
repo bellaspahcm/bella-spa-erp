@@ -2,6 +2,7 @@
 
 import { resolvePackageName, getLocalDateString, sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { syncBookingProgress } from './lifecycle-actions';
 import type { Database } from '@/types/database.types';
@@ -53,6 +54,20 @@ export async function processSessionCompletion(
   existingLog: any,
   currentUser: any
 ) {
+  try {
+    await assertOpenAccountingPeriod(supabase, {
+      tenantId,
+      date: today,
+      context: 'Complete booking session',
+    });
+  } catch (periodErr) {
+    return {
+      error: periodErr instanceof Error
+        ? periodErr.message
+        : 'Accounting period is closed or unavailable',
+    };
+  }
+
   // 1. Tự động trừ kho vật tư tiêu hao nếu có định mức
   let isInventoryConsumed = false;
   if (packageId) {
