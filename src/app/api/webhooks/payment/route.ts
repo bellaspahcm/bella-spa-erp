@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { enqueueWithAutoClient } from "@/lib/accounting-outbox";
 import { safeStringify } from "@/lib/log-redactor";
+import { assertOpenAccountingPeriod } from "@/services/accounting/period-guards";
 import { findMissingRequiredFields, inferBusinessEventType } from "@/services/accounting/template-rules";
 import type { Database } from "@/types/database.types";
 
@@ -230,6 +231,19 @@ export async function POST(request: NextRequest) {
       // 4. Update booking status and record revenue
       let revenueType: NonNullable<Database["public"]["Tables"]["revenue"]["Insert"]["revenue_type"]> = "additional";
       const oldStatus = booking.status;
+      const cleanDate = receivedDate ? new Date(receivedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+
+      try {
+        await assertOpenAccountingPeriod(supabase, {
+          tenantId: booking.tenant_id,
+          date: cleanDate,
+          context: `Payment webhook booking ${bookingNumber}`,
+        });
+      } catch (periodErr) {
+        const reason = periodErr instanceof Error ? periodErr.message : "Accounting period is closed";
+        results.push({ transactionId, bookingNumber, status: "failed", reason });
+        continue;
+      }
 
       // If the booking is in deposit_pending or inquiry state, change status to 'booked' and set revenueType to 'deposit'
       if (oldStatus === "deposit_pending" || oldStatus === "inquiry") {
@@ -249,7 +263,6 @@ export async function POST(request: NextRequest) {
       }
 
       // 5. Insert revenue entry
-      const cleanDate = receivedDate ? new Date(receivedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
       const businessEventType = inferBusinessEventType({
         sourceTable: "revenue",
         revenueType,

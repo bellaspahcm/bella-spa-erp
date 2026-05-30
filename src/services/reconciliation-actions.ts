@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { getLocalDateString } from '@/lib/utils';
 import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
+import { assertOpenAccountingPeriod } from './accounting/period-guards';
 import { assertLegacyFinanceWriteAllowed } from './accounting/mode';
 import { getCurrentUser } from './user-actions';
 import type { Database } from '@/types/database.types';
@@ -66,12 +67,30 @@ export async function allocateOrphanedRevenue(revenueId: string, bookingId: stri
     }
     await assertLegacyFinanceWriteAllowed('Phân bổ doanh thu treo');
 
+    const supabase = await createClient();
+    const { data: existingRevenue, error: existingRevenueError } = await supabase
+      .from('revenue')
+      .select('received_date, tenant_id')
+      .eq('id', revenueId)
+      .eq('tenant_id', user.tenant_id)
+      .is('booking_id', null)
+      .single();
+
+    if (existingRevenueError || !existingRevenue) {
+      return { success: false, error: existingRevenueError?.message || 'Không tìm thấy doanh thu treo' };
+    }
+
+    await assertOpenAccountingPeriod(supabase, {
+      tenantId: existingRevenue.tenant_id,
+      date: existingRevenue.received_date,
+      context: 'Allocate orphaned revenue',
+    });
+
     const payload: Database['public']['Tables']['revenue']['Update'] = {
       booking_id: bookingId,
       status: 'confirmed',
     };
 
-    const supabase = await createClient();
     const { error } = await supabase
       .from('revenue')
       .update(payload)
@@ -118,6 +137,14 @@ export async function collectDebtPayment(input: {
       booking_id: input.bookingId,
       reason: `Thu đối soát công nợ - KH: ${customerStr} - Gói: ${packageStr} (Booking: ${shortBookingId})`,
     };
+    const receivedDate = getLocalDateString();
+    const supabase = await createClient();
+    await assertOpenAccountingPeriod(supabase, {
+      tenantId: user.tenant_id,
+      date: receivedDate,
+      context: 'Collect debt payment',
+    });
+
     const payload: Database['public']['Tables']['revenue']['Insert'] = {
       tenant_id: user.tenant_id,
       booking_id: input.bookingId,
@@ -126,14 +153,13 @@ export async function collectDebtPayment(input: {
       notes: accountingPayload.reason,
       status: 'confirmed',
       payment_method: input.paymentMethod,
-      received_date: getLocalDateString(),
+      received_date: receivedDate,
       recorded_by_id: user.id,
       business_event_type: businessEventType,
       accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
       accounting_metadata: accountingPayload,
     };
 
-    const supabase = await createClient();
     const { error } = await supabase.from('revenue').insert(payload);
     if (error) return { success: false, error: error.message };
 

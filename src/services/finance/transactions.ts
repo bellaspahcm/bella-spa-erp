@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getLocalDateString } from '@/lib/utils';
 import { resolveTenantId } from './shared';
+import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import type { MappedTransaction, RevenueDBRow, ExpenseDBRow } from './types';
 import type { Database } from '@/types/database.types';
@@ -140,7 +141,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   if (type === 'revenue') {
     const { data: existingRev, error: existingRevError } = await supabase
       .from('revenue')
-      .select('revenue_type, amount, payment_method, booking_id, notes')
+      .select('revenue_type, amount, payment_method, booking_id, notes, tenant_id')
       .eq('id', id)
       .single();
 
@@ -159,6 +160,11 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       booking_id: existingRev?.booking_id,
       reason: existingRev?.notes,
     };
+    await assertOpenAccountingPeriod(supabase, {
+      tenantId: existingRev?.tenant_id,
+      date: today,
+      context: 'Confirm revenue transaction',
+    });
     const revenueUpdatePayload: RevenueUpdate = {
       status: 'confirmed',
       received_date: today,
@@ -203,7 +209,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   } else {
     const { data: existingExpense, error: existingExpenseError } = await supabase
       .from('expenses')
-      .select('category, amount, description')
+      .select('category, amount, description, tenant_id')
       .eq('id', id)
       .single();
 
@@ -222,6 +228,11 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       expense_date: today,
       description: existingExpense?.description,
     };
+    await assertOpenAccountingPeriod(supabase, {
+      tenantId: existingExpense?.tenant_id,
+      date: today,
+      context: 'Confirm expense transaction',
+    });
     const expenseUpdatePayload: ExpenseUpdate = {
       status: 'approved',
       expense_date: today,
@@ -370,6 +381,11 @@ export async function recordTransaction(data: {
         expense_date: expenseDate,
         description: data.notes,
       };
+      await assertOpenAccountingPeriod(supabase, {
+        tenantId,
+        date: expenseDate,
+        context: 'Record expense transaction',
+      });
       const expenseInsertPayload: ExpenseInsert = {
         amount: Math.abs(data.amount),
         category: dbCategory,
@@ -436,6 +452,11 @@ export async function recordTransaction(data: {
         booking_id: data.booking_id || null,
         reason: data.notes,
       };
+      await assertOpenAccountingPeriod(supabase, {
+        tenantId,
+        date: receivedDate,
+        context: 'Record revenue transaction',
+      });
       const revenueInsertPayload: RevenueInsert = {
         amount: Math.abs(data.amount),
         notes: data.notes,

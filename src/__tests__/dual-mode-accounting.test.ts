@@ -289,6 +289,31 @@ describe('Application Layer protection', () => {
 
     await expect(confirmTransaction('rev-1', 'revenue')).rejects.toThrow(/Professional Core/);
   });
+
+  it('blocks manually recordTransaction if the accounting period is closed', async () => {
+    mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
+    mockRpc.mockImplementation((fnName: string) => {
+      if (fnName === 'ensure_open_period') {
+        return Promise.resolve({
+          data: null,
+          error: { message: 'Accounting period is closed' },
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    await expect(
+      recordTransaction({
+        amount: 200000,
+        type: 'expense',
+        category: 'other_admin',
+        notes: 'Mua khan giay',
+      })
+    ).rejects.toThrow(/accounting period is closed/i);
+
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
   it('blocks reconciliation debt collection if mode is PROFESSIONAL', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
     mockSingle.mockResolvedValueOnce({ data: { accounting_mode: 'PROFESSIONAL' }, error: null });
