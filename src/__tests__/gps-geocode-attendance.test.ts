@@ -354,15 +354,17 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
 
       expect(result.success).toBe(true);
 
-      // Verify session update payload includes checkout coordinates
+      // Verify critical checkout data is saved independently from optional GPS capture.
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('session_logs');
       expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
         status: 'completed',
         notes: 'Notes',
         ktv_checkout_note: 'Checkout Note',
+      }));
+      expect(mockUpdate).toHaveBeenCalledWith({
         checkout_lat: 10.77,
         checkout_lon: 106.70,
-      }));
+      });
     });
   });
 });

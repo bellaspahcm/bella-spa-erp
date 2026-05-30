@@ -3,6 +3,7 @@ import {
   getKTVEarnings,
   getKTVNotifications,
   getKTVUpcomingSessions,
+  completeKTVSession,
   startSession,
 } from '../services/ktv-actions';
 
@@ -26,14 +27,16 @@ jest.mock('../lib/supabase-server', () => ({
 class MockQueryBuilder {
   public updateSpy = jest.fn().mockReturnThis();
 
-  constructor(private data: any = null, private error: any = null) {}
+  constructor(private data: any = null, private error: any = null, private count: number | null = null) {}
 
   select() { return this; }
   update(...args: any[]) {
     this.updateSpy(...args);
     return this;
   }
+  delete() { return this; }
   eq() { return this; }
+  gt() { return this; }
   neq() { return this; }
   gte() { return this; }
   lt() { return this; }
@@ -42,7 +45,7 @@ class MockQueryBuilder {
   single() { return this; }
 
   then(onfulfilled: any) {
-    return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
+    return Promise.resolve({ data: this.data, error: this.error, count: this.count }).then(onfulfilled);
   }
 }
 
@@ -164,12 +167,14 @@ describe('KTV read actions fail-fast behavior', () => {
     const fetchSession = new MockQueryBuilder(session, null);
     const startUpdate = new MockQueryBuilder(null, null);
     const bookingUpdate = new MockQueryBuilder(null, null);
+    const sessionGpsUpdate = new MockQueryBuilder(null, null);
     const customerGpsUpdate = new MockQueryBuilder(null, { message: 'gps update failed' });
 
     mockFrom
       .mockReturnValueOnce(fetchSession)
       .mockReturnValueOnce(startUpdate)
       .mockReturnValueOnce(bookingUpdate)
+      .mockReturnValueOnce(sessionGpsUpdate)
       .mockReturnValueOnce(customerGpsUpdate);
 
     const result = await startSession('session-1', 10.5, 106.5);
@@ -178,6 +183,118 @@ describe('KTV read actions fail-fast behavior', () => {
       success: true,
       warning: 'Session started, but customer GPS coordinates were not saved: gps update failed',
     });
-    expect(mockFrom).toHaveBeenCalledTimes(4);
+    expect(mockFrom).toHaveBeenCalledTimes(5);
+  });
+
+  it('does not fail checkout when non-critical checkout GPS save fails', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      start_time: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      end_time: null,
+      completed_date: null,
+      notes: null,
+      standard_duration: null,
+      actual_duration: null,
+      time_deviation: null,
+      duration_warning_type: null,
+      ktv_checkout_note: null,
+      checkout_lat: null,
+      checkout_lon: null,
+      bookings: {
+        package_id: null,
+        packages: { duration: '60 phut' },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const completeUpdate = new MockQueryBuilder(null, null);
+    const checkoutGpsUpdate = new MockQueryBuilder(null, { message: 'checkout gps failed' });
+    const completedCount = new MockQueryBuilder(null, null, 1);
+    const fetchBooking = new MockQueryBuilder({ total_sessions: 10 }, null);
+    const bookingUpdate = new MockQueryBuilder(null, null);
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(completeUpdate)
+      .mockReturnValueOnce(checkoutGpsUpdate)
+      .mockReturnValueOnce(completedCount)
+      .mockReturnValueOnce(fetchBooking)
+      .mockReturnValueOnce(bookingUpdate);
+
+    const result = await completeKTVSession('session-1', 'notes', 'checkout note', 10.5, 106.5);
+
+    expect(result).toEqual({
+      success: true,
+      warning: 'Session completed, but checkout GPS was not saved: checkout gps failed',
+    });
+    expect(completeUpdate.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'completed',
+      notes: 'notes',
+      ktv_checkout_note: 'checkout note',
+    }));
+    expect(completeUpdate.updateSpy).not.toHaveBeenCalledWith(expect.objectContaining({
+      checkout_lat: 10.5,
+      checkout_lon: 106.5,
+    }));
+    expect(checkoutGpsUpdate.updateSpy).toHaveBeenCalledWith({
+      checkout_lat: 10.5,
+      checkout_lon: 106.5,
+    });
+  });
+
+  it('rolls back completed session when booking update after checkout fails', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      start_time: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      end_time: null,
+      completed_date: null,
+      notes: 'old notes',
+      standard_duration: null,
+      actual_duration: null,
+      time_deviation: null,
+      duration_warning_type: null,
+      ktv_checkout_note: null,
+      checkout_lat: null,
+      checkout_lon: null,
+      bookings: {
+        package_id: null,
+        packages: { duration: '60 phut' },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const completeUpdate = new MockQueryBuilder(null, null);
+    const completedCount = new MockQueryBuilder(null, null, 1);
+    const fetchBooking = new MockQueryBuilder({ total_sessions: 10 }, null);
+    const bookingUpdate = new MockQueryBuilder(null, { message: 'booking update failed' });
+    const rollbackSession = new MockQueryBuilder(null, null);
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(completeUpdate)
+      .mockReturnValueOnce(completedCount)
+      .mockReturnValueOnce(fetchBooking)
+      .mockReturnValueOnce(bookingUpdate)
+      .mockReturnValueOnce(rollbackSession);
+
+    const result = await completeKTVSession('session-1', 'notes', 'checkout note');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Failed to update booking after completing session: booking update failed',
+    });
+    expect(rollbackSession.updateSpy).toHaveBeenCalledWith({
+      status: 'in_progress',
+      end_time: null,
+      completed_date: null,
+      notes: 'old notes',
+      standard_duration: null,
+      actual_duration: null,
+      time_deviation: null,
+      duration_warning_type: null,
+      ktv_checkout_note: null,
+      checkout_lat: null,
+      checkout_lon: null,
+    });
   });
 });
