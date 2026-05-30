@@ -52,7 +52,13 @@ export async function createPackage(packageData: any) {
         new_data: data[0]
       });
     } catch (auditErr) {
-      console.warn('Failed to record createPackage audit log:', auditErr);
+      await supabase
+        .from('packages')
+        .delete()
+        .eq('id', data[0].id);
+      return {
+        error: auditErr instanceof Error ? auditErr.message : 'Failed to record createPackage audit log'
+      };
     }
   }
 
@@ -66,14 +72,19 @@ export async function updatePackage(id: string, packageData: any) {
   // Fetch existing package before update for audit trail
   let oldPackage = null;
   try {
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('packages')
       .select('*')
       .eq('id', id)
       .single();
+    if (existingError) {
+      return { error: existingError.message };
+    }
     oldPackage = existing;
   } catch (err) {
-    console.warn('Failed to fetch old package for audit trail:', err);
+    return {
+      error: err instanceof Error ? err.message : 'Failed to fetch old package for audit trail'
+    };
   }
   
   // Format data for DB
@@ -110,7 +121,15 @@ export async function updatePackage(id: string, packageData: any) {
         new_data: dbData
       });
     } catch (auditErr) {
-      console.warn('Failed to record updatePackage audit log:', auditErr);
+      if (oldPackage) {
+        await supabase
+          .from('packages')
+          .update(oldPackage)
+          .eq('id', id);
+      }
+      return {
+        error: auditErr instanceof Error ? auditErr.message : 'Failed to record updatePackage audit log'
+      };
     }
   }
 
@@ -124,14 +143,19 @@ export async function deletePackage(id: string) {
   // Fetch existing package before delete for audit trail
   let oldPackage = null;
   try {
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('packages')
       .select('*')
       .eq('id', id)
       .single();
+    if (existingError) {
+      return { error: existingError.message };
+    }
     oldPackage = existing;
   } catch (err) {
-    console.warn('Failed to fetch old package for delete audit trail:', err);
+    return {
+      error: err instanceof Error ? err.message : 'Failed to fetch old package for delete audit trail'
+    };
   }
 
   const { error } = await supabase
@@ -153,7 +177,14 @@ export async function deletePackage(id: string) {
       old_data: oldPackage
     });
   } catch (auditErr) {
-    console.warn('Failed to record deletePackage audit log:', auditErr);
+    if (oldPackage) {
+      await supabase
+        .from('packages')
+        .insert([oldPackage]);
+    }
+    return {
+      error: auditErr instanceof Error ? auditErr.message : 'Failed to record deletePackage audit log'
+    };
   }
 
   safeRevalidatePath('/dashboard/services');

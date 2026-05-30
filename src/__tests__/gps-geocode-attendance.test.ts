@@ -11,6 +11,7 @@ jest.mock('next/cache', () => ({
 const mockSelect = jest.fn();
 const mockInsert = jest.fn();
 const mockUpdate = jest.fn();
+const mockDelete = jest.fn();
 const mockEq = jest.fn();
 const mockOrder = jest.fn();
 const mockSingle = jest.fn();
@@ -27,6 +28,7 @@ class MockQueryBuilder {
   select(...args: any[]) { mockSelect(...args); return this; }
   insert(...args: any[]) { mockInsert(...args); return this; }
   update(...args: any[]) { mockUpdate(...args); return this; }
+  delete(...args: any[]) { mockDelete(...args); return this; }
   eq(...args: any[]) { mockEq(...args); return this; }
   order(...args: any[]) { mockOrder(...args); return this; }
   single(...args: any[]) { mockSingle(...args); return this; }
@@ -58,6 +60,11 @@ jest.mock('../lib/revalidate', () => ({
   safeRevalidatePath: jest.fn().mockResolvedValue(undefined),
 }));
 
+const mockRecordAuditLog = jest.fn();
+jest.mock('../services/audit-actions', () => ({
+  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
+}));
+
 import { geocodeAddress, createCustomer, updateCustomer } from '../services/customer-actions';
 import { startSession, completeKTVSession } from '../services/ktv-actions';
 
@@ -65,6 +72,7 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     global.fetch = jest.fn();
+    mockRecordAuditLog.mockResolvedValue({ success: true });
   });
 
   describe('geocodeAddress', () => {
@@ -158,6 +166,18 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
           longitude: 106.123,
         },
       ]);
+    });
+
+    it('createCustomer rolls back inserted customer when audit logging fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(mockAdminUser);
+      mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+      mockSupabaseClient.from.mockImplementation(() => new MockQueryBuilder([{ id: 'cust-1' }], null));
+
+      const result = await createCustomer({ name: 'Customer A' });
+
+      expect(result).toEqual({ data: null, error: 'Audit write failed', warning: null });
+      expect(mockDelete).toHaveBeenCalled();
+      expect(mockEq).toHaveBeenCalledWith('id', 'cust-1');
     });
 
     it('updateCustomer calls geocodeAddress when address is changed and lat/lon are missing', async () => {
