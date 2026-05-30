@@ -135,8 +135,7 @@ export async function getKTVActiveSessions() {
     .order('start_time', { ascending: false });
 
   if (error) {
-    console.error('Error fetching active sessions:', error);
-    return [];
+    throw new Error(`Failed to fetch KTV active sessions: ${error.message}`);
   }
 
   return (data as unknown as SessionLogWithBooking[] || [])
@@ -223,9 +222,12 @@ export async function getKTVUpcomingSessions() {
     .eq('completed_by_ktv_id', user.id)
     .eq('status', 'scheduled');
 
-  if (originalError && reassignedError) {
-    console.error('Error fetching upcoming sessions:', originalError || reassignedError);
-    return [];
+  if (originalError) {
+    throw new Error(`Failed to fetch originally assigned KTV sessions: ${originalError.message}`);
+  }
+
+  if (reassignedError) {
+    throw new Error(`Failed to fetch reassigned KTV sessions: ${reassignedError.message}`);
   }
 
   // Merge the two arrays and deduplicate by session log ID
@@ -233,12 +235,11 @@ export async function getKTVUpcomingSessions() {
   if (originalData) (originalData as unknown as SessionLogWithInnerBooking[]).forEach((s) => mergedMap.set(s.id, s));
   if (reassignedData) (reassignedData as unknown as SessionLogWithInnerBooking[]).forEach((s) => mergedMap.set(s.id, s));
   const sessions = Array.from(mergedMap.values());
-  console.log("getKTVUpcomingSessions sessions length:", sessions?.length);
   const bookingIds = [...new Set(sessions?.map((s) => s.booking_id) || [])];
 
   if (bookingIds.length === 0) return [];
 
-  const { data: allSessionsForBookings } = await supabase
+  const { data: allSessionsForBookings, error: allSessionsError } = await supabase
     .from('session_logs')
     .select(`
       *,
@@ -267,7 +268,10 @@ export async function getKTVUpcomingSessions() {
     .in('booking_id', bookingIds)
     .order('session_number', { ascending: true });
 
-  console.log("allSessionsForBookings length:", allSessionsForBookings?.length);
+  if (allSessionsError) {
+    throw new Error(`Failed to fetch all sessions for KTV bookings: ${allSessionsError.message}`);
+  }
+
   const sessionsByBooking: Record<string, SessionLogWithInnerBooking[]> = {};
   const typedSessions = allSessionsForBookings as unknown as SessionLogWithInnerBooking[];
   typedSessions?.forEach((s) => {
@@ -327,7 +331,6 @@ export async function getKTVUpcomingSessions() {
       const bookingTotal = booking?.total_sessions || 0;
       const isBookingCompleted = booking?.status === 'completed';
 
-      console.log(`Processing session ${s.id}, status: ${s.status}, finalDate: ${finalDate}, today: ${today}, sessionNum: ${s.session_number}, total: ${bookingTotal}`);
       if (s.status === 'scheduled' && finalDate === today && s.session_number <= bookingTotal && !isBookingCompleted) {
         processedSessionsList.push({
           ...s,
@@ -350,7 +353,6 @@ export async function getKTVUpcomingSessions() {
     return timeA.localeCompare(timeB);
   });
 
-  console.log("Processed sessions:", processedSessionsList.length);
   return processedSessionsList;
 }
 
@@ -611,7 +613,9 @@ export async function getKTVEarnings(month: string) {
     .gte('completed_date', startOfMonth)
     .lt('completed_date', nextMonth);
 
-  if (error) return { total: 0, sessions: 0 };
+  if (error) {
+    throw new Error(`Failed to fetch KTV earnings: ${error.message}`);
+  }
 
   const total = (data as unknown as SessionLogCommission[] || []).reduce((acc: number, s) => acc + (Number(s.bookings?.ktv_commission) || 0), 0);
   
@@ -633,9 +637,6 @@ export async function getKTVLeaderboard(month: string) {
   });
 
   if (error) {
-    // Per AGENTS.md Rule 1: never silently swallow DB errors. The caller
-    // (KTVLeaderboardPage) already has a try/catch that surfaces a toast.
-    console.error('Error fetching leaderboard:', error);
     throw new Error(`get_ktv_leaderboard failed: ${error.message}`);
   }
 
@@ -659,8 +660,7 @@ export async function getKTVNotifications() {
     .order('createdAt', { ascending: false });
 
   if (error) {
-    console.error('Error fetching KTV notifications:', error);
-    return [];
+    throw new Error(`Failed to fetch KTV notifications: ${error.message}`);
   }
 
   if (!data) return [];
