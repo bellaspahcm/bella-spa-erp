@@ -30,30 +30,44 @@ beforeEach(() => {
   jest.clearAllMocks();
   // Default: successful RPC
   mockRpc.mockResolvedValue({ error: null });
-  // Default: successful chainable query builder
-  const mockQueryChain: any = {
-    select: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    single: jest.fn().mockReturnThis(),
-    maybeSingle: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    gte: jest.fn().mockReturnThis(),
-    lte: jest.fn().mockReturnThis(),
-    in: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-  };
-  
-  // Make the promise itself chainable or return chainable methods
-  const mockResolve = { data: null, error: null };
-  const mockPromise: any = Promise.resolve(mockResolve);
-  Object.assign(mockPromise, mockQueryChain);
-  
-  Object.keys(mockQueryChain).forEach(key => {
-    mockQueryChain[key].mockReturnValue(mockPromise);
+  mockFrom.mockImplementation((table: string) => {
+    let usedInFilter = false;
+    const resolve = () => {
+      if (table === 'tenants') {
+        return {
+          data: usedInFilter
+            ? []
+            : {
+                name: 'Bella Spa',
+                royalty_type: 'percentage',
+                royalty_rate: 10,
+                royalty_fixed_amount: null,
+              },
+          error: null,
+        };
+      }
+      if (table === 'revenue' || table === 'session_logs') return { data: [], error: null };
+      if (table === 'franchise_royalty_invoices' || table === 'inter_branch_clearing_records') return { data: null, error: null };
+      return { data: null, error: null };
+    };
+    const chain: any = {
+      select: jest.fn(() => chain),
+      update: jest.fn(() => chain),
+      insert: jest.fn(() => chain),
+      single: jest.fn(() => Promise.resolve(resolve())),
+      maybeSingle: jest.fn(() => Promise.resolve({ data: null, error: null })),
+      eq: jest.fn(() => chain),
+      gte: jest.fn(() => chain),
+      lte: jest.fn(() => chain),
+      in: jest.fn(() => {
+        usedInFilter = true;
+        return chain;
+      }),
+      order: jest.fn(() => chain),
+      then: (cb: any) => Promise.resolve(resolve()).then(cb),
+    };
+    return chain;
   });
-  
-  mockFrom.mockReturnValue(mockQueryChain);
 });
 
 describe('lockMonth', () => {
@@ -99,6 +113,26 @@ describe('lockMonth', () => {
     expect(result.error).toContain('DB timeout');
   });
 
+  it('returns error when royalty tenant lookup fails', async () => {
+    mockGetCurrentUser.mockResolvedValue(adminUser);
+    mockFrom.mockImplementation((table: string) => {
+      const chain: any = {
+        select: jest.fn(() => chain),
+        eq: jest.fn(() => chain),
+        single: jest.fn(() => Promise.resolve({
+          data: null,
+          error: table === 'tenants' ? { message: 'tenant unavailable' } : null,
+        })),
+      };
+      return chain;
+    });
+
+    const result = await lockMonth('2026-05-01');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/hệ thống|system/i);
+  });
+
   it('revalidatePath được gọi sau khi lock thành công', async () => {
     mockGetCurrentUser.mockResolvedValue(adminUser);
     const { revalidatePath } = require('next/cache');
@@ -126,5 +160,27 @@ describe('unlockMonth', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/Admin/i);
+  });
+
+  it('returns error when a table unlock update fails', async () => {
+    mockGetCurrentUser.mockResolvedValue(adminUser);
+    mockFrom.mockImplementation((table: string) => {
+      const chain: any = {
+        update: jest.fn(() => chain),
+        eq: jest.fn(() => chain),
+        gte: jest.fn(() => chain),
+        lte: jest.fn(() => chain),
+        then: (cb: any) => Promise.resolve({
+          data: null,
+          error: table === 'revenue' ? { message: 'unlock failed' } : null,
+        }).then(cb),
+      };
+      return chain;
+    });
+
+    const result = await unlockMonth('2026-05-01');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('unlock failed');
   });
 });
