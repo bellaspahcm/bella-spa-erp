@@ -3,7 +3,18 @@
 import { revalidatePath } from 'next/cache';
 import { getLocalDateString } from '@/lib/utils';
 import { resolveTenantId } from './shared';
+import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import type { MappedTransaction, RevenueDBRow, ExpenseDBRow } from './types';
+
+function resolveReviewStatus(
+  businessEventType: ReturnType<typeof inferBusinessEventType>,
+  payload: Record<string, unknown>
+) {
+  if (!businessEventType) return 'NEEDS_REVIEW';
+  return findMissingRequiredFields(businessEventType, payload).length > 0
+    ? 'NEEDS_REVIEW'
+    : 'UNREVIEWED';
+}
 
 export async function getFinancialOverview() {
   const { createClient } = await import('@/lib/supabase-server');
@@ -123,9 +134,37 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   const today = getLocalDateString();
 
   if (type === 'revenue') {
+    const { data: existingRev, error: existingRevError } = await supabase
+      .from('revenue')
+      .select('revenue_type, amount, payment_method, booking_id, notes')
+      .eq('id', id)
+      .single();
+
+    if (existingRevError) {
+      console.error(`Error fetching revenue before confirmation:`, existingRevError);
+      throw new Error(`Failed to fetch revenue before confirmation: ${existingRevError.message}`);
+    }
+
+    const businessEventType = inferBusinessEventType({
+      sourceTable: 'revenue',
+      revenueType: existingRev?.revenue_type,
+    });
+    const accountingPayload = {
+      amount: Number(existingRev?.amount || 0),
+      payment_method: existingRev?.payment_method || 'bank_transfer',
+      booking_id: existingRev?.booking_id,
+      reason: existingRev?.notes,
+    };
+
     const { data: updatedRev, error } = await supabase
       .from('revenue')
-      .update({ status: 'confirmed', received_date: today })
+      .update({
+        status: 'confirmed',
+        received_date: today,
+        business_event_type: businessEventType,
+        accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
+        accounting_metadata: accountingPayload,
+      })
       .eq('id', id)
       .select('*')
       .single();
@@ -157,9 +196,37 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       );
     }
   } else {
+    const { data: existingExpense, error: existingExpenseError } = await supabase
+      .from('expenses')
+      .select('category, amount, description')
+      .eq('id', id)
+      .single();
+
+    if (existingExpenseError) {
+      console.error(`Error fetching expense before confirmation:`, existingExpenseError);
+      throw new Error(`Failed to fetch expense before confirmation: ${existingExpenseError.message}`);
+    }
+
+    const businessEventType = inferBusinessEventType({
+      sourceTable: 'expenses',
+      category: existingExpense?.category,
+    });
+    const accountingPayload = {
+      amount: Number(existingExpense?.amount || 0),
+      payment_method: 'bank_transfer',
+      expense_date: today,
+      description: existingExpense?.description,
+    };
+
     const { data: updatedExpense, error } = await supabase
       .from('expenses')
-      .update({ status: 'approved', expense_date: today })
+      .update({
+        status: 'approved',
+        expense_date: today,
+        business_event_type: businessEventType,
+        accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
+        accounting_metadata: accountingPayload,
+      })
       .eq('id', id)
       .select('*')
       .single();
@@ -180,10 +247,28 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
         const ktvId = ktvIdMatch ? ktvIdMatch[1] : null;
 
         if (salaryRecordId && ktvId) {
+          const salaryBusinessEventType = inferBusinessEventType({
+            sourceTable: 'salary_records',
+            status: 'paid',
+          });
+          const salaryAccountingPayload = {
+            amount: Number(updatedExpense.amount),
+            payment_method: 'bank_transfer',
+            ktv_id: ktvId,
+            month_year: today.slice(0, 7),
+          };
+
           // Update salary record status to 'paid'
           const { error: salaryRecordUpdateError } = await supabase
             .from('salary_records')
-            .update({ status: 'paid', paid_date: today, paid_method: 'bank_transfer' })
+            .update({
+              status: 'paid',
+              paid_date: today,
+              paid_method: 'bank_transfer',
+              business_event_type: salaryBusinessEventType,
+              accounting_review_status: resolveReviewStatus(salaryBusinessEventType, salaryAccountingPayload),
+              accounting_metadata: salaryAccountingPayload,
+            })
             .eq('id', salaryRecordId);
 
           if (salaryRecordUpdateError) {
@@ -270,6 +355,17 @@ export async function recordTransaction(data: {
 
       // expenses.status: 'approved' | 'submitted' | 'rejected'
       const dbStatus = data.status === 'confirmed' ? 'approved' : 'submitted';
+      const expenseDate = getLocalDateString();
+      const businessEventType = inferBusinessEventType({
+        sourceTable: 'expenses',
+        category: dbCategory,
+      });
+      const accountingPayload = {
+        amount: Math.abs(data.amount),
+        payment_method: 'bank_transfer',
+        expense_date: expenseDate,
+        description: data.notes,
+      };
 
       const { data: result, error } = await supabase
         .from('expenses')
@@ -278,8 +374,11 @@ export async function recordTransaction(data: {
           category: dbCategory,
           description: data.notes,
           status: dbStatus,                           // ✓ 'approved' | 'pending'
-          expense_date: getLocalDateString(),
-          tenant_id: tenantId
+          expense_date: expenseDate,
+          tenant_id: tenantId,
+          business_event_type: businessEventType,
+          accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
+          accounting_metadata: accountingPayload
           // No: expense_number, payment_status (don't exist in schema)
         })
         .select()
@@ -322,6 +421,17 @@ export async function recordTransaction(data: {
       // Map frontend categories to valid DB revenue_type values
       const validRevenueTypes = ['deposit', 'session_completed', 'additional', 'package_payment', 'remaining_payment'];
       const dbRevenueType = validRevenueTypes.includes(data.category) ? data.category : 'additional';
+      const receivedDate = getLocalDateString();
+      const businessEventType = inferBusinessEventType({
+        sourceTable: 'revenue',
+        revenueType: dbRevenueType,
+      });
+      const accountingPayload = {
+        amount: Math.abs(data.amount),
+        payment_method: 'bank_transfer',
+        booking_id: data.booking_id || null,
+        reason: data.notes,
+      };
 
       const { data: result, error } = await supabase
         .from('revenue')
@@ -332,8 +442,11 @@ export async function recordTransaction(data: {
           revenue_type: dbRevenueType,
           payment_method: 'bank_transfer',
           status: dbStatus,
-          received_date: getLocalDateString(),
-          tenant_id: tenantId
+          received_date: receivedDate,
+          tenant_id: tenantId,
+          business_event_type: businessEventType,
+          accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
+          accounting_metadata: accountingPayload
         })
         .select()
         .single();
