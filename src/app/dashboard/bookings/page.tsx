@@ -130,8 +130,14 @@ function BookingsContent() {
   }, [customerName]);
 
   const fetchAllBookings = async () => {
-    const data = await getBookings();
-    setAllBookings(data);
+    try {
+      const data = await getBookings();
+      setAllBookings(data);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      setAllBookings([]);
+      toast.error('Khong the tai danh sach booking');
+    }
   };
 
   const fetchSessions = async () => {

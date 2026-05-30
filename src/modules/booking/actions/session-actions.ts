@@ -17,7 +17,11 @@ export async function getSessionLogs(bookingId: string) {
     .eq('booking_id', bookingId)
     .order('session_number', { ascending: true });
 
-  if (error || !data || data.length === 0) {
+  if (error) {
+    throw new Error(`Failed to fetch session logs for booking ${bookingId}: ${error.message}`);
+  }
+
+  if (!data || data.length === 0) {
     return [];
   }
 
@@ -59,7 +63,11 @@ export async function processSessionCompletion(
     .eq('status', 'completed');
 
   if (countError) {
-    console.error('Error counting completed sessions:', countError);
+    if (isInventoryConsumed) {
+      const { rollbackInventoryConsumption } = await import('@/services/inventory-actions');
+      await rollbackInventoryConsumption(sessionId);
+    }
+    return { error: 'Lỗi đếm số buổi đã hoàn thành: ' + countError.message };
   }
 
   const { data: currentBooking } = await supabase
@@ -391,8 +399,7 @@ export async function getSessionsWithDetails() {
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching sessions with details:', error);
-    return []; 
+    throw new Error(`Failed to fetch sessions with details: ${error.message}`);
   }
   
   if (!data || data.length === 0) {
@@ -478,8 +485,7 @@ export async function getCalendarSessions() {
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching calendar sessions:', error);
-    return [];
+    throw new Error(`Failed to fetch calendar sessions: ${error.message}`);
   }
   
   const sessionsByBooking: Record<string, any[]> = {};

@@ -127,6 +127,25 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
       const bookings = await getBookings();
       expect(bookings).toHaveLength(0);
     });
+
+    it('propagates booking query failures instead of returning an empty list', async () => {
+      mockGetCurrentUser.mockResolvedValue({
+        id: 'admin-a',
+        email: 'admin@tenant-a.com',
+        role: 'admin',
+        tenant_id: 'tenant-a',
+        full_name: 'Tenant A Manager',
+      });
+
+      mockSelect.mockImplementation(() => ({
+        order: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'RLS policy lookup failed' },
+        }),
+      }));
+
+      await expect(getBookings()).rejects.toThrow('Failed to fetch bookings: RLS policy lookup failed');
+    });
   });
 
   describe('KTV Attendance Isolation & Granularity', () => {

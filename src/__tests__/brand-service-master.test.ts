@@ -112,8 +112,7 @@ describe('Brand Service Master System (Phase 2)', () => {
   describe('getHqPackageTemplates', () => {
     it('should block non-HQ admins', async () => {
       mockCheckHqAuth.mockResolvedValue({ authorized: false, error: 'Unauthorized' });
-      const result = await getHqPackageTemplates();
-      expect(result).toEqual([]);
+      await expect(getHqPackageTemplates()).rejects.toThrow('Unauthorized');
     });
 
     it('should fetch package templates where is_hq_template is true', async () => {
@@ -127,6 +126,24 @@ describe('Brand Service Master System (Phase 2)', () => {
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Standard Massage');
       expect(packageQueryMock.eqSpy).toHaveBeenCalledWith('is_hq_template', true);
+    });
+
+    it('propagates template query failures instead of returning an empty list', async () => {
+      mockCheckHqAuth.mockResolvedValue({ authorized: true, user: hqAdminUser });
+      packageQueryMock = new MockQueryBuilder(null, { message: 'template query failed' });
+
+      await expect(getHqPackageTemplates()).rejects.toThrow('Failed to fetch HQ package templates: template query failed');
+    });
+  });
+
+  describe('getBrandDistributionMatrix', () => {
+    it('propagates distribution matrix query failures instead of returning empty buckets', async () => {
+      mockCheckHqAuth.mockResolvedValue({ authorized: true, user: hqAdminUser });
+      packageQueryMock = new MockQueryBuilder(null, { message: 'matrix templates failed' });
+
+      await expect(getBrandDistributionMatrix()).rejects.toThrow(
+        'Failed to fetch HQ package templates for distribution matrix: matrix templates failed'
+      );
     });
   });
 

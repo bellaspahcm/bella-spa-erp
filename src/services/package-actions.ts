@@ -11,8 +11,7 @@ export async function getPackages() {
     .order('name', { ascending: true });
 
   if (error) {
-    console.error('Error fetching packages:', error);
-    return [];
+    throw new Error(`Failed to fetch packages: ${error.message}`);
   }
   return data || [];
 }
