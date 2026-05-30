@@ -8,7 +8,7 @@
  */
 
 import { createBooking, recordRemainingPayment, reusePackage, submitOnlineBooking, updateBooking } from '../modules/booking/actions/lifecycle-actions';
-import { addExtraSession, completeSession } from '../modules/booking/actions/session-actions';
+import { addExtraSession, completeSession, createSessionLog } from '../modules/booking/actions/session-actions';
 
 // Setup environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
@@ -152,7 +152,7 @@ class MockQueryBuilder {
     const chainRes = this.forceError
       ? singleRes
       : {
-          data: this.table === 'bookings'
+          data: this.table === 'bookings' || this.table === 'session_logs'
             ? [{ id: 'mock-inserted-id', ...inserted[0] }]
             : singleRes.data,
           error: null
@@ -496,5 +496,26 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
     expect(sessionLogsQueryBuilder.deleteCalled).toBe(true);
     expect(bookingsQueryBuilder.updatePayloads).toContainEqual({ total_sessions: 16 });
     expect(bookingsQueryBuilder.updatePayloads).toContainEqual({ total_sessions: 15 });
+  });
+
+  it('rolls back created session log when createSessionLog audit logging fails', async () => {
+    const bookingsQueryBuilder = new MockQueryBuilder('bookings');
+    const sessionLogsQueryBuilder = new MockQueryBuilder('session_logs');
+    mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'bookings') return bookingsQueryBuilder;
+      if (table === 'session_logs') return sessionLogsQueryBuilder;
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await createSessionLog({
+      booking_id: 'mock-booking-id',
+      assigned_date: '2026-05-10',
+      status: 'scheduled'
+    });
+
+    expect(result.error).toBe('Audit write failed');
+    expect(sessionLogsQueryBuilder.deleteCalled).toBe(true);
   });
 });

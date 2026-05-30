@@ -543,11 +543,15 @@ export async function updateSessionLog(id: string, payload: any) {
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   
-  const { data: existingLog } = await supabase
+  const { data: existingLog, error: existingLogError } = await supabase
     .from('session_logs')
     .select('*')
     .eq('id', id)
     .single();
+
+  if (existingLogError || !existingLog) {
+    return { error: existingLogError?.message || 'Không tìm thấy session log' };
+  }
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status ?? '')) {
     return { error: 'Bạn không có quyền thực hiện thao tác này (Unauthorized)' };
@@ -614,7 +618,13 @@ export async function updateSessionLog(id: string, payload: any) {
         new_data: safeUpdates
       });
     } catch (auditErr) {
-      console.warn('Failed to record updateSessionLog audit log:', auditErr);
+      await supabase
+        .from('session_logs')
+        .update(existingLog)
+        .eq('id', id);
+      return {
+        error: auditErr instanceof Error ? auditErr.message : 'Failed to record updateSessionLog audit log'
+      };
     }
   }
 
@@ -766,7 +776,13 @@ export async function saveSessionNote(sessionId: string, note: string) {
       new_data: { notes: note }
     });
   } catch (auditErr) {
-    console.warn('Failed to record saveSessionNote audit log:', auditErr);
+    await supabase
+      .from('session_logs')
+      .update({ notes: existingLog?.notes || null })
+      .eq('id', sessionId);
+    return {
+      error: auditErr instanceof Error ? auditErr.message : 'Failed to record saveSessionNote audit log'
+    };
   }
 
   return { success: true };
@@ -908,7 +924,15 @@ export async function createSessionLog(data: any) {
       });
     }
   } catch (auditErr) {
-    console.warn('Failed to record createSessionLog audit log:', auditErr);
+    if (session?.[0]?.id) {
+      await supabase
+        .from('session_logs')
+        .delete()
+        .eq('id', session[0].id);
+    }
+    return {
+      error: auditErr instanceof Error ? auditErr.message : 'Failed to record createSessionLog audit log'
+    };
   }
 
   await safeRevalidatePath('/dashboard/bookings');
@@ -996,6 +1020,22 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
     return { error: 'Có lỗi xảy ra khi cập nhật một số buổi học.' };
   }
 
+  const rollbackReschedule = async () => {
+    await Promise.all((futureSessions || []).map((s: any) => {
+      let rollbackDate = s.assigned_date;
+      if (!rollbackDate) {
+        const baseDate = new Date(effectiveOldDateStr);
+        baseDate.setDate(baseDate.getDate() + (s.session_number - session.session_number));
+        rollbackDate = getLocalDateString(baseDate);
+      }
+
+      return supabase
+        .from('session_logs')
+        .update({ assigned_date: rollbackDate })
+        .eq('id', s.id);
+    }));
+  };
+
   const { data: bookingData } = await supabase.from('bookings').select('customer_id').eq('id', bookingId).single();
   const revalPaths = [
     '/dashboard/bookings',
@@ -1016,7 +1056,10 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
       new_data: { assigned_date: newDate, notes: `Dời lịch các buổi từ buổi ${session.session_number} thêm ${diffDays} ngày.` }
     });
   } catch (auditErr) {
-    console.warn('Failed to record rescheduleSession audit log:', auditErr);
+    await rollbackReschedule();
+    return {
+      error: auditErr instanceof Error ? auditErr.message : 'Failed to record rescheduleSession audit log'
+    };
   }
 
   return { success: true };
