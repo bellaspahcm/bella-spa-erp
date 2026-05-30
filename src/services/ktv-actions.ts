@@ -365,17 +365,18 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
   if (!user || user.role !== 'ktv') return { success: false, error: 'Unauthorized' };
 
   // 1. Lấy thông tin session để tìm booking_id và tọa độ của khách hàng
-  const { data: session } = await supabase
+  const { data: session, error: sessionFetchError } = await supabase
     .from('session_logs')
-    .select('booking_id, session_number, bookings(customer_id, total_sessions, completed_sessions, status, customers(latitude, longitude))')
+    .select('booking_id, session_number, status, start_time, completed_by_ktv_id, checkin_lat, checkin_lon, bookings(customer_id, total_sessions, completed_sessions, status, is_in_care, customers(latitude, longitude))')
     .eq('id', sessionId)
     .single();
 
+  if (sessionFetchError) return { success: false, error: sessionFetchError.message };
   if (!session) return { success: false, error: 'Session not found' };
 
   // Guard: check that the booking is not completed and the session number is within the booking's total_sessions
   const bookingData = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
-  const booking = bookingData as { customer_id: string; status?: string; completed_sessions?: number; total_sessions?: number; customers?: { latitude: number | null; longitude: number | null } | { latitude: number | null; longitude: number | null }[] } | null;
+  const booking = bookingData as { customer_id: string; status?: string; is_in_care?: boolean | null; completed_sessions?: number; total_sessions?: number; customers?: { latitude: number | null; longitude: number | null } | { latitude: number | null; longitude: number | null }[] } | null;
   if (booking) {
     if (booking.status === 'completed' || (booking.completed_sessions || 0) >= (booking.total_sessions || 0)) {
       return { success: false, error: 'Liệu trình này đã hoàn thành toàn bộ số buổi. Không thể bắt đầu buổi mới.' };
@@ -399,18 +400,43 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
     .eq('id', sessionId);
 
   if (error) {
-    console.error('Error starting session:', error);
-    return { success: false, error: 'Không thể bắt đầu buổi chăm sóc' };
+    return { success: false, error: 'Khong the bat dau buoi cham soc: ' + error.message };
   }
 
+  const rollbackStartedSession = async (reason: string) => {
+    const { error: rollbackError } = await supabase
+      .from('session_logs')
+      .update({
+        status: session.status,
+        start_time: session.start_time,
+        completed_by_ktv_id: session.completed_by_ktv_id,
+        checkin_lat: session.checkin_lat,
+        checkin_lon: session.checkin_lon
+      })
+      .eq('id', sessionId);
+
+    if (rollbackError) {
+      return {
+        success: false,
+        error: `${reason}; failed to roll back session start: ${rollbackError.message}`
+      };
+    }
+
+    return { success: false, error: reason };
+  };
+
   // 3. Cập nhật booking: set is_in_care = true và status = in_progress
-  await supabase
+  const { error: bookingUpdateError } = await supabase
     .from('bookings')
     .update({ 
       is_in_care: true,
       status: 'in_progress'
     })
     .eq('id', session.booking_id);
+
+  if (bookingUpdateError) {
+    return rollbackStartedSession(`Failed to update booking after session start: ${bookingUpdateError.message}`);
+  }
 
   // 4. Nếu KTV check-in có tọa độ GPS và khách hàng chưa có tọa độ chuẩn trong DB -> tự động gán làm tọa độ chuẩn
   if (lat !== undefined && lon !== undefined && booking?.customer_id) {
@@ -425,7 +451,11 @@ export async function startSession(sessionId: string, lat?: number, lon?: number
         .eq('id', booking.customer_id);
       
       if (customerGpsError) {
-        console.warn('Failed to auto-assign customer GPS coordinates from KTV check-in:', customerGpsError);
+        revalidatePath('/ktv/dashboard');
+        return {
+          success: true,
+          warning: `Session started, but customer GPS coordinates were not saved: ${customerGpsError.message}`
+        };
       } else {
         console.log(`[startSession] Automatically assigned coordinates (${lat}, ${lon}) for customer ${booking.customer_id} based on first KTV check-in.`);
       }
