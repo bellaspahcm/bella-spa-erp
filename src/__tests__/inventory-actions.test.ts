@@ -7,7 +7,9 @@ import {
   getPackageMaterials,
   restockItem,
   rollbackInventoryConsumption,
+  upsertPackageMaterials,
 } from '../services/inventory-actions';
+import type { Database } from '../types/database.types';
 
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
@@ -17,6 +19,9 @@ jest.mock('server-only', () => ({}), { virtual: true });
 
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
+
+type PackageMaterialRow = Database['public']['Tables']['package_materials']['Row'];
+type PackageMaterialInsert = Database['public']['Tables']['package_materials']['Insert'];
 
 jest.mock('../services/user-actions', () => ({
   getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
@@ -146,12 +151,19 @@ describe('inventory read actions', () => {
 });
 
 describe('inventory write action side effects', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     mockGetCurrentUser.mockResolvedValue({
       id: 'user-1',
       tenant_id: 'tenant-1',
     });
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   function installScriptedSupabase(scripts: ScriptedResult[]) {
@@ -227,5 +239,140 @@ describe('inventory write action side effects', () => {
       error: 'Lỗi hoàn kho vật tư item-1: stock update failed',
     });
     expect(calls.some(c => c.table === 'inventory_logs' && c.op === 'delete')).toBe(false);
+  });
+
+  it('replaces package materials by deleting old rows and inserting valid new rows', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'package_materials', op: 'select', data: [] },
+      { table: 'package_materials', op: 'delete' },
+      { table: 'package_materials', op: 'insert' },
+    ]);
+
+    const result = await upsertPackageMaterials('pkg-1', [
+      { item_id: 'item-1', quantity_per_session: 2 },
+      { item_id: 'item-2', quantity_per_session: 0 },
+      { item_id: 'item-3', quantity_per_session: 1.5 },
+    ]);
+
+    expect(result).toEqual({ success: true, inserted: 2 });
+    expect(calls.filter(c => c.table === 'package_materials').map(c => c.op)).toEqual([
+      'select',
+      'delete',
+      'insert',
+    ]);
+    expect(calls.find(c => c.table === 'package_materials' && c.op === 'insert')?.payload).toEqual([
+      {
+        tenant_id: 'tenant-1',
+        package_id: 'pkg-1',
+        item_id: 'item-1',
+        quantity_per_session: 2,
+      },
+      {
+        tenant_id: 'tenant-1',
+        package_id: 'pkg-1',
+        item_id: 'item-3',
+        quantity_per_session: 1.5,
+      },
+    ]);
+  });
+
+  it('deletes old package materials without inserting when replacement rows are empty', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'package_materials', op: 'select', data: [] },
+      { table: 'package_materials', op: 'delete' },
+    ]);
+
+    const result = await upsertPackageMaterials('pkg-1', []);
+
+    expect(result).toEqual({ success: true, inserted: 0 });
+    expect(calls.filter(c => c.table === 'package_materials').map(c => c.op)).toEqual([
+      'select',
+      'delete',
+    ]);
+    expect(calls.some(c => c.table === 'package_materials' && c.op === 'insert')).toBe(false);
+  });
+
+  it('does not insert replacement package materials when delete fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'package_materials', op: 'select', data: [] },
+      { table: 'package_materials', op: 'delete', error: { message: 'delete failed' } },
+    ]);
+
+    const result = await upsertPackageMaterials('pkg-1', [
+      { item_id: 'item-1', quantity_per_session: 2 },
+    ]);
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Lỗi xóa định mức cũ: delete failed',
+    });
+    expect(calls.some(c => c.table === 'package_materials' && c.op === 'insert')).toBe(false);
+  });
+
+  it('restores old package materials when replacement insert fails', async () => {
+    const oldRows: PackageMaterialRow[] = [
+      {
+        id: 'pm-1',
+        tenant_id: 'tenant-1',
+        package_id: 'pkg-1',
+        item_id: 'item-old',
+        quantity_per_session: 3,
+        created_at: '2026-06-01T00:00:00.000Z',
+      },
+    ];
+    const calls = installScriptedSupabase([
+      { table: 'package_materials', op: 'select', data: oldRows },
+      { table: 'package_materials', op: 'delete' },
+      { table: 'package_materials', op: 'insert', error: { message: 'insert failed' } },
+      { table: 'package_materials', op: 'insert' },
+    ]);
+
+    const result = await upsertPackageMaterials('pkg-1', [
+      { item_id: 'item-new', quantity_per_session: 2 },
+    ]);
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Lỗi lưu định mức mới: insert failed',
+    });
+    const insertPayloads = calls
+      .filter(c => c.table === 'package_materials' && c.op === 'insert')
+      .map(c => c.payload);
+    expect(insertPayloads).toHaveLength(2);
+    expect(insertPayloads[1]).toEqual<PackageMaterialInsert[]>([
+      {
+        tenant_id: 'tenant-1',
+        package_id: 'pkg-1',
+        item_id: 'item-old',
+        quantity_per_session: 3,
+      },
+    ]);
+  });
+
+  it('reports rollback failure when restoring old package materials fails', async () => {
+    const oldRows: PackageMaterialRow[] = [
+      {
+        id: 'pm-1',
+        tenant_id: 'tenant-1',
+        package_id: 'pkg-1',
+        item_id: 'item-old',
+        quantity_per_session: 3,
+        created_at: '2026-06-01T00:00:00.000Z',
+      },
+    ];
+    installScriptedSupabase([
+      { table: 'package_materials', op: 'select', data: oldRows },
+      { table: 'package_materials', op: 'delete' },
+      { table: 'package_materials', op: 'insert', error: { message: 'insert failed' } },
+      { table: 'package_materials', op: 'insert', error: { message: 'restore failed' } },
+    ]);
+
+    const result = await upsertPackageMaterials('pkg-1', [
+      { item_id: 'item-new', quantity_per_session: 2 },
+    ]);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Lỗi lưu định mức mới: insert failed');
+    expect(result.error).toContain('rollback failed: restore failed');
   });
 });

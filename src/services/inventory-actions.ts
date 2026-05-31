@@ -8,6 +8,7 @@ type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Inse
 type InventoryItemUpdate = Database['public']['Tables']['inventory_items']['Update'];
 type InventoryLogInsert = Database['public']['Tables']['inventory_logs']['Insert'];
 type PackageMaterialInsert = Database['public']['Tables']['package_materials']['Insert'];
+type PackageMaterialRow = Database['public']['Tables']['package_materials']['Row'];
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   return error instanceof Error ? error.message : fallback;
@@ -151,6 +152,17 @@ export async function upsertPackageMaterials(
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
     if (!packageId) return { success: false, error: 'Thiếu mã gói' };
 
+    const { data: existingRows, error: existingError } = await supabase
+      .from('package_materials')
+      .select('*')
+      .eq('package_id', packageId)
+      .eq('tenant_id', tenantId);
+
+    if (existingError) {
+      console.error('[upsertPackageMaterials.snapshot]', existingError);
+      return { success: false, error: 'Lỗi đọc định mức cũ: ' + existingError.message };
+    }
+
     // 1. Xóa toàn bộ định mức cũ của gói trong tenant này
     const { error: deleteError } = await supabase
       .from('package_materials')
@@ -184,6 +196,28 @@ export async function upsertPackageMaterials(
 
     if (insertError) {
       console.error('[upsertPackageMaterials.insert]', insertError);
+      const restoreRows: PackageMaterialInsert[] = ((existingRows || []) as PackageMaterialRow[]).map(row => ({
+        tenant_id: row.tenant_id,
+        package_id: row.package_id,
+        item_id: row.item_id,
+        quantity_per_session: row.quantity_per_session,
+      }));
+
+      if (restoreRows.length > 0) {
+        const { error: restoreError } = await supabase
+          .from('package_materials')
+          .insert(restoreRows);
+
+        if (restoreError) {
+          console.error('[upsertPackageMaterials.restore]', restoreError);
+          return {
+            success: false,
+            error: 'Lỗi lưu định mức mới: ' + insertError.message
+              + '; rollback failed: ' + restoreError.message,
+          };
+        }
+      }
+
       return { success: false, error: 'Lỗi lưu định mức mới: ' + insertError.message };
     }
 
