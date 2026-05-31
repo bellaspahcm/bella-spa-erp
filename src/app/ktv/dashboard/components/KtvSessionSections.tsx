@@ -14,6 +14,9 @@ export type KtvDashboardSession = {
     package_name?: string | null;
     total_sessions?: number | string | null;
     assigned_ktv_id?: string | null;
+    packages?: {
+      duration?: string | null;
+    } | null;
     customers?: {
       name_mother?: string | null;
       name_baby?: string | null;
