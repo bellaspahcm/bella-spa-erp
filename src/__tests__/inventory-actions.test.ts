@@ -1,4 +1,5 @@
 import {
+  autoConsumeForSession,
   consumeInventory,
   getInventoryItems,
   getInventoryLogs,
@@ -19,6 +20,7 @@ jest.mock('server-only', () => ({}), { virtual: true });
 
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
+const mockEnqueueWithAutoClient = jest.fn();
 
 type PackageMaterialRow = Database['public']['Tables']['package_materials']['Row'];
 type PackageMaterialInsert = Database['public']['Tables']['package_materials']['Insert'];
@@ -29,6 +31,10 @@ jest.mock('../services/user-actions', () => ({
 
 jest.mock('../lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
+}));
+
+jest.mock('@/lib/accounting-outbox', () => ({
+  enqueueWithAutoClient: (...args: any[]) => mockEnqueueWithAutoClient(...args),
 }));
 
 class MockQueryBuilder {
@@ -152,10 +158,15 @@ describe('inventory read actions', () => {
 
 describe('inventory write action side effects', () => {
   let consoleErrorSpy: jest.SpyInstance;
+  let consoleLogSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    mockEnqueueWithAutoClient.mockResolvedValue({ success: true });
     mockGetCurrentUser.mockResolvedValue({
       id: 'user-1',
       tenant_id: 'tenant-1',
@@ -164,6 +175,8 @@ describe('inventory write action side effects', () => {
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+    consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   function installScriptedSupabase(scripts: ScriptedResult[]) {
@@ -374,5 +387,139 @@ describe('inventory write action side effects', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('Lỗi lưu định mức mới: insert failed');
     expect(result.error).toContain('rollback failed: restore failed');
+  });
+
+  it('bypasses auto consumption when tenant config disables it', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: false } } },
+    ]);
+
+    const result = await autoConsumeForSession('pkg-1', 'session-1');
+
+    expect(result).toEqual({ success: true, bypassed: true });
+    expect(calls).toEqual([{ table: 'tenants', op: 'select' }]);
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('consumes all configured package materials and enqueues accounting outbox', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
+      {
+        table: 'package_materials',
+        op: 'select',
+        data: [
+          { quantity_per_session: 2, inventory_items: { id: 'item-1', price_per_unit: 1000 } },
+          { quantity_per_session: 1.5, inventory_items: { id: 'item-2', price_per_unit: 2000 } },
+        ],
+      },
+      { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 10 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert' },
+      { table: 'inventory_items', op: 'select', data: { name: 'Oil', stock_level: 5 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert' },
+    ]);
+
+    const result = await autoConsumeForSession('pkg-1', 'session-1');
+
+    expect(result).toEqual({ success: true, processed: 2, totalCost: 5000 });
+    expect(calls.filter(c => c.table === 'inventory_items' && c.op === 'update').map(c => c.payload)).toEqual([
+      { stock_level: 8 },
+      { stock_level: 3.5 },
+    ]);
+    expect(calls.filter(c => c.table === 'inventory_logs' && c.op === 'insert').map(c => c.payload)).toEqual([
+      expect.objectContaining({
+        item_id: 'item-1',
+        change_amount: -2,
+        reason: 'session_consumption',
+        session_log_id: 'session-1',
+        tenant_id: 'tenant-1',
+      }),
+      expect.objectContaining({
+        item_id: 'item-2',
+        change_amount: -1.5,
+        reason: 'session_consumption',
+        session_log_id: 'session-1',
+        tenant_id: 'tenant-1',
+      }),
+    ]);
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      expect.objectContaining({ from: mockFrom }),
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        eventType: 'INVENTORY_CONSUMED',
+        referenceType: 'SESSION_LOG',
+        referenceId: 'session-1',
+        payload: expect.objectContaining({
+          amount: 5000,
+          branchId: 'tenant-1',
+        }),
+      }),
+      '[autoConsumeForSession]'
+    );
+  });
+
+  it('rolls back earlier auto consumption when a later material cannot be consumed', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
+      {
+        table: 'package_materials',
+        op: 'select',
+        data: [
+          { quantity_per_session: 2, inventory_items: { id: 'item-1', price_per_unit: 1000 } },
+          { quantity_per_session: 9, inventory_items: { id: 'item-2', price_per_unit: 2000 } },
+        ],
+      },
+      { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 10 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert' },
+      { table: 'inventory_items', op: 'select', data: { name: 'Oil', stock_level: 5 } },
+      { table: 'inventory_logs', op: 'select', data: [{ id: 'log-1', item_id: 'item-1', change_amount: -2 }] },
+      { table: 'inventory_items', op: 'select', data: { stock_level: 8 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'delete' },
+    ]);
+
+    const result = await autoConsumeForSession('pkg-1', 'session-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Oil');
+    expect(calls.filter(c => c.table === 'inventory_items' && c.op === 'update').map(c => c.payload)).toEqual([
+      { stock_level: 8 },
+      { stock_level: 10 },
+    ]);
+    expect(calls.filter(c => c.table === 'inventory_logs').map(c => c.op)).toEqual(['insert', 'select', 'delete']);
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('rolls back auto consumption when accounting outbox enqueue fails', async () => {
+    mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('outbox failed'));
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
+      {
+        table: 'package_materials',
+        op: 'select',
+        data: [
+          { quantity_per_session: 2, inventory_items: { id: 'item-1', price_per_unit: 1000 } },
+        ],
+      },
+      { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 10 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert' },
+      { table: 'inventory_logs', op: 'select', data: [{ id: 'log-1', item_id: 'item-1', change_amount: -2 }] },
+      { table: 'inventory_items', op: 'select', data: { stock_level: 8 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'delete' },
+    ]);
+
+    const result = await autoConsumeForSession('pkg-1', 'session-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('outbox failed');
+    expect(calls.filter(c => c.table === 'inventory_items' && c.op === 'update').map(c => c.payload)).toEqual([
+      { stock_level: 8 },
+      { stock_level: 10 },
+    ]);
+    expect(calls.filter(c => c.table === 'inventory_logs').map(c => c.op)).toEqual(['insert', 'select', 'delete']);
   });
 });

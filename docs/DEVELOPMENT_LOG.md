@@ -7,6 +7,18 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Auto Consume Inventory
+* **Mục tiêu kỹ thuật**:
+  * Khóa luồng tự động trừ kho khi hoàn thành buổi liệu trình, nơi định mức package chuyển thành cập nhật tồn kho thật.
+  * Giảm rủi ro trừ kho một phần nhưng không hoàn kho nếu vật tư sau đó thiếu tồn hoặc ghi outbox kế toán lỗi.
+* **Thay đổi chính**:
+  * Mở rộng `inventory-actions.test.ts` lên 17 test.
+  * Mock `enqueueWithAutoClient` để assert sự kiện `INVENTORY_CONSUMED` được gọi đúng tổng chi phí vật tư.
+  * Bổ sung coverage cho auto-consume disabled, consume nhiều vật tư thành công, rollback khi vật tư thứ hai thiếu tồn, và rollback khi accounting outbox enqueue lỗi.
+  * Không đổi implementation vì test xác nhận `autoConsumeForSession` hiện đã propagation lỗi và rollback đúng theo session log.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/inventory-actions.test.ts --runInBand` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Package Materials
 * **Mục tiêu kỹ thuật**:
   * Hoàn tất trục Services → Package → Materials bằng cách siết luồng lưu định mức tiêu hao vật tư theo gói.
