@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Activity, 
   Lock, 
   RefreshCw, 
   Percent,
@@ -14,9 +13,7 @@ import {
   Award,
   Sparkles,
   Info,
-  Plus,
   Send,
-  Package,
   Check
 } from 'lucide-react';
 import { toggleTenantStatus, getHqDashboardStats, getAllTenants } from '@/services/hq-actions';
@@ -40,7 +37,6 @@ import {
   TransferOrderItem
 } from '@/services/inventory-transfer-actions';
 import { createClient } from '@/lib/supabase-client';
-import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { HqDashboardStats, HqTenantRecord, CurrentUser, HqAuditLogRecord, HqPackageTemplate } from '@/types/domain';
 import { getHqAuditLogs, getAuditTables, getAuditUsers } from '@/services/audit-actions';
@@ -74,6 +70,9 @@ import { HqTransferOrdersLedger } from './components/HqTransferOrdersLedger';
 import { HqAuditStats } from './components/HqAuditStats';
 import { HqAuditFilters } from './components/HqAuditFilters';
 import { HqAuditLogLedger } from './components/HqAuditLogLedger';
+import { HqServiceStats } from './components/HqServiceStats';
+import { HqServiceTemplateList } from './components/HqServiceTemplateList';
+import { HqServiceDistributionMatrix } from './components/HqServiceDistributionMatrix';
 
 interface HqDashboardClientProps {
   initialStats: HqDashboardStats;
@@ -930,215 +929,25 @@ export default function HqDashboardClient({
         ) : (
           /* LIỆU TRÌNH CHUẨN (SERVICES) TAB PANEL */
           <div className="space-y-8 text-left">
-            {/* KPIs Bar */}
-            <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex gap-4 items-center">
-                <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-primary shrink-0">
-                  <Package size={26} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tổng số gói mẫu</p>
-                  <h3 className="text-2xl font-black text-slate-900 leading-none">{templates.length} Gói mẫu</h3>
-                </div>
-              </div>
-              
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex gap-4 items-center">
-                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
-                  <Send size={26} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Chi nhánh áp dụng</p>
-                  <h3 className="text-2xl font-black text-slate-900 leading-none">
-                    {new Set(distributedList.map(d => d.tenant_id)).size} Chi nhánh
-                  </h3>
-                </div>
-              </div>
+            <HqServiceStats
+              templates={templates}
+              distributedList={distributedList}
+            />
 
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex gap-4 items-center">
-                <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0">
-                  <Activity size={26} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Bản ghi phân phối</p>
-                  <h3 className="text-2xl font-black text-slate-900 leading-none">{distributedList.length} Bản ghi</h3>
-                </div>
-              </div>
-            </section>
-
-            {/* Double Panel Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Left Column: HQ Templates List (5 cols) */}
-              <div className="lg:col-span-5 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-6 space-y-6">
-                <div className="flex justify-between items-center border-b border-slate-50 pb-4">
-                  <div>
-                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">Liệu trình thương hiệu</h4>
-                    <p className="text-[9px] text-slate-400 font-bold mt-0.5">Danh mục mẫu chuẩn Bella HQ</p>
-                  </div>
-                  <button
-                    onClick={() => handleOpenTemplateModal(null)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-sm"
-                  >
-                    <Plus size={12} />
-                    Thêm mới
-                  </button>
-                </div>
+              <HqServiceTemplateList
+                templates={templates}
+                loading={loadingServices}
+                onOpenTemplate={handleOpenTemplateModal}
+                onOpenDistribution={handleOpenDistributionModal}
+                onDeleteTemplate={handleDeleteTemplate}
+              />
 
-                {loadingServices ? (
-                  <div className="py-12 text-center">
-                    <RefreshCw size={20} className="animate-spin text-primary mx-auto" />
-                  </div>
-                ) : templates.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic text-center py-8">Chưa có liệu trình chuẩn nào.</p>
-                ) : (
-                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-                    {templates.map(t => (
-                      <div key={t.id} className="bg-slate-50/50 border border-slate-100 rounded-3xl p-4 space-y-3 hover:bg-slate-50 transition-colors text-left">
-                        <div className="flex justify-between items-start gap-2">
-                          <div className="min-w-0">
-                            <h5 className="font-black text-slate-900 text-xs truncate" title={t.name}>{t.name}</h5>
-                            <p className="text-[10px] text-slate-400 font-bold block mt-0.5">{t.duration} &bull; {t.total_sessions} buổi</p>
-                          </div>
-                          <span className="text-[11px] font-black text-primary shrink-0">{formatCurrency(t.price)}</span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 bg-white rounded-2xl border border-slate-100/50 p-2.5 text-[9px] font-bold text-slate-500">
-                          <div>
-                            <p className="text-slate-400">Giá sàn / trần</p>
-                            <p className="font-black text-slate-800">{formatCurrency(t.price_floor ?? t.price)} - {formatCurrency(t.price_cap ?? t.price)}</p>
-                          </div>
-                          <div>
-                            <p className="text-slate-400">KTV hoa hồng</p>
-                            <p className="font-black text-slate-800">{formatCurrency(t.ktv_commission ?? 0)} / buổi</p>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between items-center text-[9px] font-bold bg-white rounded-xl border border-slate-100/50 px-2.5 py-1">
-                          <span className="text-slate-400">Cho phép tự sửa giá</span>
-                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${
-                            t.allowed_franchise_override 
-                              ? 'bg-emerald-50 text-emerald-600' 
-                              : 'bg-rose-50 text-rose-600'
-                          }`}>
-                            {t.allowed_franchise_override ? 'BẬT (BIÊN ĐỘ)' : 'KHÓA CỐ ĐỊNH'}
-                          </span>
-                        </div>
-
-                        {t.offer && (
-                          <div className="bg-rose-50/40 border border-rose-100/30 rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-primary flex items-start gap-1">
-                            <Sparkles size={10} className="shrink-0 mt-0.5 text-primary" />
-                            <span>Ưu đãi: {t.offer}</span>
-                          </div>
-                        )}
-
-                        <div className="flex gap-2 justify-end pt-2 border-t border-slate-100/50">
-                          <button
-                            onClick={() => handleOpenDistributionModal(t)}
-                            className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[9px] font-black uppercase tracking-wider transition-all"
-                          >
-                            Phân phối
-                          </button>
-                          <button
-                            onClick={() => handleOpenTemplateModal(t)}
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[9px] font-black uppercase tracking-wider transition-all"
-                          >
-                            Sửa
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTemplate(t.id, t.name)}
-                            className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[9px] font-black uppercase tracking-wider transition-all"
-                          >
-                            Xóa
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column: Distribution Matrix Grid (7 cols) */}
-              <div className="lg:col-span-7 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden p-6 space-y-4">
-                <div className="border-b border-slate-50 pb-4">
-                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest">
-                    Ma trận phân phối & Giá bán chi nhánh đại lý
-                  </h4>
-                  <p className="text-[9px] text-slate-400 font-bold mt-0.5">Giám sát giá bán thực tế và biên độ tự quyết tại chi nhánh nhượng quyền</p>
-                </div>
-
-                {loadingServices ? (
-                  <div className="py-12 text-center">
-                    <RefreshCw size={20} className="animate-spin text-primary mx-auto" />
-                  </div>
-                ) : distributedList.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic text-center py-8">Chưa có liệu trình nào được phân phối xuống chi nhánh.</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[650px] text-xs text-left">
-                      <thead className="text-[9px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50 border-b border-slate-100">
-                        <tr>
-                          <th className="px-4 py-3">Chi nhánh</th>
-                          <th className="px-4 py-3">Liệu trình</th>
-                          <th className="px-4 py-3 text-right">Giá áp dụng</th>
-                          <th className="px-4 py-3 text-center">Biên độ kiểm soát</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                        {distributedList.map(item => {
-                          const template = templates.find(t => t.id === item.template_id);
-                          const floor = template?.price_floor ?? item.price;
-                          const cap = template?.price_cap ?? item.price;
-                          const localPrice = item.price;
-                          
-                          // Calculate graphical slider percentage
-                          const sliderRange = cap - floor;
-                          const sliderPercentage = sliderRange > 0 
-                            ? Math.min(Math.max(((localPrice - floor) / sliderRange) * 100, 0), 100)
-                            : 50;
-
-                          return (
-                            <tr key={item.id} className="hover:bg-slate-50/40 transition-colors">
-                              <td className="px-4 py-3 font-black text-slate-900">{item.tenant_name}</td>
-                              <td className="px-4 py-3">
-                                <p className="font-bold text-slate-800 text-[11px]">{item.name}</p>
-                                <span className="text-[8px] bg-slate-100 text-slate-400 font-bold px-1.5 py-0.2 rounded uppercase">
-                                  ID: {item.id.slice(0, 5)}...
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right font-black text-emerald-600 text-[11px]">{formatCurrency(localPrice)}</td>
-                              <td className="px-4 py-3">
-                                {/* Interactive Visual Price Boundary Slider */}
-                                <div className="space-y-1 max-w-[200px] mx-auto text-left">
-                                  <div className="flex justify-between text-[8px] font-mono text-slate-400">
-                                    <span>Sàn: {floor / 1000}k</span>
-                                    <span>Trần: {cap / 1000}k</span>
-                                  </div>
-                                  <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
-                                    <div 
-                                      className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-indigo-500 to-primary rounded-full transition-all"
-                                      style={{ width: `${sliderPercentage}%` }}
-                                    />
-                                    {/* Center tick indicator for standard price */}
-                                    {template && template.price > floor && template.price < cap && (
-                                      <div 
-                                        className="absolute top-0 bottom-0 w-0.5 bg-slate-350"
-                                        style={{ left: `${((template.price - floor) / sliderRange) * 100}%` }}
-                                        title="Giá chuẩn HQ"
-                                      />
-                                    )}
-                                  </div>
-                                  <p className="text-[8px] text-center font-bold text-slate-400 italic">
-                                    {localPrice === template?.price ? 'Chuẩn giá thương hiệu' : localPrice > (template?.price ?? 0) ? 'Đắt hơn tiêu chuẩn' : 'Rẻ hơn tiêu chuẩn'}
-                                  </p>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              <HqServiceDistributionMatrix
+                templates={templates}
+                distributedList={distributedList}
+                loading={loadingServices}
+              />
             </div>
           </div>
         )}
