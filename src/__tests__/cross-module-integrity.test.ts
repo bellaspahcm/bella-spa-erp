@@ -339,6 +339,8 @@ jest.mock('@/lib/supabase-server', () => ({
 
 describe('Cross-Module End-to-End Integrity Tests', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-05-15T03:00:00.000Z'));
     jest.clearAllMocks();
     resetMockStore();
     mockGetCurrentUser.mockResolvedValue({
@@ -347,6 +349,10 @@ describe('Cross-Module End-to-End Integrity Tests', () => {
       tenant_id: 'tenant-a',
       full_name: 'Admin Bella'
     });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('runs the complete cross-module pipeline successfully', async () => {

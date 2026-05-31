@@ -57,6 +57,22 @@ let mockDb: {
   inventory_logs: []
 };
 
+type MockDbOp = 'insert' | 'update';
+type MockDbFailure = {
+  table: string;
+  op: MockDbOp;
+  error: { message: string };
+};
+
+let mockFailures: MockDbFailure[] = [];
+
+function consumeMockFailure(table: string, op: MockDbOp) {
+  const index = mockFailures.findIndex(failure => failure.table === table && failure.op === op);
+  if (index === -1) return null;
+  const [failure] = mockFailures.splice(index, 1);
+  return failure.error;
+}
+
 // Helper class for mock query builders interacting with in-memory mockDb
 class MockQueryBuilder {
   private table: string;
@@ -70,7 +86,7 @@ class MockQueryBuilder {
     this.table = table;
   }
 
-  select(fields?: string) {
+  select() {
     return this;
   }
 
@@ -133,6 +149,11 @@ class MockQueryBuilder {
     }
 
     if (this.insertData) {
+      const failure = consumeMockFailure(this.table, 'insert');
+      if (failure) {
+        return { data: null, error: failure };
+      }
+
       const records = Array.isArray(this.insertData) ? this.insertData : [this.insertData];
       const inserted = records.map(r => {
         const newRecord = {
@@ -148,6 +169,11 @@ class MockQueryBuilder {
     }
 
     if (this.updateData) {
+      const failure = consumeMockFailure(this.table, 'update');
+      if (failure) {
+        return { data: null, error: failure };
+      }
+
       const updated = list.map(item => {
         // Find matching item in global database and mutate it
         const dbItem = (mockDb[this.table as keyof typeof mockDb] as any[]).find(i => i.id === item.id);
@@ -244,6 +270,7 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
     });
 
     mockRpc.mockResolvedValue({ error: null });
+    mockFailures = [];
   });
 
   describe('createInventoryRequest', () => {
@@ -437,6 +464,25 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
       expect(order?.approved_at).toBeDefined();
       expect(order?.shipped_at).toBeDefined();
     });
+
+    it('should roll back HQ stock and keep order pending when shipment log insert fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(hqAdmin);
+      mockCheckHqAuth.mockResolvedValue({ authorized: true });
+      mockFailures = [
+        { table: 'inventory_logs', op: 'insert', error: { message: 'log insert failed' } },
+      ];
+
+      const result = await approveAndShipTransfer('trf-pending-a', 'Viettel Post', 'VTP987654');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('log insert failed');
+      const oilItem = mockDb.inventory_items.find(i => i.id === 'item-hq-oil');
+      expect(oilItem?.stock_level).toBe(50);
+      expect(mockDb.inventory_logs).toHaveLength(0);
+      const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-pending-a');
+      expect(order?.status).toBe('pending');
+      expect(order?.shipped_at).toBeUndefined();
+    });
   });
 
   describe('confirmTransferReceipt', () => {
@@ -523,6 +569,26 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
       expect(order?.completed_at).toBeDefined();
     });
 
+    it('should roll back existing branch stock and keep order shipped when receipt log insert fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(branchAAdmin);
+      mockFailures = [
+        { table: 'inventory_logs', op: 'insert', error: { message: 'receipt log failed' } },
+      ];
+
+      const result = await confirmTransferReceipt('trf-shipped-a-oil');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('receipt log failed');
+      const branchOil = mockDb.inventory_items.find(
+        i => i.tenant_id === 'tenant-branch-a' && i.sku === 'OIL-001'
+      );
+      expect(branchOil?.stock_level).toBe(2);
+      expect(mockDb.inventory_logs).toHaveLength(0);
+      const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-shipped-a-oil');
+      expect(order?.status).toBe('shipped');
+      expect(order?.completed_at).toBeUndefined();
+    });
+
     it('should automatically initialize new inventory item at the branch if it does not exist', async () => {
       mockGetCurrentUser.mockResolvedValue(branchAAdmin);
 
@@ -556,6 +622,27 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
       // Verify order status
       const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-shipped-a-cream-new');
       expect(order?.status).toBe('completed');
+    });
+
+    it('should reset new branch item stock and keep order shipped when new-item receipt log insert fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(branchAAdmin);
+      mockFailures = [
+        { table: 'inventory_logs', op: 'insert', error: { message: 'new item log failed' } },
+      ];
+
+      const result = await confirmTransferReceipt('trf-shipped-a-cream-new');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('new item log failed');
+      const newBranchCream = mockDb.inventory_items.find(
+        i => i.tenant_id === 'tenant-branch-a' && i.sku === 'CRM-002'
+      );
+      expect(newBranchCream).toBeDefined();
+      expect(newBranchCream?.stock_level).toBe(0);
+      expect(mockDb.inventory_logs).toHaveLength(0);
+      const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-shipped-a-cream-new');
+      expect(order?.status).toBe('shipped');
+      expect(order?.completed_at).toBeUndefined();
     });
   });
 

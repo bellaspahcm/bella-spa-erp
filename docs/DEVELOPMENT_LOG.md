@@ -1,11 +1,41 @@
 # 📔 Nhật ký Phát triển & Bảo trì Tổng hợp (Development & Maintenance Log)
 **Dự án**: Bella Spa Enterprise Resource Planning (ERP) System  
-**Ngày cập nhật**: 31/05/2026  
+**Ngày cập nhật**: 01/06/2026
 **Mục tiêu**: Gom và tổng hợp tất cả các nhật ký làm việc hàng ngày của AI Agent và nhà phát triển để giúp việc tra cứu lịch sử được dễ dàng, tránh làm tràn context của AI Coding.
 
 ---
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
+
+### 🟢 Ngày 01/06/2026: Refactor Inventory page bước 1
+* **Mục tiêu nghiệp vụ/kỹ thuật**:
+  * Tiếp tục giảm rủi ro bảo trì ở khu vực kho vật tư, nơi liên quan trực tiếp đến tồn kho, kiểm kê, yêu cầu cấp hàng từ HQ và log audit.
+  * Tách state/fetch/mutation khỏi `src/app/dashboard/inventory/page.tsx` để page chính tập trung render UI, dễ review và dễ tiếp tục tách component.
+* **Inventory refactor**:
+  * Tạo `src/app/dashboard/inventory/types.ts` để gom type cho inventory item, inventory log, reconciliation row, tab/filter và request cart item.
+  * Tạo `src/app/dashboard/inventory/constants.ts` để gom danh sách tháng/năm dùng chung.
+  * Tạo `src/app/dashboard/inventory/hooks/useInventoryPageState.ts` để quản lý dữ liệu tồn kho, log kho, lệnh chuyển kho, modal thêm vật tư, điều chỉnh kho và kiểm kê cuối tháng.
+  * Giữ nguyên UI hiện tại trong `page.tsx`, nhưng giảm file từ khoảng 1.108 dòng xuống khoảng 812 dòng sau khi tách state/handler.
+  * Siết hành vi lỗi trong phần client inventory: lỗi fetch items/logs không còn chỉ `console.error` rồi tiếp tục set dữ liệu rỗng; lỗi ghi `inventory_logs` khi điều chỉnh kho hoặc tạo tồn ban đầu sẽ được kiểm tra và báo lỗi rõ.
+  * Type hóa payload insert/update bằng Supabase generated types cho `inventory_items` và `inventory_logs`.
+  * Tách tiếp UI inventory thành component chuyên trách: `InventoryPageHeader`, `InventoryTabs`, `InventoryStockPanel`, `InventoryTransferOrdersPanel`, `InventoryReconciliationPanel`, `InventoryLogsPanel`, `InventoryRestockModal`, `InventoryCreateRequestModal`, `InventoryAddItemModal`.
+  * Sau bước tách component UI, `src/app/dashboard/inventory/page.tsx` giảm tiếp xuống khoảng 165 dòng và chỉ còn orchestration.
+* **Inventory actions hardening**:
+  * Type hóa payload insert/update cho `inventory_items`, `inventory_logs`, `package_materials` bằng Supabase generated types.
+  * `restockItem` và `consumeInventory` không còn bỏ qua lỗi ghi `inventory_logs`; nếu log thất bại sau khi đã cập nhật tồn kho, hệ thống rollback tồn kho về giá trị trước đó và trả failure rõ ràng.
+  * `saveMonthlyReconciliation` rollback tồn kho về expected khi update kiểm kê đã chạy nhưng ghi log kiểm kê thất bại.
+  * `autoConsumeForSession` kiểm tra lỗi đọc tenant config và báo lỗi rollback nếu rollback inventory thất bại.
+  * `rollbackInventoryConsumption` không còn bỏ qua lỗi fetch/update từng vật tư; nếu hoàn kho lỗi thì dừng và không xóa log tiêu hao.
+  * Bổ sung test side-effect cho lỗi ghi log restock/consume và lỗi hoàn kho rollback.
+* **Kiểm tra**:
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/app/dashboard/inventory/page.tsx src/app/dashboard/inventory/constants.ts src/app/dashboard/inventory/types.ts src/app/dashboard/inventory/hooks/useInventoryPageState.ts` pass.
+  * `npx.cmd eslint src/app/dashboard/inventory/page.tsx src/app/dashboard/inventory/components/*.tsx src/app/dashboard/inventory/constants.ts src/app/dashboard/inventory/types.ts src/app/dashboard/inventory/hooks/useInventoryPageState.ts` pass sau khi tách UI.
+  * `npx.cmd eslint src/services/inventory-actions.ts src/__tests__/inventory-actions.test.ts` pass.
+  * `npm.cmd test -- src/__tests__/inventory-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/transaction-safety.test.ts --runInBand` pass.
+  * Freeze clock trong `src/__tests__/cross-module-integrity.test.ts` và `src/__tests__/e2e-pipeline.test.ts` về tháng 05/2026 để test không fail khi ngày hệ thống sang 01/06/2026.
+  * `npm.cmd test -- src/__tests__/inventory-actions.test.ts src/__tests__/transaction-safety.test.ts src/__tests__/cross-module-integrity.test.ts src/__tests__/e2e-pipeline.test.ts src/__tests__/e2e-negative-pipeline.test.ts src/__tests__/state-machine.test.ts --runInBand` pass.
 
 ### 🟢 Ngày 31/05/2026: Refactor booking/KTV dashboard để giảm rủi ro bảo trì
 * **Mục tiêu nghiệp vụ/kỹ thuật**:

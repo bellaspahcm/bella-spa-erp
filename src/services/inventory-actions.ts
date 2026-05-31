@@ -2,6 +2,16 @@
 
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
+import type { Database } from '@/types/database.types';
+
+type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Insert'];
+type InventoryItemUpdate = Database['public']['Tables']['inventory_items']['Update'];
+type InventoryLogInsert = Database['public']['Tables']['inventory_logs']['Insert'];
+type PackageMaterialInsert = Database['public']['Tables']['package_materials']['Insert'];
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
+  return error instanceof Error ? error.message : fallback;
+}
 
 // ─── Schema (verified 2026-05-15) ──────────────────────────────────────────────
 // inventory_items:   id, tenant_id, name, sku, unit, stock_level, min_stock_level,
@@ -154,7 +164,7 @@ export async function upsertPackageMaterials(
     }
 
     // 2. Lọc các dòng hợp lệ (item_id không rỗng, quantity > 0)
-    const validRows = rows
+    const validRows: PackageMaterialInsert[] = rows
       .filter(r => r.item_id && Number(r.quantity_per_session) > 0)
       .map(r => ({
         tenant_id: tenantId,
@@ -179,9 +189,9 @@ export async function upsertPackageMaterials(
 
     revalidatePath('/dashboard/services');
     return { success: true, inserted: validRows.length };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[upsertPackageMaterials]', e);
-    return { success: false, error: e?.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
 
@@ -235,7 +245,7 @@ export async function getMonthlyReconciliation(year: number, month: number) {
       else logsByItem[k].tieu_hao += Math.abs(amt);
     }
 
-    const items = (itemsRes.data || []).map((it: any) => {
+    const items = (itemsRes.data || []).map((it) => {
       const m = logsByItem[it.id] || { nhap: 0, tieu_hao: 0 };
       return {
         item_id: it.id,
@@ -249,9 +259,9 @@ export async function getMonthlyReconciliation(year: number, month: number) {
     });
 
     return { success: true as const, items };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[getMonthlyReconciliation]', e);
-    return { success: false as const, error: e?.message || 'Lỗi hệ thống', items: [] };
+    return { success: false as const, error: getErrorMessage(e), items: [] };
   }
 }
 
@@ -305,12 +315,14 @@ export async function saveMonthlyReconciliation(
       const variance = actual - expected;
 
       // Cập nhật stock_level về số thực tế
+      const updatePayload: InventoryItemUpdate = {
+        stock_level: actual,
+        updated_at: new Date().toISOString(),
+      };
+
       const { error: updateErr } = await supabase
         .from('inventory_items')
-        .update({
-          stock_level: actual,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq('id', entry.item_id)
         .eq('tenant_id', tenantId);
 
@@ -324,17 +336,29 @@ export async function saveMonthlyReconciliation(
         ? `Kiểm kê tháng ${periodLabel}: khớp sổ${entry.notes ? ' - ' + entry.notes : ''}`
         : `Kiểm kê tháng ${periodLabel}: thực tế ${actual} vs dự kiến ${expected} (${variance > 0 ? '+' : ''}${variance} ${itemRow.unit})${entry.notes ? ' - ' + entry.notes : ''}`;
 
-      const { error: logErr } = await supabase.from('inventory_logs').insert({
+      const logPayload: InventoryLogInsert = {
         item_id: entry.item_id,
         change_amount: variance,
         reason: 'monthly_reconciliation',
         notes: noteText,
         created_by: userId,
         tenant_id: tenantId,
-      });
+      };
+
+      const { error: logErr } = await supabase.from('inventory_logs').insert(logPayload);
 
       if (logErr) {
-        failures.push(`Item ${itemRow.name}: lỗi ghi log - ${logErr.message}`);
+        const rollbackPayload: InventoryItemUpdate = {
+          stock_level: expected,
+          updated_at: new Date().toISOString(),
+        };
+        const { error: rollbackErr } = await supabase
+          .from('inventory_items')
+          .update(rollbackPayload)
+          .eq('id', entry.item_id)
+          .eq('tenant_id', tenantId);
+        const rollbackNote = rollbackErr ? `; rollback failed - ${rollbackErr.message}` : '';
+        failures.push(`Item ${itemRow.name}: lỗi ghi log - ${logErr.message}${rollbackNote}`);
         continue;
       }
 
@@ -351,9 +375,9 @@ export async function saveMonthlyReconciliation(
       };
     }
     return { success: true, processed };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[saveMonthlyReconciliation]', e);
-    return { success: false, error: e?.message || 'Lỗi hệ thống', processed: 0 };
+    return { success: false, error: getErrorMessage(e), processed: 0 };
   }
 }
 
@@ -373,9 +397,11 @@ export async function addInventoryItem(item: {
     const { supabase, tenantId } = await getSupabaseWithTenant();
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
 
+    const insertPayload: InventoryItemInsert = { ...item, tenant_id: tenantId };
+
     const { data, error } = await supabase
       .from('inventory_items')
-      .insert({ ...item, tenant_id: tenantId })
+      .insert(insertPayload)
       .select()
       .single();
 
@@ -393,6 +419,10 @@ export async function restockItem(itemId: string, amount: number, notes?: string
   try {
     const { supabase, tenantId, userId } = await getSupabaseWithTenant();
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
+    const numericAmount = Number(amount);
+    if (!itemId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return { success: false, error: 'Số lượng nhập kho không hợp lệ' };
+    }
 
     const { data: item, error: fetchError } = await supabase
       .from('inventory_items')
@@ -403,22 +433,41 @@ export async function restockItem(itemId: string, amount: number, notes?: string
 
     if (fetchError || !item) return { success: false, error: 'Không tìm thấy vật tư' };
 
+    const previousStock = Number(item.stock_level || 0);
+    const updatePayload: InventoryItemUpdate = { stock_level: previousStock + numericAmount };
+
     const { error: updateError } = await supabase
       .from('inventory_items')
-      .update({ stock_level: Number(item.stock_level) + Number(amount) })
+      .update(updatePayload)
       .eq('id', itemId)
       .eq('tenant_id', tenantId);
 
     if (updateError) return { success: false, error: 'Lỗi cập nhật tồn kho' };
 
-    await supabase.from('inventory_logs').insert({
+    const logPayload: InventoryLogInsert = {
       item_id: itemId,
-      change_amount: amount,
+      change_amount: numericAmount,
       reason: 'restock',
       notes: notes || 'Nhập hàng',
       created_by: userId,
       tenant_id: tenantId
-    });
+    };
+
+    const { error: logError } = await supabase.from('inventory_logs').insert(logPayload);
+    if (logError) {
+      const rollbackPayload: InventoryItemUpdate = { stock_level: previousStock };
+      const { error: rollbackError } = await supabase
+        .from('inventory_items')
+        .update(rollbackPayload)
+        .eq('id', itemId)
+        .eq('tenant_id', tenantId);
+      return {
+        success: false,
+        error: rollbackError
+          ? `Lỗi ghi log nhập kho: ${logError.message}; rollback thất bại: ${rollbackError.message}`
+          : `Lỗi ghi log nhập kho: ${logError.message}`,
+      };
+    }
 
     revalidatePath('/dashboard/inventory');
     return { success: true };
@@ -437,6 +486,10 @@ export async function consumeInventory(
   try {
     const { supabase, tenantId, userId } = await getSupabaseWithTenant();
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
+    const numericAmount = Number(amount);
+    if (!itemId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return { success: false, error: 'Số lượng tiêu hao không hợp lệ' };
+    }
 
     const { data: item, error: fetchError } = await supabase
       .from('inventory_items')
@@ -447,29 +500,47 @@ export async function consumeInventory(
 
     if (fetchError || !item) return { success: false, error: 'Không tìm thấy vật tư' };
 
-    if (Number(item.stock_level) < Number(amount)) {
-      return { success: false, error: `Mặt hàng "${item.name}" không đủ tồn kho (Hiện có: ${item.stock_level}, Cần tiêu hao: ${amount})` };
+    const previousStock = Number(item.stock_level || 0);
+    if (previousStock < numericAmount) {
+      return { success: false, error: `Mặt hàng "${item.name}" không đủ tồn kho (Hiện có: ${item.stock_level}, Cần tiêu hao: ${numericAmount})` };
     }
 
-    const newStock = Number(item.stock_level) - Number(amount);
+    const newStock = previousStock - numericAmount;
+    const updatePayload: InventoryItemUpdate = { stock_level: newStock };
 
     const { error: updateError } = await supabase
       .from('inventory_items')
-      .update({ stock_level: newStock })
+      .update(updatePayload)
       .eq('id', itemId)
       .eq('tenant_id', tenantId);
 
     if (updateError) return { success: false, error: 'Lỗi cập nhật tồn kho' };
 
-    await supabase.from('inventory_logs').insert({
+    const logPayload: InventoryLogInsert = {
       item_id: itemId,
-      change_amount: -amount,
+      change_amount: -numericAmount,
       reason: 'session_consumption',
       session_log_id: sessionLogId || null,
       notes: notes || 'Tiêu hao buổi liệu trình',
       created_by: userId,
       tenant_id: tenantId
-    });
+    };
+
+    const { error: logError } = await supabase.from('inventory_logs').insert(logPayload);
+    if (logError) {
+      const rollbackPayload: InventoryItemUpdate = { stock_level: previousStock };
+      const { error: rollbackError } = await supabase
+        .from('inventory_items')
+        .update(rollbackPayload)
+        .eq('id', itemId)
+        .eq('tenant_id', tenantId);
+      return {
+        success: false,
+        error: rollbackError
+          ? `Lỗi ghi log tiêu hao: ${logError.message}; rollback thất bại: ${rollbackError.message}`
+          : `Lỗi ghi log tiêu hao: ${logError.message}`,
+      };
+    }
 
     revalidatePath('/dashboard/inventory');
     return { success: true, newStock };
@@ -486,11 +557,14 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
 
     // Đọc cấu hình từ bảng tenants để kiểm tra chế độ trừ kho tự động
-    const { data: tenantData } = await supabase
+    const { data: tenantData, error: tenantError } = await supabase
       .from('tenants')
       .select('salary_config')
       .eq('id', tenantId)
       .single();
+    if (tenantError) {
+      return { success: false, error: `Lỗi tải cấu hình tự động trừ kho: ${tenantError.message}` };
+    }
 
     const salaryConfig = (tenantData?.salary_config as Record<string, unknown> | null) || {};
     const isAutoConsumeEnabled = !!salaryConfig.auto_consume_inventory;
@@ -522,8 +596,9 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
       if (!consumeResult.success) {
         console.warn(`[autoConsumeForSession] Consume failed for item ${itemId}, rolling back consumed items...`);
         // Rollback lại các mặt hàng đã trừ của session này
-        await rollbackInventoryConsumption(sessionLogId);
-        return { success: false, error: consumeResult.error || 'Kho không đủ nguyên liệu' };
+        const rollbackResult = await rollbackInventoryConsumption(sessionLogId);
+        const rollbackError = rollbackResult.success ? '' : `; rollback thất bại: ${rollbackResult.error}`;
+        return { success: false, error: `${consumeResult.error || 'Kho không đủ nguyên liệu'}${rollbackError}` };
       }
       consumedItems.push({ id: itemId, qty });
     }
@@ -550,11 +625,12 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
     }
 
     return { success: true, processed: consumedItems.length, totalCost };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[autoConsumeForSession]', e);
     // Hủy bỏ và hoàn kho nếu gặp lỗi hệ thống giữa chừng
-    await rollbackInventoryConsumption(sessionLogId);
-    return { success: false, error: e?.message || 'Lỗi tiêu hao tự động' };
+    const rollbackResult = await rollbackInventoryConsumption(sessionLogId);
+    const rollbackError = rollbackResult.success ? '' : `; rollback thất bại: ${rollbackResult.error}`;
+    return { success: false, error: `${getErrorMessage(e, 'Lỗi tiêu hao tự động')}${rollbackError}` };
   }
 }
 
@@ -592,13 +668,21 @@ export async function rollbackInventoryConsumption(sessionLogId: string) {
         .eq('tenant_id', tenantId)
         .single();
 
-      if (!itemErr && item) {
-        const restoredStock = Number(item.stock_level) + Math.abs(Number(log.change_amount));
-        await supabase
-          .from('inventory_items')
-          .update({ stock_level: restoredStock })
-          .eq('id', log.item_id)
-          .eq('tenant_id', tenantId);
+      if (itemErr || !item) {
+        return { success: false, error: itemErr?.message || `Không tìm thấy vật tư ${log.item_id} để hoàn kho` };
+      }
+
+      const updatePayload: InventoryItemUpdate = {
+        stock_level: Number(item.stock_level) + Math.abs(Number(log.change_amount)),
+      };
+      const { error: updateErr } = await supabase
+        .from('inventory_items')
+        .update(updatePayload)
+        .eq('id', log.item_id)
+        .eq('tenant_id', tenantId);
+
+      if (updateErr) {
+        return { success: false, error: `Lỗi hoàn kho vật tư ${log.item_id}: ${updateErr.message}` };
       }
     }
 
@@ -607,6 +691,7 @@ export async function rollbackInventoryConsumption(sessionLogId: string) {
     const { error: deleteErr } = await supabase
       .from('inventory_logs')
       .delete()
+      .eq('tenant_id', tenantId)
       .in('id', logIds);
 
     if (deleteErr) {
@@ -615,8 +700,8 @@ export async function rollbackInventoryConsumption(sessionLogId: string) {
     }
 
     return { success: true, processed: logs.length };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[rollbackInventoryConsumption] Error:', e);
-    return { success: false, error: e.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
