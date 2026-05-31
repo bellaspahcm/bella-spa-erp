@@ -7,6 +7,19 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Leave Reassignment Rollback
+* **Mục tiêu kỹ thuật**:
+  * Siết tiếp luồng phê duyệt nghỉ phép sau khi đã rollback `staff_leaves` khi ghi `attendance` lỗi.
+  * Tránh trạng thái ca đã bị điều chuyển người làm thay nhưng đơn nghỉ không được duyệt hoặc chấm công không được ghi nhận.
+* **Thay đổi chính**:
+  * `approveLeaveRequest` snapshot `session_logs.completed_by_ktv_id` và `notes` trước mỗi reassignment.
+  * Nếu approve leave hoặc attendance side effect lỗi sau khi đã điều chuyển ca, action rollback các `session_logs` đã đổi theo thứ tự ngược.
+  * Rollback failure của reassignment được trả về trong error text thay vì bị che mất.
+  * Mở rộng `attendance-actions.test.ts` lên 13 test, bao phủ reassignment success, approval failure rollback, attendance failure rollback và reassignment rollback failure.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/attendance-actions.test.ts --runInBand` pass.
+  * Các lệnh verify bổ sung được chạy trước khi commit: `security-hardening`, `tsc`, `eslint`.
+
 ### 🟢 Ngày 01/06/2026: Harden Attendance Leave Approval
 * **Mục tiêu kỹ thuật**:
   * Siết luồng phê duyệt nghỉ phép KTV để trạng thái leave và dữ liệu chấm công luôn nhất quán.
