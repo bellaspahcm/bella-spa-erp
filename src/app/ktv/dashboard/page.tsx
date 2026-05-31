@@ -9,12 +9,10 @@ import {
   Calendar as CalendarIcon, 
   MapPin, 
   Phone, 
-  ChevronRight,
   DollarSign,
   User,
   LogOut,
   RefreshCw,
-  Bell,
   X,
   Mail,
   Megaphone,
@@ -42,6 +40,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { KtvDashboardHeader } from './components/KtvDashboardHeader';
 
 export default function KTVDashboard() {
   const [user, setUser] = useState<any>(null);
@@ -450,199 +449,23 @@ export default function KTVDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
-      {/* Header */}
-      <div className="bg-white px-6 pt-8 pb-6 rounded-b-[40px] shadow-sm border-b border-slate-100">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 bg-rose-50 px-3 py-1.5 rounded-full border border-rose-100/50">
-              <Clock className="w-3.5 h-3.5 text-primary animate-pulse" />
-              <span className="text-[10px] font-black text-primary uppercase tracking-wider">{systemTime}</span>
-            </div>
-
-            {/* Connection Status Badge */}
-            {isOnline ? (
-              pendingCount > 0 ? (
-                <button 
-                  onClick={() => triggerSync()}
-                  className="flex items-center gap-1.5 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100/50 hover:bg-blue-100 transition-all active:scale-95 animate-pulse"
-                  title="Nhấp để đồng bộ thủ công"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-spin" />
-                  <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider">Đồng bộ ({pendingCount})</span>
-                </button>
-              ) : (
-                <div className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100/50">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-[9px] font-black text-emerald-600 uppercase tracking-wider">Trực tuyến</span>
-                </div>
-              )
-            ) : (
-              <button 
-                onClick={() => triggerSync()}
-                className="flex items-center gap-1.5 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100/50 hover:bg-amber-100 transition-all active:scale-95"
-                title="Đang lưu ngoại tuyến. Nhấp để thử đồng bộ lại"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
-                <span className="text-[9px] font-black text-amber-600 uppercase tracking-wider">Ngoại tuyến ({pendingCount})</span>
-              </button>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {/* Notification Bell */}
-            <div className="relative">
-              <button 
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all active:scale-95 relative ${
-                  isNotifOpen ? 'bg-primary text-white border-primary shadow-lg shadow-pink-100 dark:shadow-none' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
-                }`}
-              >
-                <Bell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {/* Notification Popover */}
-              <AnimatePresence>
-                {isNotifOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsNotifOpen(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 p-5 z-50 overflow-hidden"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-black uppercase tracking-widest text-xs text-slate-800">Thông báo</h3>
-                        <span className="px-2.5 py-0.5 bg-rose-100 text-rose-600 text-[9px] font-black rounded-full uppercase">
-                          {unreadCount} Mới
-                        </span>
-                      </div>
-                      <div className="space-y-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
-                        {notifications.length > 0 ? (
-                          notifications.map((notif) => {
-                            // Cấu hình loại thông báo: Lịch ca mới, Đối soát lương, Thông báo hệ thống, Cá nhân
-                            const type = notif.type || 'personal';
-                            let iconElement = <Bell className="w-4 h-4" />;
-                            let badgeLabel = 'Thông báo';
-                            let iconBgStyle = '';
-
-                            if (type === 'booking') {
-                              iconElement = <CalendarIcon className="w-4 h-4" />;
-                              badgeLabel = 'Lịch ca mới';
-                              iconBgStyle = !notif.isRead 
-                                ? 'bg-indigo-100 text-indigo-600 border border-indigo-200' 
-                                : 'bg-indigo-50 text-indigo-400 border border-indigo-100';
-                            } else if (type === 'salary' || type === 'payroll') {
-                              iconElement = <DollarSign className="w-4 h-4" />;
-                              badgeLabel = 'Đối soát lương';
-                              iconBgStyle = !notif.isRead 
-                                ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' 
-                                : 'bg-emerald-50 text-emerald-400 border border-emerald-100';
-                            } else if (type === 'system') {
-                              iconElement = <Megaphone className="w-4 h-4" />;
-                              badgeLabel = 'Hệ thống';
-                              iconBgStyle = !notif.isRead 
-                                ? 'bg-amber-100 text-amber-600 border border-amber-200' 
-                                : 'bg-amber-50 text-amber-400 border border-amber-100';
-                            } else {
-                              // Personal or default
-                              iconElement = <User className="w-4 h-4" />;
-                              badgeLabel = 'Cá nhân';
-                              iconBgStyle = !notif.isRead 
-                                ? 'bg-rose-100 text-rose-600 border border-rose-200' 
-                                : 'bg-rose-50 text-rose-400 border border-rose-100';
-                            }
-
-                            return (
-                              <div 
-                                key={notif.id}
-                                onClick={() => {
-                                  handleMarkAsRead(notif.id);
-                                  setIsNotifOpen(false);
-                                  setSelectedNotif(notif);
-                                }}
-                                className={`p-3 rounded-2xl border transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer text-left ${
-                                  !notif.isRead ? 'bg-rose-50/30 border-rose-100 font-bold' : 'bg-slate-50/50 border-slate-100 opacity-60'
-                                }`}
-                              >
-                                <div className="flex gap-3">
-                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${iconBgStyle}`}>
-                                    {iconElement}
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                                      <h4 className="font-bold text-xs text-slate-800 truncate">{notif.title}</h4>
-                                      <span className={`text-[8px] px-1.5 py-0.2 rounded-full font-black uppercase shrink-0 ${
-                                        type === 'booking' ? 'bg-indigo-50 text-indigo-600' :
-                                        type === 'salary' || type === 'payroll' ? 'bg-emerald-50 text-emerald-600' :
-                                        type === 'system' ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'
-                                      }`}>
-                                        {badgeLabel}
-                                      </span>
-                                    </div>
-                                    <p className="text-[10px] text-slate-500 leading-normal line-clamp-2">{notif.message}</p>
-                                    <span className="text-[8px] text-slate-400 mt-1 block">
-                                      {new Date(notif.createdAt).toLocaleDateString('vi-VN')} {new Date(notif.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <div className="py-8 text-center">
-                            <span className="text-2xl mb-2 block">🔔</span>
-                            <p className="text-slate-400 font-bold text-xs italic">Không có thông báo mới</p>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Refresh Button */}
-            <button 
-              onClick={() => window.location.reload()}
-              className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center border border-slate-200 text-slate-500 hover:text-primary transition-all active:scale-95"
-              title="Làm mới dữ liệu"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
-
-            {/* Profile Settings Button */}
-            <button 
-              onClick={() => setIsProfileOpen(true)}
-              className="w-10 h-10 bg-slate-50 hover:bg-slate-100 rounded-xl flex items-center justify-center border border-slate-200 text-slate-500 hover:text-primary transition-all active:scale-95"
-            >
-              <User className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Kỹ thuật viên</p>
-          <h1 className="text-2xl font-black text-slate-900">{user?.full_name || 'Kỹ thuật viên'}</h1>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-900 p-4 rounded-3xl text-white">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Thu nhập tháng</p>
-            <p className="text-lg font-black">{formatCurrency(earnings.total)}</p>
-          </div>
-          <div className="bg-rose-500 p-4 rounded-3xl text-white">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Số ca đã xong</p>
-            <p className="text-lg font-black">{earnings.sessions} ca</p>
-          </div>
-        </div>
-      </div>
+      <KtvDashboardHeader
+        user={user}
+        earnings={earnings}
+        systemTime={systemTime}
+        isOnline={isOnline}
+        pendingCount={pendingCount}
+        isNotifOpen={isNotifOpen}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        onToggleNotifications={() => setIsNotifOpen((current) => !current)}
+        onCloseNotifications={() => setIsNotifOpen(false)}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        onRefresh={() => window.location.reload()}
+        onTriggerSync={triggerSync}
+        onMarkAsRead={handleMarkAsRead}
+        onSelectNotification={setSelectedNotif}
+      />
 
       {/* Offline Actions Alert Banner */}
       {(!isOnline || pendingCount > 0) && (
