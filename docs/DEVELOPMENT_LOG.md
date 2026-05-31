@@ -32,6 +32,7 @@
   * Tách tiếp `createSessionLog` và `rescheduleSession` khỏi `session-mutation-actions.ts` sang action file riêng, đồng thời giữ wrapper `session-actions.ts` để không đổi API gọi từ các màn hình.
   * Tách helper cho `updateSessionLog`: normalize payload, tự điền thông tin khi hoàn thành buổi, gọi completion engine/rollback, và sync booking progress được gom vào `update-session-log-helpers.ts`.
   * Tách helper cho `createBooking`: rate limit, tạo customer, resolve tenant, upsert booking/audit, ghi revenue cọc/outbox và tạo session logs ban đầu được gom vào `create-booking-helpers.ts`.
+  * Tách helper cho `processSessionCompletion`: kiểm tra kỳ kế toán, trừ/rollback kho, sync booking progress, ghi revenue gói lẻ/outbox, sync lương KTV, review placeholder và SESSION_DONE outbox được gom vào `session-completion-helpers.ts`.
   * Bỏ global `window.fetchSessionHistory`, thay bằng callback từ hook; bỏ state thừa `isLoading`, `isFetchingQrData`.
   * Bỏ DOM side-effect `document.querySelector('input[name="date"]')` khi tạo lịch từ timeline; truyền `createDate` rõ ràng vào `BookingCreateScheduleModal`.
   * Type hóa dữ liệu booking chính: `TimelineSession`, `BookingModalData`, `BookingOption`, `KtvOption`, `SessionHistoryItem`, tenant QR info và payment revenue item.
@@ -41,6 +42,7 @@
   * `npx.cmd eslint src/app/dashboard/bookings/page.tsx src/app/dashboard/bookings/components/*.tsx src/app/dashboard/bookings/hooks/*.ts src/app/dashboard/bookings/utils/*.ts` pass, không còn warning.
   * `npm.cmd test -- src/__tests__/transaction-safety.test.ts --runInBand` pass sau khi tách session mutation/update actions.
   * Các test liên quan `createBooking` pass sau khi tách helper: `transaction-safety`, `idempotency`, `concurrency`, `cross-module-integrity`, `e2e-pipeline`.
+  * Sau khi tách `processSessionCompletion`: `tsc`, ESLint, `transaction-safety`, `e2e-pipeline`, `idempotency`, `concurrency`, `edge-cases` pass. `e2e-negative-pipeline` còn fail ở case overpayment do test đang tính cả revenue cọc setup từ `createBooking`.
 * **Commit nổi bật trong chuỗi refactor**:
   * `e8fc839` tách checkout confirmation modal cho KTV dashboard.
   * `eaa074b` type hóa state/effects KTV dashboard.
