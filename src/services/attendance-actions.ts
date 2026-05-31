@@ -5,6 +5,34 @@ import { getCurrentUser } from './user-actions';
 import { revalidatePath } from 'next/cache';
 import { recordAuditLog } from './audit-actions';
 import { getLocalDateString } from '@/lib/utils';
+import type { Database } from '@/types/database.types';
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type AttendanceInsert = Database['public']['Tables']['attendance']['Insert'];
+type AttendanceUpdate = Database['public']['Tables']['attendance']['Update'];
+type StaffLeaveUpdate = Database['public']['Tables']['staff_leaves']['Update'];
+
+function getErrorMessage(error: unknown, fallback = 'Lá»—i há»‡ thá»‘ng') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return fallback;
+}
+
+async function rollbackLeaveApproval(
+  supabase: SupabaseClient,
+  leaveId: string,
+  payload: StaffLeaveUpdate,
+) {
+  const { error } = await supabase
+    .from('staff_leaves')
+    .update(payload)
+    .eq('id', leaveId);
+
+  return error?.message || '';
+}
 
 /** Fetch today's local date string in YYYY-MM-DD format (Vietnam Timezone) */
 export async function getVNTodayString(): Promise<string> {
@@ -491,6 +519,11 @@ export async function approveLeaveRequest(
   }
 
   // 2. Thực hiện điều chuyển ca nếu có cấu hình
+  const leaveRollbackPayload: StaffLeaveUpdate = {
+    status: leave.status,
+    approved_by: leave.approved_by ?? null,
+  };
+
   if (reassignments && reassignments.length > 0) {
     for (const r of reassignments) {
       const { error: reassignErr } = await supabase
@@ -509,12 +542,13 @@ export async function approveLeaveRequest(
   }
 
   // 3. Cập nhật trạng thái đơn nghỉ thành approved
+  const leaveApprovalPayload: StaffLeaveUpdate = {
+    status: 'approved',
+    approved_by: currentUser.id,
+  };
   const { error: updateErr } = await supabase
     .from('staff_leaves')
-    .update({
-      status: 'approved',
-      approved_by: currentUser.id
-    })
+    .update(leaveApprovalPayload)
     .eq('id', leaveId);
 
   if (updateErr) return { success: false, error: updateErr.message };
@@ -541,7 +575,7 @@ export async function approveLeaveRequest(
       if (existingAtt.status === 'absent' || existingAtt.status === 'half_day') {
         const { error: updateErr } = await supabase
           .from('attendance')
-          .update({ status: leaveAttendanceStatus })
+          .update({ status: leaveAttendanceStatus } satisfies AttendanceUpdate)
           .eq('id', existingAtt.id);
         if (updateErr) throw updateErr;
       }
@@ -554,12 +588,17 @@ export async function approveLeaveRequest(
           date: leave.leave_date,
           status: leaveAttendanceStatus,
           tenant_id: leave.tenant_id,
-        });
+        } satisfies AttendanceInsert);
       if (insertErr) throw insertErr;
     }
-  } catch (attErr: any) {
+  } catch (attErr: unknown) {
     console.error('[approveLeaveRequest] Error writing attendance record:', attErr);
-    return { success: false, error: 'Phê duyệt phép thất bại do không thể ghi nhận dữ liệu chấm công: ' + (attErr.message || attErr) };
+    const rollbackError = await rollbackLeaveApproval(supabase, leaveId, leaveRollbackPayload);
+    const rollbackNote = rollbackError ? `; rollback failed: ${rollbackError}` : '';
+    return {
+      success: false,
+      error: `Phê duyệt phép thất bại do không thể ghi nhận dữ liệu chấm công: ${getErrorMessage(attErr)}${rollbackNote}`,
+    };
   }
 
   await recordAuditLog({

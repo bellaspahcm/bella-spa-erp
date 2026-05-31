@@ -7,6 +7,21 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Attendance Leave Approval
+* **Mục tiêu kỹ thuật**:
+  * Siết luồng phê duyệt nghỉ phép KTV để trạng thái leave và dữ liệu chấm công luôn nhất quán.
+  * Tránh trường hợp đơn nghỉ đã `approved` nhưng không có bản ghi `attendance`, làm lệch tính lương pro-rata và auto-deduction.
+* **Thay đổi chính**:
+  * `approveLeaveRequest` snapshot `staff_leaves.status` và `approved_by` trước khi approve.
+  * Nếu đọc/ghi `attendance` lỗi sau khi approve leave, action rollback leave về trạng thái cũ và trả lỗi rõ.
+  * Type hóa payload update/insert liên quan tới `staff_leaves` và `attendance` bằng Supabase generated types.
+  * Mở rộng `attendance-actions.test.ts` lên 9 test, bao phủ full-day `absent`, half-day `half_day`, rollback khi attendance insert/update lỗi, và rollback-failure reporting.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/attendance-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/attendance-actions.ts src/__tests__/attendance-actions.test.ts` pass, còn warning `any` cũ trong `attendance-actions.ts`.
+
 ### 🟢 Ngày 01/06/2026: Harden Finance Transaction Outbox
 * **Mục tiêu kỹ thuật**:
   * Siết luồng Finance legacy khi transaction đã ghi DB nhưng accounting outbox enqueue lỗi.

@@ -1,4 +1,5 @@
 import {
+  approveLeaveRequest,
   getKTVConflictSessions,
   getKTVLeaveHistory,
   getKTVTodayAttendance,
@@ -14,9 +15,14 @@ jest.mock('server-only', () => ({}), { virtual: true });
 
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
+const mockRecordAuditLog = jest.fn();
 
 jest.mock('../services/user-actions', () => ({
   getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
+}));
+
+jest.mock('../services/audit-actions', () => ({
+  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
 }));
 
 jest.mock('../lib/supabase-server', () => ({
@@ -35,6 +41,68 @@ class MockQueryBuilder {
 
   then(onfulfilled: any) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
+  }
+}
+
+type ScriptedResult = {
+  table: string;
+  op: 'insert' | 'select' | 'update';
+  data?: any;
+  error?: { message: string };
+};
+
+type DbCall = {
+  table: string;
+  op: ScriptedResult['op'];
+  payload?: any;
+};
+
+class ScriptedQueryBuilder {
+  private op: ScriptedResult['op'] | '' = '';
+
+  constructor(
+    private table: string,
+    private scripts: ScriptedResult[],
+    private calls: DbCall[],
+  ) {}
+
+  select() {
+    if (!this.op) {
+      this.op = 'select';
+      this.calls.push({ table: this.table, op: 'select' });
+    }
+    return this;
+  }
+
+  update(payload: any) {
+    this.op = 'update';
+    this.calls.push({ table: this.table, op: 'update', payload });
+    return this;
+  }
+
+  insert(payload: any) {
+    this.op = 'insert';
+    this.calls.push({ table: this.table, op: 'insert', payload });
+    return this;
+  }
+
+  eq() { return this; }
+  maybeSingle() { return this.resolve(); }
+  single() { return this.resolve(); }
+
+  then(onfulfilled: (value: { data: any; error: any }) => unknown) {
+    return this.resolve().then(onfulfilled);
+  }
+
+  private resolve() {
+    const next = this.scripts.shift();
+    if (!next) {
+      throw new Error(`No scripted result for ${this.table}.${this.op}`);
+    }
+    if (next.table !== this.table || next.op !== this.op) {
+      throw new Error(`Expected ${next.table}.${next.op}, got ${this.table}.${this.op}`);
+    }
+    return Promise.resolve({ data: next.data ?? null, error: next.error ?? null });
   }
 }
 
@@ -91,5 +159,160 @@ describe('attendance read actions fail-fast behavior', () => {
     await expect(getKTVConflictSessions('ktv-1', '2026-05-30', 'full_day')).rejects.toThrow(
       'Failed to fetch KTV conflict sessions: conflicts failed'
     );
+  });
+});
+
+describe('attendance leave approval side effects', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+    });
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  function installScriptedSupabase(scripts: ScriptedResult[]) {
+    const calls: DbCall[] = [];
+    mockFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, calls));
+    return calls;
+  }
+
+  it('inserts an absent attendance row when approving a full-day leave', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'staff_leaves',
+        op: 'select',
+        data: {
+          id: 'leave-1',
+          user_id: 'ktv-1',
+          leave_date: '2026-06-02',
+          leave_type: 'full_day',
+          status: 'pending',
+          approved_by: null,
+          tenant_id: 'tenant-1',
+        },
+      },
+      { table: 'staff_leaves', op: 'update' },
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert' },
+    ]);
+
+    const result = await approveLeaveRequest('leave-1');
+
+    expect(result).toEqual({ success: true });
+    expect(calls.find(c => c.table === 'attendance' && c.op === 'insert')?.payload).toEqual({
+      ktv_id: 'ktv-1',
+      date: '2026-06-02',
+      status: 'absent',
+      tenant_id: 'tenant-1',
+    });
+    expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'UPDATE',
+      table_name: 'staff_leaves',
+      record_id: 'leave-1',
+    }));
+  });
+
+  it('inserts a half-day attendance row when approving a morning leave', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'staff_leaves',
+        op: 'select',
+        data: {
+          id: 'leave-2',
+          user_id: 'ktv-1',
+          leave_date: '2026-06-03',
+          leave_type: 'morning',
+          status: 'pending',
+          approved_by: null,
+          tenant_id: 'tenant-1',
+        },
+      },
+      { table: 'staff_leaves', op: 'update' },
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert' },
+    ]);
+
+    const result = await approveLeaveRequest('leave-2');
+
+    expect(result).toEqual({ success: true });
+    expect(calls.find(c => c.table === 'attendance' && c.op === 'insert')?.payload).toMatchObject({
+      ktv_id: 'ktv-1',
+      date: '2026-06-03',
+      status: 'half_day',
+    });
+  });
+
+  it('rolls back leave approval when attendance insert fails', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'staff_leaves',
+        op: 'select',
+        data: {
+          id: 'leave-3',
+          user_id: 'ktv-1',
+          leave_date: '2026-06-04',
+          leave_type: 'full_day',
+          status: 'pending',
+          approved_by: null,
+          tenant_id: 'tenant-1',
+        },
+      },
+      { table: 'staff_leaves', op: 'update' },
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert', error: { message: 'attendance insert failed' } },
+      { table: 'staff_leaves', op: 'update' },
+    ]);
+
+    const result = await approveLeaveRequest('leave-3');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('attendance insert failed');
+    expect(calls.filter(c => c.table === 'staff_leaves' && c.op === 'update').map(c => c.payload)).toEqual([
+      { status: 'approved', approved_by: 'admin-1' },
+      { status: 'pending', approved_by: null },
+    ]);
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('reports rollback failure when leave approval rollback fails after attendance update failure', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'staff_leaves',
+        op: 'select',
+        data: {
+          id: 'leave-4',
+          user_id: 'ktv-1',
+          leave_date: '2026-06-05',
+          leave_type: 'afternoon',
+          status: 'pending',
+          approved_by: null,
+          tenant_id: 'tenant-1',
+        },
+      },
+      { table: 'staff_leaves', op: 'update' },
+      { table: 'attendance', op: 'select', data: { id: 'att-1', status: 'absent' } },
+      { table: 'attendance', op: 'update', error: { message: 'attendance update failed' } },
+      { table: 'staff_leaves', op: 'update', error: { message: 'leave rollback failed' } },
+    ]);
+
+    const result = await approveLeaveRequest('leave-4');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('attendance update failed');
+    expect(result.error).toContain('rollback failed: leave rollback failed');
+    expect(calls.filter(c => c.table === 'staff_leaves' && c.op === 'update').map(c => c.payload)).toEqual([
+      { status: 'approved', approved_by: 'admin-1' },
+      { status: 'pending', approved_by: null },
+    ]);
   });
 });
