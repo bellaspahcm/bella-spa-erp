@@ -11,9 +11,9 @@ import { getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycl
 import type { BookingModalData } from '../components/BookingDayDetailModal';
 
 type TenantBankInfo = {
-  qr_bank_code?: string;
-  qr_account_number?: string;
-  qr_account_name?: string;
+  qr_bank_code?: string | null;
+  qr_account_number?: string | null;
+  qr_account_name?: string | null;
   name?: string;
 };
 
