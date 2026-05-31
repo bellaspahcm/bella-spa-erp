@@ -7,7 +7,7 @@ import { Loader2, X } from 'lucide-react';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { getLocalDateString } from '@/lib/utils';
 
-type BookingOption = {
+export type BookingOption = {
   id: string;
   customers?: {
     name_mother?: string | null;

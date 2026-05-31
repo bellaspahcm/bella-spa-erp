@@ -18,12 +18,12 @@ import {
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
-type KtvOption = {
+export type KtvOption = {
   id: string;
   full_name: string;
 };
 
-type SessionHistoryItem = {
+export type SessionHistoryItem = {
   id: string;
   status?: string | null;
   session_number?: number | null;
@@ -32,7 +32,7 @@ type SessionHistoryItem = {
   notes?: string | null;
 };
 
-type BookingModalData = {
+export type BookingModalData = {
   id: string;
   date: Date;
   dateString?: string;
@@ -48,6 +48,10 @@ type BookingModalData = {
   contractDetail?: string;
   bookingId: string;
   time?: string;
+  originalStatus?: string;
+  originalDateString?: string;
+  contractId?: string;
+  sessionCount?: string;
 };
 
 type BookingDayDetailModalProps = {
