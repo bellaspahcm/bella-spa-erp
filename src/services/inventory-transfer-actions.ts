@@ -5,6 +5,50 @@ import { getCurrentUser } from './user-actions';
 import { checkHqAuth } from './hq-actions';
 import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import type { Database, Json } from '@/types/database.types';
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Insert'];
+type InventoryItemUpdate = Database['public']['Tables']['inventory_items']['Update'];
+type InventoryLogInsert = Database['public']['Tables']['inventory_logs']['Insert'];
+type InventoryTransferOrderInsert = Database['public']['Tables']['inventory_transfer_orders']['Insert'];
+type InventoryTransferOrderUpdate = Database['public']['Tables']['inventory_transfer_orders']['Update'];
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return fallback;
+}
+
+function transferItemsToJson(items: TransferOrderItem[]): Json {
+  return items.map(item => ({
+    name: item.name,
+    sku: item.sku,
+    qty: item.qty,
+    unit: item.unit,
+  }));
+}
+
+async function restoreInventoryStock(
+  supabase: SupabaseClient,
+  itemId: string,
+  previousStock: number,
+) {
+  const rollbackPayload: InventoryItemUpdate = {
+    stock_level: previousStock,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
+    .from('inventory_items')
+    .update(rollbackPayload)
+    .eq('id', itemId);
+
+  return error;
+}
 
 export interface TransferOrderItem {
   name: string;
@@ -54,15 +98,17 @@ export async function createInventoryRequest(items: TransferOrderItem[], notes?:
     const rand = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `TRF-${dateStr}-${rand}`;
 
+    const insertPayload: InventoryTransferOrderInsert = {
+      order_number: orderNumber,
+      requester_tenant_id: user.tenant_id,
+      items: transferItemsToJson(items),
+      notes: notes || '',
+      status: 'pending',
+    };
+
     const { data, error } = await supabase
       .from('inventory_transfer_orders')
-      .insert({
-        order_number: orderNumber,
-        requester_tenant_id: user.tenant_id,
-        items: items as unknown as import('@/types/database.types').Database['public']['Tables']['inventory_transfer_orders']['Insert']['items'],
-        notes: notes || '',
-        status: 'pending'
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
@@ -74,12 +120,12 @@ export async function createInventoryRequest(items: TransferOrderItem[], notes?:
     try {
       revalidatePath('/dashboard/inventory');
       await safeRevalidatePath('/dashboard/inventory');
-    } catch (_) {}
+    } catch {}
 
     return { success: true, data };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[createInventoryRequest] exception:', e);
-    return { success: false, error: e.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
 
@@ -122,7 +168,7 @@ export async function getInventoryTransferOrders(tenantId?: string): Promise<Inv
     return (data || []) as unknown as InventoryTransferOrder[];
   } catch (e) {
     console.error('[getInventoryTransferOrders] Exception:', e);
-    return [];
+    throw e;
   }
 }
 
@@ -217,40 +263,63 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
         query = query.eq('name', item.name);
       }
 
-      const { data: dbItem } = await query.single();
+      const { data: dbItem, error: fetchErr } = await query.single();
+      if (fetchErr) {
+        return { success: false, error: `Lỗi đọc tồn kho Tổng bộ cho "${item.name}": ${fetchErr.message}` };
+      }
       if (!dbItem) {
         return { success: false, error: `Vật tư "${item.name}" không tồn tại trong kho Tổng bộ.` };
       }
-      const newStock = (dbItem.stock_level ?? 0) - item.qty;
+      const previousStock = Number(dbItem.stock_level ?? 0);
+      const newStock = previousStock - item.qty;
 
       // Cập nhật tồn kho
-      await supabase
+      const stockUpdatePayload: InventoryItemUpdate = {
+        stock_level: newStock,
+        updated_at: new Date().toISOString(),
+      };
+      const { error: stockUpdateErr } = await supabase
         .from('inventory_items')
-        .update({ stock_level: newStock, updated_at: new Date().toISOString() })
+        .update(stockUpdatePayload)
         .eq('id', dbItem.id);
 
+      if (stockUpdateErr) {
+        return { success: false, error: `Lỗi trừ kho Tổng bộ cho "${item.name}": ${stockUpdateErr.message}` };
+      }
+
       // Ghi log
-      await supabase.from('inventory_logs').insert({
+      const logPayload: InventoryLogInsert = {
         item_id: dbItem.id,
         change_amount: -item.qty,
         reason: 'transfer_shipment',
         notes: `Xuất chuyển kho cho đơn ${order.order_number}`,
-        tenant_id: hqTenantId
-      });
+        tenant_id: hqTenantId,
+      };
+      const { error: logErr } = await supabase.from('inventory_logs').insert(logPayload);
+
+      if (logErr) {
+        const rollbackErr = await restoreInventoryStock(supabase, dbItem.id, previousStock);
+        const rollbackNote = rollbackErr ? `; rollback thất bại: ${rollbackErr.message}` : '';
+        return {
+          success: false,
+          error: `Lỗi ghi log xuất kho cho "${item.name}": ${logErr.message}${rollbackNote}`,
+        };
+      }
     }
 
     // 5. Cập nhật trạng thái lệnh chuyển kho thành 'shipped'
     const now = new Date().toISOString();
+    const orderUpdatePayload: InventoryTransferOrderUpdate = {
+      status: 'shipped',
+      shipping_carrier: carrier,
+      tracking_number: trackingNumber,
+      approved_at: now,
+      shipped_at: now,
+      updated_at: now,
+    };
     const { error: updateErr } = await supabase
       .from('inventory_transfer_orders')
-      .update({
-        status: 'shipped',
-        shipping_carrier: carrier,
-        tracking_number: trackingNumber,
-        approved_at: now,
-        shipped_at: now,
-        updated_at: now
-      })
+      .update(orderUpdatePayload)
       .eq('id', transferId);
 
     if (updateErr) {
@@ -305,12 +374,12 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
       revalidatePath('/hq');
       await safeRevalidatePath('/dashboard/inventory');
       await safeRevalidatePath('/hq');
-    } catch (_) {}
+    } catch {}
 
     return { success: true };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[approveAndShipTransfer] exception:', e);
-    return { success: false, error: e.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
 
@@ -363,15 +432,30 @@ export async function confirmTransferReceipt(transferId: string) {
       const { data: dbItem, error: fetchErr } = await query.maybeSingle();
 
       let itemId = '';
+      if (fetchErr) {
+        return { success: false, error: `Lỗi đọc tồn kho chi nhánh cho "${item.name}": ${fetchErr.message}` };
+      }
+
+      let previousStock: number | null = null;
+      let createdNewItem = false;
       if (dbItem) {
         // Vật tư đã tồn tại tại chi nhánh con, tiến hành cập nhật số lượng
         itemId = dbItem.id;
-        const newStock = dbItem.stock_level + item.qty;
+        previousStock = Number(dbItem.stock_level ?? 0);
+        const newStock = previousStock + item.qty;
 
-        await supabase
+        const stockUpdatePayload: InventoryItemUpdate = {
+          stock_level: newStock,
+          updated_at: new Date().toISOString(),
+        };
+        const { error: stockUpdateErr } = await supabase
           .from('inventory_items')
-          .update({ stock_level: newStock, updated_at: new Date().toISOString() })
+          .update(stockUpdatePayload)
           .eq('id', itemId);
+
+        if (stockUpdateErr) {
+          return { success: false, error: `Lỗi cộng kho chi nhánh cho "${item.name}": ${stockUpdateErr.message}` };
+        }
       } else {
         // Vật tư chưa từng tồn tại, tự động khởi tạo mặt hàng mới cho chi nhánh con
         const { data: newItem, error: insertErr } = await supabase
@@ -385,7 +469,7 @@ export async function confirmTransferReceipt(transferId: string) {
             price_per_unit: 0,
             category: 'Cấp từ HQ',
             tenant_id: branchTenantId
-          })
+          } satisfies InventoryItemInsert)
           .select('id')
           .single();
 
@@ -394,27 +478,42 @@ export async function confirmTransferReceipt(transferId: string) {
           return { success: false, error: `Lỗi khởi tạo mặt hàng "${item.name}" tại chi nhánh` };
         }
         itemId = newItem.id;
+        createdNewItem = true;
       }
 
       // Ghi log lịch sử nhận kho tại chi nhánh con
-      await supabase.from('inventory_logs').insert({
+      const logPayload: InventoryLogInsert = {
         item_id: itemId,
         change_amount: item.qty,
         reason: 'transfer_receipt',
         notes: `Nhận chuyển kho từ Tổng bộ theo đơn ${order.order_number}`,
-        tenant_id: branchTenantId
-      });
+        tenant_id: branchTenantId,
+      };
+      const { error: logErr } = await supabase.from('inventory_logs').insert(logPayload);
+
+      if (logErr) {
+        const rollbackStock = createdNewItem ? 0 : previousStock;
+        const rollbackErr = rollbackStock === null
+          ? null
+          : await restoreInventoryStock(supabase, itemId, rollbackStock);
+        const rollbackNote = rollbackErr ? `; rollback thất bại: ${rollbackErr.message}` : '';
+        return {
+          success: false,
+          error: `Lỗi ghi log nhận kho cho "${item.name}": ${logErr.message}${rollbackNote}`,
+        };
+      }
     }
 
     // 3. Cập nhật trạng thái lệnh chuyển kho thành 'completed'
     const now = new Date().toISOString();
+    const orderUpdatePayload: InventoryTransferOrderUpdate = {
+      status: 'completed',
+      completed_at: now,
+      updated_at: now,
+    };
     const { error: updateErr } = await supabase
       .from('inventory_transfer_orders')
-      .update({
-        status: 'completed',
-        completed_at: now,
-        updated_at: now
-      })
+      .update(orderUpdatePayload)
       .eq('id', transferId);
 
     if (updateErr) {
@@ -427,12 +526,12 @@ export async function confirmTransferReceipt(transferId: string) {
       revalidatePath('/hq');
       await safeRevalidatePath('/dashboard/inventory');
       await safeRevalidatePath('/hq');
-    } catch (_) {}
+    } catch {}
 
     return { success: true };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[confirmTransferReceipt] exception:', e);
-    return { success: false, error: e.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
 
@@ -466,14 +565,15 @@ export async function cancelTransferOrder(transferId: string, reason?: string) {
     }
 
     const now = new Date().toISOString();
+    const orderUpdatePayload: InventoryTransferOrderUpdate = {
+      status: 'cancelled',
+      rejection_reason: reason || 'Người dùng hủy yêu cầu',
+      cancelled_at: now,
+      updated_at: now,
+    };
     const { error: updateErr } = await supabase
       .from('inventory_transfer_orders')
-      .update({
-        status: 'cancelled',
-        rejection_reason: reason || 'Người dùng hủy yêu cầu',
-        cancelled_at: now,
-        updated_at: now
-      })
+      .update(orderUpdatePayload)
       .eq('id', transferId);
 
     if (updateErr) {
@@ -486,11 +586,11 @@ export async function cancelTransferOrder(transferId: string, reason?: string) {
       revalidatePath('/hq');
       await safeRevalidatePath('/dashboard/inventory');
       await safeRevalidatePath('/hq');
-    } catch (_) {}
+    } catch {}
 
     return { success: true };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[cancelTransferOrder] exception:', e);
-    return { success: false, error: e.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }

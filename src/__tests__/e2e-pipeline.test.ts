@@ -481,6 +481,8 @@ jest.mock('@/lib/accounting-outbox', () => ({
 // --- Test Suite Execution ---
 describe('End-to-End Business Pipeline Integration Suite', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-05-15T03:00:00.000Z'));
     jest.clearAllMocks();
     resetMockStore();
     
@@ -492,6 +494,10 @@ describe('End-to-End Business Pipeline Integration Suite', () => {
       tenant_id: 'tenant-a',
       full_name: 'Admin Bella',
     });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('verifies the absolute full booking-to-salary business pipeline flow', async () => {

@@ -1,9 +1,12 @@
 import {
+  consumeInventory,
   getInventoryItems,
   getInventoryLogs,
   getInventoryLogsByDateRange,
   getInventorySummary,
   getPackageMaterials,
+  restockItem,
+  rollbackInventoryConsumption,
 } from '../services/inventory-actions';
 
 jest.mock('next/cache', () => ({
@@ -35,6 +38,66 @@ class MockQueryBuilder {
 
   then(onfulfilled: any) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
+  }
+}
+
+type ScriptedResult = {
+  table: string;
+  op: string;
+  data?: any;
+  error?: any;
+};
+
+class ScriptedQueryBuilder {
+  private op = '';
+
+  constructor(
+    private table: string,
+    private scripts: ScriptedResult[],
+    private calls: Array<{ table: string; op: string; payload?: any }>
+  ) {}
+
+  select() {
+    this.op = 'select';
+    this.calls.push({ table: this.table, op: 'select' });
+    return this;
+  }
+
+  update(payload: any) {
+    this.op = 'update';
+    this.calls.push({ table: this.table, op: 'update', payload });
+    return this;
+  }
+
+  insert(payload: any) {
+    this.op = 'insert';
+    this.calls.push({ table: this.table, op: 'insert', payload });
+    return this;
+  }
+
+  delete() {
+    this.op = 'delete';
+    this.calls.push({ table: this.table, op: 'delete' });
+    return this;
+  }
+
+  order() { return this; }
+  limit() { return this; }
+  eq() { return this; }
+  gte() { return this; }
+  lte() { return this; }
+  in() { return this; }
+  single() { return this; }
+
+  then(onfulfilled: any) {
+    const next = this.scripts.shift();
+    if (!next) {
+      throw new Error(`No scripted result for ${this.table}.${this.op}`);
+    }
+    if (next.table !== this.table || next.op !== this.op) {
+      throw new Error(`Expected ${next.table}.${next.op}, got ${this.table}.${this.op}`);
+    }
+    return Promise.resolve({ data: next.data ?? null, error: next.error ?? null }).then(onfulfilled);
   }
 }
 
@@ -79,5 +142,90 @@ describe('inventory read actions', () => {
     await expect(getPackageMaterials('pkg-1')).rejects.toThrow(
       'Failed to fetch package materials for package pkg-1: materials query failed'
     );
+  });
+});
+
+describe('inventory write action side effects', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'user-1',
+      tenant_id: 'tenant-1',
+    });
+  });
+
+  function installScriptedSupabase(scripts: ScriptedResult[]) {
+    const calls: Array<{ table: string; op: string; payload?: any }> = [];
+    mockFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, calls));
+    return calls;
+  }
+
+  it('rolls back restock stock update when inventory log insert fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_items', op: 'select', data: { stock_level: 5 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert', error: { message: 'log insert failed' } },
+      { table: 'inventory_items', op: 'update' },
+    ]);
+
+    const result = await restockItem('item-1', 3, 'manual restock');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Lỗi ghi log nhập kho: log insert failed',
+    });
+    expect(calls.filter(c => c.table === 'inventory_items' && c.op === 'update').map(c => c.payload)).toEqual([
+      { stock_level: 8 },
+      { stock_level: 5 },
+    ]);
+    expect(calls.find(c => c.table === 'inventory_logs' && c.op === 'insert')?.payload).toMatchObject({
+      item_id: 'item-1',
+      change_amount: 3,
+      reason: 'restock',
+      tenant_id: 'tenant-1',
+    });
+  });
+
+  it('rolls back consumption stock update when inventory log insert fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 5 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert', error: { message: 'log insert failed' } },
+      { table: 'inventory_items', op: 'update' },
+    ]);
+
+    const result = await consumeInventory('item-1', 2, 'session-1');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Lỗi ghi log tiêu hao: log insert failed',
+    });
+    expect(calls.filter(c => c.table === 'inventory_items' && c.op === 'update').map(c => c.payload)).toEqual([
+      { stock_level: 3 },
+      { stock_level: 5 },
+    ]);
+    expect(calls.find(c => c.table === 'inventory_logs' && c.op === 'insert')?.payload).toMatchObject({
+      item_id: 'item-1',
+      change_amount: -2,
+      reason: 'session_consumption',
+      session_log_id: 'session-1',
+      tenant_id: 'tenant-1',
+    });
+  });
+
+  it('halts rollback and preserves logs when restoring stock fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_logs', op: 'select', data: [{ id: 'log-1', item_id: 'item-1', change_amount: -2 }] },
+      { table: 'inventory_items', op: 'select', data: { stock_level: 3 } },
+      { table: 'inventory_items', op: 'update', error: { message: 'stock update failed' } },
+    ]);
+
+    const result = await rollbackInventoryConsumption('session-1');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Lỗi hoàn kho vật tư item-1: stock update failed',
+    });
+    expect(calls.some(c => c.table === 'inventory_logs' && c.op === 'delete')).toBe(false);
   });
 });
