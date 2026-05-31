@@ -1,6 +1,6 @@
 # 👑 BẢN ĐỒ DỰ ÁN & QUY TẮC PHÁT TRIỂN (AGENT CONTEXT)
 **Dự án**: Bella Spa Enterprise Resource Planning (ERP) System  
-**Ngày cập nhật**: 30/05/2026  
+**Ngày cập nhật**: 31/05/2026  
 **Mục tiêu**: Giúp AI Coding Assistants và lập trình viên con người nhanh chóng hiểu toàn diện dự án trong 30 giây và tuyệt đối tuân thủ các quy tắc lập trình an toàn để chống lỗi hồi quy.
 
 ---
@@ -12,7 +12,16 @@ Hệ thống quản lý chu kỳ khép kín từ Đăng ký khách hàng $\right
 
 ---
 
-## 🧭 1.1. Cập nhật trạng thái mới nhất ngày 30/05/2026
+## 🧭 1.1. Cập nhật trạng thái mới nhất ngày 31/05/2026
+* **Mục tiêu refactor mới nhất**: Chuỗi thay đổi ngày 31/05/2026 tập trung giảm rủi ro bảo trì và regression ở các màn hình lớn, đặc biệt booking/admin timeline và KTV dashboard. Đây là refactor cấu trúc: không đổi schema database, không đổi khóa ngoại, không đổi luồng nghiệp vụ booking/session/QR/GPS.
+* **Booking Admin page**: `src/app/dashboard/bookings/page.tsx` đã được tách từ một file rất lớn thành các component/hook chuyên trách: `BookingsPageHeader`, `BookingsMonthCalendar`, `BookingsTimelineDateRibbon`, `BookingsSpecialtyFilter`, `BookingsTimelineGrid`, `BookingsDayTimelineList`, `BookingDayDetailModal`, `BookingCreateScheduleModal`, và hook `useBookingsPageData`.
+* **Data/realtime isolation**: Fetch sessions, bookings, KTV, session history và Supabase realtime subscription đã được gom vào `src/app/dashboard/bookings/hooks/useBookingsPageData.ts`; page chính chỉ còn điều phối UI và các mutation nhạy cảm như update/create session, QR payment.
+* **Type safety**: Booking page đã type hóa `sessions`, `modalData`, `allBookings`, `ktvs`, `sessionHistory`, tenant QR info và bỏ các state/global thừa như `window.fetchSessionHistory`, `isLoading`, `isFetchingQrData`. ESLint cho booking page và các component booking hiện pass không warning.
+* **KTV dashboard refactor**: Trước booking refactor, KTV dashboard cũng đã được tách thành các component modal/header/session/attendance/profile/password/leave; state/effects chính được type hóa để giảm coupling giữa UI mobile KTV và logic check-in/out.
+* **Kiểm tra bắt buộc sau refactor**: Các bước refactor đã chạy `npx.cmd tsc --noEmit` và `npx.cmd eslint src/app/dashboard/bookings/page.tsx src/app/dashboard/bookings/components/*.tsx src/app/dashboard/bookings/hooks/*.ts` pass trước khi commit/push.
+* **Commit nổi bật**: `9e4446e`, `c0b2a23`, `6d03fe8`, `5d641bd`, `0a21a4f`, `3035176`, `aa8f4e1`, `c6d505f`, `39a3f4f`, `b46e245` cho booking refactor; `e8fc839`, `eaa074b` cho KTV dashboard refactor.
+
+## 🧭 1.2. Cập nhật trạng thái ngày 30/05/2026
 * **Độ an toàn dữ liệu**: Đã harden hàng loạt Server Actions theo nguyên tắc Zero Silent DB Failures. Các lỗi DB trong audit, brand service, customer/package actions, dashboard/customer/attendance/KTV reads và session lifecycle phải throw hoặc trả explicit failure, không được `console.error` rồi tiếp tục thành công giả.
 * **GPS KTV**: Check-in/check-out vẫn phải thành công khi GPS lỗi. GPS check-in/out được lưu như side-effect phụ trợ và chỉ trả warning nếu lỗi; lỗi cập nhật booking, trừ kho, đếm session hoặc hậu xử lý quan trọng vẫn rollback để tránh dữ liệu nửa vời.
 * **Salary/P&L**: Salary engine dùng `recalculateAndSaveSalaryRecord`, đồng bộ KPI từ `kpi_records`, bảo toàn record không còn `draft`, tính session quy đổi theo `packages.session_multiplier`, và P&L chỉ ghi nhận doanh thu/chi phí đúng trạng thái.

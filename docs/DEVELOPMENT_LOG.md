@@ -1,11 +1,51 @@
 # 📔 Nhật ký Phát triển & Bảo trì Tổng hợp (Development & Maintenance Log)
 **Dự án**: Bella Spa Enterprise Resource Planning (ERP) System  
-**Ngày cập nhật**: 30/05/2026  
+**Ngày cập nhật**: 31/05/2026  
 **Mục tiêu**: Gom và tổng hợp tất cả các nhật ký làm việc hàng ngày của AI Agent và nhà phát triển để giúp việc tra cứu lịch sử được dễ dàng, tránh làm tràn context của AI Coding.
 
 ---
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
+
+### 🟢 Ngày 31/05/2026: Refactor booking/KTV dashboard để giảm rủi ro bảo trì
+* **Mục tiêu nghiệp vụ/kỹ thuật**:
+  * Giảm rủi ro regression cho các màn hình vận hành có tần suất sử dụng cao: KTV dashboard, booking admin, timeline KTV, lịch tháng, modal tạo/dời lịch, modal chi tiết buổi chăm sóc và QR payment.
+  * Chuyển các file page lớn từ dạng “ôm toàn bộ UI + state + fetch + realtime” sang cấu trúc component/hook rõ trách nhiệm, dễ kiểm tra và dễ rollback từng phần.
+  * Giữ nguyên hành vi nghiệp vụ hiện có: không đổi schema DB, không đổi khóa ngoại, không đổi migration, không đổi luồng booking/session/QR/GPS.
+* **KTV dashboard refactor**:
+  * Tách các phần UI/flow lớn trong `src/app/ktv/dashboard/page.tsx` thành component riêng cho header, attendance/offline, sessions, navigation/notifications, check-in, profile, password, leave và checkout confirmation.
+  * Type hóa state/effects chính của dashboard KTV để giảm coupling giữa UI mobile và logic check-in/out.
+  * Kiểm tra: `npx.cmd tsc --noEmit` pass; ESLint cho KTV dashboard và component liên quan pass.
+* **Booking admin refactor**:
+  * Tách `src/app/dashboard/bookings/page.tsx` thành các component chuyên trách:
+    * `BookingsPageHeader`
+    * `BookingsMonthCalendar`
+    * `BookingsTimelineDateRibbon`
+    * `BookingsSpecialtyFilter`
+    * `BookingsTimelineGrid`
+    * `BookingsDayTimelineList`
+    * `BookingDayDetailModal`
+    * `BookingCreateScheduleModal`
+  * Tách data/realtime vào `src/app/dashboard/bookings/hooks/useBookingsPageData.ts`, bao gồm fetch sessions, bookings, KTV, session history và Supabase realtime subscription.
+  * Bỏ global `window.fetchSessionHistory`, thay bằng callback từ hook; bỏ state thừa `isLoading`, `isFetchingQrData`.
+  * Type hóa dữ liệu booking chính: `TimelineSession`, `BookingModalData`, `BookingOption`, `KtvOption`, `SessionHistoryItem`, tenant QR info và payment revenue item.
+  * `bookings/page.tsx` giảm từ khoảng hơn 1.500 dòng xuống khoảng 430 dòng sau khi tách UI + hook.
+* **Kiểm tra cuối chuỗi refactor**:
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/app/dashboard/bookings/page.tsx src/app/dashboard/bookings/components/*.tsx src/app/dashboard/bookings/hooks/*.ts` pass, không còn warning.
+* **Commit nổi bật trong chuỗi refactor**:
+  * `e8fc839` tách checkout confirmation modal cho KTV dashboard.
+  * `eaa074b` type hóa state/effects KTV dashboard.
+  * `9e4446e` tách booking page header.
+  * `c0b2a23` tách timeline controls.
+  * `6d03fe8` tách month calendar.
+  * `5d641bd` gom mapping dữ liệu session modal.
+  * `0a21a4f` tách day detail modal.
+  * `3035176` tách create schedule modal.
+  * `aa8f4e1` tách timeline grid.
+  * `c6d505f` type hóa booking page state.
+  * `39a3f4f` tách day timeline list.
+  * `b46e245` tách page data hook.
 
 ### 🟢 Ngày 30/05/2026: Hardening DB, GPS KTV, Salary/P&L và tối ưu UI HQ/Mobile
 * **Nghiệp vụ thực hiện**:
