@@ -7,6 +7,19 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Refactor Services page state theo BMAD
+* **Mục tiêu kỹ thuật**:
+  * Tiếp tục giảm rủi ro bảo trì sau inventory refactor bằng cách tách logic state/action khỏi `src/app/dashboard/services/page.tsx`.
+  * Giữ nguyên UI và hành vi hiện tại của màn hình Quản lý dịch vụ, gồm filter, pagination, modal add/edit, sync package mặc định và định mức tiêu hao vật tư.
+* **Thay đổi chính**:
+  * Tạo `src/app/dashboard/services/types.ts` để gom type cho package, inventory item, status/filter, modal mode và material row dựa trên Supabase generated types.
+  * Tạo `src/app/dashboard/services/constants.ts` để gom `PAGE_SIZE` và factory form rỗng.
+  * Tạo `src/app/dashboard/services/hooks/useServicesPageState.ts` để quản lý load packages/inventory items, modal form, CRUD package, toggle status, sync default packages, material rows và pagination.
+  * Thu gọn `src/app/dashboard/services/page.tsx` về vai trò render UI, tương tự pattern đã áp dụng cho inventory page.
+* **Kiểm tra**:
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/app/dashboard/services/page.tsx src/app/dashboard/services/types.ts src/app/dashboard/services/constants.ts src/app/dashboard/services/hooks/useServicesPageState.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Refactor Inventory page bước 1
 * **Mục tiêu nghiệp vụ/kỹ thuật**:
   * Tiếp tục giảm rủi ro bảo trì ở khu vực kho vật tư, nơi liên quan trực tiếp đến tồn kho, kiểm kê, yêu cầu cấp hàng từ HQ và log audit.
