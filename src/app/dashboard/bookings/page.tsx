@@ -10,8 +10,6 @@ import {
   MapPin, 
   CheckCircle2, 
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
   LayoutGrid,
   List,
   X,
@@ -45,6 +43,7 @@ import { getUsers } from '@/services/user-actions';
 import { BookingsPageHeader, type BookingsViewMode } from './components/BookingsPageHeader';
 import { BookingsSpecialtyFilter, type KtvSpecialty } from './components/BookingsSpecialtyFilter';
 import { BookingsTimelineDateRibbon } from './components/BookingsTimelineDateRibbon';
+import { BookingsMonthCalendar } from './components/BookingsMonthCalendar';
 
 
 
@@ -221,13 +220,6 @@ function BookingsContent() {
   const monthDays = getMonthDays(currentMonth);
   const today = new Date();
   
-  const formatDateHeader = (date: Date) => {
-    return new Intl.DateTimeFormat('vi-VN', { 
-      month: 'long', 
-      year: 'numeric' 
-    }).format(date);
-  };
-
   const isSameDay = (d1: Date | string, d2: Date | string) => {
     const getLocalDateString = (d: Date | string) => {
       if (typeof d === 'string') return d.split('T')[0];
@@ -237,10 +229,6 @@ function BookingsContent() {
       return `${y}-${m}-${day}`;
     };
     return getLocalDateString(d1) === getLocalDateString(d2);
-  };
-
-  const isSameMonth = (d1: Date, d2: Date) => {
-    return d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
   };
 
   const handleDayDoubleClick = (date: Date) => {
@@ -360,120 +348,16 @@ function BookingsContent() {
             transition={{ duration: 0.25 }}
             className="space-y-8"
           >
-            {/* Month Calendar Box */}
-            <div className="luxury-card-white p-8 rounded-[40px] overflow-hidden relative">
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center bg-slate-50 rounded-2xl p-1 border border-slate-100">
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const prev = new Date(currentMonth);
-                        prev.setMonth(prev.getMonth() - 1);
-                        setCurrentMonth(prev);
-                      }}
-                      className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"
-                    >
-                      <ChevronLeft className="w-5 h-5 text-slate-600" />
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const next = new Date(currentMonth);
-                        next.setMonth(next.getMonth() + 1);
-                        setCurrentMonth(next);
-                      }}
-                      className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"
-                    >
-                      <ChevronRight className="w-5 h-5 text-slate-600" />
-                    </button>
-                  </div>
-                  <h2 className="text-2xl font-black text-slate-900 capitalize tracking-tight">
-                    {formatDateHeader(currentMonth)}
-                  </h2>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      setCurrentMonth(new Date());
-                      setSelectedDate(new Date());
-                    }}
-                    className="text-sm font-bold text-slate-600 bg-slate-50 border border-slate-100 px-5 py-2.5 rounded-2xl hover:bg-slate-100 transition-all active:scale-95"
-                  >
-                    Hôm nay
-                  </button>
-                </div>
-              </div>
-
-              {/* Days Header */}
-              <div className="grid grid-cols-7 mb-4">
-                {['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'].map((day) => (
-                  <div key={day} className="text-center">
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{day}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Grid Box */}
-              <div className="grid grid-cols-7 gap-px bg-slate-100 border border-slate-100 rounded-3xl overflow-hidden relative">
-                {isSyncing && sessions.length === 0 && (
-                  <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px] z-20 flex items-center justify-center">
-                    <Loader2 className="w-10 h-10 text-rose-500 animate-spin" />
-                  </div>
-                )}
-                {monthDays.map((date, i) => {
-                  const isToday = isSameDay(date, today);
-                  const isSelected = isSameDay(date, selectedDate);
-                  const isCurrentMonth = isSameMonth(date, currentMonth);
-                  
-                  const daySessions = sessions.filter(s => s.assigned_date && isSameDay(new Date(s.assigned_date), date));
-                  
-                  return (
-                    <div 
-                      key={i} 
-                      onClick={() => {
-                        setSelectedDate(date);
-                        // Smooth scroll to timeline
-                        setTimeout(() => {
-                          document.getElementById('bookings-timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 100);
-                      }}
-                      className={`min-h-[100px] p-3 bg-white transition-all cursor-pointer group hover:bg-slate-50/80 relative select-none ${
-                        !isCurrentMonth ? 'opacity-40' : ''
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className={`flex items-center justify-center w-8 h-8 text-sm font-bold rounded-xl transition-all ${
-                          isSelected 
-                            ? 'bg-rose-50 text-white shadow-lg shadow-rose-200 dark:shadow-none' 
-                            : isToday 
-                              ? 'bg-rose-50 text-rose-500 border border-rose-100' 
-                              : 'text-slate-600 group-hover:text-slate-900'
-                        }`}>
-                          {date.getDate()}
-                        </span>
-                        {isToday && (
-                          <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
-                        )}
-                      </div>
-                      
-                      {/* Event Indicator */}
-                      {daySessions.length > 0 && (
-                        <div className="flex flex-col gap-1">
-                          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-rose-400" style={{ width: '100%' }} />
-                          </div>
-                          <span className="text-[9px] font-bold text-slate-400 truncate">
-                            {daySessions.length} Lịch hẹn
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <BookingsMonthCalendar
+              currentMonth={currentMonth}
+              monthDays={monthDays}
+              selectedDate={selectedDate}
+              today={today}
+              sessions={sessions}
+              isSyncing={isSyncing}
+              onCurrentMonthChange={setCurrentMonth}
+              onSelectedDateChange={setSelectedDate}
+            />
 
             {/* Bookings Timeline Day List */}
             <div id="bookings-timeline" className="space-y-4 scroll-mt-8">
