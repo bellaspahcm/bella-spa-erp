@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Store, 
   Activity, 
-  Search, 
-  Users, 
   Lock, 
   RefreshCw, 
   Percent,
@@ -17,7 +14,6 @@ import {
   Award,
   Sparkles,
   Info,
-  ShieldCheck,
   Plus,
   Send,
   Package,
@@ -75,6 +71,9 @@ import { HqClearingRecordsLedger } from './components/HqClearingRecordsLedger';
 import { HqTransferStats } from './components/HqTransferStats';
 import { HqTransferFilters } from './components/HqTransferFilters';
 import { HqTransferOrdersLedger } from './components/HqTransferOrdersLedger';
+import { HqAuditStats } from './components/HqAuditStats';
+import { HqAuditFilters } from './components/HqAuditFilters';
+import { HqAuditLogLedger } from './components/HqAuditLogLedger';
 
 interface HqDashboardClientProps {
   initialStats: HqDashboardStats;
@@ -895,299 +894,38 @@ export default function HqDashboardClient({
         ) : activeTab === 'audit' ? (
           /* NHẬT KÝ KIỂM TOÁN (AUDIT) TAB */
           <div className="space-y-8 text-left">
-            {/* Security KPIs Cards */}
-            <section className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-              {/* Total activities in page */}
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex gap-4 items-center">
-                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
-                  <Activity size={26} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tổng số tác vụ</p>
-                  <h3 className="text-2xl font-black text-slate-900 leading-none mb-1">
-                    {auditLogs.length === 15 ? '15+' : auditLogs.length} Ghi nhận
-                  </h3>
-                  <span className="text-[9px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                    Đợt tải hiện tại
-                  </span>
-                </div>
-              </div>
+            <HqAuditStats logs={auditLogs} tables={auditTables} />
 
-              {/* Active users */}
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex gap-4 items-center">
-                <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center text-primary shrink-0">
-                  <Users size={26} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Quản trị viên thao tác</p>
-                  <h3 className="text-2xl font-black text-slate-900 leading-none mb-1">
-                    {new Set(auditLogs.map(l => l.user_name)).size} Tài khoản
-                  </h3>
-                  <span className="text-[9px] bg-rose-50 text-primary px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                    Hoạt động gần đây
-                  </span>
-                </div>
-              </div>
+            <HqAuditFilters
+              tenants={tenants}
+              users={auditUsers}
+              tables={auditTables}
+              selectedTenant={selectedTenant}
+              selectedUser={selectedUser}
+              selectedAction={selectedAction}
+              selectedTable={selectedTable}
+              startDate={startDate}
+              endDate={endDate}
+              onSelectedTenantChange={setSelectedTenant}
+              onSelectedUserChange={setSelectedUser}
+              onSelectedActionChange={setSelectedAction}
+              onSelectedTableChange={setSelectedTable}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+            />
 
-              {/* Touched branches */}
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex gap-4 items-center">
-                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shrink-0">
-                  <Store size={26} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Chi nhánh phát sinh log</p>
-                  <h3 className="text-2xl font-black text-slate-900 leading-none mb-1">
-                    {new Set(auditLogs.map(l => l.tenant_name)).size} Chi nhánh
-                  </h3>
-                  <span className="text-[9px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                    Toàn hệ thống
-                  </span>
-                </div>
-              </div>
-
-              {/* System Table Count */}
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex gap-4 items-center">
-                <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0">
-                  <ShieldCheck size={26} className="text-emerald-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Danh mục giám sát</p>
-                  <h3 className="text-2xl font-black text-emerald-600 leading-none mb-1">
-                    {auditTables.length} Bảng dữ liệu
-                  </h3>
-                  <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                    Cơ sở dữ liệu an toàn
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* Filter and Search Panel - Glassmorphic design */}
-            <section className="bg-white/80 border border-slate-200/60 backdrop-blur-md rounded-[2.5rem] shadow-sm p-6 space-y-6">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-white shrink-0">
-                  <Search size={14} />
-                </div>
-                <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Bộ lọc nhật ký nâng cao</h4>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-                {/* Branch filter */}
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Chi nhánh</label>
-                  <select
-                    value={selectedTenant}
-                    onChange={(e) => setSelectedTenant(e.target.value)}
-                    className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-xs font-bold text-slate-700"
-                  >
-                    <option value="all">Tất cả chi nhánh</option>
-                    {tenants.map(t => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* User filter */}
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Người thực hiện</label>
-                  <select
-                    value={selectedUser}
-                    onChange={(e) => setSelectedUser(e.target.value)}
-                    className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-xs font-bold text-slate-700"
-                  >
-                    <option value="all">Tất cả người dùng</option>
-                    {auditUsers.map(u => (
-                      <option key={u.id} value={u.id}>{u.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Action filter */}
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Loại tác vụ</label>
-                  <select
-                    value={selectedAction}
-                    onChange={(e) => setSelectedAction(e.target.value)}
-                    className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-xs font-bold text-slate-700"
-                  >
-                    <option value="">Tất cả tác vụ</option>
-                    <option value="INSERT">Thêm mới (INSERT)</option>
-                    <option value="UPDATE">Cập nhật (UPDATE)</option>
-                    <option value="DELETE">Xóa bỏ (DELETE)</option>
-                  </select>
-                </div>
-
-                {/* Table filter */}
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Bảng dữ liệu</label>
-                  <select
-                    value={selectedTable}
-                    onChange={(e) => setSelectedTable(e.target.value)}
-                    className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-xs font-bold text-slate-700"
-                  >
-                    <option value="all">Tất cả bảng</option>
-                    {auditTables.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Start Date */}
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Từ ngày</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="block w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-xs font-bold text-slate-700"
-                  />
-                </div>
-
-                {/* End Date */}
-                <div>
-                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Đến ngày</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="block w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-xs font-bold text-slate-700"
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Audit Logs Table Ledger - Metallic design */}
-            <section className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-                <div>
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                    Nhật ký kiểm toán thời gian thực (Super Admin Security Audit Log)
-                  </h4>
-                  <p className="text-[10px] text-slate-400 font-bold mt-0.5">
-                    Ghi lại mọi hoạt động nghiệp vụ nhạy cảm, chỉnh sửa hợp đồng, điều phối vật tư của toàn chuỗi spa Bella.
-                  </p>
-                </div>
-                <span className="text-[10px] bg-indigo-50 text-indigo-650 px-3 py-1 rounded-full font-black uppercase border border-indigo-100">
-                  SYSTEM SECURITY AUDIT
-                </span>
-              </div>
-
-              {loadingAudit ? (
-                <div className="p-16 text-center space-y-3">
-                  <RefreshCw size={24} className="animate-spin text-primary mx-auto" />
-                  <p className="text-xs text-slate-400 font-bold italic">Đang trích xuất dữ liệu nhật ký kiểm toán...</p>
-                </div>
-              ) : auditLogs.length === 0 ? (
-                <div className="p-16 text-center">
-                  <span className="text-4xl mb-3 block">🔒</span>
-                  <p className="text-slate-400 font-bold text-sm italic">Chưa có nhật ký hoạt động nào phù hợp bộ lọc.</p>
-                  <p className="text-[10px] text-slate-400 mt-1 max-w-sm mx-auto">
-                    Hệ thống tự động ghi nhận mọi lệnh thao tác dữ liệu nhạy cảm. Thử xóa bớt bộ lọc để hiển thị nhiều dữ liệu hơn.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50 border-b border-slate-100">
-                      <tr>
-                        <th scope="col" className="px-8 py-5">Thời gian</th>
-                        <th scope="col" className="px-6 py-5">Chi nhánh</th>
-                        <th scope="col" className="px-6 py-5">Người thực hiện</th>
-                        <th scope="col" className="px-6 py-5 text-center">Tác vụ</th>
-                        <th scope="col" className="px-6 py-5">Bảng dữ liệu</th>
-                        <th scope="col" className="px-6 py-5">Mã dòng (Record ID)</th>
-                        <th scope="col" className="px-8 py-5 text-right">Chi tiết</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                      {auditLogs.map((log) => (
-                        <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                          {/* Time */}
-                          <td className="px-8 py-5 text-slate-500 font-mono text-[11px]">
-                            {new Date(log.created_at).toLocaleString('vi-VN')}
-                          </td>
-
-                          {/* Tenant */}
-                          <td className="px-6 py-5 font-black text-slate-900">
-                            {log.tenant_name || 'Tổng bộ HQ'}
-                          </td>
-
-                          {/* Changed By User */}
-                          <td className="px-6 py-5 font-black text-slate-700">
-                            {log.user_name}
-                          </td>
-
-                          {/* Action Badge */}
-                          <td className="px-6 py-5 text-center">
-                            {log.action === 'INSERT' ? (
-                              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100">
-                                Thêm (INSERT)
-                              </span>
-                            ) : log.action === 'UPDATE' ? (
-                              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100">
-                                Sửa (UPDATE)
-                              </span>
-                            ) : (
-                              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-100">
-                                Xóa (DELETE)
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Table Name */}
-                          <td className="px-6 py-5 font-mono text-xs text-indigo-600 font-black">
-                            {log.table_name}
-                          </td>
-
-                          {/* Record ID */}
-                          <td className="px-6 py-5 font-mono text-[10px] text-slate-400 select-all" title={log.record_id}>
-                            {log.record_id.slice(0, 8)}...
-                          </td>
-
-                          {/* Action detail button */}
-                          <td className="px-8 py-5 text-right">
-                            <button
-                              onClick={() => {
-                                setSelectedAuditLog(log);
-                                setShowAuditDetailModal(true);
-                                setShowRawJson(false);
-                              }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-sm"
-                            >
-                              <ShieldCheck size={12} />
-                              Đối soát thay đổi
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* Pagination controls */}
-              <div className="px-8 py-5 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <span className="text-xs text-slate-500 font-bold">
-                  Trang {currentPage} | Hiển thị tối đa 15 bản ghi
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1 || loadingAudit}
-                    className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all active:scale-95 cursor-pointer"
-                  >
-                    Trang trước
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(prev => prev + 1)}
-                    disabled={auditLogs.length < 15 || loadingAudit}
-                    className="px-4 py-2 bg-slate-900 border border-slate-900 rounded-xl text-xs font-black uppercase tracking-wider text-white hover:bg-slate-800 disabled:opacity-40 transition-all active:scale-95 cursor-pointer"
-                  >
-                    Trang sau
-                  </button>
-                </div>
-              </div>
-            </section>
+            <HqAuditLogLedger
+              logs={auditLogs}
+              loading={loadingAudit}
+              currentPage={currentPage}
+              onInspectLog={(log) => {
+                setSelectedAuditLog(log);
+                setShowAuditDetailModal(true);
+                setShowRawJson(false);
+              }}
+              onPreviousPage={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onNextPage={() => setCurrentPage(prev => prev + 1)}
+            />
           </div>
         ) : (
           /* LIỆU TRÌNH CHUẨN (SERVICES) TAB PANEL */
