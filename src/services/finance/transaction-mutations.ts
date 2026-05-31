@@ -13,6 +13,73 @@ type RevenueUpdate = Database['public']['Tables']['revenue']['Update'];
 type ExpenseInsert = Database['public']['Tables']['expenses']['Insert'];
 type ExpenseUpdate = Database['public']['Tables']['expenses']['Update'];
 type SalaryRecordUpdate = Database['public']['Tables']['salary_records']['Update'];
+type SupabaseClient = Awaited<ReturnType<typeof import('@/lib/supabase-server')['createClient']>>;
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return fallback;
+}
+
+function withRollbackFailure(error: unknown, rollbackError: string) {
+  const message = getErrorMessage(error);
+  return rollbackError ? `${message}; rollback failed: ${rollbackError}` : message;
+}
+
+async function rollbackRevenueConfirmation(
+  supabase: SupabaseClient,
+  id: string,
+  payload: RevenueUpdate,
+) {
+  const { error } = await supabase
+    .from('revenue')
+    .update(payload)
+    .eq('id', id);
+
+  return error?.message || '';
+}
+
+async function rollbackExpenseConfirmation(
+  supabase: SupabaseClient,
+  id: string,
+  payload: ExpenseUpdate,
+) {
+  const { error } = await supabase
+    .from('expenses')
+    .update(payload)
+    .eq('id', id);
+
+  return error?.message || '';
+}
+
+async function rollbackSalaryRecord(
+  supabase: SupabaseClient,
+  id: string,
+  payload: SalaryRecordUpdate,
+) {
+  const { error } = await supabase
+    .from('salary_records')
+    .update(payload)
+    .eq('id', id);
+
+  return error?.message || '';
+}
+
+async function deleteInsertedFinanceRow(
+  supabase: SupabaseClient,
+  table: 'expenses' | 'revenue',
+  id: string,
+) {
+  const { error } = await supabase
+    .from(table)
+    .delete()
+    .eq('id', id);
+
+  return error?.message || '';
+}
 
 export async function confirmTransaction(id: string, type: 'revenue' | 'expense') {
   const { assertLegacyFinanceWriteAllowed } = await import('../accounting-actions');
@@ -26,7 +93,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
   if (type === 'revenue') {
     const { data: existingRev, error: existingRevError } = await supabase
       .from('revenue')
-      .select('revenue_type, amount, payment_method, booking_id, notes, tenant_id')
+      .select('revenue_type, amount, payment_method, booking_id, notes, tenant_id, status, received_date, business_event_type, accounting_review_status, accounting_metadata')
       .eq('id', id)
       .single();
 
@@ -44,6 +111,13 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       payment_method: existingRev?.payment_method || 'bank_transfer',
       booking_id: existingRev?.booking_id,
       reason: existingRev?.notes,
+    };
+    const revenueRollbackPayload: RevenueUpdate = {
+      status: existingRev?.status,
+      received_date: existingRev?.received_date,
+      business_event_type: existingRev?.business_event_type,
+      accounting_review_status: existingRev?.accounting_review_status,
+      accounting_metadata: existingRev?.accounting_metadata,
     };
     await assertOpenAccountingPeriod(supabase, {
       tenantId: existingRev?.tenant_id,
@@ -73,7 +147,8 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
     // ⭐ Enqueue PACKAGE_SALE if type is deposit/remaining_payment/package_payment
     if (updatedRev && updatedRev.tenant_id && ['deposit', 'remaining_payment', 'package_payment', 'package_sale'].includes(updatedRev.revenue_type || '')) {
       const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-      await enqueueWithAutoClient(
+      try {
+        await enqueueWithAutoClient(
         supabase,
         {
           tenantId: updatedRev.tenant_id,
@@ -88,13 +163,17 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
             branchId: updatedRev.tenant_id,
           },
         },
-        '[confirmTransaction]'
-      );
+          '[confirmTransaction]'
+        );
+      } catch (outboxError) {
+        const rollbackError = await rollbackRevenueConfirmation(supabase, id, revenueRollbackPayload);
+        throw new Error(withRollbackFailure(outboxError, rollbackError));
+      }
     }
   } else {
     const { data: existingExpense, error: existingExpenseError } = await supabase
       .from('expenses')
-      .select('category, amount, description, tenant_id')
+      .select('category, amount, description, tenant_id, status, expense_date, business_event_type, accounting_review_status, accounting_metadata')
       .eq('id', id)
       .single();
 
@@ -112,6 +191,13 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       payment_method: 'bank_transfer',
       expense_date: today,
       description: existingExpense?.description,
+    };
+    const expenseRollbackPayload: ExpenseUpdate = {
+      status: existingExpense?.status,
+      expense_date: existingExpense?.expense_date,
+      business_event_type: existingExpense?.business_event_type,
+      accounting_review_status: existingExpense?.accounting_review_status,
+      accounting_metadata: existingExpense?.accounting_metadata,
     };
     await assertOpenAccountingPeriod(supabase, {
       tenantId: existingExpense?.tenant_id,
@@ -149,6 +235,17 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
         const ktvId = ktvIdMatch ? ktvIdMatch[1] : null;
 
         if (salaryRecordId && ktvId) {
+          const { data: existingSalaryRecord, error: salaryRecordFetchError } = await supabase
+            .from('salary_records')
+            .select('status, paid_date, paid_method, business_event_type, accounting_review_status, accounting_metadata')
+            .eq('id', salaryRecordId)
+            .single();
+
+          if (salaryRecordFetchError) {
+            const rollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
+            throw new Error(withRollbackFailure(salaryRecordFetchError, rollbackError));
+          }
+
           const salaryBusinessEventType = inferBusinessEventType({
             sourceTable: 'salary_records',
             status: 'paid',
@@ -167,6 +264,14 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
             accounting_review_status: resolveReviewStatus(salaryBusinessEventType, salaryAccountingPayload),
             accounting_metadata: salaryAccountingPayload,
           };
+          const salaryRecordRollbackPayload: SalaryRecordUpdate = {
+            status: existingSalaryRecord?.status,
+            paid_date: existingSalaryRecord?.paid_date,
+            paid_method: existingSalaryRecord?.paid_method,
+            business_event_type: existingSalaryRecord?.business_event_type,
+            accounting_review_status: existingSalaryRecord?.accounting_review_status,
+            accounting_metadata: existingSalaryRecord?.accounting_metadata,
+          };
 
           // Update salary record status to 'paid'
           const { error: salaryRecordUpdateError } = await supabase
@@ -176,10 +281,12 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
 
           if (salaryRecordUpdateError) {
             console.error('[confirmTransaction] Failed to update salary record status:', salaryRecordUpdateError);
-            throw salaryRecordUpdateError;
+            const rollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
+            throw new Error(withRollbackFailure(salaryRecordUpdateError, rollbackError));
           }
 
-          await enqueueWithAutoClient(
+          try {
+            await enqueueWithAutoClient(
             supabase,
             {
               tenantId: updatedExpense.tenant_id,
@@ -195,14 +302,21 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
                 branchId: updatedExpense.tenant_id,
               },
             },
-            '[confirmTransaction]'
-          );
+              '[confirmTransaction]'
+            );
+          } catch (outboxError) {
+            const salaryRollbackError = await rollbackSalaryRecord(supabase, salaryRecordId, salaryRecordRollbackPayload);
+            const expenseRollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
+            const rollbackError = [salaryRollbackError, expenseRollbackError].filter(Boolean).join('; ');
+            throw new Error(withRollbackFailure(outboxError, rollbackError));
+          }
           revalidatePath('/dashboard/finance');
           return { success: true };
         }
       }
 
-      await enqueueWithAutoClient(
+      try {
+        await enqueueWithAutoClient(
         supabase,
         {
           tenantId: updatedExpense.tenant_id,
@@ -218,8 +332,12 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
             branchId: updatedExpense.tenant_id,
           },
         },
-        '[confirmTransaction]'
-      );
+          '[confirmTransaction]'
+        );
+      } catch (outboxError) {
+        const rollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
+        throw new Error(withRollbackFailure(outboxError, rollbackError));
+      }
     }
   }
 
@@ -297,7 +415,8 @@ export async function recordTransaction(data: {
       // ⭐ Ghi nhận Outbox nếu đã được phê duyệt
       if (dbStatus === 'approved' && result) {
         const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-        await enqueueWithAutoClient(
+        try {
+          await enqueueWithAutoClient(
           supabase,
           {
             tenantId,
@@ -313,8 +432,12 @@ export async function recordTransaction(data: {
               branchId: tenantId,
             },
           },
-          '[recordTransaction]'
-        );
+            '[recordTransaction]'
+          );
+        } catch (outboxError) {
+          const rollbackError = await deleteInsertedFinanceRow(supabase, 'expenses', result.id);
+          throw new Error(withRollbackFailure(outboxError, rollbackError));
+        }
       }
 
       revalidatePath('/dashboard/finance');
@@ -370,7 +493,8 @@ export async function recordTransaction(data: {
       // ⭐ Ghi nhận Outbox nếu đã confirmed và thuộc loại cọc/thanh toán gói
       if (dbStatus === 'confirmed' && result && ['deposit', 'remaining_payment', 'package_payment', 'package_sale'].includes(dbRevenueType)) {
         const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-        await enqueueWithAutoClient(
+        try {
+          await enqueueWithAutoClient(
           supabase,
           {
             tenantId,
@@ -385,8 +509,12 @@ export async function recordTransaction(data: {
               branchId: tenantId,
             },
           },
-          '[recordTransaction]'
-        );
+            '[recordTransaction]'
+          );
+        } catch (outboxError) {
+          const rollbackError = await deleteInsertedFinanceRow(supabase, 'revenue', result.id);
+          throw new Error(withRollbackFailure(outboxError, rollbackError));
+        }
       }
 
       revalidatePath('/dashboard/finance');
