@@ -7,6 +7,20 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Package Materials
+* **Mục tiêu kỹ thuật**:
+  * Hoàn tất trục Services → Package → Materials bằng cách siết luồng lưu định mức tiêu hao vật tư theo gói.
+  * Giảm rủi ro mất định mức cũ nếu thao tác thay thế vật tư bị lỗi giữa chừng.
+* **Thay đổi chính**:
+  * `upsertPackageMaterials` snapshot định mức cũ trước khi xóa.
+  * Nếu insert định mức mới thất bại, hệ thống tự restore định mức cũ và trả lỗi rõ ràng.
+  * Nếu restore cũng thất bại, lỗi trả về bao gồm cả lỗi insert mới và lỗi rollback.
+  * Mở rộng `inventory-actions.test.ts` lên 13 test, bổ sung coverage cho replace, empty replace, delete failure, insert failure rollback và rollback failure.
+* **Kiểm tra**:
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/inventory-actions.ts src/__tests__/inventory-actions.test.ts` pass.
+  * `npm.cmd test -- src/__tests__/inventory-actions.test.ts --runInBand` pass.
+
 ### 🟢 Ngày 01/06/2026: Wire Services page sang Package Actions
 * **Mục tiêu kỹ thuật**:
   * Loại bỏ đường ghi `packages` trực tiếp từ browser Supabase trong hook Services sau khi `package-actions` đã được harden.
