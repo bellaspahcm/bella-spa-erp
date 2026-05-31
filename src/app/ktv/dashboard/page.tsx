@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   RefreshCw,
 } from 'lucide-react';
@@ -20,22 +20,42 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
-import { KtvAttendanceCard } from './components/KtvAttendanceCard';
+import { KtvAttendanceCard, type KtvTodayAttendance } from './components/KtvAttendanceCard';
 import { KtvBottomNav } from './components/KtvBottomNav';
 import { KtvChangePasswordModal } from './components/KtvChangePasswordModal';
 import { KtvCheckinConfirmModal } from './components/KtvCheckinConfirmModal';
 import { KtvCheckoutConfirmModal } from './components/KtvCheckoutConfirmModal';
-import { KtvDashboardHeader } from './components/KtvDashboardHeader';
-import { KtvLeaveHistoryModal, KtvLeaveRequestModal } from './components/KtvLeaveModals';
+import { KtvDashboardHeader, type KtvDashboardNotification } from './components/KtvDashboardHeader';
+import { KtvLeaveHistoryModal, KtvLeaveRequestModal, type KtvLeaveHistoryItem, type KtvLeaveType } from './components/KtvLeaveModals';
 import { KtvNotificationDetailModal } from './components/KtvNotificationDetailModal';
 import { KtvOfflineSyncBanner } from './components/KtvOfflineSyncBanner';
-import { KtvProfileDrawer } from './components/KtvProfileDrawer';
-import { KtvSessionSections } from './components/KtvSessionSections';
+import { KtvProfileDrawer, type KtvOfflineAction, type KtvProfileUser } from './components/KtvProfileDrawer';
+import { KtvSessionSections, type KtvDashboardSession } from './components/KtvSessionSections';
+
+type KtvUser = NonNullable<KtvProfileUser> & {
+  id: string;
+};
+
+type KtvLeaderboardRow = {
+  ktv_id?: string | null;
+  average_rating?: number | null;
+};
+
+type OfflineActionResult<T = unknown> = {
+  success?: boolean;
+  offline?: boolean;
+  data?: T;
+  error?: string;
+};
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function KTVDashboard() {
-  const [user, setUser] = useState<any>(null);
-  const [activeSessions, setActiveSessions] = useState<any[]>([]);
-  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
+  const [user, setUser] = useState<KtvUser | null>(null);
+  const [activeSessions, setActiveSessions] = useState<KtvDashboardSession[]>([]);
+  const [upcomingSessions, setUpcomingSessions] = useState<KtvDashboardSession[]>([]);
   const [earnings, setEarnings] = useState({ total: 0, sessions: 0 });
   const [myRating, setMyRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,37 +69,37 @@ export default function KTVDashboard() {
   const [pwdConfirm, setPwdConfirm] = useState('');
   const [pwdShowing, setPwdShowing] = useState(false);
   const [isChangingPwd, setIsChangingPwd] = useState(false);
-  const [selectedNotif, setSelectedNotif] = useState<any>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [checkoutSession, setCheckoutSession] = useState<any | null>(null);
+  const [selectedNotif, setSelectedNotif] = useState<KtvDashboardNotification | null>(null);
+  const [notifications, setNotifications] = useState<KtvDashboardNotification[]>([]);
+  const [checkoutSession, setCheckoutSession] = useState<KtvDashboardSession | null>(null);
   const [checkoutNotes, setCheckoutNotes] = useState<string>('');
-  const [checkinSession, setCheckinSession] = useState<any | null>(null);
+  const [checkinSession, setCheckinSession] = useState<KtvDashboardSession | null>(null);
   
   // Attendance States
-  const [todayAttendance, setTodayAttendance] = useState<any>(null);
+  const [todayAttendance, setTodayAttendance] = useState<KtvTodayAttendance>(null);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
 
   // Leave Request States
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isLeaveHistoryOpen, setIsLeaveHistoryOpen] = useState(false);
-  const [leaveHistory, setLeaveHistory] = useState<any[]>([]);
+  const [leaveHistory, setLeaveHistory] = useState<KtvLeaveHistoryItem[]>([]);
   const [leaveDate, setLeaveDate] = useState<string>('');
-  const [leaveType, setLeaveType] = useState<'full_day' | 'morning' | 'afternoon'>('full_day');
+  const [leaveType, setLeaveType] = useState<KtvLeaveType>('full_day');
   const [leaveReason, setLeaveReason] = useState<string>('');
   const [isLeaveSubmitting, setIsLeaveSubmitting] = useState(false);
   const [isLeaveHistoryLoading, setIsLeaveHistoryLoading] = useState(false);
 
-  const fetchLeaveHistory = async () => {
+  const fetchLeaveHistory = useCallback(async () => {
     setIsLeaveHistoryLoading(true);
     try {
       const history = await getKTVLeaveHistory();
       setLeaveHistory(history);
-    } catch (e) {
-      toast.error('Lỗi khi tải lịch sử nghỉ phép');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Lỗi khi tải lịch sử nghỉ phép'));
     } finally {
       setIsLeaveHistoryLoading(false);
     }
-  };
+  }, []);
 
   const handleLeaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,8 +124,8 @@ export default function KTVDashboard() {
       } else {
         toast.error(res.error || 'Gửi đơn thất bại');
       }
-    } catch (e: any) {
-      toast.error(e?.message || 'Có lỗi xảy ra');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Có lỗi xảy ra'));
     } finally {
       setIsLeaveSubmitting(false);
     }
@@ -113,15 +133,15 @@ export default function KTVDashboard() {
 
   const router = useRouter();
   const { isOnline, pendingCount, executeAction, triggerSync, refreshQueue } = useOfflineSync();
-  const [offlineActions, setOfflineActions] = useState<any[]>([]);
+  const [offlineActions, setOfflineActions] = useState<KtvOfflineAction[]>([]);
 
-  const fetchOfflineActions = async () => {
+  const fetchOfflineActions = useCallback(async () => {
     const { offlineDB } = await import('@/lib/offline-db');
     if (offlineDB) {
       const actions = await offlineDB.offlineQueue.toArray();
       setOfflineActions(actions);
     }
-  };
+  }, []);
 
   const handleDiscardAction = async (id: string) => {
     if (!window.confirm('Bạn có chắc chắn muốn hủy bỏ thao tác ngoại tuyến này? Thao tác bị hủy sẽ không thể khôi phục.')) return;
@@ -136,8 +156,12 @@ export default function KTVDashboard() {
 
 
   useEffect(() => {
-    fetchOfflineActions();
-  }, [pendingCount, isProfileOpen]);
+    const timeout = window.setTimeout(() => {
+      void fetchOfflineActions();
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [fetchOfflineActions, pendingCount, isProfileOpen]);
 
   const handleLogout = async () => {
     try {
@@ -148,8 +172,8 @@ export default function KTVDashboard() {
       await supabase.auth.signOut();
       toast.success('Đăng xuất thành công');
       router.push('/login');
-    } catch (e) {
-      console.error('Logout error:', e);
+    } catch (error) {
+      console.error('Logout error:', error);
       router.push('/login');
     }
   };
@@ -214,7 +238,7 @@ export default function KTVDashboard() {
       setNotifications(prev => 
         prev.map(n => n.id === notifId ? { ...n, isRead: true } : n)
       );
-    } catch (error) {
+    } catch {
       toast.error('Không thể cập nhật trạng thái thông báo');
     }
   };
@@ -238,16 +262,16 @@ export default function KTVDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const fetchAttendance = async () => {
+  const fetchAttendance = useCallback(async () => {
     try {
       const att = await getKTVTodayAttendance();
       setTodayAttendance(att);
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Lỗi khi tải chấm công hôm nay'));
     }
-  };
+  }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [u, active, upcoming] = await Promise.all([
@@ -256,7 +280,7 @@ export default function KTVDashboard() {
         getKTVUpcomingSessions()
       ]);
       
-      setUser(u);
+      setUser(u as KtvUser | null);
       setActiveSessions(active);
       setUpcomingSessions(upcoming);
       
@@ -268,27 +292,31 @@ export default function KTVDashboard() {
           getKTVNotifications(),
           getKTVLeaderboard(monthStr),
         ]);
-        fetchAttendance();
+        void fetchAttendance();
         setEarnings(earn);
         setNotifications(notifs);
-        const myStats = lb.find((k: any) => k.ktv_id === u.id);
+        const myStats = (lb as KtvLeaderboardRow[]).find((k) => k.ktv_id === u.id);
         setMyRating(myStats?.average_rating ?? null);
       }
     } catch (error) {
-      toast.error('Lỗi khi tải dữ liệu');
+      toast.error(getErrorMessage(error, 'Lỗi khi tải dữ liệu'));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchAttendance]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const timeout = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [fetchData]);
 
   const handleCheckIn = async () => {
     setIsAttendanceLoading(true);
     try {
-      const res = await executeAction('KTV_SHIFT_CHECKIN', {}, () => ktvCheckIn());
+      const res = await executeAction('KTV_SHIFT_CHECKIN', {}, () => ktvCheckIn()) as OfflineActionResult<{ status?: string }>;
       if (res && res.offline) {
         setTodayAttendance({
           checkin_time: new Date().toISOString(),
@@ -296,12 +324,12 @@ export default function KTVDashboard() {
         });
       } else if (res && res.success) {
         toast.success(res.data?.status === 'late' ? 'Check-in thành công (Trễ giờ)!' : 'Check-in thành công!');
-        fetchAttendance();
+        void fetchAttendance();
       } else {
         toast.error((res && res.error) || 'Check-in thất bại');
       }
-    } catch (e: any) {
-      toast.error(e?.message || 'Check-in thất bại');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Check-in thất bại'));
     } finally {
       setIsAttendanceLoading(false);
     }
@@ -311,20 +339,20 @@ export default function KTVDashboard() {
     if (!window.confirm('Bạn có chắc chắn muốn Check-out ca làm việc hôm nay?')) return;
     setIsAttendanceLoading(true);
     try {
-      const res = await executeAction('KTV_SHIFT_CHECKOUT', {}, () => ktvCheckOut());
+      const res = await executeAction('KTV_SHIFT_CHECKOUT', {}, () => ktvCheckOut()) as OfflineActionResult;
       if (res && res.offline) {
-        setTodayAttendance((prev: any) => ({
+        setTodayAttendance((prev) => ({
           ...prev,
           checkout_time: new Date().toISOString()
         }));
       } else if (res && res.success) {
         toast.success('Check-out thành công!');
-        fetchAttendance();
+        void fetchAttendance();
       } else {
         toast.error((res && res.error) || 'Check-out thất bại');
       }
-    } catch (e: any) {
-      toast.error(e?.message || 'Check-out thất bại');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Check-out thất bại'));
     } finally {
       setIsAttendanceLoading(false);
     }
@@ -352,7 +380,7 @@ export default function KTVDashboard() {
         toast.warning('Không thể xác định vị trí GPS. Ca làm việc vẫn được bắt đầu.');
       }
 
-      const res = await executeAction('CHECKIN', { sessionId, lat, lon }, () => startSession(sessionId, lat, lon));
+      const res = await executeAction('CHECKIN', { sessionId, lat, lon }, () => startSession(sessionId, lat, lon)) as OfflineActionResult;
       if (res && res.offline) {
         setActiveSessions(prev => [
           ...prev,
@@ -365,12 +393,12 @@ export default function KTVDashboard() {
         setUpcomingSessions(prev => prev.filter(s => s.id !== sessionId));
       } else if (res && res.success) {
         toast.success('Đã bắt đầu buổi chăm sóc!');
-        fetchData();
+        void fetchData();
       } else {
         toast.error((res && res.error) || 'Không thể bắt đầu buổi chăm sóc');
       }
-    } catch (error: any) {
-      toast.error(error?.message || 'Không thể bắt đầu buổi chăm sóc');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Không thể bắt đầu buổi chăm sóc'));
     } finally {
       setIsActionLoading(null);
     }
@@ -404,7 +432,7 @@ export default function KTVDashboard() {
         'CHECKOUT',
         { sessionId, notes, ktvCheckoutNote: checkoutNoteVal, lat, lon },
         () => completeKTVSession(sessionId, notes, checkoutNoteVal, lat, lon)
-      );
+      ) as OfflineActionResult;
       if (res && res.offline) {
         setCheckoutSession(null);
         setCheckoutNotes('');
@@ -415,12 +443,12 @@ export default function KTVDashboard() {
         setCheckoutSession(null);
         setCheckoutNotes('');
         setKtvCheckoutNote('');
-        fetchData();
+        void fetchData();
       } else {
         toast.error((res && res.error) || 'Không thể hoàn tất buổi chăm sóc');
       }
-    } catch (error: any) {
-      toast.error(error?.message || 'Không thể hoàn tất buổi chăm sóc');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Không thể hoàn tất buổi chăm sóc'));
     } finally {
       setIsActionLoading(null);
     }
@@ -435,7 +463,7 @@ export default function KTVDashboard() {
     );
   }
 
-  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
+  const unreadCount = notifications.filter((notification) => !notification.isRead).length;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">

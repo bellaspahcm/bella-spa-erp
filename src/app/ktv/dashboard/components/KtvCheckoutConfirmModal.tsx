@@ -29,7 +29,7 @@ function getCheckoutTiming(session: KtvDashboardSession | null) {
 
     const durationStr = session.bookings?.packages?.duration;
     if (durationStr) {
-      const match = durationStr.match(/(\d+)/);
+      const match = String(durationStr).match(/(\d+)/);
       if (match) {
         standardDuration = parseInt(match[1], 10);
       }
