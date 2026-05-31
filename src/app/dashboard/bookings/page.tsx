@@ -14,10 +14,11 @@ import { BookingsTimelineDateRibbon } from './components/BookingsTimelineDateRib
 import { BookingsMonthCalendar } from './components/BookingsMonthCalendar';
 import { BookingDayDetailModal, type BookingModalData } from './components/BookingDayDetailModal';
 import { BookingCreateScheduleModal } from './components/BookingCreateScheduleModal';
-import { BookingsTimelineGrid, type TimelineSession } from './components/BookingsTimelineGrid';
+import { BookingsTimelineGrid } from './components/BookingsTimelineGrid';
 import { BookingsDayTimelineList } from './components/BookingsDayTimelineList';
 import { useBookingsPageData } from './hooks/useBookingsPageData';
 import { useBookingsPageActions } from './hooks/useBookingsPageActions';
+import { buildSessionModalData, getMonthDays, isSameDay } from './utils/bookingsPageUtils';
 
 
 function BookingsContent() {
@@ -67,70 +68,8 @@ function BookingsContent() {
     }
   }, [customerName]);
 
-  const getMonthDays = (date: Date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    
-    // First day of month
-    const firstDay = new Date(year, month, 1);
-    // Last day of month
-    const lastDay = new Date(year, month + 1, 0);
-    
-    // Start from the beginning of the week containing the first day
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - startDate.getDay());
-    
-    // End at the end of the week containing the last day
-    const endDate = new Date(lastDay);
-    endDate.setDate(endDate.getDate() + (6 - endDate.getDay()));
-    
-    const days = [];
-    const current = new Date(startDate);
-    
-    while (current <= endDate) {
-      days.push(new Date(current));
-      current.setDate(current.getDate() + 1);
-    }
-    
-    return days;
-  };
-
   const monthDays = getMonthDays(currentMonth);
   const today = new Date();
-  
-  const isSameDay = (d1: Date | string, d2: Date | string) => {
-    const getLocalDateString = (d: Date | string) => {
-      if (typeof d === 'string') return d.split('T')[0];
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
-    return getLocalDateString(d1) === getLocalDateString(d2);
-  };
-
-  const buildSessionModalData = (session: TimelineSession, overrides: Partial<BookingModalData> = {}) => ({
-    id: session.id,
-    date: new Date(session.assigned_date),
-    dateString: session.assigned_date,
-    customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
-    package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
-    time: session.assigned_time || '09:00 - 11:00',
-    ktv: session.bookings?.assigned_ktv?.full_name || 'Chưa phân công',
-    contractId: session.bookings?.booking_number || 'N/A',
-    contractDetail: session.notes || 'Không có ghi chú',
-    bookingId: session.booking_id,
-    ktvId: session.bookings?.assigned_ktv_id || undefined,
-    location: session.bookings?.customers?.address || 'Tại Spa',
-    sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
-    completedSessions: session.bookings?.completed_sessions || 0,
-    totalSessions: session.bookings?.total_sessions || 15,
-    originalStatus: session.status || undefined,
-    originalDateString: session.assigned_date,
-    status: session.status || undefined,
-    sessionNumber: session.session_number || 1,
-    ...overrides,
-  });
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative">
