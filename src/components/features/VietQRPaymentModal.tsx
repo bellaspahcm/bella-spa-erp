@@ -7,10 +7,10 @@ import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 
 interface TenantBankInfo {
-  qr_bank_code?: string;
-  qr_account_number?: string;
-  qr_account_name?: string;
-  name?: string;
+  qr_bank_code?: string | null;
+  qr_account_number?: string | null;
+  qr_account_name?: string | null;
+  name?: string | null;
 }
 
 interface VietQRPaymentModalProps {

@@ -471,6 +471,7 @@ jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
 
 jest.mock('@/services/audit-actions', () => ({
   recordAuditLog: jest.fn().mockResolvedValue({ success: true }),
+  checkMonthLock: jest.fn().mockResolvedValue({ isLocked: false }),
 }));
 
 jest.mock('@/lib/accounting-outbox', () => ({
