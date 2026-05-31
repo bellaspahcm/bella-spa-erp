@@ -5,6 +5,13 @@ import { toast } from 'sonner';
 
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { getInventoryItems, getPackageMaterials, upsertPackageMaterials } from '@/services/inventory-actions';
+import {
+  createPackage,
+  deletePackage,
+  getPackages,
+  updatePackage,
+  type PackageActionInput,
+} from '@/services/package-actions';
 
 import { createBlankServiceForm, PAGE_SIZE } from '../constants';
 import type {
@@ -12,8 +19,6 @@ import type {
   MaterialRow,
   ServiceModalMode,
   ServicePackage,
-  ServicePackageInsert,
-  ServicePackageUpdate,
   ServiceStatus,
   ServiceStatusFilter,
 } from '../types';
@@ -28,7 +33,7 @@ const getErrorMessage = (error: unknown, fallback: string) => (
   error instanceof Error ? error.message : fallback
 );
 
-const createDefaultPackages = (tenantId: string): ServicePackageInsert[] => [
+const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
   {
     name: 'Gói Bầu Thư Giãn Bella',
     price: 450000,
@@ -161,17 +166,8 @@ export function useServicesPageState() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const supabase = createBrowserClient();
-      const { data, error } = await supabase
-        .from('packages')
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (error) {
-        throw new Error(`Error fetching packages: ${error.message}`);
-      }
-
-      setServices(data || []);
+      const packages = await getPackages();
+      setServices(packages);
     } catch (error) {
       console.error('Load data error:', error);
       toast.error('Không thể tải danh sách dịch vụ');
@@ -250,15 +246,8 @@ export function useServicesPageState() {
 
     setIsLoading(true);
     try {
-      const supabase = createBrowserClient();
-      const { error } = await supabase
-        .from('packages')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        throw new Error(`Error deleting package: ${error.message}`);
-      }
+      const result = await deletePackage(id);
+      if (result.error) throw new Error(result.error);
 
       toast.success('Đã xóa gói dịch vụ');
       void loadData();
@@ -273,14 +262,8 @@ export function useServicesPageState() {
   const toggleServiceStatus = async (service: ServicePackage) => {
     const newStatus: ServiceStatus = service.status === 'active' ? 'inactive' : 'active';
     try {
-      const supabase = createBrowserClient();
-      const updatePayload: ServicePackageUpdate = { status: newStatus };
-      const { error } = await supabase
-        .from('packages')
-        .update(updatePayload)
-        .eq('id', service.id);
-
-      if (error) throw new Error(error.message);
+      const result = await updatePackage(service.id, { status: newStatus });
+      if (result.error) throw new Error(result.error);
 
       toast.success(`Đã chuyển trạng thái sang: ${newStatus === 'active' ? 'Đang hoạt động' : 'Tạm ngưng/Bản nháp'} 🌸`);
       setServices(prev => prev.map(item => item.id === service.id ? { ...item, status: newStatus } : item));
@@ -311,15 +294,9 @@ export function useServicesPageState() {
   const syncDefaultPackages = async () => {
     setIsLoading(true);
     try {
-      const supabase = createBrowserClient();
       const tenantId = await getTenantId();
       const defaultPackages = createDefaultPackages(tenantId);
-
-      const { data: existingPackages, error: existingError } = await supabase
-        .from('packages')
-        .select('name');
-
-      if (existingError) throw new Error(existingError.message);
+      const existingPackages = await getPackages();
 
       const existingNames = new Set((existingPackages || []).map(packageRow => packageRow.name));
       const toInsert = defaultPackages.filter(packageRow => !existingNames.has(packageRow.name));
@@ -329,11 +306,10 @@ export function useServicesPageState() {
         return;
       }
 
-      const { error: insertError } = await supabase
-        .from('packages')
-        .insert(toInsert);
-
-      if (insertError) throw new Error(insertError.message);
+      for (const packageData of toInsert) {
+        const result = await createPackage(packageData);
+        if (result.error) throw new Error(result.error);
+      }
 
       toast.success(`Đã đồng bộ ${toInsert.length} gói dịch vụ mặc định làm bản nháp thành công! 🎉`);
       void loadData();
@@ -350,16 +326,15 @@ export function useServicesPageState() {
     setIsSubmitting(true);
 
     try {
-      const supabase = createBrowserClient();
       const tenantId = await getTenantId();
-      const dbData: ServicePackageInsert = {
+      const dbData: PackageActionInput = {
         name: form.name,
-        price: parseInt(form.price.toString().replace(/[^\d]/g, '') || '0'),
+        price: form.price,
         duration: `${form.duration} phút/buổi`,
-        total_sessions: parseInt(form.sessions.toString() || '10'),
+        total_sessions: form.sessions,
         details: form.details.split(',').map(detail => detail.trim()).filter(Boolean),
         offer: form.offer || '',
-        ktv_commission: parseInt(form.ktvCommission.toString().replace(/[^\d]/g, '') || '150000'),
+        ktv_commission: form.ktvCommission,
         status: form.status,
         tenant_id: tenantId,
       };
@@ -367,24 +342,15 @@ export function useServicesPageState() {
       let packageId: string | null = null;
 
       if (modalMode === 'edit' && selectedService) {
-        const updateData: ServicePackageUpdate = dbData;
-        const { error } = await supabase
-          .from('packages')
-          .update(updateData)
-          .eq('id', selectedService.id);
-
-        if (error) throw new Error(error.message);
+        const result = await updatePackage(selectedService.id, dbData);
+        if (result.error) throw new Error(result.error);
         packageId = selectedService.id;
         toast.success('Đã cập nhật gói dịch vụ');
       } else {
-        const { data: inserted, error } = await supabase
-          .from('packages')
-          .insert([dbData])
-          .select('id')
-          .single();
-
-        if (error) throw new Error(error.message);
-        packageId = inserted?.id || null;
+        const result = await createPackage(dbData);
+        if (result.error) throw new Error(result.error);
+        packageId = result.data?.id || null;
+        if (!packageId) throw new Error('Khong xac dinh duoc ma goi dich vu vua tao');
         toast.success('Đã thêm gói dịch vụ mới');
       }
 
