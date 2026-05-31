@@ -7,6 +7,21 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Finance Transaction Outbox
+* **Mục tiêu kỹ thuật**:
+  * Siết luồng Finance legacy khi transaction đã ghi DB nhưng accounting outbox enqueue lỗi.
+  * Tránh báo cáo ghi nhận doanh thu/chi phí `confirmed`/`approved` trong khi kế toán tự động không có event tương ứng.
+* **Thay đổi chính**:
+  * `confirmTransaction` snapshot các field mutable của `revenue`/`expenses` trước khi confirm và rollback nếu outbox lỗi.
+  * Nhánh lương trong confirm expense rollback cả `salary_records` và `expenses` nếu `SALARY_PAID` outbox lỗi.
+  * `recordTransaction` xóa row `revenue`/`expenses` vừa insert nếu transaction đã confirmed/approved nhưng outbox lỗi.
+  * Thêm `finance-transaction-mutations.test.ts` với 5 test side-effect cho rollback revenue, expense, salary và rollback-failure reporting.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/finance-transaction-mutations.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/dual-mode-accounting.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/finance/transaction-mutations.ts src/__tests__/finance-transaction-mutations.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Inventory Transfer Rollbacks
 * **Mục tiêu kỹ thuật**:
   * Siết luồng chuyển kho nội bộ sau khi đã harden tiêu hao kho tự động.
