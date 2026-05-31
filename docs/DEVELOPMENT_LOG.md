@@ -7,6 +7,20 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Package Actions
+* **Mục tiêu kỹ thuật**:
+  * Siết lớp Server Actions quản lý package sau khi đã tách state của màn hình Services.
+  * Giảm rủi ro lỗi âm thầm ở package CRUD, nơi liên quan đến booking, dịch vụ, định mức vật tư và hệ số quy đổi ca KTV.
+* **Thay đổi chính**:
+  * Type hóa `src/services/package-actions.ts` bằng Supabase generated types cho `packages` Row/Insert/Update.
+  * Thay payload `any` bằng `PackageActionInput` rõ ràng, chuẩn hóa giá, số buổi, hoa hồng và chi tiết dịch vụ trước khi ghi DB.
+  * Siết rollback audit cho create/update/delete: nếu rollback DB thất bại, action trả lỗi gồm cả lỗi audit và lỗi rollback thay vì che mất lỗi phụ.
+  * Mở rộng `src/__tests__/package-actions.test.ts` lên 8 test, assert side effects cho insert/update/delete, audit log, rollback create/update/delete và failure propagation.
+* **Kiểm tra**:
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/package-actions.ts src/__tests__/package-actions.test.ts` pass.
+  * `npm.cmd test -- src/__tests__/package-actions.test.ts --runInBand` pass.
+
 ### 🟢 Ngày 01/06/2026: Refactor Services page state theo BMAD
 * **Mục tiêu kỹ thuật**:
   * Tiếp tục giảm rủi ro bảo trì sau inventory refactor bằng cách tách logic state/action khỏi `src/app/dashboard/services/page.tsx`.

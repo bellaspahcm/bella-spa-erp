@@ -2,8 +2,162 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import type { Database, Json } from '@/types/database.types';
 
-export async function getPackages() {
+type PackageRow = Database['public']['Tables']['packages']['Row'];
+type PackageInsert = Database['public']['Tables']['packages']['Insert'];
+type PackageUpdate = Database['public']['Tables']['packages']['Update'];
+
+export type PackageActionInput = {
+  name: string;
+  price?: number | string | null;
+  duration?: number | string | null;
+  sessions?: number | string | null;
+  total_sessions?: number | string | null;
+  details?: string[] | string | null;
+  offer?: string | null;
+  ktv_commission?: number | string | null;
+  status?: string | null;
+  tenant_id?: string | null;
+  session_multiplier?: number | null;
+};
+
+type PackageActionResult = {
+  data?: PackageRow;
+  error?: string;
+};
+
+type DeletePackageResult = {
+  success?: true;
+  error?: string;
+};
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function parseNumericValue(value: number | string | null | undefined, fallback: number) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  if (typeof value !== 'string') return fallback;
+
+  const normalized = value.replace(/[^\d.-]/g, '');
+  if (!normalized) return fallback;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeDetails(details: PackageActionInput['details']) {
+  if (Array.isArray(details)) return details;
+  if (typeof details === 'string') {
+    return details.split(',').map(detail => detail.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function buildPackageInsert(packageData: PackageActionInput): PackageInsert {
+  const payload: PackageInsert = {
+    name: packageData.name,
+    price: parseNumericValue(packageData.price, 0),
+    duration: packageData.duration?.toString() || '90 phút/buổi',
+    total_sessions: parseNumericValue(packageData.total_sessions ?? packageData.sessions, 10),
+    details: normalizeDetails(packageData.details),
+    offer: packageData.offer || '',
+    ktv_commission: parseNumericValue(packageData.ktv_commission, 150000),
+    status: packageData.status || 'active',
+  };
+
+  if (packageData.tenant_id) payload.tenant_id = packageData.tenant_id;
+  if (packageData.session_multiplier !== undefined) payload.session_multiplier = packageData.session_multiplier;
+
+  return payload;
+}
+
+function buildPackageUpdate(packageData: Partial<PackageActionInput>): PackageUpdate {
+  const payload: PackageUpdate = {};
+
+  if (packageData.name !== undefined) payload.name = packageData.name;
+  if (packageData.price !== undefined) payload.price = parseNumericValue(packageData.price, 0);
+  if (packageData.duration !== undefined) payload.duration = packageData.duration?.toString() || '90 phút/buổi';
+  if (packageData.total_sessions !== undefined || packageData.sessions !== undefined) {
+    payload.total_sessions = parseNumericValue(packageData.total_sessions ?? packageData.sessions, 10);
+  }
+  if (packageData.details !== undefined) payload.details = normalizeDetails(packageData.details);
+  if (packageData.offer !== undefined) payload.offer = packageData.offer || '';
+  if (packageData.ktv_commission !== undefined) {
+    payload.ktv_commission = parseNumericValue(packageData.ktv_commission, 150000);
+  }
+  if (packageData.status !== undefined) payload.status = packageData.status || 'active';
+  if (packageData.tenant_id !== undefined) payload.tenant_id = packageData.tenant_id;
+  if (packageData.session_multiplier !== undefined) payload.session_multiplier = packageData.session_multiplier;
+
+  return payload;
+}
+
+function toAuditJson(value: PackageRow | PackageInsert | PackageUpdate): Json {
+  return value as Json;
+}
+
+async function recordPackageAudit(payload: {
+  action: 'INSERT' | 'UPDATE' | 'DELETE';
+  record_id: string;
+  old_data?: Json;
+  new_data?: Json;
+}) {
+  const { recordAuditLog } = await import('./audit-actions');
+  return recordAuditLog({
+    action: payload.action,
+    table_name: 'packages',
+    record_id: payload.record_id,
+    old_data: payload.old_data,
+    new_data: payload.new_data,
+  });
+}
+
+async function rollbackCreatePackage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  insertedId: string,
+) {
+  const { error } = await supabase
+    .from('packages')
+    .delete()
+    .eq('id', insertedId);
+
+  return error?.message || null;
+}
+
+async function rollbackUpdatePackage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  packageId: string,
+  oldPackage: PackageRow,
+) {
+  const restorePayload: PackageUpdate = oldPackage;
+  const { error } = await supabase
+    .from('packages')
+    .update(restorePayload)
+    .eq('id', packageId);
+
+  return error?.message || null;
+}
+
+async function rollbackDeletePackage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  oldPackage: PackageRow,
+) {
+  const restorePayload: PackageInsert = oldPackage;
+  const { error } = await supabase
+    .from('packages')
+    .insert([restorePayload]);
+
+  return error?.message || null;
+}
+
+function withRollbackError(error: unknown, fallback: string, rollbackError: string | null) {
+  const actionError = getErrorMessage(error, fallback);
+  return rollbackError ? `${actionError}; Rollback failed: ${rollbackError}` : actionError;
+}
+
+export async function getPackages(): Promise<PackageRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('packages')
@@ -16,20 +170,9 @@ export async function getPackages() {
   return data || [];
 }
 
-export async function createPackage(packageData: any) {
+export async function createPackage(packageData: PackageActionInput): Promise<PackageActionResult> {
   const supabase = await createClient();
-  
-  // Format data for DB
-  const dbData = {
-    name: packageData.name,
-    price: parseInt(packageData.price?.toString().replace(/[^\d]/g, '') || '0'),
-    duration: packageData.duration?.toString() || '90 phút/buổi',
-    total_sessions: parseInt(packageData.sessions?.toString() || '10'),
-    details: packageData.details || [],
-    offer: packageData.offer || '',
-    ktv_commission: parseInt(packageData.ktv_commission?.toString().replace(/[^\d]/g, '') || '150000'),
-    status: 'active'
-  };
+  const dbData = buildPackageInsert(packageData);
 
   const { data, error } = await supabase
     .from('packages')
@@ -37,67 +180,49 @@ export async function createPackage(packageData: any) {
     .select();
 
   if (error) {
-    console.error('Error creating package:', error);
     return { error: error.message };
   }
 
-  if (data?.[0]) {
+  const insertedPackage = data?.[0];
+  if (insertedPackage) {
     try {
-      const { recordAuditLog } = await import('./audit-actions');
-      await recordAuditLog({
+      await recordPackageAudit({
         action: 'INSERT',
-        table_name: 'packages',
-        record_id: data[0].id,
-        new_data: data[0]
+        record_id: insertedPackage.id,
+        new_data: toAuditJson(insertedPackage),
       });
-    } catch (auditErr) {
-      await supabase
-        .from('packages')
-        .delete()
-        .eq('id', data[0].id);
+    } catch (auditError) {
+      const rollbackError = await rollbackCreatePackage(supabase, insertedPackage.id);
       return {
-        error: auditErr instanceof Error ? auditErr.message : 'Failed to record createPackage audit log'
+        error: withRollbackError(auditError, 'Failed to record createPackage audit log', rollbackError),
       };
     }
   }
 
   safeRevalidatePath('/dashboard/services');
-  return { data: data?.[0] };
+  return { data: insertedPackage };
 }
 
-export async function updatePackage(id: string, packageData: any) {
+export async function updatePackage(
+  id: string,
+  packageData: Partial<PackageActionInput>,
+): Promise<PackageActionResult> {
   const supabase = await createClient();
 
-  // Fetch existing package before update for audit trail
-  let oldPackage = null;
-  try {
-    const { data: existing, error: existingError } = await supabase
-      .from('packages')
-      .select('*')
-      .eq('id', id)
-      .single();
-    if (existingError) {
-      return { error: existingError.message };
-    }
-    oldPackage = existing;
-  } catch (err) {
-    return {
-      error: err instanceof Error ? err.message : 'Failed to fetch old package for audit trail'
-    };
-  }
-  
-  // Format data for DB
-  const dbData = {
-    name: packageData.name,
-    price: typeof packageData.price === 'string' ? parseInt(packageData.price.replace(/[^\d]/g, '')) : packageData.price,
-    duration: packageData.duration,
-    total_sessions: packageData.sessions,
-    details: packageData.details,
-    offer: packageData.offer,
-    ktv_commission: typeof packageData.ktv_commission === 'string' ? parseInt(packageData.ktv_commission.replace(/[^\d]/g, '')) : packageData.ktv_commission,
-    status: packageData.status || 'active'
-  };
+  const { data: oldPackage, error: existingError } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('id', id)
+    .single();
 
+  if (existingError) {
+    return { error: existingError.message };
+  }
+  if (!oldPackage) {
+    return { error: 'Package not found' };
+  }
+
+  const dbData = buildPackageUpdate(packageData);
   const { data, error } = await supabase
     .from('packages')
     .update(dbData)
@@ -105,56 +230,44 @@ export async function updatePackage(id: string, packageData: any) {
     .select();
 
   if (error) {
-    console.error('Error updating package:', error);
     return { error: error.message };
   }
 
-  if (data?.[0]) {
+  const updatedPackage = data?.[0];
+  if (updatedPackage) {
     try {
-      const { recordAuditLog } = await import('./audit-actions');
-      await recordAuditLog({
+      await recordPackageAudit({
         action: 'UPDATE',
-        table_name: 'packages',
         record_id: id,
-        old_data: oldPackage,
-        new_data: dbData
+        old_data: toAuditJson(oldPackage),
+        new_data: toAuditJson(dbData),
       });
-    } catch (auditErr) {
-      if (oldPackage) {
-        await supabase
-          .from('packages')
-          .update(oldPackage)
-          .eq('id', id);
-      }
+    } catch (auditError) {
+      const rollbackError = await rollbackUpdatePackage(supabase, id, oldPackage);
       return {
-        error: auditErr instanceof Error ? auditErr.message : 'Failed to record updatePackage audit log'
+        error: withRollbackError(auditError, 'Failed to record updatePackage audit log', rollbackError),
       };
     }
   }
 
   safeRevalidatePath('/dashboard/services');
-  return { data: data?.[0] };
+  return { data: updatedPackage };
 }
 
-export async function deletePackage(id: string) {
+export async function deletePackage(id: string): Promise<DeletePackageResult> {
   const supabase = await createClient();
 
-  // Fetch existing package before delete for audit trail
-  let oldPackage = null;
-  try {
-    const { data: existing, error: existingError } = await supabase
-      .from('packages')
-      .select('*')
-      .eq('id', id)
-      .single();
-    if (existingError) {
-      return { error: existingError.message };
-    }
-    oldPackage = existing;
-  } catch (err) {
-    return {
-      error: err instanceof Error ? err.message : 'Failed to fetch old package for delete audit trail'
-    };
+  const { data: oldPackage, error: existingError } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (existingError) {
+    return { error: existingError.message };
+  }
+  if (!oldPackage) {
+    return { error: 'Package not found' };
   }
 
   const { error } = await supabase
@@ -163,26 +276,19 @@ export async function deletePackage(id: string) {
     .eq('id', id);
 
   if (error) {
-    console.error('Error deleting package:', error);
     return { error: error.message };
   }
 
   try {
-    const { recordAuditLog } = await import('./audit-actions');
-    await recordAuditLog({
+    await recordPackageAudit({
       action: 'DELETE',
-      table_name: 'packages',
       record_id: id,
-      old_data: oldPackage
+      old_data: toAuditJson(oldPackage),
     });
-  } catch (auditErr) {
-    if (oldPackage) {
-      await supabase
-        .from('packages')
-        .insert([oldPackage]);
-    }
+  } catch (auditError) {
+    const rollbackError = await rollbackDeletePackage(supabase, oldPackage);
     return {
-      error: auditErr instanceof Error ? auditErr.message : 'Failed to record deletePackage audit log'
+      error: withRollbackError(auditError, 'Failed to record deletePackage audit log', rollbackError),
     };
   }
 
