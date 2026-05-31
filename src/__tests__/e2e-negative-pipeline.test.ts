@@ -199,6 +199,7 @@ describe('E2E Negative Business Pipeline Suite', () => {
     const createResult = await createBooking(bookingFormData);
     const booking = (Array.isArray(createResult.data) ? createResult.data[0] : createResult.data) || { id: 'bk-2', full_price: 5000000, deposit_amount: 1000000 };
     mockStore.bookings.push(booking);
+    const revenueCountBeforeOverpayment = mockStore.revenue.length;
 
     const paymentAmount = 10000000;
     
@@ -213,7 +214,11 @@ describe('E2E Negative Business Pipeline Suite', () => {
 
     expect(paymentResult.error).toBeDefined();
     expect(paymentResult.error).toContain('vượt quá số tiền');
-    expect(mockStore.revenue).toHaveLength(0);
+    expect(mockStore.revenue).toHaveLength(revenueCountBeforeOverpayment);
+    expect(mockStore.revenue).not.toContainEqual(expect.objectContaining({
+      amount: paymentAmount,
+      payment_method: 'cash',
+    }));
   });
 
   it('Lỗi Xuyên Suốt Luồng 3: Kho hết nguyên liệu nhưng KTV vẫn cố tình hoàn thành dịch vụ', async () => {
