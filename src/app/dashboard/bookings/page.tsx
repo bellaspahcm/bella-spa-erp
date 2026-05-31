@@ -231,32 +231,35 @@ function BookingsContent() {
     return getLocalDateString(d1) === getLocalDateString(d2);
   };
 
+  const buildSessionModalData = (session: any, overrides: Record<string, unknown> = {}) => ({
+    id: session.id,
+    date: new Date(session.assigned_date),
+    dateString: session.assigned_date,
+    customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
+    package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
+    time: session.assigned_time || '09:00 - 11:00',
+    ktv: session.bookings?.assigned_ktv?.full_name || 'Chưa phân công',
+    contractId: session.bookings?.booking_number || 'N/A',
+    contractDetail: session.notes || 'Không có ghi chú',
+    bookingId: session.booking_id,
+    ktvId: session.bookings?.assigned_ktv_id,
+    location: session.bookings?.customers?.address || 'Tại Spa',
+    sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
+    completedSessions: session.bookings?.completed_sessions || 0,
+    totalSessions: session.bookings?.total_sessions || 15,
+    originalStatus: session.status,
+    originalDateString: session.assigned_date,
+    status: session.status,
+    sessionNumber: session.session_number || 1,
+    ...overrides,
+  });
+
   const handleDayDoubleClick = (date: Date) => {
     const daySessions = sessions.filter(s => s.assigned_date && isSameDay(new Date(s.assigned_date), date));
     
     if (daySessions.length > 0) {
       const s = daySessions[0];
-      const detail = {
-        id: s.id,
-        date,
-        customer: `Mẹ: ${s.bookings?.customers?.name_mother || 'Khách hàng'}${s.bookings?.customers?.name_baby ? ` - Bé: ${s.bookings?.customers?.name_baby}` : ''}`,
-        package: s.bookings?.packages?.name || s.bookings?.package_name || 'Gói liệu trình',
-        time: s.assigned_time || '09:00 - 11:00',
-        ktv: s.bookings?.assigned_ktv?.full_name || 'Chưa phân công',
-        status: s.status,
-        location: s.bookings?.customers?.address || 'Tại Spa',
-        sessionCount: `${s.bookings?.completed_sessions || 0}/${s.bookings?.total_sessions || 15} buổi`,
-        completedSessions: s.bookings?.completed_sessions || 0,
-        totalSessions: s.bookings?.total_sessions || 15,
-        contractId: s.bookings?.booking_number || 'N/A',
-        contractDetail: s.notes || 'Không có ghi chú',
-        bookingId: s.booking_id,
-        ktvId: s.bookings?.assigned_ktv_id,
-        originalStatus: s.status,
-        originalDateString: s.assigned_date,
-        sessionNumber: s.session_number || 1
-      };
-      setModalData(detail);
+      setModalData(buildSessionModalData(s, { date }));
       setShowDetailModal(true);
     } else {
       toast.info(`Không có lịch hẹn vào ngày ${date.toLocaleDateString('vi-VN')}`);
@@ -388,27 +391,7 @@ function BookingsContent() {
 
                       <div 
                         onClick={() => {
-                          const detail = {
-                            id: session.id,
-                            date: new Date(session.assigned_date),
-                            dateString: session.assigned_date,
-                            customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
-                            package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
-                            time: session.assigned_time || '09:00 - 11:00',
-                            contractId: session.bookings?.booking_number || 'N/A',
-                            contractDetail: session.notes || 'Không có ghi chú',
-                            bookingId: session.booking_id,
-                            ktvId: session.bookings?.assigned_ktv_id,
-                            location: session.bookings?.customers?.address || 'Tại Spa',
-                            sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
-                            completedSessions: session.bookings?.completed_sessions || 0,
-                            totalSessions: session.bookings?.total_sessions || 15,
-                            originalStatus: session.status,
-                            originalDateString: session.assigned_date,
-                            status: session.status,
-                            sessionNumber: session.session_number || 1
-                          };
-                          setModalData(detail);
+                          setModalData(buildSessionModalData(session));
                           setShowDetailModal(true);
                           if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
                         }}
@@ -467,24 +450,7 @@ function BookingsContent() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const detail = {
-                                  id: session.id,
-                                  date: new Date(session.assigned_date),
-                                  dateString: session.assigned_date,
-                                  customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
-                                  package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
-                                  time: session.assigned_time || '09:00 - 11:00',
-                                  contractId: session.bookings?.booking_number || 'N/A',
-                                  contractDetail: session.notes || 'Không có ghi chú',
-                                  bookingId: session.booking_id,
-                                  ktvId: session.bookings?.assigned_ktv_id,
-                                  location: session.bookings?.customers?.address || 'Tại Spa',
-                                  sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
-                                  originalStatus: session.status,
-                                  sessionNumber: session.session_number || 1,
-                                  totalSessions: session.bookings?.total_sessions || 15
-                                };
-                                setModalData(detail);
+                                setModalData(buildSessionModalData(session));
                                 setShowDetailModal(true);
                                 if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
                               }}
@@ -502,26 +468,12 @@ function BookingsContent() {
                                 }
                                 
                                 // Prefill modal for check-in
-                                const detail = {
-                                  id: session.id,
-                                  date: new Date(session.assigned_date),
-                                  dateString: session.assigned_date,
+                                setModalData(buildSessionModalData(session, {
                                   customer: session.bookings?.customers?.name_mother || 'Khách hàng',
-                                  package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
                                   time: session.assigned_time || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-                                  contractId: session.bookings?.booking_number || 'N/A',
                                   contractDetail: session.notes || '',
-                                  bookingId: session.booking_id,
-                                  ktvId: session.bookings?.assigned_ktv_id,
-                                  location: session.bookings?.customers?.address || 'Tại Spa',
-                                  sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
-                                  completedSessions: session.bookings?.completed_sessions || 0,
-                                  totalSessions: session.bookings?.total_sessions || 15,
                                   status: session.status === 'scheduled' ? 'in_progress' : session.status,
-                                  originalStatus: session.status,
-                                  sessionNumber: session.session_number || 1
-                                };
-                                setModalData(detail);
+                                }));
                                 setShowDetailModal(true);
                                 if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
                               }}
@@ -734,27 +686,7 @@ function BookingsContent() {
                                             <div
                                               key={session.id}
                                               onClick={() => {
-                                                const detail = {
-                                                  id: session.id,
-                                                  date: new Date(session.assigned_date),
-                                                  dateString: session.assigned_date,
-                                                  customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
-                                                  package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
-                                                  time: session.assigned_time || '09:00 - 11:00',
-                                                  contractId: session.bookings?.booking_number || 'N/A',
-                                                  contractDetail: session.notes || 'Không có ghi chú',
-                                                  bookingId: session.booking_id,
-                                                  ktvId: session.bookings?.assigned_ktv_id,
-                                                  location: session.bookings?.customers?.address || 'Tại Spa',
-                                                  sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
-                                                  completedSessions: session.bookings?.completed_sessions || 0,
-                                                  totalSessions: session.bookings?.total_sessions || 15,
-                                                  originalStatus: session.status,
-                                                  originalDateString: session.assigned_date,
-                                                  status: session.status,
-                                                  sessionNumber: session.session_number || 1
-                                                };
-                                                setModalData(detail);
+                                                setModalData(buildSessionModalData(session));
                                                 setShowDetailModal(true);
                                                 if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
                                               }}
