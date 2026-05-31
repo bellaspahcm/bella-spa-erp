@@ -28,11 +28,21 @@ import { BookingsPageHeader, type BookingsViewMode } from './components/Bookings
 import { BookingsSpecialtyFilter, type KtvSpecialty } from './components/BookingsSpecialtyFilter';
 import { BookingsTimelineDateRibbon } from './components/BookingsTimelineDateRibbon';
 import { BookingsMonthCalendar } from './components/BookingsMonthCalendar';
-import { BookingDayDetailModal } from './components/BookingDayDetailModal';
-import { BookingCreateScheduleModal } from './components/BookingCreateScheduleModal';
-import { BookingsTimelineGrid } from './components/BookingsTimelineGrid';
+import { BookingDayDetailModal, type BookingModalData, type KtvOption, type SessionHistoryItem } from './components/BookingDayDetailModal';
+import { BookingCreateScheduleModal, type BookingOption } from './components/BookingCreateScheduleModal';
+import { BookingsTimelineGrid, type TimelineSession } from './components/BookingsTimelineGrid';
 
+type TenantBankInfo = {
+  qr_bank_code?: string;
+  qr_account_number?: string;
+  qr_account_name?: string;
+  name?: string;
+};
 
+type RevenuePayment = {
+  status?: string | null;
+  amount?: number | string | null;
+};
 
 
 function BookingsContent() {
@@ -46,24 +56,21 @@ function BookingsContent() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [modalData, setModalData] = useState<any>(null);
+  const [modalData, setModalData] = useState<BookingModalData | null>(null);
   const [selectedBookingIdForCreate, setSelectedBookingIdForCreate] = useState('');
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [allBookings, setAllBookings] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [sessions, setSessions] = useState<TimelineSession[]>([]);
+  const [allBookings, setAllBookings] = useState<BookingOption[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [ktvs, setKtvs] = useState<any[]>([]);
+  const [ktvs, setKtvs] = useState<KtvOption[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [sessionHistory, setSessionHistory] = useState<SessionHistoryItem[]>([]);
   const [createTimeRange, setCreateTimeRange] = useState({ start: '09:00', end: '11:00' });
 
   // VietQR Payment States
   const [showQrModal, setShowQrModal] = useState(false);
-  const [qrModalData, setQrModalData] = useState<{ bookingNumber: string; amount: number; tenantInfo: any } | null>(null);
-  const [isFetchingQrData, setIsFetchingQrData] = useState(false);
+  const [qrModalData, setQrModalData] = useState<{ bookingNumber: string; amount: number; tenantInfo: TenantBankInfo | null } | null>(null);
 
   const handleOpenQrModal = async (bookingId: string) => {
-    setIsFetchingQrData(true);
     try {
       const result = await getBookingDetailsWithPayment(bookingId);
       if (result.error || !result.data) {
@@ -78,8 +85,8 @@ function BookingsContent() {
       
       // Calculate confirmed revenue
       const confirmedRevenue = (booking.revenue || [])
-        .filter((r: any) => r.status === 'confirmed')
-        .reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0);
+        .filter((payment: RevenuePayment) => payment.status === 'confirmed')
+        .reduce((acc: number, payment: RevenuePayment) => acc + Number(payment.amount || 0), 0);
         
       let debt = discountedPrice - confirmedRevenue;
       
@@ -102,8 +109,6 @@ function BookingsContent() {
     } catch (err) {
       console.error("Error opening QR Modal:", err);
       toast.error("Có lỗi xảy ra khi tải dữ liệu thanh toán");
-    } finally {
-      setIsFetchingQrData(false);
     }
   };
 
@@ -138,13 +143,15 @@ function BookingsContent() {
 
   const fetchKtvs = async () => {
     const data = await getUsers();
-    setKtvs(data.filter((u: any) => u.role?.toLowerCase() === 'ktv'));
+    setKtvs(data.filter((user: KtvOption & { role?: string | null }) => user.role?.toLowerCase() === 'ktv'));
   };
 
   useEffect(() => {
-    fetchSessions();
-    fetchAllBookings();
-    fetchKtvs();
+    const initializeBookingsPage = async () => {
+      await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs()]);
+    };
+
+    void initializeBookingsPage();
 
     const fetchSessionHistory = async (bookingId: string) => {
       const supabase = createClient();
@@ -217,7 +224,7 @@ function BookingsContent() {
     return getLocalDateString(d1) === getLocalDateString(d2);
   };
 
-  const buildSessionModalData = (session: any, overrides: Record<string, unknown> = {}) => ({
+  const buildSessionModalData = (session: TimelineSession, overrides: Partial<BookingModalData> = {}) => ({
     id: session.id,
     date: new Date(session.assigned_date),
     dateString: session.assigned_date,
@@ -228,39 +235,30 @@ function BookingsContent() {
     contractId: session.bookings?.booking_number || 'N/A',
     contractDetail: session.notes || 'Không có ghi chú',
     bookingId: session.booking_id,
-    ktvId: session.bookings?.assigned_ktv_id,
+    ktvId: session.bookings?.assigned_ktv_id || undefined,
     location: session.bookings?.customers?.address || 'Tại Spa',
     sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
     completedSessions: session.bookings?.completed_sessions || 0,
     totalSessions: session.bookings?.total_sessions || 15,
-    originalStatus: session.status,
+    originalStatus: session.status || undefined,
     originalDateString: session.assigned_date,
-    status: session.status,
+    status: session.status || undefined,
     sessionNumber: session.session_number || 1,
     ...overrides,
   });
 
-  const handleDayDoubleClick = (date: Date) => {
-    const daySessions = sessions.filter(s => s.assigned_date && isSameDay(new Date(s.assigned_date), date));
-    
-    if (daySessions.length > 0) {
-      const s = daySessions[0];
-      setModalData(buildSessionModalData(s, { date }));
-      setShowDetailModal(true);
-    } else {
-      toast.info(`Không có lịch hẹn vào ngày ${date.toLocaleDateString('vi-VN')}`);
-    }
-  };
-
   const handleUpdatePlan = async () => {
+    if (!modalData) return;
+
     setIsUpdating(true);
     try {
       // 0. Check for Reschedule (Date Shift)
       // Only shift if it's scheduled and the date has actually changed
-      const isDateChanged = modalData.dateString && modalData.dateString !== modalData.originalDateString;
+      const newDateString = modalData.dateString;
+      const isDateChanged = Boolean(newDateString && newDateString !== modalData.originalDateString);
       
-      if (isDateChanged && modalData.status === 'scheduled') {
-        const rescheduleResult = await rescheduleSession(modalData.id, modalData.dateString);
+      if (newDateString && isDateChanged && modalData.status === 'scheduled') {
+        const rescheduleResult = await rescheduleSession(modalData.id, newDateString);
         if (rescheduleResult.error) {
           toast.error('Lỗi khi dời lịch: ' + rescheduleResult.error);
           setIsUpdating(false);
@@ -328,7 +326,7 @@ function BookingsContent() {
         fetchSessions();
         setShowCreateModal(false);
       }
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra');
     } finally {
       setIsUpdating(false);
@@ -379,7 +377,7 @@ function BookingsContent() {
 
             {/* Bookings Timeline Day List */}
             <div id="bookings-timeline" className="space-y-4 scroll-mt-8">
-              {isLoading && sessions.length === 0 ? (
+              {isSyncing && sessions.length === 0 ? (
                 <div className="flex justify-center py-20">
                   <Loader2 className="w-10 h-10 text-slate-200 animate-spin" />
                 </div>
@@ -387,7 +385,7 @@ function BookingsContent() {
                 sessions
                   .filter(s => isSameDay(new Date(s.assigned_date || 0), selectedDate))
                   .sort((a, b) => new Date(b.assigned_date).getTime() - new Date(a.assigned_date).getTime())
-                  .map((session: any, idx: number) => (
+                  .map((session, idx) => (
                     <motion.div 
                       key={session.id}
                       initial={{ opacity: 0, x: -20 }}
@@ -487,7 +485,7 @@ function BookingsContent() {
                                   customer: session.bookings?.customers?.name_mother || 'Khách hàng',
                                   time: session.assigned_time || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
                                   contractDetail: session.notes || '',
-                                  status: session.status === 'scheduled' ? 'in_progress' : session.status,
+                                  status: session.status === 'scheduled' ? 'in_progress' : session.status || undefined,
                                 }));
                                 setShowDetailModal(true);
                                 if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);

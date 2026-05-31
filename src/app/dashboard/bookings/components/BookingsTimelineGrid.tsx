@@ -5,18 +5,27 @@ import { Clock, Loader2, Plus } from 'lucide-react';
 
 import type { KtvSpecialty } from './BookingsSpecialtyFilter';
 
-type TimelineSession = {
+export type TimelineSession = {
   id: string;
   booking_id: string;
   assigned_date: string;
   assigned_time?: string | null;
+  notes?: string | null;
+  session_number?: number | null;
   status?: string | null;
   completed_by_ktv_id?: string | null;
   bookings?: {
     assigned_ktv_id?: string | null;
+    booking_number?: string | null;
+    completed_sessions?: number | null;
+    total_sessions?: number | null;
+    assigned_ktv?: {
+      full_name?: string | null;
+    } | null;
     customers?: {
       name_mother?: string | null;
       name_baby?: string | null;
+      address?: string | null;
     } | null;
     packages?: {
       name?: string | null;
@@ -25,7 +34,7 @@ type TimelineSession = {
   } | null;
 };
 
-type KtvColumn = {
+export type KtvColumn = {
   id: string | null;
   full_name: string;
   role?: string | null;
