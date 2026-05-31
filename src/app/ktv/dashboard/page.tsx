@@ -40,7 +40,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { KtvAttendanceCard } from './components/KtvAttendanceCard';
 import { KtvDashboardHeader } from './components/KtvDashboardHeader';
+import { KtvOfflineSyncBanner } from './components/KtvOfflineSyncBanner';
 
 export default function KTVDashboard() {
   const [user, setUser] = useState<any>(null);
@@ -467,125 +469,23 @@ export default function KTVDashboard() {
         onSelectNotification={setSelectedNotif}
       />
 
-      {/* Offline Actions Alert Banner */}
-      {(!isOnline || pendingCount > 0) && (
-        <div className="px-6 mt-4">
-          <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-pink-500/10 border border-amber-200/50 backdrop-blur-md rounded-[32px] p-5 shadow-sm flex gap-4 items-start relative overflow-hidden animate-pulse">
-            <div className="absolute top-[-20%] right-[-10%] w-24 h-24 bg-amber-500/10 rounded-full blur-2xl"></div>
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-600 shrink-0 relative z-10">
-              <span className="text-lg">⚡</span>
-            </div>
-            <div className="space-y-1 relative z-10 flex-grow">
-              <h4 className="text-xs font-black text-amber-800 uppercase tracking-wider">
-                {!isOnline ? 'Đang hoạt động Ngoại tuyến' : 'Đang chờ đồng bộ'}
-              </h4>
-              <p className="text-[11px] text-amber-700/80 leading-normal font-bold">
-                {!isOnline 
-                  ? `Đang lưu tạm ${pendingCount} thao tác (Check-in/Start/Complete ca). Mọi hoạt động của bạn được lưu an toàn cục bộ và sẽ tự đồng bộ khi có mạng lại.`
-                  : `Có ${pendingCount} thao tác đang chờ đẩy lên hệ thống. Đang tự động kết nối và đồng bộ...`
-                }
-              </p>
-              {pendingCount > 0 && isOnline && (
-                <button 
-                  onClick={() => triggerSync()}
-                  className="mt-2 text-[10px] font-black text-primary uppercase tracking-wider flex items-center gap-1 bg-white/60 hover:bg-white px-3 py-1 rounded-full border border-pink-100 transition-all active:scale-95 cursor-pointer"
-                >
-                  <span>🔄 Đồng bộ ngay lập tức</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <KtvOfflineSyncBanner
+        isOnline={isOnline}
+        pendingCount={pendingCount}
+        onTriggerSync={triggerSync}
+      />
 
-      {/* Attendance Clock Card */}
-      <div className="px-6 mt-6">
-        <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100/50 relative overflow-hidden">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Điểm danh hôm nay</h4>
-              <p className="text-sm font-bold text-slate-500 mt-0.5">Thời gian vào ca tiêu chuẩn: 08:30 sáng</p>
-            </div>
-            
-            {todayAttendance && (
-              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                todayAttendance.status === 'present' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                todayAttendance.status === 'late' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                todayAttendance.status === 'half_day' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                'bg-rose-50 text-rose-600 border border-rose-100'
-              }`}>
-                {todayAttendance.status === 'present' ? 'Đúng giờ' :
-                 todayAttendance.status === 'late' ? 'Đi trễ' :
-                 todayAttendance.status === 'half_day' ? 'Nửa ngày' :
-                 'Vắng mặt'}
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-slate-50 rounded-2xl p-4 text-center">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Giờ Check-in</span>
-              <span className="text-lg font-black text-slate-700">
-                {todayAttendance?.checkin_time 
-                  ? new Date(todayAttendance.checkin_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                  : '--:--'}
-              </span>
-            </div>
-            <div className="bg-slate-50 rounded-2xl p-4 text-center">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">Giờ Check-out</span>
-              <span className="text-lg font-black text-slate-700">
-                {todayAttendance?.checkout_time 
-                  ? new Date(todayAttendance.checkout_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                  : '--:--'}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            {!todayAttendance ? (
-              <button
-                onClick={handleCheckIn}
-                disabled={isAttendanceLoading}
-                className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-rose-100 dark:shadow-none text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isAttendanceLoading ? 'Đang gửi...' : 'Đầu ca: CHECK-IN'}
-              </button>
-            ) : !todayAttendance.checkout_time ? (
-              <button
-                onClick={handleCheckOut}
-                disabled={isAttendanceLoading}
-                className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-2xl transition-all shadow-lg shadow-slate-100 text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {isAttendanceLoading ? 'Đang gửi...' : 'Cuối ca: CHECK-OUT'}
-              </button>
-            ) : (
-              <div className="flex-1 py-4 bg-emerald-50 text-emerald-700 border border-emerald-100 font-black rounded-2xl text-xs uppercase tracking-widest text-center">
-                🎉 Bạn đã hoàn thành chấm công hôm nay
-              </div>
-            )}
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-slate-100 flex gap-3">
-            <button
-              onClick={() => setIsLeaveModalOpen(true)}
-              className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <CalendarIcon className="w-3.5 h-3.5" />
-              Đăng ký nghỉ
-            </button>
-            <button
-              onClick={() => {
-                setIsLeaveHistoryOpen(true);
-                fetchLeaveHistory();
-              }}
-              className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition-all text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <Clock className="w-3.5 h-3.5" />
-              Lịch sử nghỉ
-            </button>
-          </div>
-        </div>
-      </div>
+      <KtvAttendanceCard
+        todayAttendance={todayAttendance}
+        isAttendanceLoading={isAttendanceLoading}
+        onCheckIn={handleCheckIn}
+        onCheckOut={handleCheckOut}
+        onOpenLeaveModal={() => setIsLeaveModalOpen(true)}
+        onOpenLeaveHistory={() => {
+          setIsLeaveHistoryOpen(true);
+          fetchLeaveHistory();
+        }}
+      />
 
       <div className="px-6 mt-8 space-y-8">
         {/* Active Sessions */}
