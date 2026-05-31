@@ -7,6 +7,20 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Inventory Transfer Rollbacks
+* **Mục tiêu kỹ thuật**:
+  * Siết luồng chuyển kho nội bộ sau khi đã harden tiêu hao kho tự động.
+  * Tránh trạng thái kho/log bị lệch với trạng thái đơn nếu lỗi xảy ra sau khi đã trừ/cộng kho một phần.
+* **Thay đổi chính**:
+  * `approveAndShipTransfer` track các lần trừ kho + log shipment đã thành công và rollback theo thứ tự ngược nếu item sau hoặc cập nhật trạng thái đơn lỗi.
+  * `confirmTransferReceipt` track các lần cộng kho + log receipt đã thành công và rollback nếu item sau hoặc cập nhật trạng thái đơn lỗi.
+  * Rollback xóa log chuyển kho bằng tuple hẹp `item_id`, `reason`, `tenant_id`, `notes` để không đụng lịch sử kho khác.
+  * Mở rộng `inventory-transfer.test.ts` lên 29 test, bao phủ rollback partial shipment, shipment status update failure, partial receipt, và receipt status update failure.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/inventory-transfer.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/inventory-transfer-actions.ts src/__tests__/inventory-transfer.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Auto Consume Inventory
 * **Mục tiêu kỹ thuật**:
   * Khóa luồng tự động trừ kho khi hoàn thành buổi liệu trình, nơi định mức package chuyển thành cập nhật tồn kho thật.

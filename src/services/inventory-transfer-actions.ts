@@ -13,6 +13,15 @@ type InventoryItemUpdate = Database['public']['Tables']['inventory_items']['Upda
 type InventoryLogInsert = Database['public']['Tables']['inventory_logs']['Insert'];
 type InventoryTransferOrderInsert = Database['public']['Tables']['inventory_transfer_orders']['Insert'];
 type InventoryTransferOrderUpdate = Database['public']['Tables']['inventory_transfer_orders']['Update'];
+type TransferLogReason = 'transfer_receipt' | 'transfer_shipment';
+
+type TransferInventoryMutation = {
+  itemId: string;
+  previousStock: number;
+  logReason: TransferLogReason;
+  logNotes: string;
+  tenantId: string;
+};
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   if (error instanceof Error) return error.message;
@@ -48,6 +57,44 @@ async function restoreInventoryStock(
     .eq('id', itemId);
 
   return error;
+}
+
+async function deleteTransferInventoryLog(
+  supabase: SupabaseClient,
+  mutation: TransferInventoryMutation,
+) {
+  const { error } = await supabase
+    .from('inventory_logs')
+    .delete()
+    .eq('item_id', mutation.itemId)
+    .eq('reason', mutation.logReason)
+    .eq('tenant_id', mutation.tenantId)
+    .eq('notes', mutation.logNotes);
+
+  return error;
+}
+
+async function rollbackTransferInventoryMutations(
+  supabase: SupabaseClient,
+  mutations: TransferInventoryMutation[],
+) {
+  for (const mutation of [...mutations].reverse()) {
+    const stockError = await restoreInventoryStock(supabase, mutation.itemId, mutation.previousStock);
+    if (stockError) {
+      return `restore ${mutation.itemId} failed: ${stockError.message}`;
+    }
+
+    const logError = await deleteTransferInventoryLog(supabase, mutation);
+    if (logError) {
+      return `delete log ${mutation.itemId} failed: ${logError.message}`;
+    }
+  }
+
+  return '';
+}
+
+function appendRollbackError(message: string, rollbackError: string) {
+  return rollbackError ? `${message}; rollback failed: ${rollbackError}` : message;
 }
 
 export interface TransferOrderItem {
@@ -251,6 +298,7 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
     }
 
     // 4. Trừ kho Tổng bộ & ghi log lịch sử xuất kho
+    const shipmentMutations: TransferInventoryMutation[] = [];
     for (const item of items) {
       let query = supabase
         .from('inventory_items')
@@ -288,23 +336,37 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
       }
 
       // Ghi log
+      const logNotes = `Xuất chuyển kho cho đơn ${order.order_number}`;
       const logPayload: InventoryLogInsert = {
         item_id: dbItem.id,
         change_amount: -item.qty,
         reason: 'transfer_shipment',
-        notes: `Xuất chuyển kho cho đơn ${order.order_number}`,
+        notes: logNotes,
         tenant_id: hqTenantId,
       };
       const { error: logErr } = await supabase.from('inventory_logs').insert(logPayload);
 
       if (logErr) {
         const rollbackErr = await restoreInventoryStock(supabase, dbItem.id, previousStock);
-        const rollbackNote = rollbackErr ? `; rollback thất bại: ${rollbackErr.message}` : '';
+        const priorRollbackErr = await rollbackTransferInventoryMutations(supabase, shipmentMutations);
+        const rollbackParts = [
+          rollbackErr ? `current item restore failed: ${rollbackErr.message}` : '',
+          priorRollbackErr,
+        ].filter(Boolean);
+        const rollbackNote = rollbackParts.length > 0 ? `; rollback failed: ${rollbackParts.join('; ')}` : '';
         return {
           success: false,
           error: `Lỗi ghi log xuất kho cho "${item.name}": ${logErr.message}${rollbackNote}`,
         };
       }
+
+      shipmentMutations.push({
+        itemId: dbItem.id,
+        previousStock,
+        logReason: 'transfer_shipment',
+        logNotes,
+        tenantId: hqTenantId,
+      });
     }
 
     // 5. Cập nhật trạng thái lệnh chuyển kho thành 'shipped'
@@ -324,7 +386,11 @@ export async function approveAndShipTransfer(transferId: string, carrier: string
 
     if (updateErr) {
       console.error('[approveAndShipTransfer] update error:', updateErr);
-      return { success: false, error: 'Lỗi cập nhật trạng thái đơn hàng: ' + updateErr.message };
+      const rollbackErr = await rollbackTransferInventoryMutations(supabase, shipmentMutations);
+      return {
+        success: false,
+        error: appendRollbackError('Lỗi cập nhật trạng thái đơn hàng: ' + updateErr.message, rollbackErr),
+      };
     }
 
     // 6. Gửi cảnh báo Notification, Email & Zalo ZNS cho chi nhánh nhận hàng
@@ -415,6 +481,7 @@ export async function confirmTransferReceipt(transferId: string) {
 
     const items = order.items as unknown as TransferOrderItem[];
     const branchTenantId = user.tenant_id;
+    const receiptMutations: TransferInventoryMutation[] = [];
 
     // 2. Thực hiện cộng kho vật tư tại chi nhánh & ghi log lịch sử
     for (const item of items) {
@@ -482,11 +549,12 @@ export async function confirmTransferReceipt(transferId: string) {
       }
 
       // Ghi log lịch sử nhận kho tại chi nhánh con
+      const logNotes = `Nhận chuyển kho từ Tổng bộ theo đơn ${order.order_number}`;
       const logPayload: InventoryLogInsert = {
         item_id: itemId,
         change_amount: item.qty,
         reason: 'transfer_receipt',
-        notes: `Nhận chuyển kho từ Tổng bộ theo đơn ${order.order_number}`,
+        notes: logNotes,
         tenant_id: branchTenantId,
       };
       const { error: logErr } = await supabase.from('inventory_logs').insert(logPayload);
@@ -496,12 +564,25 @@ export async function confirmTransferReceipt(transferId: string) {
         const rollbackErr = rollbackStock === null
           ? null
           : await restoreInventoryStock(supabase, itemId, rollbackStock);
-        const rollbackNote = rollbackErr ? `; rollback thất bại: ${rollbackErr.message}` : '';
+        const priorRollbackErr = await rollbackTransferInventoryMutations(supabase, receiptMutations);
+        const rollbackParts = [
+          rollbackErr ? `current item restore failed: ${rollbackErr.message}` : '',
+          priorRollbackErr,
+        ].filter(Boolean);
+        const rollbackNote = rollbackParts.length > 0 ? `; rollback failed: ${rollbackParts.join('; ')}` : '';
         return {
           success: false,
           error: `Lỗi ghi log nhận kho cho "${item.name}": ${logErr.message}${rollbackNote}`,
         };
       }
+
+      receiptMutations.push({
+        itemId,
+        previousStock: createdNewItem ? 0 : Number(previousStock ?? 0),
+        logReason: 'transfer_receipt',
+        logNotes,
+        tenantId: branchTenantId,
+      });
     }
 
     // 3. Cập nhật trạng thái lệnh chuyển kho thành 'completed'
@@ -518,7 +599,11 @@ export async function confirmTransferReceipt(transferId: string) {
 
     if (updateErr) {
       console.error('[confirmTransferReceipt] update error:', updateErr);
-      return { success: false, error: 'Lỗi cập nhật trạng thái đơn hàng: ' + updateErr.message };
+      const rollbackErr = await rollbackTransferInventoryMutations(supabase, receiptMutations);
+      return {
+        success: false,
+        error: appendRollbackError('Lỗi cập nhật trạng thái đơn hàng: ' + updateErr.message, rollbackErr),
+      };
     }
 
     try {
