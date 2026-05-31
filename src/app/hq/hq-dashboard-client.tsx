@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { 
   Crown,
@@ -252,7 +252,7 @@ export default function HqDashboardClient({
     }
   };
 
-  const loadAuditData = async (page: number = 1) => {
+  const loadAuditData = useCallback(async (page: number = 1) => {
     setLoadingAudit(true);
     try {
       const logs = await getHqAuditLogs({
@@ -281,7 +281,16 @@ export default function HqDashboardClient({
     } finally {
       setLoadingAudit(false);
     }
-  };
+  }, [
+    auditTables.length,
+    auditUsers.length,
+    endDate,
+    selectedAction,
+    selectedTable,
+    selectedTenant,
+    selectedUser,
+    startDate,
+  ]);
 
   const handleOpenShipModal = (order: InventoryTransferOrder) => {
     setSelectedTransfer(order);
@@ -566,14 +575,7 @@ export default function HqDashboardClient({
     } else if (activeTab === 'services') {
       loadServicesData();
     }
-  }, [activeTab, currentPage]);
-
-  useEffect(() => {
-    if (activeTab === 'audit') {
-      setCurrentPage(1);
-      loadAuditData(1);
-    }
-  }, [selectedTenant, selectedUser, selectedAction, selectedTable, startDate, endDate]);
+  }, [activeTab, currentPage, loadAuditData]);
 
   const handleToggleStatus = async (tenantId: string, currentStatus: 'active' | 'suspended') => {
     const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
@@ -887,12 +889,30 @@ export default function HqDashboardClient({
               selectedTable={selectedTable}
               startDate={startDate}
               endDate={endDate}
-              onSelectedTenantChange={setSelectedTenant}
-              onSelectedUserChange={setSelectedUser}
-              onSelectedActionChange={setSelectedAction}
-              onSelectedTableChange={setSelectedTable}
-              onStartDateChange={setStartDate}
-              onEndDateChange={setEndDate}
+              onSelectedTenantChange={(value) => {
+                setSelectedTenant(value);
+                setCurrentPage(1);
+              }}
+              onSelectedUserChange={(value) => {
+                setSelectedUser(value);
+                setCurrentPage(1);
+              }}
+              onSelectedActionChange={(value) => {
+                setSelectedAction(value);
+                setCurrentPage(1);
+              }}
+              onSelectedTableChange={(value) => {
+                setSelectedTable(value);
+                setCurrentPage(1);
+              }}
+              onStartDateChange={(value) => {
+                setStartDate(value);
+                setCurrentPage(1);
+              }}
+              onEndDateChange={(value) => {
+                setEndDate(value);
+                setCurrentPage(1);
+              }}
             />
 
             <HqAuditLogLedger
