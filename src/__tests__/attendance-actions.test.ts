@@ -252,6 +252,94 @@ describe('attendance leave approval side effects', () => {
     });
   });
 
+  it('updates reassigned sessions when leave approval and attendance write succeed', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'staff_leaves',
+        op: 'select',
+        data: {
+          id: 'leave-reassign-1',
+          user_id: 'ktv-1',
+          leave_date: '2026-06-06',
+          leave_type: 'full_day',
+          status: 'pending',
+          approved_by: null,
+          tenant_id: 'tenant-1',
+        },
+      },
+      {
+        table: 'session_logs',
+        op: 'select',
+        data: { completed_by_ktv_id: 'ktv-1', notes: 'Original note' },
+      },
+      { table: 'session_logs', op: 'update' },
+      { table: 'staff_leaves', op: 'update' },
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert' },
+    ]);
+
+    const result = await approveLeaveRequest('leave-reassign-1', [
+      { sessionLogId: 'session-1', newKtvId: 'ktv-2' },
+    ]);
+
+    expect(result).toEqual({ success: true });
+    expect(calls.filter(c => c.table === 'session_logs' && c.op === 'update').map(c => c.payload)).toEqual([
+      {
+        completed_by_ktv_id: 'ktv-2',
+        notes: '[🔄 Thay ca] Làm thay cho KTV chính',
+      },
+    ]);
+    expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'UPDATE',
+      table_name: 'staff_leaves',
+      record_id: 'leave-reassign-1',
+    }));
+  });
+
+  it('rolls back reassigned sessions when leave approval update fails', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'staff_leaves',
+        op: 'select',
+        data: {
+          id: 'leave-reassign-2',
+          user_id: 'ktv-1',
+          leave_date: '2026-06-07',
+          leave_type: 'full_day',
+          status: 'pending',
+          approved_by: null,
+          tenant_id: 'tenant-1',
+        },
+      },
+      {
+        table: 'session_logs',
+        op: 'select',
+        data: { completed_by_ktv_id: 'ktv-1', notes: 'Original note' },
+      },
+      { table: 'session_logs', op: 'update' },
+      { table: 'staff_leaves', op: 'update', error: { message: 'leave approval failed' } },
+      { table: 'session_logs', op: 'update' },
+    ]);
+
+    const result = await approveLeaveRequest('leave-reassign-2', [
+      { sessionLogId: 'session-2', newKtvId: 'ktv-2' },
+    ]);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('leave approval failed');
+    expect(calls.filter(c => c.table === 'session_logs' && c.op === 'update').map(c => c.payload)).toEqual([
+      {
+        completed_by_ktv_id: 'ktv-2',
+        notes: '[🔄 Thay ca] Làm thay cho KTV chính',
+      },
+      {
+        completed_by_ktv_id: 'ktv-1',
+        notes: 'Original note',
+      },
+    ]);
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
   it('rolls back leave approval when attendance insert fails', async () => {
     const calls = installScriptedSupabase([
       {
@@ -280,6 +368,57 @@ describe('attendance leave approval side effects', () => {
     expect(calls.filter(c => c.table === 'staff_leaves' && c.op === 'update').map(c => c.payload)).toEqual([
       { status: 'approved', approved_by: 'admin-1' },
       { status: 'pending', approved_by: null },
+    ]);
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('rolls back leave approval and reassigned sessions when attendance insert fails', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'staff_leaves',
+        op: 'select',
+        data: {
+          id: 'leave-reassign-3',
+          user_id: 'ktv-1',
+          leave_date: '2026-06-08',
+          leave_type: 'full_day',
+          status: 'pending',
+          approved_by: null,
+          tenant_id: 'tenant-1',
+        },
+      },
+      {
+        table: 'session_logs',
+        op: 'select',
+        data: { completed_by_ktv_id: null, notes: null },
+      },
+      { table: 'session_logs', op: 'update' },
+      { table: 'staff_leaves', op: 'update' },
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert', error: { message: 'attendance insert failed' } },
+      { table: 'staff_leaves', op: 'update' },
+      { table: 'session_logs', op: 'update' },
+    ]);
+
+    const result = await approveLeaveRequest('leave-reassign-3', [
+      { sessionLogId: 'session-3', newKtvId: 'ktv-2' },
+    ]);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('attendance insert failed');
+    expect(calls.filter(c => c.table === 'staff_leaves' && c.op === 'update').map(c => c.payload)).toEqual([
+      { status: 'approved', approved_by: 'admin-1' },
+      { status: 'pending', approved_by: null },
+    ]);
+    expect(calls.filter(c => c.table === 'session_logs' && c.op === 'update').map(c => c.payload)).toEqual([
+      {
+        completed_by_ktv_id: 'ktv-2',
+        notes: '[🔄 Thay ca] Làm thay cho KTV chính',
+      },
+      {
+        completed_by_ktv_id: null,
+        notes: null,
+      },
     ]);
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
   });
@@ -314,5 +453,53 @@ describe('attendance leave approval side effects', () => {
       { status: 'approved', approved_by: 'admin-1' },
       { status: 'pending', approved_by: null },
     ]);
+  });
+
+  it('reports reassignment rollback failure when attendance rollback cannot restore a session', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'staff_leaves',
+        op: 'select',
+        data: {
+          id: 'leave-reassign-4',
+          user_id: 'ktv-1',
+          leave_date: '2026-06-09',
+          leave_type: 'morning',
+          status: 'pending',
+          approved_by: null,
+          tenant_id: 'tenant-1',
+        },
+      },
+      {
+        table: 'session_logs',
+        op: 'select',
+        data: { completed_by_ktv_id: 'ktv-1', notes: 'Original note' },
+      },
+      { table: 'session_logs', op: 'update' },
+      { table: 'staff_leaves', op: 'update' },
+      { table: 'attendance', op: 'select', data: null },
+      { table: 'attendance', op: 'insert', error: { message: 'attendance insert failed' } },
+      { table: 'staff_leaves', op: 'update' },
+      { table: 'session_logs', op: 'update', error: { message: 'session rollback failed' } },
+    ]);
+
+    const result = await approveLeaveRequest('leave-reassign-4', [
+      { sessionLogId: 'session-4', newKtvId: 'ktv-2' },
+    ]);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('attendance insert failed');
+    expect(result.error).toContain('reassignment rollback failed: session-4: session rollback failed');
+    expect(calls.filter(c => c.table === 'session_logs' && c.op === 'update').map(c => c.payload)).toEqual([
+      {
+        completed_by_ktv_id: 'ktv-2',
+        notes: '[🔄 Thay ca] Làm thay cho KTV chính',
+      },
+      {
+        completed_by_ktv_id: 'ktv-1',
+        notes: 'Original note',
+      },
+    ]);
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
   });
 });

@@ -10,7 +10,13 @@ import type { Database } from '@/types/database.types';
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type AttendanceInsert = Database['public']['Tables']['attendance']['Insert'];
 type AttendanceUpdate = Database['public']['Tables']['attendance']['Update'];
+type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type StaffLeaveUpdate = Database['public']['Tables']['staff_leaves']['Update'];
+
+type ReassignmentSnapshot = {
+  sessionLogId: string;
+  payload: SessionLogUpdate;
+};
 
 function getErrorMessage(error: unknown, fallback = 'Lá»—i há»‡ thá»‘ng') {
   if (error instanceof Error) return error.message;
@@ -32,6 +38,26 @@ async function rollbackLeaveApproval(
     .eq('id', leaveId);
 
   return error?.message || '';
+}
+
+async function rollbackSessionReassignments(
+  supabase: SupabaseClient,
+  snapshots: ReassignmentSnapshot[],
+) {
+  const failures: string[] = [];
+
+  for (const snapshot of [...snapshots].reverse()) {
+    const { error } = await supabase
+      .from('session_logs')
+      .update(snapshot.payload)
+      .eq('id', snapshot.sessionLogId);
+
+    if (error) {
+      failures.push(`${snapshot.sessionLogId}: ${error.message}`);
+    }
+  }
+
+  return failures.join('; ');
 }
 
 /** Fetch today's local date string in YYYY-MM-DD format (Vietnam Timezone) */
@@ -523,21 +549,52 @@ export async function approveLeaveRequest(
     status: leave.status,
     approved_by: leave.approved_by ?? null,
   };
+  const reassignmentSnapshots: ReassignmentSnapshot[] = [];
 
   if (reassignments && reassignments.length > 0) {
     for (const r of reassignments) {
+      const { data: sessionLog, error: snapshotErr } = await supabase
+        .from('session_logs')
+        .select('completed_by_ktv_id, notes')
+        .eq('id', r.sessionLogId)
+        .single();
+
+      if (snapshotErr || !sessionLog) {
+        const rollbackError = await rollbackSessionReassignments(supabase, reassignmentSnapshots);
+        const rollbackNote = rollbackError ? `; reassignment rollback failed: ${rollbackError}` : '';
+        return {
+          success: false,
+          error: `Không thể đọc ca cần điều chuyển: ${getErrorMessage(snapshotErr)}${rollbackNote}`,
+        };
+      }
+
+      const reassignmentPayload: SessionLogUpdate = {
+        completed_by_ktv_id: r.newKtvId,
+        notes: `[🔄 Thay ca] Làm thay cho KTV chính`,
+      };
+
       const { error: reassignErr } = await supabase
         .from('session_logs')
-        .update({
-          completed_by_ktv_id: r.newKtvId,
-          notes: `[🔄 Thay ca] Làm thay cho KTV chính`
-        })
+        .update(reassignmentPayload)
         .eq('id', r.sessionLogId);
 
       if (reassignErr) {
         console.error('Error reassigning session:', r.sessionLogId, reassignErr);
-        return { success: false, error: 'Có lỗi xảy ra khi điều chuyển ca làm việc' };
+        const rollbackError = await rollbackSessionReassignments(supabase, reassignmentSnapshots);
+        const rollbackNote = rollbackError ? `; reassignment rollback failed: ${rollbackError}` : '';
+        return {
+          success: false,
+          error: `Có lỗi xảy ra khi điều chuyển ca làm việc: ${reassignErr.message}${rollbackNote}`,
+        };
       }
+
+      reassignmentSnapshots.push({
+        sessionLogId: r.sessionLogId,
+        payload: {
+          completed_by_ktv_id: sessionLog.completed_by_ktv_id ?? null,
+          notes: sessionLog.notes ?? null,
+        },
+      });
     }
   }
 
@@ -551,7 +608,11 @@ export async function approveLeaveRequest(
     .update(leaveApprovalPayload)
     .eq('id', leaveId);
 
-  if (updateErr) return { success: false, error: updateErr.message };
+  if (updateErr) {
+    const rollbackError = await rollbackSessionReassignments(supabase, reassignmentSnapshots);
+    const rollbackNote = rollbackError ? `; reassignment rollback failed: ${rollbackError}` : '';
+    return { success: false, error: `${updateErr.message}${rollbackNote}` };
+  }
 
   // 4. Tự động ghi/cập nhật bản ghi chấm công theo loại nghỉ phép
   // - Nghỉ buổi sáng (morning) hoặc buổi chiều (afternoon) → half_day (0.5 ngày công)
@@ -593,11 +654,15 @@ export async function approveLeaveRequest(
     }
   } catch (attErr: unknown) {
     console.error('[approveLeaveRequest] Error writing attendance record:', attErr);
-    const rollbackError = await rollbackLeaveApproval(supabase, leaveId, leaveRollbackPayload);
-    const rollbackNote = rollbackError ? `; rollback failed: ${rollbackError}` : '';
+    const leaveRollbackError = await rollbackLeaveApproval(supabase, leaveId, leaveRollbackPayload);
+    const reassignmentRollbackError = await rollbackSessionReassignments(supabase, reassignmentSnapshots);
+    const rollbackNote = [
+      leaveRollbackError ? `rollback failed: ${leaveRollbackError}` : '',
+      reassignmentRollbackError ? `reassignment rollback failed: ${reassignmentRollbackError}` : '',
+    ].filter(Boolean).join('; ');
     return {
       success: false,
-      error: `Phê duyệt phép thất bại do không thể ghi nhận dữ liệu chấm công: ${getErrorMessage(attErr)}${rollbackNote}`,
+      error: `Phê duyệt phép thất bại do không thể ghi nhận dữ liệu chấm công: ${getErrorMessage(attErr)}${rollbackNote ? `; ${rollbackNote}` : ''}`,
     };
   }
 
