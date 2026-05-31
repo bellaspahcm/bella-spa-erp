@@ -29,6 +29,7 @@
   * Tách data/realtime vào `src/app/dashboard/bookings/hooks/useBookingsPageData.ts`, bao gồm fetch sessions, bookings, KTV, session history và Supabase realtime subscription.
   * Tách mutation/action vào `src/app/dashboard/bookings/hooks/useBookingsPageActions.ts`, bao gồm QR payment, update session, dời lịch và tạo lịch chăm sóc mới.
   * Tách helper thuần vào `src/app/dashboard/bookings/utils/bookingsPageUtils.ts`, bao gồm `getMonthDays`, `isSameDay`, `buildSessionModalData`.
+  * Tách tiếp `createSessionLog` và `rescheduleSession` khỏi `session-mutation-actions.ts` sang action file riêng, đồng thời giữ wrapper `session-actions.ts` để không đổi API gọi từ các màn hình.
   * Bỏ global `window.fetchSessionHistory`, thay bằng callback từ hook; bỏ state thừa `isLoading`, `isFetchingQrData`.
   * Bỏ DOM side-effect `document.querySelector('input[name="date"]')` khi tạo lịch từ timeline; truyền `createDate` rõ ràng vào `BookingCreateScheduleModal`.
   * Type hóa dữ liệu booking chính: `TimelineSession`, `BookingModalData`, `BookingOption`, `KtvOption`, `SessionHistoryItem`, tenant QR info và payment revenue item.
@@ -52,6 +53,7 @@
   * `79d0411` tách page action hook.
   * `1e0eda0` tách page utilities.
   * `43d37a7` truyền create date explicit, bỏ DOM query thủ công.
+  * `1694f4e` tách create/reschedule session actions khỏi mutation action lớn.
 
 ### 🟢 Ngày 30/05/2026: Hardening DB, GPS KTV, Salary/P&L và tối ưu UI HQ/Mobile
 * **Nghiệp vụ thực hiện**:
