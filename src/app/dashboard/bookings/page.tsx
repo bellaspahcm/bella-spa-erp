@@ -12,7 +12,6 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   LayoutGrid,
   List,
   X,
@@ -21,7 +20,6 @@ import {
   Package,
   Plus,
   History,
-  Briefcase,
   Loader2,
   RefreshCw,
   MessageSquare,
@@ -31,7 +29,7 @@ import {
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { getLocalDateString, cn } from '@/lib/utils';
+import { getLocalDateString } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -45,6 +43,8 @@ import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
 import { QrCode } from 'lucide-react';
 import { getUsers } from '@/services/user-actions';
 import { BookingsPageHeader, type BookingsViewMode } from './components/BookingsPageHeader';
+import { BookingsSpecialtyFilter, type KtvSpecialty } from './components/BookingsSpecialtyFilter';
+import { BookingsTimelineDateRibbon } from './components/BookingsTimelineDateRibbon';
 
 
 
@@ -54,7 +54,7 @@ function BookingsContent() {
   const customerName = searchParams.get('name');
 
   const [view, setView] = useState<BookingsViewMode>('timeline');
-  const [ktvSpecialty, setKtvSpecialty] = useState<'all' | 'combo' | 'baby' | 'pregnancy' | 'lactation'>('all');
+  const [ktvSpecialty, setKtvSpecialty] = useState<KtvSpecialty>('all');
   const [isSpecialtyDropdownOpen, setIsSpecialtyDropdownOpen] = useState(false);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -668,224 +668,18 @@ function BookingsContent() {
             transition={{ duration: 0.25 }}
             className="space-y-6"
           >
-            {/* Daily date Ribbon selector */}
-            {(() => {
-              const getDaysOfWeek = (d: Date) => {
-                const current = new Date(d);
-                const day = current.getDay();
-                const diff = current.getDate() - day + (day === 0 ? -6 : 1);
-                const monday = new Date(current.setDate(diff));
-                const days = [];
-                for (let i = 0; i < 7; i++) {
-                  const nextDay = new Date(monday);
-                  nextDay.setDate(monday.getDate() + i);
-                  days.push(nextDay);
-                }
-                return days;
-              };
-              
-              const weekDays = getDaysOfWeek(selectedDate);
-              
-              return (
-                <div className="luxury-card-white p-6 rounded-[32px] mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 select-none">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center bg-slate-50 rounded-2xl p-1 border border-slate-100">
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          const prev = new Date(selectedDate);
-                          prev.setDate(prev.getDate() - 1);
-                          setSelectedDate(prev);
-                        }}
-                        className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"
-                      >
-                        <ChevronLeft className="w-5 h-5 text-slate-600" />
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          const next = new Date(selectedDate);
-                          next.setDate(next.getDate() + 1);
-                          setSelectedDate(next);
-                        }}
-                        className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"
-                      >
-                        <ChevronRight className="w-5 h-5 text-slate-600" />
-                      </button>
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-black text-slate-900 capitalize tracking-tight">
-                        {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full' }).format(selectedDate)}
-                      </h2>
-                      <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">
-                        Bella Spa Coordinator
-                      </span>
-                    </div>
-                  </div>
+            <BookingsTimelineDateRibbon
+              selectedDate={selectedDate}
+              today={today}
+              onSelectedDateChange={setSelectedDate}
+            />
 
-                  <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-                    {weekDays.map((date, idx) => {
-                      const isSelected = isSameDay(date, selectedDate);
-                      const isToday = isSameDay(date, today);
-                      const daysName = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-                      const dayLabel = daysName[date.getDay()];
-                      
-                      return (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setSelectedDate(date)}
-                          className={`flex flex-col items-center justify-center w-12 h-14 rounded-2xl transition-all shrink-0 select-none ${
-                            isSelected
-                              ? 'bg-gradient-to-br from-rose-500 to-rose-400 text-white shadow-md shadow-rose-200 dark:shadow-none scale-105'
-                              : isToday
-                                ? 'bg-rose-50 text-rose-500 border border-rose-100'
-                                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-                          }`}
-                        >
-                          <span className="text-[9px] font-black uppercase tracking-widest">{dayLabel}</span>
-                          <span className="text-sm font-extrabold mt-0.5">{date.getDate()}</span>
-                        </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedDate(new Date());
-                      }}
-                      className="text-xs font-black text-slate-500 bg-slate-100 hover:bg-slate-200 px-4 py-3 rounded-2xl transition-all ml-2 shrink-0 active:scale-95"
-                    >
-                      Hôm nay
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Specialty Filters tabs & arrow navigation */}
-            {(() => {
-              const specialties: { id: 'all' | 'combo' | 'baby' | 'pregnancy' | 'lactation'; label: string; icon: React.ReactNode }[] = [
-                { id: 'all', label: 'Tất cả KTV', icon: <Users className="w-4 h-4" /> },
-                { id: 'combo', label: 'Combo Mẹ Bé', icon: <Briefcase className="w-4 h-4 text-rose-400" /> },
-                { id: 'baby', label: 'Tắm Bé', icon: <Briefcase className="w-4 h-4 text-purple-400" /> },
-                { id: 'pregnancy', label: 'Massage Bầu', icon: <Briefcase className="w-4 h-4 text-indigo-400" /> },
-                { id: 'lactation', label: 'Thông tia sữa/Kích sữa', icon: <Briefcase className="w-4 h-4 text-emerald-400" /> }
-              ];
-
-              return (
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 select-none">
-                  {/* Mobile Dropdown Select */}
-                  <div className="block sm:hidden w-full relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsSpecialtyDropdownOpen(!isSpecialtyDropdownOpen)}
-                      className="w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300 bg-white border-slate-200 text-slate-800 shadow-sm hover:shadow-md active:scale-[0.98] outline-none"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        {(() => {
-                          const currentSpec = specialties.find(s => s.id === ktvSpecialty) || specialties[0];
-                          return (
-                            <>
-                              {currentSpec.icon}
-                              <span className="text-xs font-black uppercase tracking-wider truncate">
-                                {currentSpec.label}
-                              </span>
-                            </>
-                          );
-                        })()}
-                      </div>
-                      <ChevronDown className={cn(
-                        "w-4 h-4 text-slate-400 transition-transform duration-300 shrink-0",
-                        isSpecialtyDropdownOpen && "rotate-180 text-primary"
-                      )} />
-                    </button>
-
-                    <AnimatePresence>
-                      {isSpecialtyDropdownOpen && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={() => setIsSpecialtyDropdownOpen(false)} />
-                          <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="absolute left-0 right-0 z-50 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden py-2"
-                          >
-                            {specialties.map((spec) => {
-                              const isActive = ktvSpecialty === spec.id;
-                              return (
-                                <button
-                                  key={spec.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setKtvSpecialty(spec.id);
-                                    setIsSpecialtyDropdownOpen(false);
-                                  }}
-                                  className={cn(
-                                    "w-full flex items-center gap-3 px-5 py-3 text-left transition-colors",
-                                    isActive
-                                      ? "bg-rose-50/50 text-[#BE185D] font-black"
-                                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                  )}
-                                >
-                                  {spec.icon}
-                                  <span className="text-xs font-bold uppercase tracking-wider truncate">{spec.label}</span>
-                                </button>
-                              );
-                            })}
-                          </motion.div>
-                        </>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Desktop tabs list */}
-                  <div className="hidden sm:flex items-center gap-2 bg-slate-100/80 p-1 rounded-2xl border border-slate-200/50 w-full sm:w-auto overflow-x-auto no-scrollbar flex-nowrap py-1">
-                    {specialties.map((spec) => {
-                      const isActive = ktvSpecialty === spec.id;
-                      return (
-                        <button
-                          key={spec.id}
-                          type="button"
-                          onClick={() => setKtvSpecialty(spec.id)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all shrink-0 whitespace-nowrap ${
-                            isActive
-                              ? 'bg-white text-slate-900 shadow-sm shadow-slate-100'
-                              : 'text-slate-500 hover:text-slate-700'
-                          }`}
-                        >
-                          {spec.icon}
-                          <span>{spec.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const body = document.getElementById('timeline-body');
-                        if (body) body.scrollBy({ left: -240, behavior: 'smooth' });
-                      }}
-                      className="p-2.5 bg-white border border-slate-200/60 rounded-xl hover:bg-slate-50 transition-all shadow-sm active:scale-95 text-slate-500 hover:text-slate-800"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        const body = document.getElementById('timeline-body');
-                        if (body) body.scrollBy({ left: 240, behavior: 'smooth' });
-                      }}
-                      className="p-2.5 bg-white border border-slate-200/60 rounded-xl hover:bg-slate-50 transition-all shadow-sm active:scale-95 text-slate-500 hover:text-slate-800"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
+            <BookingsSpecialtyFilter
+              value={ktvSpecialty}
+              isOpen={isSpecialtyDropdownOpen}
+              onOpenChange={setIsSpecialtyDropdownOpen}
+              onValueChange={setKtvSpecialty}
+            />
 
             {/* Daily Timeline Grid Container */}
             {(() => {

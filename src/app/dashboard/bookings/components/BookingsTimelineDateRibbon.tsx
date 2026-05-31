@@ -1,0 +1,111 @@
+'use client';
+
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+type BookingsTimelineDateRibbonProps = {
+  selectedDate: Date;
+  today: Date;
+  onSelectedDateChange: (date: Date) => void;
+};
+
+function getDaysOfWeek(d: Date) {
+  const current = new Date(d);
+  const day = current.getDay();
+  const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(current.setDate(diff));
+  const days = [];
+
+  for (let i = 0; i < 7; i++) {
+    const nextDay = new Date(monday);
+    nextDay.setDate(monday.getDate() + i);
+    days.push(nextDay);
+  }
+
+  return days;
+}
+
+function isSameDay(d1: Date, d2: Date) {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+}
+
+export function BookingsTimelineDateRibbon({
+  selectedDate,
+  today,
+  onSelectedDateChange,
+}: BookingsTimelineDateRibbonProps) {
+  const weekDays = getDaysOfWeek(selectedDate);
+
+  const moveDate = (days: number) => {
+    const next = new Date(selectedDate);
+    next.setDate(next.getDate() + days);
+    onSelectedDateChange(next);
+  };
+
+  return (
+    <div className="luxury-card-white p-6 rounded-[32px] mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 select-none">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center bg-slate-50 rounded-2xl p-1 border border-slate-100">
+          <button
+            type="button"
+            onClick={() => moveDate(-1)}
+            className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"
+          >
+            <ChevronLeft className="w-5 h-5 text-slate-600" />
+          </button>
+          <button
+            type="button"
+            onClick={() => moveDate(1)}
+            className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"
+          >
+            <ChevronRight className="w-5 h-5 text-slate-600" />
+          </button>
+        </div>
+        <div>
+          <h2 className="text-xl font-black text-slate-900 capitalize tracking-tight">
+            {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full' }).format(selectedDate)}
+          </h2>
+          <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">
+            Bella Spa Coordinator
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        {weekDays.map((date, idx) => {
+          const selected = isSameDay(date, selectedDate);
+          const dateIsToday = isSameDay(date, today);
+          const dayLabel = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][date.getDay()];
+
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onSelectedDateChange(date)}
+              className={`flex flex-col items-center justify-center w-12 h-14 rounded-2xl transition-all shrink-0 select-none ${
+                selected
+                  ? 'bg-gradient-to-br from-rose-500 to-rose-400 text-white shadow-md shadow-rose-200 dark:shadow-none scale-105'
+                  : dateIsToday
+                    ? 'bg-rose-50 text-rose-500 border border-rose-100'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <span className="text-[9px] font-black uppercase tracking-widest">{dayLabel}</span>
+              <span className="text-sm font-extrabold mt-0.5">{date.getDate()}</span>
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => onSelectedDateChange(new Date())}
+          className="text-xs font-black text-slate-500 bg-slate-100 hover:bg-slate-200 px-4 py-3 rounded-2xl transition-all ml-2 shrink-0 active:scale-95"
+        >
+          Hôm nay
+        </button>
+      </div>
+    </div>
+  );
+}
