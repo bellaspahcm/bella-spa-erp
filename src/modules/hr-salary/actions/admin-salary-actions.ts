@@ -1,11 +1,8 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/services/user-actions';
 import { recordAuditLog } from '@/services/audit-actions';
-import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
-import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { getMonthStart } from '@/lib/utils';
 import { Database } from '@/types/database.types';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -14,16 +11,14 @@ import {
   type SalaryRecalculationOverrides,
   type SalaryRecordDbAdmin,
 } from './salary-recalculation-engine';
-
-function resolveAccountingReviewStatus(
-  businessEventType: ReturnType<typeof inferBusinessEventType>,
-  payload: Record<string, unknown>
-) {
-  if (!businessEventType) return 'NEEDS_REVIEW';
-  return findMissingRequiredFields(businessEventType, payload).length > 0
-    ? 'NEEDS_REVIEW'
-    : 'UNREVIEWED';
-}
+import {
+  createSalaryExpense,
+  getSalaryMonthLockFailure,
+  recordSalaryStatusAudit,
+  revalidateApprovedSalaryViews,
+  revalidateSalaryAndFinancePages,
+  revalidateSalaryPage,
+} from './admin-salary-workflow-helpers';
 
 /**
  * Helper to recalculate and save a KTV salary record.
@@ -54,10 +49,12 @@ export async function publishSalaryRecord(ktvId: string) {
   const now = new Date();
   const monthYear = getMonthStart(now);
 
-  const { checkMonthLock } = await import('@/services/audit-actions');
-  const { isLocked } = await checkMonthLock(monthYear);
-  if (isLocked) {
-    return { success: false, error: 'Tháng lương đã bị khóa, không thể phát hành bảng lương.' };
+  const lockFailure = await getSalaryMonthLockFailure(
+    monthYear,
+    'Tháng lương đã bị khóa, không thể phát hành bảng lương.'
+  );
+  if (lockFailure) {
+    return lockFailure;
   }
 
   try {
@@ -65,13 +62,12 @@ export async function publishSalaryRecord(ktvId: string) {
       status: 'published'
     });
 
-    await recordAuditLog({ 
-      action: 'UPDATE', 
-      table_name: 'salary_records', 
-      record_id: ktvId, 
-      new_data: { status: 'published', totalSalary: res.totalSalary } 
+    await recordSalaryStatusAudit({
+      recordId: ktvId,
+      status: 'published',
+      extraData: { totalSalary: res.totalSalary }
     });
-    revalidatePath('/dashboard/salary');
+    revalidateSalaryPage();
     return { success: true };
   } catch (e: unknown) {
     const err = e as Error;
@@ -106,11 +102,11 @@ export async function adminConfirmOnBehalf(ktvId: string) {
   const supabase = await createClient();
   const monthYear = getMonthStart();
 
-  const { checkMonthLock } = await import('@/services/audit-actions');
-  const { isLocked } = await checkMonthLock(monthYear);
-  if (isLocked) {
-    return { success: false, error: 'Tháng lương đã bị khóa, không thể xác nhận hộ.' };
-  }
+  const lockFailure = await getSalaryMonthLockFailure(
+    monthYear,
+    'Tháng lương đã bị khóa, không thể xác nhận hộ.'
+  );
+  if (lockFailure) return lockFailure;
 
   const { error } = await supabase
     .from('salary_records')
@@ -121,7 +117,7 @@ export async function adminConfirmOnBehalf(ktvId: string) {
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath('/dashboard/salary');
+  revalidateSalaryPage();
   return { success: true };
 }
 
@@ -136,11 +132,11 @@ export async function finalizeSalaryRecord(ktvId: string) {
   const monthYear = getMonthStart(now);
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
 
-  const { checkMonthLock } = await import('@/services/audit-actions');
-  const { isLocked } = await checkMonthLock(monthYear);
-  if (isLocked) {
-    return { success: false, error: 'Tháng lương đã bị khóa, không thể hoàn tất.' };
-  }
+  const lockFailure = await getSalaryMonthLockFailure(
+    monthYear,
+    'Tháng lương đã bị khóa, không thể hoàn tất.'
+  );
+  if (lockFailure) return lockFailure;
 
   const { data: recordData, error: fetchError } = await supabase
     .from('salary_records')
@@ -171,42 +167,19 @@ export async function finalizeSalaryRecord(ktvId: string) {
 
   if (sessionError) throw sessionError;
 
-  // Create expense for Finance
   const expenseAmount = record.total_salary || 0;
   const expenseDate = new Date().toISOString();
   const expenseDescription = `Lương T${monthLabel} - ${record.users?.full_name || 'KTV'} [salary_record_id:${record.id}] [ktv_id:${ktvId}]`;
-  const businessEventType = inferBusinessEventType({
-    sourceTable: 'expenses',
-    category: 'salary',
-  });
-  const accountingPayload = {
-    amount: expenseAmount,
-    payment_method: 'bank_transfer',
-    expense_date: expenseDate,
-    description: expenseDescription,
-  };
-  await assertOpenAccountingPeriod(supabase, {
+  await createSalaryExpense({
+    supabase,
     tenantId,
-    date: expenseDate,
-    context: 'Finalize salary expense',
-  });
-  const expensePayload: Database['public']['Tables']['expenses']['Insert'] = {
     amount: expenseAmount,
-    category: 'salary',
     description: expenseDescription,
-    status: 'submitted',
-    expense_date: expenseDate,
-    tenant_id: tenantId,
-    business_event_type: businessEventType,
-    accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
-    accounting_metadata: accountingPayload,
-  };
-  const { error: expenseError } = await supabase.from('expenses').insert(expensePayload);
-
-  if (expenseError) throw expenseError;
-  await recordAuditLog({ action: 'UPDATE', table_name: 'salary_records', record_id: ktvId, new_data: { status: 'finalized', amount: record.total_salary } });
-  revalidatePath('/dashboard/salary');
-  revalidatePath('/dashboard/finance');
+    context: 'Finalize salary expense',
+    expenseDate,
+  });
+  await recordSalaryStatusAudit({ recordId: ktvId, status: 'finalized', amount: record.total_salary });
+  revalidateSalaryAndFinancePages();
   return { success: true };
 }
 
@@ -245,7 +218,7 @@ export async function checkAndAutoConfirm() {
 
   const count = data as number | null;
 
-  if (count && count > 0) revalidatePath('/dashboard/salary');
+  if (count && count > 0) revalidateSalaryPage();
   return { count: count ?? 0 };
 }
 
@@ -255,11 +228,11 @@ export async function approveSalary(ktvId: string) {
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
   const supabase = await createClient();
 
-  const { checkMonthLock } = await import('@/services/audit-actions');
-  const { isLocked } = await checkMonthLock(monthYear);
-  if (isLocked) {
-    return { success: false, error: 'Tháng lương đã bị khóa, không thể phê duyệt.' };
-  }
+  const lockFailure = await getSalaryMonthLockFailure(
+    monthYear,
+    'Tháng lương đã bị khóa, không thể phê duyệt.'
+  );
+  if (lockFailure) return lockFailure;
 
   try {
     // 1. Get KTV info for description
@@ -292,55 +265,24 @@ export async function approveSalary(ktvId: string) {
       .single();
     if (fetchError) throw fetchError;
 
-    // 4. Create expense record in Finance dashboard
     const expenseAmount = res.totalSalary;
     const expenseDate = new Date().toISOString();
     const expenseDescription = `Thanh toán lương T${monthLabel} - KTV ${ktv?.full_name || 'Nhân viên'} [salary_record_id:${recordData.id}] [ktv_id:${ktvId}]`;
-    const businessEventType = inferBusinessEventType({
-      sourceTable: 'expenses',
-      category: 'salary',
-    });
-    const accountingPayload = {
-      amount: expenseAmount,
-      payment_method: 'bank_transfer',
-      expense_date: expenseDate,
-      description: expenseDescription,
-    };
-    await assertOpenAccountingPeriod(supabase, {
+    await createSalaryExpense({
+      supabase,
       tenantId,
-      date: expenseDate,
-      context: 'Approve salary expense',
-    });
-    const expensePayload: Database['public']['Tables']['expenses']['Insert'] = {
       amount: expenseAmount,
-      category: 'salary',
       description: expenseDescription,
-      status: 'submitted', // Will appear as "Chờ duyệt" in Finance
-      expense_date: expenseDate,
-      tenant_id: tenantId,
-      business_event_type: businessEventType,
-      accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
-      accounting_metadata: accountingPayload,
-    };
-    const { error: expenseError } = await supabase.from('expenses').insert(expensePayload);
-
-    if (expenseError) throw expenseError;
-    // Record Audit Log
-    await recordAuditLog({
-      action: 'UPDATE',
-      table_name: 'salary_records',
-      record_id: ktvId,
-      new_data: { 
-        status: 'approved', 
-        amount: res.totalSalary, 
-        ktv_name: ktv?.full_name 
-      }
+      context: 'Approve salary expense',
+      expenseDate,
     });
-
-    // Force revalidation of related pages
-    revalidatePath('/dashboard/finance', 'page');
-    revalidatePath('/dashboard/salary', 'page');
-    revalidatePath('/', 'layout');
+    await recordSalaryStatusAudit({
+      recordId: ktvId,
+      status: 'approved',
+      amount: res.totalSalary,
+      ktvName: ktv?.full_name,
+    });
+    revalidateApprovedSalaryViews();
 
     return { success: true };
   } catch (error: unknown) {
@@ -355,11 +297,11 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
   const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const supabase = await createClient();
 
-  const { checkMonthLock } = await import('@/services/audit-actions');
-  const { isLocked } = await checkMonthLock(monthYear);
-  if (isLocked) {
-    return { success: false, error: 'Tháng lương đã bị khóa, không thể chỉnh sửa cấu hình lương.' };
-  }
+  const lockFailure = await getSalaryMonthLockFailure(
+    monthYear,
+    'Tháng lương đã bị khóa, không thể chỉnh sửa cấu hình lương.'
+  );
+  if (lockFailure) return lockFailure;
 
   try {
     const currentUser = await getCurrentUser();
@@ -382,7 +324,7 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
       new_data: payload
     });
 
-    revalidatePath('/dashboard/salary');
+    revalidateSalaryPage();
     return { success: true };
   } catch (err: unknown) {
     const errorObj = err as Error;
@@ -399,11 +341,11 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
   const tenantId = currentUser?.tenant_id;
   if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
-  const { checkMonthLock } = await import('@/services/audit-actions');
-  const { isLocked } = await checkMonthLock(currentMonthYear);
-  if (isLocked) {
-    return { success: false, error: 'Tháng lương đã bị khóa, không thể xác nhận số buổi.' };
-  }
+  const lockFailure = await getSalaryMonthLockFailure(
+    currentMonthYear,
+    'Tháng lương đã bị khóa, không thể xác nhận số buổi.'
+  );
+  if (lockFailure) return lockFailure;
   
   console.log(`Confirming sessions for KTV: ${ktvId}, Total: ${totalSessions}`);
   
@@ -427,7 +369,7 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
     });
 
     console.log('Session confirmation successful');
-    revalidatePath('/dashboard/salary');
+    revalidateSalaryPage();
     return { success: true };
   } catch (error: unknown) {
     const err = error as Error;
