@@ -6,7 +6,6 @@ import {
   Lock, 
   RefreshCw, 
   X,
-  Truck,
   Crown,
   Award,
   Sparkles,
@@ -31,8 +30,7 @@ import {
   getInventoryTransferOrders,
   approveAndShipTransfer,
   cancelTransferOrder,
-  InventoryTransferOrder,
-  TransferOrderItem
+  InventoryTransferOrder
 } from '@/services/inventory-transfer-actions';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
@@ -73,6 +71,8 @@ import { HqServiceTemplateList } from './components/HqServiceTemplateList';
 import { HqServiceDistributionMatrix } from './components/HqServiceDistributionMatrix';
 import { HqRoyaltyConfigModal } from './components/HqRoyaltyConfigModal';
 import { HqClearingRateModal } from './components/HqClearingRateModal';
+import { HqTransferShipModal } from './components/HqTransferShipModal';
+import { HqTransferCancelModal } from './components/HqTransferCancelModal';
 
 interface HqDashboardClientProps {
   initialStats: HqDashboardStats;
@@ -978,169 +978,31 @@ export default function HqDashboardClient({
           onSubmit={handleSaveClearingRate}
         />
 
-        {showShipModal && selectedTransfer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden text-left"
-            >
-              <div className="bg-gradient-to-r from-slate-900 to-indigo-950 px-8 py-6 text-white flex justify-between items-center">
-                <div>
-                  <span className="text-[9px] bg-primary/20 text-rose-300 font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-primary/20">QUY TRÌNH XUẤT KHO CUNG ỨNG</span>
-                  <h3 className="text-lg font-black uppercase tracking-tight mt-1 truncate max-w-[320px]">Đơn {selectedTransfer.order_number}</h3>
-                </div>
-                <button 
-                  onClick={() => {
-                    setShowShipModal(false);
-                    setSelectedTransfer(null);
-                  }}
-                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              
-              <form onSubmit={handleApproveAndShip} className="p-8 space-y-6">
-                <div className="bg-rose-50/50 border border-rose-100/50 rounded-3xl p-4 space-y-3">
-                  <h5 className="text-[10px] font-black text-primary uppercase tracking-widest">Danh sách xuất cấp từ kho Tổng bộ:</h5>
-                  <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
-                    {((selectedTransfer.items || []) as TransferOrderItem[]).map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center gap-2 bg-white rounded-xl border border-slate-100 px-3 py-2 text-xs">
-                        <div>
-                          <p className="font-black text-slate-800">{item.name}</p>
-                          <p className="font-mono text-[9px] text-slate-400 font-bold uppercase">{item.sku}</p>
-                        </div>
-                        <span className="font-black text-primary bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-lg">
-                          SL: {item.qty} {item.unit || 'cái'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        <HqTransferShipModal
+          transfer={showShipModal ? selectedTransfer : null}
+          shippingCarrier={shippingCarrier}
+          trackingNumber={trackingNumber}
+          submitting={submittingTransferAction}
+          onClose={() => {
+            setShowShipModal(false);
+            setSelectedTransfer(null);
+          }}
+          onShippingCarrierChange={setShippingCarrier}
+          onTrackingNumberChange={setTrackingNumber}
+          onSubmit={handleApproveAndShip}
+        />
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đơn vị vận chuyển</label>
-                    <input
-                      type="text"
-                      value={shippingCarrier}
-                      onChange={(e) => setShippingCarrier(e.target.value)}
-                      className="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary font-bold text-xs transition-all"
-                      placeholder="Ví dụ: Giao Hàng Nhanh, Viettel Post..."
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã vận đơn (Tracking Number)</label>
-                    <input
-                      type="text"
-                      value={trackingNumber}
-                      onChange={(e) => setTrackingNumber(e.target.value)}
-                      className="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary font-mono text-xs font-black transition-all"
-                      placeholder="Nhập mã vận đơn bưu cục"
-                      required
-                    />
-                    <p className="text-[9px] text-slate-400 font-bold italic mt-1">* Khi duyệt giao hàng, hệ thống sẽ tự động trừ số lượng tồn kho tương ứng tại Tổng bộ.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 pt-4 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowShipModal(false);
-                      setSelectedTransfer(null);
-                    }}
-                    className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 cursor-pointer"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submittingTransferAction}
-                    className="flex-1 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                  >
-                    {submittingTransferAction ? (
-                      <RefreshCw size={14} className="animate-spin" />
-                    ) : (
-                      <>
-                        <Truck size={14} />
-                        Duyệt & Giao hàng
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-
-        {showCancelModal && selectedTransfer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden text-left"
-            >
-              <div className="bg-gradient-to-r from-slate-900 to-indigo-950 px-8 py-6 text-white flex justify-between items-center">
-                <div>
-                  <span className="text-[9px] bg-rose-500/20 text-rose-300 font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-rose-500/20">TỪ CHỐI CẤP VẬT TƯ</span>
-                  <h3 className="text-lg font-black uppercase tracking-tight mt-1 truncate max-w-[320px]">Đơn {selectedTransfer.order_number}</h3>
-                </div>
-                <button 
-                  onClick={() => {
-                    setShowCancelModal(false);
-                    setSelectedTransfer(null);
-                  }}
-                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              
-              <form onSubmit={handleCancelOrder} className="p-8 space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lý do từ chối cung ứng</label>
-                  <textarea
-                    rows={4}
-                    value={refusingReason}
-                    onChange={(e) => setRefusingReason(e.target.value)}
-                    className="block w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary font-bold text-xs transition-all resize-none"
-                    placeholder="Nhập lý do từ chối cấp hàng cho chi nhánh (ví dụ: Tồn kho Tổng bộ đang cạn, sản phẩm tạm ngừng sản xuất...)"
-                    required
-                  />
-                  <p className="text-[9px] text-slate-400 font-bold italic mt-1">* Lý do từ chối sẽ hiển thị trực tiếp cho quản trị viên chi nhánh được biết.</p>
-                </div>
-
-                <div className="flex gap-4 pt-4 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCancelModal(false);
-                      setSelectedTransfer(null);
-                    }}
-                    className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 cursor-pointer"
-                  >
-                    Quay lại
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submittingTransferAction}
-                    className="flex-1 py-3.5 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-rose-100 dark:shadow-none"
-                  >
-                    {submittingTransferAction ? (
-                      <RefreshCw size={14} className="animate-spin" />
-                    ) : 'Xác nhận từ chối'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
+        <HqTransferCancelModal
+          transfer={showCancelModal ? selectedTransfer : null}
+          refusingReason={refusingReason}
+          submitting={submittingTransferAction}
+          onClose={() => {
+            setShowCancelModal(false);
+            setSelectedTransfer(null);
+          }}
+          onRefusingReasonChange={setRefusingReason}
+          onSubmit={handleCancelOrder}
+        />
 
         {showAuditDetailModal && selectedAuditLog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
