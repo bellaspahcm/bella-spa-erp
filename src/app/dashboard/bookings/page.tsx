@@ -34,6 +34,7 @@ function BookingsContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [modalData, setModalData] = useState<BookingModalData | null>(null);
   const [selectedBookingIdForCreate, setSelectedBookingIdForCreate] = useState('');
+  const [createDate, setCreateDate] = useState(() => getLocalDateString());
   const [createTimeRange, setCreateTimeRange] = useState({ start: '09:00', end: '11:00' });
   const {
     sessions,
@@ -88,7 +89,10 @@ function BookingsContent() {
       <BookingsPageHeader
         view={view}
         onViewChange={setView}
-        onCreateClick={() => setShowCreateModal(true)}
+        onCreateClick={() => {
+          setCreateDate(getLocalDateString());
+          setShowCreateModal(true);
+        }}
       />
 
       {/* Switch Rendering Views */}
@@ -181,12 +185,8 @@ function BookingsContent() {
                 const startHourStr = String(hour).padStart(2, '0') + ':00';
                 const endHourStr = String(hour + 2).padStart(2, '0') + ':00';
                 setCreateTimeRange({ start: startHourStr, end: endHourStr });
+                setCreateDate(getLocalDateString(selectedDate));
                 setShowCreateModal(true);
-
-                setTimeout(() => {
-                  const dateInput = document.querySelector('input[name="date"]') as HTMLInputElement;
-                  if (dateInput) dateInput.value = getLocalDateString(selectedDate);
-                }, 100);
               }}
             />
           </motion.div>
@@ -208,6 +208,7 @@ function BookingsContent() {
         isOpen={showCreateModal}
         allBookings={allBookings}
         selectedBookingId={selectedBookingIdForCreate}
+        defaultDate={createDate}
         createTimeRange={createTimeRange}
         isUpdating={isUpdating}
         onClose={() => setShowCreateModal(false)}

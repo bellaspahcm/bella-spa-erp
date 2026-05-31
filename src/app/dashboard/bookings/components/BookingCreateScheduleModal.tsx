@@ -27,6 +27,7 @@ type BookingCreateScheduleModalProps = {
   isOpen: boolean;
   allBookings: BookingOption[];
   selectedBookingId: string;
+  defaultDate: string;
   createTimeRange: TimeRange;
   isUpdating: boolean;
   onClose: () => void;
@@ -39,6 +40,7 @@ export function BookingCreateScheduleModal({
   isOpen,
   allBookings,
   selectedBookingId,
+  defaultDate,
   createTimeRange,
   isUpdating,
   onClose,
@@ -99,7 +101,7 @@ export function BookingCreateScheduleModal({
                     <input
                       name="date"
                       type="date"
-                      defaultValue={getLocalDateString()}
+                      defaultValue={defaultDate || getLocalDateString()}
                       className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1"
                     />
                   </div>
