@@ -3,7 +3,7 @@
 
 import { getLocalDateString, sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
-import { syncBookingProgress } from './lifecycle-actions';
+import { syncBookingProgress } from './update-booking-action';
 import type { Database } from '@/types/database.types';
 import { processSessionCompletion } from './session-completion-engine';
 
