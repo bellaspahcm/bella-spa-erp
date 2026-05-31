@@ -34,6 +34,7 @@
   * Tách helper cho `createBooking`: rate limit, tạo customer, resolve tenant, upsert booking/audit, ghi revenue cọc/outbox và tạo session logs ban đầu được gom vào `create-booking-helpers.ts`.
   * Tách helper cho `processSessionCompletion`: kiểm tra kỳ kế toán, trừ/rollback kho, sync booking progress, ghi revenue gói lẻ/outbox, sync lương KTV, review placeholder và SESSION_DONE outbox được gom vào `session-completion-helpers.ts`.
   * Tách helper cho payment actions: snapshot booking/payment, validate overpayment, kiểm tra khóa kỳ, gọi RPC `record_remaining_payment_atomic`, update share token và fetch QR/payment detail được gom vào `payment-helpers.ts`.
+  * Tách salary recalculation engine: `recalculateAndSaveSalaryRecord` giữ wrapper public trong `admin-salary-actions.ts`, còn logic pro-rata, session multiplier, KPI sync, rating bonus, deductions và preserve non-draft được gom vào `salary-recalculation-engine.ts`.
   * Bỏ global `window.fetchSessionHistory`, thay bằng callback từ hook; bỏ state thừa `isLoading`, `isFetchingQrData`.
   * Bỏ DOM side-effect `document.querySelector('input[name="date"]')` khi tạo lịch từ timeline; truyền `createDate` rõ ràng vào `BookingCreateScheduleModal`.
   * Type hóa dữ liệu booking chính: `TimelineSession`, `BookingModalData`, `BookingOption`, `KtvOption`, `SessionHistoryItem`, tenant QR info và payment revenue item.
@@ -45,6 +46,7 @@
   * Các test liên quan `createBooking` pass sau khi tách helper: `transaction-safety`, `idempotency`, `concurrency`, `cross-module-integrity`, `e2e-pipeline`.
   * Sau khi tách `processSessionCompletion`: `tsc`, ESLint, `transaction-safety`, `e2e-pipeline`, `idempotency`, `concurrency`, `edge-cases` pass. `e2e-negative-pipeline` còn fail ở case overpayment do test đang tính cả revenue cọc setup từ `createBooking`.
   * Sau khi tách payment actions: `e2e-negative-pipeline`, `transaction-safety`, `cross-module-integrity`, `e2e-pipeline`, `subscription`, và `tsc` pass.
+  * Sau khi tách salary recalculation engine: `tsc`, ESLint targeted, `salary`, `state-machine`, `edge-cases`, `salary-reconciliation`, `reconciliation` pass.
 * **Commit nổi bật trong chuỗi refactor**:
   * `e8fc839` tách checkout confirmation modal cho KTV dashboard.
   * `eaa074b` type hóa state/effects KTV dashboard.
