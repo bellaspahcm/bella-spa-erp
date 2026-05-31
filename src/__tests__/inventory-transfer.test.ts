@@ -57,11 +57,12 @@ let mockDb: {
   inventory_logs: []
 };
 
-type MockDbOp = 'insert' | 'update';
+type MockDbOp = 'delete' | 'insert' | 'update';
 type MockDbFailure = {
   table: string;
   op: MockDbOp;
   error: { message: string };
+  skip?: number;
 };
 
 let mockFailures: MockDbFailure[] = [];
@@ -69,6 +70,11 @@ let mockFailures: MockDbFailure[] = [];
 function consumeMockFailure(table: string, op: MockDbOp) {
   const index = mockFailures.findIndex(failure => failure.table === table && failure.op === op);
   if (index === -1) return null;
+  const matchedFailure = mockFailures[index];
+  if (matchedFailure.skip && matchedFailure.skip > 0) {
+    matchedFailure.skip -= 1;
+    return null;
+  }
   const [failure] = mockFailures.splice(index, 1);
   return failure.error;
 }
@@ -79,6 +85,7 @@ class MockQueryBuilder {
   private filters: Record<string, any> = {};
   private updateData: any = null;
   private insertData: any = null;
+  private shouldDelete = false;
   private sortField: string = '';
   private sortAscending: boolean = false;
 
@@ -108,6 +115,11 @@ class MockQueryBuilder {
 
   update(data: any) {
     this.updateData = data;
+    return this;
+  }
+
+  delete() {
+    this.shouldDelete = true;
     return this;
   }
 
@@ -184,6 +196,18 @@ class MockQueryBuilder {
         return item;
       });
       return { data: updated.length === 1 ? updated[0] : updated, error: null };
+    }
+
+    if (this.shouldDelete) {
+      const failure = consumeMockFailure(this.table, 'delete');
+      if (failure) {
+        return { data: null, error: failure };
+      }
+
+      const tableRows = mockDb[this.table as keyof typeof mockDb] as any[];
+      const deletedIds = new Set(list.map(item => item.id));
+      mockDb[this.table as keyof typeof mockDb] = tableRows.filter(item => !deletedIds.has(item.id)) as any;
+      return { data: list, error: null };
     }
 
     return { data: list, error: null };
@@ -483,6 +507,53 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
       expect(order?.status).toBe('pending');
       expect(order?.shipped_at).toBeUndefined();
     });
+
+    it('should roll back earlier HQ shipment mutations when a later shipment log insert fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(hqAdmin);
+      mockCheckHqAuth.mockResolvedValue({ authorized: true });
+      const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-pending-a');
+      order.items = [
+        { name: 'Dáº§u Massage Vy Vy', sku: 'OIL-001', qty: 10, unit: 'chai' },
+        { name: 'Kem DÆ°á»¡ng Da Vy Vy', sku: 'CRM-002', qty: 3, unit: 'hÅ©' },
+      ];
+      mockFailures = [
+        { table: 'inventory_logs', op: 'insert', skip: 1, error: { message: 'second shipment log failed' } },
+      ];
+
+      const result = await approveAndShipTransfer('trf-pending-a', 'Viettel Post', 'VTP987654');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('second shipment log failed');
+      expect(mockDb.inventory_items.find(i => i.id === 'item-hq-oil')?.stock_level).toBe(50);
+      expect(mockDb.inventory_items.find(i => i.id === 'item-hq-cream')?.stock_level).toBe(5);
+      expect(mockDb.inventory_logs).toHaveLength(0);
+      expect(order.status).toBe('pending');
+      expect(order.shipped_at).toBeUndefined();
+    });
+
+    it('should roll back all HQ shipment mutations when order status update fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(hqAdmin);
+      mockCheckHqAuth.mockResolvedValue({ authorized: true });
+      const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-pending-a');
+      order.items = [
+        { name: 'Dáº§u Massage Vy Vy', sku: 'OIL-001', qty: 10, unit: 'chai' },
+        { name: 'Kem DÆ°á»¡ng Da Vy Vy', sku: 'CRM-002', qty: 3, unit: 'hÅ©' },
+      ];
+      mockFailures = [
+        { table: 'inventory_transfer_orders', op: 'update', error: { message: 'order update failed' } },
+      ];
+
+      const result = await approveAndShipTransfer('trf-pending-a', 'Viettel Post', 'VTP987654');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('order update failed');
+      expect(mockDb.inventory_items.find(i => i.id === 'item-hq-oil')?.stock_level).toBe(50);
+      expect(mockDb.inventory_items.find(i => i.id === 'item-hq-cream')?.stock_level).toBe(5);
+      expect(mockDb.inventory_logs).toHaveLength(0);
+      expect(order.status).toBe('pending');
+      expect(order.shipping_carrier).toBeUndefined();
+      expect(order.tracking_number).toBeUndefined();
+    });
   });
 
   describe('confirmTransferReceipt', () => {
@@ -643,6 +714,58 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
       const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-shipped-a-cream-new');
       expect(order?.status).toBe('shipped');
       expect(order?.completed_at).toBeUndefined();
+    });
+
+    it('should roll back earlier branch receipt mutations when a later receipt log insert fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(branchAAdmin);
+      const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-shipped-a-oil');
+      order.items = [
+        { name: 'Dáº§u Massage Vy Vy', sku: 'OIL-001', qty: 15, unit: 'chai' },
+        { name: 'Kem DÆ°á»¡ng Da Vy Vy', sku: 'CRM-002', qty: 5, unit: 'hÅ©' },
+      ];
+      mockFailures = [
+        { table: 'inventory_logs', op: 'insert', skip: 1, error: { message: 'second receipt log failed' } },
+      ];
+
+      const result = await confirmTransferReceipt('trf-shipped-a-oil');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('second receipt log failed');
+      expect(mockDb.inventory_items.find(i => i.id === 'item-branch-a-oil')?.stock_level).toBe(2);
+      const newBranchCream = mockDb.inventory_items.find(
+        i => i.tenant_id === 'tenant-branch-a' && i.sku === 'CRM-002'
+      );
+      expect(newBranchCream).toBeDefined();
+      expect(newBranchCream?.stock_level).toBe(0);
+      expect(mockDb.inventory_logs).toHaveLength(0);
+      expect(order.status).toBe('shipped');
+      expect(order.completed_at).toBeUndefined();
+    });
+
+    it('should roll back all branch receipt mutations when order status update fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(branchAAdmin);
+      const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-shipped-a-oil');
+      order.items = [
+        { name: 'Dáº§u Massage Vy Vy', sku: 'OIL-001', qty: 15, unit: 'chai' },
+        { name: 'Kem DÆ°á»¡ng Da Vy Vy', sku: 'CRM-002', qty: 5, unit: 'hÅ©' },
+      ];
+      mockFailures = [
+        { table: 'inventory_transfer_orders', op: 'update', error: { message: 'receipt status update failed' } },
+      ];
+
+      const result = await confirmTransferReceipt('trf-shipped-a-oil');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('receipt status update failed');
+      expect(mockDb.inventory_items.find(i => i.id === 'item-branch-a-oil')?.stock_level).toBe(2);
+      const newBranchCream = mockDb.inventory_items.find(
+        i => i.tenant_id === 'tenant-branch-a' && i.sku === 'CRM-002'
+      );
+      expect(newBranchCream).toBeDefined();
+      expect(newBranchCream?.stock_level).toBe(0);
+      expect(mockDb.inventory_logs).toHaveLength(0);
+      expect(order.status).toBe('shipped');
+      expect(order.completed_at).toBeUndefined();
     });
   });
 
