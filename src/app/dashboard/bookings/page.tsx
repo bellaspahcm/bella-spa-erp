@@ -8,24 +8,18 @@ import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import { getLocalDateString } from '@/lib/utils';
 
-declare global {
-  interface Window {
-    fetchSessionHistory?: (bookingId: string) => Promise<void>;
-  }
-}
-
-import { getCalendarSessions, updateSessionLog, createSessionLog, rescheduleSession } from '@/modules/booking/actions/session-actions';
-import { getBookings, getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycle-actions';
+import { updateSessionLog, createSessionLog, rescheduleSession } from '@/modules/booking/actions/session-actions';
+import { getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycle-actions';
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
-import { getUsers } from '@/services/user-actions';
 import { BookingsPageHeader, type BookingsViewMode } from './components/BookingsPageHeader';
 import { BookingsSpecialtyFilter, type KtvSpecialty } from './components/BookingsSpecialtyFilter';
 import { BookingsTimelineDateRibbon } from './components/BookingsTimelineDateRibbon';
 import { BookingsMonthCalendar } from './components/BookingsMonthCalendar';
-import { BookingDayDetailModal, type BookingModalData, type KtvOption, type SessionHistoryItem } from './components/BookingDayDetailModal';
-import { BookingCreateScheduleModal, type BookingOption } from './components/BookingCreateScheduleModal';
+import { BookingDayDetailModal, type BookingModalData } from './components/BookingDayDetailModal';
+import { BookingCreateScheduleModal } from './components/BookingCreateScheduleModal';
 import { BookingsTimelineGrid, type TimelineSession } from './components/BookingsTimelineGrid';
 import { BookingsDayTimelineList } from './components/BookingsDayTimelineList';
+import { useBookingsPageData } from './hooks/useBookingsPageData';
 
 type TenantBankInfo = {
   qr_bank_code?: string;
@@ -53,13 +47,18 @@ function BookingsContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [modalData, setModalData] = useState<BookingModalData | null>(null);
   const [selectedBookingIdForCreate, setSelectedBookingIdForCreate] = useState('');
-  const [sessions, setSessions] = useState<TimelineSession[]>([]);
-  const [allBookings, setAllBookings] = useState<BookingOption[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [ktvs, setKtvs] = useState<KtvOption[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [sessionHistory, setSessionHistory] = useState<SessionHistoryItem[]>([]);
   const [createTimeRange, setCreateTimeRange] = useState({ start: '09:00', end: '11:00' });
+  const {
+    sessions,
+    allBookings,
+    isSyncing,
+    ktvs,
+    sessionHistory,
+    fetchSessions,
+    fetchAllBookings,
+    fetchSessionHistory,
+  } = useBookingsPageData();
 
   // VietQR Payment States
   const [showQrModal, setShowQrModal] = useState(false);
@@ -112,70 +111,6 @@ function BookingsContent() {
       toast.info(`Đang mở biểu mẫu đặt lịch cho khách hàng: ${customerName}`);
     }
   }, [customerName]);
-
-  const fetchAllBookings = async () => {
-    try {
-      const data = await getBookings();
-      setAllBookings(data);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-      setAllBookings([]);
-      toast.error('Khong the tai danh sach booking');
-    }
-  };
-
-  const fetchSessions = async () => {
-    setIsSyncing(true);
-    try {
-      const data = await getCalendarSessions();
-      setSessions(data);
-    } catch (error) {
-      console.error('Error fetching sessions:', error);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
-  const fetchKtvs = async () => {
-    const data = await getUsers();
-    setKtvs(data.filter((user: KtvOption & { role?: string | null }) => user.role?.toLowerCase() === 'ktv'));
-  };
-
-  useEffect(() => {
-    const initializeBookingsPage = async () => {
-      await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs()]);
-    };
-
-    void initializeBookingsPage();
-
-    const fetchSessionHistory = async (bookingId: string) => {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('session_logs')
-        .select('*')
-        .eq('booking_id', bookingId)
-        .order('session_number', { ascending: false });
-      setSessionHistory(data || []);
-    };
-    window.fetchSessionHistory = fetchSessionHistory;
-
-    // REALTIME SUBSCRIPTION
-    const supabase = createClient();
-    const channel = supabase
-      .channel('bookings-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
-        fetchSessions();
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
-        fetchAllBookings();
-        fetchSessions();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   const getMonthDays = (date: Date) => {
     const year = date.getFullYear();
@@ -378,7 +313,7 @@ function BookingsContent() {
               onSessionSelect={(session) => {
                 setModalData(buildSessionModalData(session));
                 setShowDetailModal(true);
-                if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
+                void fetchSessionHistory(session.booking_id);
               }}
               onQrClick={handleOpenQrModal}
               onCareClick={(session) => {
@@ -394,7 +329,7 @@ function BookingsContent() {
                   status: session.status === 'scheduled' ? 'in_progress' : session.status || undefined,
                 }));
                 setShowDetailModal(true);
-                if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
+                void fetchSessionHistory(session.booking_id);
               }}
             />
           </motion.div>
@@ -431,7 +366,7 @@ function BookingsContent() {
               onSessionSelect={(session) => {
                 setModalData(buildSessionModalData(session));
                 setShowDetailModal(true);
-                if (window.fetchSessionHistory) window.fetchSessionHistory(session.booking_id);
+                void fetchSessionHistory(session.booking_id);
               }}
               onEmptySlotClick={(hour) => {
                 setSelectedBookingIdForCreate('');
