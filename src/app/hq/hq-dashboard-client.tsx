@@ -1,17 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { 
-  Lock, 
-  RefreshCw, 
-  X,
   Crown,
   Award,
   Sparkles,
-  Info,
-  Send,
-  Check
+  Info
 } from 'lucide-react';
 import { toggleTenantStatus, getHqDashboardStats, getAllTenants } from '@/services/hq-actions';
 import { 
@@ -74,6 +69,8 @@ import { HqClearingRateModal } from './components/HqClearingRateModal';
 import { HqTransferShipModal } from './components/HqTransferShipModal';
 import { HqTransferCancelModal } from './components/HqTransferCancelModal';
 import { HqAuditDetailModal } from './components/HqAuditDetailModal';
+import { HqServiceTemplateModal } from './components/HqServiceTemplateModal';
+import { HqServiceDistributionModal } from './components/HqServiceDistributionModal';
 
 interface HqDashboardClientProps {
   initialStats: HqDashboardStats;
@@ -995,301 +992,47 @@ export default function HqDashboardClient({
           onShowRawJsonChange={setShowRawJson}
         />
 
-        {/* Template Form Modal */}
-        {showTemplateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              <div className="bg-gradient-to-r from-slate-900 to-indigo-950 px-8 py-6 text-white flex justify-between items-center shrink-0">
-                <div>
-                  <span className="text-[9px] bg-primary/20 text-rose-300 font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-primary/20">QUẢN TRỊ DANH MỤC</span>
-                  <h3 className="text-lg font-black uppercase tracking-tight mt-1">{editingTemplate ? 'Cập nhật Liệu trình Chuẩn' : 'Thêm mới Liệu trình Chuẩn'}</h3>
-                </div>
-                <button 
-                  onClick={() => setShowTemplateModal(false)}
-                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white"
-                >
-                  <X size={16} />
-                </button>
-              </div>
+        <HqServiceTemplateModal
+          open={showTemplateModal}
+          editingTemplate={editingTemplate}
+          templateName={templateName}
+          templatePrice={templatePrice}
+          templateDuration={templateDuration}
+          templateTotalSessions={templateTotalSessions}
+          templateKtvCommission={templateKtvCommission}
+          templatePriceFloor={templatePriceFloor}
+          templatePriceCap={templatePriceCap}
+          templateAllowedOverride={templateAllowedOverride}
+          templateDetails={templateDetails}
+          newDetailText={newDetailText}
+          templateOffer={templateOffer}
+          submitting={submittingTemplate}
+          onClose={() => setShowTemplateModal(false)}
+          onSubmit={handleSaveTemplate}
+          onTemplateNameChange={setTemplateName}
+          onTemplatePriceChange={setTemplatePrice}
+          onTemplateDurationChange={setTemplateDuration}
+          onTemplateTotalSessionsChange={setTemplateTotalSessions}
+          onTemplateKtvCommissionChange={setTemplateKtvCommission}
+          onTemplatePriceFloorChange={setTemplatePriceFloor}
+          onTemplatePriceCapChange={setTemplatePriceCap}
+          onTemplateAllowedOverrideChange={setTemplateAllowedOverride}
+          onTemplateOfferChange={setTemplateOffer}
+          onNewDetailTextChange={setNewDetailText}
+          onAddDetailStep={addDetailStep}
+          onRemoveDetailStep={removeDetailStep}
+        />
 
-              <div className="p-8 overflow-y-auto">
-                <form id="templateForm" onSubmit={handleSaveTemplate} className="space-y-6 text-left">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Tên liệu trình *</label>
-                    <input
-                      type="text"
-                      required
-                      value={templateName}
-                      onChange={e => setTemplateName(e.target.value)}
-                      placeholder="VD: Chăm sóc da chuyên sâu VIP"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-bold text-slate-800"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Giá chuẩn HQ (VNĐ) *</label>
-                      <input
-                        type="number"
-                        required
-                        value={templatePrice}
-                        onChange={e => setTemplatePrice(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-bold text-slate-800"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">KTV Hoa hồng/buổi (VNĐ)</label>
-                      <input
-                        type="number"
-                        value={templateKtvCommission}
-                        onChange={e => setTemplateKtvCommission(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-bold text-slate-800"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Thời lượng (VD: 90 phút)</label>
-                      <input
-                        type="text"
-                        value={templateDuration}
-                        onChange={e => setTemplateDuration(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-bold text-slate-800"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Số buổi liệu trình</label>
-                      <input
-                        type="number"
-                        value={templateTotalSessions}
-                        onChange={e => setTemplateTotalSessions(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-bold text-slate-800"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-1.5">
-                        <Lock size={12} className="text-slate-400" />
-                        Quản trị giá bán & Phân phối
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Cho phép Đại lý tự đổi giá</span>
-                        <input 
-                          type="checkbox"
-                          checked={templateAllowedOverride}
-                          onChange={e => setTemplateAllowedOverride(e.target.checked)}
-                          className="w-4 h-4 rounded text-primary focus:ring-primary/20"
-                        />
-                      </label>
-                    </div>
-
-                    <div className={`grid grid-cols-2 gap-4 transition-all ${!templateAllowedOverride ? 'opacity-40 pointer-events-none' : ''}`}>
-                      <div>
-                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Giá sàn (Tối thiểu)</label>
-                        <input
-                          type="number"
-                          value={templatePriceFloor}
-                          onChange={e => setTemplatePriceFloor(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Giá trần (Tối đa)</label>
-                        <input
-                          type="number"
-                          value={templatePriceCap}
-                          onChange={e => setTemplatePriceCap(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
-                        />
-                      </div>
-                    </div>
-                    {!templateAllowedOverride && (
-                      <p className="text-[10px] text-slate-500 font-bold italic">
-                        Khi tắt tùy chọn này, các chi nhánh nhượng quyền sẽ bị khóa giá bán lẻ chính xác theo Giá chuẩn HQ.
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ưu đãi / Ghi chú</label>
-                    <input
-                      type="text"
-                      value={templateOffer}
-                      onChange={e => setTemplateOffer(e.target.value)}
-                      placeholder="VD: Tặng kèm voucher 200k"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-bold text-slate-800"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Các bước quy trình (Chuẩn hóa)</label>
-                    <div className="space-y-2 mb-3">
-                      {templateDetails.map((detail, idx) => (
-                        <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl">
-                          <span className="w-5 h-5 bg-white rounded-full flex items-center justify-center text-[9px] font-black text-slate-400 shrink-0 shadow-sm">{idx + 1}</span>
-                          <span className="text-xs font-bold text-slate-700 flex-1">{detail}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeDetailStep(idx)}
-                            className="text-slate-400 hover:text-rose-500 p-1"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newDetailText}
-                        onChange={e => setNewDetailText(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addDetailStep())}
-                        placeholder="Thêm bước thực hiện..."
-                        className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:border-primary transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={addDetailStep}
-                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
-                      >
-                        Thêm
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-
-              <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowTemplateModal(false)}
-                  className="px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  form="templateForm"
-                  disabled={submittingTemplate}
-                  className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md disabled:opacity-50 flex items-center gap-2"
-                >
-                  {submittingTemplate ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />}
-                  Lưu Gói Mẫu
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-
-        {/* Distribution Checklist Modal */}
-        {showDistributionModal && selectedTemplateForDist && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] text-left"
-            >
-              <div className="bg-gradient-to-r from-indigo-900 to-slate-900 px-8 py-6 text-white flex justify-between items-center shrink-0">
-                <div>
-                  <span className="text-[9px] bg-white/20 text-indigo-200 font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-white/10">TRIỂN KHAI MẪU</span>
-                  <h3 className="text-lg font-black uppercase tracking-tight mt-1 truncate max-w-[300px]">{selectedTemplateForDist.name}</h3>
-                </div>
-                <button 
-                  onClick={() => setShowDistributionModal(false)}
-                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div className="p-8 overflow-y-auto space-y-6">
-                <div className="bg-indigo-50/50 border border-indigo-100/50 p-4 rounded-2xl flex items-start gap-3 text-indigo-700">
-                  <Info size={20} className="shrink-0 mt-0.5" />
-                  <p className="text-xs font-bold leading-relaxed">
-                    Chọn các chi nhánh để đẩy cấu hình liệu trình chuẩn này xuống. Nếu chi nhánh đã có gói này, hệ thống sẽ <strong>ghi đè & cập nhật</strong> lại quy trình/thời lượng chuẩn.
-                  </p>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-end mb-3">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Danh sách chi nhánh</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selectedTenantIds.length === matrixTenants.length) {
-                          setSelectedTenantIds([]);
-                        } else {
-                          setSelectedTenantIds(matrixTenants.map(t => t.id));
-                        }
-                      }}
-                      className="text-[10px] font-black text-primary uppercase tracking-wider hover:underline"
-                    >
-                      {selectedTenantIds.length === matrixTenants.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
-                    </button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2">
-                    {matrixTenants.map(tenant => {
-                      const isChecked = selectedTenantIds.includes(tenant.id);
-                      return (
-                        <label 
-                          key={tenant.id} 
-                          className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                            isChecked ? 'bg-rose-50/50 border-primary shadow-sm' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
-                          }`}
-                        >
-                          <input 
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedTenantIds([...selectedTenantIds, tenant.id]);
-                              } else {
-                                setSelectedTenantIds(selectedTenantIds.filter(id => id !== tenant.id));
-                              }
-                            }}
-                            className="w-4 h-4 rounded text-primary focus:ring-primary/20"
-                          />
-                          <span className={`text-sm font-bold ${isChecked ? 'text-slate-900' : 'text-slate-600'}`}>
-                            {tenant.name}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowDistributionModal(false)}
-                  className="px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest text-slate-500 hover:bg-slate-100 transition-all"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDistributeTemplate}
-                  disabled={submittingDistribution || selectedTenantIds.length === 0}
-                  className="px-6 py-3 bg-primary hover:bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md shadow-primary/20 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {submittingDistribution ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-                  Tiến hành phân phối
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
+        <HqServiceDistributionModal
+          open={showDistributionModal}
+          template={selectedTemplateForDist}
+          tenants={matrixTenants}
+          selectedTenantIds={selectedTenantIds}
+          submitting={submittingDistribution}
+          onClose={() => setShowDistributionModal(false)}
+          onSelectedTenantIdsChange={setSelectedTenantIds}
+          onSubmit={handleDistributeTemplate}
+        />
       </AnimatePresence>
 
     </div>
