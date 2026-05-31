@@ -1,19 +1,17 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { type FormEvent, useState, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
   LayoutGrid,
-  X,
   Plus,
   Loader2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { getLocalDateString } from '@/lib/utils';
 
 declare global {
@@ -22,7 +20,7 @@ declare global {
   }
 }
 
-import { getCalendarSessions, updateSessionLog, createSessionLog, completeSession, rescheduleSession } from '@/modules/booking/actions/session-actions';
+import { getCalendarSessions, updateSessionLog, createSessionLog, rescheduleSession } from '@/modules/booking/actions/session-actions';
 import { getBookings, getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycle-actions';
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
 import { QrCode } from 'lucide-react';
@@ -32,6 +30,7 @@ import { BookingsSpecialtyFilter, type KtvSpecialty } from './components/Booking
 import { BookingsTimelineDateRibbon } from './components/BookingsTimelineDateRibbon';
 import { BookingsMonthCalendar } from './components/BookingsMonthCalendar';
 import { BookingDayDetailModal } from './components/BookingDayDetailModal';
+import { BookingCreateScheduleModal } from './components/BookingCreateScheduleModal';
 
 
 
@@ -303,6 +302,35 @@ function BookingsContent() {
     } catch (error) {
       console.error('Update failed:', error);
       toast.error('Có lỗi xảy ra khi lưu dữ liệu');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCreateScheduleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsUpdating(true);
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const result = await createSessionLog({
+        booking_id: formData.get('booking_id'),
+        assigned_date: formData.get('date'),
+        assigned_time: createTimeRange.start,
+        notes: formData.get('notes'),
+        status: 'scheduled'
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success('Đã tạo lịch hẹn mới thành công!');
+        fetchSessions();
+        setShowCreateModal(false);
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra');
     } finally {
       setIsUpdating(false);
     }
@@ -766,128 +794,17 @@ function BookingsContent() {
         onOpenQrModal={handleOpenQrModal}
         onSave={handleUpdatePlan}
       />
-      {/* Create New Schedule Modal */}
-      <AnimatePresence>
-        {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCreateModal(false)}
-              className="absolute inset-0 bg-[#1A0A0E]/70 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-xl bg-white rounded-[40px] shadow-2xl overflow-hidden p-8"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-2xl font-black text-slate-900">Tạo lịch chăm sóc mới</h3>
-                <button 
-                  onClick={() => setShowCreateModal(false)}
-                  className="p-3 hover:bg-slate-100 rounded-2xl transition-colors"
-                >
-                  <X className="w-6 h-6 text-slate-400" />
-                </button>
-              </div>
-
-              <form className="space-y-6" onSubmit={async (e) => {
-                e.preventDefault();
-                setIsUpdating(true);
-                const formData = new FormData(e.currentTarget);
-                try {
-                  const result = await createSessionLog({
-                    booking_id: formData.get('booking_id'),
-                    assigned_date: formData.get('date'),
-                    assigned_time: createTimeRange.start, // Valid HH:MM for DB; display range is cosmetic
-                    notes: formData.get('notes'),
-                    status: 'scheduled'
-                  });
-
-                  if (result.error) {
-                    toast.error(result.error);
-                  } else {
-                    toast.success('Đã tạo lịch hẹn mới thành công!');
-                    fetchSessions();
-                    setShowCreateModal(false);
-                  }
-                } catch (error) {
-                  toast.error('Có lỗi xảy ra');
-                } finally {
-                  setIsUpdating(false);
-                }
-              }}>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Chọn Hợp đồng / Khách hàng</label>
-                    <input type="hidden" name="booking_id" value={selectedBookingIdForCreate} />
-                    <PremiumSelect 
-                      value={selectedBookingIdForCreate}
-                      options={allBookings.map(b => ({
-                        value: b.id,
-                        label: `${b.customers?.name_mother} - ${b.packages?.name || b.package_name || 'Gói liệu trình'}`
-                      }))}
-                      onChange={(val) => setSelectedBookingIdForCreate(val)}
-                      placeholder="Chọn hợp đồng..."
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Ngày thực hiện</label>
-                      <input name="date" type="date" defaultValue={getLocalDateString()} className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Giờ bắt đầu</label>
-                      <input 
-                        type="time" 
-                        value={createTimeRange.start}
-                        onChange={(e) => setCreateTimeRange(p => ({ ...p, start: e.target.value }))}
-                        className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" 
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Giờ kết thúc</label>
-                      <input 
-                        type="time" 
-                        value={createTimeRange.end}
-                        onChange={(e) => setCreateTimeRange(p => ({ ...p, end: e.target.value }))}
-                        className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1" 
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Ghi chú</label>
-                    <textarea name="notes" placeholder="Nhập yêu cầu đặc biệt..." className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1 h-24 resize-none" />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button 
-                    type="submit"
-                    disabled={isUpdating}
-                    className="flex-1 bg-primary text-white py-4 rounded-2xl font-bold hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-200 dark:shadow-none disabled:opacity-50"
-                  >
-                    {isUpdating ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Xác nhận lịch hẹn'}
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all active:scale-95"
-                  >
-                    Hủy bỏ
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
+      <BookingCreateScheduleModal
+        isOpen={showCreateModal}
+        allBookings={allBookings}
+        selectedBookingId={selectedBookingIdForCreate}
+        createTimeRange={createTimeRange}
+        isUpdating={isUpdating}
+        onClose={() => setShowCreateModal(false)}
+        onSelectedBookingChange={setSelectedBookingIdForCreate}
+        onCreateTimeRangeChange={setCreateTimeRange}
+        onSubmit={handleCreateScheduleSubmit}
+      />
       {/* VietQR Payment Modal */}
       {qrModalData && (
         <VietQRPaymentModal
