@@ -9,10 +9,10 @@ import {
 } from './session-query-actions';
 import {
   addExtraSession as addExtraSessionAction,
-  createSessionLog as createSessionLogAction,
-  rescheduleSession as rescheduleSessionAction,
   saveSessionNote as saveSessionNoteAction,
 } from './session-mutation-actions';
+import { createSessionLog as createSessionLogAction } from './create-session-log-action';
+import { rescheduleSession as rescheduleSessionAction } from './reschedule-session-action';
 
 export async function updateSessionLog(id: string, payload: Parameters<typeof updateSessionLogAction>[1]) {
   return updateSessionLogAction(id, payload);

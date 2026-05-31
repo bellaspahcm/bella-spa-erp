@@ -151,11 +151,20 @@ export function useBookingsPageActions({
     const formData = new FormData(event.currentTarget);
 
     try {
+      const bookingId = formData.get('booking_id');
+      const date = formData.get('date');
+      const notes = formData.get('notes');
+
+      if (typeof bookingId !== 'string' || !bookingId) {
+        toast.error('Thiếu thông tin booking để tạo lịch hẹn.');
+        return;
+      }
+
       const result = await createSessionLog({
-        booking_id: formData.get('booking_id'),
-        assigned_date: formData.get('date'),
+        booking_id: bookingId,
+        assigned_date: typeof date === 'string' ? date : null,
         assigned_time: createTimeRange.start,
-        notes: formData.get('notes'),
+        notes: typeof notes === 'string' ? notes : null,
         status: 'scheduled',
       });
 
