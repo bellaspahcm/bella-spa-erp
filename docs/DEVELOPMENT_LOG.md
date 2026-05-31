@@ -27,12 +27,15 @@
     * `BookingDayDetailModal`
     * `BookingCreateScheduleModal`
   * Tách data/realtime vào `src/app/dashboard/bookings/hooks/useBookingsPageData.ts`, bao gồm fetch sessions, bookings, KTV, session history và Supabase realtime subscription.
+  * Tách mutation/action vào `src/app/dashboard/bookings/hooks/useBookingsPageActions.ts`, bao gồm QR payment, update session, dời lịch và tạo lịch chăm sóc mới.
+  * Tách helper thuần vào `src/app/dashboard/bookings/utils/bookingsPageUtils.ts`, bao gồm `getMonthDays`, `isSameDay`, `buildSessionModalData`.
   * Bỏ global `window.fetchSessionHistory`, thay bằng callback từ hook; bỏ state thừa `isLoading`, `isFetchingQrData`.
+  * Bỏ DOM side-effect `document.querySelector('input[name="date"]')` khi tạo lịch từ timeline; truyền `createDate` rõ ràng vào `BookingCreateScheduleModal`.
   * Type hóa dữ liệu booking chính: `TimelineSession`, `BookingModalData`, `BookingOption`, `KtvOption`, `SessionHistoryItem`, tenant QR info và payment revenue item.
-  * `bookings/page.tsx` giảm từ khoảng hơn 1.500 dòng xuống khoảng 430 dòng sau khi tách UI + hook.
+  * `bookings/page.tsx` giảm từ khoảng hơn 1.500 dòng xuống khoảng 240 dòng sau khi tách UI + hook + utils.
 * **Kiểm tra cuối chuỗi refactor**:
   * `npx.cmd tsc --noEmit` pass.
-  * `npx.cmd eslint src/app/dashboard/bookings/page.tsx src/app/dashboard/bookings/components/*.tsx src/app/dashboard/bookings/hooks/*.ts` pass, không còn warning.
+  * `npx.cmd eslint src/app/dashboard/bookings/page.tsx src/app/dashboard/bookings/components/*.tsx src/app/dashboard/bookings/hooks/*.ts src/app/dashboard/bookings/utils/*.ts` pass, không còn warning.
 * **Commit nổi bật trong chuỗi refactor**:
   * `e8fc839` tách checkout confirmation modal cho KTV dashboard.
   * `eaa074b` type hóa state/effects KTV dashboard.
@@ -46,6 +49,9 @@
   * `c6d505f` type hóa booking page state.
   * `39a3f4f` tách day timeline list.
   * `b46e245` tách page data hook.
+  * `79d0411` tách page action hook.
+  * `1e0eda0` tách page utilities.
+  * `43d37a7` truyền create date explicit, bỏ DOM query thủ công.
 
 ### 🟢 Ngày 30/05/2026: Hardening DB, GPS KTV, Salary/P&L và tối ưu UI HQ/Mobile
 * **Nghiệp vụ thực hiện**:
