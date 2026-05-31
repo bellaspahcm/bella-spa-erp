@@ -7,6 +7,20 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Wire Services page sang Package Actions
+* **Mục tiêu kỹ thuật**:
+  * Loại bỏ đường ghi `packages` trực tiếp từ browser Supabase trong hook Services sau khi `package-actions` đã được harden.
+  * Gom package CRUD về action boundary đã type hóa, audit và rollback-test, trong khi giữ nguyên luồng `package_materials`.
+* **Thay đổi chính**:
+  * `useServicesPageState` chuyển load danh sách package sang `getPackages`.
+  * Add/edit/delete/toggle status trong Services hook chuyển sang `createPackage`, `updatePackage`, `deletePackage`.
+  * Đồng bộ gói mặc định gọi `createPackage` theo từng gói để đi qua audit/rollback path.
+  * Phần định mức tiêu hao vật tư tiếp tục dùng `upsertPackageMaterials` như trước.
+* **Kiểm tra**:
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/app/dashboard/services/hooks/useServicesPageState.ts src/services/package-actions.ts` pass.
+  * `npm.cmd test -- src/__tests__/package-actions.test.ts --runInBand` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Package Actions
 * **Mục tiêu kỹ thuật**:
   * Siết lớp Server Actions quản lý package sau khi đã tách state của màn hình Services.
