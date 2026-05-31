@@ -13,10 +13,7 @@ import {
   CreditCard,
   CheckCircle2,
   X,
-  Edit,
-  Settings,
   AlertCircle,
-  Calendar,
   ArrowLeftRight,
   Truck,
   Ban,
@@ -76,6 +73,9 @@ import { HqBranchTable } from './components/HqBranchTable';
 import { HqFranchiseRoyaltyStats } from './components/HqFranchiseRoyaltyStats';
 import { HqFranchiseConfigLedger } from './components/HqFranchiseConfigLedger';
 import { HqRoyaltyInvoiceLedger } from './components/HqRoyaltyInvoiceLedger';
+import { HqClearingStats } from './components/HqClearingStats';
+import { HqClearingRateLedger } from './components/HqClearingRateLedger';
+import { HqClearingRecordsLedger } from './components/HqClearingRecordsLedger';
 
 interface HqDashboardClientProps {
   initialStats: HqDashboardStats;
@@ -858,220 +858,18 @@ export default function HqDashboardClient({
         ) : activeTab === 'clearing' ? (
           /* INTER-BRANCH CLEARING TAB */
           <div className="space-y-8 text-left">
-            {/* Quick Stats for Clearing */}
-            <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              {/* Total projected transfer fees */}
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex gap-4 items-center">
-                <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
-                  <ArrowLeftRight size={26} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tổng bù trừ liên chi nhánh</p>
-                  <h3 className="text-2xl font-black text-slate-900 leading-none mb-1">
-                    {formatCurrency(clearingRecords.reduce((acc, r) => acc + Number(r.calculated_amount), 0))}
-                  </h3>
-                  <span className="text-[9px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                    {clearingRecords.length} Giao dịch công nợ
-                  </span>
-                </div>
-              </div>
+            <HqClearingStats records={clearingRecords} />
 
-              {/* Settled fees */}
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex gap-4 items-center">
-                <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0">
-                  <CheckCircle2 size={26} className="text-emerald-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Đã gạch nợ bù trừ</p>
-                  <h3 className="text-2xl font-black text-emerald-600 leading-none mb-1">
-                    {formatCurrency(clearingRecords.filter(r => r.status === 'cleared').reduce((acc, r) => acc + Number(r.calculated_amount), 0))}
-                  </h3>
-                  <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                    Đã thanh lý công nợ nội bộ
-                  </span>
-                </div>
-              </div>
+            <HqClearingRateLedger
+              tenants={tenants}
+              onOpenClearingRate={handleOpenClearingRate}
+            />
 
-              {/* Pending fees */}
-              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex gap-4 items-center">
-                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 shrink-0">
-                  <AlertCircle size={26} className="text-amber-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Dư nợ đang chờ</p>
-                  <h3 className="text-2xl font-black text-amber-600 leading-none mb-1">
-                    {formatCurrency(clearingRecords.filter(r => r.status === 'pending').reduce((acc, r) => acc + Number(r.calculated_amount), 0))}
-                  </h3>
-                  <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                    Đang đợi chi nhánh thanh toán
-                  </span>
-                </div>
-              </div>
-            </section>
-
-            {/* Clearing configuration ledger */}
-            <section className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-                <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                  Cấu hình Đơn giá Đối soát Liệu trình Nội bộ ({tenants.filter(t => t.name !== 'Bella Spa Headquarter').length})
-                </h4>
-                <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-black uppercase flex items-center gap-1">
-                  <Settings size={10} /> Đơn giá hoàn lại creditor
-                </span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50 border-b border-slate-100">
-                    <tr>
-                      <th scope="col" className="px-8 py-5">Chi nhánh</th>
-                      <th scope="col" className="px-6 py-5 text-right">Đơn giá đối soát liệu trình liên chi nhánh</th>
-                      <th scope="col" className="px-8 py-5 text-right">Thiết lập</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                    {tenants
-                      .filter(t => t.name !== 'Bella Spa Headquarter')
-                      .map((t) => (
-                        <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-8 py-5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-black text-xs uppercase shrink-0">
-                                {t.name.charAt(0)}
-                              </div>
-                              <div>
-                                <h5 className="font-black text-slate-900">{t.name}</h5>
-                                <span className="text-[9px] text-slate-400 block mt-0.5">ID: {t.id.slice(0, 8)}...</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-5 text-right font-black text-slate-900">
-                            {formatCurrency(t.internal_clearing_rate ?? 150000)} / ca điều trị hoàn thành
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                            <button
-                              onClick={() => handleOpenClearingRate(t)}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-sm"
-                            >
-                              <Edit size={12} />
-                              Thay đổi đơn giá
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            {/* Inter-branch Clearing Records Ledger */}
-            <section className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden">
-              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center">
-                <div>
-                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                    Sổ cái bù trừ nội bộ liên chi nhánh (Inter-branch Clearing Ledger)
-                  </h4>
-                  <p className="text-[10px] text-slate-400 font-bold mt-0.5">
-                    Hóa đơn bù trừ tự động được trích xuất khi chi nhánh bán (Debtor) và chi nhánh làm liệu trình (Creditor) phát sinh ca liệu trình liên chi nhánh trong tháng.
-                  </p>
-                </div>
-                <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-black uppercase">
-                  HQ Clearing Audit
-                </span>
-              </div>
-
-              {loadingClearing ? (
-                <div className="p-16 text-center space-y-3">
-                  <RefreshCw size={24} className="animate-spin text-primary mx-auto" />
-                  <p className="text-xs text-slate-400 font-bold italic">Đang đồng bộ hóa đơn bù trừ...</p>
-                </div>
-              ) : clearingRecords.length === 0 ? (
-                <div className="p-16 text-center">
-                  <span className="text-4xl mb-3 block">🔄</span>
-                  <p className="text-slate-400 font-bold text-sm italic">Chưa có công nợ liên chi nhánh nào phát sinh.</p>
-                  <p className="text-[10px] text-slate-400 mt-1 max-w-sm mx-auto">
-                    Khi khách hàng mua liệu trình tại Spa A nhưng thực hiện ca liệu trình thành công tại Spa B, hệ thống sẽ tự động tổng hợp bù trừ khi chi nhánh thực hiện khóa sổ tháng.
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50 border-b border-slate-100">
-                      <tr>
-                        <th scope="col" className="px-8 py-5">Mã bù trừ</th>
-                        <th scope="col" className="px-6 py-5">Bên mua nợ (Debtor)</th>
-                        <th scope="col" className="px-6 py-5">Bên làm thu (Creditor)</th>
-                        <th scope="col" className="px-6 py-5 text-center">Tháng đối soát</th>
-                        <th scope="col" className="px-6 py-5 text-center">Số ca liên chi nhánh</th>
-                        <th scope="col" className="px-6 py-5 text-right">Đơn giá áp dụng</th>
-                        <th scope="col" className="px-6 py-5 text-right">Số tiền bù trừ</th>
-                        <th scope="col" className="px-6 py-5 text-center">Trạng thái</th>
-                        <th scope="col" className="px-8 py-5 text-right">Hành động</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                      {clearingRecords.map((rec) => {
-                        const monthDate = new Date(rec.month_year);
-                        const formattedMonth = `Tháng ${monthDate.getMonth() + 1}/${monthDate.getFullYear()}`;
-                        return (
-                          <tr key={rec.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-8 py-5 font-black text-slate-900 font-mono tracking-tight text-xs animate-fade-in">
-                              {rec.clearing_number}
-                            </td>
-                            <td className="px-6 py-5 font-bold text-slate-800">
-                              {rec.debtor?.name || 'Chi nhánh A'}
-                            </td>
-                            <td className="px-6 py-5 font-bold text-slate-800">
-                              {rec.creditor?.name || 'Chi nhánh B'}
-                            </td>
-                            <td className="px-6 py-5 text-center">
-                              <span className="inline-flex items-center gap-1 text-[11px] font-black text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
-                                <Calendar size={11} className="text-slate-400" />
-                                {formattedMonth}
-                              </span>
-                            </td>
-                            <td className="px-6 py-5 text-center font-black text-slate-800">
-                              {rec.session_count} ca
-                            </td>
-                            <td className="px-6 py-5 text-right text-slate-600">
-                              {formatCurrency(rec.clearing_rate)}
-                            </td>
-                            <td className="px-6 py-5 text-right font-black text-emerald-600 text-sm">
-                              {formatCurrency(rec.calculated_amount)}
-                            </td>
-                            <td className="px-6 py-5 text-center">
-                              <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                                rec.status === 'cleared'
-                                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                  : 'bg-amber-50 text-amber-600 border border-amber-100'
-                              }`}>
-                                {rec.status === 'cleared' ? 'Đã bù trừ' : 'Chờ xử lý'}
-                              </span>
-                            </td>
-                            <td className="px-8 py-5 text-right">
-                              {rec.status === 'pending' ? (
-                                <button
-                                  onClick={() => handleClearRecord(rec.id, rec.clearing_number)}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer shadow-sm shadow-emerald-50"
-                                >
-                                  <CheckCircle2 size={12} />
-                                  HQ Gạch nợ
-                                </button>
-                              ) : (
-                                <div className="text-left text-[9px] leading-tight text-slate-400">
-                                  <p className="font-bold">Đã gạch nợ thành công</p>
-                                  <p className="font-mono text-[8px]">{rec.payment_method || 'HQ Manual'}</p>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
+            <HqClearingRecordsLedger
+              records={clearingRecords}
+              loading={loadingClearing}
+              onClearRecord={handleClearRecord}
+            />
           </div>
         ) : activeTab === 'transfers' ? (
           /* CUNG ỨNG & CHUYỂN KHO (TRANSFERS) TAB */
