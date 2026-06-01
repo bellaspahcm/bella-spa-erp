@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Add HQ Subscription Service Actions
+* **Mục tiêu kỹ thuật**:
+  * Xây service layer cho Super Admin quản lý subscription/quota trên schema đã tạo.
+  * Giữ mutation fail-closed: DB/audit lỗi thì trả failure rõ, không revalidate, và rollback thay đổi đã ghi.
+  * Cung cấp API nền cho UI HQ sau này: overview, đổi plan tenant, set quota override, reset usage counter.
+* **Thay đổi chính**:
+  * Bổ sung generated DB types cho `subscription_plans`, `subscription_plan_entitlements`, `tenant_subscription_overrides`, `tenant_usage_counters` và RPC `get_effective_subscription_entitlements`.
+  * Thêm `src/services/hq-subscription-actions.ts` với `getHqSubscriptionOverview`, `updateTenantSubscriptionPlan`, `setTenantQuotaOverride`, `resetTenantUsageCounter`.
+  * `updateTenantSubscriptionPlan` validate active plan, snapshot tenant, audit old/new, rollback `subscription_tier/subscription_expires_at/updated_at` nếu audit fail.
+  * `setTenantQuotaOverride` upsert theo active override hiện có, audit insert/update và rollback bằng delete/restore snapshot khi audit fail.
+  * `resetTenantUsageCounter` reset hoặc tạo counter 0 có metadata reset, audit side-effect và rollback update/insert khi audit fail.
+  * Thêm `hq-subscription-actions.test.ts` bao phủ overview DB failure, mutation success, audit rollback cho tenant plan, quota override và usage counter.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/hq-subscription-actions.test.ts --runInBand` pass.
+  * `npx.cmd eslint src/services/hq-subscription-actions.ts src/__tests__/hq-subscription-actions.test.ts` pass.
+  * `npx.cmd tsc --noEmit` pass.
+
 ### 🟢 Ngày 01/06/2026: Create Super Admin Subscription Quota Schema
 * **Mục tiêu kỹ thuật**:
   * Tạo nền dữ liệu cho phân hệ Super Admin quản lý plan/quota trước khi làm service/UI.

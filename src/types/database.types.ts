@@ -2496,6 +2496,175 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          is_active: boolean
+          plan_code: string
+          price_monthly: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          is_active?: boolean
+          plan_code: string
+          price_monthly?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          is_active?: boolean
+          plan_code?: string
+          price_monthly?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_plan_entitlements: {
+        Row: {
+          created_at: string
+          description: string | null
+          enforcement_mode: string
+          feature_key: string
+          id: string
+          is_unlimited: boolean
+          limit_value: number | null
+          plan_code: string
+          reset_period: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enforcement_mode?: string
+          feature_key: string
+          id?: string
+          is_unlimited?: boolean
+          limit_value?: number | null
+          plan_code: string
+          reset_period?: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enforcement_mode?: string
+          feature_key?: string
+          id?: string
+          is_unlimited?: boolean
+          limit_value?: number | null
+          plan_code?: string
+          reset_period?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_plan_entitlements_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["plan_code"]
+          },
+        ]
+      }
+      tenant_subscription_overrides: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          enforcement_mode: string
+          expires_at: string | null
+          feature_key: string
+          id: string
+          is_active: boolean
+          is_unlimited: boolean
+          limit_value: number | null
+          reason: string | null
+          reset_period: string
+          starts_at: string
+          tenant_id: string
+          unit: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          enforcement_mode?: string
+          expires_at?: string | null
+          feature_key: string
+          id?: string
+          is_active?: boolean
+          is_unlimited?: boolean
+          limit_value?: number | null
+          reason?: string | null
+          reset_period?: string
+          starts_at?: string
+          tenant_id: string
+          unit?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          enforcement_mode?: string
+          expires_at?: string | null
+          feature_key?: string
+          id?: string
+          is_active?: boolean
+          is_unlimited?: boolean
+          limit_value?: number | null
+          reason?: string | null
+          reset_period?: string
+          starts_at?: string
+          tenant_id?: string
+          unit?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_subscription_overrides_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_subscription_overrides_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_subscription_overrides_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_subscription_overrides_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_invoices: {
         Row: {
           amount: number
@@ -2543,6 +2712,54 @@ export type Database = {
           },
           {
             foreignKeyName: "subscription_invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_usage_counters: {
+        Row: {
+          feature_key: string
+          last_increment_at: string | null
+          metadata: Json
+          period_end: string
+          period_start: string
+          tenant_id: string
+          updated_at: string
+          used_value: number
+        }
+        Insert: {
+          feature_key: string
+          last_increment_at?: string | null
+          metadata?: Json
+          period_end: string
+          period_start: string
+          tenant_id: string
+          updated_at?: string
+          used_value?: number
+        }
+        Update: {
+          feature_key?: string
+          last_increment_at?: string | null
+          metadata?: Json
+          period_end?: string
+          period_start?: string
+          tenant_id?: string
+          updated_at?: string
+          used_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_usage_counters_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_usage_counters_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2971,6 +3188,20 @@ export type Database = {
         }[]
       }
       get_auth_tenant_id: { Args: never; Returns: string }
+      get_effective_subscription_entitlements: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          enforcement_mode: string
+          feature_key: string
+          is_unlimited: boolean
+          limit_value: number | null
+          plan_code: string
+          reset_period: string
+          source: string
+          tenant_id: string
+          unit: string
+        }[]
+      }
       get_balance_sheet: {
         Args: { p_as_of_date: string; p_tenant_id: string }
         Returns: {
