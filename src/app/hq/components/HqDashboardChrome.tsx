@@ -121,12 +121,12 @@ interface HqDashboardTabsProps {
 export function HqDashboardTabs({ activeTab, onTabChange }: HqDashboardTabsProps) {
   return (
     <div className="flex justify-center w-full px-4 sm:px-6">
-      <div className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-white/95 border border-slate-100 backdrop-blur-md rounded-[2rem] md:rounded-3xl p-1.5 shadow-sm max-w-7xl w-full gap-1 sm:gap-1.5 whitespace-nowrap scroll-smooth">
+      <div className="flex md:grid md:grid-cols-7 overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-white/95 border border-slate-100 backdrop-blur-md rounded-[2rem] md:rounded-3xl p-1.5 shadow-sm max-w-7xl w-full gap-1 sm:gap-1.5 whitespace-nowrap scroll-smooth">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => onTabChange(tab.key)}
-            className={`flex-none min-w-max py-2.5 px-4 lg:px-5 rounded-2xl font-black text-[9px] sm:text-[10px] lg:text-xs uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap text-center ${
+            className={`flex-none md:flex md:w-full md:min-w-0 md:min-h-10 items-center justify-center py-2.5 px-4 md:px-2 lg:px-2.5 xl:px-3 rounded-2xl font-black text-[9px] sm:text-[10px] lg:text-[10px] xl:text-[11px] uppercase tracking-normal leading-tight transition-all cursor-pointer whitespace-nowrap md:whitespace-normal break-words text-center ${
               activeTab === tab.key
                 ? 'bg-slate-900 text-white shadow-md'
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
