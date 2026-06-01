@@ -73,7 +73,7 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
     if (!tenantId) {
       tenantId = currentUser?.tenant_id || undefined;
     }
-  } catch (e) {
+  } catch {
     // Suppress error if no active session (e.g. Cron job)
   }
 
@@ -126,11 +126,15 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
     const ktvName = session.bookings?.assigned_ktv?.full_name || 'KTV Bella Spa';
 
     // Fetch tenant Zalo Template config
-    const { data: tenant } = await supabase
+    const { data: tenant, error: tenantErr } = await supabase
       .from('tenants')
       .select('zalo_template_reminder_id')
       .eq('id', tenantId)
       .single();
+
+    if (tenantErr) {
+      return { error: 'Không thể tải cấu hình Zalo nhắc lịch: ' + tenantErr.message };
+    }
 
     const templateId = tenant?.zalo_template_reminder_id || 'ZNS_REMINDER_V2';
 
@@ -140,6 +144,8 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
     // Attempt real ZNS sending if phone is available
     let isRealSent = false;
     let zaloError = '';
+
+    await incrementSmsCount(tenantId);
 
     const phoneVal = customer.phone;
     if (phoneVal) {
@@ -194,7 +200,7 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
       });
 
     if (notifErr) {
-      console.warn('Failed to save ZNS notification log:', notifErr.message);
+      return { error: 'Không thể lưu nhật ký thông báo Zalo: ' + notifErr.message };
     }
 
     // 4. Record audit log
@@ -210,9 +216,6 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
         zalo_error: zaloError || null
       }
     });
-
-    // 5. Increment SMS Count
-    await incrementSmsCount(tenantId);
 
     return { success: true, message: logMessage };
   } catch (error: unknown) {
@@ -234,7 +237,7 @@ export async function triggerBatchReminders(specificTenantId?: string) {
         if (currentUser?.tenant_id) {
           tenantIds = [currentUser.tenant_id];
         }
-      } catch (e) {
+      } catch {
         // Suppress session check error in cron environment
       }
 
