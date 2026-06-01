@@ -19,14 +19,11 @@ export interface SubscriptionInvoice {
   payment_method: string | null;
 }
 
-const TIER_PRICES: Record<string, number> = {
-  free_trial: 0,
-  basic: 499000,
-  pro: 999000,
-  enterprise: 2499000,
-};
-
 type SubscriptionInvoiceInsert = Database['public']['Tables']['subscription_invoices']['Insert'];
+type SubscriptionPlanPrice = Pick<
+  Database['public']['Tables']['subscription_plans']['Row'],
+  'plan_code' | 'price_monthly' | 'is_active'
+>;
 
 function canManageSubscription(role?: string | null) {
   return role === 'admin' || role === 'super_admin';
@@ -115,12 +112,26 @@ export async function createUpgradeInvoice(tier: string, durationMonths: number)
     return { error: 'Không xác định được chi nhánh của người dùng' };
   }
 
-  const pricePerMonth = TIER_PRICES[tier];
-  if (pricePerMonth === undefined) {
+  if (!Number.isInteger(durationMonths) || durationMonths <= 0) {
+    return { error: 'Thời hạn gói cước không hợp lệ' };
+  }
+
+  const { data: plan, error: planError } = await (supabase
+    .from('subscription_plans')
+    .select('plan_code, price_monthly, is_active')
+    .eq('plan_code', tier)
+    .eq('is_active', true)
+    .maybeSingle() as unknown as Promise<{ data: SubscriptionPlanPrice | null; error: { message: string } | null }>);
+
+  if (planError) {
+    return { error: `[createUpgradeInvoice] subscription_plans query failed: ${planError.message}` };
+  }
+
+  if (!plan) {
     return { error: 'Gói cước không hợp lệ' };
   }
 
-  const totalAmount = pricePerMonth * durationMonths;
+  const totalAmount = Number(plan.price_monthly) * durationMonths;
   const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
   const invoicePayload: SubscriptionInvoiceInsert = {
     tenant_id: tenantId,
