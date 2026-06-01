@@ -1,4 +1,4 @@
-import { createUser, updateUser, updateUserStatus } from '../services/user-actions';
+import { createUser, deleteUser, updateUser, updateUserStatus } from '../services/user-actions';
 
 const mockFrom = jest.fn();
 const mockGetSession = jest.fn();
@@ -169,6 +169,36 @@ describe('user update audit rollback', () => {
     role: 'manager',
   };
 
+  const deletedUserSnapshot = {
+    avatar_url: null,
+    base_salary: 9000000,
+    created_at: '2026-05-01T00:00:00.000Z',
+    email: 'delete.me@bella.test',
+    full_name: 'Delete Me',
+    hire_date: '2026-05-01',
+    id: 'delete-user-1',
+    phone: '0900000000',
+    resignation_date: null,
+    role: 'ktv',
+    status: 'active',
+    tenant_id: 'tenant-1',
+    updated_at: '2026-05-20T00:00:00.000Z',
+  };
+
+  const deletedStaffLeaveSnapshot = {
+    approved_by: null,
+    created_at: '2026-05-10T00:00:00.000Z',
+    id: 'leave-1',
+    leave_date: '2026-05-20',
+    leave_type: 'full_day',
+    reason: 'Personal',
+    rejection_reason: null,
+    status: 'pending',
+    tenant_id: 'tenant-1',
+    updated_at: '2026-05-10T00:00:00.000Z',
+    user_id: 'delete-user-1',
+  };
+
   it('creates auth user, profile row, audit log, and revalidates on success', async () => {
     installCurrentUser();
     const adminCalls = installScriptedAdminSupabase([
@@ -310,6 +340,104 @@ describe('user update audit rollback', () => {
     expect(result.error).toContain('audit failed');
     expect(result.error).toContain('profile rollback failed: profile delete failed');
     expect(result.error).toContain('auth rollback failed: auth delete failed');
+  });
+
+  it('deletes user and records old audit data on success', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'users', op: 'select', data: deletedUserSnapshot },
+      { table: 'staff_leaves', op: 'select', data: [] },
+      { table: 'users', op: 'delete' },
+    ]);
+
+    const result = await deleteUser('delete-user-1');
+
+    expect(result).toEqual({ success: true });
+    expect(calls.map(c => `${c.table}.${c.op}`)).toEqual([
+      'users.select',
+      'staff_leaves.select',
+      'users.delete',
+    ]);
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'DELETE',
+      table_name: 'users',
+      record_id: 'delete-user-1',
+      old_data: deletedUserSnapshot,
+      new_data: null,
+    });
+    expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+  });
+
+  it('does not delete user when delete snapshot fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'users', op: 'select', error: { message: 'snapshot failed' } },
+    ]);
+
+    const result = await deleteUser('delete-user-1');
+
+    expect(result.error).toContain('snapshot failed');
+    expect(calls.map(c => c.op)).toEqual(['select']);
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('restores deleted user when delete audit logging fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'users', op: 'select', data: deletedUserSnapshot },
+      { table: 'staff_leaves', op: 'select', data: [deletedStaffLeaveSnapshot] },
+      { table: 'users', op: 'delete' },
+      { table: 'users', op: 'insert' },
+      { table: 'staff_leaves', op: 'insert' },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await deleteUser('delete-user-1');
+
+    expect(result.error).toContain('audit failed');
+    expect(calls.map(c => ({ table: c.table, op: c.op, payload: c.payload }))).toEqual([
+      { table: 'users', op: 'select', payload: undefined },
+      { table: 'staff_leaves', op: 'select', payload: undefined },
+      { table: 'users', op: 'delete', payload: undefined },
+      { table: 'users', op: 'insert', payload: [deletedUserSnapshot] },
+      { table: 'staff_leaves', op: 'insert', payload: [deletedStaffLeaveSnapshot] },
+    ]);
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('reports restore failure when delete audit rollback fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'users', op: 'select', data: deletedUserSnapshot },
+      { table: 'staff_leaves', op: 'select', data: [deletedStaffLeaveSnapshot] },
+      { table: 'users', op: 'delete' },
+      { table: 'users', op: 'insert', error: { message: 'restore failed' } },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await deleteUser('delete-user-1');
+
+    expect(result.error).toContain('audit failed');
+    expect(result.error).toContain('restore failed: restore failed');
+    expect(calls.map(c => `${c.table}.${c.op}`)).toEqual([
+      'users.select',
+      'staff_leaves.select',
+      'users.delete',
+      'users.insert',
+    ]);
+  });
+
+  it('reports staff leave restore failure when delete audit rollback partially fails', async () => {
+    installScriptedSupabase([
+      { table: 'users', op: 'select', data: deletedUserSnapshot },
+      { table: 'staff_leaves', op: 'select', data: [deletedStaffLeaveSnapshot] },
+      { table: 'users', op: 'delete' },
+      { table: 'users', op: 'insert' },
+      { table: 'staff_leaves', op: 'insert', error: { message: 'staff leave restore failed' } },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await deleteUser('delete-user-1');
+
+    expect(result.error).toContain('audit failed');
+    expect(result.error).toContain('staff leaves restore failed: staff leave restore failed');
   });
 
   it('updates user status and records old/new audit data on success', async () => {

@@ -17,7 +17,10 @@ type AdminSupabaseClient = {
   };
 };
 type UserInsert = Database['public']['Tables']['users']['Insert'];
+type UserRow = Database['public']['Tables']['users']['Row'];
 type UserUpdate = Database['public']['Tables']['users']['Update'];
+type StaffLeaveInsert = Database['public']['Tables']['staff_leaves']['Insert'];
+type StaffLeaveRow = Database['public']['Tables']['staff_leaves']['Row'];
 
 interface UserWithLogsAndReviews {
   id: string;
@@ -210,6 +213,68 @@ async function rollbackUserUpdate(
     .from('users')
     .update(payload)
     .eq('id', id);
+
+  return error?.message || '';
+}
+
+function toUserInsertSnapshot(user: UserRow): UserInsert {
+  return {
+    avatar_url: user.avatar_url,
+    base_salary: user.base_salary,
+    created_at: user.created_at,
+    email: user.email,
+    full_name: user.full_name,
+    hire_date: user.hire_date,
+    id: user.id,
+    phone: user.phone,
+    resignation_date: user.resignation_date,
+    role: user.role,
+    status: user.status,
+    tenant_id: user.tenant_id,
+    updated_at: user.updated_at,
+  };
+}
+
+function toUserAuditSnapshot(user: UserRow) {
+  return toUserInsertSnapshot(user);
+}
+
+function toStaffLeaveInsertSnapshot(leave: StaffLeaveRow): StaffLeaveInsert {
+  return {
+    approved_by: leave.approved_by,
+    created_at: leave.created_at,
+    id: leave.id,
+    leave_date: leave.leave_date,
+    leave_type: leave.leave_type,
+    reason: leave.reason,
+    rejection_reason: leave.rejection_reason,
+    status: leave.status,
+    tenant_id: leave.tenant_id,
+    updated_at: leave.updated_at,
+    user_id: leave.user_id,
+  };
+}
+
+async function restoreDeletedUser(
+  supabase: SupabaseClient,
+  payload: UserInsert,
+) {
+  const { error } = await supabase
+    .from('users')
+    .insert([payload]);
+
+  return error?.message || '';
+}
+
+async function restoreDeletedStaffLeaves(
+  supabase: SupabaseClient,
+  payloads: StaffLeaveInsert[],
+) {
+  if (payloads.length === 0) return '';
+
+  const { error } = await supabase
+    .from('staff_leaves')
+    .insert(payloads);
 
   return error?.message || '';
 }
@@ -457,6 +522,35 @@ export async function updateUser(id: string, formData: { full_name: string; role
 
 export async function deleteUser(id: string) {
   const supabase = await createClient();
+
+  const {
+    data: previousUser,
+    error: snapshotError,
+  }: { data: UserRow | null; error: { message?: string } | null } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (snapshotError || !previousUser) {
+    return { error: snapshotError?.message || 'User not found' };
+  }
+
+  const restorePayload = toUserInsertSnapshot(previousUser);
+
+  const {
+    data: previousStaffLeaves,
+    error: staffLeavesSnapshotError,
+  }: { data: StaffLeaveRow[] | null; error: { message?: string } | null } = await supabase
+    .from('staff_leaves')
+    .select('*')
+    .eq('user_id', id);
+
+  if (staffLeavesSnapshotError) {
+    return { error: staffLeavesSnapshotError.message || 'Failed to snapshot staff leaves' };
+  }
+
+  const staffLeaveRestorePayloads = (previousStaffLeaves || []).map(toStaffLeaveInsertSnapshot);
   
   const { error } = await supabase
     .from('users')
@@ -469,12 +563,25 @@ export async function deleteUser(id: string) {
   }
 
   // Record Audit Log
-  await recordAuditLog({
-    action: 'DELETE',
-    table_name: 'users',
-    record_id: id,
-    new_data: null
-  });
+  try {
+    await recordAuditLog({
+      action: 'DELETE',
+      table_name: 'users',
+      record_id: id,
+      old_data: toUserAuditSnapshot(previousUser),
+      new_data: null
+    });
+  } catch (auditError: unknown) {
+    const restoreError = await restoreDeletedUser(supabase, restorePayload);
+    const staffLeavesRestoreError = restoreError
+      ? ''
+      : await restoreDeletedStaffLeaves(supabase, staffLeaveRestorePayloads);
+    const restoreNote = formatRollbackNotes([
+      ['restore', restoreError],
+      ['staff leaves restore', staffLeavesRestoreError],
+    ]);
+    return { error: `Failed to record user delete audit log: ${getErrorMessage(auditError)}${restoreNote}` };
+  }
 
   await safeRevalidatePath('/dashboard/settings');
   return { success: true };
