@@ -7,6 +7,27 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Create Super Admin Subscription Quota Schema
+* **Mục tiêu kỹ thuật**:
+  * Tạo nền dữ liệu cho phân hệ Super Admin quản lý plan/quota trước khi làm service/UI.
+  * Giữ tương thích với `tenants.subscription_tier` hiện tại và các gói `free_trial`, `basic`, `pro`, `enterprise`.
+  * Tách định nghĩa hạn mức khỏi hard-code để batch sau có thể chuyển enforcement sang schema chuẩn.
+* **Thay đổi chính**:
+  * Thêm migration `20260601011000_create_subscription_quota_schema.sql`.
+  * Tạo `subscription_plans`, `subscription_plan_entitlements`, `tenant_subscription_overrides`, `tenant_usage_counters`.
+  * Bật RLS cho toàn bộ bảng mới: tenant chỉ đọc dữ liệu override/usage của mình; HQ Super Admin mới được mutate plan/entitlement/override/counter.
+  * Seed lại 4 gói hiện tại và hạn mức KTV/customer/SMS đúng với logic đang chạy.
+  * Thêm RPC `get_effective_subscription_entitlements(UUID)` để trả entitlement sau khi áp active tenant overrides, có guard `service_role`/HQ/current tenant.
+  * Thêm `subscription-quota-schema.test.ts` để khóa contract migration: bảng, RLS, seed default và RPC guarded.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/subscription-quota-schema.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/__tests__/subscription-quota-schema.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Subscription Engine Fail Closed
 * **Mục tiêu kỹ thuật**:
   * Xử lý nền subscription/quota trước khi xây phân hệ Super Admin quản lý gói thuê bao và hạn ngạch.
