@@ -267,8 +267,11 @@ export async function triggerBatchReminders(specificTenantId?: string) {
 
     const todayStr = getLocalDateString(new Date());
     let totalCount = 0;
+    let skippedCount = 0;
     const messagesSent: string[] = [];
     const errors: string[] = [];
+    const quotaSkipped: string[] = [];
+    const { checkSubscriptionLimit } = await import('@/lib/subscription');
 
     for (const tenantId of tenantIds) {
       // Fetch today's scheduled sessions for this tenant that have not been reminded
@@ -290,38 +293,60 @@ export async function triggerBatchReminders(specificTenantId?: string) {
         continue;
       }
 
-      // Filter sessions within the next 2.5 hours
       const now = new Date();
-      // Current minutes since start of day in GMT+7
       const currentVNMinutes = now.getUTCHours() * 60 + now.getUTCMinutes() + 420; // 420 mins offset for GMT+7
       const dayMinutes = currentVNMinutes % 1440;
+      const dueSessions = sessions.filter((session) => {
+        if (!session.assigned_time) return false;
 
-      for (const session of sessions) {
-        if (!session.assigned_time) continue;
-        
         const parts = session.assigned_time.split(':');
         const sessionMinutes = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-
-        // Remind if session starts in the next 150 minutes (2.5 hours)
-        // or if it is already past the scheduled time slightly but not sent yet.
         const diff = sessionMinutes - dayMinutes;
-        if (diff >= -30 && diff <= 150) {
-          const result = await triggerZaloReminder(session.id, tenantId);
-          if (result.success && result.message) {
-            totalCount++;
-            messagesSent.push(result.message);
-          } else if (result.error) {
-            errors.push(`Session ${session.id}: ${result.error}`);
-          }
+        return diff >= -30 && diff <= 150;
+      });
+
+      if (dueSessions.length === 0) {
+        continue;
+      }
+
+      const smsLimit = await checkSubscriptionLimit(tenantId, 'sms');
+      const isFiniteQuota = smsLimit.max < 999999;
+      let remainingQuota = isFiniteQuota ? Math.max(smsLimit.max - smsLimit.current, 0) : Number.POSITIVE_INFINITY;
+
+      if (smsLimit.isBlocked || remainingQuota <= 0) {
+        skippedCount += dueSessions.length;
+        quotaSkipped.push(`Tenant ${tenantId}: bỏ qua ${dueSessions.length} lịch do hết hạn ngạch Zalo/SMS.`);
+        continue;
+      }
+
+      for (const session of dueSessions) {
+        if (remainingQuota <= 0) {
+          skippedCount++;
+          quotaSkipped.push(`Session ${session.id}: bỏ qua do hết hạn ngạch Zalo/SMS trong batch.`);
+          continue;
+        }
+
+        if (isFiniteQuota) {
+          remainingQuota--;
+        }
+
+        const result = await triggerZaloReminder(session.id, tenantId);
+        if (result.success && result.message) {
+          totalCount++;
+          messagesSent.push(result.message);
+        } else if (result.error) {
+          errors.push(`Session ${session.id}: ${result.error}`);
         }
       }
     }
 
     return {
       count: totalCount,
+      skipped: skippedCount,
       messages: messagesSent,
       errors: errors.length > 0 ? errors : undefined,
-      info: `Đã quét và tự động gửi ${totalCount} thông báo nhắc hẹn qua Zalo.`
+      quotaSkipped: quotaSkipped.length > 0 ? quotaSkipped : undefined,
+      info: `Đã quét và tự động gửi ${totalCount} thông báo nhắc hẹn qua Zalo${skippedCount > 0 ? `; bỏ qua ${skippedCount} lịch do hạn ngạch.` : '.'}`
     };
   } catch (err: unknown) {
     console.error('Error in triggerBatchReminders:', err);

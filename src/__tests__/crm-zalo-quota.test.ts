@@ -1,5 +1,5 @@
 import { getBirthdayCustomers, sendBirthdayGreeting } from '../services/crm/campaigns';
-import { triggerZaloReminder } from '../services/crm/zalo-messaging';
+import { triggerBatchReminders, triggerZaloReminder } from '../services/crm/zalo-messaging';
 
 const mockGetCurrentUser = jest.fn();
 const mockRecordAuditLog = jest.fn();
@@ -27,6 +27,10 @@ jest.mock('@/lib/subscription', () => ({
 
 jest.mock('../services/crm/zalo-config', () => ({
   getOrRefreshZaloToken: (...args: unknown[]) => mockGetOrRefreshZaloToken(...args),
+}));
+
+jest.mock('@/lib/utils', () => ({
+  getLocalDateString: () => '2026-06-02',
 }));
 
 type TableQueues = Record<string, MockQueryBuilder[]>;
@@ -110,6 +114,10 @@ describe('CRM/Zalo quota hardening', () => {
       return { success: true };
     });
     mockSuccessfulZaloFetch();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('propagates birthday customer query failures instead of returning an empty list', async () => {
@@ -207,5 +215,53 @@ describe('CRM/Zalo quota hardening', () => {
     expect(updatePayloads).toHaveLength(0);
     expect(insertPayloads).toHaveLength(0);
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('skips due batch reminders once the remaining SMS quota is exhausted', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-02T01:00:00.000Z'));
+    mockCheckSubscriptionLimit
+      .mockResolvedValueOnce({ isBlocked: false, current: 19, max: 20 })
+      .mockResolvedValue({ isBlocked: false, current: 19, max: 20 });
+    setupSupabase({
+      session_logs: [
+        new MockQueryBuilder([
+          { id: 'session-1', assigned_time: '08:30:00' },
+          { id: 'session-2', assigned_time: '09:00:00' },
+        ]),
+        new MockQueryBuilder({
+          id: 'session-1',
+          assigned_time: '08:30:00',
+          assigned_date: '2026-06-02',
+          address: '123 Le Loi',
+          bookings: {
+            package_name: 'Goi cham soc',
+            customers: {
+              name_mother: 'Lan',
+              name_baby: 'Mi',
+              phone: '0909123456',
+            },
+            assigned_ktv: {
+              full_name: 'KTV A',
+              id: 'ktv-1',
+            },
+          },
+        }),
+        new MockQueryBuilder(null, null),
+      ],
+      tenants: [new MockQueryBuilder({ zalo_template_reminder_id: 'tpl-reminder' })],
+      Notification: [new MockQueryBuilder(null, null)],
+    });
+
+    const result = await triggerBatchReminders('tenant-1');
+
+    expect(result.count).toBe(1);
+    expect(result.skipped).toBe(1);
+    expect(result.quotaSkipped).toEqual([
+      'Session session-2: bỏ qua do hết hạn ngạch Zalo/SMS trong batch.',
+    ]);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(mockIncrementSmsCount).toHaveBeenCalledTimes(1);
+    expect(mockRecordAuditLog).toHaveBeenCalledTimes(1);
+
   });
 });

@@ -115,8 +115,20 @@ export default function CRMPage() {
       if ('error' in res && res.error) {
         alert('Lỗi khi quét lịch hẹn: ' + res.error);
       } else {
-        const successRes = res as { count: number; messages: string[]; info: string };
-        alert(successRes.info + (successRes.count > 0 ? `\n\nDanh sách tin đã gửi:\n` + successRes.messages.join('\n') : ''));
+        const successRes = res as {
+          count: number;
+          skipped?: number;
+          messages: string[];
+          quotaSkipped?: string[];
+          info: string;
+        };
+        const sentDetails = successRes.count > 0
+          ? `\n\nDanh sách tin đã gửi:\n${successRes.messages.join('\n')}`
+          : '';
+        const skippedDetails = successRes.skipped && successRes.quotaSkipped?.length
+          ? `\n\nBị bỏ qua do hạn ngạch:\n${successRes.quotaSkipped.join('\n')}`
+          : '';
+        alert(successRes.info + sentDetails + skippedDetails);
         await loadData();
       }
     } catch (e) {
