@@ -7,6 +7,24 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Batch Harden Salary Query and Clean Dirty Typing
+* **Mục tiêu kỹ thuật**:
+  * Gom batch thay vì sửa từng hàm nhỏ: harden `getSalaryData`, hoàn tất cleanup typing ở promotions UI và accounting salary reconciliation RPC.
+  * Tránh trạng thái salary page trả mảng rỗng khi database query thật sự lỗi.
+* **Thay đổi chính**:
+  * `getSalaryData` giờ throw lỗi rõ khi thiếu tenant hoặc khi các query `tenants`, `users`, `salary_records`, `session_logs`, `attendance`, `packages` thất bại.
+  * Thêm tenant filter cho các query salary data có `tenant_id`: `users`, `salary_records`, `session_logs`, `attendance`.
+  * Catch cuối của `getSalaryData` rethrow thay vì `return []`.
+  * Mở rộng `query-salary-actions.test.ts` lên 6 test, bao phủ salary happy path, missing tenant, query failure và matrix query failures.
+  * `PromotionsTab` bỏ `any` ở promotion state/catch, đồng thời tránh warning `react-hooks/set-state-in-effect`.
+  * `accounting/reports.ts` thay repeated RPC `as any` bằng typed `SalaryReconciliationRpc`.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/query-salary-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/modules/hr-salary/actions/query-salary-actions.ts src/__tests__/query-salary-actions.test.ts src/app/dashboard/settings/components/PromotionsTab.tsx src/services/accounting/reports.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden KTV Session Matrix Query Errors
 * **Mục tiêu kỹ thuật**:
   * Siết `getKtvSessionMatrix` để lỗi database không còn bị log rồi trả matrix rỗng như một trạng thái hợp lệ.

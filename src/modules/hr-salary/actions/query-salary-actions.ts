@@ -88,11 +88,17 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
     if (!tenantId) {
-      console.warn('[getSalaryData] Không tìm thấy tenantId cho người dùng hiện tại');
-      return [];
+      throw new Error('[getSalaryData] Missing tenantId for current user');
     }
 
-    const { data: tenantData } = await supabase.from('tenants').select('salary_config').eq('id', tenantId).single();
+    const { data: tenantData, error: tenantError } = await supabase
+      .from('tenants')
+      .select('salary_config')
+      .eq('id', tenantId)
+      .single();
+    if (tenantError) {
+      throw new Error(`[getSalaryData] tenants query failed: ${tenantError.message}`);
+    }
     const stored = (tenantData?.salary_config as unknown as Partial<TenantSalaryConfig>) || {};
     const salaryConfig: TenantSalaryConfig = {
       bonus_5_star:          stored.bonus_5_star          ?? 50000,
@@ -110,33 +116,45 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
     const ktvQuery = supabase
       .from('users')
       .select('id, full_name, role, base_salary, hire_date, resignation_date, status')
-      .eq('role', 'ktv');
+      .eq('role', 'ktv')
+      .eq('tenant_id', tenantId);
 
     // If current user is KTV, they can only see their own data
     if (currentUser?.role?.toLowerCase() === 'ktv') {
       ktvQuery.eq('id', currentUser.id);
     }
 
-    const { data: ktvs } = await ktvQuery;
+    const { data: ktvs, error: ktvsError } = await ktvQuery;
+    if (ktvsError) {
+      throw new Error(`[getSalaryData] users query failed: ${ktvsError.message}`);
+    }
     const realKtvs = (ktvs || []) as KtvUserData[];
 
     const startOfMonthStr = currentMonthYear;
     const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
 
-    const { data: salaryRecordsData } = await supabase
+    const { data: salaryRecordsData, error: salaryRecordsError } = await supabase
       .from('salary_records')
       .select('*')
-      .eq('month_year', currentMonthYear);
+      .eq('month_year', currentMonthYear)
+      .eq('tenant_id', tenantId);
+    if (salaryRecordsError) {
+      throw new Error(`[getSalaryData] salary_records query failed: ${salaryRecordsError.message}`);
+    }
     
     const salaryRecords = (salaryRecordsData || []) as SalaryRecordDb[];
 
     // Fetch completed sessions with booking details + rating fallback
-    const { data: sessionsData } = await supabase
+    const { data: sessionsData, error: sessionsError } = await supabase
       .from('session_logs')
       .select('id, completed_by_ktv_id, status, is_confirmed, rating, bookings(ktv_commission, package_name), session_reviews(rating, status)')
       .eq('status', 'completed')
       .gte('completed_date', startOfMonthStr)
-      .lt('completed_date', endOfMonthStr);
+      .lt('completed_date', endOfMonthStr)
+      .eq('tenant_id', tenantId);
+    if (sessionsError) {
+      throw new Error(`[getSalaryData] session_logs query failed: ${sessionsError.message}`);
+    }
 
     const sessions = (sessionsData || []) as unknown as SessionLogDb[];
 
@@ -163,11 +181,15 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
     );
 
     // Fetch all attendance logs this month
-    const { data: attendanceLogs } = await supabase
+    const { data: attendanceLogs, error: attendanceError } = await supabase
       .from('attendance')
       .select('*')
       .gte('date', startOfMonthStr)
-      .lt('date', endOfMonthStr);
+      .lt('date', endOfMonthStr)
+      .eq('tenant_id', tenantId);
+    if (attendanceError) {
+      throw new Error(`[getSalaryData] attendance query failed: ${attendanceError.message}`);
+    }
 
     const attendanceLogsTyped = (attendanceLogs || []) as unknown as AttendanceLogDb[];
 
@@ -177,7 +199,9 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       .select('name, session_multiplier')
       .eq('tenant_id', tenantId);
 
-    if (packagesError) throw packagesError;
+    if (packagesError) {
+      throw new Error(`[getSalaryData] packages query failed: ${packagesError.message}`);
+    }
     const packagesList = packagesData || [];
 
     // Create a map of package name -> multiplier
@@ -303,7 +327,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
     return ktvSalaries;
   } catch (error) {
     console.error('Error in getSalaryData:', error);
-    return [];
+    throw error instanceof Error ? error : new Error('getSalaryData failed');
   }
 }
 
