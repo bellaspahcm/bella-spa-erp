@@ -5,8 +5,23 @@ import { Sparkles, Plus, Trash2, Calendar, Tag, Percent, RefreshCw } from "lucid
 import { toast } from "sonner";
 import { getPromotions, createPromotion, togglePromotionActive, deletePromotion } from "@/services/promotions-actions";
 
+interface Promotion {
+  id: string;
+  title: string;
+  description: string;
+  discount_code: string | null;
+  discount_percent: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  image_url: string | null;
+  is_active: boolean;
+  tenant_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function PromotionsTab() {
-  const [promotions, setPromotions] = useState<any[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -22,16 +37,39 @@ export default function PromotionsTab() {
     setIsLoading(true);
     try {
       const data = await getPromotions();
-      setPromotions(data);
-    } catch (error: any) {
-      toast.error("Không thể tải danh sách khuyến mãi: " + error.message);
+      setPromotions(data as Promotion[]);
+    } catch (error) {
+      toast.error("Không thể tải danh sách khuyến mãi: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPromoData();
+    let isMounted = true;
+
+    async function loadInitialPromotions() {
+      try {
+        const data = await getPromotions();
+        if (isMounted) {
+          setPromotions(data as Promotion[]);
+        }
+      } catch (error) {
+        if (isMounted) {
+          toast.error("Không thể tải danh sách khuyến mãi: " + (error instanceof Error ? error.message : String(error)));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadInitialPromotions();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,8 +105,8 @@ export default function PromotionsTab() {
       } else {
         toast.error("Lỗi khi thêm: " + res.error);
       }
-    } catch (err: any) {
-      toast.error("Lỗi không mong muốn: " + err.message);
+    } catch (err) {
+      toast.error("Lỗi không mong muốn: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setIsSubmitting(false);
     }
@@ -84,8 +122,8 @@ export default function PromotionsTab() {
       } else {
         toast.error("Không thể cập nhật trạng thái: " + res.error);
       }
-    } catch (err: any) {
-      toast.error("Lỗi: " + err.message);
+    } catch (err) {
+      toast.error("Lỗi: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -100,8 +138,8 @@ export default function PromotionsTab() {
       } else {
         toast.error("Lỗi khi xóa: " + res.error);
       }
-    } catch (err: any) {
-      toast.error("Lỗi: " + err.message);
+    } catch (err) {
+      toast.error("Lỗi: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 

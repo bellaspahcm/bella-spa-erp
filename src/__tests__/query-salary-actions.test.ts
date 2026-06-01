@@ -1,6 +1,8 @@
-import { getKtvSessionMatrix } from '../modules/hr-salary/actions/query-salary-actions';
+import { getKtvSessionMatrix, getSalaryData } from '../modules/hr-salary/actions/query-salary-actions';
 
 const mockFrom = jest.fn();
+const mockRpc = jest.fn();
+const mockGetCurrentUser = jest.fn();
 const mockNoStore = jest.fn();
 
 jest.mock('next/cache', () => ({
@@ -10,11 +12,12 @@ jest.mock('next/cache', () => ({
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({
     from: mockFrom,
+    rpc: mockRpc,
   })),
 }));
 
 jest.mock('@/services/user-actions', () => ({
-  getCurrentUser: jest.fn(),
+  getCurrentUser: () => mockGetCurrentUser(),
 }));
 
 jest.mock('../modules/hr-salary/actions/base-salary-actions', () => ({
@@ -67,6 +70,10 @@ class ScriptedQueryBuilder {
     return this;
   }
 
+  single() {
+    return this.resolve();
+  }
+
   then(onfulfilled: (value: { data: unknown; error: { message: string } | null }) => unknown) {
     return this.resolve().then(onfulfilled);
   }
@@ -88,6 +95,111 @@ function setupDb(scripts: ScriptedResult[]) {
   mockFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, calls));
   return calls;
 }
+
+describe('getSalaryData query errors', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-15T08:00:00.000Z'));
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+    });
+    mockRpc.mockResolvedValue({
+      data: [{
+        ktv_id: 'ktv-1',
+        average_rating: 5,
+        late_days: 0,
+        absent_days: 0,
+        total_kpi_bonus: null,
+      }],
+      error: null,
+    });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('returns computed salary rows when all salary queries succeed', async () => {
+    const calls = setupDb([
+      { table: 'tenants', op: 'select', data: { salary_config: null } },
+      {
+        table: 'users',
+        op: 'select',
+        data: [{
+          id: 'ktv-1',
+          full_name: 'KTV One',
+          role: 'ktv',
+          base_salary: 2600000,
+          hire_date: '2026-01-01',
+          resignation_date: null,
+          status: 'active',
+        }],
+      },
+      { table: 'salary_records', op: 'select', data: [] },
+      {
+        table: 'session_logs',
+        op: 'select',
+        data: [{
+          id: 'session-1',
+          completed_by_ktv_id: 'ktv-1',
+          status: 'completed',
+          is_confirmed: false,
+          rating: 5,
+          bookings: { ktv_commission: 200000, package_name: 'Combo VIP' },
+          session_reviews: [],
+        }],
+      },
+      {
+        table: 'attendance',
+        op: 'select',
+        data: [{ id: 'att-1', ktv_id: 'ktv-1', date: '2026-06-02', status: 'present' }],
+      },
+      { table: 'packages', op: 'select', data: [{ name: 'Combo VIP', session_multiplier: 1.5 }] },
+    ]);
+
+    const result = await getSalaryData();
+
+    expect(result).toEqual([expect.objectContaining({
+      id: 'ktv-1',
+      name: 'KTV One',
+      sessions: 1.5,
+      baseSalary: 100000,
+      sessionBonus: 200000,
+      ratingBonus: 75000,
+      totalSalary: 375000,
+      actualDays: 1,
+    })]);
+    expect(mockRpc).toHaveBeenCalledWith('get_ktv_leaderboard', {
+      p_tenant_id: 'tenant-1',
+      p_month: '2026-06-01',
+    });
+    expect(calls[1].filters).toEqual([
+      { field: 'role', value: 'ktv' },
+      { field: 'tenant_id', value: 'tenant-1' },
+    ]);
+    expect(calls[3].filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
+    expect(calls[4].filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
+  });
+
+  it('throws instead of returning an empty salary list when a required query fails', async () => {
+    setupDb([
+      { table: 'tenants', op: 'select', data: { salary_config: null } },
+      { table: 'users', op: 'select', error: { message: 'users query failed' } },
+    ]);
+
+    await expect(getSalaryData()).rejects.toThrow('[getSalaryData] users query failed: users query failed');
+  });
+
+  it('throws before querying when the current user has no tenant', async () => {
+    mockGetCurrentUser.mockResolvedValue({ id: 'admin-1', role: 'admin', tenant_id: null });
+    const calls = setupDb([]);
+
+    await expect(getSalaryData()).rejects.toThrow('[getSalaryData] Missing tenantId for current user');
+    expect(calls).toHaveLength(0);
+  });
+});
 
 describe('getKtvSessionMatrix query errors', () => {
   beforeEach(() => {

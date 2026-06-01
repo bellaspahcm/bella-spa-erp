@@ -4,6 +4,23 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '../user-actions';
 import type { ReconciliationRow, SalaryReconciliationRow } from './types';
 
+type SalaryReconciliationRpcArgs = {
+  p_tenant_id: string;
+  p_month_year: string;
+};
+
+type ReportRpcError = {
+  message: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+};
+
+type SalaryReconciliationRpc = (
+  fn: 'get_salary_reconciliation_report',
+  args: SalaryReconciliationRpcArgs
+) => Promise<{ data: unknown; error: ReportRpcError | null }>;
+
 export async function getTrialBalanceReport(asOfDate: string) {
   const supabase = await createClient();
   const user = await getCurrentUser();
@@ -140,7 +157,8 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
   if (!serviceKey) {
     console.warn('[getSalaryReconciliationReport] SUPABASE_SERVICE_ROLE_KEY is missing. Using user client fallback.');
     const supabase = await createClient();
-    const { data, error } = await (supabase.rpc as any)('get_salary_reconciliation_report', {
+    const rpcCall = supabase.rpc as unknown as SalaryReconciliationRpc;
+    const { data, error } = await rpcCall('get_salary_reconciliation_report', {
       p_tenant_id: user.tenant_id,
       p_month_year: monthYear,
     });
@@ -172,7 +190,8 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
     throw tenantContextError;
   }
 
-  const { data, error } = await (adminClient.rpc as any)('get_salary_reconciliation_report', {
+  const rpcCall = adminClient.rpc as unknown as SalaryReconciliationRpc;
+  const { data, error } = await rpcCall('get_salary_reconciliation_report', {
     p_tenant_id: user.tenant_id,
     p_month_year: monthYear,
   });
