@@ -195,6 +195,84 @@ describe('KTV read actions fail-fast behavior', () => {
     expect(mockFrom).toHaveBeenCalledTimes(5);
   });
 
+  it('does not roll back a started session when non-critical session GPS save fails', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      session_number: 1,
+      status: 'scheduled',
+      start_time: null,
+      completed_by_ktv_id: null,
+      checkin_lat: null,
+      checkin_lon: null,
+      bookings: {
+        customer_id: 'cust-1',
+        total_sessions: 10,
+        completed_sessions: 0,
+        status: 'booked',
+        is_in_care: false,
+        customers: { latitude: 10, longitude: 106 },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const startUpdate = new MockQueryBuilder(null, null);
+    const bookingUpdate = new MockQueryBuilder(null, null);
+    const sessionGpsUpdate = new MockQueryBuilder(null, { message: 'session gps failed' });
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(startUpdate)
+      .mockReturnValueOnce(bookingUpdate)
+      .mockReturnValueOnce(sessionGpsUpdate);
+
+    const result = await startSession('session-1', 10.5, 106.5);
+
+    expect(result).toEqual({
+      success: true,
+      warning: 'Session started, but check-in GPS was not saved: session gps failed',
+    });
+    expect(mockFrom).toHaveBeenCalledTimes(4);
+  });
+
+  it('returns combined warnings without rollback when both start GPS writes fail', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      session_number: 1,
+      status: 'scheduled',
+      start_time: null,
+      completed_by_ktv_id: null,
+      checkin_lat: null,
+      checkin_lon: null,
+      bookings: {
+        customer_id: 'cust-1',
+        total_sessions: 10,
+        completed_sessions: 0,
+        status: 'booked',
+        is_in_care: false,
+        customers: { latitude: null, longitude: null },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const startUpdate = new MockQueryBuilder(null, null);
+    const bookingUpdate = new MockQueryBuilder(null, null);
+    const sessionGpsUpdate = new MockQueryBuilder(null, { message: 'session gps failed' });
+    const customerGpsUpdate = new MockQueryBuilder(null, { message: 'customer gps failed' });
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(startUpdate)
+      .mockReturnValueOnce(bookingUpdate)
+      .mockReturnValueOnce(sessionGpsUpdate)
+      .mockReturnValueOnce(customerGpsUpdate);
+
+    const result = await startSession('session-1', 10.5, 106.5);
+
+    expect(result).toEqual({
+      success: true,
+      warning: 'Session started, but check-in GPS was not saved: session gps failed; customer GPS coordinates were not saved: customer gps failed',
+    });
+    expect(mockFrom).toHaveBeenCalledTimes(5);
+  });
+
   it('does not fail checkout when non-critical checkout GPS save fails', async () => {
     const session = {
       booking_id: 'booking-1',

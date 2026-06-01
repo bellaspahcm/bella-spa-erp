@@ -7,6 +7,21 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Lock Start Session GPS Warnings
+* **Mục tiêu kỹ thuật**:
+  * Khóa rõ ranh giới critical/non-critical trong `startSession`.
+  * Xác nhận session start và booking update vẫn là side-effect bắt buộc, còn GPS enrichment chỉ trả warning sau khi check-in chính đã thành công.
+* **Thay đổi chính**:
+  * Không đổi production code vì behavior hiện tại đúng phạm vi nghiệp vụ.
+  * Bổ sung test cho lỗi lưu GPS vào `session_logs` khi check-in: action vẫn success với warning, không rollback.
+  * Bổ sung test khi cả session GPS và customer GPS cùng lỗi: warning được gom đầy đủ, không che lỗi booking/session critical.
+  * Mở rộng `ktv-actions.test.ts` lên 17 test.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/ktv-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/ktv-actions.ts src/__tests__/ktv-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden KTV Booking Rollback
 * **Mục tiêu kỹ thuật**:
   * Hoàn thiện rollback cho `completeKTVSession` khi booking update đã thành công nhưng bước cleanup phía sau lỗi.
