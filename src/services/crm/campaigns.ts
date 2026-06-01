@@ -25,7 +25,7 @@ export async function getBirthdayCustomers() {
 
     if (error) {
       console.error('Error fetching birthday customers:', error);
-      return [];
+      throw new Error(`Failed to fetch birthday customers: ${error.message}`);
     }
 
     const now = new Date();
@@ -60,7 +60,9 @@ export async function getBirthdayCustomers() {
 
   } catch (error) {
     console.error('Error in getBirthdayCustomers:', error);
-    return [];
+    throw error instanceof Error
+      ? error
+      : new Error('Failed to fetch birthday customers');
   }
 }
 
@@ -76,7 +78,7 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
     if (!tenantId) {
       tenantId = currentUser?.tenant_id || undefined;
     }
-  } catch (e) {
+  } catch {
     // Suppress
   }
 
@@ -107,13 +109,19 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
     const message = `Bella Spa chúc mừng sinh nhật tròn tuổi mới của bé ${babyName}! Mẹ ${motherName} ơi, nhân dịp đặc biệt này, Bella Spa thân gửi tặng gia đình Voucher giảm giá 10% gói liệu trình chăm sóc tiếp theo: [${voucherCode}]. Chúc bé luôn hay ăn chóng lớn, khỏe mạnh bình an! Hotline liên hệ đặt lịch: 0865 701 493.`;
 
     // Fetch tenant Zalo Template config
-    const { data: tenant } = await supabase
+    const { data: tenant, error: tenantErr } = await supabase
       .from('tenants')
       .select('zalo_template_birthday_id')
       .eq('id', tenantId)
       .single();
 
+    if (tenantErr) {
+      return { error: 'Không thể tải cấu hình Zalo sinh nhật: ' + tenantErr.message };
+    }
+
     const templateId = tenant?.zalo_template_birthday_id || 'ZNS_BIRTHDAY_GIFT_V1';
+
+    await incrementSmsCount(tenantId);
 
     // Attempt real ZNS sending if phone is available
     let isRealSent = false;
@@ -158,7 +166,7 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
       });
 
     if (notifErr) {
-      console.warn('Failed to save birthday notification log:', notifErr.message);
+      return { error: 'Không thể lưu nhật ký thông báo sinh nhật: ' + notifErr.message };
     }
 
     // Record audit log
@@ -174,9 +182,6 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
         zalo_error: zaloError || null
       }
     });
-
-    // Increment the SMS allotment count
-    await incrementSmsCount(tenantId);
 
     return { success: true, message: logMessage };
   } catch (error: unknown) {
