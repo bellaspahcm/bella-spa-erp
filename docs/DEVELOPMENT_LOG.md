@@ -7,6 +7,25 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 02/06/2026: Subscription Quota Deploy Readiness
+* **Mục tiêu kỹ thuật**:
+  * Chốt checkpoint triển khai cho toàn bộ cụm Super Admin subscription/quota trước khi chuyển module khác.
+  * Kiểm migration order, RPC security/grants, compatibility với legacy SMS column và invoice renewal.
+  * Tạo checklist deploy/smoke test để áp dụng khi đẩy migration lên Supabase thật.
+* **Thay đổi chính**:
+  * Thêm `docs/implementation-artifacts/deploy-readiness-super-admin-subscription-quota.md`.
+  * Checklist bao gồm migration order `20260601010000` → `20260601011000` → `20260602010000`.
+  * Ghi rõ production pre-deploy, post-deploy smoke tests, rollback notes và residual risks.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/subscription.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/hq-subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/hq-subscription-ui.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-quota-schema.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd eslint src/lib/subscription.ts src/services/subscription-actions.ts src/services/hq-subscription-actions.ts src/app/hq/components/HqSubscriptionQuotaConsole.tsx src/__tests__/subscription.test.ts src/__tests__/subscription-actions.test.ts src/__tests__/hq-subscription-actions.test.ts src/__tests__/hq-subscription-ui.test.ts src/__tests__/subscription-quota-schema.test.ts` pass.
+  * `npx.cmd tsc --noEmit` pass.
+
 ### 🟢 Ngày 02/06/2026: Remove Subscription Tier Hard Code
 * **Mục tiêu kỹ thuật**:
   * Loại bỏ dependency runtime cuối cùng vào `SUBSCRIPTION_TIERS` trong quota enforcement.
