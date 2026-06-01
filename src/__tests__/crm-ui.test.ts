@@ -8,6 +8,24 @@ function read(relativePath: string) {
 }
 
 describe('CRM page error handling UI', () => {
+  it('keeps CRM UI copy free from mojibake markers', () => {
+    const uiFiles = [
+      'src/app/dashboard/crm/page.tsx',
+      'src/app/dashboard/crm/components/CrmHeader.tsx',
+      'src/app/dashboard/crm/components/CrmTabs.tsx',
+      'src/app/dashboard/crm/components/CrmLoadErrorBanner.tsx',
+      'src/app/dashboard/crm/components/CrmOverviewTab.tsx',
+      'src/app/dashboard/crm/components/CrmRemindersTab.tsx',
+      'src/app/dashboard/crm/components/CrmMarketingTab.tsx',
+      'src/app/dashboard/crm/components/CrmLogsTab.tsx',
+      'src/app/dashboard/crm/components/CrmVoucherModal.tsx',
+    ];
+
+    for (const file of uiFiles) {
+      expect(read(file)).not.toMatch(/�|ï¿½|Ã|Ä|Â|ðŸ|áº|á»|Æ|â€|â€¢/);
+    }
+  });
+
   it('surfaces CRM load failures instead of showing silent empty states', () => {
     const pageSource = read('src/app/dashboard/crm/page.tsx');
     const dataHookSource = read('src/app/dashboard/crm/hooks/useCrmPageData.ts');
@@ -43,6 +61,7 @@ describe('CRM page error handling UI', () => {
     const marketingSource = read('src/app/dashboard/crm/components/CrmMarketingTab.tsx');
     const logsSource = read('src/app/dashboard/crm/components/CrmLogsTab.tsx');
     const voucherModalSource = read('src/app/dashboard/crm/components/CrmVoucherModal.tsx');
+    const voucherHookSource = read('src/app/dashboard/crm/hooks/useCrmVoucherCampaigns.ts');
 
     expect(pageSource).toContain('<CrmHeader');
     expect(pageSource).toContain('<CrmTabs');
@@ -51,6 +70,7 @@ describe('CRM page error handling UI', () => {
     expect(pageSource).toContain('<CrmMarketingTab');
     expect(pageSource).toContain('<CrmLogsTab');
     expect(pageSource).toContain('<CrmVoucherModal');
+    expect(pageSource).toContain('useCrmVoucherCampaigns');
     expect(headerSource).toContain('onManualScan');
     expect(tabsSource).toContain('onTabChange');
     expect(overviewSource).toContain('setZaloConfig');
@@ -58,5 +78,7 @@ describe('CRM page error handling UI', () => {
     expect(marketingSource).toContain('onSendBirthday');
     expect(logsSource).toContain('format(new Date(log.createdAt)');
     expect(voucherModalSource).toContain('onSubmit={onSubmit}');
+    expect(voucherHookSource).toContain('INITIAL_VOUCHER_CAMPAIGNS');
+    expect(voucherHookSource).toContain('handleCreateVoucher');
   });
 });

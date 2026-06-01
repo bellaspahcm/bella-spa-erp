@@ -1,6 +1,5 @@
 'use client';
 
-import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { CrmHeader } from './components/CrmHeader';
@@ -13,7 +12,8 @@ import { CrmTabs } from './components/CrmTabs';
 import { CrmVoucherModal } from './components/CrmVoucherModal';
 import { useCrmPageActions } from './hooks/useCrmPageActions';
 import { useCrmPageData } from './hooks/useCrmPageData';
-import type { CrmTabId, NewVoucherCampaign, VoucherCampaign } from './types';
+import { useCrmVoucherCampaigns } from './hooks/useCrmVoucherCampaigns';
+import type { CrmTabId } from './types';
 
 export default function CRMPage() {
   const [activeTab, setActiveTab] = useState<CrmTabId>('overview');
@@ -36,27 +36,15 @@ export default function CRMPage() {
     handleSendBirthday,
     handleSaveConfig,
   } = useCrmPageActions({ loadData, zaloConfig });
-
-  const [vouchers, setVouchers] = useState<VoucherCampaign[]>([
-    { code: 'BELLA_BABY_1ST', discount: 10, target: 'BÃ© trÃ²n 1 tuá»•i', status: 'active', usage: 12 },
-    { code: 'MATERNITY_CARE_15', discount: 15, target: 'Máº¹ báº§u sáº¯p sinh', status: 'active', usage: 8 },
-    { code: 'WELCOME_NEWBORN', discount: 5, target: 'Tráº» sÆ¡ sinh', status: 'active', usage: 24 },
-  ]);
-  const [showNewVoucherModal, setShowNewVoucherModal] = useState(false);
-  const [newVoucher, setNewVoucher] = useState<NewVoucherCampaign>({
-    code: '',
-    discount: 10,
-    target: 'BÃ© trÃ²n 1 tuá»•i',
-    status: 'active',
-  });
-
-  const handleCreateVoucher = (event: FormEvent) => {
-    event.preventDefault();
-    if (!newVoucher.code.trim()) return;
-    setVouchers((currentVouchers) => [...currentVouchers, { ...newVoucher, usage: 0 }]);
-    setShowNewVoucherModal(false);
-    setNewVoucher({ code: '', discount: 10, target: 'BÃ© trÃ²n 1 tuá»•i', status: 'active' });
-  };
+  const {
+    vouchers,
+    isVoucherModalOpen,
+    newVoucher,
+    setNewVoucher,
+    openVoucherModal,
+    closeVoucherModal,
+    handleCreateVoucher,
+  } = useCrmVoucherCampaigns();
 
   return (
     <div className="flex flex-col flex-1 overflow-auto p-4 lg:p-8 space-y-8 custom-scrollbar bg-slate-50/50">
@@ -80,7 +68,7 @@ export default function CRMPage() {
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center py-20 gap-3 opacity-60">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
-          <p className="text-xs font-black uppercase tracking-widest text-primary">Äang Ä‘á»“ng bá»™ dá»¯ liá»‡u CRM...</p>
+          <p className="text-xs font-black uppercase tracking-widest text-primary">Đang đồng bộ dữ liệu CRM...</p>
         </div>
       ) : (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -110,24 +98,21 @@ export default function CRMPage() {
               loadError={loadError}
               actionLoading={actionLoading}
               onSendBirthday={handleSendBirthday}
-              onOpenVoucherModal={() => setShowNewVoucherModal(true)}
+              onOpenVoucherModal={openVoucherModal}
             />
           )}
 
           {activeTab === 'logs' && (
-            <CrmLogsTab
-              znsLogs={znsLogs}
-              loadError={loadError}
-            />
+            <CrmLogsTab znsLogs={znsLogs} loadError={loadError} />
           )}
         </div>
       )}
 
-      {showNewVoucherModal && (
+      {isVoucherModalOpen && (
         <CrmVoucherModal
           newVoucher={newVoucher}
           onChange={setNewVoucher}
-          onClose={() => setShowNewVoucherModal(false)}
+          onClose={closeVoucherModal}
           onSubmit={handleCreateVoucher}
         />
       )}

@@ -7,6 +7,7 @@ interface CrmLoadErrorBannerProps {
   loading: boolean;
   onRetry: () => void;
 }
+
 export function CrmLoadErrorBanner({ error, loading, onRetry }: CrmLoadErrorBannerProps) {
   return (
     <div className="rounded-[1.75rem] border border-rose-200 bg-rose-50 p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
