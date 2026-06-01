@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Publish Salary Record Audit Rollback
+* **Mục tiêu kỹ thuật**:
+  * Siết `publishSalaryRecord` để không còn trạng thái salary row đã chuyển `published` nhưng status audit bị thiếu.
+  * Giữ publish qua central salary engine, chỉ thêm snapshot/rollback quanh audit.
+* **Thay đổi chính**:
+  * Snapshot current-month `salary_records` theo KTV/month/tenant trước khi publish.
+  * Nếu `recordSalaryStatusAudit` fail sau publish, action rollback row cũ bằng snapshot.
+  * Nếu trước đó chưa có row và publish sinh row mới, audit fail sẽ xóa generated row theo KTV/month/tenant.
+  * Nếu rollback fail, response trả rõ cả lỗi audit và lỗi rollback; không revalidate trong nhánh failure.
+  * Mở rộng `admin-salary-actions.test.ts` lên 24 test, bao phủ publish success, audit rollback update/delete, rollback failure và recalc failure không audit.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/admin-salary-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/modules/hr-salary/actions/admin-salary-actions.ts src/__tests__/admin-salary-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Admin Confirm On Behalf Audit
 * **Mục tiêu kỹ thuật**:
   * Siết `adminConfirmOnBehalf` để hành động admin xác nhận hộ KTV có audit trail và không còn no-op im lặng.

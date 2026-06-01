@@ -3,6 +3,7 @@ import {
   confirmKtvSessions,
   finalizeAllSalaryRecords,
   publishAllSalaryRecords,
+  publishSalaryRecord,
   updateSalaryConfig,
 } from '../modules/hr-salary/actions/admin-salary-actions';
 
@@ -166,6 +167,128 @@ function setupDb(scripts: ScriptedResult[]) {
   mockFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, calls));
   return calls;
 }
+
+describe('publishSalaryRecord audit rollback', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-15T08:00:00.000Z'));
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+      full_name: 'Admin Bella',
+    });
+    mockCheckMonthLock.mockResolvedValue({ isLocked: false });
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+    mockRecalculateAndSaveSalaryRecordEngine.mockResolvedValue({ totalSalary: 6500000 });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('publishes through the salary engine and records status audit when audit succeeds', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+    ]);
+
+    const result = await publishSalaryRecord('ktv-1');
+
+    expect(result).toEqual({ success: true });
+    expect(mockRecalculateAndSaveSalaryRecordEngine).toHaveBeenCalledWith(
+      expect.anything(),
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+      { status: 'published' }
+    );
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'salary_records',
+      record_id: 'ktv-1',
+      new_data: {
+        status: 'published',
+        totalSalary: 6500000,
+      },
+    });
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary');
+    expect(calls).toHaveLength(1);
+  });
+
+  it('restores the previous salary row when publish audit fails', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'update', data: salarySnapshot },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await publishSalaryRecord('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('audit failed');
+    expect(calls[1]).toEqual({
+      table: 'salary_records',
+      op: 'update',
+      payload: salarySnapshot,
+      filters: [{ field: 'id', value: 'salary-1' }],
+    });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('deletes the generated row when publish audit fails and no prior row existed', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: null },
+      { table: 'salary_records', op: 'delete', data: null },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await publishSalaryRecord('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('audit failed');
+    expect(calls[1]).toEqual({
+      table: 'salary_records',
+      op: 'delete',
+      payload: undefined,
+      filters: [
+        { field: 'ktv_id', value: 'ktv-1' },
+        { field: 'month_year', value: '2026-06-01' },
+        { field: 'tenant_id', value: 'tenant-1' },
+      ],
+    });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('reports rollback failure when restoring publish snapshot fails', async () => {
+    setupDb([
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'update', error: { message: 'restore failed' } },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await publishSalaryRecord('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('audit failed');
+    expect(result.error).toContain('restore failed');
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('does not audit or rollback when publish recalculation fails', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+    ]);
+    mockRecalculateAndSaveSalaryRecordEngine.mockRejectedValue(new Error('publish recalc failed'));
+
+    const result = await publishSalaryRecord('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('publish recalc failed');
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(1);
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
 
 describe('updateSalaryConfig audit rollback', () => {
   const payload = { baseSalary: 6000000, kpiBonus: 500000, deductions: 150000, advances: 250000 };
@@ -582,6 +705,8 @@ describe('bulk salary action partial failure reporting', () => {
   it('returns a complete success summary when all publish targets succeed', async () => {
     setupDb([
       { table: 'users', op: 'select', data: [{ id: 'ktv-1' }, { id: 'ktv-2' }] },
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'select', data: { ...salarySnapshot, id: 'salary-2', ktv_id: 'ktv-2' } },
     ]);
 
     const result = await publishAllSalaryRecords();
@@ -599,6 +724,8 @@ describe('bulk salary action partial failure reporting', () => {
   it('returns partial failure details when one publish target fails', async () => {
     setupDb([
       { table: 'users', op: 'select', data: [{ id: 'ktv-1' }, { id: 'ktv-2' }] },
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'select', data: { ...salarySnapshot, id: 'salary-2', ktv_id: 'ktv-2' } },
     ]);
     mockRecalculateAndSaveSalaryRecordEngine
       .mockResolvedValueOnce({ totalSalary: 6500000 })
