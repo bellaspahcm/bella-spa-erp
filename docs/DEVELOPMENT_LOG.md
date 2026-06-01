@@ -1,11 +1,58 @@
 # 📔 Nhật ký Phát triển & Bảo trì Tổng hợp (Development & Maintenance Log)
 **Dự án**: Bella Spa Enterprise Resource Planning (ERP) System  
-**Ngày cập nhật**: 01/06/2026
+**Ngày cập nhật**: 02/06/2026
 **Mục tiêu**: Gom và tổng hợp tất cả các nhật ký làm việc hàng ngày của AI Agent và nhà phát triển để giúp việc tra cứu lịch sử được dễ dàng, tránh làm tràn context của AI Coding.
 
 ---
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
+
+### 🟢 Ngày 02/06/2026: Super Admin Subscription Quota Production Fixes
+* **Mục tiêu kỹ thuật**:
+  * Hoàn thiện các điểm còn thiếu trước deploy cho phân hệ Super Admin quản lý thuê bao và hạn ngạch chi nhánh.
+  * Đảm bảo schema/action/UI subscription quota đã có trên remote Supabase và không để dropdown chi nhánh/gói hiển thị rỗng gây hiểu nhầm.
+  * Sửa các lỗi UI sau smoke test thực tế: menu “Thuê bao & Hạn ngạch” bị cắt chữ và thuật ngữ `tenant/quota` khó hiểu với người vận hành.
+* **Thay đổi chính**:
+  * Push migration còn thiếu lên Supabase remote: harden subscription RPC, tạo schema subscription quota, chuyển SMS metering sang `tenant_usage_counters`.
+  * Thêm modal đăng ký chi nhánh trực tiếp trong HQ dashboard, gọi `registerNewTenant` và refresh stats/tenant/quota sau khi tạo thành công.
+  * Cập nhật `HqSubscriptionQuotaConsole` để không tự chọn `Bella Spa Headquarter` như một chi nhánh thật khi chưa có chi nhánh franchise.
+  * Đổi copy UI từ “tenant/quota/override” sang “chi nhánh/hạn ngạch/hạn ngạch riêng” cho dễ hiểu.
+  * Sửa layout tab HQ dashboard để “Thuê bao & Hạn ngạch” không bị cắt nội dung trên desktop.
+* **Kiểm tra**:
+  * `npm.cmd run lint -- src/app/hq/hq-dashboard-client.tsx src/app/hq/components/HqDashboardChrome.tsx src/app/hq/components/HqBranchTable.tsx src/app/hq/components/HqBranchRegistrationModal.tsx src/app/hq/components/HqSubscriptionQuotaConsole.tsx` pass.
+  * `npm.cmd test -- src/__tests__/onboarding.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit --pretty false` pass.
+  * Supabase remote verified: migrations applied, subscription quota tables exist, default plans seeded.
+* **Commit nổi bật**:
+  * `5c39e184` fix empty subscription branch selects.
+  * `7f66ebac` add HQ branch registration modal and clarify quota copy.
+  * `dce17da8` prevent HQ tab menu clipping.
+
+### 🟢 Ngày 02/06/2026: CRM/Zalo SMS Quota Hardening
+* **Mục tiêu kỹ thuật**:
+  * Chốt phần investigation CRM/Zalo SMS quota thành runtime hardening thực tế.
+  * Tránh tình trạng gửi Zalo hoặc ghi side effects xong mới tăng counter, khiến hệ thống báo lỗi sau khi outbound đã xảy ra.
+  * Tách rõ lỗi tải dữ liệu CRM với trạng thái “không có dữ liệu” trên UI.
+* **Thay đổi chính**:
+  * `sendBirthdayGreeting` và `triggerZaloReminder` giờ reserve SMS usage bằng `incrementSmsCount` trước khi gọi Zalo/fetch ngoài và trước các side-effect ghi trạng thái/notification/audit.
+  * `getBirthdayCustomers` không còn trả `[]` khi DB query lỗi; lỗi được throw rõ theo quy tắc Zero Silent Database Failures.
+  * Notification insert trong CRM/Zalo trả lỗi explicit thay vì chỉ `console.warn` rồi tiếp tục.
+  * `triggerBatchReminders` tính remaining SMS quota theo tenant trước khi gửi batch, chỉ gửi trong hạn ngạch còn lại và trả `skipped/quotaSkipped` cho các lịch bị bỏ qua do hết hạn ngạch.
+  * CRM page hiển thị banner “Lỗi tải dữ liệu CRM” có nút thử lại, và empty state phân biệt lỗi tải dữ liệu với dữ liệu rỗng thật.
+* **Artifact**:
+  * `docs/implementation-artifacts/investigations/crm-zalo-sms-quota-flow-investigation.md`
+  * `docs/implementation-artifacts/spec-harden-crm-zalo-quota-side-effects.md`
+  * `docs/implementation-artifacts/spec-optimize-zalo-batch-reminder-quota.md`
+  * `docs/implementation-artifacts/spec-improve-crm-page-load-error-handling.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/crm-zalo-quota.test.ts src/__tests__/subscription.test.ts src/__tests__/subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/crm-ui.test.ts src/__tests__/crm-zalo-quota.test.ts --runInBand` pass.
+  * `npm.cmd run lint -- src/services/crm/campaigns.ts src/services/crm/zalo-messaging.ts src/app/dashboard/crm/page.tsx src/__tests__/crm-zalo-quota.test.ts src/__tests__/crm-ui.test.ts` pass.
+  * `npx.cmd tsc --noEmit --pretty false` pass.
+* **Commit nổi bật**:
+  * `7939782f` harden CRM/Zalo quota side effects.
+  * `0c61149a` report quota skips in Zalo batch reminders.
+  * `65a327b6` surface CRM load failures.
 
 ### 🟢 Ngày 02/06/2026: Investigate CRM Zalo SMS Quota Flow
 * **Mục tiêu kỹ thuật**:
