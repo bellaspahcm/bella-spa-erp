@@ -26,6 +26,7 @@ type SalaryRecordUpdate = Database['public']['Tables']['salary_records']['Update
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionConfirmationSnapshot = Pick<SessionLogRow, 'id' | 'is_confirmed'>;
+type AdminConfirmSalarySnapshot = Pick<SalaryRecordRow, 'id' | 'status' | 'ktv_confirmed_at' | 'confirmed_by_admin'>;
 type BulkSalaryActionFailure = { ktvId: string; error: string };
 type BulkSalaryActionResult = {
   success: boolean;
@@ -168,6 +169,44 @@ async function restoreSessionConfirmations(
   return rollbackErrors;
 }
 
+async function snapshotAdminConfirmSalaryRecord(
+  supabase: SupabaseClient<Database>,
+  ktvId: string,
+  monthYear: string,
+  tenantId: string
+): Promise<AdminConfirmSalarySnapshot | null> {
+  const { data, error } = await supabase
+    .from('salary_records')
+    .select('id, status, ktv_confirmed_at, confirmed_by_admin')
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear)
+    .eq('tenant_id', tenantId)
+    .in('status', ['published', 'disputed'])
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data;
+}
+
+async function restoreAdminConfirmSalaryRecord(
+  supabase: SupabaseClient<Database>,
+  snapshot: AdminConfirmSalarySnapshot
+) {
+  const restorePayload: SalaryRecordUpdate = {
+    status: snapshot.status,
+    ktv_confirmed_at: snapshot.ktv_confirmed_at,
+    confirmed_by_admin: snapshot.confirmed_by_admin,
+  };
+
+  const { error } = await supabase
+    .from('salary_records')
+    .update(restorePayload)
+    .eq('id', snapshot.id);
+
+  return error?.message;
+}
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message || fallback;
   if (typeof error === 'object' && error && 'message' in error) {
@@ -285,6 +324,10 @@ export async function publishAllSalaryRecords() {
 /** ADMIN: Confirm salary on behalf of KTV (no-smartphone case) */
 export async function adminConfirmOnBehalf(ktvId: string) {
   const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+
   const monthYear = getMonthStart();
 
   const lockFailure = await getSalaryMonthLockFailure(
@@ -293,17 +336,61 @@ export async function adminConfirmOnBehalf(ktvId: string) {
   );
   if (lockFailure) return lockFailure;
 
-  const { error } = await supabase
-    .from('salary_records')
-    .update({ status: 'confirmed', ktv_confirmed_at: new Date().toISOString(), confirmed_by_admin: true })
-    .eq('ktv_id', ktvId)
-    .eq('month_year', monthYear)
-    .in('status', ['published', 'disputed']);
+  try {
+    const previousRecord = await snapshotAdminConfirmSalaryRecord(supabase, ktvId, monthYear, tenantId);
+    if (!previousRecord) {
+      return {
+        success: false,
+        error: 'Không tìm thấy bảng lương đang chờ KTV xác nhận để xác nhận hộ.',
+      };
+    }
 
-  if (error) return { success: false, error: error.message };
+    const confirmedAt = new Date().toISOString();
+    const confirmPayload: SalaryRecordUpdate = {
+      status: 'confirmed',
+      ktv_confirmed_at: confirmedAt,
+      confirmed_by_admin: true,
+    };
+    const { error } = await supabase
+      .from('salary_records')
+      .update(confirmPayload)
+      .eq('id', previousRecord.id);
 
-  revalidateSalaryPage();
-  return { success: true };
+    if (error) return { success: false, error: error.message };
+
+    try {
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'salary_records',
+        record_id: previousRecord.id,
+        old_data: {
+          id: previousRecord.id,
+          status: previousRecord.status,
+          ktv_confirmed_at: previousRecord.ktv_confirmed_at,
+          confirmed_by_admin: previousRecord.confirmed_by_admin,
+        },
+        new_data: {
+          id: previousRecord.id,
+          status: 'confirmed',
+          ktv_confirmed_at: confirmedAt,
+          confirmed_by_admin: true,
+          confirmed_on_behalf_of_ktv_id: ktvId,
+        },
+      });
+    } catch (auditError: unknown) {
+      const rollbackError = await restoreAdminConfirmSalaryRecord(supabase, previousRecord);
+      const rollbackMessage = rollbackError ? ` Rollback salary_records failed: ${rollbackError}` : '';
+      return {
+        success: false,
+        error: `Failed to record admin confirm audit log: ${getErrorMessage(auditError, 'Unknown audit error')}.${rollbackMessage}`,
+      };
+    }
+
+    revalidateSalaryPage();
+    return { success: true };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error, 'Lỗi không xác định') };
+  }
 }
 
 /** ADMIN: Finalize salary record — locks and creates expense entry */

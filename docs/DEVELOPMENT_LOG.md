@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Admin Confirm On Behalf Audit
+* **Mục tiêu kỹ thuật**:
+  * Siết `adminConfirmOnBehalf` để hành động admin xác nhận hộ KTV có audit trail và không còn no-op im lặng.
+  * Tránh trạng thái `salary_records` đã chuyển `confirmed` nhưng audit log ghi nhận xác nhận hộ bị thiếu.
+* **Thay đổi chính**:
+  * Thêm snapshot eligible current-month salary row theo KTV/month/tenant với status `published` hoặc `disputed`.
+  * Nếu không có row eligible, action trả failure rõ và không update/audit/revalidate.
+  * Sau khi update `status`, `ktv_confirmed_at`, `confirmed_by_admin`, action ghi audit old/new data.
+  * Nếu audit fail, rollback các field đã đổi về snapshot; nếu rollback fail thì response chứa cả lỗi audit và lỗi rollback.
+  * Mở rộng `admin-salary-actions.test.ts` lên 19 test, bao phủ success, no-op, update failure, audit rollback và rollback-failure reporting.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/admin-salary-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/modules/hr-salary/actions/admin-salary-actions.ts src/__tests__/admin-salary-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Clean Salary Page ESLint Warnings
 * **Mục tiêu kỹ thuật**:
   * Dọn warning ESLint còn lại trong `src/app/dashboard/salary/page.tsx` sau các lát cắt salary hardening.

@@ -1,4 +1,5 @@
 import {
+  adminConfirmOnBehalf,
   confirmKtvSessions,
   finalizeAllSalaryRecords,
   publishAllSalaryRecords,
@@ -93,6 +94,11 @@ class ScriptedQueryBuilder {
 
   eq(field: string, value: unknown) {
     this.call?.filters.push({ field, value });
+    return this;
+  }
+
+  in(field: string, values: unknown[]) {
+    this.call?.filters.push({ field, value: values });
     return this;
   }
 
@@ -285,6 +291,147 @@ describe('updateSalaryConfig audit rollback', () => {
     expect(result.error).toContain('recalc failed');
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
     expect(calls).toHaveLength(1);
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe('adminConfirmOnBehalf audit and no-op handling', () => {
+  const confirmSnapshot = {
+    id: 'salary-confirm-1',
+    status: 'published',
+    ktv_confirmed_at: null,
+    confirmed_by_admin: false,
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-15T08:00:00.000Z'));
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+      full_name: 'Admin Bella',
+    });
+    mockCheckMonthLock.mockResolvedValue({ isLocked: false });
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('updates an eligible salary row and records audit data', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: confirmSnapshot },
+      { table: 'salary_records', op: 'update', data: null },
+    ]);
+
+    const result = await adminConfirmOnBehalf('ktv-1');
+
+    expect(result).toEqual({ success: true });
+    expect(calls[0]).toEqual({
+      table: 'salary_records',
+      op: 'select',
+      payload: undefined,
+      filters: [
+        { field: 'ktv_id', value: 'ktv-1' },
+        { field: 'month_year', value: '2026-06-01' },
+        { field: 'tenant_id', value: 'tenant-1' },
+        { field: 'status', value: ['published', 'disputed'] },
+      ],
+    });
+    expect(calls[1]).toEqual({
+      table: 'salary_records',
+      op: 'update',
+      payload: {
+        status: 'confirmed',
+        ktv_confirmed_at: '2026-06-15T08:00:00.000Z',
+        confirmed_by_admin: true,
+      },
+      filters: [{ field: 'id', value: 'salary-confirm-1' }],
+    });
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'salary_records',
+      record_id: 'salary-confirm-1',
+      old_data: confirmSnapshot,
+      new_data: {
+        id: 'salary-confirm-1',
+        status: 'confirmed',
+        ktv_confirmed_at: '2026-06-15T08:00:00.000Z',
+        confirmed_by_admin: true,
+        confirmed_on_behalf_of_ktv_id: 'ktv-1',
+      },
+    });
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary');
+  });
+
+  it('returns failure without update or audit when no eligible salary row exists', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: null },
+    ]);
+
+    const result = await adminConfirmOnBehalf('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Không tìm thấy bảng lương');
+    expect(calls).toHaveLength(1);
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('returns failure without audit when confirmation update fails', async () => {
+    setupDb([
+      { table: 'salary_records', op: 'select', data: confirmSnapshot },
+      { table: 'salary_records', op: 'update', error: { message: 'confirm update failed' } },
+    ]);
+
+    const result = await adminConfirmOnBehalf('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('confirm update failed');
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('rolls back the status fields when audit fails after confirmation update', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: confirmSnapshot },
+      { table: 'salary_records', op: 'update', data: null },
+      { table: 'salary_records', op: 'update', data: null },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await adminConfirmOnBehalf('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('audit failed');
+    expect(calls[2]).toEqual({
+      table: 'salary_records',
+      op: 'update',
+      payload: {
+        status: 'published',
+        ktv_confirmed_at: null,
+        confirmed_by_admin: false,
+      },
+      filters: [{ field: 'id', value: 'salary-confirm-1' }],
+    });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('reports rollback failure when audit rollback fails', async () => {
+    setupDb([
+      { table: 'salary_records', op: 'select', data: confirmSnapshot },
+      { table: 'salary_records', op: 'update', data: null },
+      { table: 'salary_records', op: 'update', error: { message: 'rollback failed' } },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await adminConfirmOnBehalf('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('audit failed');
+    expect(result.error).toContain('rollback failed');
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });
