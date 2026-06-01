@@ -27,6 +27,7 @@ type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionConfirmationSnapshot = Pick<SessionLogRow, 'id' | 'is_confirmed'>;
 type AdminConfirmSalarySnapshot = Pick<SalaryRecordRow, 'id' | 'status' | 'ktv_confirmed_at' | 'confirmed_by_admin'>;
+type FinalizeSalarySnapshot = Pick<SalaryRecordRow, 'id' | 'status' | 'finalized_at'>;
 type BulkSalaryActionFailure = { ktvId: string; error: string };
 type BulkSalaryActionResult = {
   success: boolean;
@@ -205,6 +206,77 @@ async function restoreAdminConfirmSalaryRecord(
     .eq('id', snapshot.id);
 
   return error?.message;
+}
+
+async function restoreFinalizedSalaryRecord(
+  supabase: SupabaseClient<Database>,
+  snapshot: FinalizeSalarySnapshot
+) {
+  const restorePayload: SalaryRecordUpdate = {
+    status: snapshot.status,
+    finalized_at: snapshot.finalized_at,
+  };
+
+  const { error } = await supabase
+    .from('salary_records')
+    .update(restorePayload)
+    .eq('id', snapshot.id);
+
+  return error?.message;
+}
+
+async function deleteSalaryExpenseByDescription(
+  supabase: SupabaseClient<Database>,
+  tenantId: string,
+  description: string
+) {
+  const { error } = await supabase
+    .from('expenses')
+    .delete()
+    .eq('tenant_id', tenantId)
+    .eq('category', 'salary')
+    .eq('description', description);
+
+  return error?.message;
+}
+
+async function rollbackFinalizeSalarySideEffects({
+  supabase,
+  salarySnapshot,
+  sessionSnapshots,
+  tenantId,
+  expenseDescription,
+}: {
+  supabase: SupabaseClient<Database>;
+  salarySnapshot: FinalizeSalarySnapshot;
+  sessionSnapshots: SessionConfirmationSnapshot[];
+  tenantId?: string;
+  expenseDescription?: string;
+}) {
+  const rollbackErrors: string[] = [];
+
+  if (tenantId && expenseDescription) {
+    const expenseRollbackError = await deleteSalaryExpenseByDescription(supabase, tenantId, expenseDescription);
+    if (expenseRollbackError) {
+      rollbackErrors.push(`expenses delete failed: ${expenseRollbackError}`);
+    }
+  }
+
+  const sessionRollbackErrors = await restoreSessionConfirmations(supabase, sessionSnapshots);
+  if (sessionRollbackErrors.length > 0) {
+    rollbackErrors.push(`session_logs restore failed: ${sessionRollbackErrors.join('; ')}`);
+  }
+
+  const salaryRollbackError = await restoreFinalizedSalaryRecord(supabase, salarySnapshot);
+  if (salaryRollbackError) {
+    rollbackErrors.push(`salary_records restore failed: ${salaryRollbackError}`);
+  }
+
+  return rollbackErrors;
+}
+
+function formatRollbackErrors(rollbackErrors: string[]) {
+  return rollbackErrors.length > 0 ? ` Rollback failed: ${rollbackErrors.join('; ')}` : '';
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -433,21 +505,42 @@ export async function finalizeSalaryRecord(ktvId: string) {
     .select('*, users(full_name)')
     .eq('ktv_id', ktvId)
     .eq('month_year', monthYear)
+    .eq('tenant_id', tenantId)
     .eq('status', 'confirmed')
     .single();
 
-  if (fetchError) throw fetchError;
+  if (fetchError) return { success: false, error: fetchError.message };
 
-  const record = recordData as unknown as SalaryRecordDbAdmin | null;
+  const record = recordData as unknown as (SalaryRecordDbAdmin & Pick<SalaryRecordRow, 'finalized_at'>) | null;
 
   if (!record) return { success: false, error: 'Không tìm thấy bản ghi đã được xác nhận' };
 
+  let sessionSnapshots: SessionConfirmationSnapshot[];
+  try {
+    sessionSnapshots = await snapshotCompletedSessionConfirmations(supabase, ktvId);
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: `Failed to snapshot completed sessions for salary finalization: ${getErrorMessage(error, 'Unknown session snapshot error')}`,
+    };
+  }
+
+  const salarySnapshot: FinalizeSalarySnapshot = {
+    id: record.id,
+    status: record.status,
+    finalized_at: record.finalized_at,
+  };
+
   // Lock record
+  const finalizePayload: SalaryRecordUpdate = {
+    status: 'finalized',
+    finalized_at: new Date().toISOString(),
+  };
   const { error: lockError } = await supabase.from('salary_records')
-    .update({ status: 'finalized', finalized_at: new Date().toISOString() })
+    .update(finalizePayload)
     .eq('id', record.id);
 
-  if (lockError) throw lockError;
+  if (lockError) return { success: false, error: lockError.message };
 
   // Lock session_logs
   const { error: sessionError } = await supabase.from('session_logs')
@@ -455,20 +548,57 @@ export async function finalizeSalaryRecord(ktvId: string) {
     .eq('completed_by_ktv_id', ktvId)
     .eq('status', 'completed');
 
-  if (sessionError) throw sessionError;
+  if (sessionError) {
+    const rollbackErrors = await rollbackFinalizeSalarySideEffects({
+      supabase,
+      salarySnapshot,
+      sessionSnapshots,
+    });
+    return {
+      success: false,
+      error: `Failed to confirm sessions during salary finalization: ${sessionError.message}.${formatRollbackErrors(rollbackErrors)}`,
+    };
+  }
 
   const expenseAmount = record.total_salary || 0;
   const expenseDate = new Date().toISOString();
   const expenseDescription = `Lương T${monthLabel} - ${record.users?.full_name || 'KTV'} [salary_record_id:${record.id}] [ktv_id:${ktvId}]`;
-  await createSalaryExpense({
-    supabase,
-    tenantId,
-    amount: expenseAmount,
-    description: expenseDescription,
-    context: 'Finalize salary expense',
-    expenseDate,
-  });
-  await recordSalaryStatusAudit({ recordId: ktvId, status: 'finalized', amount: record.total_salary });
+  try {
+    await createSalaryExpense({
+      supabase,
+      tenantId,
+      amount: expenseAmount,
+      description: expenseDescription,
+      context: 'Finalize salary expense',
+      expenseDate,
+    });
+  } catch (error: unknown) {
+    const rollbackErrors = await rollbackFinalizeSalarySideEffects({
+      supabase,
+      salarySnapshot,
+      sessionSnapshots,
+    });
+    return {
+      success: false,
+      error: `Failed to create salary expense during finalization: ${getErrorMessage(error, 'Unknown expense error')}.${formatRollbackErrors(rollbackErrors)}`,
+    };
+  }
+
+  try {
+    await recordSalaryStatusAudit({ recordId: ktvId, status: 'finalized', amount: record.total_salary });
+  } catch (error: unknown) {
+    const rollbackErrors = await rollbackFinalizeSalarySideEffects({
+      supabase,
+      salarySnapshot,
+      sessionSnapshots,
+      tenantId,
+      expenseDescription,
+    });
+    return {
+      success: false,
+      error: `Failed to record finalize salary audit log: ${getErrorMessage(error, 'Unknown audit error')}.${formatRollbackErrors(rollbackErrors)}`,
+    };
+  }
   revalidateSalaryAndFinancePages();
   return { success: true };
 }
