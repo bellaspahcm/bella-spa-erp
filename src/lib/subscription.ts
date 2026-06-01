@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase-server';
+import type { Database } from '@/types/database.types';
 
 export interface SubscriptionLimit {
   maxKtv: number;
@@ -6,6 +7,11 @@ export interface SubscriptionLimit {
   maxSms: number;
   tierName: string;
 }
+
+type EffectiveEntitlement =
+  Database['public']['Functions']['get_effective_subscription_entitlements']['Returns'][number];
+
+const UNLIMITED_QUOTA = 999999;
 
 export const SUBSCRIPTION_TIERS: Record<string, SubscriptionLimit> = {
   free_trial: {
@@ -33,6 +39,54 @@ export const SUBSCRIPTION_TIERS: Record<string, SubscriptionLimit> = {
     tierName: 'Gói Nhượng quyền',
   },
 };
+
+function resolveTierName(tier: string) {
+  return SUBSCRIPTION_TIERS[tier]?.tierName || tier;
+}
+
+function entitlementLimitValue(entitlement: EffectiveEntitlement) {
+  if (entitlement.is_unlimited) return UNLIMITED_QUOTA;
+  return Number(entitlement.limit_value ?? 0);
+}
+
+function buildEffectiveLimits(tier: string, entitlements: EffectiveEntitlement[]): SubscriptionLimit {
+  const byFeature = new Map(entitlements.map((row) => [row.feature_key, row]));
+  const ktv = byFeature.get('ktv');
+  const customer = byFeature.get('customer');
+  const sms = byFeature.get('sms');
+
+  return {
+    maxKtv: ktv ? entitlementLimitValue(ktv) : 0,
+    maxCustomers: customer ? entitlementLimitValue(customer) : 0,
+    maxSms: sms ? entitlementLimitValue(sms) : 0,
+    tierName: resolveTierName(tier),
+  };
+}
+
+async function getEffectiveEntitlements(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tenantId: string,
+  limitType: 'ktv' | 'customer' | 'sms'
+) {
+  const { data, error } = await supabase.rpc('get_effective_subscription_entitlements', {
+    p_tenant_id: tenantId,
+  });
+
+  if (error) {
+    throw new Error(`[checkSubscriptionLimit] get_effective_subscription_entitlements failed: ${error.message}`);
+  }
+
+  const entitlements = data || [];
+  const requested = entitlements.find((row) => row.feature_key === limitType);
+  if (!requested) {
+    throw new Error(`[checkSubscriptionLimit] Missing entitlement for feature ${limitType}`);
+  }
+
+  return {
+    entitlements,
+    requested,
+  };
+}
 
 /**
  * Checks if a tenant has exceeded their active subscription limits.
@@ -71,18 +125,22 @@ export async function checkSubscriptionLimit(
   // → bypass entirely, treated as unlimited.
   const isFranchise = !!tenant.franchise_agreement_date;
   if (!isFranchise) {
-    return { isBlocked: false, current: 0, max: 999999, tier: 'hq_owned', isExpired: false, limits: SUBSCRIPTION_TIERS.enterprise };
+    return { isBlocked: false, current: 0, max: UNLIMITED_QUOTA, tier: 'hq_owned', isExpired: false, limits: SUBSCRIPTION_TIERS.enterprise };
   }
 
   const tier = tenant.subscription_tier || 'free_trial';
   const expiresAt = tenant.subscription_expires_at ? new Date(tenant.subscription_expires_at) : null;
-  const limits = SUBSCRIPTION_TIERS[tier] || SUBSCRIPTION_TIERS.free_trial;
 
   // Check expiration first
   if (expiresAt && expiresAt < new Date()) {
     console.warn(`[checkSubscriptionLimit] Tenant ${tenantId} subscription expired on ${expiresAt}`);
+    const limits = SUBSCRIPTION_TIERS[tier] || SUBSCRIPTION_TIERS.free_trial;
     return { isBlocked: true, current: 0, max: 0, tier, isExpired: true, limits };
   }
+
+  const { entitlements, requested } = await getEffectiveEntitlements(supabase, tenantId, limitType);
+  const limits = buildEffectiveLimits(tier, entitlements);
+  const maxLimit = entitlementLimitValue(requested);
 
   if (limitType === 'ktv') {
     // Count active KTVs
@@ -97,9 +155,9 @@ export async function checkSubscriptionLimit(
     }
     const currentCount = count || 0;
     return {
-      isBlocked: currentCount >= limits.maxKtv,
+      isBlocked: requested.is_unlimited ? false : currentCount >= maxLimit,
       current: currentCount,
-      max: limits.maxKtv,
+      max: maxLimit,
       tier,
       isExpired: false,
       limits
@@ -116,9 +174,9 @@ export async function checkSubscriptionLimit(
     }
     const currentCount = count || 0;
     return {
-      isBlocked: currentCount >= limits.maxCustomers,
+      isBlocked: requested.is_unlimited ? false : currentCount >= maxLimit,
       current: currentCount,
-      max: limits.maxCustomers,
+      max: maxLimit,
       tier,
       isExpired: false,
       limits
@@ -127,9 +185,9 @@ export async function checkSubscriptionLimit(
     // Check SMS count
     const currentCount = tenant.sms_allotment_used || 0;
     return {
-      isBlocked: currentCount >= limits.maxSms,
+      isBlocked: requested.is_unlimited ? false : currentCount >= maxLimit,
       current: currentCount,
-      max: limits.maxSms,
+      max: maxLimit,
       tier,
       isExpired: false,
       limits
