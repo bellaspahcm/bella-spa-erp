@@ -131,6 +131,9 @@ describe('Subscription Constraints & Webhook Suite', () => {
       if (fn === 'get_effective_subscription_entitlements') {
         return Promise.resolve({ data: defaultEntitlements, error: null });
       }
+      if (fn === 'get_tenant_sms_usage') {
+        return Promise.resolve({ data: 0, error: null });
+      }
       if (fn === 'increment_tenant_sms') {
         return Promise.resolve({ data: 1, error: null });
       }
@@ -255,16 +258,80 @@ describe('Subscription Constraints & Webhook Suite', () => {
         data: {
           subscription_tier: 'basic', // max SMS is 100
           subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
-          sms_allotment_used: 100,
+          sms_allotment_used: 0,
           franchise_agreement_date: '2024-01-01T00:00:00Z',
         },
         error: null,
+      });
+      mockRpcSubscription.mockImplementation((fn: string) => {
+        if (fn === 'get_effective_subscription_entitlements') {
+          return Promise.resolve({ data: defaultEntitlements, error: null });
+        }
+        if (fn === 'get_tenant_sms_usage') {
+          return Promise.resolve({ data: 100, error: null });
+        }
+        return Promise.resolve({ data: null, error: null });
       });
 
       const res = await checkSubscriptionLimit('tenant-1', 'sms');
       expect(res.isBlocked).toBe(true);
       expect(res.current).toBe(100);
       expect(res.max).toBe(100);
+      expect(mockRpcSubscription).toHaveBeenCalledWith('get_tenant_sms_usage', {
+        p_tenant_id: 'tenant-1',
+      });
+    });
+
+    it('uses tenant_usage_counters for SMS usage instead of legacy tenant column', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
+          sms_allotment_used: 999,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
+        },
+        error: null,
+      });
+      mockRpcSubscription.mockImplementation((fn: string) => {
+        if (fn === 'get_effective_subscription_entitlements') {
+          return Promise.resolve({ data: defaultEntitlements, error: null });
+        }
+        if (fn === 'get_tenant_sms_usage') {
+          return Promise.resolve({ data: 10, error: null });
+        }
+        return Promise.resolve({ data: null, error: null });
+      });
+
+      const res = await checkSubscriptionLimit('tenant-1', 'sms');
+
+      expect(res.isBlocked).toBe(false);
+      expect(res.current).toBe(10);
+      expect(res.max).toBe(100);
+    });
+
+    it('throws instead of fail-opening when SMS usage RPC fails', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
+          sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
+        },
+        error: null,
+      });
+      mockRpcSubscription.mockImplementation((fn: string) => {
+        if (fn === 'get_effective_subscription_entitlements') {
+          return Promise.resolve({ data: defaultEntitlements, error: null });
+        }
+        if (fn === 'get_tenant_sms_usage') {
+          return Promise.resolve({ data: null, error: { message: 'usage rpc denied' } });
+        }
+        return Promise.resolve({ data: null, error: null });
+      });
+
+      await expect(checkSubscriptionLimit('tenant-1', 'sms')).rejects.toThrow(
+        '[checkSubscriptionLimit] get_tenant_sms_usage failed: usage rpc denied'
+      );
     });
 
     it('uses tenant quota overrides from effective entitlement RPC instead of hard-coded plan limits', async () => {
@@ -434,6 +501,20 @@ describe('Subscription Constraints & Webhook Suite', () => {
       await expect(incrementSmsCount('tenant-1')).rejects.toThrow(
         '[incrementSmsCount] increment_tenant_sms failed: rpc denied'
       );
+    });
+
+    it('returns the incremented SMS counter from the database RPC', async () => {
+      mockRpcSubscription.mockImplementation((fn: string) => {
+        if (fn === 'increment_tenant_sms') {
+          return Promise.resolve({ data: 42, error: null });
+        }
+        return Promise.resolve({ data: null, error: null });
+      });
+
+      await expect(incrementSmsCount('tenant-1')).resolves.toBe(42);
+      expect(mockRpcSubscription).toHaveBeenCalledWith('increment_tenant_sms', {
+        p_tenant_id: 'tenant-1',
+      });
     });
   });
 

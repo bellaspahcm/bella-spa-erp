@@ -3202,6 +3202,7 @@ export type Database = {
           unit: string
         }[]
       }
+      get_tenant_sms_usage: { Args: { p_tenant_id: string }; Returns: number }
       get_balance_sheet: {
         Args: { p_as_of_date: string; p_tenant_id: string }
         Returns: {

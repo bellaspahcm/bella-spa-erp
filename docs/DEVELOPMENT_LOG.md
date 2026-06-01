@@ -7,6 +7,26 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 02/06/2026: Use Usage Counters for SMS Metering
+* **Mục tiêu kỹ thuật**:
+  * Hoàn tất phần còn lại của quota runtime: SMS usage không còn đọc trực tiếp từ cột legacy `tenants.sms_allotment_used`.
+  * Đưa SMS về đúng schema Super Admin `tenant_usage_counters`, phù hợp với plan entitlement và reset theo chu kỳ tháng.
+  * Giữ fail-closed: lỗi RPC đọc/ghi counter phải throw rõ, không fallback thành usage 0.
+* **Thay đổi chính**:
+  * `src/lib/subscription.ts` thêm `get_tenant_sms_usage` RPC và dùng kết quả này cho `checkSubscriptionLimit(..., 'sms')`.
+  * Thêm migration `20260602010000_use_usage_counters_for_sms.sql` để tạo RPC đọc SMS usage, refactor `increment_tenant_sms` sang upsert atomic vào `tenant_usage_counters`, đồng bộ ngược cột legacy.
+  * `renew_tenant_subscription` reset current monthly SMS counter về 0, đồng thời vẫn reset `sms_allotment_used` để tương thích màn hình cũ.
+  * Cập nhật DB types cho `get_tenant_sms_usage`.
+  * Thêm spec `docs/implementation-artifacts/spec-use-usage-counters-for-sms.md`.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/subscription.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-quota-schema.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/hq-subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd eslint src/lib/subscription.ts src/__tests__/subscription.test.ts src/__tests__/subscription-quota-schema.test.ts` pass.
+  * `npx.cmd tsc --noEmit` pass.
+
 ### 🟢 Ngày 01/06/2026: Enforce Subscription Quota Schema
 * **Mục tiêu kỹ thuật**:
   * Làm cho cấu hình plan/quota ở HQ có tác dụng thật trong runtime enforcement.
