@@ -26,6 +26,15 @@ type SalaryRecordUpdate = Database['public']['Tables']['salary_records']['Update
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionConfirmationSnapshot = Pick<SessionLogRow, 'id' | 'is_confirmed'>;
+type BulkSalaryActionFailure = { ktvId: string; error: string };
+type BulkSalaryActionResult = {
+  success: boolean;
+  count: number;
+  total: number;
+  failedCount: number;
+  failures: BulkSalaryActionFailure[];
+  error?: string;
+};
 
 /**
  * Helper to recalculate and save a KTV salary record.
@@ -159,6 +168,37 @@ async function restoreSessionConfirmations(
   return rollbackErrors;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.length > 0) return message;
+  }
+  return fallback;
+}
+
+function buildBulkSalaryActionResult(
+  actionLabel: string,
+  count: number,
+  total: number,
+  failures: BulkSalaryActionFailure[]
+): BulkSalaryActionResult {
+  const failedCount = failures.length;
+  if (failedCount === 0) {
+    return { success: true, count, total, failedCount, failures };
+  }
+
+  const failureSummary = failures.map((failure) => `${failure.ktvId}: ${failure.error}`).join('; ');
+  return {
+    success: false,
+    count,
+    total,
+    failedCount,
+    failures,
+    error: `${actionLabel} thất bại ${failedCount}/${total} bản ghi. Thành công: ${count}. ${failureSummary}`,
+  };
+}
+
 /**
  * ADMIN: Publish salary record to KTV for confirmation.
  * Calculates final salary breakdown and sets status to 'published'.
@@ -204,20 +244,42 @@ export async function publishAllSalaryRecords() {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
-  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+  if (!tenantId) {
+    return buildBulkSalaryActionResult('Gửi đối soát tất cả', 0, 0, [{
+      ktvId: 'UNKNOWN',
+      error: 'Không xác định được chi nhánh của người dùng',
+    }]);
+  }
 
-  const { data: ktvs } = await supabase
+  const { data: ktvs, error: ktvError } = await supabase
     .from('users')
     .select('id')
     .eq('role', 'ktv')
     .eq('tenant_id', tenantId);
 
-  let count = 0;
-  for (const ktv of (ktvs || [])) {
-    const res = await publishSalaryRecord(ktv.id);
-    if (res.success) count++;
+  if (ktvError) {
+    return buildBulkSalaryActionResult('Gửi đối soát tất cả', 0, 0, [{
+      ktvId: 'FETCH_TARGETS',
+      error: `Không thể tải danh sách KTV: ${ktvError.message}`,
+    }]);
   }
-  return { success: true, count };
+
+  const targets = ktvs ?? [];
+  let count = 0;
+  const failures: BulkSalaryActionFailure[] = [];
+  for (const ktv of targets) {
+    try {
+      const res = await publishSalaryRecord(ktv.id);
+      if (res.success) {
+        count++;
+      } else {
+        failures.push({ ktvId: ktv.id, error: res.error || 'Không thể gửi đối soát' });
+      }
+    } catch (error: unknown) {
+      failures.push({ ktvId: ktv.id, error: getErrorMessage(error, 'Không thể gửi đối soát') });
+    }
+  }
+  return buildBulkSalaryActionResult('Gửi đối soát tất cả', count, targets.length, failures);
 }
 
 /** ADMIN: Confirm salary on behalf of KTV (no-smartphone case) */
@@ -311,22 +373,44 @@ export async function finalizeAllSalaryRecords() {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
-  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+  if (!tenantId) {
+    return buildBulkSalaryActionResult('Chốt sổ tất cả', 0, 0, [{
+      ktvId: 'UNKNOWN',
+      error: 'Không xác định được chi nhánh của người dùng',
+    }]);
+  }
 
   const monthYear = getMonthStart();
-  const { data: confirmed } = await supabase
+  const { data: confirmed, error: confirmedError } = await supabase
     .from('salary_records')
     .select('ktv_id')
     .eq('month_year', monthYear)
     .eq('status', 'confirmed')
     .eq('tenant_id', tenantId);
 
-  let count = 0;
-  for (const r of (confirmed || [])) {
-    const res = await finalizeSalaryRecord(r.ktv_id);
-    if (res.success) count++;
+  if (confirmedError) {
+    return buildBulkSalaryActionResult('Chốt sổ tất cả', 0, 0, [{
+      ktvId: 'FETCH_TARGETS',
+      error: `Không thể tải danh sách lương đã xác nhận: ${confirmedError.message}`,
+    }]);
   }
-  return { success: true, count };
+
+  const targets = confirmed ?? [];
+  let count = 0;
+  const failures: BulkSalaryActionFailure[] = [];
+  for (const r of targets) {
+    try {
+      const res = await finalizeSalaryRecord(r.ktv_id);
+      if (res.success) {
+        count++;
+      } else {
+        failures.push({ ktvId: r.ktv_id, error: res.error || 'Không thể chốt sổ lương' });
+      }
+    } catch (error: unknown) {
+      failures.push({ ktvId: r.ktv_id, error: getErrorMessage(error, 'Không thể chốt sổ lương') });
+    }
+  }
+  return buildBulkSalaryActionResult('Chốt sổ tất cả', count, targets.length, failures);
 }
 
 /** ADMIN: Trigger auto-confirm for records published > 48h ago */

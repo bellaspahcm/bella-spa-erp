@@ -273,7 +273,12 @@ export default function SalaryPage() {
           setKtvSalaries(salary || []);
           setMatrixData(matrix || null);
         } else {
-          toast.error('Lỗi khi gửi đối soát');
+          toast.error(res.error || 'Lỗi khi gửi đối soát');
+          if (res.count > 0) {
+            const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
+            setKtvSalaries(salary || []);
+            setMatrixData(matrix || null);
+          }
         }
         setIsLoading(false);
       }
@@ -293,7 +298,11 @@ export default function SalaryPage() {
           const data = await getSalaryData();
           setKtvSalaries(data || []);
         } else {
-          toast.error('Lỗi khi chốt sổ');
+          toast.error(res.error || 'Lỗi khi chốt sổ');
+          if (res.count > 0) {
+            const data = await getSalaryData();
+            setKtvSalaries(data || []);
+          }
         }
         setIsLoading(false);
       }
