@@ -5,6 +5,9 @@ import { type SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
+import type { Database } from '@/types/database.types';
+
+type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
 
 interface SessionLogWithBooking {
   id: string;
@@ -93,6 +96,11 @@ type InventoryConsumeResult = {
 type InventoryRollbackResult = {
   success: boolean;
   error?: string;
+};
+
+type BookingRollbackSnapshot = {
+  bookingId: string;
+  payload: BookingUpdate;
 };
 
 function getErrorMessage(error: unknown, fallback = 'Loi he thong') {
@@ -607,6 +615,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   let rollbackInventoryConsumptionForSession:
     | ((targetSessionId: string) => Promise<InventoryRollbackResult>)
     | null = null;
+  let bookingRollbackSnapshot: BookingRollbackSnapshot | null = null;
 
   const rollbackCompletedSession = async (reason: string) => {
     const rollbackFailures: string[] = [];
@@ -619,6 +628,17 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
         }
       } catch (rollbackErr: unknown) {
         rollbackFailures.push(`failed to roll back inventory consumption: ${getErrorMessage(rollbackErr)}`);
+      }
+    }
+
+    if (bookingRollbackSnapshot) {
+      const { error: bookingRollbackError } = await supabase
+        .from('bookings')
+        .update(bookingRollbackSnapshot.payload)
+        .eq('id', bookingRollbackSnapshot.bookingId);
+
+      if (bookingRollbackError) {
+        rollbackFailures.push(`failed to roll back booking: ${bookingRollbackError.message}`);
       }
     }
 
@@ -692,7 +712,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
 
   const { data: booking, error: bookingFetchError } = await supabase
     .from('bookings')
-    .select('total_sessions')
+    .select('total_sessions, status, is_in_care, updated_at')
     .eq('id', session.booking_id)
     .single();
 
@@ -715,6 +735,15 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     if (bookingError) {
       return rollbackCompletedSession(`Failed to update booking after completing session: ${bookingError.message}`);
     }
+
+    bookingRollbackSnapshot = {
+      bookingId: session.booking_id,
+      payload: {
+        status: booking.status,
+        is_in_care: booking.is_in_care,
+        updated_at: booking.updated_at,
+      },
+    };
 
     if (isFinished) {
       // Clean up any remaining scheduled logs that exceed the total sessions
