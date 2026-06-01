@@ -7,6 +7,25 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 02/06/2026: Use Plan Catalog for Subscription Invoices
+* **Mục tiêu kỹ thuật**:
+  * Loại bỏ bảng giá subscription hard-code trong server action tạo invoice nâng gói.
+  * Cho invoice mới lấy giá từ catalog `subscription_plans` do Super Admin quản lý.
+  * Giữ fail-closed: lỗi đọc plan hoặc plan inactive/không tồn tại không được tạo invoice.
+* **Thay đổi chính**:
+  * `src/services/subscription-actions.ts` bỏ `TIER_PRICES`, thêm lookup active plan theo `plan_code`.
+  * `createUpgradeInvoice` tính `amount = subscription_plans.price_monthly * durationMonths`.
+  * Reject duration không hợp lệ trước khi query/mutate DB.
+  * Mở rộng `subscription-actions.test.ts` để assert plan lookup, amount từ DB, DB failure, missing/inactive plan và invalid duration.
+  * Thêm spec `docs/implementation-artifacts/spec-use-plan-catalog-for-subscription-invoices.md`.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/hq-subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-quota-schema.test.ts --runInBand` pass.
+  * `npx.cmd eslint src/services/subscription-actions.ts src/__tests__/subscription-actions.test.ts` pass.
+  * `npx.cmd tsc --noEmit` pass.
+
 ### 🟢 Ngày 02/06/2026: Use Usage Counters for SMS Metering
 * **Mục tiêu kỹ thuật**:
   * Hoàn tất phần còn lại của quota runtime: SMS usage không còn đọc trực tiếp từ cột legacy `tenants.sms_allotment_used`.

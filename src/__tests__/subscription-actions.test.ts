@@ -133,37 +133,96 @@ describe('subscription actions hardening', () => {
   });
 
   it('creates typed pending invoice payload for tenant admins', async () => {
-    scriptedResults = [{
-      data: {
-        id: 'invoice-1',
-        tenant_id: 'tenant-1',
-        invoice_number: 'INV-1234',
-        amount: 499000,
-        status: 'pending',
-        tier: 'basic',
-        duration_months: 1,
-        created_at: '2026-06-01T00:00:00.000Z',
-        paid_at: null,
-        payment_method: null,
+    scriptedResults = [
+      {
+        data: {
+          plan_code: 'basic',
+          price_monthly: 499000,
+          is_active: true,
+        },
+        error: null,
       },
-      error: null,
-    }];
+      {
+        data: {
+          id: 'invoice-1',
+          tenant_id: 'tenant-1',
+          invoice_number: 'INV-1234',
+          amount: 998000,
+          status: 'pending',
+          tier: 'basic',
+          duration_months: 2,
+          created_at: '2026-06-01T00:00:00.000Z',
+          paid_at: null,
+          payment_method: null,
+        },
+        error: null,
+      },
+    ];
 
-    const res = await createUpgradeInvoice('basic', 1);
+    const res = await createUpgradeInvoice('basic', 2);
 
     expect(res.success).toBe(true);
     expect(queryCalls[0]).toMatchObject({
+      table: 'subscription_plans',
+      operation: 'select',
+      filters: [
+        { column: 'plan_code', value: 'basic' },
+        { column: 'is_active', value: true },
+      ],
+    });
+    expect(queryCalls[1]).toMatchObject({
       table: 'subscription_invoices',
       operation: 'insert',
       payload: expect.objectContaining({
         tenant_id: 'tenant-1',
-        amount: 499000,
+        amount: 998000,
         status: 'pending',
         tier: 'basic',
-        duration_months: 1,
+        duration_months: 2,
       }),
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+  });
+
+  it('does not create invoice when plan price lookup fails', async () => {
+    scriptedResults = [{ data: null, error: { message: 'plans db down' } }];
+
+    const res = await createUpgradeInvoice('basic', 1);
+
+    expect(res).toEqual({
+      error: '[createUpgradeInvoice] subscription_plans query failed: plans db down',
+    });
+    expect(queryCalls).toHaveLength(1);
+    expect(queryCalls[0]).toMatchObject({
+      table: 'subscription_plans',
+      operation: 'select',
+    });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('does not create invoice for inactive or missing plans', async () => {
+    scriptedResults = [{ data: null, error: null }];
+
+    const res = await createUpgradeInvoice('retired-plan', 1);
+
+    expect(res).toEqual({ error: 'Gói cước không hợp lệ' });
+    expect(queryCalls).toHaveLength(1);
+    expect(queryCalls[0]).toMatchObject({
+      table: 'subscription_plans',
+      operation: 'select',
+      filters: [
+        { column: 'plan_code', value: 'retired-plan' },
+        { column: 'is_active', value: true },
+      ],
+    });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('does not query plans for invalid subscription duration', async () => {
+    const res = await createUpgradeInvoice('basic', 0);
+
+    expect(res).toEqual({ error: 'Thời hạn gói cước không hợp lệ' });
+    expect(queryCalls).toEqual([]);
   });
 
   it('scopes simulated payment to current tenant invoice before calling renewal RPC', async () => {
