@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Batch Harden Promotion Actions Audit Rollback
+* **Mục tiêu kỹ thuật**:
+  * Gom cả cụm `promotions-actions` vào một batch thay vì sửa từng hàm nhỏ.
+  * Đảm bảo create/toggle/delete promotion không thể để lại thay đổi đã ghi DB nhưng audit trail bị thiếu.
+  * Siết tenant scope cho update/delete promotion để tránh tác động chéo chi nhánh.
+* **Thay đổi chính**:
+  * `createPromotion` dùng payload typed theo `Database['public']['Tables']['promotions']['Insert']`; nếu audit `INSERT` fail thì xóa lại promotion vừa tạo theo `id` + `tenant_id`.
+  * `togglePromotionActive` snapshot row cũ theo `id` + `tenant_id`, update bằng typed `PromotionUpdate`, audit old/new data; nếu audit fail thì restore `is_active` và `updated_at`.
+  * `deletePromotion` snapshot row trước khi xóa, delete theo `id` + `tenant_id`, audit `old_data`; nếu audit fail thì reinsert snapshot cũ.
+  * Thêm helper mapping promotion row sang audit JSON có cấu trúc, tránh payload loose/`any`.
+  * Thay test mock Supabase mỏng bằng scripted query mock để assert thứ tự query, tenant filters, rollback delete/update/reinsert và không revalidate khi fail.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/promotions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/promotions-actions.ts src/__tests__/promotions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Batch Harden Salary Query and Clean Dirty Typing
 * **Mục tiêu kỹ thuật**:
   * Gom batch thay vì sửa từng hàm nhỏ: harden `getSalaryData`, hoàn tất cleanup typing ở promotions UI và accounting salary reconciliation RPC.
