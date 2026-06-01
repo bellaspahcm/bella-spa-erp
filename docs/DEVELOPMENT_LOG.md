@@ -7,6 +7,22 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Delete User Audit Rollback
+* **Mục tiêu kỹ thuật**:
+  * Siết `deleteUser` để không còn hard-delete user thành công nhưng audit log bị thiếu.
+  * Giữ hard-delete hiện tại, chỉ thêm snapshot và compensating restore khi audit fail.
+* **Thay đổi chính**:
+  * Snapshot toàn bộ row `users` và các `staff_leaves` liên quan trước khi delete.
+  * Ghi audit delete với `old_data` là snapshot user đã bị xóa.
+  * Nếu `recordAuditLog` fail sau khi delete thành công, action insert lại snapshot user và các leave bị cascade.
+  * Error trả về bao gồm restore failure nếu khôi phục user hoặc staff leave cũng lỗi.
+  * Mở rộng `user-actions.test.ts` lên 14 test, assert delete success, snapshot failure, audit failure restore, cascade restore và restore-failure reporting.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/user-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/user-actions.ts src/__tests__/user-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Create User Rollback
 * **Mục tiêu kỹ thuật**:
   * Siết `createUser` để không còn rollback Auth user bị nuốt lỗi khi insert `public.users` thất bại.
