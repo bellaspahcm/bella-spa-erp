@@ -1,257 +1,468 @@
 /**
- * Unit tests for Promotions Server Actions (getPromotions, createPromotion, togglePromotionActive, deletePromotion)
- * Validates role-based tenant checks, correct payload parameters, and Zero Silent Database Failures.
+ * Unit tests for Promotions Server Actions.
+ * Covers tenant scoping, explicit DB failures, and audit rollback side effects.
  */
 
-// Bypass Next.js server-only check
 jest.mock('server-only', () => ({}), { virtual: true });
 jest.mock('next/cache', () => ({ revalidatePath: jest.fn() }));
-
-// Mock audit logging
 jest.mock('../services/audit-actions', () => ({
   recordAuditLog: jest.fn().mockResolvedValue({ success: true }),
 }));
+jest.mock('../services/user-actions', () => ({
+  getCurrentUser: jest.fn(),
+}));
 
-// Supabase mock environment
-const mockEq = jest.fn().mockReturnThis();
-const mockSelect = jest.fn().mockReturnThis();
-const mockOrder = jest.fn().mockReturnThis();
-const mockSingle = jest.fn();
-const mockInsert = jest.fn();
-const mockUpdate = jest.fn();
-const mockDelete = jest.fn();
+import { revalidatePath } from 'next/cache';
+import { recordAuditLog } from '../services/audit-actions';
+import { getCurrentUser } from '../services/user-actions';
+import type { Database } from '@/types/database.types';
+import {
+  createPromotion,
+  deletePromotion,
+  getPromotions,
+  togglePromotionActive,
+} from '../services/promotions-actions';
+
+type DbError = { message: string };
+type QueryResult = { data: unknown; error: DbError | null };
+type Filter = { column: string; value: unknown };
+type QueryCall = {
+  table: string;
+  operation: 'select' | 'insert' | 'update' | 'delete';
+  payload?: unknown;
+  filters: Filter[];
+  order?: { column: string; options?: unknown };
+  select?: unknown[];
+};
+type CurrentUser = Awaited<ReturnType<typeof getCurrentUser>>;
+type PromotionRow = Database['public']['Tables']['promotions']['Row'];
+
+const queryCalls: QueryCall[] = [];
+let scriptedResults: QueryResult[] = [];
+
+class QueryBuilder implements PromiseLike<QueryResult> {
+  private operation: QueryCall['operation'] = 'select';
+  private payload?: unknown;
+  private filters: Filter[] = [];
+  private selectArgs?: unknown[];
+  private orderCall?: { column: string; options?: unknown };
+
+  constructor(private readonly table: string) {}
+
+  select(...args: unknown[]) {
+    this.selectArgs = args;
+    return this;
+  }
+
+  insert(payload: unknown) {
+    this.operation = 'insert';
+    this.payload = payload;
+    return this;
+  }
+
+  update(payload: unknown) {
+    this.operation = 'update';
+    this.payload = payload;
+    return this;
+  }
+
+  delete() {
+    this.operation = 'delete';
+    return this;
+  }
+
+  eq(column: string, value: unknown) {
+    this.filters.push({ column, value });
+    return this;
+  }
+
+  order(column: string, options?: unknown) {
+    this.orderCall = { column, options };
+    return this.resolve();
+  }
+
+  single() {
+    return this.resolve();
+  }
+
+  maybeSingle() {
+    return this.resolve();
+  }
+
+  then<TResult1 = QueryResult, TResult2 = never>(
+    onfulfilled?: ((value: QueryResult) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ): Promise<TResult1 | TResult2> {
+    return this.resolve().then(onfulfilled, onrejected);
+  }
+
+  private resolve() {
+    queryCalls.push({
+      table: this.table,
+      operation: this.operation,
+      payload: this.payload,
+      filters: [...this.filters],
+      order: this.orderCall,
+      select: this.selectArgs,
+    });
+
+    return Promise.resolve(scriptedResults.shift() ?? { data: null, error: null });
+  }
+}
 
 const mockSupabase = {
-  from: jest.fn((table: string) => ({
-    select: mockSelect,
-    eq: mockEq,
-    order: mockOrder,
-    single: mockSingle,
-    insert: mockInsert,
-    update: mockUpdate,
-    delete: mockDelete,
-  })),
+  from: jest.fn((table: string) => new QueryBuilder(table)),
 };
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve(mockSupabase)),
 }));
 
-import { getCurrentUser } from '../services/user-actions';
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<typeof getCurrentUser>;
-jest.mock('../services/user-actions', () => {
-  return {
-    getCurrentUser: jest.fn(),
-  };
+const mockRecordAuditLog = recordAuditLog as jest.MockedFunction<typeof recordAuditLog>;
+const mockRevalidatePath = revalidatePath as jest.MockedFunction<typeof revalidatePath>;
+
+const currentUser = (tenantId = 'tenant-123'): CurrentUser =>
+  ({
+    id: 'user-1',
+    email: 'user@example.com',
+    role: 'admin',
+    tenant_id: tenantId,
+    full_name: 'Staff',
+  }) as CurrentUser;
+
+const promotion = (overrides: Partial<PromotionRow> = {}): PromotionRow => ({
+  id: 'promo-1',
+  title: 'Mother Day',
+  description: 'Discount services',
+  image_url: null,
+  discount_code: 'MOTHER10',
+  discount_percent: 10,
+  start_date: '2026-05-01',
+  end_date: '2026-05-31',
+  is_active: true,
+  tenant_id: 'tenant-123',
+  created_at: '2026-05-01T00:00:00.000Z',
+  updated_at: '2026-05-01T00:00:00.000Z',
+  ...overrides,
 });
 
-import {
-  getPromotions,
-  createPromotion,
-  togglePromotionActive,
-  deletePromotion,
-} from '../services/promotions-actions';
+const payload = {
+  title: 'Mother Day',
+  description: 'Discount services',
+  discount_code: 'MOTHER10',
+  discount_percent: 10,
+  start_date: '2026-05-01',
+  end_date: '2026-05-31',
+};
 
 describe('Promotions Server Actions System', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-
-    mockSelect.mockReturnValue({
-      eq: mockEq,
-      order: mockOrder,
-      single: mockSingle,
-    });
-    mockEq.mockReturnValue({
-      order: mockOrder,
-      single: mockSingle,
-    });
-    mockOrder.mockResolvedValue({ data: [], error: null });
+    queryCalls.length = 0;
+    scriptedResults = [];
+    mockRecordAuditLog.mockResolvedValue({ success: true });
   });
 
   describe('getPromotions', () => {
     it('returns empty array when user has no tenant_id', async () => {
-      mockGetCurrentUser.mockResolvedValue({
-        id: 'user-1',
-        email: 'user@example.com',
-        role: 'admin',
-        tenant_id: '',
-        full_name: 'Staff',
-      });
+      mockGetCurrentUser.mockResolvedValue(currentUser(''));
 
       const res = await getPromotions();
+
       expect(res).toEqual([]);
       expect(mockSupabase.from).not.toHaveBeenCalled();
     });
 
-    it('returns promotions list when user has tenant_id', async () => {
-      mockGetCurrentUser.mockResolvedValue({
-        id: 'user-1',
-        email: 'user@example.com',
-        role: 'admin',
-        tenant_id: 'tenant-123',
-        full_name: 'Staff',
-      });
-
-      const mockData = [
-        { id: 'promo-1', title: 'Mẹ Bầu VIP', is_active: true, tenant_id: 'tenant-123' }
-      ];
-      mockOrder.mockResolvedValue({ data: mockData, error: null });
+    it('returns promotions list scoped by tenant_id', async () => {
+      const rows = [promotion()];
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [{ data: rows, error: null }];
 
       const res = await getPromotions();
-      expect(res).toEqual(mockData);
-      expect(mockSupabase.from).toHaveBeenCalledWith('promotions');
-      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-123');
+
+      expect(res).toEqual(rows);
+      expect(queryCalls[0]).toMatchObject({
+        table: 'promotions',
+        operation: 'select',
+        filters: [{ column: 'tenant_id', value: 'tenant-123' }],
+        order: { column: 'created_at', options: { ascending: false } },
+      });
     });
 
-    it('propagates error when query fails (Rule 1: Zero Silent Failures)', async () => {
-      mockGetCurrentUser.mockResolvedValue({
-        id: 'user-1',
-        email: 'user@example.com',
-        role: 'admin',
-        tenant_id: 'tenant-123',
-        full_name: 'Staff',
-      });
+    it('propagates error when query fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [{ data: null, error: { message: 'Database crash' } }];
 
-      mockOrder.mockResolvedValue({ data: null, error: { message: 'Database crash' } });
-
-      await expect(getPromotions()).rejects.toThrow('Lỗi truy vấn cơ sở dữ liệu: Database crash');
+      await expect(getPromotions()).rejects.toThrow('Database crash');
     });
   });
 
   describe('createPromotion', () => {
-    const payload = {
-      title: 'Mừng Ngày Của Mẹ',
-      description: 'Giảm giá 10% các dịch vụ',
-      discount_code: 'MOTHER10',
-      discount_percent: 10,
-      start_date: '2026-05-01',
-      end_date: '2026-05-31',
-    };
-
     it('returns error if user not authenticated', async () => {
-      mockGetCurrentUser.mockResolvedValue(null as any);
+      mockGetCurrentUser.mockResolvedValue(null);
+
       const res = await createPromotion(payload);
+
       expect(res.success).toBe(false);
-      expect(res.error).toBe('Không có quyền thực hiện. Vui lòng đăng nhập.');
+      expect(mockSupabase.from).not.toHaveBeenCalled();
     });
 
     it('returns error if missing title or description', async () => {
-      mockGetCurrentUser.mockResolvedValue({
-        id: 'user-1',
-        role: 'admin',
-        tenant_id: 'tenant-123',
-      } as any);
+      mockGetCurrentUser.mockResolvedValue(currentUser());
 
       const res = await createPromotion({ title: '', description: 'Some description' });
+
       expect(res.success).toBe(false);
-      expect(res.error).toBe('Tiêu đề và Mô tả là bắt buộc.');
+      expect(mockSupabase.from).not.toHaveBeenCalled();
     });
 
-    it('successfully inserts promotion with tenant_id', async () => {
-      mockGetCurrentUser.mockResolvedValue({
-        id: 'user-1',
-        role: 'admin',
-        tenant_id: 'tenant-123',
-      } as any);
-
-      const createdPromo = { id: 'promo-abc', ...payload, tenant_id: 'tenant-123', is_active: true };
-
-      mockInsert.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: createdPromo, error: null }),
-        }),
-      });
+    it('inserts promotion with tenant_id and records audit', async () => {
+      const createdPromo = promotion();
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [{ data: createdPromo, error: null }];
 
       const res = await createPromotion(payload);
 
       expect(res.success).toBe(true);
       expect(res.data).toEqual(createdPromo);
-      expect(mockInsert).toHaveBeenCalledWith({
-        title: 'Mừng Ngày Của Mẹ',
-        description: 'Giảm giá 10% các dịch vụ',
-        discount_code: 'MOTHER10',
-        discount_percent: 10,
-        start_date: '2026-05-01',
-        end_date: '2026-05-31',
-        is_active: true,
-        tenant_id: 'tenant-123',
-        image_url: null,
+      expect(queryCalls[0]).toMatchObject({
+        table: 'promotions',
+        operation: 'insert',
+        payload: {
+          title: 'Mother Day',
+          description: 'Discount services',
+          discount_code: 'MOTHER10',
+          discount_percent: 10,
+          start_date: '2026-05-01',
+          end_date: '2026-05-31',
+          is_active: true,
+          tenant_id: 'tenant-123',
+          image_url: null,
+        },
       });
+      expect(mockRecordAuditLog).toHaveBeenCalledWith({
+        action: 'INSERT',
+        table_name: 'promotions',
+        record_id: 'promo-1',
+        new_data: expect.objectContaining({ id: 'promo-1', tenant_id: 'tenant-123' }),
+      });
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
     });
 
-    it('returns error with DB failure (Zero Silent Failures)', async () => {
-      mockGetCurrentUser.mockResolvedValue({
-        id: 'user-1',
-        role: 'admin',
-        tenant_id: 'tenant-123',
-      } as any);
-
-      mockInsert.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Insert constraint violation' } }),
-        }),
-      });
+    it('returns error with DB failure', async () => {
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [{ data: null, error: { message: 'Insert constraint violation' } }];
 
       const res = await createPromotion(payload);
+
       expect(res.success).toBe(false);
       expect(res.error).toBe('Insert constraint violation');
+      expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    });
+
+    it('rolls back inserted promotion when audit fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      mockRecordAuditLog.mockRejectedValueOnce(new Error('audit down'));
+      scriptedResults = [
+        { data: promotion(), error: null },
+        { data: null, error: null },
+      ];
+
+      const res = await createPromotion(payload);
+
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Audit log failed after promotion insert: audit down');
+      expect(queryCalls[1]).toMatchObject({
+        table: 'promotions',
+        operation: 'delete',
+        filters: [
+          { column: 'id', value: 'promo-1' },
+          { column: 'tenant_id', value: 'tenant-123' },
+        ],
+      });
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it('reports rollback failure when audit and rollback both fail', async () => {
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      mockRecordAuditLog.mockRejectedValueOnce(new Error('audit down'));
+      scriptedResults = [
+        { data: promotion(), error: null },
+        { data: null, error: { message: 'rollback denied' } },
+      ];
+
+      const res = await createPromotion(payload);
+
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Rollback failed');
+      expect(res.error).toContain('rollback denied');
     });
   });
 
   describe('togglePromotionActive', () => {
-    it('successfully updates is_active status', async () => {
-      mockGetCurrentUser.mockResolvedValue({ id: 'user-1', role: 'admin' } as any);
-
-      mockUpdate.mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: { id: 'promo-1', is_active: false }, error: null }),
-          }),
-        }),
-      });
+    it('updates is_active with tenant scope and records old/new audit data', async () => {
+      const before = promotion({ is_active: true });
+      const after = promotion({ is_active: false, updated_at: '2026-05-02T00:00:00.000Z' });
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [
+        { data: before, error: null },
+        { data: after, error: null },
+      ];
 
       const res = await togglePromotionActive('promo-1', false);
+
       expect(res.success).toBe(true);
-      expect(res.data?.is_active).toBe(false);
+      expect(res.data).toEqual(after);
+      expect(queryCalls[0]).toMatchObject({
+        table: 'promotions',
+        operation: 'select',
+        filters: [
+          { column: 'id', value: 'promo-1' },
+          { column: 'tenant_id', value: 'tenant-123' },
+        ],
+      });
+      expect(queryCalls[1]).toMatchObject({
+        table: 'promotions',
+        operation: 'update',
+        filters: [
+          { column: 'id', value: 'promo-1' },
+          { column: 'tenant_id', value: 'tenant-123' },
+        ],
+      });
+      expect(queryCalls[1].payload).toMatchObject({ is_active: false });
+      expect(mockRecordAuditLog).toHaveBeenCalledWith({
+        action: 'UPDATE',
+        table_name: 'promotions',
+        record_id: 'promo-1',
+        old_data: expect.objectContaining({ is_active: true }),
+        new_data: expect.objectContaining({ is_active: false }),
+      });
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
     });
 
-    it('handles failure during status toggle', async () => {
-      mockGetCurrentUser.mockResolvedValue({ id: 'user-1', role: 'admin' } as any);
-
-      mockUpdate.mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          select: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Update failed' } }),
-          }),
-        }),
-      });
+    it('does not update when snapshot is missing', async () => {
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [{ data: null, error: null }];
 
       const res = await togglePromotionActive('promo-1', false);
+
+      expect(res.success).toBe(false);
+      expect(queryCalls).toHaveLength(1);
+      expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    });
+
+    it('returns update failure without audit or revalidate', async () => {
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [
+        { data: promotion(), error: null },
+        { data: null, error: { message: 'Update failed' } },
+      ];
+
+      const res = await togglePromotionActive('promo-1', false);
+
       expect(res.success).toBe(false);
       expect(res.error).toBe('Update failed');
+      expect(mockRecordAuditLog).not.toHaveBeenCalled();
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it('rolls back status update when audit fails', async () => {
+      const before = promotion({ is_active: true, updated_at: 'old-date' });
+      const after = promotion({ is_active: false, updated_at: 'new-date' });
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      mockRecordAuditLog.mockRejectedValueOnce(new Error('audit down'));
+      scriptedResults = [
+        { data: before, error: null },
+        { data: after, error: null },
+        { data: null, error: null },
+      ];
+
+      const res = await togglePromotionActive('promo-1', false);
+
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Audit log failed after promotion update: audit down');
+      expect(queryCalls[2]).toMatchObject({
+        table: 'promotions',
+        operation: 'update',
+        payload: { is_active: true, updated_at: 'old-date' },
+        filters: [
+          { column: 'id', value: 'promo-1' },
+          { column: 'tenant_id', value: 'tenant-123' },
+        ],
+      });
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
     });
   });
 
   describe('deletePromotion', () => {
-    it('successfully deletes promotion', async () => {
-      mockGetCurrentUser.mockResolvedValue({ id: 'user-1', role: 'admin' } as any);
-      mockDelete.mockReturnValue({
-        eq: jest.fn().mockResolvedValue({ error: null }),
-      });
+    it('deletes promotion with tenant scope and records old audit data', async () => {
+      const before = promotion();
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [
+        { data: before, error: null },
+        { data: null, error: null },
+      ];
 
       const res = await deletePromotion('promo-1');
+
       expect(res.success).toBe(true);
+      expect(queryCalls[1]).toMatchObject({
+        table: 'promotions',
+        operation: 'delete',
+        filters: [
+          { column: 'id', value: 'promo-1' },
+          { column: 'tenant_id', value: 'tenant-123' },
+        ],
+      });
+      expect(mockRecordAuditLog).toHaveBeenCalledWith({
+        action: 'DELETE',
+        table_name: 'promotions',
+        record_id: 'promo-1',
+        old_data: expect.objectContaining({ id: 'promo-1', tenant_id: 'tenant-123' }),
+      });
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
     });
 
-    it('handles failure during deletion', async () => {
-      mockGetCurrentUser.mockResolvedValue({ id: 'user-1', role: 'admin' } as any);
-      mockDelete.mockReturnValue({
-        eq: jest.fn().mockResolvedValue({ error: { message: 'Delete restricted' } }),
-      });
+    it('returns delete failure without audit or revalidate', async () => {
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [
+        { data: promotion(), error: null },
+        { data: null, error: { message: 'Delete restricted' } },
+      ];
 
       const res = await deletePromotion('promo-1');
+
       expect(res.success).toBe(false);
       expect(res.error).toBe('Delete restricted');
+      expect(mockRecordAuditLog).not.toHaveBeenCalled();
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it('restores deleted promotion when audit fails', async () => {
+      const before = promotion();
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      mockRecordAuditLog.mockRejectedValueOnce(new Error('audit down'));
+      scriptedResults = [
+        { data: before, error: null },
+        { data: null, error: null },
+        { data: null, error: null },
+      ];
+
+      const res = await deletePromotion('promo-1');
+
+      expect(res.success).toBe(false);
+      expect(res.error).toContain('Audit log failed after promotion delete: audit down');
+      expect(queryCalls[2]).toMatchObject({
+        table: 'promotions',
+        operation: 'insert',
+        payload: expect.objectContaining({
+          id: 'promo-1',
+          tenant_id: 'tenant-123',
+          is_active: true,
+        }),
+      });
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
     });
   });
 });
