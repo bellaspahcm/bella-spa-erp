@@ -7,6 +7,24 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Approve Salary Audit Rollback
+* **Mục tiêu kỹ thuật**:
+  * Siết `approveSalary` để không còn trạng thái salary row đã `approved` hoặc salary expense đã tạo nhưng audit trail bị thiếu.
+  * Chặn approve lệch tenant bằng cách yêu cầu tenant của current user và filter KTV/salary row theo tenant đó.
+* **Thay đổi chính**:
+  * Snapshot current-month `salary_records` trước khi gọi central salary engine với `status: 'approved'`.
+  * Fetch KTV theo `id` + `tenant_id`, bỏ fallback lấy tenant từ bản ghi KTV.
+  * Fetch approved salary row theo KTV/month/tenant; nếu fail thì restore snapshot hoặc xóa generated row.
+  * Nếu tạo expense fail sau approval, action rollback `salary_records` và không audit/revalidate.
+  * Nếu audit fail sau khi expense đã tạo, action xóa generated salary expense theo tenant/category/description rồi restore salary snapshot; rollback errors được trả rõ.
+  * Mở rộng `admin-salary-actions.test.ts` lên 34 test, bao phủ approve happy path, fetch rollback, expense rollback, audit rollback và rollback-failure reporting.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/admin-salary-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/modules/hr-salary/actions/admin-salary-actions.ts src/__tests__/admin-salary-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Finalize Salary Record Side-Effect Rollback
 * **Mục tiêu kỹ thuật**:
   * Siết `finalizeSalaryRecord` để không còn trạng thái lương đã `finalized`, session đã confirm, hoặc expense đã tạo nhưng audit trail bị thiếu.
