@@ -10,57 +10,44 @@ export interface SubscriptionLimit {
 
 type EffectiveEntitlement =
   Database['public']['Functions']['get_effective_subscription_entitlements']['Returns'][number];
+type SubscriptionPlanDisplay = Pick<
+  Database['public']['Tables']['subscription_plans']['Row'],
+  'plan_code' | 'display_name'
+>;
 
 const UNLIMITED_QUOTA = 999999;
-
-export const SUBSCRIPTION_TIERS: Record<string, SubscriptionLimit> = {
-  free_trial: {
-    maxKtv: 1,
-    maxCustomers: 15,
-    maxSms: 20,
-    tierName: 'Dùng thử miễn phí',
-  },
-  basic: {
-    maxKtv: 3,
-    maxCustomers: 50,
-    maxSms: 100,
-    tierName: 'Gói Cơ bản',
-  },
-  pro: {
-    maxKtv: 10,
-    maxCustomers: 500,
-    maxSms: 500,
-    tierName: 'Gói Chuyên nghiệp',
-  },
-  enterprise: {
-    maxKtv: 999999, // unlimited
-    maxCustomers: 999999, // unlimited
-    maxSms: 2000,
-    tierName: 'Gói Nhượng quyền',
-  },
-};
-
-function resolveTierName(tier: string) {
-  return SUBSCRIPTION_TIERS[tier]?.tierName || tier;
-}
 
 function entitlementLimitValue(entitlement: EffectiveEntitlement) {
   if (entitlement.is_unlimited) return UNLIMITED_QUOTA;
   return Number(entitlement.limit_value ?? 0);
 }
 
-function buildEffectiveLimits(tier: string, entitlements: EffectiveEntitlement[]): SubscriptionLimit {
+function buildQuotaSnapshot(
+  tierName: string,
+  maxKtv: number,
+  maxCustomers: number,
+  maxSms: number
+): SubscriptionLimit {
+  return {
+    maxKtv,
+    maxCustomers,
+    maxSms,
+    tierName,
+  };
+}
+
+function buildEffectiveLimits(tierName: string, entitlements: EffectiveEntitlement[]): SubscriptionLimit {
   const byFeature = new Map(entitlements.map((row) => [row.feature_key, row]));
   const ktv = byFeature.get('ktv');
   const customer = byFeature.get('customer');
   const sms = byFeature.get('sms');
 
-  return {
-    maxKtv: ktv ? entitlementLimitValue(ktv) : 0,
-    maxCustomers: customer ? entitlementLimitValue(customer) : 0,
-    maxSms: sms ? entitlementLimitValue(sms) : 0,
-    tierName: resolveTierName(tier),
-  };
+  return buildQuotaSnapshot(
+    tierName,
+    ktv ? entitlementLimitValue(ktv) : 0,
+    customer ? entitlementLimitValue(customer) : 0,
+    sms ? entitlementLimitValue(sms) : 0
+  );
 }
 
 async function getEffectiveEntitlements(
@@ -86,6 +73,23 @@ async function getEffectiveEntitlements(
     entitlements,
     requested,
   };
+}
+
+async function getSubscriptionPlanDisplayName(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tier: string
+) {
+  const { data, error } = await (supabase
+    .from('subscription_plans')
+    .select('plan_code, display_name')
+    .eq('plan_code', tier)
+    .maybeSingle() as unknown as Promise<{ data: SubscriptionPlanDisplay | null; error: { message: string } | null }>);
+
+  if (error) {
+    throw new Error(`[checkSubscriptionLimit] subscription_plans query failed: ${error.message}`);
+  }
+
+  return data?.display_name || tier;
 }
 
 async function getCurrentSmsUsage(
@@ -117,7 +121,6 @@ export async function checkSubscriptionLimit(
 ) {
   const supabase = await createClient();
 
-  // 1. Fetch tenant subscription details
   interface TenantSubscriptionRow {
     subscription_tier: string | null;
     subscription_expires_at: string | null;
@@ -138,30 +141,33 @@ export async function checkSubscriptionLimit(
     throw new Error(`[checkSubscriptionLimit] Tenant ${tenantId} not found`);
   }
 
-  // Subscription limits (KTV/customer/SMS quotas) apply ONLY to franchise
-  // branches. HQ-owned spas (spa trực thuộc) have no franchise agreement
-  // → bypass entirely, treated as unlimited.
   const isFranchise = !!tenant.franchise_agreement_date;
   if (!isFranchise) {
-    return { isBlocked: false, current: 0, max: UNLIMITED_QUOTA, tier: 'hq_owned', isExpired: false, limits: SUBSCRIPTION_TIERS.enterprise };
+    return {
+      isBlocked: false,
+      current: 0,
+      max: UNLIMITED_QUOTA,
+      tier: 'hq_owned',
+      isExpired: false,
+      limits: buildQuotaSnapshot('Spa truc thuoc', UNLIMITED_QUOTA, UNLIMITED_QUOTA, UNLIMITED_QUOTA),
+    };
   }
 
   const tier = tenant.subscription_tier || 'free_trial';
   const expiresAt = tenant.subscription_expires_at ? new Date(tenant.subscription_expires_at) : null;
+  const tierName = await getSubscriptionPlanDisplayName(supabase, tier);
 
-  // Check expiration first
   if (expiresAt && expiresAt < new Date()) {
     console.warn(`[checkSubscriptionLimit] Tenant ${tenantId} subscription expired on ${expiresAt}`);
-    const limits = SUBSCRIPTION_TIERS[tier] || SUBSCRIPTION_TIERS.free_trial;
+    const limits = buildQuotaSnapshot(tierName, 0, 0, 0);
     return { isBlocked: true, current: 0, max: 0, tier, isExpired: true, limits };
   }
 
   const { entitlements, requested } = await getEffectiveEntitlements(supabase, tenantId, limitType);
-  const limits = buildEffectiveLimits(tier, entitlements);
+  const limits = buildEffectiveLimits(tierName, entitlements);
   const maxLimit = entitlementLimitValue(requested);
 
   if (limitType === 'ktv') {
-    // Count active KTVs
     const { count, error } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
@@ -178,10 +184,11 @@ export async function checkSubscriptionLimit(
       max: maxLimit,
       tier,
       isExpired: false,
-      limits
+      limits,
     };
-  } else if (limitType === 'customer') {
-    // Count active customers
+  }
+
+  if (limitType === 'customer') {
     const { count, error } = await supabase
       .from('customers')
       .select('*', { count: 'exact', head: true })
@@ -197,20 +204,19 @@ export async function checkSubscriptionLimit(
       max: maxLimit,
       tier,
       isExpired: false,
-      limits
-    };
-  } else {
-    // Check SMS count
-    const currentCount = await getCurrentSmsUsage(supabase, tenantId);
-    return {
-      isBlocked: requested.is_unlimited ? false : currentCount >= maxLimit,
-      current: currentCount,
-      max: maxLimit,
-      tier,
-      isExpired: false,
-      limits
+      limits,
     };
   }
+
+  const currentCount = await getCurrentSmsUsage(supabase, tenantId);
+  return {
+    isBlocked: requested.is_unlimited ? false : currentCount >= maxLimit,
+    current: currentCount,
+    max: maxLimit,
+    tier,
+    isExpired: false,
+    limits,
+  };
 }
 
 /**
@@ -220,7 +226,7 @@ export async function checkSubscriptionLimit(
 export async function incrementSmsCount(tenantId: string): Promise<number> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('increment_tenant_sms', {
-    p_tenant_id: tenantId
+    p_tenant_id: tenantId,
   });
 
   if (error) {
