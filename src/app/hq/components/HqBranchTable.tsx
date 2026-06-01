@@ -9,6 +9,7 @@ interface HqBranchTableProps {
   tenants: HqTenantRecord[];
   updatingId: string | null;
   onToggleStatus: (tenantId: string, currentStatus: 'active' | 'suspended') => void;
+  onOpenBranchRegistration: () => void;
   getTierBadge: (tier?: string | null) => ReactNode;
   getExpirationInfo: (expiryStr?: string | null, tier?: string | null) => ReactNode;
 }
@@ -17,6 +18,7 @@ export function HqBranchTable({
   tenants,
   updatingId,
   onToggleStatus,
+  onOpenBranchRegistration,
   getTierBadge,
   getExpirationInfo,
 }: HqBranchTableProps) {
@@ -30,13 +32,14 @@ export function HqBranchTable({
                   <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-black uppercase hidden sm:inline-block">
                     Hệ thống Multi-Tenant
                   </span>
-                  <a 
-                    href="/signup"
+                  <button
+                    type="button"
+                    onClick={onOpenBranchRegistration}
                     className="flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-650 hover:from-rose-600 hover:to-pink-700 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-full shadow-md hover:shadow-rose-100 dark:hover:shadow-none transition-all active:scale-95 cursor-pointer"
                   >
                     <Plus size={12} />
                     Đăng ký Chi Nhánh mới
-                  </a>
+                  </button>
                 </div>
               </div>
 

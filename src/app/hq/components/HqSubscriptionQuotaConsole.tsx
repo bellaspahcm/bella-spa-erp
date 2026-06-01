@@ -125,12 +125,17 @@ export function HqSubscriptionQuotaConsole({
       const data = await getHqSubscriptionOverview();
       setOverview(data);
 
-      const firstTenant = data.tenants.find((tenant) => tenant.name !== 'Bella Spa Headquarter') ?? data.tenants[0];
+      const firstTenant = data.tenants.find((tenant) => tenant.name !== 'Bella Spa Headquarter');
       if (firstTenant) {
         setSelectedTenantId((current) => current || firstTenant.id);
         setOverrideTenantId((current) => current || firstTenant.id);
         setSelectedPlanCode((current) => current || firstTenant.subscription_tier || data.plans[0]?.plan_code || '');
         setPlanExpiryDate((current) => current || toDateInput(firstTenant.subscription_expires_at));
+      } else {
+        setSelectedTenantId('');
+        setOverrideTenantId('');
+        setSelectedPlanCode((current) => current || data.plans[0]?.plan_code || '');
+        setPlanExpiryDate('');
       }
     } catch (error) {
       toast.error('Không thể tải dữ liệu thuê bao HQ: ' + getErrorMessage(error));
@@ -210,13 +215,13 @@ export function HqSubscriptionQuotaConsole({
       });
 
       if (result.success) {
-        toast.success('Đã lưu quota override cho chi nhánh.');
+        toast.success('Đã lưu hạn ngạch riêng cho chi nhánh.');
         await loadOverview();
       } else {
-        toast.error(result.error || 'Lưu quota override thất bại.');
+        toast.error(result.error || 'Lưu hạn ngạch riêng thất bại.');
       }
     } catch (error) {
-      toast.error('Lỗi lưu quota override: ' + getErrorMessage(error));
+      toast.error('Lỗi lưu hạn ngạch riêng: ' + getErrorMessage(error));
     } finally {
       setSubmittingOverride(false);
     }
@@ -225,7 +230,7 @@ export function HqSubscriptionQuotaConsole({
   const handleResetCounter = async (counter: UsageCounter) => {
     const tenantName = getTenantName(overview.tenants, counter.tenant_id);
     const confirmed = window.confirm(
-      `Reset bộ đếm ${counter.feature_key} của ${tenantName} về 0 cho kỳ ${counter.period_start} - ${counter.period_end}?`
+      `Đặt lại bộ đếm ${counter.feature_key} của ${tenantName} về 0 cho kỳ ${counter.period_start} - ${counter.period_end}?`
     );
     if (!confirmed) return;
 
@@ -241,13 +246,13 @@ export function HqSubscriptionQuotaConsole({
       });
 
       if (result.success) {
-        toast.success('Đã reset usage counter.');
+        toast.success('Đã đặt lại bộ đếm sử dụng.');
         await loadOverview();
       } else {
-        toast.error(result.error || 'Reset usage counter thất bại.');
+        toast.error(result.error || 'Đặt lại bộ đếm sử dụng thất bại.');
       }
     } catch (error) {
-      toast.error('Lỗi reset usage counter: ' + getErrorMessage(error));
+      toast.error('Lỗi đặt lại bộ đếm sử dụng: ' + getErrorMessage(error));
     } finally {
       setResettingCounterKey(null);
     }
@@ -263,7 +268,7 @@ export function HqSubscriptionQuotaConsole({
             <Crown size={22} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan đang bật</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gói đang bật</p>
             <h3 className="text-2xl font-black text-slate-900 dark:text-[#EFE9E1]">{overview.plans.length}</h3>
           </div>
         </div>
@@ -272,7 +277,7 @@ export function HqSubscriptionQuotaConsole({
             <ShieldCheck size={22} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tenant quản trị</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Chi nhánh quản trị</p>
             <h3 className="text-2xl font-black text-slate-900 dark:text-[#EFE9E1]">{activeTenants.length}</h3>
           </div>
         </div>
@@ -281,7 +286,7 @@ export function HqSubscriptionQuotaConsole({
             <SlidersHorizontal size={22} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Override active</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hạn ngạch riêng</p>
             <h3 className="text-2xl font-black text-slate-900 dark:text-[#EFE9E1]">{activeOverrides.length}</h3>
           </div>
         </div>
@@ -290,7 +295,7 @@ export function HqSubscriptionQuotaConsole({
             <Gauge size={22} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Counter usage</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lượt dùng</p>
             <h3 className="text-2xl font-black text-slate-900 dark:text-[#EFE9E1]">{overview.usageCounters.length}</h3>
           </div>
         </div>
@@ -299,8 +304,8 @@ export function HqSubscriptionQuotaConsole({
       <section className="bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35] rounded-[2.5rem] p-6 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-slate-100 dark:border-[#3E3A35] pb-5 mb-5">
           <div>
-            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Danh mục plan & entitlement</h4>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Nguồn chuẩn cho hạn ngạch tenant</p>
+            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Danh mục gói & hạn ngạch</h4>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Nguồn chuẩn cho hạn ngạch chi nhánh</p>
           </div>
           <button
             type="button"
@@ -309,7 +314,7 @@ export function HqSubscriptionQuotaConsole({
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-[#3E3A35] px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-600 dark:text-[#CDBCAB] hover:bg-slate-50 dark:hover:bg-[#292623] disabled:opacity-50"
           >
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-            Tải lại quota
+            Tải lại hạn ngạch
           </button>
         </div>
 
@@ -318,7 +323,7 @@ export function HqSubscriptionQuotaConsole({
             <RefreshCw size={22} className="mx-auto animate-spin text-primary" />
           </div>
         ) : overview.plans.length === 0 ? (
-          <p className="py-10 text-center text-xs font-bold italic text-slate-400">Chưa có plan thuê bao nào.</p>
+          <p className="py-10 text-center text-xs font-bold italic text-slate-400">Chưa có gói thuê bao nào.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {overview.plans.map((plan) => (
@@ -349,8 +354,8 @@ export function HqSubscriptionQuotaConsole({
       <section className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         <form onSubmit={handleSavePlan} className="xl:col-span-5 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35] rounded-[2.5rem] p-6 shadow-sm space-y-5">
           <div>
-            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Đổi gói thuê bao tenant</h4>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Ghi vào `tenants.subscription_tier` qua action có audit rollback</p>
+            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Đổi gói thuê bao chi nhánh</h4>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Cập nhật gói thuê bao chi nhánh qua action có audit rollback</p>
           </div>
 
           <label className="block space-y-2">
@@ -372,7 +377,7 @@ export function HqSubscriptionQuotaConsole({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Plan</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gói</span>
               <select
                 value={selectedPlanCode}
                 onChange={(event) => setSelectedPlanCode(event.target.value)}
@@ -380,7 +385,7 @@ export function HqSubscriptionQuotaConsole({
                 className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
               >
                 {!hasPlans ? (
-                  <option value="">Chưa có plan</option>
+                  <option value="">Chưa có gói</option>
                 ) : null}
                 {overview.plans.map((plan) => (
                   <option key={plan.plan_code} value={plan.plan_code}>{plan.display_name}</option>
@@ -405,18 +410,18 @@ export function HqSubscriptionQuotaConsole({
 
           <button
             type="submit"
-            disabled={submittingPlan || loading || !selectedTenantId || !selectedPlanCode}
+            disabled={submittingPlan || loading || !hasActiveTenants || !selectedTenantId || !selectedPlanCode}
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 hover:bg-slate-800 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white disabled:opacity-50"
           >
             {submittingPlan ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-            Lưu gói tenant
+            Lưu gói chi nhánh
           </button>
         </form>
 
         <form onSubmit={handleSaveOverride} className="xl:col-span-7 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35] rounded-[2.5rem] p-6 shadow-sm space-y-5">
           <div>
-            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Quota override</h4>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Override theo tenant + feature, action tự update override active nếu đã tồn tại</p>
+            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Điều chỉnh hạn ngạch</h4>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Điều chỉnh theo chi nhánh + tính năng, tự cập nhật hạn ngạch đang hiệu lực nếu đã tồn tại</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -437,7 +442,7 @@ export function HqSubscriptionQuotaConsole({
               </select>
             </label>
             <label className="block space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Feature</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tính năng</span>
               <select
                 value={overrideFeatureKey}
                 onChange={(event) => setOverrideFeatureKey(event.target.value)}
@@ -452,7 +457,7 @@ export function HqSubscriptionQuotaConsole({
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <label className="block space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Limit</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hạn mức</span>
               <input
                 type="number"
                 min="0"
@@ -463,24 +468,24 @@ export function HqSubscriptionQuotaConsole({
               />
             </label>
             <label className="block space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Unit</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Đơn vị</span>
               <select
                 value={overrideUnit}
                 onChange={(event) => setOverrideUnit(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
               >
                 <option value="message">Tin</option>
-                <option value="count">Count</option>
+                <option value="count">Lượt</option>
               </select>
             </label>
             <label className="block space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reset</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Chu kỳ</span>
               <select
                 value={overrideResetPeriod}
                 onChange={(event) => setOverrideResetPeriod(event.target.value)}
                 className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
               >
-                <option value="none">Không reset</option>
+                <option value="none">Không đặt lại</option>
                 <option value="daily">Hàng ngày</option>
                 <option value="monthly">Hàng tháng</option>
                 <option value="yearly">Hàng năm</option>
@@ -520,11 +525,11 @@ export function HqSubscriptionQuotaConsole({
 
           <button
             type="submit"
-            disabled={submittingOverride || loading || !overrideTenantId}
+            disabled={submittingOverride || loading || !hasActiveTenants || !overrideTenantId}
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 hover:bg-indigo-700 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white disabled:opacity-50"
           >
             {submittingOverride ? <RefreshCw size={14} className="animate-spin" /> : <SlidersHorizontal size={14} />}
-            Lưu quota override
+            Lưu hạn ngạch
           </button>
         </form>
       </section>
@@ -533,10 +538,10 @@ export function HqSubscriptionQuotaConsole({
         <div className="bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35] rounded-[2.5rem] p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-5">
             <Database size={18} className="text-amber-600" />
-            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Override active</h4>
+            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Hạn ngạch riêng đang bật</h4>
           </div>
           {activeOverrides.length === 0 ? (
-            <p className="text-xs font-bold italic text-slate-400 py-8 text-center">Chưa có quota override active.</p>
+            <p className="text-xs font-bold italic text-slate-400 py-8 text-center">Chưa có hạn ngạch riêng đang bật.</p>
           ) : (
             <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
               {activeOverrides.map((override) => (
@@ -558,10 +563,10 @@ export function HqSubscriptionQuotaConsole({
         <div className="bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35] rounded-[2.5rem] p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-5">
             <Activity size={18} className="text-emerald-600" />
-            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Usage counters</h4>
+            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Bộ đếm sử dụng</h4>
           </div>
           {overview.usageCounters.length === 0 ? (
-            <p className="text-xs font-bold italic text-slate-400 py-8 text-center">Chưa có usage counter nào.</p>
+            <p className="text-xs font-bold italic text-slate-400 py-8 text-center">Chưa có bộ đếm sử dụng nào.</p>
           ) : (
             <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
               {overview.usageCounters.map((counter) => {
@@ -582,7 +587,7 @@ export function HqSubscriptionQuotaConsole({
                       className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-700 disabled:opacity-50"
                     >
                       {resettingCounterKey === key ? <RefreshCw size={13} className="animate-spin" /> : <RotateCcw size={13} />}
-                      Reset
+                      Đặt lại
                     </button>
                   </div>
                 );
