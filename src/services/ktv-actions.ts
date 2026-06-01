@@ -82,6 +82,33 @@ interface ProcessedSession extends Omit<SessionLogWithInnerBooking, 'bookings'> 
   bookings: (Omit<InnerBooking, 'packages'> & { package_name: string }) | null;
 }
 
+type InventoryConsumeResult = {
+  success?: boolean;
+  bypassed?: boolean;
+  processed?: number;
+  totalCost?: number;
+  error?: string;
+};
+
+type InventoryRollbackResult = {
+  success: boolean;
+  error?: string;
+};
+
+function getErrorMessage(error: unknown, fallback = 'Loi he thong') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return fallback;
+}
+
+function hasInventoryConsumptionSideEffects(result: InventoryConsumeResult) {
+  if (result.bypassed) return false;
+  return Number(result.processed || 0) > 0 || Number(result.totalCost || 0) > 0;
+}
+
 interface SessionLogCommission {
   id: string;
   bookings: {
@@ -576,8 +603,25 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   if (sessionError) return { success: false, error: 'Failed to complete session' };
 
   const checkoutWarnings: string[] = [];
+  let shouldRollbackInventoryConsumption = false;
+  let rollbackInventoryConsumptionForSession:
+    | ((targetSessionId: string) => Promise<InventoryRollbackResult>)
+    | null = null;
 
   const rollbackCompletedSession = async (reason: string) => {
+    const rollbackFailures: string[] = [];
+
+    if (shouldRollbackInventoryConsumption && rollbackInventoryConsumptionForSession) {
+      try {
+        const inventoryRollback = await rollbackInventoryConsumptionForSession(sessionId);
+        if (!inventoryRollback.success) {
+          rollbackFailures.push(`failed to roll back inventory consumption: ${inventoryRollback.error || 'unknown error'}`);
+        }
+      } catch (rollbackErr: unknown) {
+        rollbackFailures.push(`failed to roll back inventory consumption: ${getErrorMessage(rollbackErr)}`);
+      }
+    }
+
     const { error: rollbackError } = await untypedSupabase
       .from('session_logs')
       .update({
@@ -596,13 +640,13 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
       .eq('id', sessionId);
 
     if (rollbackError) {
-      return {
-        success: false,
-        error: `${reason}; failed to roll back completed session: ${rollbackError.message}`
-      };
+      rollbackFailures.push(`failed to roll back completed session: ${rollbackError.message}`);
     }
 
-    return { success: false, error: reason };
+    return {
+      success: false,
+      error: rollbackFailures.length > 0 ? `${reason}; ${rollbackFailures.join('; ')}` : reason,
+    };
   };
 
   if (lat !== undefined && lon !== undefined) {
@@ -620,16 +664,18 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   const packageId = bookingsData?.package_id;
   if (packageId) {
     try {
-      const { autoConsumeForSession } = await import('./inventory-actions');
-      const consumeResult = await autoConsumeForSession(packageId, sessionId);
+      const { autoConsumeForSession, rollbackInventoryConsumption } = await import('./inventory-actions');
+      rollbackInventoryConsumptionForSession = rollbackInventoryConsumption;
+      const consumeResult: InventoryConsumeResult = await autoConsumeForSession(packageId, sessionId);
       
       if (consumeResult && consumeResult.success === false) {
         return rollbackCompletedSession(consumeResult.error || 'Kho khong du nguyen lieu de thuc hien ca dich vu nay.');
       }
+      shouldRollbackInventoryConsumption = hasInventoryConsumptionSideEffects(consumeResult);
       console.log(`[completeKTVSession] Successfully auto-consumed materials for package ${packageId} and session ${sessionId}`);
-    } catch (consumeErr: any) {
+    } catch (consumeErr: unknown) {
       console.error('[completeKTVSession] Error in autoConsumeForSession:', consumeErr);
-      return rollbackCompletedSession(consumeErr.message || 'Loi he thong khi kiem tra kho vat tu.');
+      return rollbackCompletedSession(getErrorMessage(consumeErr, 'Loi he thong khi kiem tra kho vat tu.'));
     }
   }
 
