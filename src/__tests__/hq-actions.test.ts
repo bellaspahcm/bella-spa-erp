@@ -6,9 +6,15 @@ jest.mock('@/lib/revalidate', () => ({
 
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
+const updatePayloads: any[] = [];
 
 jest.mock('@/services/user-actions', () => ({
   getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
+}));
+
+const mockRecordAuditLog = jest.fn();
+jest.mock('@/services/audit-actions', () => ({
+  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
 }));
 
 jest.mock('@/lib/supabase-server', () => ({
@@ -27,7 +33,11 @@ class MockQueryBuilder {
   select() { return this; }
   eq() { return this; }
   order() { return this; }
-  update() { return this; }
+  update(payload?: any) {
+    updatePayloads.push(payload);
+    return this;
+  }
+  insert() { return this; }
   single() { return this; }
 
   then(onfulfilled: any) {
@@ -35,7 +45,7 @@ class MockQueryBuilder {
   }
 }
 
-import { checkHqAuth, getAllTenants, getHqDashboardStats } from '@/services/hq-actions';
+import { checkHqAuth, getAllTenants, getHqDashboardStats, toggleTenantStatus } from '@/services/hq-actions';
 
 describe('HQ actions data loading', () => {
   beforeEach(() => {
@@ -45,6 +55,8 @@ describe('HQ actions data loading', () => {
       role: 'admin',
       tenant_id: 'hq-tenant',
     });
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+    updatePayloads.length = 0;
   });
 
   it('propagates HQ tenant verification query failures', async () => {
@@ -86,5 +98,37 @@ describe('HQ actions data loading', () => {
     await expect(getAllTenants()).rejects.toThrow(
       'Failed to count staff for tenant hq-tenant: staff count failed'
     );
+  });
+
+  it('rolls back tenant status update when audit logging fails', async () => {
+    const tenant = {
+      id: 'branch-1',
+      name: 'Bella Spa HCM',
+      status: 'active',
+      updated_at: 'old-date',
+    };
+
+    mockRecordAuditLog.mockRejectedValueOnce(new Error('audit unavailable'));
+    mockFrom
+      .mockReturnValueOnce(new MockQueryBuilder({ name: 'Bella Spa Headquarter' }, null))
+      .mockReturnValueOnce(new MockQueryBuilder(tenant, null))
+      .mockReturnValueOnce(new MockQueryBuilder(null, null))
+      .mockReturnValueOnce(new MockQueryBuilder(null, null));
+
+    const res = await toggleTenantStatus('branch-1', 'suspended');
+
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('Audit log failed after tenant status update: audit unavailable');
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'tenants',
+      record_id: 'branch-1',
+      old_data: expect.objectContaining({ status: 'active', updated_at: 'old-date' }),
+      new_data: expect.objectContaining({ status: 'suspended' }),
+    });
+    expect(updatePayloads).toEqual([
+      expect.objectContaining({ status: 'suspended' }),
+      { status: 'active', updated_at: 'old-date' },
+    ]);
   });
 });

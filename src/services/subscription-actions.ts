@@ -2,8 +2,9 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
-import { checkSubscriptionLimit, SUBSCRIPTION_TIERS } from '@/lib/subscription';
+import { checkSubscriptionLimit } from '@/lib/subscription';
 import { revalidatePath } from 'next/cache';
+import type { Database } from '@/types/database.types';
 
 export interface SubscriptionInvoice {
   id: string;
@@ -25,36 +26,10 @@ const TIER_PRICES: Record<string, number> = {
   enterprise: 2499000,
 };
 
-interface CustomSupabaseClient {
-  from(table: 'subscription_invoices'): {
-    select(columns?: string): {
-      eq(column: 'tenant_id', value: string): {
-        order(column: 'created_at', options?: { ascending?: boolean }): Promise<{
-          data: SubscriptionInvoice[] | null;
-          error: { message: string } | null;
-        }>;
-      };
-    };
-    insert(values: Array<{
-      tenant_id: string;
-      invoice_number: string;
-      amount: number;
-      status: 'pending';
-      tier: string;
-      duration_months: number;
-    }>): {
-      select(): {
-        single(): Promise<{
-          data: SubscriptionInvoice | null;
-          error: { message: string } | null;
-        }>;
-      };
-    };
-  };
-  rpc(
-    fn: 'renew_tenant_subscription',
-    args: { p_invoice_number: string; p_payment_method: string }
-  ): Promise<{ data: unknown; error: { message: string } | null }>;
+type SubscriptionInvoiceInsert = Database['public']['Tables']['subscription_invoices']['Insert'];
+
+function canManageSubscription(role?: string | null) {
+  return role === 'admin' || role === 'super_admin';
 }
 
 /**
@@ -103,7 +78,7 @@ export async function getSubscriptionStatus() {
  * Fetch invoice history for the current tenant
  */
 export async function getSubscriptionInvoiceHistory(): Promise<SubscriptionInvoice[]> {
-  const supabase = await createClient() as unknown as CustomSupabaseClient;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 
@@ -118,20 +93,23 @@ export async function getSubscriptionInvoiceHistory(): Promise<SubscriptionInvoi
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching subscription invoices:', error);
-    return [];
+    throw new Error(`[getSubscriptionInvoiceHistory] subscription_invoices query failed: ${error.message}`);
   }
 
-  return data || [];
+  return (data || []) as SubscriptionInvoice[];
 }
 
 /**
  * Create a new pending subscription invoice
  */
 export async function createUpgradeInvoice(tier: string, durationMonths: number) {
-  const supabase = await createClient() as unknown as CustomSupabaseClient;
+  const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
+
+  if (!currentUser || !canManageSubscription(currentUser.role)) {
+    return { error: 'Không có quyền tạo hóa đơn gói dịch vụ.' };
+  }
 
   if (!tenantId) {
     return { error: 'Không xác định được chi nhánh của người dùng' };
@@ -144,19 +122,18 @@ export async function createUpgradeInvoice(tier: string, durationMonths: number)
 
   const totalAmount = pricePerMonth * durationMonths;
   const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
+  const invoicePayload: SubscriptionInvoiceInsert = {
+    tenant_id: tenantId,
+    invoice_number: invoiceNumber,
+    amount: totalAmount,
+    status: 'pending',
+    tier,
+    duration_months: durationMonths,
+  };
 
-  // Defer RLS by executing through tenant context or service role if needed,
-  // but public.subscription_invoices RLS allows inserting/viewing if you're an Admin of the tenant
   const { data, error } = await supabase
     .from('subscription_invoices')
-    .insert([{
-      tenant_id: tenantId,
-      invoice_number: invoiceNumber,
-      amount: totalAmount,
-      status: 'pending',
-      tier: tier,
-      duration_months: durationMonths,
-    }])
+    .insert(invoicePayload)
     .select()
     .single();
 
@@ -173,9 +150,36 @@ export async function createUpgradeInvoice(tier: string, durationMonths: number)
  * Simulate database payment webhook callback for sandbox validation
  */
 export async function simulateInvoicePayment(invoiceNumber: string) {
-  const supabase = await createClient() as unknown as CustomSupabaseClient;
-  const { data, error } = await supabase.rpc('renew_tenant_subscription', {
-    p_invoice_number: invoiceNumber,
+  const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+
+  if (!currentUser || !canManageSubscription(currentUser.role)) {
+    return { error: 'Không có quyền kích hoạt thanh toán gói dịch vụ.' };
+  }
+
+  if (!tenantId) {
+    return { error: 'Không xác định được chi nhánh của người dùng' };
+  }
+
+  const normalizedInvoiceNumber = invoiceNumber.trim().toUpperCase();
+  const { data: invoice, error: invoiceError } = await supabase
+    .from('subscription_invoices')
+    .select('invoice_number')
+    .eq('invoice_number', normalizedInvoiceNumber)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (invoiceError) {
+    return { error: `[simulateInvoicePayment] subscription_invoices query failed: ${invoiceError.message}` };
+  }
+
+  if (!invoice) {
+    return { error: 'Không tìm thấy hóa đơn gói dịch vụ thuộc chi nhánh hiện tại.' };
+  }
+
+  const { error } = await supabase.rpc('renew_tenant_subscription', {
+    p_invoice_number: normalizedInvoiceNumber,
     p_payment_method: 'Simulated VietQR'
   });
 

@@ -3,6 +3,35 @@
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from './user-actions';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { recordAuditLog } from './audit-actions';
+import type { Database } from '@/types/database.types';
+
+type TenantRow = Database['public']['Tables']['tenants']['Row'];
+type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
+type TenantStatusAuditData = {
+  id: string;
+  name: string;
+  status: string | null;
+  updated_at: string | null;
+};
+
+function tenantStatusAuditJson(tenant: TenantRow): TenantStatusAuditData {
+  return {
+    id: tenant.id,
+    name: tenant.name,
+    status: tenant.status,
+    updated_at: tenant.updated_at,
+  };
+}
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.length > 0) return message;
+  }
+  return fallback;
+}
 
 /**
  * Checks if the current user belongs to the Headquarter and is an admin
@@ -176,20 +205,33 @@ export async function toggleTenantStatus(tenantId: string, status: 'active' | 's
   const supabase = await createClient();
 
   // Prevent suspending Headquarter
-  const { data: tenant } = await supabase
+  const { data: tenant, error: tenantError } = await supabase
     .from('tenants')
-    .select('name')
+    .select('*')
     .eq('id', tenantId)
     .single();
+
+  if (tenantError) {
+    return { success: false, error: `Failed to fetch tenant before status update: ${tenantError.message}` };
+  }
+
+  if (!tenant) {
+    return { success: false, error: 'Không tìm thấy chi nhánh cần cập nhật trạng thái.' };
+  }
 
   if (tenant && tenant.name === 'Bella Spa Headquarter') {
     return { success: false, error: 'Không thể khóa chi nhánh trụ sở chính Bella Spa Headquarter.' };
   }
 
+  const updatePayload: TenantUpdate = {
+    status,
+    updated_at: new Date().toISOString(),
+  };
+
   // Update status in tenants table
   const { error } = await supabase
     .from('tenants')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update(updatePayload)
     .eq('id', tenantId);
 
   if (error) {
@@ -197,17 +239,39 @@ export async function toggleTenantStatus(tenantId: string, status: 'active' | 's
     return { success: false, error: error.message };
   }
 
-  // Record Audit Log
   try {
-    const { recordAuditLog } = await import('./audit-actions');
     await recordAuditLog({
       action: 'UPDATE',
       table_name: 'tenants',
       record_id: tenantId,
-      new_data: { status }
+      old_data: tenantStatusAuditJson(tenant),
+      new_data: {
+        ...tenantStatusAuditJson(tenant),
+        status,
+        updated_at: updatePayload.updated_at ?? tenant.updated_at,
+      }
     });
-  } catch (auditErr) {
-    console.warn('Failed to record status change audit log:', auditErr);
+  } catch (auditError) {
+    const rollbackPayload: TenantUpdate = {
+      status: tenant.status,
+      updated_at: tenant.updated_at,
+    };
+    const { error: rollbackError } = await supabase
+      .from('tenants')
+      .update(rollbackPayload)
+      .eq('id', tenantId);
+
+    if (rollbackError) {
+      return {
+        success: false,
+        error: `Audit log failed after tenant status update: ${getErrorMessage(auditError)}. Rollback failed: ${rollbackError.message}`,
+      };
+    }
+
+    return {
+      success: false,
+      error: `Audit log failed after tenant status update: ${getErrorMessage(auditError)}`,
+    };
   }
 
   // Safe revalidate

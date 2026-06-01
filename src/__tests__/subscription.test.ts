@@ -61,6 +61,7 @@ jest.mock('server-only', () => ({}), { virtual: true });
 
 // Dynamically import modules under test to prevent eager execution before mock variables are initialized
 let checkSubscriptionLimit: any;
+let incrementSmsCount: any;
 let POST: any;
 
 describe('Subscription Constraints & Webhook Suite', () => {
@@ -68,6 +69,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
 
   beforeAll(() => {
     checkSubscriptionLimit = require('@/lib/subscription').checkSubscriptionLimit;
+    incrementSmsCount = require('@/lib/subscription').incrementSmsCount;
     POST = require('@/app/api/webhooks/payment/route').POST;
   });
 
@@ -204,6 +206,43 @@ describe('Subscription Constraints & Webhook Suite', () => {
       expect(res.max).toBe(100);
     });
 
+    it('throws instead of fail-opening when tenant subscription query fails', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: null,
+        error: { message: 'tenant lookup failed' },
+      });
+
+      await expect(checkSubscriptionLimit('tenant-1', 'ktv')).rejects.toThrow(
+        '[checkSubscriptionLimit] tenants query failed: tenant lookup failed'
+      );
+    });
+
+    it('throws instead of fail-opening when KTV count query fails', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
+          sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
+        },
+        error: null,
+      });
+
+      mockSupabaseServer.from = jest.fn().mockImplementation((table: string) => {
+        if (table === 'tenants') {
+          return createChainableMock({}, mockSingleTenant);
+        }
+        if (table === 'users') {
+          return createChainableMock({ count: null, error: { message: 'users count failed' } });
+        }
+        return {};
+      });
+
+      await expect(checkSubscriptionLimit('tenant-1', 'ktv')).rejects.toThrow(
+        '[checkSubscriptionLimit] users count failed: users count failed'
+      );
+    });
+
     it('bypasses limits for HQ-owned spas (franchise_agreement_date IS NULL)', async () => {
       // HQ-owned spa: subscription tier may be set but franchise_agreement_date
       // is null → treated as unlimited regardless of tier or KTV count.
@@ -240,6 +279,14 @@ describe('Subscription Constraints & Webhook Suite', () => {
 
       const sms = await checkSubscriptionLimit('tenant-hq', 'sms');
       expect(sms.isBlocked).toBe(false);
+    });
+
+    it('throws when SMS counter RPC fails instead of returning zero', async () => {
+      mockRpcSubscription.mockResolvedValue({ data: null, error: { message: 'rpc denied' } });
+
+      await expect(incrementSmsCount('tenant-1')).rejects.toThrow(
+        '[incrementSmsCount] increment_tenant_sms failed: rpc denied'
+      );
     });
   });
 
