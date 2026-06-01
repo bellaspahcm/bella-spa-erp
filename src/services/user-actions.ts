@@ -8,6 +8,15 @@ import { randomBytes } from 'crypto';
 import type { Database } from '@/types/database.types';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type AdminSupabaseClient = {
+  from: SupabaseClient['from'];
+  auth: {
+    admin: {
+      deleteUser: (id: string) => Promise<{ error: { message: string } | null }>;
+    };
+  };
+};
+type UserInsert = Database['public']['Tables']['users']['Insert'];
 type UserUpdate = Database['public']['Tables']['users']['Update'];
 
 interface UserWithLogsAndReviews {
@@ -205,6 +214,33 @@ async function rollbackUserUpdate(
   return error?.message || '';
 }
 
+async function rollbackCreatedAuthUser(
+  supabaseAdmin: AdminSupabaseClient,
+  authUserId: string,
+) {
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(authUserId);
+  return error?.message || '';
+}
+
+async function rollbackCreatedUserProfile(
+  supabaseAdmin: AdminSupabaseClient,
+  authUserId: string,
+) {
+  const { error } = await supabaseAdmin
+    .from('users')
+    .delete()
+    .eq('id', authUserId);
+
+  return error?.message || '';
+}
+
+function formatRollbackNotes(notes: Array<[string, string]>) {
+  return notes
+    .filter(([, message]) => message)
+    .map(([label, message]) => `; ${label} failed: ${message}`)
+    .join('');
+}
+
 export async function createUser(formData: CreateUserInput) {
   const currentUser = await getCurrentUser();
 
@@ -274,39 +310,54 @@ export async function createUser(formData: CreateUserInput) {
   // getCurrentUser()'s primary id lookup (users.id = auth.uid) hits directly.
   // Uses supabaseAdmin (service role) to bypass any RLS policy that might
   // restrict cross-user inserts on public.users (id != auth.uid()).
+  const userPayload: UserInsert = {
+    id: authUserId,
+    email: formData.email,
+    full_name: formData.full_name,
+    role: targetRole,
+    status: 'active',
+    tenant_id: currentUser?.tenant_id,
+  };
+
   const { data, error } = await supabaseAdmin
     .from('users')
-    .insert([{
-      id: authUserId,
-      email: formData.email as string,
-      full_name: formData.full_name as string,
-      role: targetRole as string,
-      status: 'active',
-      tenant_id: currentUser?.tenant_id,
-    }])
+    .insert([userPayload])
     .select()
     .single();
 
   if (error) {
     // Rollback the auth user so we don't leave an orphan account hanging.
-    await supabaseAdmin.auth.admin.deleteUser(authUserId).catch(() => {});
+    const authRollbackError = await rollbackCreatedAuthUser(supabaseAdmin, authUserId);
     console.error('[createUser] Profile insert failed:', error);
-    if (error.code === '23505' || error.message?.includes('users_email_key')) {
+    const rollbackNote = formatRollbackNotes([
+      ['auth rollback', authRollbackError],
+    ]);
+    if (!rollbackNote && (error.code === '23505' || error.message?.includes('users_email_key'))) {
       return { error: 'Email này đã được sử dụng trong hệ thống. Vui lòng sử dụng email khác.' };
     }
-    return { error: error.message };
+    return { error: `${error.message}${rollbackNote}` };
   }
 
-  await recordAuditLog({
-    action: 'INSERT',
-    table_name: 'users',
-    record_id: data.id,
-    new_data: {
-      full_name: formData.full_name,
-      email: formData.email,
-      role: targetRole,
-    },
-  });
+  try {
+    await recordAuditLog({
+      action: 'INSERT',
+      table_name: 'users',
+      record_id: data.id,
+      new_data: {
+        full_name: formData.full_name,
+        email: formData.email,
+        role: targetRole,
+      },
+    });
+  } catch (auditError: unknown) {
+    const profileRollbackError = await rollbackCreatedUserProfile(supabaseAdmin, authUserId);
+    const authRollbackError = await rollbackCreatedAuthUser(supabaseAdmin, authUserId);
+    const rollbackNote = formatRollbackNotes([
+      ['profile rollback', profileRollbackError],
+      ['auth rollback', authRollbackError],
+    ]);
+    return { error: `Failed to record user create audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
+  }
 
   await safeRevalidatePath('/dashboard/settings');
   return { data, defaultPassword: temporaryPassword };

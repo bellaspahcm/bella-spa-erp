@@ -1,13 +1,36 @@
-import { updateUser, updateUserStatus } from '../services/user-actions';
+import { createUser, updateUser, updateUserStatus } from '../services/user-actions';
 
 const mockFrom = jest.fn();
+const mockGetSession = jest.fn();
+const mockGetUser = jest.fn();
+const mockAdminFrom = jest.fn();
+const mockCreateAdminUser = jest.fn();
+const mockDeleteAuthUser = jest.fn();
 const mockRecordAuditLog = jest.fn();
 const mockSafeRevalidatePath = jest.fn();
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
 jest.mock('../lib/supabase-server', () => ({
-  createClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
+  createClient: jest.fn(() => Promise.resolve({
+    from: mockFrom,
+    auth: {
+      getSession: mockGetSession,
+      getUser: mockGetUser,
+    },
+  })),
+}));
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    from: mockAdminFrom,
+    auth: {
+      admin: {
+        createUser: mockCreateAdminUser,
+        deleteUser: mockDeleteAuthUser,
+      },
+    },
+  })),
 }));
 
 jest.mock('../services/audit-actions', () => ({
@@ -20,7 +43,7 @@ jest.mock('../lib/revalidate', () => ({
 
 type ScriptedResult = {
   table: string;
-  op: 'select' | 'update';
+  op: 'select' | 'insert' | 'update' | 'delete';
   data?: any;
   error?: { message: string };
 };
@@ -54,6 +77,18 @@ class ScriptedQueryBuilder {
     return this;
   }
 
+  insert(payload: unknown) {
+    this.op = 'insert';
+    this.calls.push({ table: this.table, op: 'insert', payload });
+    return this;
+  }
+
+  delete() {
+    this.op = 'delete';
+    this.calls.push({ table: this.table, op: 'delete' });
+    return this;
+  }
+
   eq() { return this; }
   single() { return this.resolve(); }
 
@@ -76,6 +111,24 @@ class ScriptedQueryBuilder {
 describe('user update audit rollback', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          user: {
+            id: 'admin-1',
+            email: 'admin@bella.test',
+          },
+        },
+      },
+    });
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockCreateAdminUser.mockResolvedValue({
+      data: { user: { id: 'created-user-1' } },
+      error: null,
+    });
+    mockDeleteAuthUser.mockResolvedValue({ error: null });
     mockRecordAuditLog.mockResolvedValue({ success: true });
     mockSafeRevalidatePath.mockResolvedValue(undefined);
   });
@@ -85,6 +138,179 @@ describe('user update audit rollback', () => {
     mockFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, calls));
     return calls;
   }
+
+  function installScriptedAdminSupabase(scripts: ScriptedResult[]) {
+    const calls: DbCall[] = [];
+    mockAdminFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, calls));
+    return calls;
+  }
+
+  function installCurrentUser() {
+    return installScriptedSupabase([
+      {
+        table: 'users',
+        op: 'select',
+        data: {
+          id: 'admin-1',
+          email: 'admin@bella.test',
+          full_name: 'Admin User',
+          role: 'admin',
+          tenant_id: 'tenant-1',
+          avatar_url: null,
+        },
+      },
+      { table: 'tenants', op: 'select', data: { status: 'active', name: 'Bella Test' } },
+    ]);
+  }
+
+  const createUserInput = {
+    email: 'new.user@bella.test',
+    full_name: 'New User',
+    role: 'manager',
+  };
+
+  it('creates auth user, profile row, audit log, and revalidates on success', async () => {
+    installCurrentUser();
+    const adminCalls = installScriptedAdminSupabase([
+      {
+        table: 'users',
+        op: 'insert',
+        data: {
+          id: 'created-user-1',
+          email: createUserInput.email,
+          full_name: createUserInput.full_name,
+          role: createUserInput.role,
+          tenant_id: 'tenant-1',
+          status: 'active',
+        },
+      },
+    ]);
+
+    const result = await createUser(createUserInput);
+
+    expect(result.data).toEqual(expect.objectContaining({ id: 'created-user-1' }));
+    expect(result.defaultPassword).toEqual(expect.stringMatching(/^Bella-.+1aA!$/));
+    expect(mockCreateAdminUser).toHaveBeenCalledWith(expect.objectContaining({
+      email: createUserInput.email,
+      email_confirm: true,
+      user_metadata: { full_name: createUserInput.full_name },
+    }));
+    expect(adminCalls.map(c => c.payload)).toEqual([[
+      {
+        id: 'created-user-1',
+        email: createUserInput.email,
+        full_name: createUserInput.full_name,
+        role: createUserInput.role,
+        status: 'active',
+        tenant_id: 'tenant-1',
+      },
+    ]]);
+    expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'INSERT',
+      table_name: 'users',
+      record_id: 'created-user-1',
+      new_data: {
+        full_name: createUserInput.full_name,
+        email: createUserInput.email,
+        role: createUserInput.role,
+      },
+    }));
+    expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+  });
+
+  it('rolls back auth user when profile insert fails', async () => {
+    installCurrentUser();
+    installScriptedAdminSupabase([
+      { table: 'users', op: 'insert', error: { message: 'profile insert failed' } },
+    ]);
+
+    const result = await createUser(createUserInput);
+
+    expect(result.error).toContain('profile insert failed');
+    expect(mockDeleteAuthUser).toHaveBeenCalledWith('created-user-1');
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('reports auth rollback failure when profile insert fails', async () => {
+    installCurrentUser();
+    installScriptedAdminSupabase([
+      { table: 'users', op: 'insert', error: { message: 'profile insert failed' } },
+    ]);
+    mockDeleteAuthUser.mockResolvedValue({ error: { message: 'auth delete failed' } });
+
+    const result = await createUser(createUserInput);
+
+    expect(result.error).toContain('profile insert failed');
+    expect(result.error).toContain('auth rollback failed: auth delete failed');
+  });
+
+  it('rolls back profile and auth user when create audit logging fails', async () => {
+    installCurrentUser();
+    const adminCalls = installScriptedAdminSupabase([
+      {
+        table: 'users',
+        op: 'insert',
+        data: {
+          id: 'created-user-1',
+          email: createUserInput.email,
+          full_name: createUserInput.full_name,
+          role: createUserInput.role,
+          tenant_id: 'tenant-1',
+          status: 'active',
+        },
+      },
+      { table: 'users', op: 'delete' },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await createUser(createUserInput);
+
+    expect(result.error).toContain('audit failed');
+    expect(adminCalls.map(c => ({ op: c.op, payload: c.payload }))).toEqual([
+      {
+        op: 'insert',
+        payload: [{
+          id: 'created-user-1',
+          email: createUserInput.email,
+          full_name: createUserInput.full_name,
+          role: createUserInput.role,
+          status: 'active',
+          tenant_id: 'tenant-1',
+        }],
+      },
+      { op: 'delete', payload: undefined },
+    ]);
+    expect(mockDeleteAuthUser).toHaveBeenCalledWith('created-user-1');
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('reports cleanup failures when create audit rollback fails', async () => {
+    installCurrentUser();
+    installScriptedAdminSupabase([
+      {
+        table: 'users',
+        op: 'insert',
+        data: {
+          id: 'created-user-1',
+          email: createUserInput.email,
+          full_name: createUserInput.full_name,
+          role: createUserInput.role,
+          tenant_id: 'tenant-1',
+          status: 'active',
+        },
+      },
+      { table: 'users', op: 'delete', error: { message: 'profile delete failed' } },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+    mockDeleteAuthUser.mockResolvedValue({ error: { message: 'auth delete failed' } });
+
+    const result = await createUser(createUserInput);
+
+    expect(result.error).toContain('audit failed');
+    expect(result.error).toContain('profile rollback failed: profile delete failed');
+    expect(result.error).toContain('auth rollback failed: auth delete failed');
+  });
 
   it('updates user status and records old/new audit data on success', async () => {
     const calls = installScriptedSupabase([
