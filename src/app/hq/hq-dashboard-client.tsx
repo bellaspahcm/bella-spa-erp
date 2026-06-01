@@ -9,6 +9,7 @@ import {
   Info
 } from 'lucide-react';
 import { toggleTenantStatus, getHqDashboardStats, getAllTenants } from '@/services/hq-actions';
+import { registerNewTenant } from '@/services/onboarding-actions';
 import { 
   getFranchiseRoyaltyInvoices, 
   updateFranchiseRoyaltyConfig, 
@@ -72,6 +73,10 @@ import { HqAuditDetailModal } from './components/HqAuditDetailModal';
 import { HqServiceTemplateModal } from './components/HqServiceTemplateModal';
 import { HqServiceDistributionModal } from './components/HqServiceDistributionModal';
 import { HqSubscriptionQuotaConsole } from './components/HqSubscriptionQuotaConsole';
+import {
+  HqBranchRegistrationModal,
+  type HqBranchRegistrationInput,
+} from './components/HqBranchRegistrationModal';
 
 interface HqDashboardClientProps {
   initialStats: HqDashboardStats;
@@ -99,6 +104,8 @@ export default function HqDashboardClient({
   const [typeFilter, setTypeFilter] = useState<'all' | 'direct' | 'franchise'>('all');
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [showBranchRegistrationModal, setShowBranchRegistrationModal] = useState(false);
+  const [submittingBranchRegistration, setSubmittingBranchRegistration] = useState(false);
 
   // Tab System
   const [activeTab, setActiveTab] = useState<HqDashboardTab>('branches');
@@ -590,6 +597,27 @@ export default function HqDashboardClient({
     setTenants(freshTenants as unknown as HqTenantRecord[]);
   };
 
+  const handleRegisterBranch = async (input: HqBranchRegistrationInput) => {
+    setSubmittingBranchRegistration(true);
+    try {
+      const result = await registerNewTenant(input);
+      if (!result.success) {
+        toast.error(result.error || 'Không thể tạo chi nhánh mới.');
+        return;
+      }
+
+      toast.success('Đã tạo chi nhánh mới và tài khoản admin.');
+      setShowBranchRegistrationModal(false);
+      setActiveTab('branches');
+      setSubscriptionRefreshSignal((current) => current + 1);
+      await handleTenantSubscriptionChanged();
+    } catch (error) {
+      toast.error('Lỗi tạo chi nhánh: ' + getErrorMessage(error));
+    } finally {
+      setSubmittingBranchRegistration(false);
+    }
+  };
+
   const handleToggleStatus = async (tenantId: string, currentStatus: 'active' | 'suspended') => {
     const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
     const confirmMsg = newStatus === 'suspended' 
@@ -774,6 +802,7 @@ export default function HqDashboardClient({
         loading={loading}
         onRefresh={refreshData}
         onLogout={handleLogout}
+        onOpenBranchRegistration={() => setShowBranchRegistrationModal(true)}
       />
 
       <main className="max-w-7xl mx-auto px-6 mt-8 space-y-8">
@@ -825,6 +854,7 @@ export default function HqDashboardClient({
               tenants={filteredTenants}
               updatingId={updatingId}
               onToggleStatus={handleToggleStatus}
+              onOpenBranchRegistration={() => setShowBranchRegistrationModal(true)}
               getTierBadge={getTierBadge}
               getExpirationInfo={getExpirationInfo}
             />
@@ -987,6 +1017,14 @@ export default function HqDashboardClient({
           onRoyaltyRateChange={setRoyaltyRate}
           onRoyaltyFixedAmountChange={setRoyaltyFixedAmount}
           onSubmit={handleSaveConfig}
+        />
+
+        <HqBranchRegistrationModal
+          key={showBranchRegistrationModal ? 'branch-registration-open' : 'branch-registration-closed'}
+          open={showBranchRegistrationModal}
+          submitting={submittingBranchRegistration}
+          onClose={() => setShowBranchRegistrationModal(false)}
+          onSubmit={handleRegisterBranch}
         />
 
         <HqClearingRateModal
