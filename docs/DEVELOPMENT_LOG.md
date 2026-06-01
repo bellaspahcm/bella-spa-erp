@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Auto Confirm Salary RPC Error Handling
+* **Mục tiêu kỹ thuật**:
+  * Siết `checkAndAutoConfirm` để không còn che lỗi RPC `auto_confirm_stale_salary_records` thành `{ count: 0 }`.
+  * Giữ auto-confirm theo tenant hiện tại, chỉ revalidate khi RPC chạy thành công và có bản ghi được xác nhận.
+* **Thay đổi chính**:
+  * Missing tenant giờ trả `{ success: false, count: 0, error }` và không gọi RPC.
+  * RPC error giờ trả failure rõ với message `auto_confirm_stale_salary_records failed: ...`.
+  * RPC success trả `{ success: true, count }`; chỉ revalidate `/dashboard/salary` khi `count > 0`.
+  * Thêm mock Supabase `rpc` trong `admin-salary-actions.test.ts`.
+  * Mở rộng `admin-salary-actions.test.ts` lên 38 test, bao phủ missing tenant, count dương, count 0 và RPC failure.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/admin-salary-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/modules/hr-salary/actions/admin-salary-actions.ts src/__tests__/admin-salary-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Approve Salary Audit Rollback
 * **Mục tiêu kỹ thuật**:
   * Siết `approveSalary` để không còn trạng thái salary row đã `approved` hoặc salary expense đã tạo nhưng audit trail bị thiếu.
