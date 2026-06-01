@@ -260,15 +260,33 @@ export async function publishSalaryRecord(ktvId: string) {
   }
 
   try {
+    const previousSalaryRecord = await snapshotSalaryRecord(supabase, ktvId, monthYear, tenantId);
+
     const res = await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, {
       status: 'published'
     });
 
-    await recordSalaryStatusAudit({
-      recordId: ktvId,
-      status: 'published',
-      extraData: { totalSalary: res.totalSalary }
-    });
+    try {
+      await recordSalaryStatusAudit({
+        recordId: ktvId,
+        status: 'published',
+        extraData: { totalSalary: res.totalSalary }
+      });
+    } catch (auditError: unknown) {
+      const rollbackError = await restoreSalaryConfigSnapshot(
+        supabase,
+        previousSalaryRecord,
+        ktvId,
+        monthYear,
+        tenantId
+      );
+      const rollbackMessage = rollbackError ? ` Rollback salary_records failed: ${rollbackError}` : '';
+      return {
+        success: false,
+        error: `Failed to record publish salary audit log: ${getErrorMessage(auditError, 'Unknown audit error')}.${rollbackMessage}`,
+      };
+    }
+
     revalidateSalaryPage();
     return { success: true };
   } catch (e: unknown) {
