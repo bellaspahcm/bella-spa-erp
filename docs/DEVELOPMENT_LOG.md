@@ -7,6 +7,22 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden KTV Booking Rollback
+* **Mục tiêu kỹ thuật**:
+  * Hoàn thiện rollback cho `completeKTVSession` khi booking update đã thành công nhưng bước cleanup phía sau lỗi.
+  * Tránh trạng thái lệch: session/inventory đã rollback nhưng booking vẫn ở `completed` hoặc trạng thái mới.
+* **Thay đổi chính**:
+  * Snapshot `bookings.status`, `is_in_care`, `updated_at` trước khi cập nhật trạng thái booking.
+  * Nếu lỗi xảy ra sau booking update thành công, rollback helper sẽ khôi phục booking trước khi rollback session.
+  * Error trả về gom thêm lỗi rollback booking nếu khôi phục booking thất bại.
+  * Mở rộng `ktv-actions.test.ts` lên 15 test, assert rollback booking và rollback-failure reporting.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/ktv-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/inventory-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/ktv-actions.ts src/__tests__/ktv-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden KTV Session Cleanup Failure
 * **Mục tiêu kỹ thuật**:
   * Đóng lỗi silent DB failure cuối luồng `completeKTVSession` khi booking đã hoàn tất.

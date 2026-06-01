@@ -468,9 +468,15 @@ describe('KTV read actions fail-fast behavior', () => {
     const fetchSession = new MockQueryBuilder(session, null);
     const completeUpdate = new MockQueryBuilder(null, null);
     const completedCount = new MockQueryBuilder(null, null, 10);
-    const fetchBooking = new MockQueryBuilder({ total_sessions: 10 }, null);
+    const fetchBooking = new MockQueryBuilder({
+      total_sessions: 10,
+      status: 'in_progress',
+      is_in_care: true,
+      updated_at: '2026-06-01T08:00:00.000Z',
+    }, null);
     const bookingUpdate = new MockQueryBuilder(null, null);
     const cleanupDelete = new MockQueryBuilder(null, { message: 'cleanup delete failed' });
+    const bookingRollback = new MockQueryBuilder(null, null);
     const rollbackSession = new MockQueryBuilder(null, null);
     mockAutoConsumeForSession.mockResolvedValue({ success: true, processed: 1, totalCost: 1000 });
 
@@ -481,6 +487,7 @@ describe('KTV read actions fail-fast behavior', () => {
       .mockReturnValueOnce(fetchBooking)
       .mockReturnValueOnce(bookingUpdate)
       .mockReturnValueOnce(cleanupDelete)
+      .mockReturnValueOnce(bookingRollback)
       .mockReturnValueOnce(rollbackSession);
 
     const result = await completeKTVSession('session-1', 'notes', 'checkout note');
@@ -490,6 +497,73 @@ describe('KTV read actions fail-fast behavior', () => {
       error: 'Failed to clean up extra scheduled sessions after completing booking: cleanup delete failed',
     });
     expect(mockRollbackInventoryConsumption).toHaveBeenCalledWith('session-1');
+    expect(bookingRollback.updateSpy).toHaveBeenCalledWith({
+      status: 'in_progress',
+      is_in_care: true,
+      updated_at: '2026-06-01T08:00:00.000Z',
+    });
+    expect(rollbackSession.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'in_progress',
+      notes: 'old notes',
+    }));
+  });
+
+  it('reports booking rollback failure when cleanup fails after booking update', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      start_time: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      end_time: null,
+      completed_date: null,
+      notes: 'old notes',
+      standard_duration: null,
+      actual_duration: null,
+      time_deviation: null,
+      duration_warning_type: null,
+      ktv_checkout_note: null,
+      checkout_lat: null,
+      checkout_lon: null,
+      bookings: {
+        package_id: 'pkg-1',
+        packages: { duration: '60 phut' },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const completeUpdate = new MockQueryBuilder(null, null);
+    const completedCount = new MockQueryBuilder(null, null, 10);
+    const fetchBooking = new MockQueryBuilder({
+      total_sessions: 10,
+      status: 'in_progress',
+      is_in_care: true,
+      updated_at: '2026-06-01T08:00:00.000Z',
+    }, null);
+    const bookingUpdate = new MockQueryBuilder(null, null);
+    const cleanupDelete = new MockQueryBuilder(null, { message: 'cleanup delete failed' });
+    const bookingRollback = new MockQueryBuilder(null, { message: 'booking rollback failed' });
+    const rollbackSession = new MockQueryBuilder(null, null);
+    mockAutoConsumeForSession.mockResolvedValue({ success: true, processed: 1, totalCost: 1000 });
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(completeUpdate)
+      .mockReturnValueOnce(completedCount)
+      .mockReturnValueOnce(fetchBooking)
+      .mockReturnValueOnce(bookingUpdate)
+      .mockReturnValueOnce(cleanupDelete)
+      .mockReturnValueOnce(bookingRollback)
+      .mockReturnValueOnce(rollbackSession);
+
+    const result = await completeKTVSession('session-1', 'notes', 'checkout note');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Failed to clean up extra scheduled sessions after completing booking: cleanup delete failed');
+    expect(result.error).toContain('failed to roll back booking: booking rollback failed');
+    expect(mockRollbackInventoryConsumption).toHaveBeenCalledWith('session-1');
+    expect(bookingRollback.updateSpy).toHaveBeenCalledWith({
+      status: 'in_progress',
+      is_in_care: true,
+      updated_at: '2026-06-01T08:00:00.000Z',
+    });
     expect(rollbackSession.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
       status: 'in_progress',
       notes: 'old notes',
