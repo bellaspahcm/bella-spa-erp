@@ -1,6 +1,7 @@
 import {
   adminConfirmOnBehalf,
   approveSalary,
+  checkAndAutoConfirm,
   confirmKtvSessions,
   finalizeAllSalaryRecords,
   finalizeSalaryRecord,
@@ -10,6 +11,7 @@ import {
 } from '../modules/hr-salary/actions/admin-salary-actions';
 
 const mockFrom = jest.fn();
+const mockRpc = jest.fn();
 const mockGetCurrentUser = jest.fn();
 const mockRecordAuditLog = jest.fn();
 const mockCheckMonthLock = jest.fn();
@@ -25,6 +27,7 @@ jest.mock('next/cache', () => ({
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({
     from: mockFrom,
+    rpc: mockRpc,
   })),
 }));
 
@@ -1102,6 +1105,69 @@ describe('approveSalary audit rollback', () => {
     expect(result.error).toContain('audit failed');
     expect(result.error).toContain('expense delete failed');
     expect(result.error).toContain('salary restore failed');
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe('checkAndAutoConfirm RPC handling', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+      full_name: 'Admin Bella',
+    });
+  });
+
+  it('returns failure without calling RPC when current user has no tenant', async () => {
+    mockGetCurrentUser.mockResolvedValue({ id: 'admin-1', role: 'admin', tenant_id: null });
+
+    const result = await checkAndAutoConfirm();
+
+    expect(result).toEqual({
+      success: false,
+      count: 0,
+      error: 'Không xác định được chi nhánh của người dùng',
+    });
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('returns success and revalidates salary page when RPC confirms stale records', async () => {
+    mockRpc.mockResolvedValue({ data: 3, error: null });
+
+    const result = await checkAndAutoConfirm();
+
+    expect(result).toEqual({ success: true, count: 3 });
+    expect(mockRpc).toHaveBeenCalledWith('auto_confirm_stale_salary_records', {
+      p_tenant_id: 'tenant-1',
+    });
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary');
+  });
+
+  it('returns success without revalidation when RPC confirms zero records', async () => {
+    mockRpc.mockResolvedValue({ data: 0, error: null });
+
+    const result = await checkAndAutoConfirm();
+
+    expect(result).toEqual({ success: true, count: 0 });
+    expect(mockRpc).toHaveBeenCalledWith('auto_confirm_stale_salary_records', {
+      p_tenant_id: 'tenant-1',
+    });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('returns explicit failure without revalidation when RPC fails', async () => {
+    mockRpc.mockResolvedValue({ data: null, error: { message: 'rpc failed' } });
+
+    const result = await checkAndAutoConfirm();
+
+    expect(result).toEqual({
+      success: false,
+      count: 0,
+      error: 'auto_confirm_stale_salary_records failed: rpc failed',
+    });
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });

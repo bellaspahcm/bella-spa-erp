@@ -652,16 +652,30 @@ export async function finalizeAllSalaryRecords() {
 export async function checkAndAutoConfirm() {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
-  if (!currentUser?.tenant_id) return { count: 0 };
+  if (!currentUser?.tenant_id) {
+    return {
+      success: false,
+      count: 0,
+      error: 'Không xác định được chi nhánh của người dùng',
+    };
+  }
 
-  const { data } = await supabase.rpc('auto_confirm_stale_salary_records', {
+  const { data, error } = await supabase.rpc('auto_confirm_stale_salary_records', {
     p_tenant_id: currentUser.tenant_id,
   });
+
+  if (error) {
+    return {
+      success: false,
+      count: 0,
+      error: `auto_confirm_stale_salary_records failed: ${error.message}`,
+    };
+  }
 
   const count = data as number | null;
 
   if (count && count > 0) revalidateSalaryPage();
-  return { count: count ?? 0 };
+  return { success: true, count: count ?? 0 };
 }
 
 export async function approveSalary(ktvId: string) {
