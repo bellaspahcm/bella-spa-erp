@@ -1,225 +1,64 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
 import { 
-  Megaphone, 
   Clock, 
   Gift, 
   Calendar, 
   CheckCircle2, 
-  AlertCircle, 
   Loader2, 
   Plus, 
   Percent, 
-  Send, 
   Info,
   Settings,
-  Bell,
-  RefreshCw,
   TrendingUp,
   Tag
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { 
-  getCRMStats, 
-  getUpcomingSessions, 
-  triggerZaloReminder, 
-  triggerBatchReminders,
-  getBirthdayCustomers,
-  sendBirthdayGreeting,
-  getZaloZnsLogs,
-  CRMStats,
-  getZaloConfig,
-  saveZaloConfig,
-  type ZaloConfig
-} from '@/services/crm-actions';
-
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Lỗi không xác định';
-}
-
-interface UpcomingCrmSession {
-  id: string;
-  assigned_time?: string | null;
-  assigned_date?: string | null;
-  address?: string | null;
-  zalo_reminder_sent?: boolean | null;
-  bookings?: {
-    booking_number?: string | null;
-    customers?: {
-      name_mother?: string | null;
-      name_baby?: string | null;
-      phone?: string | null;
-    } | null;
-    assigned_ktv?: {
-      full_name?: string | null;
-    } | null;
-  } | null;
-}
-
-interface BirthdayCustomer {
-  id: string;
-  name_mother?: string | null;
-  name_baby?: string | null;
-  phone?: string | null;
-  dobFormatted: string;
-  ageYears: number;
-  isToday: boolean;
-  daysUntil: number;
-}
-
-interface ZnsLog {
-  id: string;
-  createdAt: string;
-  type: string;
-  title: string;
-  message: string;
-}
+import { CrmHeader } from './components/CrmHeader';
+import { CrmLoadErrorBanner } from './components/CrmLoadErrorBanner';
+import { CrmTabs } from './components/CrmTabs';
+import { useCrmPageActions } from './hooks/useCrmPageActions';
+import { useCrmPageData } from './hooks/useCrmPageData';
+import type { CrmTabId, NewVoucherCampaign, VoucherCampaign } from './types';
 
 export default function CRMPage() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'reminders' | 'marketing' | 'logs'>('overview');
-  const [stats, setStats] = useState<CRMStats>({
-    totalRemindersSent: 0,
-    pendingRemindersToday: 0,
-    totalBirthdaysToday: 0,
-    totalBirthdaysMonth: 0
-  });
-  const [upcomingSessions, setUpcomingSessions] = useState<UpcomingCrmSession[]>([]);
-  const [birthdayCustomers, setBirthdayCustomers] = useState<BirthdayCustomer[]>([]);
-  const [znsLogs, setZnsLogs] = useState<ZnsLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [scanning, setScanning] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<CrmTabId>('overview');
+  const {
+    stats,
+    upcomingSessions,
+    birthdayCustomers,
+    znsLogs,
+    zaloConfig,
+    setZaloConfig,
+    loading,
+    loadError,
+    loadData,
+  } = useCrmPageData();
+  const {
+    scanning,
+    actionLoading,
+    handleManualScan,
+    handleSendSingleReminder,
+    handleSendBirthday,
+    handleSaveConfig,
+  } = useCrmPageActions({ loadData, zaloConfig });
 
-  // Zalo OA Config state
-  const [zaloConfig, setZaloConfig] = useState<ZaloConfig>({
-    zalo_app_id: '',
-    zalo_secret_key: '',
-    zalo_oa_id: '',
-    zalo_access_token: '',
-    zalo_refresh_token: '',
-    zalo_token_expires_at: '',
-    zalo_template_reminder_id: '',
-    zalo_template_birthday_id: '',
-    zalo_auto_scan: true
-  });
-
-  // Voucher Campaign Form state
-  const [vouchers, setVouchers] = useState([
+  const [vouchers, setVouchers] = useState<VoucherCampaign[]>([
     { code: 'BELLA_BABY_1ST', discount: 10, target: 'Bé tròn 1 tuổi', status: 'active', usage: 12 },
     { code: 'MATERNITY_CARE_15', discount: 15, target: 'Mẹ bầu sắp sinh', status: 'active', usage: 8 },
     { code: 'WELCOME_NEWBORN', discount: 5, target: 'Trẻ sơ sinh', status: 'active', usage: 24 }
   ]);
   const [showNewVoucherModal, setShowNewVoucherModal] = useState(false);
-  const [newVoucher, setNewVoucher] = useState({
+  const [newVoucher, setNewVoucher] = useState<NewVoucherCampaign>({
     code: '',
     discount: 10,
     target: 'Bé tròn 1 tuổi',
     status: 'active'
   });
 
-  const loadData = async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const [s, sessions, bdays, logs, config] = await Promise.all([
-        getCRMStats(),
-        getUpcomingSessions(),
-        getBirthdayCustomers(),
-        getZaloZnsLogs(),
-        getZaloConfig()
-      ]);
-      setStats(s);
-      setUpcomingSessions(sessions);
-      setBirthdayCustomers(bdays);
-      setZnsLogs(logs);
-      setZaloConfig(config);
-    } catch (err) {
-      console.error('Error loading CRM data:', err);
-      setLoadError(`Không thể tải dữ liệu CRM: ${getErrorMessage(err)}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void loadData();
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, []);
-
-  const handleManualScan = async () => {
-    setScanning(true);
-    try {
-      const res = await triggerBatchReminders();
-      if ('error' in res && res.error) {
-        alert('Lỗi khi quét lịch hẹn: ' + res.error);
-      } else {
-        const successRes = res as {
-          count: number;
-          skipped?: number;
-          messages: string[];
-          quotaSkipped?: string[];
-          info: string;
-        };
-        const sentDetails = successRes.count > 0
-          ? `\n\nDanh sách tin đã gửi:\n${successRes.messages.join('\n')}`
-          : '';
-        const skippedDetails = successRes.skipped && successRes.quotaSkipped?.length
-          ? `\n\nBị bỏ qua do hạn ngạch:\n${successRes.quotaSkipped.join('\n')}`
-          : '';
-        alert(successRes.info + sentDetails + skippedDetails);
-        await loadData();
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Không thể hoàn tất quét lịch hẹn.');
-    } finally {
-      setScanning(false);
-    }
-  };
-
-  const handleSendSingleReminder = async (sessionId: string) => {
-    setActionLoading(sessionId);
-    try {
-      const res = await triggerZaloReminder(sessionId);
-      if (res.error) {
-        alert(res.error);
-      } else {
-        alert('Đã gửi thông báo nhắc lịch qua Zalo OA thành công!\n\nNội dung:\n' + res.message);
-        await loadData();
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Lỗi khi gửi thông báo nhắc lịch.');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleSendBirthday = async (customerId: string, babyName: string) => {
-    const voucherCode = 'BELLA_BABY_1ST';
-    setActionLoading(customerId);
-    try {
-      const res = await sendBirthdayGreeting(customerId, voucherCode);
-      if (res.error) {
-        alert(res.error);
-      } else {
-        alert(`Đã gửi lời chúc mừng sinh nhật bé ${babyName} và gửi kèm voucher ${voucherCode} thành công!`);
-        await loadData();
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Lỗi khi gửi tin chúc mừng sinh nhật.');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleCreateVoucher = (e: React.FormEvent) => {
+  const handleCreateVoucher = (e: FormEvent) => {
     e.preventDefault();
     if (!newVoucher.code.trim()) return;
     setVouchers(prev => [...prev, { ...newVoucher, usage: 0 }]);
@@ -227,102 +66,25 @@ export default function CRMPage() {
     setNewVoucher({ code: '', discount: 10, target: 'Bé tròn 1 tuổi', status: 'active' });
   };
 
-  const handleSaveConfig = async () => {
-    setActionLoading('save_zalo_config');
-    try {
-      const res = await saveZaloConfig(zaloConfig);
-      if (res.error) {
-        alert(res.error);
-      } else {
-        alert('Cập nhật cấu hình kết nối Zalo thành công!');
-        await loadData();
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Lỗi hệ thống khi lưu cấu hình.');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   return (
     <div className="flex flex-col flex-1 overflow-auto p-4 lg:p-8 space-y-8 custom-scrollbar bg-slate-50/50">
       
       {/* ── Title Header ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-black text-slate-800 uppercase tracking-tighter flex items-center gap-3">
-            <Megaphone className="w-10 h-10 text-primary" />
-            CRM & Zalo Marketing
-          </h1>
-          <p className="text-slate-400 font-medium mt-1">Hệ thống gửi tin Zalo ZNS tự động, quản lý tệp khách hàng và chiến dịch khuyến mãi</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={loadData}
-            disabled={loading}
-            className="p-3 bg-white hover:bg-rose-50 text-slate-600 hover:text-primary rounded-2xl transition-all border border-rose-100 flex items-center gap-2 shadow-sm font-black text-xs uppercase tracking-widest disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            LÀM MỚI
-          </button>
-          <button 
-            onClick={handleManualScan}
-            disabled={scanning || loading}
-            className="px-6 py-3 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white rounded-2xl transition-all flex items-center gap-2 shadow-lg shadow-rose-200 dark:shadow-none font-black text-xs uppercase tracking-widest disabled:opacity-75"
-          >
-            {scanning ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            QUÉT LỊCH HẸN HÔM NAY
-          </button>
-        </div>
-      </div>
+      <CrmHeader
+        loading={loading}
+        scanning={scanning}
+        onRefresh={loadData}
+        onManualScan={handleManualScan}
+      />
 
-      {/* ── Tabs Navigation ── */}
-      <div className="flex border-b border-rose-100 bg-white p-2.5 rounded-[1.8rem] shadow-sm gap-2">
-        {[
-          { id: 'overview', label: 'TỔNG QUAN & CÀI ĐẶT ZALO', icon: Settings },
-          { id: 'reminders', label: 'THÔNG BÁO NHẮC HẸN', icon: Bell },
-          { id: 'marketing', label: 'SINH NHẬT & CHIẾN DỊCH', icon: Gift },
-          { id: 'logs', label: 'NHẬT KÝ GỬI TIN', icon: Clock }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as 'overview' | 'reminders' | 'marketing' | 'logs')}
-            className={`flex items-center gap-2.5 px-6 py-3.5 rounded-[1.25rem] transition-all duration-300 font-black text-xs uppercase tracking-wider ${
-              activeTab === tab.id
-                ? 'bg-primary text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-            }`}
-          >
-            <tab.icon className="w-4.5 h-4.5" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <CrmTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {loadError && (
-        <div className="rounded-[1.75rem] border border-rose-200 bg-rose-50 p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-xs font-black uppercase tracking-widest text-rose-700">Lỗi tải dữ liệu CRM</h3>
-              <p className="text-sm font-semibold text-rose-700/80 mt-1">{loadError}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={loadData}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-[11px] font-black uppercase tracking-widest text-rose-700 border border-rose-200 hover:bg-rose-100 disabled:opacity-60"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Thử lại
-          </button>
-        </div>
+        <CrmLoadErrorBanner
+          error={loadError}
+          loading={loading}
+          onRetry={loadData}
+        />
       )}
 
       {loading ? (
