@@ -1,5 +1,6 @@
 import {
   adminConfirmOnBehalf,
+  approveSalary,
   confirmKtvSessions,
   finalizeAllSalaryRecords,
   finalizeSalaryRecord,
@@ -901,6 +902,205 @@ describe('finalizeSalaryRecord side-effect rollback', () => {
     expect(result.error).toContain('audit failed');
     expect(result.error).toContain('expense delete failed');
     expect(result.error).toContain('session restore failed');
+    expect(result.error).toContain('salary restore failed');
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe('approveSalary audit rollback', () => {
+  const ktvRecord = {
+    full_name: 'KTV One',
+    tenant_id: 'tenant-1',
+  };
+  const approvedRecord = {
+    id: 'salary-approved-1',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-15T08:00:00.000Z'));
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+      full_name: 'Admin Bella',
+    });
+    mockCheckMonthLock.mockResolvedValue({ isLocked: false });
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+    mockRecalculateAndSaveSalaryRecordEngine.mockResolvedValue({ totalSalary: 6500000 });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('approves salary, creates expense, audits, and revalidates approved views on success', async () => {
+    const calls = setupDb([
+      { table: 'users', op: 'select', data: ktvRecord },
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'select', data: approvedRecord },
+      { table: 'expenses', op: 'insert', data: null },
+    ]);
+
+    const result = await approveSalary('ktv-1');
+
+    expect(result).toEqual({ success: true });
+    expect(calls[0]).toEqual({
+      table: 'users',
+      op: 'select',
+      payload: undefined,
+      filters: [
+        { field: 'id', value: 'ktv-1' },
+        { field: 'tenant_id', value: 'tenant-1' },
+      ],
+    });
+    expect(calls[1]).toEqual({
+      table: 'salary_records',
+      op: 'select',
+      payload: undefined,
+      filters: [
+        { field: 'ktv_id', value: 'ktv-1' },
+        { field: 'month_year', value: '2026-06-01' },
+        { field: 'tenant_id', value: 'tenant-1' },
+      ],
+    });
+    expect(mockRecalculateAndSaveSalaryRecordEngine).toHaveBeenCalledWith(
+      expect.anything(),
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+      { status: 'approved' }
+    );
+    expect(calls[2]).toEqual({
+      table: 'salary_records',
+      op: 'select',
+      payload: undefined,
+      filters: [
+        { field: 'ktv_id', value: 'ktv-1' },
+        { field: 'month_year', value: '2026-06-01' },
+        { field: 'tenant_id', value: 'tenant-1' },
+      ],
+    });
+    expect(calls[3].payload).toEqual(expect.objectContaining({
+      amount: 6500000,
+      category: 'salary',
+      status: 'submitted',
+      tenant_id: 'tenant-1',
+      description: expect.stringContaining('[salary_record_id:salary-approved-1]'),
+    }));
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'salary_records',
+      record_id: 'ktv-1',
+      new_data: {
+        status: 'approved',
+        amount: 6500000,
+        ktv_name: 'KTV One',
+      },
+    });
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/finance', 'page');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary', 'page');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/', 'layout');
+  });
+
+  it('restores the previous salary row when approved record fetch fails after recalculation', async () => {
+    const calls = setupDb([
+      { table: 'users', op: 'select', data: ktvRecord },
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'select', error: { message: 'approved row fetch failed' } },
+      { table: 'salary_records', op: 'update', data: null },
+    ]);
+
+    const result = await approveSalary('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('approved row fetch failed');
+    expect(calls[3]).toEqual({
+      table: 'salary_records',
+      op: 'update',
+      payload: salarySnapshot,
+      filters: [{ field: 'id', value: 'salary-1' }],
+    });
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('restores the previous salary row when expense creation fails after approval', async () => {
+    const calls = setupDb([
+      { table: 'users', op: 'select', data: ktvRecord },
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'select', data: approvedRecord },
+      { table: 'expenses', op: 'insert', error: { message: 'expense insert failed' } },
+      { table: 'salary_records', op: 'update', data: null },
+    ]);
+
+    const result = await approveSalary('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('expense insert failed');
+    expect(calls[4]).toEqual({
+      table: 'salary_records',
+      op: 'update',
+      payload: salarySnapshot,
+      filters: [{ field: 'id', value: 'salary-1' }],
+    });
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('deletes generated expense and restores salary row when approval audit fails', async () => {
+    const calls = setupDb([
+      { table: 'users', op: 'select', data: ktvRecord },
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'select', data: approvedRecord },
+      { table: 'expenses', op: 'insert', data: null },
+      { table: 'expenses', op: 'delete', data: null },
+      { table: 'salary_records', op: 'update', data: null },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await approveSalary('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('audit failed');
+    expect(calls[4]).toEqual({
+      table: 'expenses',
+      op: 'delete',
+      payload: undefined,
+      filters: [
+        { field: 'tenant_id', value: 'tenant-1' },
+        { field: 'category', value: 'salary' },
+        {
+          field: 'description',
+          value: expect.stringContaining('[salary_record_id:salary-approved-1]'),
+        },
+      ],
+    });
+    expect(calls[5]).toEqual({
+      table: 'salary_records',
+      op: 'update',
+      payload: salarySnapshot,
+      filters: [{ field: 'id', value: 'salary-1' }],
+    });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('reports rollback failures when approval audit rollback cannot fully restore state', async () => {
+    setupDb([
+      { table: 'users', op: 'select', data: ktvRecord },
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'select', data: approvedRecord },
+      { table: 'expenses', op: 'insert', data: null },
+      { table: 'expenses', op: 'delete', error: { message: 'expense delete failed' } },
+      { table: 'salary_records', op: 'update', error: { message: 'salary restore failed' } },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await approveSalary('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('audit failed');
+    expect(result.error).toContain('expense delete failed');
     expect(result.error).toContain('salary restore failed');
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });

@@ -677,21 +677,27 @@ export async function approveSalary(ktvId: string) {
   if (lockFailure) return lockFailure;
 
   try {
+    const currentUser = await getCurrentUser();
+    const tenantId = currentUser?.tenant_id;
+    if (!tenantId) {
+      return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+    }
+
     // 1. Get KTV info for description
     const { data: ktvData, error: ktvError } = await supabase
       .from('users')
       .select('full_name, tenant_id')
       .eq('id', ktvId)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (ktvError) throw ktvError;
     const ktv = ktvData;
-
-    const currentUser = await getCurrentUser();
-    const tenantId = currentUser?.tenant_id || ktv?.tenant_id;
-    if (!tenantId) {
-      return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+    if (!ktv) {
+      return { success: false, error: 'Không tìm thấy KTV cần phê duyệt lương' };
     }
+
+    const previousSalaryRecord = await snapshotSalaryRecord(supabase, ktvId, monthYear, tenantId);
 
     // 2. Recalculate and update status to 'approved'
     const res = await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, {
@@ -704,26 +710,91 @@ export async function approveSalary(ktvId: string) {
       .select('id')
       .eq('ktv_id', ktvId)
       .eq('month_year', monthYear)
+      .eq('tenant_id', tenantId)
       .single();
-    if (fetchError) throw fetchError;
+    if (fetchError) {
+      const rollbackError = await restoreSalaryConfigSnapshot(
+        supabase,
+        previousSalaryRecord,
+        ktvId,
+        monthYear,
+        tenantId
+      );
+      const rollbackMessage = rollbackError ? ` Rollback salary_records failed: ${rollbackError}` : '';
+      return {
+        success: false,
+        error: `Failed to fetch approved salary record: ${fetchError.message}.${rollbackMessage}`,
+      };
+    }
+
+    const approvedRecord = recordData as Pick<SalaryRecordRow, 'id'> | null;
+    if (!approvedRecord) {
+      const rollbackError = await restoreSalaryConfigSnapshot(
+        supabase,
+        previousSalaryRecord,
+        ktvId,
+        monthYear,
+        tenantId
+      );
+      const rollbackMessage = rollbackError ? ` Rollback salary_records failed: ${rollbackError}` : '';
+      return {
+        success: false,
+        error: `Failed to fetch approved salary record: missing approved salary row.${rollbackMessage}`,
+      };
+    }
 
     const expenseAmount = res.totalSalary;
     const expenseDate = new Date().toISOString();
-    const expenseDescription = `Thanh toán lương T${monthLabel} - KTV ${ktv?.full_name || 'Nhân viên'} [salary_record_id:${recordData.id}] [ktv_id:${ktvId}]`;
-    await createSalaryExpense({
-      supabase,
-      tenantId,
-      amount: expenseAmount,
-      description: expenseDescription,
-      context: 'Approve salary expense',
-      expenseDate,
-    });
-    await recordSalaryStatusAudit({
-      recordId: ktvId,
-      status: 'approved',
-      amount: res.totalSalary,
-      ktvName: ktv?.full_name,
-    });
+    const expenseDescription = `Thanh toán lương T${monthLabel} - KTV ${ktv.full_name || 'Nhân viên'} [salary_record_id:${approvedRecord.id}] [ktv_id:${ktvId}]`;
+    try {
+      await createSalaryExpense({
+        supabase,
+        tenantId,
+        amount: expenseAmount,
+        description: expenseDescription,
+        context: 'Approve salary expense',
+        expenseDate,
+      });
+    } catch (expenseError: unknown) {
+      const rollbackError = await restoreSalaryConfigSnapshot(
+        supabase,
+        previousSalaryRecord,
+        ktvId,
+        monthYear,
+        tenantId
+      );
+      const rollbackMessage = rollbackError ? ` Rollback salary_records failed: ${rollbackError}` : '';
+      return {
+        success: false,
+        error: `Failed to create salary expense during approval: ${getErrorMessage(expenseError, 'Unknown expense error')}.${rollbackMessage}`,
+      };
+    }
+
+    try {
+      await recordSalaryStatusAudit({
+        recordId: ktvId,
+        status: 'approved',
+        amount: res.totalSalary,
+        ktvName: ktv.full_name,
+      });
+    } catch (auditError: unknown) {
+      const expenseRollbackError = await deleteSalaryExpenseByDescription(supabase, tenantId, expenseDescription);
+      const salaryRollbackError = await restoreSalaryConfigSnapshot(
+        supabase,
+        previousSalaryRecord,
+        ktvId,
+        monthYear,
+        tenantId
+      );
+      const rollbackErrors = [
+        ...(expenseRollbackError ? [`expenses delete failed: ${expenseRollbackError}`] : []),
+        ...(salaryRollbackError ? [`salary_records restore failed: ${salaryRollbackError}`] : []),
+      ];
+      return {
+        success: false,
+        error: `Failed to record approve salary audit log: ${getErrorMessage(auditError, 'Unknown audit error')}.${formatRollbackErrors(rollbackErrors)}`,
+      };
+    }
     revalidateApprovedSalaryViews();
 
     return { success: true };
