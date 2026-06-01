@@ -10,6 +10,7 @@
 /test-results-fresh.json
 /test-summary.json
 /test-execution-report.html
+/docs/bella_spa_evaluation_report.html
 
 # playwright / e2e
 /playwright-report/
@@ -52,6 +53,8 @@ yarn-error.log*
 # Local scratch / experiment scripts (KHÔNG commit — có thể chứa secrets)
 /scratch/
 /scripts/check_exec_sql.mjs
+/.claude/settings.local.json
+/supabase/.temp/
 
 # MCP server config (chứa Service Role Key - không commit lên Git)
 .mcp.json
