@@ -104,6 +104,8 @@ export function HqSubscriptionQuotaConsole({
     () => overview.tenants.filter((tenant) => tenant.name !== 'Bella Spa Headquarter'),
     [overview.tenants]
   );
+  const hasActiveTenants = activeTenants.length > 0;
+  const hasPlans = overview.plans.length > 0;
 
   const entitlementsByPlan = useMemo(() => {
     return overview.entitlements.reduce<Record<string, SubscriptionEntitlement[]>>((acc, entitlement) => {
@@ -356,8 +358,12 @@ export function HqSubscriptionQuotaConsole({
             <select
               value={selectedTenantId}
               onChange={(event) => handleTenantSelection(event.target.value)}
+              disabled={!hasActiveTenants}
               className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
             >
+              {!hasActiveTenants ? (
+                <option value="">Chưa có chi nhánh</option>
+              ) : null}
               {activeTenants.map((tenant) => (
                 <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
               ))}
@@ -370,8 +376,12 @@ export function HqSubscriptionQuotaConsole({
               <select
                 value={selectedPlanCode}
                 onChange={(event) => setSelectedPlanCode(event.target.value)}
+                disabled={!hasPlans}
                 className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
               >
+                {!hasPlans ? (
+                  <option value="">Chưa có plan</option>
+                ) : null}
                 {overview.plans.map((plan) => (
                   <option key={plan.plan_code} value={plan.plan_code}>{plan.display_name}</option>
                 ))}
@@ -395,7 +405,7 @@ export function HqSubscriptionQuotaConsole({
 
           <button
             type="submit"
-            disabled={submittingPlan || loading || !selectedTenantId}
+            disabled={submittingPlan || loading || !selectedTenantId || !selectedPlanCode}
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 hover:bg-slate-800 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white disabled:opacity-50"
           >
             {submittingPlan ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
@@ -415,8 +425,12 @@ export function HqSubscriptionQuotaConsole({
               <select
                 value={overrideTenantId}
                 onChange={(event) => setOverrideTenantId(event.target.value)}
+                disabled={!hasActiveTenants}
                 className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
               >
+                {!hasActiveTenants ? (
+                  <option value="">Chưa có chi nhánh</option>
+                ) : null}
                 {activeTenants.map((tenant) => (
                   <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
                 ))}
