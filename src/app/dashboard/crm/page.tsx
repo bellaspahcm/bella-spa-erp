@@ -6,16 +6,12 @@ import {
   Clock, 
   Gift, 
   Calendar, 
-  ChevronRight, 
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
   Plus, 
-  Search, 
-  Users, 
   Percent, 
   Send, 
-  Smartphone, 
   Info,
   Settings,
   Bell,
@@ -24,7 +20,6 @@ import {
   Tag
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
 import { 
   getCRMStats, 
   getUpcomingSessions, 
@@ -38,7 +33,48 @@ import {
   saveZaloConfig,
   type ZaloConfig
 } from '@/services/crm-actions';
-import { formatCurrency } from '@/lib/utils';
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Lỗi không xác định';
+}
+
+interface UpcomingCrmSession {
+  id: string;
+  assigned_time?: string | null;
+  assigned_date?: string | null;
+  address?: string | null;
+  zalo_reminder_sent?: boolean | null;
+  bookings?: {
+    booking_number?: string | null;
+    customers?: {
+      name_mother?: string | null;
+      name_baby?: string | null;
+      phone?: string | null;
+    } | null;
+    assigned_ktv?: {
+      full_name?: string | null;
+    } | null;
+  } | null;
+}
+
+interface BirthdayCustomer {
+  id: string;
+  name_mother?: string | null;
+  name_baby?: string | null;
+  phone?: string | null;
+  dobFormatted: string;
+  ageYears: number;
+  isToday: boolean;
+  daysUntil: number;
+}
+
+interface ZnsLog {
+  id: string;
+  createdAt: string;
+  type: string;
+  title: string;
+  message: string;
+}
 
 export default function CRMPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'reminders' | 'marketing' | 'logs'>('overview');
@@ -48,10 +84,11 @@ export default function CRMPage() {
     totalBirthdaysToday: 0,
     totalBirthdaysMonth: 0
   });
-  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
-  const [birthdayCustomers, setBirthdayCustomers] = useState<any[]>([]);
-  const [znsLogs, setZnsLogs] = useState<any[]>([]);
+  const [upcomingSessions, setUpcomingSessions] = useState<UpcomingCrmSession[]>([]);
+  const [birthdayCustomers, setBirthdayCustomers] = useState<BirthdayCustomer[]>([]);
+  const [znsLogs, setZnsLogs] = useState<ZnsLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -84,6 +121,7 @@ export default function CRMPage() {
 
   const loadData = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [s, sessions, bdays, logs, config] = await Promise.all([
         getCRMStats(),
@@ -99,13 +137,18 @@ export default function CRMPage() {
       setZaloConfig(config);
     } catch (err) {
       console.error('Error loading CRM data:', err);
+      setLoadError(`Không thể tải dữ liệu CRM: ${getErrorMessage(err)}`);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    const timeoutId = window.setTimeout(() => {
+      void loadData();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   const handleManualScan = async () => {
@@ -260,6 +303,27 @@ export default function CRMPage() {
           </button>
         ))}
       </div>
+
+      {loadError && (
+        <div className="rounded-[1.75rem] border border-rose-200 bg-rose-50 p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-xs font-black uppercase tracking-widest text-rose-700">Lỗi tải dữ liệu CRM</h3>
+              <p className="text-sm font-semibold text-rose-700/80 mt-1">{loadError}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={loadData}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-[11px] font-black uppercase tracking-widest text-rose-700 border border-rose-200 hover:bg-rose-100 disabled:opacity-60"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Thử lại
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center py-20 gap-3 opacity-60">
@@ -510,7 +574,7 @@ export default function CRMPage() {
                     {upcomingSessions.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="text-center py-12 text-slate-400 font-medium italic">
-                          Không tìm thấy buổi chăm sóc nào hôm nay và ngày mai.
+                          {loadError ? 'Không thể tải danh sách lịch nhắc hẹn.' : 'Không tìm thấy buổi chăm sóc nào hôm nay và ngày mai.'}
                         </td>
                       </tr>
                     ) : (
@@ -614,7 +678,7 @@ export default function CRMPage() {
                       {birthdayCustomers.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="text-center py-12 text-slate-400 font-medium italic">
-                            Không tìm thấy bé nào có sinh nhật trong tháng này.
+                            {loadError ? 'Không thể tải danh sách sinh nhật trong tháng.' : 'Không tìm thấy bé nào có sinh nhật trong tháng này.'}
                           </td>
                         </tr>
                       ) : (
@@ -647,7 +711,7 @@ export default function CRMPage() {
                             </td>
                             <td className="py-4 px-6 text-center">
                               <button 
-                                onClick={() => handleSendBirthday(c.id, c.name_baby)}
+                                onClick={() => handleSendBirthday(c.id, c.name_baby || 'bé')}
                                 disabled={actionLoading === c.id}
                                 className="px-4 py-2 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-rose-100 dark:shadow-none hover:shadow-lg transition-all flex items-center gap-1.5 mx-auto"
                               >
@@ -760,7 +824,7 @@ export default function CRMPage() {
                     {znsLogs.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="text-center py-12 text-slate-400 font-medium italic">
-                          Không tìm thấy nhật ký gửi tin nhắn nào.
+                          {loadError ? 'Không thể tải nhật ký gửi tin nhắn.' : 'Không tìm thấy nhật ký gửi tin nhắn nào.'}
                         </td>
                       </tr>
                     ) : (
