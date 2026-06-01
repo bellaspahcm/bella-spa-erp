@@ -718,12 +718,16 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
 
     if (isFinished) {
       // Clean up any remaining scheduled logs that exceed the total sessions
-      await supabase
+      const { error: cleanupError } = await supabase
         .from('session_logs')
         .delete()
         .eq('booking_id', session.booking_id)
         .gt('session_number', booking.total_sessions)
         .eq('status', 'scheduled');
+
+      if (cleanupError) {
+        return rollbackCompletedSession(`Failed to clean up extra scheduled sessions after completing booking: ${cleanupError.message}`);
+      }
     }
   }
 

@@ -444,4 +444,94 @@ describe('KTV read actions fail-fast behavior', () => {
       notes: 'old notes',
     }));
   });
+
+  it('rolls back completed session and inventory when extra scheduled cleanup fails', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      start_time: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      end_time: null,
+      completed_date: null,
+      notes: 'old notes',
+      standard_duration: null,
+      actual_duration: null,
+      time_deviation: null,
+      duration_warning_type: null,
+      ktv_checkout_note: null,
+      checkout_lat: null,
+      checkout_lon: null,
+      bookings: {
+        package_id: 'pkg-1',
+        packages: { duration: '60 phut' },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const completeUpdate = new MockQueryBuilder(null, null);
+    const completedCount = new MockQueryBuilder(null, null, 10);
+    const fetchBooking = new MockQueryBuilder({ total_sessions: 10 }, null);
+    const bookingUpdate = new MockQueryBuilder(null, null);
+    const cleanupDelete = new MockQueryBuilder(null, { message: 'cleanup delete failed' });
+    const rollbackSession = new MockQueryBuilder(null, null);
+    mockAutoConsumeForSession.mockResolvedValue({ success: true, processed: 1, totalCost: 1000 });
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(completeUpdate)
+      .mockReturnValueOnce(completedCount)
+      .mockReturnValueOnce(fetchBooking)
+      .mockReturnValueOnce(bookingUpdate)
+      .mockReturnValueOnce(cleanupDelete)
+      .mockReturnValueOnce(rollbackSession);
+
+    const result = await completeKTVSession('session-1', 'notes', 'checkout note');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Failed to clean up extra scheduled sessions after completing booking: cleanup delete failed',
+    });
+    expect(mockRollbackInventoryConsumption).toHaveBeenCalledWith('session-1');
+    expect(rollbackSession.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'in_progress',
+      notes: 'old notes',
+    }));
+  });
+
+  it('does not attempt extra scheduled cleanup when booking is still in progress', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      start_time: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      end_time: null,
+      completed_date: null,
+      notes: null,
+      standard_duration: null,
+      actual_duration: null,
+      time_deviation: null,
+      duration_warning_type: null,
+      ktv_checkout_note: null,
+      checkout_lat: null,
+      checkout_lon: null,
+      bookings: {
+        package_id: null,
+        packages: { duration: '60 phut' },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const completeUpdate = new MockQueryBuilder(null, null);
+    const completedCount = new MockQueryBuilder(null, null, 1);
+    const fetchBooking = new MockQueryBuilder({ total_sessions: 10 }, null);
+    const bookingUpdate = new MockQueryBuilder(null, null);
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(completeUpdate)
+      .mockReturnValueOnce(completedCount)
+      .mockReturnValueOnce(fetchBooking)
+      .mockReturnValueOnce(bookingUpdate);
+
+    const result = await completeKTVSession('session-1', 'notes', 'checkout note');
+
+    expect(result).toEqual({ success: true });
+    expect(mockFrom).toHaveBeenCalledTimes(5);
+  });
 });

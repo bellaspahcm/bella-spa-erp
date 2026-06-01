@@ -7,6 +7,21 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden KTV Session Cleanup Failure
+* **Mục tiêu kỹ thuật**:
+  * Đóng lỗi silent DB failure cuối luồng `completeKTVSession` khi booking đã hoàn tất.
+  * Tránh trả success nếu bước xóa các `session_logs` scheduled dư bị lỗi, vì booking completed nhưng lịch dư vẫn còn.
+* **Thay đổi chính**:
+  * Kiểm tra kết quả cleanup delete sau khi booking đạt trạng thái hoàn tất.
+  * Nếu cleanup delete lỗi, action trả failure rõ và đi qua rollback helper để hoàn tác session/inventory đã hoàn thành trước đó.
+  * Mở rộng `ktv-actions.test.ts` lên 14 test, bao phủ cleanup delete failure và case booking chưa hoàn tất không gọi cleanup.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/ktv-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/inventory-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/ktv-actions.ts src/__tests__/ktv-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden KTV Session Completion Side Effects
 * **Mục tiêu kỹ thuật**:
   * Siết luồng hoàn thành ca KTV sau khi auto-consume inventory đã chạy thành công.
