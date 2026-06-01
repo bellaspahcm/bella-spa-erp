@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden KTV Session Completion Side Effects
+* **Mục tiêu kỹ thuật**:
+  * Siết luồng hoàn thành ca KTV sau khi auto-consume inventory đã chạy thành công.
+  * Tránh trường hợp session bị rollback khỏi trạng thái `completed` nhưng vật tư tiêu hao và inventory logs vẫn còn, làm lệch kho và COGS.
+* **Thay đổi chính**:
+  * `completeKTVSession` track khi `autoConsumeForSession` thật sự tạo side-effect inventory (`processed` hoặc `totalCost` > 0).
+  * Nếu lỗi xảy ra ở bước đếm ca hoàn thành hoặc cập nhật booking sau khi đã trừ kho, action gọi `rollbackInventoryConsumption(sessionId)` trước khi trả failure.
+  * Error trả về bao gồm lỗi rollback inventory nếu quá trình hoàn kho cũng thất bại.
+  * Giữ nguyên hành vi checkout GPS là warning không-critical khi các bước nghiệp vụ chính thành công.
+  * Mở rộng `ktv-actions.test.ts` lên 12 test, bao phủ rollback inventory khi count/booking lỗi và không rollback khi auto-consume bị bypass.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/ktv-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/inventory-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/ktv-actions.ts src/__tests__/ktv-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Leave Reassignment Rollback
 * **Mục tiêu kỹ thuật**:
   * Siết tiếp luồng phê duyệt nghỉ phép sau khi đã rollback `staff_leaves` khi ghi `attendance` lỗi.

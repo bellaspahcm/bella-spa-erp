@@ -15,6 +15,8 @@ jest.mock('server-only', () => ({}), { virtual: true });
 
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
+const mockAutoConsumeForSession = jest.fn();
+const mockRollbackInventoryConsumption = jest.fn();
 
 jest.mock('../services/user-actions', () => ({
   getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
@@ -22,6 +24,11 @@ jest.mock('../services/user-actions', () => ({
 
 jest.mock('../lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
+}));
+
+jest.mock('../services/inventory-actions', () => ({
+  autoConsumeForSession: (...args: unknown[]) => mockAutoConsumeForSession(...args),
+  rollbackInventoryConsumption: (...args: unknown[]) => mockRollbackInventoryConsumption(...args),
 }));
 
 class MockQueryBuilder {
@@ -57,6 +64,8 @@ describe('KTV read actions fail-fast behavior', () => {
       role: 'ktv',
       tenant_id: 'tenant-1',
     });
+    mockAutoConsumeForSession.mockResolvedValue({ success: true, bypassed: true });
+    mockRollbackInventoryConsumption.mockResolvedValue({ success: true });
   });
 
   it('propagates active session query failures', async () => {
@@ -296,5 +305,143 @@ describe('KTV read actions fail-fast behavior', () => {
       checkout_lat: null,
       checkout_lon: null,
     });
+  });
+
+  it('rolls back inventory consumption when completed-session count fails after checkout', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      start_time: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      end_time: null,
+      completed_date: null,
+      notes: 'old notes',
+      standard_duration: null,
+      actual_duration: null,
+      time_deviation: null,
+      duration_warning_type: null,
+      ktv_checkout_note: null,
+      checkout_lat: null,
+      checkout_lon: null,
+      bookings: {
+        package_id: 'pkg-1',
+        packages: { duration: '60 phut' },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const completeUpdate = new MockQueryBuilder(null, null);
+    const completedCount = new MockQueryBuilder(null, { message: 'count failed' });
+    const rollbackSession = new MockQueryBuilder(null, null);
+    mockAutoConsumeForSession.mockResolvedValue({ success: true, processed: 2, totalCost: 3000 });
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(completeUpdate)
+      .mockReturnValueOnce(completedCount)
+      .mockReturnValueOnce(rollbackSession);
+
+    const result = await completeKTVSession('session-1', 'notes', 'checkout note');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Failed to count completed sessions: count failed',
+    });
+    expect(mockAutoConsumeForSession).toHaveBeenCalledWith('pkg-1', 'session-1');
+    expect(mockRollbackInventoryConsumption).toHaveBeenCalledWith('session-1');
+    expect(rollbackSession.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'in_progress',
+      notes: 'old notes',
+    }));
+  });
+
+  it('reports inventory rollback failure when booking update fails after auto-consume', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      start_time: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      end_time: null,
+      completed_date: null,
+      notes: 'old notes',
+      standard_duration: null,
+      actual_duration: null,
+      time_deviation: null,
+      duration_warning_type: null,
+      ktv_checkout_note: null,
+      checkout_lat: null,
+      checkout_lon: null,
+      bookings: {
+        package_id: 'pkg-1',
+        packages: { duration: '60 phut' },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const completeUpdate = new MockQueryBuilder(null, null);
+    const completedCount = new MockQueryBuilder(null, null, 1);
+    const fetchBooking = new MockQueryBuilder({ total_sessions: 10 }, null);
+    const bookingUpdate = new MockQueryBuilder(null, { message: 'booking update failed' });
+    const rollbackSession = new MockQueryBuilder(null, null);
+    mockAutoConsumeForSession.mockResolvedValue({ success: true, processed: 1, totalCost: 1000 });
+    mockRollbackInventoryConsumption.mockResolvedValue({ success: false, error: 'inventory rollback failed' });
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(completeUpdate)
+      .mockReturnValueOnce(completedCount)
+      .mockReturnValueOnce(fetchBooking)
+      .mockReturnValueOnce(bookingUpdate)
+      .mockReturnValueOnce(rollbackSession);
+
+    const result = await completeKTVSession('session-1', 'notes', 'checkout note');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Failed to update booking after completing session: booking update failed');
+    expect(result.error).toContain('failed to roll back inventory consumption: inventory rollback failed');
+    expect(mockRollbackInventoryConsumption).toHaveBeenCalledWith('session-1');
+    expect(rollbackSession.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'in_progress',
+      notes: 'old notes',
+    }));
+  });
+
+  it('does not roll back inventory when auto-consume is bypassed before a later failure', async () => {
+    const session = {
+      booking_id: 'booking-1',
+      start_time: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      status: 'in_progress',
+      end_time: null,
+      completed_date: null,
+      notes: 'old notes',
+      standard_duration: null,
+      actual_duration: null,
+      time_deviation: null,
+      duration_warning_type: null,
+      ktv_checkout_note: null,
+      checkout_lat: null,
+      checkout_lon: null,
+      bookings: {
+        package_id: 'pkg-1',
+        packages: { duration: '60 phut' },
+      },
+    };
+    const fetchSession = new MockQueryBuilder(session, null);
+    const completeUpdate = new MockQueryBuilder(null, null);
+    const completedCount = new MockQueryBuilder(null, { message: 'count failed' });
+    const rollbackSession = new MockQueryBuilder(null, null);
+    mockAutoConsumeForSession.mockResolvedValue({ success: true, bypassed: true });
+
+    mockFrom
+      .mockReturnValueOnce(fetchSession)
+      .mockReturnValueOnce(completeUpdate)
+      .mockReturnValueOnce(completedCount)
+      .mockReturnValueOnce(rollbackSession);
+
+    const result = await completeKTVSession('session-1', 'notes', 'checkout note');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Failed to count completed sessions: count failed');
+    expect(mockRollbackInventoryConsumption).not.toHaveBeenCalled();
+    expect(rollbackSession.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      status: 'in_progress',
+      notes: 'old notes',
+    }));
   });
 });
