@@ -56,11 +56,14 @@ export async function checkSubscriptionLimit(
     .from('tenants')
     .select('subscription_tier, subscription_expires_at, sms_allotment_used, franchise_agreement_date')
     .eq('id', tenantId)
-    .single() as unknown as Promise<{ data: TenantSubscriptionRow | null; error: any }>);
+    .single() as unknown as Promise<{ data: TenantSubscriptionRow | null; error: { message: string } | null }>);
 
-  if (tenantErr || !tenant) {
-    console.error('[checkSubscriptionLimit] Error fetching tenant subscription:', tenantErr);
-    return { isBlocked: false, current: 0, max: 999999, tier: 'free_trial', isExpired: false, limits: SUBSCRIPTION_TIERS.free_trial };
+  if (tenantErr) {
+    throw new Error(`[checkSubscriptionLimit] tenants query failed: ${tenantErr.message}`);
+  }
+
+  if (!tenant) {
+    throw new Error(`[checkSubscriptionLimit] Tenant ${tenantId} not found`);
   }
 
   // Subscription limits (KTV/customer/SMS quotas) apply ONLY to franchise
@@ -89,7 +92,9 @@ export async function checkSubscriptionLimit(
       .eq('tenant_id', tenantId)
       .eq('role', 'ktv');
 
-    if (error) console.error('Error counting KTVs:', error);
+    if (error) {
+      throw new Error(`[checkSubscriptionLimit] users count failed: ${error.message}`);
+    }
     const currentCount = count || 0;
     return {
       isBlocked: currentCount >= limits.maxKtv,
@@ -106,7 +111,9 @@ export async function checkSubscriptionLimit(
       .select('*', { count: 'exact', head: true })
       .eq('tenant_id', tenantId);
 
-    if (error) console.error('Error counting customers:', error);
+    if (error) {
+      throw new Error(`[checkSubscriptionLimit] customers count failed: ${error.message}`);
+    }
     const currentCount = count || 0;
     return {
       isBlocked: currentCount >= limits.maxCustomers,
@@ -136,18 +143,17 @@ export async function checkSubscriptionLimit(
  */
 export async function incrementSmsCount(tenantId: string): Promise<number> {
   const supabase = await createClient();
-  type IncrementSmsRpc = (
-    fn: 'increment_tenant_sms',
-    args: { p_tenant_id: string }
-  ) => Promise<{ data: number | null; error: { message: string } | null }>;
-
-  const { data, error } = await (supabase.rpc as unknown as IncrementSmsRpc)('increment_tenant_sms', {
+  const { data, error } = await supabase.rpc('increment_tenant_sms', {
     p_tenant_id: tenantId
   });
 
   if (error) {
-    console.error('[incrementSmsCount] Failed to increment SMS:', error);
-    return 0;
+    throw new Error(`[incrementSmsCount] increment_tenant_sms failed: ${error.message}`);
   }
-  return data || 0;
+
+  if (data === null) {
+    throw new Error('[incrementSmsCount] increment_tenant_sms returned null');
+  }
+
+  return data;
 }

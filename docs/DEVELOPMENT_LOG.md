@@ -7,6 +7,27 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Subscription Engine Fail Closed
+* **Mục tiêu kỹ thuật**:
+  * Xử lý nền subscription/quota trước khi xây phân hệ Super Admin quản lý gói thuê bao và hạn ngạch.
+  * Loại bỏ các đường fail-open: lỗi DB/RPC không được biến thành quota unlimited, SMS count = 0, hoặc danh sách invoice rỗng giả.
+  * Đảm bảo HQ đổi trạng thái tenant phải có audit hoặc rollback.
+* **Thay đổi chính**:
+  * `checkSubscriptionLimit` giờ throw rõ khi query `tenants`, count `users`, hoặc count `customers` fail; không còn fallback unlimited khi DB lỗi.
+  * `incrementSmsCount` giờ throw khi RPC `increment_tenant_sms` fail hoặc trả null; không còn trả `0` âm thầm.
+  * `getSubscriptionInvoiceHistory` throw lỗi query thay vì trả `[]`.
+  * `createUpgradeInvoice` và `simulateInvoicePayment` yêu cầu role quản trị tenant; simulated payment chỉ gọi renewal RPC nếu invoice thuộc tenant hiện tại.
+  * `toggleTenantStatus` snapshot trạng thái tenant, audit old/new data, và rollback `status/updated_at` nếu audit fail.
+  * Thêm migration `20260601010000_harden_subscription_rpc.sql` để siết quyền DB-side cho `renew_tenant_subscription` và `increment_tenant_sms`, đồng thời lock invoice row khi renew.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/subscription.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/hq-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/lib/subscription.ts src/services/subscription-actions.ts src/services/hq-actions.ts src/__tests__/subscription.test.ts src/__tests__/subscription-actions.test.ts src/__tests__/hq-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Batch Harden Promotion Actions Audit Rollback
 * **Mục tiêu kỹ thuật**:
   * Gom cả cụm `promotions-actions` vào một batch thay vì sửa từng hàm nhỏ.
