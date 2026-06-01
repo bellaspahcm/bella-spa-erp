@@ -182,7 +182,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
     // Create a map of package name -> multiplier
     const packageMultiplierMap = new Map<string, number>();
-    packagesList.forEach((pkg: any) => {
+    packagesList.forEach((pkg: { name: string | null; session_multiplier: number | null }) => {
       if (pkg.name) {
         packageMultiplierMap.set(pkg.name, Number(pkg.session_multiplier ?? 1.0));
       }
@@ -315,10 +315,13 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
   
   try {
     // 1. Fetch all KTVs
-    const { data: ktvs } = await supabase
+    const { data: ktvs, error: ktvsError } = await supabase
       .from('users')
       .select('id, full_name')
       .eq('role', 'ktv');
+    if (ktvsError) {
+      throw new Error(`getKtvSessionMatrix users query failed: ${ktvsError.message}`);
+    }
 
     const realKtvs = (ktvs || []) as MatrixKtvUser[];
 
@@ -327,10 +330,13 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
     const endOfMonthStr = getLocalDateString(new Date(now.getFullYear(), now.getMonth() + 1, 1));
 
     // 2. Fetch salary records for confirmation status
-    const { data: salaryRecordsData } = await supabase
+    const { data: salaryRecordsData, error: salaryRecordsError } = await supabase
       .from('salary_records')
       .select('ktv_id, total_sessions, status')
       .eq('month_year', currentMonthYear);
+    if (salaryRecordsError) {
+      throw new Error(`getKtvSessionMatrix salary_records query failed: ${salaryRecordsError.message}`);
+    }
 
     const salaryRecords = (salaryRecordsData || []) as SalaryRecordDb[];
 
@@ -355,7 +361,9 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
       .gte('completed_date', currentMonthYear)
       .lt('completed_date', endOfMonthStr);
 
-    if (sessionsError) console.error('Error fetching sessions:', sessionsError);
+    if (sessionsError) {
+      throw new Error(`getKtvSessionMatrix session_logs query failed: ${sessionsError.message}`);
+    }
 
     const sessionsTyped = (sessions || []) as unknown as MatrixSessionLogDb[];
 
@@ -363,7 +371,10 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
     const matrix: Record<string, Record<string, number>> = {};
     
     // Fetch all available packages from the database to ensure all columns are shown
-    const { data: allPackages } = await supabase.from('packages').select('name');
+    const { data: allPackages, error: packagesError } = await supabase.from('packages').select('name');
+    if (packagesError) {
+      throw new Error(`getKtvSessionMatrix packages query failed: ${packagesError.message}`);
+    }
     const packagesTyped = (allPackages || []) as PackageNameDb[];
     
     // Build list of package names from sessions AND available packages
@@ -425,6 +436,6 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
     };
   } catch (error) {
     console.error('Critical error in getKtvSessionMatrix:', error);
-    return { ktvs: [], packageNames: [] };
+    throw error instanceof Error ? error : new Error('getKtvSessionMatrix failed');
   }
 }
