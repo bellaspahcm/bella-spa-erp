@@ -2,6 +2,7 @@ import {
   adminConfirmOnBehalf,
   confirmKtvSessions,
   finalizeAllSalaryRecords,
+  finalizeSalaryRecord,
   publishAllSalaryRecords,
   publishSalaryRecord,
   updateSalaryConfig,
@@ -683,6 +684,228 @@ describe('confirmKtvSessions salary rollback', () => {
   });
 });
 
+describe('finalizeSalaryRecord side-effect rollback', () => {
+  const confirmedSalaryRecord = {
+    id: 'salary-finalize-1',
+    ktv_id: 'ktv-1',
+    month_year: '2026-06-01',
+    status: 'confirmed',
+    finalized_at: null,
+    total_salary: 6500000,
+    tenant_id: 'tenant-1',
+    users: { full_name: 'KTV One' },
+  };
+  const sessionSnapshots = [
+    { id: 'session-1', is_confirmed: false },
+    { id: 'session-2', is_confirmed: null },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-15T08:00:00.000Z'));
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+      full_name: 'Admin Bella',
+    });
+    mockCheckMonthLock.mockResolvedValue({ isLocked: false });
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('finalizes salary, confirms sessions, creates expense, audits, and revalidates on success', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: confirmedSalaryRecord },
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'salary_records', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'expenses', op: 'insert', data: null },
+    ]);
+
+    const result = await finalizeSalaryRecord('ktv-1');
+
+    expect(result).toEqual({ success: true });
+    expect(calls[0]).toEqual({
+      table: 'salary_records',
+      op: 'select',
+      payload: undefined,
+      filters: [
+        { field: 'ktv_id', value: 'ktv-1' },
+        { field: 'month_year', value: '2026-06-01' },
+        { field: 'tenant_id', value: 'tenant-1' },
+        { field: 'status', value: 'confirmed' },
+      ],
+    });
+    expect(calls[2]).toEqual({
+      table: 'salary_records',
+      op: 'update',
+      payload: {
+        status: 'finalized',
+        finalized_at: '2026-06-15T08:00:00.000Z',
+      },
+      filters: [{ field: 'id', value: 'salary-finalize-1' }],
+    });
+    expect(calls[3]).toEqual({
+      table: 'session_logs',
+      op: 'update',
+      payload: { is_confirmed: true },
+      filters: [
+        { field: 'completed_by_ktv_id', value: 'ktv-1' },
+        { field: 'status', value: 'completed' },
+      ],
+    });
+    expect(calls[4].payload).toEqual(expect.objectContaining({
+      amount: 6500000,
+      category: 'salary',
+      status: 'submitted',
+      tenant_id: 'tenant-1',
+    }));
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'salary_records',
+      record_id: 'ktv-1',
+      new_data: {
+        status: 'finalized',
+        amount: 6500000,
+      },
+    });
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/finance');
+  });
+
+  it('restores salary and sessions when session confirmation fails after finalizing salary', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: confirmedSalaryRecord },
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'salary_records', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', error: { message: 'session update failed' } },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'salary_records', op: 'update', data: null },
+    ]);
+
+    const result = await finalizeSalaryRecord('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('session update failed');
+    expect(calls[4]).toEqual({
+      table: 'session_logs',
+      op: 'update',
+      payload: { is_confirmed: false },
+      filters: [{ field: 'id', value: 'session-1' }],
+    });
+    expect(calls[5]).toEqual({
+      table: 'session_logs',
+      op: 'update',
+      payload: { is_confirmed: null },
+      filters: [{ field: 'id', value: 'session-2' }],
+    });
+    expect(calls[6]).toEqual({
+      table: 'salary_records',
+      op: 'update',
+      payload: {
+        status: 'confirmed',
+        finalized_at: null,
+      },
+      filters: [{ field: 'id', value: 'salary-finalize-1' }],
+    });
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('restores sessions and salary when expense creation fails after finalization updates', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: confirmedSalaryRecord },
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'salary_records', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'expenses', op: 'insert', error: { message: 'expense insert failed' } },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'salary_records', op: 'update', data: null },
+    ]);
+
+    const result = await finalizeSalaryRecord('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('expense insert failed');
+    expect(calls[5].payload).toEqual({ is_confirmed: false });
+    expect(calls[6].payload).toEqual({ is_confirmed: null });
+    expect(calls[7].payload).toEqual({
+      status: 'confirmed',
+      finalized_at: null,
+    });
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('deletes generated expense and restores prior state when finalize audit fails', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: confirmedSalaryRecord },
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'salary_records', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'expenses', op: 'insert', data: null },
+      { table: 'expenses', op: 'delete', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'salary_records', op: 'update', data: null },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await finalizeSalaryRecord('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('audit failed');
+    expect(calls[5]).toEqual({
+      table: 'expenses',
+      op: 'delete',
+      payload: undefined,
+      filters: [
+        { field: 'tenant_id', value: 'tenant-1' },
+        { field: 'category', value: 'salary' },
+        {
+          field: 'description',
+          value: expect.stringContaining('[salary_record_id:salary-finalize-1]'),
+        },
+      ],
+    });
+    expect(calls[8].payload).toEqual({
+      status: 'confirmed',
+      finalized_at: null,
+    });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('reports rollback failures when audit rollback cannot fully restore state', async () => {
+    setupDb([
+      { table: 'salary_records', op: 'select', data: confirmedSalaryRecord },
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'salary_records', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'expenses', op: 'insert', data: null },
+      { table: 'expenses', op: 'delete', error: { message: 'expense delete failed' } },
+      { table: 'session_logs', op: 'update', error: { message: 'session restore failed' } },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'salary_records', op: 'update', error: { message: 'salary restore failed' } },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await finalizeSalaryRecord('ktv-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('audit failed');
+    expect(result.error).toContain('expense delete failed');
+    expect(result.error).toContain('session restore failed');
+    expect(result.error).toContain('salary restore failed');
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
 describe('bulk salary action partial failure reporting', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -765,10 +988,14 @@ describe('bulk salary action partial failure reporting', () => {
         data: {
           id: 'salary-1',
           ktv_id: 'ktv-1',
+          status: 'confirmed',
+          finalized_at: null,
           total_salary: 6500000,
+          tenant_id: 'tenant-1',
           users: { full_name: 'KTV One' },
         },
       },
+      { table: 'session_logs', op: 'select', data: [] },
       { table: 'salary_records', op: 'update', data: null },
       { table: 'session_logs', op: 'update', data: null },
       { table: 'expenses', op: 'insert', data: null },
