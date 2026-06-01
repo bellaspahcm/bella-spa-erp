@@ -1,4 +1,9 @@
-import { confirmKtvSessions, updateSalaryConfig } from '../modules/hr-salary/actions/admin-salary-actions';
+import {
+  confirmKtvSessions,
+  finalizeAllSalaryRecords,
+  publishAllSalaryRecords,
+  updateSalaryConfig,
+} from '../modules/hr-salary/actions/admin-salary-actions';
 
 const mockFrom = jest.fn();
 const mockGetCurrentUser = jest.fn();
@@ -41,7 +46,7 @@ jest.mock('../modules/hr-salary/actions/salary-recalculation-engine', () => ({
   recalculateAndSaveSalaryRecordEngine: (...args: unknown[]) => mockRecalculateAndSaveSalaryRecordEngine(...args),
 }));
 
-type DbOperation = 'select' | 'update' | 'delete';
+type DbOperation = 'select' | 'insert' | 'update' | 'delete';
 
 type ScriptedResult = {
   table: string;
@@ -76,6 +81,11 @@ class ScriptedQueryBuilder {
     return this;
   }
 
+  insert(payload: unknown) {
+    this.startCall('insert', payload);
+    return this;
+  }
+
   delete() {
     this.startCall('delete');
     return this;
@@ -87,6 +97,10 @@ class ScriptedQueryBuilder {
   }
 
   maybeSingle() {
+    return this.resolve();
+  }
+
+  single() {
     return this.resolve();
   }
 
@@ -396,5 +410,118 @@ describe('confirmKtvSessions salary rollback', () => {
     expect(result.error).toContain('session update failed');
     expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
     expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe('bulk salary action partial failure reporting', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-15T08:00:00.000Z'));
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+      full_name: 'Admin Bella',
+    });
+    mockCheckMonthLock.mockResolvedValue({ isLocked: false });
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+    mockRecalculateAndSaveSalaryRecordEngine.mockResolvedValue({ totalSalary: 6500000 });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('returns a complete success summary when all publish targets succeed', async () => {
+    setupDb([
+      { table: 'users', op: 'select', data: [{ id: 'ktv-1' }, { id: 'ktv-2' }] },
+    ]);
+
+    const result = await publishAllSalaryRecords();
+
+    expect(result).toEqual({
+      success: true,
+      count: 2,
+      total: 2,
+      failedCount: 0,
+      failures: [],
+    });
+    expect(mockRecalculateAndSaveSalaryRecordEngine).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns partial failure details when one publish target fails', async () => {
+    setupDb([
+      { table: 'users', op: 'select', data: [{ id: 'ktv-1' }, { id: 'ktv-2' }] },
+    ]);
+    mockRecalculateAndSaveSalaryRecordEngine
+      .mockResolvedValueOnce({ totalSalary: 6500000 })
+      .mockRejectedValueOnce(new Error('publish recalc failed'));
+
+    const result = await publishAllSalaryRecords();
+
+    expect(result.success).toBe(false);
+    expect(result.count).toBe(1);
+    expect(result.total).toBe(2);
+    expect(result.failedCount).toBe(1);
+    expect(result.failures).toEqual([{ ktvId: 'ktv-2', error: 'publish recalc failed' }]);
+    expect(result.error).toContain('ktv-2: publish recalc failed');
+  });
+
+  it('returns explicit failure when publish target fetch fails', async () => {
+    setupDb([
+      { table: 'users', op: 'select', error: { message: 'users fetch failed' } },
+    ]);
+
+    const result = await publishAllSalaryRecords();
+
+    expect(result.success).toBe(false);
+    expect(result.count).toBe(0);
+    expect(result.total).toBe(0);
+    expect(result.failedCount).toBe(1);
+    expect(result.error).toContain('users fetch failed');
+    expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
+  });
+
+  it('returns partial failure details when one finalize target throws', async () => {
+    setupDb([
+      { table: 'salary_records', op: 'select', data: [{ ktv_id: 'ktv-1' }, { ktv_id: 'ktv-2' }] },
+      {
+        table: 'salary_records',
+        op: 'select',
+        data: {
+          id: 'salary-1',
+          ktv_id: 'ktv-1',
+          total_salary: 6500000,
+          users: { full_name: 'KTV One' },
+        },
+      },
+      { table: 'salary_records', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'expenses', op: 'insert', data: null },
+      { table: 'salary_records', op: 'select', error: { message: 'confirmed salary missing' } },
+    ]);
+
+    const result = await finalizeAllSalaryRecords();
+
+    expect(result.success).toBe(false);
+    expect(result.count).toBe(1);
+    expect(result.total).toBe(2);
+    expect(result.failedCount).toBe(1);
+    expect(result.failures).toEqual([{ ktvId: 'ktv-2', error: 'confirmed salary missing' }]);
+    expect(result.error).toContain('ktv-2: confirmed salary missing');
+  });
+
+  it('returns explicit failure when finalize target fetch fails', async () => {
+    setupDb([
+      { table: 'salary_records', op: 'select', error: { message: 'confirmed fetch failed' } },
+    ]);
+
+    const result = await finalizeAllSalaryRecords();
+
+    expect(result.success).toBe(false);
+    expect(result.count).toBe(0);
+    expect(result.total).toBe(0);
+    expect(result.failedCount).toBe(1);
+    expect(result.error).toContain('confirmed fetch failed');
   });
 });

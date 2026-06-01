@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Bulk Salary Partial Failure Reporting
+* **Mục tiêu kỹ thuật**:
+  * Siết `publishAllSalaryRecords` và `finalizeAllSalaryRecords` để không còn trả success khi một phần KTV thất bại.
+  * Bắt lỗi query danh sách target ban đầu thay vì để bulk workflow im lặng chạy với danh sách rỗng.
+* **Thay đổi chính**:
+  * Thêm bulk result summary gồm `count`, `total`, `failedCount`, `failures` và `error` chi tiết.
+  * `publishAllSalaryRecords` ghi nhận từng KTV publish fail/throw và trả `success: false` nếu có partial failure.
+  * `finalizeAllSalaryRecords` ghi nhận từng KTV finalize fail/throw và trả `success: false` nếu có partial failure.
+  * UI trang salary hiển thị `res.error` từ bulk action và refresh data khi có một phần bản ghi đã thành công.
+  * Mở rộng `admin-salary-actions.test.ts` lên 14 test, bao phủ bulk success, publish partial failure, target fetch failure và finalize thrown failure.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/admin-salary-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/modules/hr-salary/actions/admin-salary-actions.ts src/app/dashboard/salary/page.tsx src/__tests__/admin-salary-actions.test.ts` pass với warning cũ trong `page.tsx`.
+
 ### 🟢 Ngày 01/06/2026: Harden Confirm KTV Sessions Rollback
 * **Mục tiêu kỹ thuật**:
   * Siết `confirmKtvSessions` để không còn trạng thái `session_logs.is_confirmed` đã đổi nhưng salary recalculation thất bại.
