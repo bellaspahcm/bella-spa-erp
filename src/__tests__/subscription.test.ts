@@ -35,6 +35,21 @@ const mockSupabaseServer = {
   rpc: mockRpcSubscription,
 };
 
+function resetMockSupabaseFrom() {
+  mockSupabaseServer.from = jest.fn((table: string) => {
+    if (table === 'tenants') {
+      return createChainableMock({}, mockSingleTenant);
+    }
+    if (table === 'users') {
+      return createChainableMock({ count: 0, error: null });
+    }
+    if (table === 'customers') {
+      return createChainableMock({ count: 0, error: null });
+    }
+    return {};
+  });
+}
+
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve(mockSupabaseServer)),
 }));
@@ -64,6 +79,42 @@ let checkSubscriptionLimit: any;
 let incrementSmsCount: any;
 let POST: any;
 
+const defaultEntitlements = [
+  {
+    tenant_id: 'tenant-1',
+    plan_code: 'basic',
+    feature_key: 'ktv',
+    limit_value: 3,
+    is_unlimited: false,
+    unit: 'count',
+    enforcement_mode: 'hard',
+    reset_period: 'none',
+    source: 'plan',
+  },
+  {
+    tenant_id: 'tenant-1',
+    plan_code: 'basic',
+    feature_key: 'customer',
+    limit_value: 50,
+    is_unlimited: false,
+    unit: 'count',
+    enforcement_mode: 'hard',
+    reset_period: 'none',
+    source: 'plan',
+  },
+  {
+    tenant_id: 'tenant-1',
+    plan_code: 'basic',
+    feature_key: 'sms',
+    limit_value: 100,
+    is_unlimited: false,
+    unit: 'message',
+    enforcement_mode: 'hard',
+    reset_period: 'monthly',
+    source: 'plan',
+  },
+];
+
 describe('Subscription Constraints & Webhook Suite', () => {
   const originalEnv = process.env;
 
@@ -75,6 +126,16 @@ describe('Subscription Constraints & Webhook Suite', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    resetMockSupabaseFrom();
+    mockRpcSubscription.mockImplementation((fn: string) => {
+      if (fn === 'get_effective_subscription_entitlements') {
+        return Promise.resolve({ data: defaultEntitlements, error: null });
+      }
+      if (fn === 'increment_tenant_sms') {
+        return Promise.resolve({ data: 1, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
     mockRouteRpc.mockResolvedValue({ data: null, error: null });
     mockEnqueueWithAutoClient.mockResolvedValue(true);
     process.env = {
@@ -206,6 +267,52 @@ describe('Subscription Constraints & Webhook Suite', () => {
       expect(res.max).toBe(100);
     });
 
+    it('uses tenant quota overrides from effective entitlement RPC instead of hard-coded plan limits', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
+          sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
+        },
+        error: null,
+      });
+
+      mockRpcSubscription.mockImplementation((fn: string) => {
+        if (fn === 'get_effective_subscription_entitlements') {
+          return Promise.resolve({
+            data: defaultEntitlements.map((row) =>
+              row.feature_key === 'ktv'
+                ? { ...row, limit_value: 4, source: 'override' }
+                : row
+            ),
+            error: null,
+          });
+        }
+        return Promise.resolve({ data: null, error: null });
+      });
+
+      mockSupabaseServer.from = jest.fn().mockImplementation((table: string) => {
+        if (table === 'tenants') {
+          return createChainableMock({}, mockSingleTenant);
+        }
+        if (table === 'users') {
+          return createChainableMock({ count: 3, error: null });
+        }
+        return {};
+      });
+
+      const res = await checkSubscriptionLimit('tenant-1', 'ktv');
+
+      expect(res.isBlocked).toBe(false);
+      expect(res.current).toBe(3);
+      expect(res.max).toBe(4);
+      expect(res.limits.maxKtv).toBe(4);
+      expect(mockRpcSubscription).toHaveBeenCalledWith('get_effective_subscription_entitlements', {
+        p_tenant_id: 'tenant-1',
+      });
+    });
+
     it('throws instead of fail-opening when tenant subscription query fails', async () => {
       mockSingleTenant.mockResolvedValue({
         data: null,
@@ -240,6 +347,46 @@ describe('Subscription Constraints & Webhook Suite', () => {
 
       await expect(checkSubscriptionLimit('tenant-1', 'ktv')).rejects.toThrow(
         '[checkSubscriptionLimit] users count failed: users count failed'
+      );
+    });
+
+    it('throws instead of fail-opening when effective entitlement RPC fails', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
+          sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
+        },
+        error: null,
+      });
+      mockRpcSubscription.mockResolvedValue({
+        data: null,
+        error: { message: 'entitlement rpc denied' },
+      });
+
+      await expect(checkSubscriptionLimit('tenant-1', 'customer')).rejects.toThrow(
+        '[checkSubscriptionLimit] get_effective_subscription_entitlements failed: entitlement rpc denied'
+      );
+    });
+
+    it('throws instead of fail-opening when a requested entitlement is missing', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
+          sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
+        },
+        error: null,
+      });
+      mockRpcSubscription.mockResolvedValue({
+        data: defaultEntitlements.filter((row) => row.feature_key !== 'sms'),
+        error: null,
+      });
+
+      await expect(checkSubscriptionLimit('tenant-1', 'sms')).rejects.toThrow(
+        '[checkSubscriptionLimit] Missing entitlement for feature sms'
       );
     });
 

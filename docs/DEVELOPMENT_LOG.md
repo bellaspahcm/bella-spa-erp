@@ -7,6 +7,26 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Enforce Subscription Quota Schema
+* **Mục tiêu kỹ thuật**:
+  * Làm cho cấu hình plan/quota ở HQ có tác dụng thật trong runtime enforcement.
+  * Chuyển `checkSubscriptionLimit` khỏi giới hạn hard-code cho tenant nhượng quyền, dùng RPC `get_effective_subscription_entitlements`.
+  * Giữ fail-closed: lỗi RPC hoặc thiếu entitlement feature không được fallback thành unlimited.
+* **Thay đổi chính**:
+  * `src/lib/subscription.ts` giờ lấy effective entitlement theo tenant trước khi so sánh quota KTV/customer/SMS.
+  * Active override từ `tenant_subscription_overrides` có hiệu lực vì RPC trả `source = override` và limit override.
+  * HQ-owned spa không có `franchise_agreement_date` vẫn bypass như trước, không bắt buộc gọi entitlement RPC.
+  * Subscription expiry vẫn block trước khi count resource, giữ behavior cũ.
+  * Bổ sung test cho override-driven quota, entitlement RPC failure và missing requested entitlement.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/subscription.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-quota-schema.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/hq-subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd eslint src/lib/subscription.ts src/__tests__/subscription.test.ts` pass.
+  * `npx.cmd tsc --noEmit` pass.
+
 ### 🟢 Ngày 01/06/2026: Create HQ Subscription Quota UI
 * **Mục tiêu kỹ thuật**:
   * Hoàn thiện phần còn thiếu của phân hệ Super Admin: HQ có màn hình thao tác plan, quota override và usage counter thay vì chỉ có schema/service.
