@@ -71,6 +71,7 @@ import { HqTransferCancelModal } from './components/HqTransferCancelModal';
 import { HqAuditDetailModal } from './components/HqAuditDetailModal';
 import { HqServiceTemplateModal } from './components/HqServiceTemplateModal';
 import { HqServiceDistributionModal } from './components/HqServiceDistributionModal';
+import { HqSubscriptionQuotaConsole } from './components/HqSubscriptionQuotaConsole';
 
 interface HqDashboardClientProps {
   initialStats: HqDashboardStats;
@@ -101,6 +102,7 @@ export default function HqDashboardClient({
 
   // Tab System
   const [activeTab, setActiveTab] = useState<HqDashboardTab>('branches');
+  const [subscriptionRefreshSignal, setSubscriptionRefreshSignal] = useState(0);
   
   // Inventory Transfer States
   const [transferOrders, setTransferOrders] = useState<InventoryTransferOrder[]>([]);
@@ -204,6 +206,8 @@ export default function HqDashboardClient({
         await loadTransferData();
       } else if (activeTab === 'audit') {
         await loadAuditData(currentPage);
+      } else if (activeTab === 'subscriptions') {
+        setSubscriptionRefreshSignal(prev => prev + 1);
       } else if (activeTab === 'services') {
         await loadServicesData();
       }
@@ -577,6 +581,15 @@ export default function HqDashboardClient({
     }
   }, [activeTab, currentPage, loadAuditData]);
 
+  const handleTenantSubscriptionChanged = async () => {
+    const [freshStats, freshTenants] = await Promise.all([
+      getHqDashboardStats(),
+      getAllTenants(),
+    ]);
+    setStats(freshStats);
+    setTenants(freshTenants as unknown as HqTenantRecord[]);
+  };
+
   const handleToggleStatus = async (tenantId: string, currentStatus: 'active' | 'suspended') => {
     const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
     const confirmMsg = newStatus === 'suspended' 
@@ -928,6 +941,11 @@ export default function HqDashboardClient({
               onNextPage={() => setCurrentPage(prev => prev + 1)}
             />
           </div>
+        ) : activeTab === 'subscriptions' ? (
+          <HqSubscriptionQuotaConsole
+            refreshSignal={subscriptionRefreshSignal}
+            onTenantSubscriptionChanged={handleTenantSubscriptionChanged}
+          />
         ) : (
           /* LIỆU TRÌNH CHUẨN (SERVICES) TAB PANEL */
           <div className="space-y-8 text-left">

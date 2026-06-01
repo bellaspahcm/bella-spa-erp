@@ -7,6 +7,25 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Create HQ Subscription Quota UI
+* **Mục tiêu kỹ thuật**:
+  * Hoàn thiện phần còn thiếu của phân hệ Super Admin: HQ có màn hình thao tác plan, quota override và usage counter thay vì chỉ có schema/service.
+  * Giữ mọi mutation đi qua server actions đã có audit rollback; client không ghi trực tiếp vào Supabase quota tables.
+  * Tạo nền UI để batch sau có thể chuyển runtime enforcement sang entitlement schema có kiểm soát.
+* **Thay đổi chính**:
+  * Thêm tab `subscriptions` / "Thuê bao & Hạn ngạch" vào HQ dashboard chrome.
+  * Thêm `HqSubscriptionQuotaConsole` để load `getHqSubscriptionOverview`, hiển thị plan catalog, entitlement, tenant subscription, override active và usage counters.
+  * UI hỗ trợ đổi gói tenant qua `updateTenantSubscriptionPlan`, set quota override qua `setTenantQuotaOverride`, reset counter qua `resetTenantUsageCounter`.
+  * Parent `/hq` refresh được subscription console và reload lại tenant/stats sau khi đổi gói tenant thành công.
+  * Thêm `hq-subscription-ui.test.ts` để khóa contract tab, route component và action wiring.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/hq-subscription-ui.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/hq-subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-quota-schema.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd eslint src/app/hq/components/HqSubscriptionQuotaConsole.tsx src/app/hq/hq-dashboard-client.tsx src/app/hq/components/HqDashboardChrome.tsx src/__tests__/hq-subscription-ui.test.ts` pass.
+  * `npx.cmd tsc --noEmit` pass.
+
 ### 🟢 Ngày 01/06/2026: Add HQ Subscription Service Actions
 * **Mục tiêu kỹ thuật**:
   * Xây service layer cho Super Admin quản lý subscription/quota trên schema đã tạo.
