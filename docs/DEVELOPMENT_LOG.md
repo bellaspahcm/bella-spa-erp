@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Update Salary Config Audit Rollback
+* **Mục tiêu kỹ thuật**:
+  * Siết `updateSalaryConfig` để không còn trạng thái `salary_records` đã thay đổi nhưng audit log cấu hình lương bị thiếu.
+  * Giữ toàn bộ phép tính lương trong central salary engine, không tạo logic tính lương riêng ở action.
+* **Thay đổi chính**:
+  * Snapshot current-month `salary_records` theo KTV/month/tenant trước khi gọi `recalculateAndSaveSalaryRecord`.
+  * Audit log ghi cả `old_data` và `new_data` cho thay đổi cấu hình lương.
+  * Nếu audit fail sau khi recalc thành công, action rollback row cũ bằng `id`; nếu trước đó chưa có row thì xóa row current-month vừa sinh theo KTV/month/tenant.
+  * Nếu rollback cũng fail, response trả rõ cả lỗi audit và lỗi rollback; không revalidate trang lương trong nhánh failure.
+  * Thêm `admin-salary-actions.test.ts` với 5 test cho audit success, rollback update, rollback delete, rollback-failure reporting và recalc failure không audit.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/admin-salary-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/modules/hr-salary/actions/admin-salary-actions.ts src/__tests__/admin-salary-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Update Base Salary Recalculation
 * **Mục tiêu kỹ thuật**:
   * Siết `updateBaseSalary` để thay đổi lương cứng KTV luôn đồng bộ current-month `salary_records` qua central salary engine.
