@@ -20,6 +20,10 @@ import {
   revalidateSalaryPage,
 } from './admin-salary-workflow-helpers';
 
+type SalaryRecordRow = Database['public']['Tables']['salary_records']['Row'];
+type SalaryRecordInsert = Database['public']['Tables']['salary_records']['Insert'];
+type SalaryRecordUpdate = Database['public']['Tables']['salary_records']['Update'];
+
 /**
  * Helper to recalculate and save a KTV salary record.
  * Handles pro-rata base salary, actual sessions count, session bonus commission,
@@ -34,6 +38,84 @@ export async function recalculateAndSaveSalaryRecord(
   overrides?: SalaryRecalculationOverrides
 ) {
   return recalculateAndSaveSalaryRecordEngine(supabase, ktvId, monthYear, tenantId, overrides);
+}
+
+function toSalaryRecordSnapshotPayload(record: SalaryRecordRow): SalaryRecordInsert {
+  return {
+    accounting_metadata: record.accounting_metadata,
+    accounting_review_status: record.accounting_review_status,
+    accounting_template_id: record.accounting_template_id,
+    base_salary: record.base_salary,
+    business_event_type: record.business_event_type,
+    confirmed_by_admin: record.confirmed_by_admin,
+    dispute_reason: record.dispute_reason,
+    dispute_resolved_at: record.dispute_resolved_at,
+    finalized_at: record.finalized_at,
+    id: record.id,
+    is_locked: record.is_locked,
+    kpi_bonus: record.kpi_bonus,
+    ktv_confirmed_at: record.ktv_confirmed_at,
+    ktv_id: record.ktv_id,
+    month_year: record.month_year,
+    notes: record.notes,
+    paid_date: record.paid_date,
+    paid_method: record.paid_method,
+    published_at: record.published_at,
+    rating_bonus: record.rating_bonus,
+    service_percentage_bonus: record.service_percentage_bonus,
+    session_bonus: record.session_bonus,
+    status: record.status,
+    tenant_id: record.tenant_id,
+    total_salary: record.total_salary,
+    total_sessions: record.total_sessions,
+    violations_deduction: record.violations_deduction,
+  };
+}
+
+async function snapshotSalaryRecord(
+  supabase: SupabaseClient<Database>,
+  ktvId: string,
+  monthYear: string,
+  tenantId: string
+) {
+  const { data, error } = await supabase
+    .from('salary_records')
+    .select('*')
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  return data;
+}
+
+async function restoreSalaryConfigSnapshot(
+  supabase: SupabaseClient<Database>,
+  snapshot: SalaryRecordRow | null,
+  ktvId: string,
+  monthYear: string,
+  tenantId: string
+) {
+  if (snapshot) {
+    const restorePayload: SalaryRecordUpdate = toSalaryRecordSnapshotPayload(snapshot);
+    const { error } = await supabase
+      .from('salary_records')
+      .update(restorePayload)
+      .eq('id', snapshot.id);
+
+    return error?.message;
+  }
+
+  const { error } = await supabase
+    .from('salary_records')
+    .delete()
+    .eq('ktv_id', ktvId)
+    .eq('month_year', monthYear)
+    .eq('tenant_id', tenantId);
+
+  return error?.message;
 }
 
 /**
@@ -308,6 +390,8 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
     const tenantId = currentUser?.tenant_id;
     if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
 
+    const previousSalaryRecord = await snapshotSalaryRecord(supabase, ktvId, monthYear, tenantId);
+
     await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, {
       base_salary: payload.baseSalary,
       kpi_bonus: payload.kpiBonus,
@@ -316,13 +400,29 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
       status: 'pending_approval'
     });
 
-    // Record Audit Log
-    await recordAuditLog({
-      action: 'UPDATE',
-      table_name: 'salary_records',
-      record_id: ktvId,
-      new_data: payload
-    });
+    try {
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'salary_records',
+        record_id: ktvId,
+        old_data: previousSalaryRecord ? toSalaryRecordSnapshotPayload(previousSalaryRecord) : null,
+        new_data: payload
+      });
+    } catch (auditError: unknown) {
+      const auditErrorObj = auditError as Error;
+      const rollbackError = await restoreSalaryConfigSnapshot(
+        supabase,
+        previousSalaryRecord,
+        ktvId,
+        monthYear,
+        tenantId
+      );
+      const rollbackMessage = rollbackError ? ` Rollback salary_records failed: ${rollbackError}` : '';
+      return {
+        success: false,
+        error: `Failed to record salary config audit log: ${auditErrorObj.message || 'Unknown audit error'}.${rollbackMessage}`,
+      };
+    }
 
     revalidateSalaryPage();
     return { success: true };
