@@ -5,6 +5,10 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
 import { CurrentUser, StaffRecord } from '@/types/domain';
 import { randomBytes } from 'crypto';
+import type { Database } from '@/types/database.types';
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type UserUpdate = Database['public']['Tables']['users']['Update'];
 
 interface UserWithLogsAndReviews {
   id: string;
@@ -179,6 +183,28 @@ function generateTemporaryPassword() {
   return `Bella-${randomBytes(9).toString('base64url')}1aA!`;
 }
 
+function getErrorMessage(error: unknown, fallback = 'Loi he thong') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return fallback;
+}
+
+async function rollbackUserUpdate(
+  supabase: SupabaseClient,
+  id: string,
+  payload: UserUpdate,
+) {
+  const { error } = await supabase
+    .from('users')
+    .update(payload)
+    .eq('id', id);
+
+  return error?.message || '';
+}
+
 export async function createUser(formData: CreateUserInput) {
   const currentUser = await getCurrentUser();
 
@@ -288,6 +314,16 @@ export async function createUser(formData: CreateUserInput) {
 
 export async function updateUserStatus(id: string, status: 'active' | 'inactive') {
   const supabase = await createClient();
+
+  const { data: previousUser, error: snapshotError } = await supabase
+    .from('users')
+    .select('status')
+    .eq('id', id)
+    .single();
+
+  if (snapshotError || !previousUser) {
+    return { error: snapshotError?.message || 'User not found' };
+  }
   
   const { error } = await supabase
     .from('users')
@@ -300,12 +336,21 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   }
 
   // Record Audit Log
-  await recordAuditLog({
-    action: 'UPDATE',
-    table_name: 'users',
-    record_id: id,
-    new_data: { status }
-  });
+  try {
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'users',
+      record_id: id,
+      old_data: { status: previousUser.status },
+      new_data: { status }
+    });
+  } catch (auditError: unknown) {
+    const rollbackError = await rollbackUserUpdate(supabase, id, {
+      status: previousUser.status,
+    });
+    const rollbackNote = rollbackError ? `; rollback failed: ${rollbackError}` : '';
+    return { error: `Failed to record user status audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
+  }
 
   await safeRevalidatePath('/dashboard/settings');
   return { success: true };
@@ -313,6 +358,16 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
 
 export async function updateUser(id: string, formData: { full_name: string; role: string }) {
   const supabase = await createClient();
+
+  const { data: previousUser, error: snapshotError } = await supabase
+    .from('users')
+    .select('full_name, role')
+    .eq('id', id)
+    .single();
+
+  if (snapshotError || !previousUser) {
+    return { error: snapshotError?.message || 'User not found' };
+  }
   
   const { error } = await supabase
     .from('users')
@@ -328,12 +383,22 @@ export async function updateUser(id: string, formData: { full_name: string; role
   }
 
   // Record Audit Log
-  await recordAuditLog({
-    action: 'UPDATE',
-    table_name: 'users',
-    record_id: id,
-    new_data: { full_name: formData.full_name, role: formData.role }
-  });
+  try {
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'users',
+      record_id: id,
+      old_data: { full_name: previousUser.full_name, role: previousUser.role },
+      new_data: { full_name: formData.full_name, role: formData.role }
+    });
+  } catch (auditError: unknown) {
+    const rollbackError = await rollbackUserUpdate(supabase, id, {
+      full_name: previousUser.full_name,
+      role: previousUser.role,
+    });
+    const rollbackNote = rollbackError ? `; rollback failed: ${rollbackError}` : '';
+    return { error: `Failed to record user update audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
+  }
 
   await safeRevalidatePath('/dashboard/settings');
   return { success: true };

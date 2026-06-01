@@ -7,6 +7,21 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden User Update Audit Rollback
+* **Mục tiêu kỹ thuật**:
+  * Siết các mutation cập nhật user để không còn trạng thái user đã đổi nhưng audit log bị thiếu.
+  * Bắt đầu với `updateUserStatus` và `updateUser`, chưa chạm create/delete/base salary để tránh trộn auth rollback và salary lifecycle.
+* **Thay đổi chính**:
+  * Snapshot field user trước khi update: `status`, hoặc `full_name`/`role`.
+  * Nếu `recordAuditLog` fail sau khi update DB thành công, action rollback user về snapshot và trả failure rõ.
+  * Error trả về bao gồm rollback failure nếu rollback user cũng lỗi.
+  * Thêm `user-actions.test.ts` với 4 test side-effect cho audit success, audit failure rollback và rollback-failure reporting.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/user-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/user-actions.ts src/__tests__/user-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Lock Start Session GPS Warnings
 * **Mục tiêu kỹ thuật**:
   * Khóa rõ ranh giới critical/non-critical trong `startSession`.
