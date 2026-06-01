@@ -1,16 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { 
   DollarSign, 
   Send, 
   Lock, 
   CalendarDays,
   UserCog, 
-  ShieldCheck, 
-  Search, 
-  Filter,
   AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -228,35 +224,6 @@ export default function SalaryPage() {
       toast.error('Lỗi khi cập nhật lương: ' + result.error);
     }
     setIsSaving(false);
-  };
-
-  const handleApproveAll = () => {
-    showConfirm({
-      title: 'Phê duyệt tất cả',
-      message: 'Bạn có chắc chắn muốn chốt và phê duyệt lương cho tất cả nhân viên trong danh sách này không?',
-      confirmText: 'Phê duyệt tất cả',
-      onConfirm: async () => {
-        setIsLoading(true);
-        let successCount = 0;
-        const filteredSalaries = ktvSalaries.filter((s) => 
-          s.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        for (const s of filteredSalaries) {
-          if (s.status !== 'approved') {
-            const result = await approveSalary(s.id);
-            if (result.success) successCount++;
-          }
-        }
-        if (successCount > 0) {
-          toast.success(`Đã chốt lương thành công cho ${successCount} nhân viên`);
-          const data = await getSalaryData();
-          setKtvSalaries(data || []);
-        } else {
-          toast.info('Không có bản ghi nào cần chốt lương.');
-        }
-        setIsLoading(false);
-      }
-    });
   };
 
   const handlePublishAll = () => {

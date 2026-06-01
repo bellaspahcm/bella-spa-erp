@@ -7,6 +7,18 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Clean Salary Page ESLint Warnings
+* **Mục tiêu kỹ thuật**:
+  * Dọn warning ESLint còn lại trong `src/app/dashboard/salary/page.tsx` sau các lát cắt salary hardening.
+  * Giữ nguyên behavior hiện hữu, chỉ xóa symbol không còn được sử dụng.
+* **Thay đổi chính**:
+  * Xóa import không dùng: `motion`, `ShieldCheck`, `Search`, `Filter`.
+  * Xóa `handleApproveAll` vì không được render/gọi ở salary page.
+  * Giữ `searchQuery` vì vẫn được truyền xuống `SalaryTable` qua props.
+* **Kiểm tra**:
+  * `npx.cmd eslint src/app/dashboard/salary/page.tsx` pass.
+  * `npx.cmd tsc --noEmit` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Bulk Salary Partial Failure Reporting
 * **Mục tiêu kỹ thuật**:
   * Siết `publishAllSalaryRecords` và `finalizeAllSalaryRecords` để không còn trả success khi một phần KTV thất bại.
