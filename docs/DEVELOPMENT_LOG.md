@@ -7,6 +7,22 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Update Base Salary Recalculation
+* **Mục tiêu kỹ thuật**:
+  * Siết `updateBaseSalary` để thay đổi lương cứng KTV luôn đồng bộ current-month `salary_records` qua central salary engine.
+  * Tránh trạng thái `users.base_salary` đã đổi nhưng salary record hoặc audit log bị lệch.
+* **Thay đổi chính**:
+  * Snapshot `base_salary`, `role`, `tenant_id` của user trước khi update.
+  * Nếu target là KTV, gọi `recalculateAndSaveSalaryRecordEngine` sau khi cập nhật lương cứng.
+  * Nếu salary recalc fail, rollback `users.base_salary` về snapshot và recalc lại lương cũ.
+  * Nếu audit fail sau recalc, rollback `users.base_salary`, recalc lại salary cũ và trả failure rõ.
+  * Mở rộng `user-actions.test.ts` lên 18 test, assert KTV recalc, non-KTV skip, recalc rollback và audit rollback.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/user-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/services/user-actions.ts src/__tests__/user-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Delete User Audit Rollback
 * **Mục tiêu kỹ thuật**:
   * Siết `deleteUser` để không còn hard-delete user thành công nhưng audit log bị thiếu.
