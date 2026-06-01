@@ -7,6 +7,22 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 02/06/2026: Investigate CRM Zalo SMS Quota Flow
+* **Mục tiêu kỹ thuật**:
+  * Điều tra luồng CRM/Zalo đang dùng quota SMS mới trước khi sửa code.
+  * Xác định điểm rủi ro giữa `checkSubscriptionLimit`, gửi Zalo, ghi side effects và `incrementSmsCount`.
+  * Ghi case file để batch hardening tiếp theo có bằng chứng rõ ràng.
+* **Kết luận chính**:
+  * `sendBirthdayGreeting` và `triggerZaloReminder` đều check quota trước, nhưng gửi/log/audit xong mới increment SMS counter.
+  * Nếu counter fail sau khi gửi thành công, caller nhận error nhưng external send/status side effects đã xảy ra.
+  * Failed/no-phone Zalo path hiện vẫn log simulated send và increment quota; cần quyết định nghiệp vụ rõ.
+  * `triggerBatchReminders` xử lý quota từng tin, chưa có batch reservation.
+  * `getBirthdayCustomers` vẫn trả `[]` khi query DB lỗi, là side finding về zero silent DB failures.
+* **Artifact**:
+  * `docs/implementation-artifacts/investigations/crm-zalo-sms-quota-flow-investigation.md`
+* **Kiểm tra**:
+  * Investigation/static source trace only; chưa sửa runtime code.
+
 ### 🟢 Ngày 02/06/2026: Subscription Quota Deploy Readiness
 * **Mục tiêu kỹ thuật**:
   * Chốt checkpoint triển khai cho toàn bộ cụm Super Admin subscription/quota trước khi chuyển module khác.
