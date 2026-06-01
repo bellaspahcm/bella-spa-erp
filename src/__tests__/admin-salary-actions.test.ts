@@ -1,4 +1,4 @@
-import { updateSalaryConfig } from '../modules/hr-salary/actions/admin-salary-actions';
+import { confirmKtvSessions, updateSalaryConfig } from '../modules/hr-salary/actions/admin-salary-actions';
 
 const mockFrom = jest.fn();
 const mockGetCurrentUser = jest.fn();
@@ -271,6 +271,130 @@ describe('updateSalaryConfig audit rollback', () => {
     expect(result.error).toContain('recalc failed');
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
     expect(calls).toHaveLength(1);
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe('confirmKtvSessions salary rollback', () => {
+  const sessionSnapshots = [
+    { id: 'session-1', is_confirmed: false },
+    { id: 'session-2', is_confirmed: null },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-15T08:00:00.000Z'));
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+      full_name: 'Admin Bella',
+    });
+    mockCheckMonthLock.mockResolvedValue({ isLocked: false });
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+    mockRecalculateAndSaveSalaryRecordEngine.mockResolvedValue({ totalSalary: 6500000 });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('confirms sessions and recalculates salary when all side effects succeed', async () => {
+    const calls = setupDb([
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'session_logs', op: 'update', data: null },
+    ]);
+
+    const result = await confirmKtvSessions('ktv-1', 12.5);
+
+    expect(result).toEqual({ success: true });
+    expect(calls[0]).toEqual({
+      table: 'session_logs',
+      op: 'select',
+      payload: undefined,
+      filters: [
+        { field: 'completed_by_ktv_id', value: 'ktv-1' },
+        { field: 'status', value: 'completed' },
+      ],
+    });
+    expect(calls[1]).toEqual({
+      table: 'session_logs',
+      op: 'update',
+      payload: { is_confirmed: true },
+      filters: [
+        { field: 'completed_by_ktv_id', value: 'ktv-1' },
+        { field: 'status', value: 'completed' },
+      ],
+    });
+    expect(mockRecalculateAndSaveSalaryRecordEngine).toHaveBeenCalledWith(
+      expect.anything(),
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1',
+      {
+        total_sessions: 12.5,
+        status: 'pending_approval',
+      }
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary');
+  });
+
+  it('restores previous session confirmation states when salary recalculation fails', async () => {
+    const calls = setupDb([
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+    ]);
+    mockRecalculateAndSaveSalaryRecordEngine.mockRejectedValue(new Error('recalc failed'));
+
+    const result = await confirmKtvSessions('ktv-1', 12.5);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('recalc failed');
+    expect(calls[2]).toEqual({
+      table: 'session_logs',
+      op: 'update',
+      payload: { is_confirmed: false },
+      filters: [{ field: 'id', value: 'session-1' }],
+    });
+    expect(calls[3]).toEqual({
+      table: 'session_logs',
+      op: 'update',
+      payload: { is_confirmed: null },
+      filters: [{ field: 'id', value: 'session-2' }],
+    });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('reports rollback failure when restoring session confirmation state fails', async () => {
+    setupDb([
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', error: { message: 'restore session failed' } },
+      { table: 'session_logs', op: 'update', data: null },
+    ]);
+    mockRecalculateAndSaveSalaryRecordEngine.mockRejectedValue(new Error('recalc failed'));
+
+    const result = await confirmKtvSessions('ktv-1', 12.5);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('recalc failed');
+    expect(result.error).toContain('restore session failed');
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('does not recalculate salary when session confirmation update fails', async () => {
+    setupDb([
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'session_logs', op: 'update', error: { message: 'session update failed' } },
+    ]);
+
+    const result = await confirmKtvSessions('ktv-1', 12.5);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('session update failed');
+    expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });

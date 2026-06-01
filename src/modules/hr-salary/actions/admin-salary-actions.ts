@@ -23,6 +23,9 @@ import {
 type SalaryRecordRow = Database['public']['Tables']['salary_records']['Row'];
 type SalaryRecordInsert = Database['public']['Tables']['salary_records']['Insert'];
 type SalaryRecordUpdate = Database['public']['Tables']['salary_records']['Update'];
+type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
+type SessionConfirmationSnapshot = Pick<SessionLogRow, 'id' | 'is_confirmed'>;
 
 /**
  * Helper to recalculate and save a KTV salary record.
@@ -116,6 +119,44 @@ async function restoreSalaryConfigSnapshot(
     .eq('tenant_id', tenantId);
 
   return error?.message;
+}
+
+async function snapshotCompletedSessionConfirmations(
+  supabase: SupabaseClient<Database>,
+  ktvId: string
+): Promise<SessionConfirmationSnapshot[]> {
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select('id, is_confirmed')
+    .eq('completed_by_ktv_id', ktvId)
+    .eq('status', 'completed');
+
+  if (error) throw error;
+
+  return (data ?? []) as SessionConfirmationSnapshot[];
+}
+
+async function restoreSessionConfirmations(
+  supabase: SupabaseClient<Database>,
+  snapshots: SessionConfirmationSnapshot[]
+) {
+  const rollbackErrors: string[] = [];
+
+  for (const snapshot of snapshots) {
+    const restorePayload: SessionLogUpdate = {
+      is_confirmed: snapshot.is_confirmed,
+    };
+    const { error } = await supabase
+      .from('session_logs')
+      .update(restorePayload)
+      .eq('id', snapshot.id);
+
+    if (error) {
+      rollbackErrors.push(`${snapshot.id}: ${error.message}`);
+    }
+  }
+
+  return rollbackErrors;
 }
 
 /**
@@ -450,6 +491,8 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
   console.log(`Confirming sessions for KTV: ${ktvId}, Total: ${totalSessions}`);
   
   try {
+    const sessionSnapshots = await snapshotCompletedSessionConfirmations(supabase, ktvId);
+
     // 1. Mark sessions as confirmed in session_logs
     const { error: sessionError } = await supabase
       .from('session_logs')
@@ -463,10 +506,22 @@ export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
     }
 
     // 2. Recalculate and update the salary record
-    await recalculateAndSaveSalaryRecord(supabase, ktvId, currentMonthYear, tenantId, {
-      total_sessions: totalSessions,
-      status: 'pending_approval'
-    });
+    try {
+      await recalculateAndSaveSalaryRecord(supabase, ktvId, currentMonthYear, tenantId, {
+        total_sessions: totalSessions,
+        status: 'pending_approval'
+      });
+    } catch (salaryError: unknown) {
+      const salaryErrorObj = salaryError as Error;
+      const rollbackErrors = await restoreSessionConfirmations(supabase, sessionSnapshots);
+      const rollbackMessage = rollbackErrors.length > 0
+        ? ` Rollback session_logs failed: ${rollbackErrors.join('; ')}`
+        : '';
+      return {
+        success: false,
+        error: `Failed to recalculate salary after confirming sessions: ${salaryErrorObj.message || 'Unknown salary error'}.${rollbackMessage}`,
+      };
+    }
 
     console.log('Session confirmation successful');
     revalidateSalaryPage();

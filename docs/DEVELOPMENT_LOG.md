@@ -7,6 +7,22 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden Confirm KTV Sessions Rollback
+* **Mục tiêu kỹ thuật**:
+  * Siết `confirmKtvSessions` để không còn trạng thái `session_logs.is_confirmed` đã đổi nhưng salary recalculation thất bại.
+  * Giữ salary calculation trong central salary engine, chỉ thêm snapshot/rollback cho side-effect xác nhận session.
+* **Thay đổi chính**:
+  * Snapshot `id` và `is_confirmed` của các completed `session_logs` theo KTV trước khi update.
+  * Sau khi set `is_confirmed = true`, nếu `recalculateAndSaveSalaryRecord` fail thì khôi phục từng session về giá trị `is_confirmed` cũ.
+  * Nếu rollback session fail, response trả rõ cả lỗi salary recalc và lỗi rollback; không revalidate trang lương trong nhánh failure.
+  * Mở rộng `admin-salary-actions.test.ts` lên 9 test, bao phủ success, recalc rollback, rollback-failure reporting và session update failure.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/admin-salary-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/modules/hr-salary/actions/admin-salary-actions.ts src/__tests__/admin-salary-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Update Salary Config Audit Rollback
 * **Mục tiêu kỹ thuật**:
   * Siết `updateSalaryConfig` để không còn trạng thái `salary_records` đã thay đổi nhưng audit log cấu hình lương bị thiếu.
