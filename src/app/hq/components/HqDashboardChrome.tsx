@@ -1,11 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { ExternalLink, LogOut, PieChart, Plus, RefreshCw } from 'lucide-react';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import type { CurrentUser } from '@/types/domain';
 
-export type HqDashboardTab = 'branches' | 'franchise' | 'clearing' | 'transfers' | 'audit' | 'services';
+export type HqDashboardTab = 'branches' | 'franchise' | 'clearing' | 'transfers' | 'audit' | 'subscriptions' | 'services';
 
 interface HqDashboardHeaderProps {
   currentUser: CurrentUser;
@@ -20,6 +21,7 @@ const tabs: { key: HqDashboardTab; label: string }[] = [
   { key: 'clearing', label: 'Bù trừ liên chi nhánh' },
   { key: 'transfers', label: 'Cung ứng & Chuyển kho' },
   { key: 'audit', label: 'Nhật ký hệ thống' },
+  { key: 'subscriptions', label: 'Thuê bao & Hạn ngạch' },
   { key: 'services', label: 'Liệu trình chuẩn' },
 ];
 
@@ -36,7 +38,7 @@ export function HqDashboardHeader({
           whileHover={{ scale: 1.05 }}
           className="drop-shadow-lg"
         >
-          <img src="/logo.png" alt="Bella Spa Logo" className="h-10 w-auto object-contain" />
+          <Image src="/logo.png" alt="Bella Spa Logo" width={120} height={40} className="h-10 w-auto object-contain" priority />
         </motion.div>
         <div className="h-6 w-px bg-slate-200 dark:bg-[#3E3A35]" />
         <div>
