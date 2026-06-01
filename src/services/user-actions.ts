@@ -6,6 +6,9 @@ import { recordAuditLog } from './audit-actions';
 import { CurrentUser, StaffRecord } from '@/types/domain';
 import { randomBytes } from 'crypto';
 import type { Database } from '@/types/database.types';
+import { getMonthStart } from '@/lib/utils';
+import type { SupabaseClient as SupabaseJsClient } from '@supabase/supabase-js';
+import { recalculateAndSaveSalaryRecordEngine } from '@/modules/hr-salary/actions/salary-recalculation-engine';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type AdminSupabaseClient = {
@@ -21,6 +24,7 @@ type UserRow = Database['public']['Tables']['users']['Row'];
 type UserUpdate = Database['public']['Tables']['users']['Update'];
 type StaffLeaveInsert = Database['public']['Tables']['staff_leaves']['Insert'];
 type StaffLeaveRow = Database['public']['Tables']['staff_leaves']['Row'];
+type SalarySupabaseClient = SupabaseJsClient<Database>;
 
 interface UserWithLogsAndReviews {
   id: string;
@@ -304,6 +308,44 @@ function formatRollbackNotes(notes: Array<[string, string]>) {
     .filter(([, message]) => message)
     .map(([label, message]) => `; ${label} failed: ${message}`)
     .join('');
+}
+
+async function recalculateCurrentMonthSalary(
+  supabase: SupabaseClient,
+  ktvId: string,
+  tenantId: string,
+) {
+  return recalculateAndSaveSalaryRecordEngine(
+    supabase as unknown as SalarySupabaseClient,
+    ktvId,
+    getMonthStart(),
+    tenantId,
+  );
+}
+
+async function rollbackBaseSalaryChange(
+  supabase: SupabaseClient,
+  id: string,
+  previousBaseSalary: number | null,
+  recalcTenantId?: string | null,
+) {
+  const userRollbackError = await rollbackUserUpdate(supabase, id, {
+    base_salary: previousBaseSalary,
+  });
+
+  let salaryRollbackError = '';
+  if (!userRollbackError && recalcTenantId) {
+    try {
+      await recalculateCurrentMonthSalary(supabase, id, recalcTenantId);
+    } catch (error: unknown) {
+      salaryRollbackError = getErrorMessage(error);
+    }
+  }
+
+  return formatRollbackNotes([
+    ['user rollback', userRollbackError],
+    ['salary rollback', salaryRollbackError],
+  ]);
 }
 
 export async function createUser(formData: CreateUserInput) {
@@ -595,6 +637,22 @@ export async function updateBaseSalary(id: string, base_salary: number) {
     return { error: 'Quyền truy cập bị từ chối: Chỉ Admin hoặc Manager mới có quyền thay đổi lương cứng.' };
   }
 
+  const {
+    data: previousUser,
+    error: snapshotError,
+  }: {
+    data: Pick<UserRow, 'base_salary' | 'role' | 'tenant_id'> | null;
+    error: { message?: string } | null;
+  } = await supabase
+    .from('users')
+    .select('base_salary, role, tenant_id')
+    .eq('id', id)
+    .single();
+
+  if (snapshotError || !previousUser) {
+    return { error: snapshotError?.message || 'User not found' };
+  }
+
   const { error } = await supabase
     .from('users')
     .update({ base_salary })
@@ -605,13 +663,40 @@ export async function updateBaseSalary(id: string, base_salary: number) {
     return { error: error.message };
   }
 
+  const recalcTenantId = previousUser.role === 'ktv' ? previousUser.tenant_id : null;
+
+  if (recalcTenantId) {
+    try {
+      await recalculateCurrentMonthSalary(supabase, id, recalcTenantId);
+    } catch (recalcError: unknown) {
+      const rollbackNote = await rollbackBaseSalaryChange(
+        supabase,
+        id,
+        previousUser.base_salary,
+        recalcTenantId,
+      );
+      return { error: `Failed to recalculate salary after base salary update: ${getErrorMessage(recalcError)}${rollbackNote}` };
+    }
+  }
+
   // Record Audit Log
-  await recordAuditLog({
-    action: 'UPDATE',
-    table_name: 'users',
-    record_id: id,
-    new_data: { base_salary }
-  });
+  try {
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'users',
+      record_id: id,
+      old_data: { base_salary: previousUser.base_salary },
+      new_data: { base_salary }
+    });
+  } catch (auditError: unknown) {
+    const rollbackNote = await rollbackBaseSalaryChange(
+      supabase,
+      id,
+      previousUser.base_salary,
+      recalcTenantId,
+    );
+    return { error: `Failed to record base salary audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
+  }
 
   await safeRevalidatePath('/dashboard/settings');
   return { success: true };

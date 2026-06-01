@@ -1,4 +1,4 @@
-import { createUser, deleteUser, updateUser, updateUserStatus } from '../services/user-actions';
+import { createUser, deleteUser, updateBaseSalary, updateUser, updateUserStatus } from '../services/user-actions';
 
 const mockFrom = jest.fn();
 const mockGetSession = jest.fn();
@@ -8,6 +8,7 @@ const mockCreateAdminUser = jest.fn();
 const mockDeleteAuthUser = jest.fn();
 const mockRecordAuditLog = jest.fn();
 const mockSafeRevalidatePath = jest.fn();
+const mockRecalculateAndSaveSalaryRecordEngine = jest.fn();
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
@@ -39,6 +40,10 @@ jest.mock('../services/audit-actions', () => ({
 
 jest.mock('../lib/revalidate', () => ({
   safeRevalidatePath: (path: string) => mockSafeRevalidatePath(path),
+}));
+
+jest.mock('../modules/hr-salary/actions/salary-recalculation-engine', () => ({
+  recalculateAndSaveSalaryRecordEngine: (...args: unknown[]) => mockRecalculateAndSaveSalaryRecordEngine(...args),
 }));
 
 type ScriptedResult = {
@@ -131,6 +136,7 @@ describe('user update audit rollback', () => {
     mockDeleteAuthUser.mockResolvedValue({ error: null });
     mockRecordAuditLog.mockResolvedValue({ success: true });
     mockSafeRevalidatePath.mockResolvedValue(undefined);
+    mockRecalculateAndSaveSalaryRecordEngine.mockResolvedValue({ success: true, totalSalary: 8000000 });
   });
 
   function installScriptedSupabase(scripts: ScriptedResult[]) {
@@ -438,6 +444,139 @@ describe('user update audit rollback', () => {
 
     expect(result.error).toContain('audit failed');
     expect(result.error).toContain('staff leaves restore failed: staff leave restore failed');
+  });
+
+  it('updates KTV base salary, recalculates salary, records audit, and revalidates', async () => {
+    installScriptedSupabase([
+      {
+        table: 'users',
+        op: 'select',
+        data: {
+          id: 'admin-1',
+          email: 'admin@bella.test',
+          full_name: 'Admin User',
+          role: 'admin',
+          tenant_id: 'tenant-1',
+          avatar_url: null,
+        },
+      },
+      { table: 'tenants', op: 'select', data: { status: 'active', name: 'Bella Test' } },
+      { table: 'users', op: 'select', data: { base_salary: 6000000, role: 'ktv', tenant_id: 'tenant-1' } },
+      { table: 'users', op: 'update' },
+    ]);
+
+    const result = await updateBaseSalary('ktv-1', 8000000);
+
+    expect(result).toEqual({ success: true });
+    expect(mockRecalculateAndSaveSalaryRecordEngine).toHaveBeenCalledWith(
+      expect.anything(),
+      'ktv-1',
+      expect.stringMatching(/^\d{4}-\d{2}-01$/),
+      'tenant-1',
+    );
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'users',
+      record_id: 'ktv-1',
+      old_data: { base_salary: 6000000 },
+      new_data: { base_salary: 8000000 },
+    });
+    expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+  });
+
+  it('updates non-KTV base salary without salary recalculation', async () => {
+    installScriptedSupabase([
+      {
+        table: 'users',
+        op: 'select',
+        data: {
+          id: 'admin-1',
+          email: 'admin@bella.test',
+          full_name: 'Admin User',
+          role: 'admin',
+          tenant_id: 'tenant-1',
+          avatar_url: null,
+        },
+      },
+      { table: 'tenants', op: 'select', data: { status: 'active', name: 'Bella Test' } },
+      { table: 'users', op: 'select', data: { base_salary: 7000000, role: 'manager', tenant_id: 'tenant-1' } },
+      { table: 'users', op: 'update' },
+    ]);
+
+    const result = await updateBaseSalary('manager-1', 9000000);
+
+    expect(result).toEqual({ success: true });
+    expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      old_data: { base_salary: 7000000 },
+      new_data: { base_salary: 9000000 },
+    }));
+  });
+
+  it('rolls back KTV base salary when salary recalculation fails', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'users',
+        op: 'select',
+        data: {
+          id: 'admin-1',
+          email: 'admin@bella.test',
+          full_name: 'Admin User',
+          role: 'admin',
+          tenant_id: 'tenant-1',
+          avatar_url: null,
+        },
+      },
+      { table: 'tenants', op: 'select', data: { status: 'active', name: 'Bella Test' } },
+      { table: 'users', op: 'select', data: { base_salary: 6000000, role: 'ktv', tenant_id: 'tenant-1' } },
+      { table: 'users', op: 'update' },
+      { table: 'users', op: 'update' },
+    ]);
+    mockRecalculateAndSaveSalaryRecordEngine
+      .mockRejectedValueOnce(new Error('salary recalc failed'))
+      .mockResolvedValueOnce({ success: true, totalSalary: 6000000 });
+
+    const result = await updateBaseSalary('ktv-1', 8000000);
+
+    expect(result.error).toContain('salary recalc failed');
+    expect(calls.filter(c => c.table === 'users' && c.op === 'update').map(c => c.payload)).toEqual([
+      { base_salary: 8000000 },
+      { base_salary: 6000000 },
+    ]);
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('rolls back KTV base salary and recalculates old salary when audit logging fails', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'users',
+        op: 'select',
+        data: {
+          id: 'admin-1',
+          email: 'admin@bella.test',
+          full_name: 'Admin User',
+          role: 'admin',
+          tenant_id: 'tenant-1',
+          avatar_url: null,
+        },
+      },
+      { table: 'tenants', op: 'select', data: { status: 'active', name: 'Bella Test' } },
+      { table: 'users', op: 'select', data: { base_salary: 6000000, role: 'ktv', tenant_id: 'tenant-1' } },
+      { table: 'users', op: 'update' },
+      { table: 'users', op: 'update' },
+    ]);
+    mockRecordAuditLog.mockRejectedValue(new Error('audit failed'));
+
+    const result = await updateBaseSalary('ktv-1', 8000000);
+
+    expect(result.error).toContain('audit failed');
+    expect(calls.filter(c => c.table === 'users' && c.op === 'update').map(c => c.payload)).toEqual([
+      { base_salary: 8000000 },
+      { base_salary: 6000000 },
+    ]);
+    expect(mockRecalculateAndSaveSalaryRecordEngine).toHaveBeenCalledTimes(2);
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
   });
 
   it('updates user status and records old/new audit data on success', async () => {
