@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 01/06/2026: Harden KTV Session Matrix Query Errors
+* **Mục tiêu kỹ thuật**:
+  * Siết `getKtvSessionMatrix` để lỗi database không còn bị log rồi trả matrix rỗng như một trạng thái hợp lệ.
+  * Giữ nguyên shape matrix và logic cột package/isConfirmed khi các query thành công.
+* **Thay đổi chính**:
+  * Thêm explicit error checks cho các query `users`, `salary_records`, `session_logs`, và `packages` trong session matrix.
+  * `session_logs` query fail giờ throw `getKtvSessionMatrix session_logs query failed: ...` thay vì tiếp tục với danh sách session rỗng.
+  * `packages` query fail giờ throw rõ và không trả partial package columns.
+  * Catch cuối của `getKtvSessionMatrix` rethrow error thay vì trả `{ ktvs: [], packageNames: [] }`.
+  * Thêm `query-salary-actions.test.ts` với 3 test cho happy path, session query failure và packages query failure.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/query-salary-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/state-machine.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/security-hardening.test.ts --runInBand` pass.
+  * `npx.cmd tsc --noEmit` pass.
+  * `npx.cmd eslint src/modules/hr-salary/actions/query-salary-actions.ts src/__tests__/query-salary-actions.test.ts` pass.
+
 ### 🟢 Ngày 01/06/2026: Harden Auto Confirm Salary RPC Error Handling
 * **Mục tiêu kỹ thuật**:
   * Siết `checkAndAutoConfirm` để không còn che lỗi RPC `auto_confirm_stale_salary_records` thành `{ count: 0 }`.
