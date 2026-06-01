@@ -7,6 +7,26 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 02/06/2026: Remove Subscription Tier Hard Code
+* **Mục tiêu kỹ thuật**:
+  * Loại bỏ dependency runtime cuối cùng vào `SUBSCRIPTION_TIERS` trong quota enforcement.
+  * Để tên gói hiển thị lấy từ catalog `subscription_plans` do Super Admin quản lý.
+  * Giữ quota number lấy từ RPC `get_effective_subscription_entitlements`, không quay lại static limit.
+* **Thay đổi chính**:
+  * `src/lib/subscription.ts` bỏ constant `SUBSCRIPTION_TIERS` và `resolveTierName`.
+  * Thêm lookup `subscription_plans.display_name` cho franchise tenant trước khi build `limits.tierName`.
+  * Expired subscription trả zero limits với tên gói từ catalog.
+  * HQ-owned spa vẫn bypass unlimited độc lập với franchise plan catalog.
+  * Mở rộng `subscription.test.ts` để assert display name từ catalog và plan lookup fail-closed.
+  * Thêm spec `docs/implementation-artifacts/spec-remove-subscription-tier-hard-code.md`.
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/subscription.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/hq-subscription-actions.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/subscription-quota-schema.test.ts --runInBand` pass.
+  * `npx.cmd eslint src/lib/subscription.ts src/__tests__/subscription.test.ts` pass.
+  * `npx.cmd tsc --noEmit` pass.
+
 ### 🟢 Ngày 02/06/2026: Use Plan Catalog for Subscription Invoices
 * **Mục tiêu kỹ thuật**:
   * Loại bỏ bảng giá subscription hard-code trong server action tạo invoice nâng gói.

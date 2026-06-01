@@ -19,10 +19,15 @@ const createChainableMock = (resolvedValue: any, singleValueFn?: () => any) => {
 const mockSingleTenant = jest.fn();
 const mockRpcSubscription = jest.fn();
 
-const mockSupabaseServer = {
-  from: jest.fn((table: string) => {
+function createDefaultTableMock(table: string) {
     if (table === 'tenants') {
       return createChainableMock({}, mockSingleTenant);
+    }
+    if (table === 'subscription_plans') {
+      return createChainableMock({
+        data: { plan_code: 'basic', display_name: 'Basic Plan' },
+        error: null,
+      });
     }
     if (table === 'users') {
       return createChainableMock({ count: 0, error: null });
@@ -31,23 +36,15 @@ const mockSupabaseServer = {
       return createChainableMock({ count: 0, error: null });
     }
     return {};
-  }),
+}
+
+const mockSupabaseServer = {
+  from: jest.fn(createDefaultTableMock),
   rpc: mockRpcSubscription,
 };
 
 function resetMockSupabaseFrom() {
-  mockSupabaseServer.from = jest.fn((table: string) => {
-    if (table === 'tenants') {
-      return createChainableMock({}, mockSingleTenant);
-    }
-    if (table === 'users') {
-      return createChainableMock({ count: 0, error: null });
-    }
-    if (table === 'customers') {
-      return createChainableMock({ count: 0, error: null });
-    }
-    return {};
-  });
+  mockSupabaseServer.from = jest.fn(createDefaultTableMock);
 }
 
 jest.mock('@/lib/supabase-server', () => ({
@@ -175,7 +172,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         if (table === 'users') {
           return createChainableMock({ count: 2, error: null });
         }
-        return {};
+        return createDefaultTableMock(table);
       });
 
       const res = await checkSubscriptionLimit('tenant-1', 'ktv');
@@ -202,7 +199,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         if (table === 'users') {
           return createChainableMock({ count: 3, error: null });
         }
-        return {};
+        return createDefaultTableMock(table);
       });
 
       const res = await checkSubscriptionLimit('tenant-1', 'ktv');
@@ -245,7 +242,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         if (table === 'customers') {
           return createChainableMock({ count: 50, error: null });
         }
-        return {};
+        return createDefaultTableMock(table);
       });
 
       const res = await checkSubscriptionLimit('tenant-1', 'customer');
@@ -366,7 +363,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         if (table === 'users') {
           return createChainableMock({ count: 3, error: null });
         }
-        return {};
+        return createDefaultTableMock(table);
       });
 
       const res = await checkSubscriptionLimit('tenant-1', 'ktv');
@@ -378,6 +375,35 @@ describe('Subscription Constraints & Webhook Suite', () => {
       expect(mockRpcSubscription).toHaveBeenCalledWith('get_effective_subscription_entitlements', {
         p_tenant_id: 'tenant-1',
       });
+    });
+
+    it('uses subscription plan display name from the plan catalog', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
+          sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
+        },
+        error: null,
+      });
+
+      mockSupabaseServer.from = jest.fn().mockImplementation((table: string) => {
+        if (table === 'tenants') {
+          return createChainableMock({}, mockSingleTenant);
+        }
+        if (table === 'subscription_plans') {
+          return createChainableMock({
+            data: { plan_code: 'basic', display_name: 'HQ Basic Catalog Name' },
+            error: null,
+          });
+        }
+        return createDefaultTableMock(table);
+      });
+
+      const res = await checkSubscriptionLimit('tenant-1', 'ktv');
+
+      expect(res.limits.tierName).toBe('HQ Basic Catalog Name');
     });
 
     it('throws instead of fail-opening when tenant subscription query fails', async () => {
@@ -409,11 +435,40 @@ describe('Subscription Constraints & Webhook Suite', () => {
         if (table === 'users') {
           return createChainableMock({ count: null, error: { message: 'users count failed' } });
         }
-        return {};
+        return createDefaultTableMock(table);
       });
 
       await expect(checkSubscriptionLimit('tenant-1', 'ktv')).rejects.toThrow(
         '[checkSubscriptionLimit] users count failed: users count failed'
+      );
+    });
+
+    it('throws instead of fail-opening when subscription plan lookup fails', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
+          sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
+        },
+        error: null,
+      });
+
+      mockSupabaseServer.from = jest.fn().mockImplementation((table: string) => {
+        if (table === 'tenants') {
+          return createChainableMock({}, mockSingleTenant);
+        }
+        if (table === 'subscription_plans') {
+          return createChainableMock({
+            data: null,
+            error: { message: 'plans unavailable' },
+          });
+        }
+        return createDefaultTableMock(table);
+      });
+
+      await expect(checkSubscriptionLimit('tenant-1', 'ktv')).rejects.toThrow(
+        '[checkSubscriptionLimit] subscription_plans query failed: plans unavailable'
       );
     });
 
@@ -481,7 +536,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         if (table === 'customers') {
           return createChainableMock({ count: 10000, error: null });
         }
-        return {};
+        return createDefaultTableMock(table);
       });
 
       const ktv = await checkSubscriptionLimit('tenant-hq', 'ktv');
