@@ -88,6 +88,25 @@ async function getEffectiveEntitlements(
   };
 }
 
+async function getCurrentSmsUsage(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tenantId: string
+) {
+  const { data, error } = await supabase.rpc('get_tenant_sms_usage', {
+    p_tenant_id: tenantId,
+  });
+
+  if (error) {
+    throw new Error(`[checkSubscriptionLimit] get_tenant_sms_usage failed: ${error.message}`);
+  }
+
+  if (data === null) {
+    throw new Error('[checkSubscriptionLimit] get_tenant_sms_usage returned null');
+  }
+
+  return Number(data);
+}
+
 /**
  * Checks if a tenant has exceeded their active subscription limits.
  * Returns { isBlocked: boolean; current: number; max: number; tier: string; isExpired?: boolean }
@@ -102,13 +121,12 @@ export async function checkSubscriptionLimit(
   interface TenantSubscriptionRow {
     subscription_tier: string | null;
     subscription_expires_at: string | null;
-    sms_allotment_used: number | null;
     franchise_agreement_date: string | null;
   }
 
   const { data: tenant, error: tenantErr } = await (supabase
     .from('tenants')
-    .select('subscription_tier, subscription_expires_at, sms_allotment_used, franchise_agreement_date')
+    .select('subscription_tier, subscription_expires_at, franchise_agreement_date')
     .eq('id', tenantId)
     .single() as unknown as Promise<{ data: TenantSubscriptionRow | null; error: { message: string } | null }>);
 
@@ -183,7 +201,7 @@ export async function checkSubscriptionLimit(
     };
   } else {
     // Check SMS count
-    const currentCount = tenant.sms_allotment_used || 0;
+    const currentCount = await getCurrentSmsUsage(supabase, tenantId);
     return {
       isBlocked: requested.is_unlimited ? false : currentCount >= maxLimit,
       current: currentCount,
