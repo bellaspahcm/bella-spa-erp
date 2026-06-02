@@ -62,7 +62,7 @@ export function getMonthStart(now = new Date()) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
-export function sanitizeTime(raw: any): string | null {
+export function sanitizeTime(raw: unknown): string | null {
   if (!raw) return null;
   const s = String(raw).trim();
   if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(s)) {
