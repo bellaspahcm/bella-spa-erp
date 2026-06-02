@@ -5,6 +5,14 @@ import { decrypt } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
+type AttendanceKpi = Database["public"]["Functions"]["get_ai_attendance_kpis"]["Returns"][number];
+type ReconciliationRow = Database["public"]["Functions"]["get_reconciliation_report"]["Returns"][number];
+type TenantError = {
+  tenant_id: string;
+  tenant_name: string;
+  error: string;
+};
+
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -13,6 +21,18 @@ function getAdminClient() {
   }
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Autopilot cron failed.";
+}
+
+function appendTenantError(errors: TenantError[], tenant: { id: string; name: string }, error: unknown) {
+  errors.push({
+    tenant_id: tenant.id,
+    tenant_name: tenant.name,
+    error: getErrorMessage(error),
   });
 }
 
@@ -53,6 +73,7 @@ export async function GET(req: NextRequest) {
 
     let tenantsChecked = 0;
     let alertsSent = 0;
+    const tenantErrors: TenantError[] = [];
 
     for (const tenant of tenants || []) {
       try {
@@ -77,6 +98,9 @@ export async function GET(req: NextRequest) {
         const { data: attendanceKpis, error: attErr } = await supabase.rpc("get_ai_attendance_kpis", {
           p_month_year: formattedDate
         });
+        if (attErr) {
+          throw new Error(`Failed to fetch attendance KPIs: ${attErr.message}`);
+        }
 
         // 5. CFO: Đối soát chênh lệch sổ cái vs sổ quỹ trong ngày hôm nay
         const { data: reconReport, error: reconErr } = await supabase.rpc("get_reconciliation_report", {
@@ -84,11 +108,16 @@ export async function GET(req: NextRequest) {
           p_from_date: formattedDate,
           p_to_date: formattedDate
         });
+        if (reconErr) {
+          throw new Error(`Failed to fetch reconciliation report: ${reconErr.message}`);
+        }
 
         // Phân tích dữ liệu bất thường
-        const gpsAnomalies = (attendanceKpis || []).filter((item: any) => Number(item.gps_anomaly_count || 0) > 0);
-        const lateAnomalies = (attendanceKpis || []).filter((item: any) => Number(item.late_count || 0) > 2);
-        const majorReconDiffs = (reconReport || []).filter((row: any) => row.status === "MAJOR_DIFF");
+        const attendanceRows: AttendanceKpi[] = attendanceKpis || [];
+        const reconciliationRows: ReconciliationRow[] = reconReport || [];
+        const gpsAnomalies = attendanceRows.filter((item) => Number(item.gps_anomaly_count || 0) > 0);
+        const lateAnomalies = attendanceRows.filter((item) => Number(item.late_count || 0) > 2);
+        const majorReconDiffs = reconciliationRows.filter((row) => row.status === "MAJOR_DIFF");
 
         // 6. Nếu phát hiện bất thường, gửi thông báo khẩn qua Telegram
         if (gpsAnomalies.length > 0 || lateAnomalies.length > 0 || majorReconDiffs.length > 0) {
@@ -98,7 +127,7 @@ export async function GET(req: NextRequest) {
 
           if (gpsAnomalies.length > 0) {
             alertText += `*⚠️ Bất thường Check-in GPS KTV:* \n`;
-            gpsAnomalies.forEach((a: any) => {
+            gpsAnomalies.forEach((a) => {
               alertText += `- *${a.ktv_name}*: Có *${a.gps_anomaly_count} ca* định vị lệch vị trí nhà khách hàng.\n`;
             });
             alertText += `\n`;
@@ -106,7 +135,7 @@ export async function GET(req: NextRequest) {
 
           if (lateAnomalies.length > 0) {
             alertText += `*⚠️ Vi phạm đi trễ nhiều ca:* \n`;
-            lateAnomalies.forEach((a: any) => {
+            lateAnomalies.forEach((a) => {
               alertText += `- *${a.ktv_name}*: Đi muộn *${a.late_count} ca* tính đến hôm nay.\n`;
             });
             alertText += `\n`;
@@ -114,7 +143,7 @@ export async function GET(req: NextRequest) {
 
           if (majorReconDiffs.length > 0) {
             alertText += `*🔥 LỆCH QUỸ KẾ TOÁN LỚN (> 1%):* \n`;
-            majorReconDiffs.forEach((row: any) => {
+            majorReconDiffs.forEach((row) => {
               alertText += `- *${row.category_label}*: Sổ quỹ ${row.legacy_amount.toLocaleString("vi-VN")}đ | Sổ cái ${row.ledger_amount.toLocaleString("vi-VN")}đ (Chênh lệch: *${row.diff_amount.toLocaleString("vi-VN")}đ* - *${row.diff_percent}%*)\n`;
             });
             alertText += `\n`;
@@ -146,25 +175,28 @@ export async function GET(req: NextRequest) {
           }
         }
 
-      } catch (innerErr: any) {
-        console.error(`[AI Autopilot Cron] Lỗi xử lý tenant ${tenant.name}:`, innerErr?.message);
+      } catch (innerErr: unknown) {
+        appendTenantError(tenantErrors, tenant, innerErr);
+        console.error(`[AI Autopilot Cron] Lỗi xử lý tenant ${tenant.name}:`, getErrorMessage(innerErr));
       }
     }
 
     const summary = {
-      success: true,
+      success: tenantErrors.length === 0,
+      status: tenantErrors.length === 0 ? "success" : "partial_failure",
       date: formattedDate,
       tenants_checked: tenantsChecked,
-      alerts_sent: alertsSent
+      alerts_sent: alertsSent,
+      tenant_errors: tenantErrors.length > 0 ? tenantErrors : undefined
     };
 
     console.log("[AI Autopilot Cron] Hoàn thành:", JSON.stringify(summary));
     return NextResponse.json(summary);
 
-  } catch (globalErr: any) {
+  } catch (globalErr: unknown) {
     console.error("[AI Autopilot Cron] Lỗi nghiêm trọng toàn cục:", globalErr);
     return NextResponse.json(
-      { success: false, error: globalErr?.message || "Autopilot cron failed." },
+      { success: false, error: getErrorMessage(globalErr) },
       { status: 500 }
     );
   }
