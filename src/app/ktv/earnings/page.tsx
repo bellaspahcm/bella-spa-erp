@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   DollarSign, TrendingUp, Calendar as CalendarIcon,
   ChevronLeft, ChevronRight, RefreshCw, Award, Star,
-  Clock, CheckCircle2, AlertCircle, Send, ChevronDown, X
+  Clock, CheckCircle2, AlertCircle, Send, X
 } from 'lucide-react';
 import { getKTVEarnings, getKTVLeaderboard } from '@/services/ktv-actions';
 import { getKtvSalaryForConfirmation, ktvConfirmSalary, ktvDisputeSalary } from '@/modules/hr-salary/actions/base-salary-actions';
@@ -13,6 +13,31 @@ import { createClient } from '@/lib/supabase-client';
 import { formatCurrency, getLocalDateString } from '@/lib/utils';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import type { Database } from '@/types/database.types';
+
+type KTVEarnings = Awaited<ReturnType<typeof getKTVEarnings>>;
+type KTVLeaderboardEntry = Awaited<ReturnType<typeof getKTVLeaderboard>>[number];
+type KtvSalaryData = NonNullable<Awaited<ReturnType<typeof getKtvSalaryForConfirmation>>>;
+type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+type EarningsSessionDetail = Pick<
+  SessionLogRow,
+  'id' | 'completed_date' | 'session_number' | 'completed_by_ktv_id'
+> & {
+  bookings: {
+    package_name: string | null;
+    ktv_commission: number | null;
+    assigned_ktv_id: string | null;
+    customers: {
+      name_mother: string | null;
+    } | null;
+  } | null;
+};
+
+type PackageSummary = {
+  name: string;
+  count: number;
+  totalCommission: number;
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -45,10 +70,10 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function KTVEarningsPage() {
-  const [earnings, setEarnings] = useState<any>(null);
-  const [details, setDetails] = useState<any[]>([]);
-  const [leaderboardData, setLeaderboardData] = useState<any>(null);
-  const [salaryData, setSalaryData] = useState<{ record: any; sessions: any[] } | null>(null);
+  const [earnings, setEarnings] = useState<KTVEarnings | null>(null);
+  const [details, setDetails] = useState<EarningsSessionDetail[]>([]);
+  const [leaderboardData, setLeaderboardData] = useState<KTVLeaderboardEntry | null>(null);
+  const [salaryData, setSalaryData] = useState<KtvSalaryData | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -81,10 +106,10 @@ export default function KTVEarningsPage() {
           .gte('completed_date', startOfMonth)
           .lt('completed_date', nextMonth)
           .order('completed_date', { ascending: false });
-        setDetails(sessions || []);
+        setDetails((sessions || []) as unknown as EarningsSessionDetail[]);
 
         const lb = await getKTVLeaderboard(selectedMonth);
-        const myStats = lb.find((k: any) => k.ktv_id === user.id) || { total_kpi_bonus: 0, average_rating: 0 };
+        const myStats = lb.find((k) => k.ktv_id === user.id) || null;
         setLeaderboardData(myStats);
 
         const salary = await getKtvSalaryForConfirmation(`${selectedMonth}-01`);
@@ -101,9 +126,10 @@ export default function KTVEarningsPage() {
 
   // Countdown timer
   useEffect(() => {
-    if (!salaryData?.record?.published_at) return;
-    const timer = setInterval(() => setCountdown(getCountdown(salaryData.record.published_at)), 30000);
-    setCountdown(getCountdown(salaryData.record.published_at));
+    const publishedAt = salaryData?.record?.published_at;
+    if (!publishedAt) return;
+    const timer = setInterval(() => setCountdown(getCountdown(publishedAt)), 30000);
+    setCountdown(getCountdown(publishedAt));
     return () => clearInterval(timer);
   }, [salaryData?.record?.published_at]);
 
@@ -145,12 +171,13 @@ export default function KTVEarningsPage() {
     setIsSubmitting(false);
   };
 
-  const pendingSalary = salaryData?.record && ['published', 'pending_approval'].includes(salaryData.record.status);
-  const disputedSalary = salaryData?.record?.status === 'disputed';
-  const confirmedSalary = salaryData?.record && ['confirmed', 'finalized', 'approved'].includes(salaryData.record.status);
-  const rec = salaryData?.record;
+  const rec = salaryData?.record ?? null;
+  const recStatus = rec?.status ?? 'draft';
+  const pendingSalary = Boolean(rec && ['published', 'pending_approval'].includes(recStatus));
+  const disputedSalary = recStatus === 'disputed';
+  const confirmedSalary = Boolean(rec && ['confirmed', 'finalized', 'approved'].includes(recStatus));
 
-  const packageSummary = details.reduce((acc: any[], session: any) => {
+  const packageSummary = details.reduce<PackageSummary[]>((acc, session) => {
     const packageName = session.bookings?.package_name || 'Dịch vụ khác / Khác';
     const commission = session.bookings?.ktv_commission || 0;
     
@@ -286,7 +313,7 @@ export default function KTVEarningsPage() {
           <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Bảng lương kỳ này</h3>
-              <StatusBadge status={rec.status} />
+              <StatusBadge status={recStatus} />
             </div>
             <div className="space-y-2 text-sm">
               {[
@@ -373,12 +400,13 @@ export default function KTVEarningsPage() {
             <div className="space-y-3">
               {details.map((session) => {
                 const isReassigned = session.completed_by_ktv_id && session.bookings && session.completed_by_ktv_id !== session.bookings.assigned_ktv_id;
+                const completedDate = session.completed_date ? new Date(session.completed_date) : null;
                 return (
                   <div key={session.id} className="bg-white p-4 rounded-3xl border border-slate-100 flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-slate-50 rounded-2xl flex flex-col items-center justify-center text-slate-400 border border-slate-100">
-                        <span className="text-[10px] font-black">{new Date(session.completed_date).getDate()}</span>
-                        <span className="text-[8px] font-black uppercase">Th{new Date(session.completed_date).getMonth() + 1}</span>
+                        <span className="text-[10px] font-black">{completedDate ? completedDate.getDate() : '--'}</span>
+                        <span className="text-[8px] font-black uppercase">{completedDate ? `Th${completedDate.getMonth() + 1}` : '--'}</span>
                       </div>
                       <div>
                         <h4 className="text-sm font-black text-slate-900">{session.bookings?.customers?.name_mother}</h4>

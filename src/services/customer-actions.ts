@@ -23,7 +23,7 @@ type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type RevenueRow = Database['public']['Tables']['revenue']['Row'];
 type SessionReviewInsert = Database['public']['Tables']['session_reviews']['Insert'];
 
-type CustomerPortalBooking = BookingRow & {
+export type CustomerPortalBooking = BookingRow & {
   customers?: Pick<CustomerRow, 'name_mother' | 'phone' | 'loyalty_points'> | null;
   packages?: Pick<PackageRow, 'name'> | null;
   assigned_ktv?: { id: string; full_name: string | null; phone: string | null } | null;

@@ -1,14 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { 
   Trophy, 
   Medal, 
   Star, 
   ChevronLeft,
   RefreshCw,
-  TrendingUp,
   Clock,
   DollarSign,
   Calendar as CalendarIcon
@@ -17,10 +15,15 @@ import { getKTVLeaderboard } from '@/services/ktv-actions';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-client';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
+
+type KTVLeaderboardEntry = Awaited<ReturnType<typeof getKTVLeaderboard>>[number];
+type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 
 export default function KTVLeaderboardPage() {
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState(() => {
+  const [leaderboard, setLeaderboard] = useState<KTVLeaderboardEntry[]>([]);
+  const [selectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
@@ -31,7 +34,7 @@ export default function KTVLeaderboardPage() {
     try {
       const data = await getKTVLeaderboard(selectedMonth);
       setLeaderboard(data);
-    } catch (error) {
+    } catch {
       toast.error('Lỗi khi tải bảng xếp hạng');
     } finally {
       setIsLoading(false);
@@ -52,7 +55,7 @@ export default function KTVLeaderboardPage() {
           schema: 'public',
           table: 'session_logs'
         },
-        (payload: any) => {
+        (payload: RealtimePostgresChangesPayload<SessionLogRow>) => {
           console.log('Realtime session log update, refetching leaderboard:', payload);
           fetchData();
         }
@@ -153,7 +156,7 @@ export default function KTVLeaderboardPage() {
                        </div>
                        <div>
                           <h4 className="text-sm font-black text-slate-900">{item.full_name}</h4>
-                          <p className="text-[10px] text-slate-400 font-medium">Hạng {item.rank} • {item.sessions ?? item.total_sessions ?? 0} ca làm</p>
+                          <p className="text-[10px] text-slate-400 font-medium">Hạng {item.rank} • {item.sessions ?? 0} ca làm</p>
                        </div>
                     </div>
                     <div className="text-right" title={ratingTooltip}>

@@ -9,10 +9,8 @@ import {
   MapPin, 
   Phone, 
   Heart,
-  ChevronRight,
   ShieldCheck,
   Gift,
-  MessageSquare,
   Sparkles,
   RefreshCw,
   X,
@@ -25,13 +23,15 @@ import { getCustomerBookingByToken, submitCustomerRating } from '@/services/cust
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
 import PortalChatWidget from '@/components/features/portal/PortalChatWidget';
-import type { Promotion } from '@/lib/promotions';
+import type { CustomerPortalBooking } from '@/services/customer-actions';
+
+type CustomerPortalSession = NonNullable<CustomerPortalBooking['session_logs']>[number];
 
 export default function CustomerPortal({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
-  const [booking, setBooking] = useState<any>(null);
+  const [booking, setBooking] = useState<CustomerPortalBooking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [selectedSession, setSelectedSession] = useState<CustomerPortalSession | null>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +47,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
     try {
       const data = await getCustomerBookingByToken(token);
       setBooking(data);
-    } catch (error) {
+    } catch {
       toast.error('Không tìm thấy thông tin liệu trình');
     } finally {
       setIsLoading(false);
@@ -66,7 +66,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
       toast.success('Cảm ơn bạn đã đánh giá!');
       setSelectedSession(null);
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('Lỗi khi gửi đánh giá');
     } finally {
       setIsSubmitting(false);
@@ -93,11 +93,13 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
     );
   }
 
-  const completedSessions = booking.session_logs.filter((s: any) => s.status === 'completed').length;
-  const progress = (completedSessions / booking.total_sessions) * 100;
+  const sessionLogs = booking.session_logs ?? [];
+  const totalSessions = booking.total_sessions || sessionLogs.length || 1;
+  const completedSessions = sessionLogs.filter((s) => s.status === 'completed').length;
+  const progress = (completedSessions / totalSessions) * 100;
 
   // Tìm buổi chăm sóc đã hoàn thành gần nhất chưa được đánh giá
-  const pendingReviewSession = booking.session_logs.find((s: any) => s.status === 'completed' && !s.rating);
+  const pendingReviewSession = sessionLogs.find((s) => s.status === 'completed' && !s.rating);
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 font-sans">
@@ -152,7 +154,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
              <div className="flex justify-between items-end mb-4">
                 <div>
                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Tiến độ hoàn thành</p>
-                   <p className="text-3xl font-black">{completedSessions}<span className="text-lg opacity-40">/{booking.total_sessions}</span></p>
+                   <p className="text-3xl font-black">{completedSessions}<span className="text-lg opacity-40">/{totalSessions}</span></p>
                 </div>
                 <div className="text-right">
                    <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Điểm Loyalty</p>
@@ -171,7 +173,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 />
              </div>
              <p className="text-[10px] font-bold text-white/30 mt-3 uppercase tracking-wider text-center">
-                Còn lại {booking.total_sessions - completedSessions} buổi chăm sóc chuyên sâu
+                Còn lại {Math.max(totalSessions - completedSessions, 0)} buổi chăm sóc chuyên sâu
              </p>
           </div>
         </div>
@@ -199,7 +201,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 </div>
                 
                 <div className="space-y-4">
-                  {(booking.active_promotions as Promotion[]).map((promo) => (
+                  {booking.active_promotions.map((promo) => (
                     <div key={promo.id} className="border-b border-pink-100/40 last:border-0 pb-3 last:pb-0 space-y-1.5">
                       <div className="flex items-baseline justify-between gap-4">
                         <h5 className="text-sm font-black text-primary leading-snug">{promo.title}</h5>
@@ -240,8 +242,8 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
           const discountPercent = booking.discount_percent || 0;
           const priceAfterDiscount = fullPrice * (1 - discountPercent / 100);
           
-          const confirmedRevenues = booking.revenue?.filter((r: any) => r.status === 'confirmed') || [];
-          const totalPaid = confirmedRevenues.reduce((sum: number, r: any) => sum + (Number(r.amount) || 0), 0);
+          const confirmedRevenues = booking.revenue?.filter((r) => r.status === 'confirmed') || [];
+          const totalPaid = confirmedRevenues.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
           
           const remainingDebt = priceAfterDiscount - totalPaid;
           const hasOutstandingDebt = remainingDebt > 0;
@@ -456,7 +458,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
           </div>
           
           <div className="space-y-4">
-            {booking.session_logs.map((session: any) => (
+            {sessionLogs.map((session) => (
               <div 
                 key={session.id} 
                 className={`bg-white rounded-[32px] border ${session.status === 'completed' ? 'border-emerald-100' : 'border-slate-100'} shadow-sm relative overflow-hidden`}
