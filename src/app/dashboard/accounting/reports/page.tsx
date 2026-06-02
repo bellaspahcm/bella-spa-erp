@@ -22,10 +22,21 @@ import {
   getCashFlowStatementReport,
   getAccounts
 } from '@/services/accounting-actions';
-import { exportAccountingReportToExcel } from '@/services/export-actions';
+import {
+  exportAccountingReportToExcel,
+  type AccountingReportData,
+  type AccountingReportRecord,
+  type TrialBalanceExportRow,
+} from '@/services/export-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { toast } from 'sonner';
+
+type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
+type AccountLedgerRow = AccountingReportRecord;
+type ExportableReportType = 'trial_balance' | 'income_statement' | 'balance_sheet' | 'cash_flow';
+
+const toReportNumber = (value: string | number | null | undefined) => Number(value || 0);
 
 const reportTabs = [
   { value: 'trial_balance', label: 'Bảng cân đối phát sinh' },
@@ -41,12 +52,12 @@ export default function AccountingReportsPage() {
   const [refreshing, setRefreshing] = useState(false);
   
   // Dynamic report data states
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [trialBalance, setTrialBalance] = useState<any[]>([]);
-  const [incomeStatement, setIncomeStatement] = useState<any>(null);
-  const [balanceSheet, setBalanceSheet] = useState<any>(null);
-  const [accountLedger, setAccountLedger] = useState<any[]>([]);
-  const [cashFlow, setCashFlow] = useState<any>(null);
+  const [accounts, setAccounts] = useState<AccountRow[]>([]);
+  const [trialBalance, setTrialBalance] = useState<TrialBalanceExportRow[]>([]);
+  const [incomeStatement, setIncomeStatement] = useState<AccountingReportRecord | null>(null);
+  const [balanceSheet, setBalanceSheet] = useState<AccountingReportRecord | null>(null);
+  const [accountLedger, setAccountLedger] = useState<AccountLedgerRow[]>([]);
+  const [cashFlow, setCashFlow] = useState<AccountingReportRecord | null>(null);
 
   // Filtering metadata
   const [asOfDate, setAsOfDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -93,7 +104,7 @@ export default function AccountingReportsPage() {
         const data = await getAccountLedgerReport(selectedAccountId, fromDate, toDate);
         setAccountLedger(data || []);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching report data:', err);
       toast.error('Không thể tải dữ liệu báo cáo tài chính.');
     } finally {
@@ -110,7 +121,7 @@ export default function AccountingReportsPage() {
   const handleExportExcel = async () => {
     setRefreshing(true);
     try {
-      let reportData: any = null;
+      let reportData: AccountingReportData | null = null;
       let dateString = '';
 
       if (activeTab === 'trial_balance') {
@@ -133,7 +144,7 @@ export default function AccountingReportsPage() {
       }
 
       const base64 = await exportAccountingReportToExcel(
-        activeTab as 'trial_balance' | 'income_statement' | 'balance_sheet' | 'cash_flow',
+        activeTab as ExportableReportType,
         reportData,
         dateString
       );
@@ -146,7 +157,7 @@ export default function AccountingReportsPage() {
       link.click();
       document.body.removeChild(link);
       toast.success('Báo cáo Excel đã được xuất thành công!');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Excel export failed:', err);
       toast.error('Gặp lỗi khi xuất tệp tin Excel.');
     } finally {
@@ -345,7 +356,7 @@ export default function AccountingReportsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-sans text-xs">
                   {(() => {
-                    const pnl = incomeStatement || {};
+                    const pnl: AccountingReportRecord = incomeStatement ?? {};
                     const items = [
                       { label: '1. Doanh thu bán hàng và cung cấp dịch vụ', code: '01', val: pnl.gross_revenue, isBold: true },
                       { label: '2. Các khoản giảm trừ doanh thu (Refunds, Voucher)', code: '02', val: pnl.deductions, isBold: false },
@@ -358,7 +369,7 @@ export default function AccountingReportsPage() {
                       { label: '9. Lợi nhuận thuần từ hoạt động kinh doanh (30 = 20 + 21 - 22 - 24)', code: '30', val: pnl.operating_profit, isBold: true },
                       { label: '10. Thu nhập khác', code: '31', val: pnl.other_income, isBold: false },
                       { label: '11. Chi phí khác', code: '32', val: pnl.other_expense, isBold: false },
-                      { label: '12. Lợi nhuận khác (40 = 31 - 32)', code: '40', val: (pnl.other_income || 0) - (pnl.other_expense || 0), isBold: true },
+                      { label: '12. Lợi nhuận khác (40 = 31 - 32)', code: '40', val: toReportNumber(pnl.other_income) - toReportNumber(pnl.other_expense), isBold: true },
                       { label: '13. Tổng lợi nhuận kế toán trước thuế (50 = 30 + 40)', code: '50', val: pnl.profit_before_tax, isBold: true },
                       { label: '14. Chi phí thuế thu nhập doanh nghiệp (821)', code: '51', val: pnl.tax_expense, isBold: false },
                       { label: '15. Lợi nhuận sau thuế thu nhập doanh nghiệp (60 = 50 - 51)', code: '60', val: pnl.net_profit, isBold: true },
@@ -401,7 +412,7 @@ export default function AccountingReportsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-sans text-xs">
                   {(() => {
-                    const bs = balanceSheet || {};
+                    const bs: AccountingReportRecord = balanceSheet ?? {};
                     const items = [
                       // ASSETS
                       { label: 'A - TÀI SẢN (ASSETS)', code: '100', val: bs.total_assets, isBold: true, isRed: false },
@@ -409,7 +420,7 @@ export default function AccountingReportsPage() {
                       { label: 'II. Phải thu khách hàng ngắn hạn (131 + 138)', code: '120', val: bs.accounts_receivable, isBold: false, isRed: false },
                       { label: 'III. Hàng tồn kho (Vật tư massage 152 + 153)', code: '130', val: bs.inventory, isBold: false, isRed: false },
                       { label: 'IV. Tài sản cố định hữu hình - Nguyên giá (211)', code: '140', val: bs.fixed_assets_cost, isBold: false, isRed: false },
-                      { label: 'V. Hao mòn lũy kế tài sản cố định (214)', code: '141', val: -Math.abs(bs.accumulated_depreciation || 0), isBold: false, isRed: true },
+                      { label: 'V. Hao mòn lũy kế tài sản cố định (214)', code: '141', val: -Math.abs(toReportNumber(bs.accumulated_depreciation)), isBold: false, isRed: true },
                       { label: 'VI. Chi phí trả trước (Mặt bằng 242)', code: '150', val: bs.prepaid_expenses, isBold: false, isRed: false },
                       { label: 'TỔNG CỘNG TÀI SẢN', code: '200', val: bs.total_assets, isBold: true, isRed: false },
                       
@@ -506,7 +517,7 @@ export default function AccountingReportsPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-sans text-xs">
                       {(() => {
-                        const cf = cashFlow || {};
+                        const cf: AccountingReportRecord = cashFlow ?? {};
                         const items = [
                           // I. OPERATING
                           { label: 'I. LƯU CHUYỂN TIỀN TỪ HOẠT ĐỘNG KINH DOANH', code: '20', val: cf.net_cash_operating, isBold: true, isSection: true },

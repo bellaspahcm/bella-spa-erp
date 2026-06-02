@@ -20,10 +20,14 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { toast } from 'sonner';
 
+type JournalEntryRow = Awaited<ReturnType<typeof getJournalEntries>>[number];
+type JournalLineRow = NonNullable<JournalEntryRow['journal_lines']>[number];
+type JournalFilters = NonNullable<Parameters<typeof getJournalEntries>[0]>;
+
 export default function JournalsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [entries, setEntries] = useState<any[]>([]);
+  const [entries, setEntries] = useState<JournalEntryRow[]>([]);
 
   // Filter states
   const [fromDate, setFromDate] = useState(() => {
@@ -41,7 +45,7 @@ export default function JournalsPage() {
   const fetchJournals = async () => {
     setRefreshing(true);
     try {
-      const filters: any = {
+      const filters: JournalFilters = {
         from_date: fromDate,
         to_date: toDate,
       };
@@ -54,7 +58,7 @@ export default function JournalsPage() {
 
       const data = await getJournalEntries(filters);
       setEntries(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching journals:', err);
       toast.error('Không thể tải nhật ký chứng từ sổ cái.');
     } finally {
@@ -73,7 +77,7 @@ export default function JournalsPage() {
     const matchesDescription = e.description?.toLowerCase().includes(searchLower);
     const matchesReferenceId = e.reference_id?.toLowerCase().includes(searchLower);
     const matchesLines = e.journal_lines?.some(
-      (line: any) =>
+      (line: JournalLineRow) =>
         line.accounting_accounts?.account_code?.includes(searchLower) ||
         line.accounting_accounts?.account_name?.toLowerCase().includes(searchLower)
     );
@@ -214,7 +218,7 @@ export default function JournalsPage() {
                 {filteredEntries.map((entry) => {
                   // Calculate total debit from lines
                   const totalAmount = entry.journal_lines?.reduce(
-                    (sum: number, line: any) => sum + Number(line.debit_amount || 0), 
+                    (sum: number, line: JournalLineRow) => sum + Number(line.debit_amount || 0),
                     0
                   ) || 0;
 
@@ -238,7 +242,7 @@ export default function JournalsPage() {
                         <div>
                           <p className="text-xs font-black text-slate-800 dark:text-[#EFE9E1] leading-snug">{entry.description}</p>
                           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                            {entry.journal_lines?.map((line: any) => (
+                            {entry.journal_lines?.map((line: JournalLineRow) => (
                               <span 
                                 key={line.id} 
                                 className={`text-4xs font-mono px-2 py-0.5 rounded border ${

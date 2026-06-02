@@ -17,7 +17,20 @@ import { getOutboxEvents, replayOutboxEvent } from '@/services/accounting-action
 import { toast } from 'sonner';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
-const statuses = [
+type OutboxEventRow = Awaited<ReturnType<typeof getOutboxEvents>>[number];
+type OutboxFilters = NonNullable<Parameters<typeof getOutboxEvents>[0]>;
+type OutboxStatusFilter = 'ALL' | NonNullable<OutboxFilters['status']>;
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+  return fallback;
+}
+
+const statuses: { value: OutboxStatusFilter; label: string }[] = [
   { value: 'ALL', label: 'TẤT CẢ EVENTS' },
   { value: 'PENDING', label: 'PENDING (ĐANG CHỜ)' },
   { value: 'COMPLETED', label: 'COMPLETED (THÀNH CÔNG)' },
@@ -28,22 +41,22 @@ const statuses = [
 export default function OutboxMonitorPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [events, setEvents] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('ALL');
+  const [events, setEvents] = useState<OutboxEventRow[]>([]);
+  const [activeTab, setActiveTab] = useState<OutboxStatusFilter>('ALL');
 
   // Payload viewer state
-  const [viewingPayload, setViewingPayload] = useState<any>(null);
+  const [viewingPayload, setViewingPayload] = useState<OutboxEventRow['payload'] | null>(null);
 
   const fetchOutbox = async () => {
     setRefreshing(true);
     try {
-      const filters: any = {};
+      const filters: OutboxFilters = {};
       if (activeTab !== 'ALL') {
         filters.status = activeTab;
       }
       const data = await getOutboxEvents(filters);
       setEvents(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching outbox queue:', err);
       toast.error('Không thể tải danh sách hàng đợi Outbox.');
     } finally {
@@ -64,9 +77,9 @@ export default function OutboxMonitorPage() {
         toast.success(`Đã xếp lịch hạch toán lại cho sự kiện "${eventType}" thành công!`);
         fetchOutbox();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Replay failed:', err);
-      toast.error(err.message || 'Lỗi khi gửi yêu cầu hạch toán lại.');
+      toast.error(getErrorMessage(err, 'Lỗi khi gửi yêu cầu hạch toán lại.'));
     } finally {
       setRefreshing(false);
     }
@@ -224,7 +237,7 @@ export default function OutboxMonitorPage() {
 
       {/* ── VIEW JSON PAYLOAD DIALOG MODAL ── */}
       <AnimatePresence>
-        {viewingPayload && (
+        {viewingPayload !== null && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
             <motion.div 

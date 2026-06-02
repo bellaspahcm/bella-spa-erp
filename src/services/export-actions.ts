@@ -3,6 +3,47 @@
 import * as XLSX from 'xlsx';
 import { createClient } from '@/lib/supabase-server';
 
+type SheetCell = string | number | null;
+type SheetRow = SheetCell[];
+
+type SalaryExportSession = {
+  bookings?: {
+    package_name?: string | null;
+    ktv_commission?: number | null;
+    customers?: {
+      name_mother?: string | null;
+    } | null;
+  } | null;
+};
+
+type PackageGroup = {
+  name: string;
+  sessions: number;
+  commissionRate: number;
+  totalEarnings: number;
+  customerNames: Set<string>;
+};
+
+export interface SessionMatrixRow {
+  name: string;
+  [packageName: string]: string | number | boolean | null | undefined;
+}
+
+export interface TrialBalanceExportRow {
+  account_id?: string | number | null;
+  account_code: string;
+  account_name: string;
+  opening_debit: string | number | null;
+  opening_credit: string | number | null;
+  period_debit: string | number | null;
+  period_credit: string | number | null;
+  closing_debit: string | number | null;
+  closing_credit: string | number | null;
+}
+
+export type AccountingReportRecord = Record<string, string | number | null | undefined>;
+export type AccountingReportData = TrialBalanceExportRow[] | AccountingReportRecord;
+
 export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthYear: string = '2026-05-01') {
   try {
     const supabase = await createClient();
@@ -25,8 +66,9 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
       .single();
 
     // 3. Process data into groups by package
-    const packageGroups: Record<string, any> = {};
-    (sessions || []).forEach((s: any) => {
+    const packageGroups: Record<string, PackageGroup> = {};
+    const sessionRows = (sessions || []) as unknown as SalaryExportSession[];
+    sessionRows.forEach((s) => {
       const packageName = s.bookings?.package_name || 'Dịch vụ lẻ';
       if (!packageGroups[packageName]) {
         packageGroups[packageName] = {
@@ -34,7 +76,7 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
           sessions: 0,
           commissionRate: s.bookings?.ktv_commission || 150000,
           totalEarnings: 0,
-          customerNames: new Set()
+          customerNames: new Set<string>()
         };
       }
       packageGroups[packageName].sessions += 1;
@@ -48,7 +90,7 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
     const wb = XLSX.utils.book_new();
     
     // Header Data
-    const reportData = [
+    const reportData: SheetRow[] = [
       ['BÁO CÁO CHI TIẾT LƯƠNG KTV'],
       ['Kỹ thuật viên:', ktvName],
       ['Tháng/Năm:', monthYear],
@@ -60,7 +102,7 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
 
     let stt = 1;
     let totalSessionBonus = 0;
-    Object.values(packageGroups).forEach((group: any) => {
+    Object.values(packageGroups).forEach((group) => {
       reportData.push([
         stt++,
         group.name,
@@ -72,17 +114,17 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
       totalSessionBonus += group.totalEarnings;
     });
 
-    const baseSalary = record?.base_salary || 6000000;
-    const kpiBonus = record?.kpi_bonus || (sessions?.length > 30 ? 1000000 : 0);
-    const deductions = record?.violations_deduction || 0;
-    const advances = record?.service_percentage_bonus || 0;
+    const baseSalary = Number(record?.base_salary || 6000000);
+    const kpiBonus = Number(record?.kpi_bonus || (sessionRows.length > 30 ? 1000000 : 0));
+    const deductions = Number(record?.violations_deduction || 0);
+    const advances = Number(record?.service_percentage_bonus || 0);
     const totalFinal = baseSalary + totalSessionBonus + kpiBonus - deductions - advances;
 
     reportData.push(
       [],
       ['TỔNG HỢP THU NHẬP & CHI PHÍ'],
       ['1. Lương cơ bản', '', '', '', baseSalary.toLocaleString('vi-VN') + 'đ'],
-      ['2. Tổng hoa hồng buổi diễn', '', sessions?.length + ' buổi', '', totalSessionBonus.toLocaleString('vi-VN') + 'đ'],
+      ['2. Tổng hoa hồng buổi diễn', '', sessionRows.length + ' buổi', '', totalSessionBonus.toLocaleString('vi-VN') + 'đ'],
       ['3. Thưởng KPI/Chuyên cần', '', '', '', kpiBonus.toLocaleString('vi-VN') + 'đ'],
       ['4. Các khoản giảm trừ (Vi phạm)', '', '', '', '-' + deductions.toLocaleString('vi-VN') + 'đ'],
       ['5. Tạm ứng', '', '', '', '-' + advances.toLocaleString('vi-VN') + 'đ'],
@@ -118,12 +160,12 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
   }
 }
 
-export async function exportSessionMatrixToExcel(data: any[], packageNames: string[]) {
+export async function exportSessionMatrixToExcel(data: SessionMatrixRow[], packageNames: string[]) {
   try {
     const wb = XLSX.utils.book_new();
     
     // 1. Prepare data for AOA (Array of Arrays)
-    const reportData = [
+    const reportData: SheetRow[] = [
       ['BẢNG ĐỐI SOÁT CHI TIẾT SỐ BUỔI LÀM THEO LIỆU TRÌNH'],
       ['Kỳ lương:', '05/2026'],
       ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
@@ -131,11 +173,11 @@ export async function exportSessionMatrixToExcel(data: any[], packageNames: stri
       ['Kỹ thuật viên', ...packageNames, 'Tổng cộng']
     ];
 
-    data.forEach((row: any) => {
-      const rowData = [row.name];
+    data.forEach((row) => {
+      const rowData: SheetRow = [row.name];
       let total = 0;
       packageNames.forEach((pkg: string) => {
-        const count = row[pkg] || 0;
+        const count = Number(row[pkg] || 0);
         rowData.push(count);
         total += count;
       });
@@ -166,12 +208,12 @@ export async function exportSessionMatrixToExcel(data: any[], packageNames: stri
  */
 export async function exportAccountingReportToExcel(
   reportType: 'trial_balance' | 'income_statement' | 'balance_sheet' | 'cash_flow',
-  data: any,
+  data: AccountingReportData,
   dateStr: string
 ) {
   try {
     const wb = XLSX.utils.book_new();
-    const sheetData: any[][] = [];
+    const sheetData: SheetRow[] = [];
 
     if (reportType === 'trial_balance') {
       // BẢNG CÂN ĐỐI PHÁT SINH
@@ -201,7 +243,8 @@ export async function exportAccountingReportToExcel(
       let sumClDebit = 0;
       let sumClCredit = 0;
 
-      (data || []).forEach((row: any) => {
+      const rows = Array.isArray(data) ? data : [];
+      rows.forEach((row) => {
         sheetData.push([
           row.account_code,
           row.account_name,
@@ -258,7 +301,7 @@ export async function exportAccountingReportToExcel(
 
     } else if (reportType === 'income_statement') {
       // BÁO CÁO KẾT QUẢ KINH DOANH (P&L)
-      const pnl = data || {};
+      const pnl = Array.isArray(data) ? {} : data;
       sheetData.push(
         ['BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH (TT 133/2016/TT-BTC)'],
         ['Chi nhánh Spa:', 'Bella Spa ERP'],
@@ -277,7 +320,7 @@ export async function exportAccountingReportToExcel(
         ['9. Lợi nhuận thuần từ hoạt động kinh doanh (30 = 20 + 21 - 22 - 24)', '30', '', pnl.operating_profit || 0, 0],
         ['10. Thu nhập khác', '31', '', pnl.other_income || 0, 0],
         ['11. Chi phí khác', '32', '', pnl.other_expense || 0, 0],
-        ['12. Lợi nhuận khác (40 = 31 - 32)', '40', '', (pnl.other_income || 0) - (pnl.other_expense || 0), 0],
+        ['12. Lợi nhuận khác (40 = 31 - 32)', '40', '', Number(pnl.other_income || 0) - Number(pnl.other_expense || 0), 0],
         ['13. Tổng lợi nhuận kế toán trước thuế (50 = 30 + 40)', '50', '', pnl.profit_before_tax || 0, 0],
         ['14. Chi phí thuế thu nhập doanh nghiệp', '51', '', pnl.tax_expense || 0, 0],
         ['15. Lợi nhuận sau thuế thu nhập doanh nghiệp (60 = 50 - 51)', '60', '', pnl.net_profit || 0, 0]
@@ -296,7 +339,7 @@ export async function exportAccountingReportToExcel(
 
     } else if (reportType === 'balance_sheet') {
       // CÂN ĐỐI KẾ TOÁN
-      const bs = data || {};
+      const bs = Array.isArray(data) ? {} : data;
       sheetData.push(
         ['BẢNG CÂN ĐỐI KẾ TOÁN (TT 133/2016/TT-BTC)'],
         ['Chi nhánh Spa:', 'Bella Spa ERP'],
@@ -309,7 +352,7 @@ export async function exportAccountingReportToExcel(
         ['II. Phải thu ngắn hạn khách hàng (131 + 138)', '120', '', bs.accounts_receivable || 0, 0],
         ['III. Hàng tồn kho (Vật tư massage, tinh dầu 152 + 153)', '130', '', bs.inventory || 0, 0],
         ['IV. Tài sản cố định hữu hình - Nguyên giá (211)', '140', '', bs.fixed_assets_cost || 0, 0],
-        ['V. Hao mòn lũy kế tài sản cố định (214)', '141', '', -Math.abs(bs.accumulated_depreciation || 0), 0],
+        ['V. Hao mòn lũy kế tài sản cố định (214)', '141', '', -Math.abs(Number(bs.accumulated_depreciation || 0)), 0],
         ['VI. Chi phí trả trước (Thuê nhà mặt bằng dài hạn 242)', '150', '', bs.prepaid_expenses || 0, 0],
         ['BỔNG CỘNG TÀI SẢN', '200', '', bs.total_assets || 0, 0],
         [],
@@ -341,7 +384,7 @@ export async function exportAccountingReportToExcel(
 
     } else if (reportType === 'cash_flow') {
       // BÁO CÁO LƯU CHUYỂN TIỀN TỆ — Phương pháp gián tiếp (TT133)
-      const cf = data || {};
+      const cf = Array.isArray(data) ? {} : data;
       sheetData.push(
         ['BÁO CÁO LƯU CHUYỂN TIỀN TỆ — Phương pháp gián tiếp (TT 133/2016/TT-BTC)'],
         ['Chi nhánh Spa:', 'Bella Spa ERP'],

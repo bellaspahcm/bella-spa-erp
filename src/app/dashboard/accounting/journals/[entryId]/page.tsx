@@ -21,6 +21,18 @@ import { getJournalEntryDetails, reverseJournalEntry } from '@/services/accounti
 import { toast } from 'sonner';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
+type JournalEntryDetails = Awaited<ReturnType<typeof getJournalEntryDetails>>;
+type JournalLineRow = NonNullable<JournalEntryDetails['journal_lines']>[number];
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+  return fallback;
+}
+
 interface PageProps {
   params: Promise<{ entryId: string }>;
 }
@@ -30,7 +42,7 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
   const { entryId } = use(params);
 
   const [loading, setLoading] = useState(true);
-  const [entry, setEntry] = useState<any>(null);
+  const [entry, setEntry] = useState<JournalEntryDetails | null>(null);
   
   // Reversal dialog states
   const [isReversing, setIsReversing] = useState(false);
@@ -41,7 +53,7 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
     try {
       const data = await getJournalEntryDetails(entryId);
       setEntry(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching journal details:', err);
       toast.error('Không thể tải chi tiết bút toán này.');
       router.push('/dashboard/accounting/journals');
@@ -70,9 +82,9 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
         setReversalReason('');
         fetchDetails(); // Reload page
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Reversal failed:', err);
-      toast.error(err.message || 'Lỗi khi đảo bút toán.');
+      toast.error(getErrorMessage(err, 'Lỗi khi đảo bút toán.'));
     } finally {
       setSubmittingReversal(false);
     }
@@ -92,8 +104,8 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
   }
 
   // Calculate totals
-  const totalDebit = entry.journal_lines?.reduce((sum: number, l: any) => sum + Number(l.debit_amount || 0), 0) || 0;
-  const totalCredit = entry.journal_lines?.reduce((sum: number, l: any) => sum + Number(l.credit_amount || 0), 0) || 0;
+  const totalDebit = entry.journal_lines?.reduce((sum: number, l: JournalLineRow) => sum + Number(l.debit_amount || 0), 0) || 0;
+  const totalCredit = entry.journal_lines?.reduce((sum: number, l: JournalLineRow) => sum + Number(l.credit_amount || 0), 0) || 0;
 
   // Status badges
   const statusColors: Record<string, string> = {
@@ -190,7 +202,7 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-[#3E3A35]/20">
-              {entry.journal_lines?.map((line: any) => (
+              {entry.journal_lines?.map((line: JournalLineRow) => (
                 <tr key={line.id} className="hover:bg-slate-50/10 dark:hover:bg-[#11100F]/10 transition-colors">
                   <td className="px-6 py-4">
                     <span className="font-mono font-black text-slate-800 dark:text-[#EFE9E1] px-2.5 py-1 bg-slate-100 dark:bg-[#3E3A35] rounded-lg">

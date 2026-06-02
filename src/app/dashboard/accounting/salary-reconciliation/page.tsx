@@ -12,6 +12,7 @@ import {
   HelpCircle,
   Clock,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { getSalaryReconciliationReport, type SalaryReconciliationRow } from '@/services/accounting-actions';
 import { toast } from 'sonner';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
@@ -19,7 +20,16 @@ import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(n) || 0);
 
-const STATUS_CONFIG: Record<string, { label: string; bg: string; border: string; text: string; icon: any }> = {
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+  return fallback;
+}
+
+const STATUS_CONFIG: Record<string, { label: string; bg: string; border: string; text: string; icon: LucideIcon }> = {
   MATCH: {
     label: 'Khớp',
     bg: 'bg-emerald-50 dark:bg-emerald-500/10',
@@ -65,9 +75,9 @@ export default function SalaryReconciliationPage() {
     try {
       const data = await getSalaryReconciliationReport(monthYear);
       setRows(data || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching salary reconciliation:', err);
-      toast.error(err?.message || 'Không thể tải báo cáo đối soát lương.');
+      toast.error(getErrorMessage(err, 'Không thể tải báo cáo đối soát lương.'));
     } finally {
       setLoading(false);
       setRefreshing(false);

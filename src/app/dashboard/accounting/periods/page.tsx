@@ -43,6 +43,15 @@ type Period = {
   status: 'OPEN' | 'CLOSED';
 };
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+  return fallback;
+}
+
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n || 0);
 
@@ -62,7 +71,7 @@ export default function PeriodsPage() {
     try {
       const data = await getAccountingPeriods();
       setPeriods((data as Period[]) || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching periods:', err);
       toast.error('Không thể tải danh sách kỳ kế toán.');
     } finally {
@@ -83,8 +92,8 @@ export default function PeriodsPage() {
     try {
       const rows = await previewClosingEntries(period.id);
       setPreviewRows((rows as ClosingPreviewRow[]) || []);
-    } catch (err: any) {
-      toast.error(err.message || 'Không thể tải xem trước bút toán kết chuyển.');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Không thể tải xem trước bút toán kết chuyển.'));
       setActiveModalPeriod(null);
     } finally {
       setPreviewLoading(false);
@@ -100,8 +109,8 @@ export default function PeriodsPage() {
       toast.success(`✅ Đã đóng kỳ "${activeModalPeriod.name}" và tự động tạo bút toán kết chuyển.`);
       setActiveModalPeriod(null);
       fetchPeriods();
-    } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi đóng kỳ kế toán. Hãy kiểm tra lại xem còn bút toán DRAFT nào không.');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Lỗi khi đóng kỳ kế toán. Hãy kiểm tra lại xem còn bút toán DRAFT nào không.'));
     } finally {
       setClosing(false);
     }
@@ -115,8 +124,8 @@ export default function PeriodsPage() {
       await reopenPeriodAction(period.id);
       toast.success(`Đã mở lại kỳ "${period.name}".`);
       fetchPeriods();
-    } catch (err: any) {
-      toast.error(err.message || 'Không thể mở lại kỳ.');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Không thể mở lại kỳ.'));
     } finally {
       setRefreshing(false);
     }
