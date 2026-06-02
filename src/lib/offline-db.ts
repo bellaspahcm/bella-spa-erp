@@ -1,11 +1,53 @@
 import Dexie, { type Table } from 'dexie';
 
+export type OfflineActionType =
+  | 'CHECKIN'
+  | 'CHECKOUT'
+  | 'SUBMIT_NOTE'
+  | 'SUBMIT_RATING'
+  | 'KTV_SHIFT_CHECKIN'
+  | 'KTV_SHIFT_CHECKOUT';
+
+export type CheckinPayload = {
+  sessionId: string;
+  lat?: number;
+  lon?: number;
+};
+
+export type CheckoutPayload = {
+  sessionId: string;
+  notes?: string;
+  ktvCheckoutNote?: string;
+  lat?: number;
+  lon?: number;
+};
+
+export type SubmitNotePayload = {
+  sessionId: string;
+  notes: string;
+};
+
+export type SubmitRatingPayload = {
+  sessionId: string;
+  rating: number;
+  comment?: string;
+};
+
+export type ShiftPayload = Record<string, never>;
+
+export type OfflineActionPayload =
+  | CheckinPayload
+  | CheckoutPayload
+  | SubmitNotePayload
+  | SubmitRatingPayload
+  | ShiftPayload;
+
 export interface OfflineAction {
-  id: string;            // Client-generated UUID v4
-  actionType: 'CHECKIN' | 'CHECKOUT' | 'SUBMIT_NOTE' | 'SUBMIT_RATING' | 'KTV_SHIFT_CHECKIN' | 'KTV_SHIFT_CHECKOUT';
-  payload: any;          // Operational parameters
-  localTimestamp: number;// Vietnam GMT+7 timestamp when clicked offline
-  retryCount: number;    // Number of attempts to sync
+  id: string;             // Client-generated UUID v4
+  actionType: OfflineActionType;
+  payload: OfflineActionPayload;
+  localTimestamp: number; // Vietnam GMT+7 timestamp when clicked offline
+  retryCount: number;     // Number of attempts to sync
   status: 'pending' | 'syncing' | 'failed';
   errorMessage?: string;
 }

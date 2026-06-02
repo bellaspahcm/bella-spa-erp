@@ -4,10 +4,30 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Download, X } from 'lucide-react';
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{
+    outcome: 'accepted' | 'dismissed';
+    platform?: string;
+  }>;
+};
+
+function isBeforeInstallPromptEvent(event: Event): event is BeforeInstallPromptEvent {
+  return 'prompt' in event && 'userChoice' in event;
+}
+
+function isIOSInstallCandidate() {
+  if (typeof window === 'undefined') return false;
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  const isAppleMobile = /iphone|ipad|ipod/.test(userAgent);
+  const isStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+  return isAppleMobile && !isStandalone;
+}
+
 export default function PwaRegister() {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState<boolean>(false);
-  const [isIOS, setIsIOS] = useState<boolean>(false);
+  const [isIOS] = useState<boolean>(() => isIOSInstallCandidate());
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -26,13 +46,7 @@ export default function PwaRegister() {
     }
 
     // 2. Detect if the device is iOS (Safari doesn't support beforeinstallprompt)
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isAppleMobile = /iphone|ipad|ipod/.test(userAgent);
-    // iOS Safari adds `standalone` to navigator when launched from Home Screen.
-    const isStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    
-    if (isAppleMobile && !isStandalone) {
-      setIsIOS(true);
+    if (isIOS) {
       // Show the iOS "Add to Home Screen" instructions after 5 seconds of loading the app
       const timer = setTimeout(() => {
         const hasDismissed = localStorage.getItem('pwa_ios_banner_dismissed');
@@ -47,6 +61,7 @@ export default function PwaRegister() {
     const handleBeforeInstallPrompt = (e: Event) => {
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
+      if (!isBeforeInstallPromptEvent(e)) return;
       // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
       // Check if user dismissed it before
@@ -69,7 +84,7 @@ export default function PwaRegister() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [isIOS]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;

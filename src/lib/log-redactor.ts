@@ -160,7 +160,7 @@ export function redact<T>(value: T, _seen: WeakSet<object> = new WeakSet()): T {
       out[k] = "[REDACTED]";
       continue;
     }
-    // Heuristic: any key containing "password"/"secret"/"token"
+    // Heuristic: keys containing "password"/"secret"/"token"
     if (/password|secret|token|api[_-]?key|authorization/i.test(k)) {
       out[k] = "[REDACTED]";
       continue;
@@ -185,15 +185,35 @@ export function safeStringify(value: unknown, space?: number): string {
  * Sentry beforeSend hook. Redacts PII from event message, breadcrumbs,
  * extra, contexts, request body/headers/cookies/query, and user fields.
  */
-// Loose typing: Sentry Event has many optional fields with union/literal types
-// that conflict with generic narrowing. Using `any` here is intentional and
-// safe because the function only mutates known fields and is wrapped in try.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function sentryBeforeSend<T extends Record<string, any> = any>(event: T): T {
-  const ev = event as any;
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === "object" && value !== null;
+}
+
+type SentryMutableEvent = {
+  user?: UnknownRecord;
+  message?: unknown;
+  request?: UnknownRecord & {
+    headers?: UnknownRecord;
+    cookies?: unknown;
+    query_string?: unknown;
+    data?: unknown;
+  };
+  breadcrumbs?: unknown[];
+  extra?: unknown;
+  contexts?: unknown;
+  tags?: unknown;
+  exception?: UnknownRecord & {
+    values?: unknown[];
+  };
+};
+
+export function sentryBeforeSend<T extends object>(event: T): T {
+  const ev = event as SentryMutableEvent;
   try {
     // Strip user PII entirely
-    if (ev.user && typeof ev.user === "object") {
+    if (isRecord(ev.user)) {
       delete ev.user.email;
       delete ev.user.ip_address;
       delete ev.user.phone;
@@ -209,9 +229,9 @@ export function sentryBeforeSend<T extends Record<string, any> = any>(event: T):
     }
 
     // Request: headers, cookies, query, data
-    if (ev.request && typeof ev.request === "object") {
+    if (isRecord(ev.request)) {
       const req = ev.request;
-      if (req.headers) {
+      if (isRecord(req.headers)) {
         for (const h of Object.keys(req.headers)) {
           if (/authorization|cookie|x-api-key|x-supabase/i.test(h)) {
             req.headers[h] = "[REDACTED]";
@@ -228,8 +248,8 @@ export function sentryBeforeSend<T extends Record<string, any> = any>(event: T):
     }
 
     if (Array.isArray(ev.breadcrumbs)) {
-      ev.breadcrumbs = ev.breadcrumbs.map((b: any) => {
-        if (b && typeof b === "object") {
+      ev.breadcrumbs = ev.breadcrumbs.map((b) => {
+        if (isRecord(b)) {
           if (typeof b.message === "string") b.message = redactString(b.message);
           if (b.data) b.data = redact(b.data);
         }
@@ -241,11 +261,11 @@ export function sentryBeforeSend<T extends Record<string, any> = any>(event: T):
     if (ev.contexts) ev.contexts = redact(ev.contexts);
     if (ev.tags) ev.tags = redact(ev.tags);
 
-    if (ev.exception && typeof ev.exception === "object") {
+    if (isRecord(ev.exception)) {
       const values = ev.exception.values;
       if (Array.isArray(values)) {
         for (const ex of values) {
-          if (ex && typeof ex.value === "string") {
+          if (isRecord(ex) && typeof ex.value === "string") {
             ex.value = redactString(ex.value);
           }
         }
