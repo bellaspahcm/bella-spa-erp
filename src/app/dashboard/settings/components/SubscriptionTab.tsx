@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition, useMemo } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { 
   CreditCard, 
   Users, 
@@ -13,9 +13,9 @@ import {
   AlertTriangle, 
   Loader2,
   QrCode,
-  ShieldCheck,
   Zap
 } from 'lucide-react';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import { 
   getSubscriptionStatus, 
@@ -25,8 +25,19 @@ import {
   SubscriptionInvoice 
 } from '@/services/subscription-actions';
 import { cn } from '@/lib/utils';
+import type { Database } from '@/types/database.types';
 
-const PLANS = [
+type SubscriptionPlanOption = {
+  id: 'free_trial' | 'basic' | 'pro' | 'enterprise';
+  name: string;
+  price: number;
+  features: readonly string[];
+  color: string;
+  glow: string;
+  recommended?: boolean;
+};
+
+const PLANS: readonly SubscriptionPlanOption[] = [
   {
     id: 'free_trial',
     name: 'Dùng thử',
@@ -84,32 +95,44 @@ const PLANS = [
     color: 'from-amber-500 to-orange-600',
     glow: 'shadow-orange-200/50',
   },
-];
+] as const;
+
+type Plan = SubscriptionPlanOption;
+type SubscriptionStatus = Awaited<ReturnType<typeof getSubscriptionStatus>>;
+type PendingSubscriptionInvoice = Database['public']['Tables']['subscription_invoices']['Row'];
+
+function getUsagePercent(current?: number, max?: number) {
+  if (!max || max === 999999) return 0;
+  return Math.min(100, Math.round(((current ?? 0) / max) * 100));
+}
+
+function getUsageWidth(current?: number, max?: number) {
+  if (max === 999999) return 100;
+  if (!max) return 0;
+  return Math.min(100, ((current ?? 0) / max) * 100);
+}
+
+function getExpiryDateString(status: SubscriptionStatus | null) {
+  if (!status) return '';
+  if (status.limits?.maxKtv === 999999 && status.limits?.maxCustomers === 999999) {
+    return 'Vô thời hạn (Unlimited)';
+  }
+
+  const days = status.limits?.maxKtv === 1 ? 30 : 365;
+  return new Date(Date.now() + days * 86400000).toLocaleDateString('vi-VN');
+}
 
 export default function SubscriptionTab() {
-  const [status, setStatus] = useState<any>(null);
+  const [status, setStatus] = useState<SubscriptionStatus | null>(null);
   const [invoices, setInvoices] = useState<SubscriptionInvoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [duration, setDuration] = useState<number>(1); // months
-  const [pendingInvoice, setPendingInvoice] = useState<any>(null);
+  const [pendingInvoice, setPendingInvoice] = useState<PendingSubscriptionInvoice | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isSimulating, setIsSimulating] = useState(false);
 
-  const [expiryDateString, setExpiryDateString] = useState('');
-
-  useEffect(() => {
-    if (!status) {
-      setExpiryDateString('');
-      return;
-    }
-    if (status.limits?.maxKtv === 999999 && status.limits?.maxCustomers === 999999) {
-      setExpiryDateString('Vô thời hạn (Unlimited)');
-      return;
-    }
-    const days = status.limits?.maxKtv === 1 ? 30 : 365;
-    setExpiryDateString(new Date(Date.now() + days * 86400000).toLocaleDateString('vi-VN'));
-  }, [status]);
+  const expiryDateString = getExpiryDateString(status);
 
   async function loadData() {
     try {
@@ -128,10 +151,34 @@ export default function SubscriptionTab() {
   }
 
   useEffect(() => {
-    loadData();
+    let cancelled = false;
+
+    async function loadInitialData() {
+      try {
+        const [statusRes, invoicesRes] = await Promise.all([
+          getSubscriptionStatus(),
+          getSubscriptionInvoiceHistory()
+        ]);
+        if (!cancelled) {
+          setStatus(statusRes);
+          setInvoices(invoicesRes);
+        }
+      } catch (err) {
+        console.error('Error loading subscription data:', err);
+        if (!cancelled) toast.error('Không thể tải thông tin gói cước');
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    void loadInitialData();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const handleSelectPlan = (plan: any) => {
+  const handleSelectPlan = (plan: Plan) => {
     if (plan.id === 'free_trial') {
       toast.error('Không thể nâng cấp lên gói Dùng thử');
       return;
@@ -241,7 +288,7 @@ export default function SubscriptionTab() {
           </div>
           <div className="flex justify-end">
             <button
-              onClick={() => setSelectedPlan(PLANS.find(p => p.id === 'pro'))}
+              onClick={() => setSelectedPlan(PLANS.find(p => p.id === 'pro') ?? null)}
               className="bg-primary hover:bg-primary-hover text-white px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-lg shadow-pink-100 dark:shadow-none hover:-translate-y-0.5 active:translate-y-0"
             >
               Gia hạn / Nâng cấp
@@ -267,17 +314,17 @@ export default function SubscriptionTab() {
             <div>
               <div className="flex items-end justify-between mb-1">
                 <span className="text-2xl font-black text-slate-800">
-                  {status?.usage?.ktv?.current}
-                  <span className="text-sm font-semibold text-slate-400"> / {status?.usage?.ktv?.max === 999999 ? '∞' : status?.usage?.ktv?.max}</span>
+                  {status?.usage?.ktv?.current ?? 0}
+                  <span className="text-sm font-semibold text-slate-400"> / {status?.usage?.ktv?.max === 999999 ? '∞' : status?.usage?.ktv?.max ?? 0}</span>
                 </span>
                 <span className="text-xs font-bold text-slate-400">
-                  {status?.usage?.ktv?.max === 999999 ? '0%' : `${Math.min(100, Math.round((status?.usage?.ktv?.current / status?.usage?.ktv?.max) * 100))}%`}
+                  {status?.usage?.ktv?.max === 999999 ? '0%' : `${getUsagePercent(status?.usage?.ktv?.current, status?.usage?.ktv?.max)}%`}
                 </span>
               </div>
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-indigo-500 rounded-full transition-all duration-500" 
-                  style={{ width: `${status?.usage?.ktv?.max === 999999 ? 100 : Math.min(100, (status?.usage?.ktv?.current / status?.usage?.ktv?.max) * 100)}%` }}
+                  style={{ width: `${getUsageWidth(status?.usage?.ktv?.current, status?.usage?.ktv?.max)}%` }}
                 />
               </div>
             </div>
@@ -294,17 +341,17 @@ export default function SubscriptionTab() {
             <div>
               <div className="flex items-end justify-between mb-1">
                 <span className="text-2xl font-black text-slate-800">
-                  {status?.usage?.customer?.current}
-                  <span className="text-sm font-semibold text-slate-400"> / {status?.usage?.customer?.max === 999999 ? '∞' : status?.usage?.customer?.max}</span>
+                  {status?.usage?.customer?.current ?? 0}
+                  <span className="text-sm font-semibold text-slate-400"> / {status?.usage?.customer?.max === 999999 ? '∞' : status?.usage?.customer?.max ?? 0}</span>
                 </span>
                 <span className="text-xs font-bold text-slate-400">
-                  {status?.usage?.customer?.max === 999999 ? '0%' : `${Math.min(100, Math.round((status?.usage?.customer?.current / status?.usage?.customer?.max) * 100))}%`}
+                  {status?.usage?.customer?.max === 999999 ? '0%' : `${getUsagePercent(status?.usage?.customer?.current, status?.usage?.customer?.max)}%`}
                 </span>
               </div>
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-rose-500 rounded-full transition-all duration-500" 
-                  style={{ width: `${status?.usage?.customer?.max === 999999 ? 100 : Math.min(100, (status?.usage?.customer?.current / status?.usage?.customer?.max) * 100)}%` }}
+                  style={{ width: `${getUsageWidth(status?.usage?.customer?.current, status?.usage?.customer?.max)}%` }}
                 />
               </div>
             </div>
@@ -321,17 +368,17 @@ export default function SubscriptionTab() {
             <div>
               <div className="flex items-end justify-between mb-1">
                 <span className="text-2xl font-black text-slate-800">
-                  {status?.usage?.sms?.current}
-                  <span className="text-sm font-semibold text-slate-400"> / {status?.usage?.sms?.max}</span>
+                  {status?.usage?.sms?.current ?? 0}
+                  <span className="text-sm font-semibold text-slate-400"> / {status?.usage?.sms?.max ?? 0}</span>
                 </span>
                 <span className="text-xs font-bold text-slate-400">
-                  {Math.min(100, Math.round((status?.usage?.sms?.current / status?.usage?.sms?.max) * 100))}%
+                  {getUsagePercent(status?.usage?.sms?.current, status?.usage?.sms?.max)}%
                 </span>
               </div>
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-amber-500 rounded-full transition-all duration-500" 
-                  style={{ width: `${Math.min(100, (status?.usage?.sms?.current / status?.usage?.sms?.max) * 100)}%` }}
+                  style={{ width: `${getUsageWidth(status?.usage?.sms?.current, status?.usage?.sms?.max)}%` }}
                 />
               </div>
             </div>
@@ -500,9 +547,12 @@ export default function SubscriptionTab() {
                     <span className="absolute top-3 left-3 bg-emerald-500 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase animate-pulse">
                       Đang chờ chuyển khoản
                     </span>
-                    <img 
+                    <Image
                       src={`https://img.vietqr.io/image/MB-190365701493-compact.png?amount=${pendingInvoice.amount}&addInfo=SUB%20${pendingInvoice.invoice_number}&accountName=BELLA%20HQ%20SUBSCRIPTION`} 
                       alt="VietQR Code" 
+                      width={200}
+                      height={200}
+                      unoptimized
                       className="w-[200px] h-[200px] object-contain mb-4 rounded-xl mt-4" 
                     />
                     <div className="text-center space-y-1">
