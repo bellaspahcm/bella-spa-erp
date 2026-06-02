@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import { RevenueRecognitionService } from '@/services/revenue-recognition';
-import { AccountingEngineService } from '@/services/accounting-engine';
+import { AccountingEngineService, type JournalEntryInput } from '@/services/accounting-engine';
 
 export const dynamic = 'force-dynamic';
+
+type AdminClient = ReturnType<typeof getAdminClient>;
+type OutboxEvent = Database['public']['Functions']['claim_outbox_batch']['Returns'][number];
+type OutboxPayload = Record<string, Json | undefined>;
+type MarkOutboxCompletedRpc = (
+  fn: 'mark_outbox_completed',
+  args: { p_outbox_id: string; p_journal_entry_id: string | null }
+) => ReturnType<AdminClient['rpc']>;
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -14,6 +22,79 @@ function getAdminClient() {
   }
   return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+function getErrorMessage(error: unknown, fallback = 'Unknown error') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error === null || error === undefined) return fallback;
+  return String(error);
+}
+
+function asPayloadRecord(payload: Json): OutboxPayload {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('Invalid outbox payload: payload must be an object.');
+  }
+  return payload;
+}
+
+function readRequiredNumber(payload: OutboxPayload, key: string) {
+  const value = payload[key];
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  throw new Error(`Invalid outbox payload: ${key} must be a number.`);
+}
+
+function readOptionalNumber(payload: OutboxPayload, key: string, defaultValue = 0) {
+  const value = payload[key];
+  if (value === undefined || value === null) return defaultValue;
+  return readRequiredNumber(payload, key);
+}
+
+function readRequiredString(payload: OutboxPayload, key: string) {
+  const value = payload[key];
+  if (typeof value === 'string') return value;
+  throw new Error(`Invalid outbox payload: ${key} must be a string.`);
+}
+
+function readOptionalString(payload: OutboxPayload, key: string) {
+  const value = payload[key];
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'string') return value;
+  throw new Error(`Invalid outbox payload: ${key} must be a string.`);
+}
+
+function readJournalLines(payload: OutboxPayload): JournalEntryInput['lines'] {
+  const lines = payload.lines;
+  if (!Array.isArray(lines)) {
+    throw new Error('Invalid outbox payload: lines must be an array.');
+  }
+
+  return lines.map((line, index) => {
+    if (!line || typeof line !== 'object' || Array.isArray(line)) {
+      throw new Error(`Invalid outbox payload: lines[${index}] must be an object.`);
+    }
+
+    return {
+      account_id: readRequiredString(line, 'account_id'),
+      debit_amount: readRequiredNumber(line, 'debit_amount'),
+      credit_amount: readRequiredNumber(line, 'credit_amount'),
+      branch_id: readOptionalString(line, 'branch_id'),
+      ktv_id: readOptionalString(line, 'ktv_id'),
+      cost_center_id: readOptionalString(line, 'cost_center_id'),
+    };
+  });
+}
+
+async function markOutboxCompleted(supabase: AdminClient, outboxId: string, journalEntryId: string | null) {
+  const markCompleted = supabase.rpc as unknown as MarkOutboxCompletedRpc;
+  return markCompleted('mark_outbox_completed', {
+    p_outbox_id: outboxId,
+    p_journal_entry_id: journalEntryId,
   });
 }
 
@@ -52,7 +133,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: claimError.message }, { status: 500 });
     }
 
-    const typedBatch = (batch as any[]) || [];
+    const typedBatch: OutboxEvent[] = batch || [];
     if (typedBatch.length === 0) {
       console.log('[Accounting Worker] No pending outbox events found.');
       return NextResponse.json({ success: true, processed: 0 });
@@ -69,7 +150,7 @@ export async function GET(req: NextRequest) {
         const tenantId = event.tenant_id;
         const eventType = event.event_type;
         const refId = event.reference_id;
-        const payload = event.payload;
+        const payload = asPayloadRecord(event.payload);
 
         console.log(`[Accounting Worker] Processing event ${event.id} | Type: ${eventType} | Tenant: ${tenantId}`);
 
@@ -81,10 +162,10 @@ export async function GET(req: NextRequest) {
             journalEntryId = await RevenueRecognitionService.handlePackageSale({
               tenantId,
               packageSaleId: refId,
-              totalAmount: payload.totalAmount,
-              vatRate: payload.vatRate,
-              description: payload.description,
-              branchId: payload.branchId,
+              totalAmount: readRequiredNumber(payload, 'totalAmount'),
+              vatRate: readOptionalNumber(payload, 'vatRate'),
+              description: readRequiredString(payload, 'description'),
+              branchId: readOptionalString(payload, 'branchId'),
             });
             break;
 
@@ -92,11 +173,11 @@ export async function GET(req: NextRequest) {
             journalEntryId = await RevenueRecognitionService.handleSessionDone({
               tenantId,
               sessionLogId: refId,
-              earnedRevenueAmount: payload.earnedRevenueAmount,
-              commissionAmount: payload.commissionAmount,
-              ktvId: payload.ktvId,
-              branchId: payload.branchId,
-              description: payload.description,
+              earnedRevenueAmount: readRequiredNumber(payload, 'earnedRevenueAmount'),
+              commissionAmount: readRequiredNumber(payload, 'commissionAmount'),
+              ktvId: readRequiredString(payload, 'ktvId'),
+              branchId: readOptionalString(payload, 'branchId'),
+              description: readRequiredString(payload, 'description'),
             });
             break;
 
@@ -104,11 +185,11 @@ export async function GET(req: NextRequest) {
             journalEntryId = await RevenueRecognitionService.handleExpenseRecorded({
               tenantId,
               expenseId: refId,
-              amount: payload.amount,
-              category: payload.category,
-              paymentMethod: payload.paymentMethod,
-              description: payload.description,
-              branchId: payload.branchId,
+              amount: readRequiredNumber(payload, 'amount'),
+              category: readRequiredString(payload, 'category'),
+              paymentMethod: readRequiredString(payload, 'paymentMethod'),
+              description: readRequiredString(payload, 'description'),
+              branchId: readOptionalString(payload, 'branchId'),
             });
             break;
 
@@ -116,11 +197,11 @@ export async function GET(req: NextRequest) {
             journalEntryId = await RevenueRecognitionService.handleSalaryPaid({
               tenantId,
               salaryRecordId: refId,
-              amount: payload.amount,
-              paymentMethod: payload.paymentMethod,
-              description: payload.description,
-              ktvId: payload.ktvId,
-              branchId: payload.branchId,
+              amount: readRequiredNumber(payload, 'amount'),
+              paymentMethod: readOptionalString(payload, 'paymentMethod'),
+              description: readRequiredString(payload, 'description'),
+              ktvId: readRequiredString(payload, 'ktvId'),
+              branchId: readOptionalString(payload, 'branchId'),
             });
             break;
 
@@ -128,9 +209,9 @@ export async function GET(req: NextRequest) {
             journalEntryId = await RevenueRecognitionService.handleInventoryConsumed({
               tenantId,
               sessionLogId: refId,
-              amount: payload.amount,
-              description: payload.description,
-              branchId: payload.branchId,
+              amount: readRequiredNumber(payload, 'amount'),
+              description: readRequiredString(payload, 'description'),
+              branchId: readOptionalString(payload, 'branchId'),
             });
             break;
 
@@ -138,18 +219,18 @@ export async function GET(req: NextRequest) {
             journalEntryId = await RevenueRecognitionService.handleRefundIssued({
               tenantId,
               refundId: refId,
-              amount: payload.amount,
-              paymentMethod: payload.paymentMethod,
-              description: payload.description,
-              branchId: payload.branchId,
+              amount: readRequiredNumber(payload, 'amount'),
+              paymentMethod: readOptionalString(payload, 'paymentMethod'),
+              description: readRequiredString(payload, 'description'),
+              branchId: readOptionalString(payload, 'branchId'),
             });
             break;
 
           case 'MANUAL_ENTRY':
             journalEntryId = await AccountingEngineService.postJournalEntry({
               tenant_id: tenantId,
-              description: payload.description,
-              lines: payload.lines,
+              description: readRequiredString(payload, 'description'),
+              lines: readJournalLines(payload),
               reference_type: 'MANUAL',
               reference_id: refId,
             });
@@ -161,10 +242,7 @@ export async function GET(req: NextRequest) {
 
         // Cập nhật trạng thái COMPLETED
         if (journalEntryId) {
-          const { error: completeErr } = await supabase.rpc('mark_outbox_completed', {
-            p_outbox_id: event.id,
-            p_journal_entry_id: journalEntryId,
-          });
+          const { error: completeErr } = await markOutboxCompleted(supabase, event.id, journalEntryId);
 
           if (completeErr) {
             throw new Error(`Failed to mark outbox completed: ${completeErr.message}`);
@@ -174,10 +252,7 @@ export async function GET(req: NextRequest) {
         } else {
           // Trường hợp không phát sinh bút toán (ví dụ doanh số/hoa hồng = 0)
           // Vẫn mark completed với journal_entry_id = null
-          const { error: completeErr } = await supabase.rpc('mark_outbox_completed', {
-            p_outbox_id: event.id,
-            p_journal_entry_id: null as any,
-          });
+          const { error: completeErr } = await markOutboxCompleted(supabase, event.id, null);
           if (completeErr) {
             throw new Error(`Failed to mark outbox empty completed: ${completeErr.message}`);
           }
@@ -185,12 +260,12 @@ export async function GET(req: NextRequest) {
           successCount++;
         }
 
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(`[Accounting Worker] Error processing event ${event.id}:`, err);
         failureCount++;
 
         // Cập nhật trạng thái FAILED (exponential backoff)
-        const errMsg = err?.message || String(err);
+        const errMsg = getErrorMessage(err);
         const { error: failErr } = await supabase.rpc('mark_outbox_failed', {
           p_outbox_id: event.id,
           p_error: errMsg,
@@ -204,16 +279,17 @@ export async function GET(req: NextRequest) {
 
     console.log(`[Accounting Worker] Finished batch. Success: ${successCount}, Failures: ${failureCount}`);
     return NextResponse.json({
-      success: true,
+      success: failureCount === 0,
+      status: failureCount === 0 ? 'success' : 'partial_failure',
       processed: typedBatch.length,
       successCount,
       failureCount,
     });
 
-  } catch (globalErr: any) {
+  } catch (globalErr: unknown) {
     console.error('[Accounting Worker] Critical exception:', globalErr);
     return NextResponse.json(
-      { success: false, error: globalErr?.message || 'Lỗi hệ thống khi chạy worker.' },
+      { success: false, error: getErrorMessage(globalErr) || 'Lỗi hệ thống khi chạy worker.' },
       { status: 500 }
     );
   }
