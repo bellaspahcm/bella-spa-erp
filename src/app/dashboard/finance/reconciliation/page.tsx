@@ -21,16 +21,98 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { getInterBranchClearingRecords, simulateInterBranchClearing } from '@/services/clearing-actions';
+import {
+  getInterBranchClearingRecords,
+  simulateInterBranchClearing,
+  type InterBranchClearingRecord,
+} from '@/services/clearing-actions';
 import { allocateOrphanedRevenue, collectDebtPayment } from '@/services/reconciliation-actions';
 
+type Numberish = string | number | null | undefined;
+type ProfileRow = {
+  tenant_id: string | null;
+  role: string | null;
+};
+
+type DebtAlert = {
+  booking_id: string;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  package_name?: string | null;
+  full_price?: Numberish;
+  total_paid?: Numberish;
+  debt?: Numberish;
+};
+
+type OrphanedRevenue = {
+  revenue_id: string;
+  revenue_type?: string | null;
+  received_date?: string | null;
+  notes?: string | null;
+  amount?: Numberish;
+};
+
+type MismatchAlert = DebtAlert & {
+  mismatch?: Numberish;
+};
+
+type CollectionHistory = {
+  revenue_id: string;
+  amount: Numberish;
+  received_date: string | null;
+  notes: string | null;
+  payment_method: string | null;
+  booking_id: string | null;
+  customer_name: string;
+};
+
+type FinancialAnomaliesData = {
+  debt_alerts: DebtAlert[];
+  orphaned_revenue: OrphanedRevenue[];
+  mismatch_alerts: MismatchAlert[];
+  collection_history: CollectionHistory[];
+};
+
+type FinancialAnomaliesRpcData = Partial<Omit<FinancialAnomaliesData, 'collection_history'>>;
+
+type RevenueHistoryRow = {
+  id: string;
+  amount: Numberish;
+  received_date: string | null;
+  notes: string | null;
+  payment_method: string | null;
+  booking_id: string | null;
+  bookings?: {
+    customers?: {
+      name_mother?: string | null;
+      name_baby?: string | null;
+    } | null;
+  } | null;
+};
+
+type LegacyProfilesClient = {
+  from(table: 'profiles'): {
+    select(columns: string): {
+      eq(column: string, value: string): {
+        single(): Promise<{ data: ProfileRow | null; error: unknown }>;
+      };
+    };
+  };
+};
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+  return fallback;
+}
+
+const formatNumberishCurrency = (value: Numberish) => formatCurrency(Number(value || 0));
+
 export default function FinancialReconciliationPage() {
-  const [data, setData] = useState<{
-    debt_alerts: any[];
-    orphaned_revenue: any[];
-    mismatch_alerts: any[];
-    collection_history: any[];
-  }>({
+  const [data, setData] = useState<FinancialAnomaliesData>({
     debt_alerts: [],
     orphaned_revenue: [],
     mismatch_alerts: [],
@@ -43,19 +125,19 @@ export default function FinancialReconciliationPage() {
   const [isTabDropdownOpen, setIsTabDropdownOpen] = useState(false);
 
   // Inter-branch clearing state
-  const [clearingRecords, setClearingRecords] = useState<any[]>([]);
+  const [clearingRecords, setClearingRecords] = useState<InterBranchClearingRecord[]>([]);
   const [isPayingClearing, setIsPayingClearing] = useState<string | null>(null);
   const [currentTenantId, setCurrentTenantId] = useState<string>('');
 
   // Modal Allocation State
   const [showAllocateModal, setShowAllocateModal] = useState(false);
-  const [selectedOrphan, setSelectedOrphan] = useState<any>(null);
+  const [selectedOrphan, setSelectedOrphan] = useState<OrphanedRevenue | null>(null);
   const [targetBookingId, setTargetBookingId] = useState('');
   const [isAllocating, setIsAllocating] = useState(false);
 
   // Debt Payment State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedDebt, setSelectedDebt] = useState<any>(null);
+  const [selectedDebt, setSelectedDebt] = useState<DebtAlert | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'cash'>('bank_transfer');
   const [isPaying, setIsPaying] = useState(false);
@@ -75,12 +157,12 @@ export default function FinancialReconciliationPage() {
         .select('tenant_id, role')
         .eq('id', session.user.id)
         .single();
-      let profile = userData;
+      let profile: ProfileRow | null = userData;
         
       if (profileErr || !profile?.tenant_id) {
-         // Fallback to legacy `profiles` table (not in current Database schema)
-         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-         const { data: fallbackProfile } = await (supabase as any)
+         // Fallback to legacy `profiles` table (not in current Database schema).
+         const legacyProfilesClient = supabase as unknown as LegacyProfilesClient;
+         const { data: fallbackProfile } = await legacyProfilesClient
            .from('profiles')
            .select('tenant_id, role')
            .eq('id', session.user.id)
@@ -116,7 +198,8 @@ export default function FinancialReconciliationPage() {
 
       if (historyError) throw historyError;
 
-      const historyFormatted = historyData?.map((item: any) => ({
+      const historyRows = (historyData || []) as unknown as RevenueHistoryRow[];
+      const historyFormatted: CollectionHistory[] = historyRows.map((item) => ({
         revenue_id: item.id,
         amount: item.amount,
         received_date: item.received_date,
@@ -127,8 +210,11 @@ export default function FinancialReconciliationPage() {
       })) || [];
 
       if (rpcData) {
+        const anomalies = rpcData as FinancialAnomaliesRpcData;
         setData({
-          ...(rpcData as any),
+          debt_alerts: anomalies.debt_alerts ?? [],
+          orphaned_revenue: anomalies.orphaned_revenue ?? [],
+          mismatch_alerts: anomalies.mismatch_alerts ?? [],
           collection_history: historyFormatted
         });
       }
@@ -136,9 +222,9 @@ export default function FinancialReconciliationPage() {
       // Fetch clearing records
       const clearingData = await getInterBranchClearingRecords(profile.tenant_id);
       setClearingRecords(clearingData || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || 'Lỗi khi tải dữ liệu đối soát');
+      toast.error(getErrorMessage(error, 'Lỗi khi tải dữ liệu đối soát'));
     }
     setIsLoading(false);
   }, []);
@@ -163,8 +249,8 @@ export default function FinancialReconciliationPage() {
       setSelectedOrphan(null);
       setTargetBookingId('');
       fetchData();
-    } catch (error: any) {
-      toast.error('Lỗi phân bổ: ' + error.message);
+    } catch (error: unknown) {
+      toast.error('Lỗi phân bổ: ' + getErrorMessage(error, 'Không thể phân bổ khoản tiền'));
     } finally {
       setIsAllocating(false);
     }
@@ -195,8 +281,8 @@ export default function FinancialReconciliationPage() {
       setSelectedDebt(null);
       setPaymentAmount('');
       fetchData();
-    } catch (error: any) {
-      toast.error('Lỗi thu tiền: ' + error.message);
+    } catch (error: unknown) {
+      toast.error('Lỗi thu tiền: ' + getErrorMessage(error, 'Không thể thu tiền'));
     } finally {
       setIsPaying(false);
     }
@@ -212,8 +298,8 @@ export default function FinancialReconciliationPage() {
       } else {
         toast.error('Lỗi khi đối soát: ' + res.error);
       }
-    } catch (e: any) {
-      toast.error('Lỗi: ' + e.message);
+    } catch (e: unknown) {
+      toast.error('Lỗi: ' + getErrorMessage(e, 'Không thể bù trừ công nợ'));
     } finally {
       setIsPayingClearing(null);
     }
@@ -685,11 +771,11 @@ export default function FinancialReconciliationPage() {
                       <div className="text-xs text-slate-500 font-medium mt-1">{item.package_name || 'Gói Dịch Vụ'}</div>
                       <div className="text-[10px] text-slate-300 font-mono mt-1">ID: {item.booking_id?.split('-')[0]}...</div>
                     </td>
-                    <td className="px-8 py-6 text-right font-black text-slate-500 whitespace-nowrap">{formatCurrency(item.full_price)}</td>
-                    <td className="px-8 py-6 text-right font-black text-emerald-600 whitespace-nowrap">{formatCurrency(item.total_paid)}</td>
+                    <td className="px-8 py-6 text-right font-black text-slate-500 whitespace-nowrap">{formatNumberishCurrency(item.full_price)}</td>
+                    <td className="px-8 py-6 text-right font-black text-emerald-600 whitespace-nowrap">{formatNumberishCurrency(item.total_paid)}</td>
                     <td className="px-8 py-6 text-right whitespace-nowrap">
                       <span className="inline-block bg-rose-50 text-rose-600 font-black px-3 py-1.5 rounded-xl border border-rose-100">
-                        {formatCurrency(item.debt)}
+                        {formatNumberishCurrency(item.debt)}
                       </span>
                     </td>
                     <td className="px-8 py-6 text-center whitespace-nowrap">
@@ -723,7 +809,7 @@ export default function FinancialReconciliationPage() {
                       <p className="text-sm text-slate-600 font-medium max-w-xs truncate">{item.notes || <span className="italic text-slate-300">Không có ghi chú</span>}</p>
                     </td>
                     <td className="px-8 py-6 text-right font-black text-amber-600 text-lg whitespace-nowrap">
-                      {formatCurrency(item.amount)}
+                      {formatNumberishCurrency(item.amount)}
                     </td>
                     <td className="px-8 py-6 text-center whitespace-nowrap">
                       <button 
@@ -743,11 +829,11 @@ export default function FinancialReconciliationPage() {
                       <div className="font-black text-sm text-slate-900">{item.customer_name}</div>
                       <div className="text-xs text-slate-500 font-medium mt-1">{item.package_name || 'Gói Dịch Vụ'}</div>
                     </td>
-                    <td className="px-8 py-6 text-right font-black text-slate-500 whitespace-nowrap">{formatCurrency(item.full_price)}</td>
-                    <td className="px-8 py-6 text-right font-black text-emerald-600 whitespace-nowrap">{formatCurrency(item.total_paid)}</td>
+                    <td className="px-8 py-6 text-right font-black text-slate-500 whitespace-nowrap">{formatNumberishCurrency(item.full_price)}</td>
+                    <td className="px-8 py-6 text-right font-black text-emerald-600 whitespace-nowrap">{formatNumberishCurrency(item.total_paid)}</td>
                     <td className="px-8 py-6 text-right whitespace-nowrap">
                       <span className="inline-block bg-purple-50 text-purple-600 font-black px-3 py-1.5 rounded-xl border border-purple-100">
-                        + {formatCurrency(item.mismatch)}
+                        + {formatNumberishCurrency(item.mismatch)}
                       </span>
                     </td>
                     <td className="px-8 py-6 text-center whitespace-nowrap">
@@ -778,7 +864,7 @@ export default function FinancialReconciliationPage() {
                     </td>
                     <td className="px-8 py-6 text-right align-top whitespace-nowrap">
                       <div className="font-black text-emerald-600 text-base mt-[-1px]">
-                        + {formatCurrency(item.amount)}
+                        + {formatNumberishCurrency(item.amount)}
                       </div>
                     </td>
                   </tr>
@@ -830,7 +916,7 @@ export default function FinancialReconciliationPage() {
               <div className="p-6 space-y-6">
                 <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Số tiền đang treo</p>
-                  <p className="text-3xl font-black text-amber-600 mb-2">{formatCurrency(selectedOrphan.amount)}</p>
+                  <p className="text-3xl font-black text-amber-600 mb-2">{formatNumberishCurrency(selectedOrphan.amount)}</p>
                   {selectedOrphan.notes && (
                     <p className="text-xs text-slate-600 font-medium italic border-l-2 border-amber-200 pl-2">
                       Ghi chú: {selectedOrphan.notes}
@@ -924,7 +1010,7 @@ export default function FinancialReconciliationPage() {
                     className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-lg font-black focus:ring-2 focus:ring-primary/20 outline-none transition-all text-rose-600"
                   />
                   <p className="text-[10px] text-slate-400 mt-2">
-                    Mặc định là số tiền khách còn nợ: <strong className="text-rose-500">{formatCurrency(selectedDebt.debt)}</strong>
+                    Mặc định là số tiền khách còn nợ: <strong className="text-rose-500">{formatNumberishCurrency(selectedDebt.debt)}</strong>
                   </p>
                 </div>
 

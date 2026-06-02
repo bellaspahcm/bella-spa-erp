@@ -19,6 +19,18 @@ import { toast } from 'sonner';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
+type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
+type StaffRow = Awaited<ReturnType<typeof getUsers>>[number];
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+  return fallback;
+}
+
 interface JournalLineRow {
   account_id: string;
   debit_amount: number;
@@ -31,8 +43,8 @@ export default function ManualEntryPage() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [ktvs, setKtvs] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<AccountRow[]>([]);
+  const [ktvs, setKtvs] = useState<StaffRow[]>([]);
 
   // Header state
   const [entryDate, setEntryDate] = useState(() => {
@@ -55,13 +67,13 @@ export default function ManualEntryPage() {
         ]);
         
         // Filter to only allow leaf accounts (accounts with no children) for posting
-        const leafAccounts = (accData || []).filter((a: any) => {
-          return !accData.some((sub: any) => sub.parent_id === a.id);
+        const leafAccounts = (accData || []).filter((a) => {
+          return !accData.some((sub) => sub.parent_id === a.id);
         });
         
         setAccounts(leafAccounts);
         setKtvs(ktvData || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading metadata:', err);
         toast.error('Không thể tải siêu dữ liệu hệ thống.');
       } finally {
@@ -83,7 +95,7 @@ export default function ManualEntryPage() {
     setLines(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleLineChange = (index: number, field: keyof JournalLineRow, value: any) => {
+  const handleLineChange = (index: number, field: keyof JournalLineRow, value: string | number) => {
     setLines(prev => {
       const copy = [...prev];
       if (field === 'debit_amount' || field === 'credit_amount') {
@@ -144,9 +156,9 @@ export default function ManualEntryPage() {
         toast.success('Bút toán điều chỉnh đã được tạo và ghi sổ thành công!');
         router.push('/dashboard/accounting/journals');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Post manual entry failed:', err);
-      toast.error(err.message || 'Lỗi khi ghi nhận bút toán thủ công.');
+      toast.error(getErrorMessage(err, 'Lỗi khi ghi nhận bút toán thủ công.'));
     } finally {
       setSaving(false);
     }

@@ -10,7 +10,12 @@ interface COORequest {
 }
 
 function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Lỗi hệ thống.";
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === "string" && message ? message : "Lỗi hệ thống.";
+  }
+  return "Lỗi hệ thống.";
 }
 
 export async function POST(request: NextRequest) {

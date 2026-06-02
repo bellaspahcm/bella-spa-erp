@@ -20,7 +20,19 @@ import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
+type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
+type TreeAccount = AccountRow & { children: TreeAccount[] };
 type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+  return fallback;
+}
+
 const ACCOUNT_TYPES_SET: ReadonlySet<AccountType> = new Set(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']);
 const accountTypes: { value: AccountType; label: string }[] = [
   { value: 'ASSET', label: '1xx, 2xx - TÀI SẢN (ASSETS)' },
@@ -32,7 +44,7 @@ const accountTypes: { value: AccountType; label: string }[] = [
 
 export default function ChartOfAccountsPage() {
   const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<AccountRow[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
   
@@ -56,13 +68,13 @@ export default function ChartOfAccountsPage() {
       
       // Auto expand all top nodes initially
       const initialExpanded: Record<string, boolean> = {};
-      data.forEach((acc: any) => {
+      data.forEach((acc) => {
         if (!acc.parent_id) {
           initialExpanded[acc.id] = true;
         }
       });
       setExpandedNodes(initialExpanded);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching COA:', err);
       toast.error('Không thể tải hệ thống tài khoản.');
     } finally {
@@ -103,17 +115,17 @@ export default function ChartOfAccountsPage() {
         setNewAccount({ account_code: '', account_name: '', account_type: 'ASSET', parent_id: '' });
         fetchCOA();
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Lỗi khi thêm tài khoản mới.');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Lỗi khi thêm tài khoản mới.'));
     } finally {
       setSaving(false);
     }
   };
 
   // Group accounts in parent-child tree hierarchy
-  const buildTree = (list: any[]) => {
-    const map: Record<string, any> = {};
-    const roots: any[] = [];
+  const buildTree = (list: AccountRow[]): TreeAccount[] => {
+    const map: Record<string, TreeAccount> = {};
+    const roots: TreeAccount[] = [];
 
     // Filter by type if needed
     let filteredList = list;
@@ -128,7 +140,7 @@ export default function ChartOfAccountsPage() {
         a => a.account_code.includes(normalizedSearch) || a.account_name.toLowerCase().includes(normalizedSearch)
       );
       // When searching, display as flat list instead of nested tree for better visibility
-      return filteredList.map(a => ({ ...a, children: [] }));
+      return filteredList.map((a): TreeAccount => ({ ...a, children: [] }));
     }
 
     filteredList.forEach((acc) => {
@@ -151,7 +163,7 @@ export default function ChartOfAccountsPage() {
   const treeData = buildTree(accounts);
 
   // Render tree node component helper
-  const renderTreeNode = (node: any, depth = 0) => {
+  const renderTreeNode = (node: TreeAccount, depth = 0) => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = !!expandedNodes[node.id];
     
@@ -205,7 +217,7 @@ export default function ChartOfAccountsPage() {
         {/* Render child nodes recursively */}
         {hasChildren && isExpanded && (
           <div className="space-y-1 mt-1">
-            {node.children.map((child: any) => renderTreeNode(child, depth + 1))}
+            {node.children.map((child) => renderTreeNode(child, depth + 1))}
           </div>
         )}
       </div>

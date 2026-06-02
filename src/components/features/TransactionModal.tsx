@@ -20,6 +20,17 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { User } from 'lucide-react';
 import { getLocalDateString } from '@/lib/utils';
 
+type BookingRow = Awaited<ReturnType<typeof getBookings>>[number];
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+  return fallback;
+}
+
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -33,7 +44,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
   const [notes, setNotes] = useState('');
   const [bookingId, setBookingId] = useState('');
   const [autoConfirm, setAutoConfirm] = useState(true);
-  const [bookings, setBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -138,9 +149,9 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
       setNotes('');
       setBookingId('');
       setCategory('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit error:', error);
-      toast.error(error.message || 'Lỗi khi ghi nhận giao dịch');
+      toast.error(getErrorMessage(error, 'Lỗi khi ghi nhận giao dịch'));
     } finally {
       setIsSubmitting(false);
     }

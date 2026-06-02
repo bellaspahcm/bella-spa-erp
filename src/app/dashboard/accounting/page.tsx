@@ -22,12 +22,23 @@ import { getFinancialOverview } from '@/services/finance-actions';
 import { toast } from 'sonner';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
+type BalanceSheetReport = Awaited<ReturnType<typeof getBalanceSheetReport>>;
+type FinancialOverview = Awaited<ReturnType<typeof getFinancialOverview>>;
+type OutboxEventRow = Awaited<ReturnType<typeof getOutboxEvents>>[number];
+type OutboxStatusCounts = {
+  pending: number;
+  processing: number;
+  completed: number;
+  failed: number;
+  dead: number;
+};
+
 export default function AccountingOverviewPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [bsData, setBsData] = useState<any>(null);
-  const [finOverview, setFinOverview] = useState<any>(null);
-  const [outboxCounts, setOutboxCounts] = useState({
+  const [bsData, setBsData] = useState<BalanceSheetReport | null>(null);
+  const [finOverview, setFinOverview] = useState<FinancialOverview | null>(null);
+  const [outboxCounts, setOutboxCounts] = useState<OutboxStatusCounts>({
     pending: 0,
     processing: 0,
     completed: 0,
@@ -54,8 +65,8 @@ export default function AccountingOverviewPage() {
       }
       if (outboxRes.status === 'fulfilled' && outboxRes.value) {
         const events = outboxRes.value || [];
-        const counts = { pending: 0, processing: 0, completed: 0, failed: 0, dead: 0 };
-        events.forEach((ev: any) => {
+        const counts: OutboxStatusCounts = { pending: 0, processing: 0, completed: 0, failed: 0, dead: 0 };
+        events.forEach((ev: OutboxEventRow) => {
           if (ev.status === 'PENDING') counts.pending++;
           else if (ev.status === 'PROCESSING') counts.processing++;
           else if (ev.status === 'COMPLETED') counts.completed++;
@@ -64,7 +75,7 @@ export default function AccountingOverviewPage() {
         });
         setOutboxCounts(counts);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching accounting overview data:', err);
       toast.error('Không thể tải dữ liệu kế toán tổng quan.');
     } finally {

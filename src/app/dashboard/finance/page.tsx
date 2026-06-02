@@ -19,7 +19,7 @@ import {
   ChevronDown,
   Check
 } from 'lucide-react';
-import { getFinancialOverview, confirmTransaction, getMonthlyPnL, getServicePerformance } from '@/services/finance-actions';
+import { getFinancialOverview, confirmTransaction, getMonthlyPnL, getServicePerformance, type MappedTransaction } from '@/services/finance-actions';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { TransactionModal } from '@/components/features/TransactionModal';
@@ -29,15 +29,20 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 
+type FinancialOverview = Awaited<ReturnType<typeof getFinancialOverview>>;
+type MonthlyPnL = Awaited<ReturnType<typeof getMonthlyPnL>>;
+type ServicePerformanceRow = Awaited<ReturnType<typeof getServicePerformance>>[number];
+type SortableTransactionKey = keyof MappedTransaction;
+
 export default function FinancePage() {
-  const [data, setData] = useState<any>({
+  const [data, setData] = useState<FinancialOverview>({
     totalBalance: 0,
     totalRevenueMonth: 0,
     totalExpenseMonth: 0,
     transactions: []
   });
-  const [pnlData, setPnlData] = useState<any>(null);
-  const [performanceData, setPerformanceData] = useState<any[]>([]);
+  const [pnlData, setPnlData] = useState<MonthlyPnL | null>(null);
+  const [performanceData, setPerformanceData] = useState<ServicePerformanceRow[]>([]);
   const [activeTab, setActiveTab] = useState<'transactions' | 'analysis'>('transactions');
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
@@ -50,7 +55,7 @@ export default function FinancePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'revenue' | 'expense'>('all');
 
-  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>({ key: 'timestamp', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState<{ key: SortableTransactionKey, direction: 'asc' | 'desc' } | null>({ key: 'timestamp', direction: 'desc' });
   const [isConfirmingId, setIsConfirmingId] = useState<string | null>(null);
   
   // Pagination State
@@ -102,7 +107,7 @@ export default function FinancePage() {
     fetchData(newMonth);
   };
 
-  const handleConfirm = async (tx: any) => {
+  const handleConfirm = async (tx: MappedTransaction) => {
     if (!tx.dbId) {
       toast.info('Đây là giao dịch mẫu (Demo), không thể xác nhận vào Database thật.');
       return;
@@ -127,14 +132,14 @@ export default function FinancePage() {
     }
   };
 
-  const sortData = (key: string) => {
+  const sortData = (key: SortableTransactionKey) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
     }
     setSortConfig({ key, direction });
 
-    const sortedTransactions = [...data.transactions].sort((a: any, b: any) => {
+    const sortedTransactions = [...data.transactions].sort((a, b) => {
       let valA = a[key];
       let valB = b[key];
       
@@ -173,7 +178,7 @@ export default function FinancePage() {
   const { totalBalance, totalRevenueMonth, totalExpenseMonth, transactions } = data;
   
   // Filtering & Search
-  const filteredTransactions = transactions.filter((tx: any) => {
+  const filteredTransactions = transactions.filter((tx) => {
     const matchesSearch = searchTerm === '' || 
       tx.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.details?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -399,7 +404,7 @@ export default function FinancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {currentTransactions.map((tx: any) => (
+                {currentTransactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
                      <td className="px-8 py-5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
