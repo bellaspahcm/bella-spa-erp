@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase-client';
 import { challengeAndVerify, needsMfaChallenge } from '@/lib/mfa';
-import { LogIn, Mail, Lock, Loader2, ShieldCheck, Smartphone } from 'lucide-react';
+import Image from 'next/image';
+import { Mail, Lock, Loader2, ShieldCheck, Smartphone } from 'lucide-react';
 
 type Stage =
   | { name: 'password' }
@@ -124,7 +125,7 @@ export default function LoginPage() {
               whileHover={{ scale: 1.05 }}
               className="mb-6 drop-shadow-xl"
             >
-              <img src="/logo.png" alt="Bella Spa" className="h-24 w-auto object-contain" />
+              <Image src="/logo.png" alt="Bella Spa" width={96} height={96} className="h-24 w-auto object-contain" />
             </motion.div>
             <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">
               Bella Spa ERP
