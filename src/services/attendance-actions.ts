@@ -9,9 +9,36 @@ import type { Database } from '@/types/database.types';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 type AttendanceInsert = Database['public']['Tables']['attendance']['Insert'];
+type AttendanceRow = Database['public']['Tables']['attendance']['Row'];
 type AttendanceUpdate = Database['public']['Tables']['attendance']['Update'];
+type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
 type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
+type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type StaffLeaveUpdate = Database['public']['Tables']['staff_leaves']['Update'];
+type UserRow = Database['public']['Tables']['users']['Row'];
+type AttendanceStatus = Database['public']['Enums']['AttendanceStatus'];
+
+type MonthlyAttendanceKtv = Pick<
+  UserRow,
+  'id' | 'full_name' | 'base_salary' | 'hire_date' | 'resignation_date' | 'status'
+>;
+
+type MonthlyAttendanceLog = Pick<
+  AttendanceRow,
+  'ktv_id' | 'date' | 'status' | 'checkin_time' | 'checkout_time'
+>;
+
+type ConflictBooking = Pick<
+  BookingRow,
+  'id' | 'booking_number' | 'package_name' | 'customer_id' | 'assigned_ktv_id' | 'preferred_time'
+> & {
+  customers: Pick<CustomerRow, 'name_mother' | 'phone' | 'address'> | null;
+};
+
+type ConflictSession = SessionLogRow & {
+  bookings: ConflictBooking | null;
+};
 
 type ReassignmentSnapshot = {
   sessionLogId: string;
@@ -25,6 +52,18 @@ function getErrorMessage(error: unknown, fallback = 'Lá»—i há»‡ thá»�
     if (typeof message === 'string') return message;
   }
   return fallback;
+}
+
+function normalizeAttendanceStatus(status: string | null): AttendanceStatus {
+  if (status === 'present' || status === 'late' || status === 'absent' || status === 'half_day') {
+    return status;
+  }
+  return 'present';
+}
+
+function getSessionHour(session: ConflictSession, fallbackTime: string) {
+  const time = session.assigned_time || session.bookings?.preferred_time || fallbackTime;
+  return parseInt(time.split(':')[0], 10);
 }
 
 async function rollbackLeaveApproval(
@@ -218,17 +257,18 @@ export async function getMonthlyAttendanceSummary(monthStr: string) {
     throw new Error(`Failed to fetch monthly attendance logs: ${logsError.message}`);
   }
 
-  const logsList = logs || [];
+  const ktvList = (ktvs || []) as MonthlyAttendanceKtv[];
+  const logsList = (logs || []) as MonthlyAttendanceLog[];
 
-  return ktvs.map((ktv: any) => {
-    const ktvLogs = logsList.filter((l: any) => l.ktv_id === ktv.id);
+  return ktvList.map((ktv) => {
+    const ktvLogs = logsList.filter((l) => l.ktv_id === ktv.id);
     
     let presentCount = 0;
     let lateCount = 0;
     let absentCount = 0;
     let halfDayCount = 0;
 
-    ktvLogs.forEach((l: any) => {
+    ktvLogs.forEach((l) => {
       if (l.status === 'present') presentCount++;
       else if (l.status === 'late') lateCount++;
       else if (l.status === 'absent') absentCount++;
@@ -250,9 +290,9 @@ export async function getMonthlyAttendanceSummary(monthStr: string) {
       halfDay: halfDayCount,
       totalDays: totalDaysWorked,
       status: ktv.status,
-      logs: ktvLogs.map((l: any) => ({
+      logs: ktvLogs.map((l) => ({
         date: l.date,
-        status: (l.status === 'present' || l.status === 'late' || l.status === 'absent' || l.status === 'half_day') ? l.status : 'present',
+        status: normalizeAttendanceStatus(l.status),
         checkin_time: l.checkin_time,
         checkout_time: l.checkout_time
       })),
@@ -502,21 +542,13 @@ export async function getKTVConflictSessions(
     throw new Error(`Failed to fetch KTV conflict sessions: ${error.message}`);
   }
 
-  const sessions = data || [];
+  const sessions = (data || []) as unknown as ConflictSession[];
   
   // Lọc theo ca sáng/chiều nếu loại nghỉ là nửa ngày
   if (leaveType === 'morning') {
-    return sessions.filter((s: any) => {
-      const time = s.assigned_time || s.bookings?.preferred_time || '09:00';
-      const hour = parseInt(time.split(':')[0], 10);
-      return hour < 13;
-    });
+    return sessions.filter((s) => getSessionHour(s, '09:00') < 13);
   } else if (leaveType === 'afternoon') {
-    return sessions.filter((s: any) => {
-      const time = s.assigned_time || s.bookings?.preferred_time || '14:00';
-      const hour = parseInt(time.split(':')[0], 10);
-      return hour >= 13;
-    });
+    return sessions.filter((s) => getSessionHour(s, '14:00') >= 13);
   }
 
   return sessions;
