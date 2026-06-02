@@ -16,6 +16,11 @@ interface SessionMatrixTableProps {
   handlePublishOne: (id: string, name: string) => void;
 }
 
+function getPackageCount(ktv: KtvSessionMatrix['ktvs'][number], packageName: string) {
+  const value = ktv[packageName];
+  return typeof value === 'number' ? value : 0;
+}
+
 export default function SessionMatrixTable({
   matrixData,
   searchQuery,
@@ -100,16 +105,19 @@ export default function SessionMatrixTable({
                     <span className="font-bold text-slate-900">{ktv.name}</span>
                   </div>
                 </td>
-                {matrixData.packageNames.map((pkg: string) => (
-                  <td key={pkg} className="px-8 py-6 text-center whitespace-nowrap">
-                    <span className={cn('font-black text-sm', ktv[pkg] > 0 ? 'text-primary' : 'text-slate-300')}>
-                      {ktv[pkg] || 0}
-                    </span>
-                  </td>
-                ))}
+                {matrixData.packageNames.map((pkg: string) => {
+                  const packageCount = getPackageCount(ktv, pkg);
+                  return (
+                    <td key={pkg} className="px-8 py-6 text-center whitespace-nowrap">
+                      <span className={cn('font-black text-sm', packageCount > 0 ? 'text-primary' : 'text-slate-300')}>
+                        {packageCount}
+                      </span>
+                    </td>
+                  );
+                })}
                 <td className="px-8 py-6 text-center whitespace-nowrap bg-slate-50/30">
                   <span className="font-black text-slate-900 text-lg">
-                    {matrixData.packageNames.reduce((acc: number, pkg: string) => acc + (ktv[pkg] || 0), 0)}
+                    {matrixData.packageNames.reduce((acc: number, pkg: string) => acc + getPackageCount(ktv, pkg), 0)}
                   </span>
                 </td>
                 {/* Status column */}
