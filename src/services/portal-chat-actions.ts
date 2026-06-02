@@ -3,6 +3,16 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database.types';
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message.trim() ? error.message : fallback;
+  if (typeof error === 'string') return error.trim() ? error : fallback;
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  return fallback;
+}
+
 // Helper to create the Supabase client using the service role key to bypass RLS for portal guests
 function getServiceRoleClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -66,10 +76,10 @@ export async function getPortalChatMessages(token: string) {
       success: true,
       data: messages || []
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       success: false,
-      error: err.message || 'Lỗi không xác định khi tải tin nhắn.'
+      error: getErrorMessage(err, 'Lỗi không xác định khi tải tin nhắn.')
     };
   }
 }
@@ -110,10 +120,10 @@ export async function sendPortalChatMessage(token: string, message: string) {
       success: true,
       data: sentMessage
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       success: false,
-      error: err.message || 'Lỗi không xác định khi gửi tin nhắn.'
+      error: getErrorMessage(err, 'Lỗi không xác định khi gửi tin nhắn.')
     };
   }
 }
@@ -142,10 +152,10 @@ export async function markPortalMessagesAsRead(token: string) {
     return {
       success: true
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       success: false,
-      error: err.message || 'Lỗi không thể cập nhật trạng thái đã đọc.'
+      error: getErrorMessage(err, 'Lỗi không thể cập nhật trạng thái đã đọc.')
     };
   }
 }
