@@ -134,7 +134,8 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
       expect(result).toEqual({ data: { id: 'cust-1' }, error: null, warning: null });
       expect(mockInsert).toHaveBeenCalledWith([
         {
-          name: 'Customer A',
+          name_mother: 'Customer A',
+          phone: '',
           address: '123 Nguyen Tri Phuong',
           tenant_id: 'tenant-1',
           latitude: 10.762622,
@@ -159,7 +160,8 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
       expect(mockFetch).not.toHaveBeenCalled();
       expect(mockInsert).toHaveBeenCalledWith([
         {
-          name: 'Customer A',
+          name_mother: 'Customer A',
+          phone: '',
           address: '123 Nguyen Tri Phuong',
           tenant_id: 'tenant-1',
           latitude: 10.123,
@@ -221,12 +223,12 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
         return new MockQueryBuilder(null, null);
       });
 
-      const customerData = { name: 'New Name' };
+      const customerData = { name_mother: 'New Name' };
       await updateCustomer('cust-1', customerData);
 
       expect(mockFetch).not.toHaveBeenCalled();
       expect(mockUpdate).toHaveBeenCalledWith({
-        name: 'New Name',
+        name_mother: 'New Name',
       });
     });
   });

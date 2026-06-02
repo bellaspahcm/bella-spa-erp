@@ -1,18 +1,27 @@
 'use server';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import type { Database } from '@/types/database.types';
 
-export async function updateBooking(id: string, payload: any) {
+type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
+type SessionLogInsert = Database['public']['Tables']['session_logs']['Insert'];
+type SessionLogSchedulePick = Pick<
+  Database['public']['Tables']['session_logs']['Row'],
+  'session_number' | 'assigned_date' | 'status'
+>;
+
+export async function updateBooking(id: string, payload: BookingUpdate) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
-  
-  if (payload.preferred_time !== undefined) {
-    payload.preferred_time = sanitizeTime(payload.preferred_time);
+  const supabase = await createClient();
+  const updatePayload: BookingUpdate = { ...payload };
+
+  if (updatePayload.preferred_time !== undefined) {
+    updatePayload.preferred_time = sanitizeTime(updatePayload.preferred_time);
   }
   
-  let oldBooking = null;
+  let oldBooking: BookingRow | null = null;
   try {
     const { data: existing, error: existingError } = await supabase
       .from('bookings')
@@ -31,13 +40,15 @@ export async function updateBooking(id: string, payload: any) {
 
   const { data, error } = await supabase
     .from('bookings')
-    .update(payload)
+    .update(updatePayload)
     .eq('id', id)
     .select();
 
   if (error) {
     if (error.message?.includes('package_name') || error.message?.includes('package_id') || error.message?.includes('uuid')) {
-      const { package_name, package_id, ...retryPayload } = payload;
+      const retryPayload: BookingUpdate = { ...updatePayload };
+      delete retryPayload.package_name;
+      delete retryPayload.package_id;
       const { data: retryData, error: retryError } = await supabase
         .from('bookings')
         .update(retryPayload)
@@ -84,12 +95,12 @@ export async function updateBooking(id: string, payload: any) {
     try {
       const { recordAuditLog } = await import('@/services/audit-actions');
       await recordAuditLog({
-        action: 'UPDATE',
-        table_name: 'bookings',
-        record_id: id,
-        old_data: oldBooking,
-        new_data: payload
-      });
+            action: 'UPDATE',
+            table_name: 'bookings',
+            record_id: id,
+            old_data: oldBooking,
+            new_data: updatePayload
+          });
     } catch (auditErr) {
       if (oldBooking) {
         await supabase
@@ -105,9 +116,9 @@ export async function updateBooking(id: string, payload: any) {
     }
   }
 
-  if (payload.total_sessions !== undefined) {
+  if (updatePayload.total_sessions !== undefined) {
     try {
-      const newTotal = Number(payload.total_sessions);
+      const newTotal = Number(updatePayload.total_sessions);
       const { data: existingLogs, error: existingLogsError } = await supabase
         .from('session_logs')
         .select('session_number, assigned_date, status')
@@ -118,8 +129,8 @@ export async function updateBooking(id: string, payload: any) {
         throw new Error(existingLogsError.message);
       }
 
-      const logs = existingLogs || [];
-      const maxSessionNumber = logs.length > 0 ? Math.max(...logs.map((l: any) => l.session_number || 0)) : 0;
+      const logs = (existingLogs || []) as SessionLogSchedulePick[];
+      const maxSessionNumber = logs.length > 0 ? Math.max(...logs.map((l) => l.session_number || 0)) : 0;
 
       if (newTotal < maxSessionNumber) {
         const { error: deleteLogsError } = await supabase
@@ -132,19 +143,24 @@ export async function updateBooking(id: string, payload: any) {
           throw new Error(deleteLogsError.message);
         }
       } else if (newTotal > maxSessionNumber) {
-        const newLogs = [];
-        let baseDateStr = payload.start_date || data?.[0]?.start_date;
+        const newLogs: SessionLogInsert[] = [];
+        let baseDateStr: string | null = updatePayload.start_date || data?.[0]?.start_date || null;
         if (!baseDateStr) {
           const { data: b } = await supabase
             .from('bookings')
             .select('start_date')
             .eq('id', id)
             .single();
-          baseDateStr = b?.start_date;
+          baseDateStr = b?.start_date || null;
         }
 
-        const lastLogWithDate = [...logs].reverse().find((l: any) => l.assigned_date);
+        const lastLogWithDate = [...logs].reverse().find((l) => l.assigned_date);
         let lastAssignedDate = lastLogWithDate?.assigned_date || baseDateStr;
+        const tenantIdForNewLogs = data?.[0]?.tenant_id || process.env.DEFAULT_TENANT_ID;
+
+        if (!tenantIdForNewLogs) {
+          throw new Error('Missing tenant_id for new session logs inside updateBooking');
+        }
 
         if (!lastAssignedDate) {
           const now = new Date();
@@ -152,7 +168,10 @@ export async function updateBooking(id: string, payload: any) {
         }
 
         for (let i = maxSessionNumber + 1; i <= newTotal; i++) {
-          const [y, m, d] = lastAssignedDate.split('-').map(Number);
+          const parts = lastAssignedDate.split('-').map(Number);
+          const y = parts[0] || 1970;
+          const m = parts[1] || 1;
+          const d = parts[2] || 1;
           const date = new Date(y, m - 1, d);
           date.setDate(date.getDate() + (i - maxSessionNumber));
           const assignedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -162,8 +181,8 @@ export async function updateBooking(id: string, payload: any) {
             session_number: i,
             status: 'scheduled',
             assigned_date: assignedDate,
-            assigned_time: payload.preferred_time || data?.[0]?.preferred_time || null,
-            tenant_id: data?.[0]?.tenant_id || process.env.DEFAULT_TENANT_ID || null
+            assigned_time: updatePayload.preferred_time || data?.[0]?.preferred_time || null,
+            tenant_id: tenantIdForNewLogs
           });
         }
 
@@ -209,7 +228,7 @@ export async function updateBooking(id: string, payload: any) {
 
 export async function syncBookingProgress(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { count, error: countError } = await supabase
     .from('session_logs')
@@ -225,10 +244,12 @@ export async function syncBookingProgress(bookingId: string) {
     .eq('id', bookingId)
     .single();
 
+  if (fetchError) return { error: fetchError.message };
   if (!booking) return { error: 'Booking not found' };
 
-  if ((booking as any).completed_sessions !== count) {
-    const { error: updateError } = await (supabase.from('bookings') as any)
+  if (booking.completed_sessions !== count) {
+    const { error: updateError } = await supabase
+      .from('bookings')
       .update({ completed_sessions: count })
       .eq('id', bookingId);
     

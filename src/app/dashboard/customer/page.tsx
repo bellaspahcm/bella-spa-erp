@@ -18,12 +18,54 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { getCustomerPortalData, submitSessionRating } from '@/services/customer-actions';
 
+type CustomerPortalBooking = NonNullable<Awaited<ReturnType<typeof getCustomerPortalData>>>;
+type PortalSession = {
+  id: string;
+  number: number | null;
+  date: string;
+  status: string | null;
+  ktv: string;
+  rating: number | null;
+};
+type CustomerPortalDashboardData = {
+  activeBooking: {
+    package_name: string | null;
+    completed_sessions: number | null;
+    total_sessions: number | null;
+    next_session?: string | null;
+  };
+  sessions: PortalSession[];
+  message?: string;
+};
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+function toCustomerPortalDashboardData(booking: CustomerPortalBooking): CustomerPortalDashboardData {
+  const sessions = (booking.session_logs || []).map((session) => ({
+    id: session.id,
+    number: session.session_number,
+    date: session.assigned_date || session.completed_date || '---',
+    status: session.status,
+    ktv: session.completed_by_ktv?.full_name || '---',
+    rating: session.rating,
+  }));
+  const nextSession = sessions.find((session) => session.status === 'scheduled');
+
+  return {
+    activeBooking: {
+      package_name: booking.package_name,
+      completed_sessions: booking.completed_sessions,
+      total_sessions: booking.total_sessions,
+      next_session: nextSession?.date || null,
+    },
+    sessions,
+  };
+}
+
 export default function CustomerDashboard() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<CustomerPortalDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [ratingModal, setRatingModal] = useState<{ isOpen: boolean; sessionId: string | null }>({
     isOpen: false,
@@ -42,7 +84,7 @@ export default function CustomerDashboard() {
       } else if ('error' in result) {
         console.error(result.error);
       } else {
-        setData(result);
+        setData(toCustomerPortalDashboardData(result));
       }
       setLoading(false);
     }
@@ -58,12 +100,12 @@ export default function CustomerDashboard() {
 
     if (result.success) {
       // Update local state
-      setData((prev: any) => ({
+      setData((prev) => prev ? ({
         ...prev,
-        sessions: prev.sessions.map((s: any) => 
+        sessions: prev.sessions.map((s) =>
           s.id === ratingModal.sessionId ? { ...s, rating: selectedRating } : s
         )
-      }));
+      }) : prev);
       setRatingModal({ isOpen: false, sessionId: null });
       setSelectedRating(0);
       setComment('');
@@ -89,7 +131,9 @@ export default function CustomerDashboard() {
   }
 
   const { activeBooking, sessions } = data;
-  const progress = (activeBooking.completed_sessions / activeBooking.total_sessions) * 100;
+  const completedSessions = activeBooking.completed_sessions || 0;
+  const totalSessions = activeBooking.total_sessions || 1;
+  const progress = (completedSessions / totalSessions) * 100;
 
   return (
     <div className="p-8 max-w-5xl mx-auto space-y-8 pb-20">
@@ -131,7 +175,7 @@ export default function CustomerDashboard() {
                 <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                 <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Đã hoàn thành</span>
               </div>
-              <p className="text-2xl font-black text-slate-800">{activeBooking.completed_sessions} / {activeBooking.total_sessions} <span className="text-sm font-medium text-slate-400 tracking-tight">buổi</span></p>
+              <p className="text-2xl font-black text-slate-800">{completedSessions} / {totalSessions} <span className="text-sm font-medium text-slate-400 tracking-tight">buổi</span></p>
             </div>
 
             <div className="bg-white/60 backdrop-blur-sm p-6 rounded-3xl border border-white/50 shadow-sm">
@@ -178,7 +222,7 @@ export default function CustomerDashboard() {
         </h3>
 
         <div className="grid gap-4">
-          {sessions.map((session: any, idx: number) => (
+          {sessions.map((session, idx: number) => (
             <motion.div 
               key={session.id}
               initial={{ opacity: 0, x: -20 }}
@@ -208,7 +252,7 @@ export default function CustomerDashboard() {
                   session.rating ? (
                     <div className="flex items-center gap-1.5 bg-amber-50 text-amber-600 px-4 py-2 rounded-xl border border-amber-100">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={cn("w-4 h-4 fill-current", i < session.rating ? "text-amber-400" : "text-amber-200")} />
+                        <Star key={i} className={cn("w-4 h-4 fill-current", i < (session.rating || 0) ? "text-amber-400" : "text-amber-200")} />
                       ))}
                       <span className="ml-2 font-black text-sm">{session.rating}.0</span>
                     </div>

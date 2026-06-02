@@ -520,7 +520,7 @@ describe('End-to-End Business Pipeline Integration Suite', () => {
     expect(createResult.error).toBeUndefined();
     expect(createResult.data).toBeDefined();
 
-    const createdBooking = createResult.data;
+    const createdBooking = createResult.data!;
     expect(createdBooking.status).toBe('deposit_pending'); // Since it is only partially paid
     expect(createdBooking.deposit_amount).toBe(1000000);
     expect(createdBooking.ktv_commission).toBe(150000); // Standard commission auto-resolved

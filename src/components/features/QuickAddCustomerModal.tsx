@@ -6,11 +6,14 @@ import { X, User, Phone, MapPin, Loader2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { createCustomer } from '@/services/customer-actions';
 import { cn } from '@/lib/utils';
+import type { Database } from '@/types/database.types';
+
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
 
 interface QuickAddCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: (newCustomer: any) => void;
+  onSuccess?: (newCustomer: CustomerRow) => void;
 }
 
 export function QuickAddCustomerModal({ isOpen, onClose, onSuccess }: QuickAddCustomerModalProps) {

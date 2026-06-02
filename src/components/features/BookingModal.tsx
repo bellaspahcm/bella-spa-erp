@@ -18,34 +18,47 @@ import {
   Tag
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCustomers, createCustomer } from '@/services/customer-actions';
 import { createBooking, getDraftBooking, getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycle-actions';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { formatNumberWithSeparator, cn, getLocalDateString } from '@/lib/utils';
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
+import type { Database } from '@/types/database.types';
 
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type PackageRow = Database['public']['Tables']['packages']['Row'];
+type UserRow = Database['public']['Tables']['users']['Row'];
+type TenantBankInfo = Pick<
+  Database['public']['Tables']['tenants']['Row'],
+  'qr_bank_code' | 'qr_account_number' | 'qr_account_name' | 'name'
+>;
+type DraftBooking = Awaited<ReturnType<typeof getDraftBooking>>;
+type BookingSubmitPayload = Parameters<typeof createBooking>[0];
+
+function getErrorMessage(error: unknown, fallback = 'Không rõ nguyên nhân. Kiểm tra console để biết thêm.') {
+  return error instanceof Error ? error.message : fallback;
+}
 
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
-  preselectedCustomer?: any;
+  preselectedCustomer?: CustomerRow | null;
 }
 
 export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }: BookingModalProps) {
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<'search' | 'new'>('search');
   const [searchQuery, setSearchQuery] = useState('');
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [filteredCustomers, setFilteredCustomers] = useState<any[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
+  const [filteredCustomers, setFilteredCustomers] = useState<CustomerRow[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerRow | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // VietQR deposit states
   const [showQrModal, setShowQrModal] = useState(false);
-  const [qrModalData, setQrModalData] = useState<{ bookingNumber: string; amount: number; tenantInfo: any } | null>(null);
+  const [qrModalData, setQrModalData] = useState<{ bookingNumber: string; amount: number; tenantInfo: TenantBankInfo | null } | null>(null);
 
   const handleCloseQrModal = () => {
     setShowQrModal(false);
@@ -62,9 +75,9 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     address: '',
   });
 
-  const [ktvs, setKtvs] = useState<any[]>([]);
-  const [packages, setPackages] = useState<any[]>([]);
-  const [draftBooking, setDraftBooking] = useState<any>(null);
+  const [ktvs, setKtvs] = useState<Pick<UserRow, 'id' | 'full_name'>[]>([]);
+  const [packages, setPackages] = useState<PackageRow[]>([]);
+  const [draftBooking, setDraftBooking] = useState<DraftBooking>(null);
   const [originalPrice, setOriginalPrice] = useState<number>(0);
   const [discountPercent, setDiscountPercent] = useState<string>('');
 
@@ -100,7 +113,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       const supabase = createBrowserClient();
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, full_name')
         .eq('role', 'ktv')
         .eq('status', 'active')
         .order('full_name', { ascending: true });
@@ -158,7 +171,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   useEffect(() => {
     if (selectedCustomer?.id) {
       const loadDraft = async () => {
-        let draft = null;
+        let draft: DraftBooking = null;
         try {
           draft = await getDraftBooking(selectedCustomer.id);
         } catch (error) {
@@ -169,6 +182,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
         }
 
         if (draft) {
+          const draftDepositAmount = draft.deposit_amount || 0;
           setDraftBooking(draft);
           // Pre-fill form data if draft exists
           setFormData(prev => ({
@@ -186,8 +200,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
           
           if (draft.package_name) {
             toast.success(`Đã tự động nạp thông tin gói "${draft.package_name}" và số tiền cọc cũ.`);
-          } else if (draft.deposit_amount > 0) {
-            toast.info(`Khách hàng có số tiền cọc chờ: ${formatNumberWithSeparator(draft.deposit_amount)}đ. Vui lòng chọn gói dịch vụ.`);
+          } else if (draftDepositAmount > 0) {
+            toast.info(`Khách hàng có số tiền cọc chờ: ${formatNumberWithSeparator(draftDepositAmount)}đ. Vui lòng chọn gói dịch vụ.`);
           }
         } else {
           setDraftBooking(null);
@@ -227,7 +241,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     }
   }, [searchQuery, customers]);
 
-  const handleSelectService = (pkg: any) => {
+  const handleSelectService = (pkg: PackageRow) => {
     const pkgPrice = Number(pkg.price || pkg.full_price || 0);
     setOriginalPrice(pkgPrice);
     
@@ -264,19 +278,17 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
     setIsSubmitting(true);
     try {
-      const payload: any = {
+      const payload: BookingSubmitPayload = {
         ...formData,
         discount_percent: discountPercent ? Number(discountPercent) : 0,
+        customer_id: mode === 'new' ? 'new' : selectedCustomer?.id || '',
       };
 
       if (mode === 'new') {
-        payload.customer_id = 'new';
         payload.newCustomer = {
           ...newCustomer,
           address: newCustomer.address || 'Chưa cập nhật'
         };
-      } else {
-        payload.customer_id = selectedCustomer?.id;
       }
 
       // Create the booking (atomic customer + booking if mode === 'new')
@@ -313,9 +325,9 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
           onClose();
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[BookingModal] Exception in handleSubmit:', error);
-      toast.error('Lỗi: ' + (error?.message || 'Không rõ nguyên nhân. Kiểm tra console để biết thêm.'));
+      toast.error('Lỗi: ' + getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -533,7 +545,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                           <CheckCircle2 className="absolute top-3 right-3 w-5 h-5 text-primary" />
                         )}
                         <h5 className="font-black text-slate-900 group-hover:text-primary transition-colors">{pkg.name}</h5>
-                        <p className="text-xs text-slate-500 font-bold mt-1">{pkg.total_sessions} buổi - {formatNumberWithSeparator(pkg.price)}đ</p>
+                        <p className="text-xs text-slate-500 font-bold mt-1">{pkg.total_sessions} buổi - {formatNumberWithSeparator(pkg.price || pkg.full_price || 0)}đ</p>
                       </button>
                     ))}
                     {packages.length === 0 && !isLoading && (
@@ -606,7 +618,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <CreditCard className="w-4 h-4" /> Tiền đặt cọc bổ sung (VNĐ) {draftBooking?.deposit_amount > 0 && <span className="text-primary normal-case">(Đã cọc trước: {formatNumberWithSeparator(draftBooking.deposit_amount)}đ)</span>}
+                    <CreditCard className="w-4 h-4" /> Tiền đặt cọc bổ sung (VNĐ) {Number(draftBooking?.deposit_amount || 0) > 0 && <span className="text-primary normal-case">(Đã cọc trước: {formatNumberWithSeparator(draftBooking?.deposit_amount || 0)}đ)</span>}
                   </label>
                   <div className="relative">
                     <input 

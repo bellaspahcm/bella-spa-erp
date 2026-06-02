@@ -20,7 +20,7 @@ type ActionError = { error: string };
 type ActionSuccess = { success: true };
 
 type CreateBookingFormData = {
-  newCustomer?: CustomerInsert;
+  newCustomer?: Omit<CustomerInsert, 'tenant_id'> & Partial<Pick<CustomerInsert, 'tenant_id'>>;
 };
 
 export async function enforceCreateBookingRateLimit(): Promise<ActionSuccess | ActionError> {
@@ -51,15 +51,21 @@ export async function enforceCreateBookingRateLimit(): Promise<ActionSuccess | A
 export async function createCustomerForBookingIfNeeded(
   supabase: SupabaseServerClient,
   validatedData: ValidatedBookingData,
-  formData: CreateBookingFormData
+  formData: CreateBookingFormData,
+  tenantId: string
 ): Promise<{ customerId: string } | ActionError> {
   if (validatedData.customer_id !== 'new' || !formData.newCustomer) {
     return { customerId: String(validatedData.customer_id) };
   }
 
+  const customerPayload: CustomerInsert = {
+    ...formData.newCustomer,
+    tenant_id: formData.newCustomer.tenant_id || tenantId,
+  };
+
   const { data: customer, error: customerError } = await supabase
     .from('customers')
-    .insert([formData.newCustomer])
+    .insert([customerPayload])
     .select()
     .single();
 

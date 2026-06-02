@@ -17,13 +17,16 @@ import {
 } from './create-booking-helpers';
 
 type CreateBookingInput = z.input<typeof bookingSchema> & {
-  newCustomer?: Database['public']['Tables']['customers']['Insert'];
+  newCustomer?: Omit<Database['public']['Tables']['customers']['Insert'], 'tenant_id'> &
+    Partial<Pick<Database['public']['Tables']['customers']['Insert'], 'tenant_id'>>;
 };
+type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type BookingValidationDetails = z.inferFlattenedErrors<typeof bookingSchema>['fieldErrors'];
+type CreateBookingResult =
+  | { error: string; details?: BookingValidationDetails; data?: undefined }
+  | { data: BookingRow; error?: undefined; details?: undefined };
 
-// Keep the legacy loose return type because several integration tests and callers
-// read `result.data` after runtime assertions instead of TypeScript narrowing.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createBooking(formData: CreateBookingInput): Promise<any> {
+export async function createBooking(formData: CreateBookingInput): Promise<CreateBookingResult> {
   const rateLimitResult = await enforceCreateBookingRateLimit();
   if ('error' in rateLimitResult) {
     return { error: rateLimitResult.error };
@@ -44,18 +47,19 @@ export async function createBooking(formData: CreateBookingInput): Promise<any> 
     validatedData.preferred_time = sanitizeTime(validatedData.preferred_time) || undefined;
   }
 
-  const customerResult = await createCustomerForBookingIfNeeded(supabase, validatedData, formData);
+  const tenantResult = await resolveBookingTenant(supabase);
+  if ('error' in tenantResult) {
+    return { error: tenantResult.error };
+  }
+  const tenantId = tenantResult.tenantId;
+
+  const customerResult = await createCustomerForBookingIfNeeded(supabase, validatedData, formData, tenantId);
   if ('error' in customerResult) {
     return { error: customerResult.error };
   }
   const customerId = customerResult.customerId;
 
   const existingBooking = await findPendingBookingForCustomer(supabase, customerId);
-  const tenantResult = await resolveBookingTenant(supabase);
-  if ('error' in tenantResult) {
-    return { error: tenantResult.error };
-  }
-  const tenantId = tenantResult.tenantId;
 
   const bookingPayload = await buildBookingPayload({
     validatedData,
