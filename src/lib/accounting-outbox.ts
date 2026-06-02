@@ -76,7 +76,21 @@ export interface EnqueueAccountingEventParams {
 // ─────────────────────────────────────────────────────────────────────────────
 
 type AdminClient = SupabaseClient<Database>;
+type EnqueueAccountingRpcArgs = Database['public']['Functions']['enqueue_accounting_event']['Args'];
+type RpcError = { message: string };
+type RpcCapableClient = { rpc: (...args: never[]) => unknown };
+type EnqueueAccountingRpcClient = {
+  rpc: (
+    fn: 'enqueue_accounting_event',
+    args: EnqueueAccountingRpcArgs
+  ) => Promise<{ error: RpcError | null }>;
+};
+
 let cachedAdminClient: AdminClient | null = null;
+
+function asEnqueueAccountingRpcClient(client: RpcCapableClient): EnqueueAccountingRpcClient {
+  return client as EnqueueAccountingRpcClient;
+}
 
 async function loadAdminClient(): Promise<AdminClient | null> {
   if (cachedAdminClient) return cachedAdminClient;
@@ -101,7 +115,7 @@ async function loadAdminClient(): Promise<AdminClient | null> {
  *
  * Returning a fallback ensures business hooks degrade gracefully instead of throwing.
  */
-export async function getOutboxClient<T extends { rpc: (...args: any[]) => any }>(
+export async function getOutboxClient<T extends RpcCapableClient>(
   fallback: T
 ): Promise<T | AdminClient> {
   const admin = await loadAdminClient();
@@ -118,15 +132,14 @@ export async function getOutboxClient<T extends { rpc: (...args: any[]) => any }
  * This helper does NOT throw — callers should not let accounting failures block
  * business flow. The error is logged with `logPrefix` for observability.
  */
-export async function enqueueAccountingEvent<
-  T extends { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: { message: string } | null }> }
->(
-  client: T,
+export async function enqueueAccountingEvent(
+  client: RpcCapableClient,
   params: EnqueueAccountingEventParams,
   logPrefix = '[accounting-outbox]'
 ): Promise<boolean> {
   try {
-    const { error } = await client.rpc('enqueue_accounting_event', {
+    const rpcClient = asEnqueueAccountingRpcClient(client);
+    const { error } = await rpcClient.rpc('enqueue_accounting_event', {
       p_tenant_id: params.tenantId,
       p_event_type: params.eventType,
       p_reference_type: params.referenceType,
@@ -152,15 +165,11 @@ export async function enqueueAccountingEvent<
  * Convenience: combine getOutboxClient + enqueueAccountingEvent in one call.
  * Use this when the caller doesn't already need the admin client for other things.
  */
-export async function enqueueWithAutoClient<T extends { rpc: (...args: any[]) => any }>(
+export async function enqueueWithAutoClient<T extends RpcCapableClient>(
   fallback: T,
   params: EnqueueAccountingEventParams,
   logPrefix?: string
 ): Promise<boolean> {
   const client = await getOutboxClient(fallback);
-  return enqueueAccountingEvent(
-    client as Parameters<typeof enqueueAccountingEvent>[0],
-    params,
-    logPrefix
-  );
+  return enqueueAccountingEvent(client, params, logPrefix);
 }
