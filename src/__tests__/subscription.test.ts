@@ -752,6 +752,76 @@ describe('Subscription Constraints & Webhook Suite', () => {
       );
     });
 
+    it('should fail BELLA booking payments when duplicate revenue lookup fails', async () => {
+      const booking = {
+        id: 'booking-1',
+        booking_number: 'BK-1001',
+        tenant_id: 'tenant-1',
+        status: 'deposit_pending',
+      };
+      const bookingStatusUpdates: unknown[] = [];
+      const revenueInsertPayloads: unknown[] = [];
+
+      mockRouteFrom.mockImplementation((table: string) => {
+        type QueryChain = {
+          select: jest.Mock;
+          eq: jest.Mock;
+          not: jest.Mock;
+          like: jest.Mock;
+          maybeSingle: jest.Mock;
+          update: jest.Mock;
+          insert: jest.Mock;
+        };
+        let chain: QueryChain;
+        chain = {
+          select: jest.fn(() => chain),
+          eq: jest.fn(() => chain),
+          not: jest.fn(() => chain),
+          like: jest.fn(() => chain),
+          maybeSingle: jest.fn(() => {
+            if (table === 'bookings') return Promise.resolve({ data: booking, error: null });
+            if (table === 'revenue') {
+              return Promise.resolve({ data: null, error: { message: 'duplicate lookup unavailable' } });
+            }
+            return Promise.resolve({ data: null, error: null });
+          }),
+          update: jest.fn((payload: unknown) => {
+            bookingStatusUpdates.push(payload);
+            return { eq: jest.fn(() => Promise.resolve({ error: null })) };
+          }),
+          insert: jest.fn((payload: unknown) => {
+            revenueInsertPayloads.push(payload);
+            return Promise.resolve({ error: null });
+          }),
+        };
+        return chain;
+      });
+
+      const req = createMockRequest({
+        transferAmount: 1000000,
+        content: 'BELLA BK-1001',
+        code: 'TX-DUP-LOOKUP-FAIL',
+        transactionDate: '2026-05-21T12:00:00.000Z',
+      }, {
+        authorization: 'Bearer super-secret-webhook-key',
+      });
+
+      const response = await POST(req);
+      const resData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(resData.processedCount).toBe(0);
+      expect(resData.details[0]).toMatchObject({
+        transactionId: 'TX-DUP-LOOKUP-FAIL',
+        bookingNumber: 'BK-1001',
+        status: 'failed',
+        reason: 'Failed to check duplicate transaction',
+      });
+      expect(bookingStatusUpdates).toEqual([]);
+      expect(revenueInsertPayloads).toEqual([]);
+      expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+    });
+
     it('should reject BELLA booking payments when the accounting period is closed', async () => {
       const booking = {
         id: 'booking-1',
