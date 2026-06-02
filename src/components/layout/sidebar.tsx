@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
@@ -25,14 +26,35 @@ import {
   Wallet,
   HelpCircle
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { getCurrentUser } from '@/services/user-actions';
 import { getTenantSettings } from '@/services/tenant-actions';
 import { createClient } from '@/lib/supabase-client';
 import ThemeToggle from '@/components/common/ThemeToggle';
+import type { CurrentUser } from '@/types/domain';
 
-const menuItems = [
+type MenuHeader = {
+  type: 'header';
+  label: string;
+};
+
+type MenuLink = {
+  icon: LucideIcon;
+  label: string;
+  href: string;
+  type?: never;
+};
+
+type SidebarMenuItem = MenuHeader | MenuLink;
+type RolePermissions = Record<string, boolean>;
+
+function isMenuHeader(item: SidebarMenuItem): item is MenuHeader {
+  return item.type === 'header';
+}
+
+const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tổng quan & AI' },
   { icon: LayoutDashboard, label: 'Dashboard',          href: '/dashboard' },
   { icon: Sparkles,        label: 'AI Copilot',         href: '/dashboard/ai-copilot' },
@@ -59,7 +81,7 @@ const menuItems = [
   { icon: Settings,        label: 'Cài đặt',             href: '/dashboard/settings' },
 ];
 
-const customerMenuItems = [
+const customerMenuItems: SidebarMenuItem[] = [
   { icon: Flower2,       label: 'Tiến trình liệu trình', href: '/dashboard/customer' },
   { icon: Calendar,      label: 'Lịch sử buổi làm',      href: '/dashboard/customer/history' },
   { icon: MessageSquare, label: 'Thông báo',              href: '/dashboard/customer/notifications' },
@@ -69,8 +91,8 @@ const customerMenuItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [rolePermissions, setRolePermissions] = useState<any>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -82,7 +104,7 @@ export function Sidebar() {
         try {
           const settings = await getTenantSettings();
           if (settings?.role_permissions) {
-            const perms = settings.role_permissions as Record<string, Record<string, boolean> | undefined> | null;
+            const perms = settings.role_permissions as Record<string, RolePermissions | undefined> | null;
             setRolePermissions(perms?.[userData.role] || null);
           }
         } catch (error) {
@@ -93,15 +115,14 @@ export function Sidebar() {
     fetchData();
   }, []);
 
-  // Auto close mobile drawer on navigation
-  useEffect(() => {
+  const handleNavigation = () => {
     setIsOpen(false);
-  }, [pathname]);
+  };
 
-  const filteredMenuItems = user?.role?.toLowerCase() === 'customer'
+  const baseMenuItems: SidebarMenuItem[] = user?.role?.toLowerCase() === 'customer'
     ? customerMenuItems
     : menuItems.filter(item => {
-        if (item.type === 'header') {
+        if (isMenuHeader(item)) {
           return true; // Keep headers for post-processing cleanup
         }
         if (user && user.role !== 'admin' && user.role !== 'customer') {
@@ -149,21 +170,23 @@ export function Sidebar() {
         return true;
       });
 
+  const filteredMenuItems = [...baseMenuItems];
+
   // KTV gets a personal income shortcut instead
   if (user?.role?.toLowerCase() === 'ktv') {
-    const hasIncome = filteredMenuItems.some((i: any) => i.label === 'Thu nhập cá nhân');
+    const hasIncome = filteredMenuItems.some((item) => item.label === 'Thu nhập cá nhân');
     if (!hasIncome) {
       filteredMenuItems.push({ icon: DollarSign, label: 'Thu nhập cá nhân', href: '/ktv/earnings' });
     }
   }
 
   // Post-process to remove headers that have no active links following them
-  const finalMenuItems: any[] = [];
-  let currentHeader: any = null;
+  const finalMenuItems: SidebarMenuItem[] = [];
+  let currentHeader: MenuHeader | null = null;
   let hasItemsInHeader = false;
 
-  filteredMenuItems.forEach((item: any) => {
-    if (item.type === 'header') {
+  filteredMenuItems.forEach((item) => {
+    if (isMenuHeader(item)) {
       if (currentHeader && hasItemsInHeader) {
         finalMenuItems.push(currentHeader);
       }
@@ -214,9 +237,11 @@ export function Sidebar() {
         </button>
         
         <div className="flex items-center gap-2">
-          <img
+          <Image
             src="/FullLogo_Transparent_NoBuffer.png"
             alt="Bella Spa"
+            width={28}
+            height={28}
             className="w-7 h-7 object-contain"
           />
           <span className="font-handwriting text-2xl text-[#BE185D] dark:text-[#A67D44] leading-none mt-1">Bella Spa</span>
@@ -250,12 +275,14 @@ export function Sidebar() {
 
         {/* ── Logo & Mobile Close Button ── */}
         <div className="px-8 pt-10 pb-6 shrink-0 relative z-10 flex items-center justify-between lg:block">
-          <Link href="/dashboard" className="flex flex-col items-center group">
+          <Link href="/dashboard" onClick={handleNavigation} className="flex flex-col items-center group">
             <div className="relative mb-4">
               <div className="absolute inset-0 bg-primary/20 dark:bg-[#A67D44]/15 blur-2xl rounded-full scale-75 group-hover:scale-110 transition-transform duration-500" />
-              <img
+              <Image
                 src="/FullLogo_Transparent_NoBuffer.png"
                 alt="Bella Spa"
+                width={96}
+                height={96}
                 className="w-24 h-24 object-contain relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500"
               />
             </div>
@@ -278,8 +305,8 @@ export function Sidebar() {
         <nav className="flex-1 min-h-0 px-5 space-y-1.5 overflow-y-auto relative z-10 pb-2
                         [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:transparent
                         [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-rose-200/60 dark:[&::-webkit-scrollbar-thumb]:bg-[#3E3A35]">
-          {finalMenuItems.map((item: any, idx: number) => {
-            if (item.type === 'header') {
+          {finalMenuItems.map((item, idx) => {
+            if (isMenuHeader(item)) {
               return (
                 <div 
                   key={`header-${idx}`} 
@@ -292,7 +319,7 @@ export function Sidebar() {
 
             const isActive = pathname === item.href;
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href} onClick={handleNavigation}>
                 <motion.div
                   whileHover={{ x: 4 }}
                   className={cn(
