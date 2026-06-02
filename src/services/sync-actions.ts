@@ -1,6 +1,12 @@
 import { startSession, completeKTVSession } from '@/services/ktv-actions';
 import { ktvCheckIn, ktvCheckOut } from '@/services/attendance-actions';
-import { offlineDB, type OfflineAction } from '@/lib/offline-db';
+import {
+  offlineDB,
+  type CheckinPayload,
+  type CheckoutPayload,
+  type OfflineAction,
+  type OfflineActionPayload
+} from '@/lib/offline-db';
 
 function getErrorMessage(error: unknown, fallback = 'Offline sync failed') {
   if (error instanceof Error) return error.message.trim() ? error.message : fallback;
@@ -12,6 +18,22 @@ function getErrorMessage(error: unknown, fallback = 'Offline sync failed') {
   return String(error) || fallback;
 }
 
+function hasSessionId(payload: OfflineActionPayload): payload is OfflineActionPayload & { sessionId: string } {
+  return 'sessionId' in payload && typeof payload.sessionId === 'string' && payload.sessionId.length > 0;
+}
+
+function requireSessionPayload(payload: OfflineActionPayload, actionType: OfflineAction['actionType']): CheckinPayload {
+  if (!hasSessionId(payload)) {
+    throw new Error(`Invalid offline ${actionType} payload: missing sessionId`);
+  }
+  return payload;
+}
+
+function requireCheckoutPayload(payload: OfflineActionPayload): CheckoutPayload {
+  const sessionPayload = requireSessionPayload(payload, 'CHECKOUT');
+  return sessionPayload;
+}
+
 export async function syncOfflineAction(action: OfflineAction) {
   if (!offlineDB) return;
 
@@ -20,11 +42,11 @@ export async function syncOfflineAction(action: OfflineAction) {
     await offlineDB.offlineQueue.update(action.id, { status: 'syncing' });
 
     if (action.actionType === 'CHECKIN') {
-      const { sessionId } = action.payload;
-      await startSession(sessionId);
+      const { sessionId, lat, lon } = requireSessionPayload(action.payload, action.actionType);
+      await startSession(sessionId, lat, lon);
     } else if (action.actionType === 'CHECKOUT') {
-      const { sessionId, notes, ktvCheckoutNote } = action.payload;
-      await completeKTVSession(sessionId, notes, ktvCheckoutNote);
+      const { sessionId, notes, ktvCheckoutNote, lat, lon } = requireCheckoutPayload(action.payload);
+      await completeKTVSession(sessionId, notes, ktvCheckoutNote, lat, lon);
     } else if (action.actionType === 'KTV_SHIFT_CHECKIN') {
       const res = await ktvCheckIn();
       if (!res.success) {
