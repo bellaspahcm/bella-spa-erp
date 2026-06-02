@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   Heart, 
   Sparkles, 
@@ -431,7 +432,7 @@ export default function LandingPage() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center border border-rose-100/50 group-hover:scale-105 transition-transform overflow-hidden">
-                <img src="/logo.png" alt="Bella Spa" className="w-8 h-8 object-contain" />
+                <Image src="/logo.png" alt="Bella Spa" width={32} height={32} className="w-8 h-8 object-contain" />
               </div>
               <div className="flex flex-col">
                 <span className="text-base font-black text-slate-800 tracking-wider uppercase leading-none">Bella Spa</span>
@@ -1308,7 +1309,7 @@ export default function LandingPage() {
             <div className="space-y-6">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md">
-                  <img src="/logo.png" alt="Bella Spa" className="w-7 h-7 object-contain" />
+                  <Image src="/logo.png" alt="Bella Spa" width={28} height={28} className="w-7 h-7 object-contain" />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-black tracking-wider uppercase text-white leading-none">Bella Spa</span>
