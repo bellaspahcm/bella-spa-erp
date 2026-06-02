@@ -8,6 +8,10 @@ interface ApprovalRequest {
   draftMessage: string;
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Lỗi hệ thống.";
+}
+
 export async function POST(request: NextRequest) {
   console.log("[AI Action Approval] Nhận yêu cầu duyệt hành động nháp...");
 
@@ -102,10 +106,10 @@ export async function POST(request: NextRequest) {
       notificationId: notif.id
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[AI Action Approval] Lỗi ngoại lệ nghiêm trọng:", error);
     return NextResponse.json(
-      { error: "Đã xảy ra lỗi nghiêm trọng khi xử lý phê duyệt hành động.", details: error.message },
+      { error: "Đã xảy ra lỗi nghiêm trọng khi xử lý phê duyệt hành động.", details: getErrorMessage(error) },
       { status: 500 }
     );
   }

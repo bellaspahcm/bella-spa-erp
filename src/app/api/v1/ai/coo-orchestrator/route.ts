@@ -9,6 +9,10 @@ interface COORequest {
   monthYear?: string;   // Định dạng 'YYYY-MM-DD' hoặc 'YYYY-MM' để phân tích kỳ báo cáo
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Lỗi hệ thống.";
+}
+
 export async function POST(request: NextRequest) {
   console.log("[AI COO Orchestrator] Nhận yêu cầu phân tích tại:", new Date().toISOString());
 
@@ -70,11 +74,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(executiveReport);
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[AI COO Orchestrator] Lỗi ngoại lệ nghiêm trọng:", error);
     // Trả về lỗi rõ ràng để hệ thống kiểm thử tự động nhận diện lập tức
     return NextResponse.json(
-      { error: "Đã xảy ra lỗi nghiêm trọng trong quá trình xử lý của AI Orchestrator.", details: error.message },
+      { error: "Đã xảy ra lỗi nghiêm trọng trong quá trình xử lý của AI Orchestrator.", details: getErrorMessage(error) },
       { status: 500 }
     );
   }
