@@ -36,6 +36,7 @@ import { HeroSection } from '@/components/features/landing/HeroSection';
 import { ServiceWizard } from '@/components/features/landing/ServiceWizard';
 import { FeedbackCarousel } from '@/components/features/landing/FeedbackCarousel';
 import { submitOnlineBooking } from '@/modules/booking/actions/lifecycle-actions';
+import { filterActivePromotions, type Promotion } from '@/lib/promotions';
 
 
 // Types for packages
@@ -317,7 +318,7 @@ export default function LandingPage() {
     fetchActivePackages();
   }, []);
 
-  const [promotions, setPromotions] = useState<any[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
 
   useEffect(() => {
     const fetchPromotions = async () => {
@@ -331,12 +332,7 @@ export default function LandingPage() {
           .order('created_at', { ascending: false });
 
         if (!error && data) {
-          const active = data.filter((promo: any) => {
-            const startValid = !promo.start_date || promo.start_date <= todayStr;
-            const endValid = !promo.end_date || promo.end_date >= todayStr;
-            return startValid && endValid;
-          });
-          setPromotions(active);
+          setPromotions(filterActivePromotions(data as Promotion[], todayStr));
         }
       } catch (err) {
         console.error('Fetch promotions error:', err);
@@ -724,12 +720,12 @@ export default function LandingPage() {
             <div className="text-center mb-10 sm:mb-14">
               <span className="text-[10px] font-black tracking-[0.25em] text-primary uppercase block mb-3">Chương trình ưu đãi</span>
               <h3 className="text-2xl sm:text-3xl font-serif font-black text-slate-800 tracking-tight">
-                Khuyến Mãi Đặc Biệt Đang Diễn Ra 🌸
+                Khuyến mãi đặc biệt đang diễn ra
               </h3>
             </div>
             
             <div className="space-y-6">
-              {promotions.map((promo: any) => (
+              {promotions.map((promo) => (
                 <motion.div
                   key={promo.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -775,7 +771,7 @@ export default function LandingPage() {
                           </code>
                         </div>
                         <button
-                          onClick={() => copyToClipboard(promo.discount_code)}
+                          onClick={() => copyToClipboard(promo.discount_code || '')}
                           className="bg-primary hover:bg-primary-hover text-white p-3 sm:p-3.5 rounded-2xl active:scale-90 transition-all shadow-md shadow-pink-100/50 group/btn"
                           title="Sao chép mã giảm giá"
                         >

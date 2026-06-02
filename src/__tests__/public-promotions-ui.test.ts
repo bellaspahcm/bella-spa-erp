@@ -1,0 +1,38 @@
+import fs from 'fs';
+import path from 'path';
+
+const projectRoot = process.cwd();
+
+function read(relativePath: string) {
+  return fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
+}
+
+describe('Public promotions UI source contracts', () => {
+  it('uses typed shared promotion helpers instead of promo any mappings', () => {
+    const landingSource = read('src/app/page.tsx');
+    const portalSource = read('src/app/portal/[token]/page.tsx');
+    const helperSource = read('src/lib/promotions.ts');
+
+    expect(landingSource).toContain('filterActivePromotions');
+    expect(landingSource).toContain('useState<Promotion[]>');
+    expect(landingSource).not.toContain('promo: any');
+    expect(landingSource).not.toContain('useState<any[]>([])');
+    expect(portalSource).toContain('import type { Promotion }');
+    expect(portalSource).toContain('as Promotion[]');
+    expect(portalSource).not.toContain('promo: any');
+    expect(helperSource).toContain('isPromotionActiveOnDate');
+  });
+
+  it('keeps public promotion labels readable', () => {
+    const landingSource = read('src/app/page.tsx');
+    const portalSource = read('src/app/portal/[token]/page.tsx');
+
+    expect(landingSource).toContain('Chương trình ưu đãi');
+    expect(landingSource).toContain('Khuyến mãi đặc biệt đang diễn ra');
+    expect(landingSource).toContain('Mã ưu đãi');
+    expect(landingSource).toContain('Sao chép mã giảm giá');
+    expect(portalSource).toContain('Ưu đãi độc quyền của chị');
+    expect(portalSource).toContain('Mã ưu đãi:');
+    expect(portalSource).toContain('Sao chép mã');
+  });
+});
