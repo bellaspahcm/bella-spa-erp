@@ -1,8 +1,12 @@
 'use server';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { safeRevalidatePath } from '@/lib/revalidate';
+import type { Database } from '@/types/database.types';
 import type { OnlineBookingFormData } from './online-booking-types';
+
+type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
+type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
+type AppNotificationInsert = Database['public']['Tables']['app_notifications']['Insert'];
 
 export async function submitOnlineBooking(formData: OnlineBookingFormData): Promise<{
   success?: boolean;
@@ -12,7 +16,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
   'use server';
 
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
 
   // 1. Basic validation
   if (!formData.phone || formData.phone.trim().length < 9) {
@@ -26,10 +30,13 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
   }
 
   const phone = formData.phone.trim();
-  let tenantId = process.env.DEFAULT_TENANT_ID;
+  let tenantId: string | null = process.env.DEFAULT_TENANT_ID ?? null;
 
   if (!tenantId) {
-    const { data: tenantData } = await supabase.from('tenants').select('id').limit(1).single();
+    const { data: tenantData, error: tenantError } = await supabase.from('tenants').select('id').limit(1).single();
+    if (tenantError) {
+      return { error: `Không thể tải cấu hình chi nhánh mặc định: ${tenantError.message}` };
+    }
     if (tenantData) {
       tenantId = tenantData.id;
     } else {
@@ -60,12 +67,12 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
     console.log('[submitOnlineBooking] Matched existing customer:', customerId);
   } else {
     // Create new customer with status "lead"
-    const newCustomerPayload: Record<string, string | null> = {
+    const newCustomerPayload: CustomerInsert = {
       name_mother: formData.name_mother.trim(),
       phone,
       address: formData.address?.trim() || null,
       status: 'lead',
-      tenant_id: tenantId || null,
+      tenant_id: tenantId,
       notes: formData.notes?.trim() || null,
     };
 
@@ -112,7 +119,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
 
   // 3. Create the booking
   const bookingNumber = `BK-ONLINE-${Date.now()}`;
-  const bookingPayload: Record<string, string | number | boolean | null> = {
+  const bookingPayload: BookingInsert = {
     customer_id: customerId,
     booking_number: bookingNumber,
     package_id: formData.package_id || null,
@@ -124,7 +131,7 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
     start_date: formData.start_date,
     preferred_time: formData.preferred_time || null,
     expected_birth_date: formData.expected_birth_date || null,
-    tenant_id: tenantId || null,
+    tenant_id: tenantId,
   };
 
   const { data: booking, error: bookingError } = await supabase
@@ -177,8 +184,8 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
   }
   // Create notification
   try {
-    const { error: notifErr } = await supabase.from('app_notifications').insert([{
-      tenant_id: tenantId || null,
+    const notificationPayload: AppNotificationInsert = {
+      tenant_id: tenantId,
       type: 'new_booking',
       title: 'Khách hàng đặt lịch mới',
       message: `${formData.name_mother} vừa đặt lịch hẹn online.`,
@@ -187,7 +194,8 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
         booking_id: booking.id,
         booking_number: bookingNumber
       }
-    }]);
+    };
+    const { error: notifErr } = await supabase.from('app_notifications').insert([notificationPayload]);
 
     if (notifErr) {
       console.error('[submitOnlineBooking] Supabase insert error for notification:', notifErr);

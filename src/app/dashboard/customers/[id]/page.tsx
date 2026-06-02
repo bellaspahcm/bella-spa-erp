@@ -34,13 +34,80 @@ import { getBookingsByCustomerId, updateBooking, reusePackage, recordRemainingPa
 import { completeSession } from '@/modules/booking/actions/session-actions';
 import { getUsers, getCurrentUser } from '@/services/user-actions';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'sonner';
 import nextDynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { PaymentReceiptTemplate, ReceiptData } from '@/components/common/PaymentReceiptTemplate';
 import { toPng } from 'html-to-image';
+import type { Database } from '@/types/database.types';
+
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+type RevenueRow = Database['public']['Tables']['revenue']['Row'];
+type UserRow = Database['public']['Tables']['users']['Row'];
+
+type CustomerDetailSession = SessionLogRow & {
+  completed_by_ktv?: { full_name: string | null; phone?: string | null } | null;
+  type?: string | null;
+};
+type CustomerDetailRevenue = RevenueRow & {
+  recorded_by?: { full_name: string | null } | null;
+};
+type CustomerDetailBooking = BookingRow & {
+  packages?: { name?: string | null } | null;
+  assigned_ktv?: { full_name: string | null; phone?: string | null } | null;
+  session_logs?: CustomerDetailSession[];
+  revenue?: CustomerDetailRevenue[];
+};
+type CustomerDetailRecord = CustomerRow & {
+  baby: {
+    name: string;
+    dob: string;
+    gender: string;
+  };
+  sessions: unknown[];
+  allBookings: CustomerDetailBooking[];
+  is_fully_paid?: boolean;
+};
+type KtvOption = Pick<UserRow, 'id' | 'full_name' | 'role'>;
+type EditCustomerData = {
+  name_mother: string;
+  phone: string;
+  name_baby: string;
+  dob_expected: string;
+  dob_baby: string;
+  address: string;
+  notes: string;
+  gender_baby: string;
+  latitude: number | null;
+  longitude: number | null;
+};
+type PaymentData = {
+  amount: number;
+  method: string;
+  notes: string;
+  receipt_url: string;
+  status: string;
+};
+type EditBookingData = {
+  package_name: string;
+  full_price: number;
+  deposit_amount: number;
+  discount_percent: number;
+  total_sessions: number;
+  completed_sessions: number;
+  preferred_time: string;
+  start_date: string;
+  status: string;
+};
+type ModalStateSetter<T> = Dispatch<SetStateAction<T>>;
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định') {
+  return error instanceof Error ? error.message : fallback;
+}
 
 // Lazy-load: only opens on user action, keeps customer detail page light.
 // Aliased to nextDynamic to avoid colliding with `export const dynamic` segment config below.
@@ -57,12 +124,12 @@ export default function CustomerDetailPage() {
   const id = params.id as string;
   const searchParams = useSearchParams();
   const targetBookingId = searchParams.get('bookingId');
-  const [customer, setCustomer] = useState<any>(null);
+  const [customer, setCustomer] = useState<CustomerDetailRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activeBooking, setActiveBooking] = useState<any>(null);
-  const [ktvs, setKtvs] = useState<any[]>([]);
+  const [activeBooking, setActiveBooking] = useState<CustomerDetailBooking | null>(null);
+  const [ktvs, setKtvs] = useState<KtvOption[]>([]);
   const [isUpdatingKTV, setIsUpdatingKTV] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isRecordingPayment, setIsRecordingPayment] = useState(false);
@@ -124,7 +191,7 @@ export default function CustomerDetailPage() {
     if (!id) return;
     try {
       const data = await getCustomerById(id);
-      const bookings = await getBookingsByCustomerId(id);
+      const bookings = (await getBookingsByCustomerId(id)) as CustomerDetailBooking[];
       
       if (data) {
         setCustomer({
@@ -143,7 +210,7 @@ export default function CustomerDetailPage() {
         if (bookings && bookings.length > 0) {
           // 1. If targetBookingId exists in URL, try to find it first
           if (targetBookingId) {
-            const found = bookings.find((b: any) => b.id === targetBookingId);
+            const found = bookings.find((b) => b.id === targetBookingId);
             if (found) {
               setActiveBooking(found);
               return;
@@ -151,7 +218,7 @@ export default function CustomerDetailPage() {
           }
 
           // 2. Default Sort to get the most relevant one
-          const sorted = [...bookings].sort((a: any, b: any) => {
+          const sorted = [...bookings].sort((a, b) => {
             // Prioritize active/booked/in_progress over others
             const priority = (s: string) => {
               if (s === 'active' || s === 'in_progress') return 0;
@@ -161,11 +228,11 @@ export default function CustomerDetailPage() {
               return 4;
             };
 
-            const pA = priority(a.status);
-            const pB = priority(b.status);
+            const pA = priority(a.status || '');
+            const pB = priority(b.status || '');
 
             if (pA !== pB) return pA - pB;
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
           });
           setActiveBooking(sorted[0]);
         } else {
@@ -184,7 +251,7 @@ export default function CustomerDetailPage() {
   async function fetchKtvs() {
     try {
       const data = await getUsers();
-      setKtvs(data.filter((u: any) => u.role?.toLowerCase() === 'ktv'));
+      setKtvs(data.filter((u) => u.role?.toLowerCase() === 'ktv'));
     } catch (error) {
       console.error('Error fetching KTVs:', error);
     }
@@ -218,8 +285,8 @@ export default function CustomerDetailPage() {
       if (result.error) throw new Error(result.error);
       toast.success('Đã cập nhật KTV phụ trách');
       loadData();
-    } catch (error: any) {
-      toast.error('Lỗi: ' + error.message);
+    } catch (error: unknown) {
+      toast.error('Lỗi: ' + getErrorMessage(error));
     } finally {
       setIsUpdatingKTV(false);
     }
@@ -258,8 +325,8 @@ export default function CustomerDetailPage() {
       
       setIsEditModalOpen(false);
       loadData();
-    } catch (error: any) {
-      toast.error('Lỗi: ' + error.message);
+    } catch (error: unknown) {
+      toast.error('Lỗi: ' + getErrorMessage(error));
     } finally {
       setIsUpdatingCustomer(false);
     }
@@ -286,8 +353,8 @@ export default function CustomerDetailPage() {
       toast.success('Cập nhật gói dịch vụ thành công!');
       setIsEditBookingModalOpen(false);
       loadData();
-    } catch (error: any) {
-      toast.error('Lỗi cập nhật gói: ' + error.message);
+    } catch (error: unknown) {
+      toast.error('Lỗi cập nhật gói: ' + getErrorMessage(error));
     } finally {
       setIsSavingBooking(false);
     }
@@ -295,7 +362,7 @@ export default function CustomerDetailPage() {
 
   const [isReusing, setIsReusing] = useState(false);
   const handleReusePackage = async (bookingId: string) => {
-    if (!bookingId) return;
+    if (!bookingId || !customer) return;
     const confirm = window.confirm(`Bạn có chắc chắn muốn tái sử dụng gói dịch vụ nhanh cho khách hàng ${customer.name_mother}?`);
     if (!confirm) return;
     
@@ -368,8 +435,8 @@ export default function CustomerDetailPage() {
       await loadData();
       setIsPaymentModalOpen(false);
       setPaymentFile(null);
-    } catch (error: any) {
-      toast.error('Lỗi: ' + error.message);
+    } catch (error: unknown) {
+      toast.error('Lỗi: ' + getErrorMessage(error));
     } finally {
       setIsRecordingPayment(false);
     }
@@ -444,10 +511,14 @@ export default function CustomerDetailPage() {
 
   const isDepositOnly = activeBooking && activeBooking.status === 'deposit_pending' && !activeBooking.package_id;
   const sortedSessions = activeBooking?.session_logs
-    ? [...activeBooking.session_logs].sort((a: any, b: any) => a.session_number - b.session_number)
+    ? [...activeBooking.session_logs].sort((a, b) => (a.session_number || 0) - (b.session_number || 0))
     : [];
-  const nextSession = sortedSessions.find((s: any) => s.status === 'scheduled');
-  const isCompleted = activeBooking && activeBooking.completed_sessions >= (activeBooking.total_sessions || 15);
+  const nextSession = sortedSessions.find((s) => s.status === 'scheduled');
+  const activeDepositAmount = activeBooking?.deposit_amount || 0;
+  const activeFullPrice = activeBooking?.full_price || 0;
+  const activeDiscountPercent = activeBooking?.discount_percent || 0;
+  const activeNetPrice = Math.round(activeFullPrice * (1 - activeDiscountPercent / 100));
+  const isCompleted = Boolean(activeBooking && (activeBooking.completed_sessions || 0) >= (activeBooking.total_sessions || 15));
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto">
@@ -500,7 +571,7 @@ export default function CustomerDetailPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-[10px] font-black text-slate-400 uppercase">Địa chỉ</p>
-                    <p className="font-bold text-slate-700 truncate max-w-[150px]" title={customer.address}>{customer.address}</p>
+                    <p className="font-bold text-slate-700 truncate max-w-[150px]" title={customer.address || undefined}>{customer.address}</p>
                     {customer.latitude && customer.longitude && (
                       <p className="text-[9px] font-black text-rose-500 mt-0.5">
                         GPS: {customer.latitude.toFixed(4)}, {customer.longitude.toFixed(4)}
@@ -569,11 +640,11 @@ export default function CustomerDetailPage() {
             {[
               { label: 'Tiến độ', value: activeBooking ? `${activeBooking.completed_sessions || 0}/${activeBooking.total_sessions || 0}` : '0/0', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
               ...(userRole === 'admin' ? [{ 
-                label: activeBooking && ((activeBooking.full_price || 0) > 0 || (activeBooking.deposit_amount || 0) > 0) && activeBooking.deposit_amount >= (activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100) ? 'Đã thanh toán đủ' : 'Đã cọc', 
+                label: activeBooking && (activeFullPrice > 0 || activeDepositAmount > 0) && activeDepositAmount >= activeNetPrice ? 'Đã thanh toán đủ' : 'Đã cọc',
                 value: activeBooking ? (
                   <div className="flex flex-col gap-1 leading-tight mt-0.5">
                     <span className="text-xl font-black text-slate-900">
-                      {formatNumberWithSeparator(activeBooking.deposit_amount || 0)}đ
+                      {formatNumberWithSeparator(activeDepositAmount)}đ
                     </span>
                     {activeBooking.full_price && activeBooking.full_price > 0 && (
                       <div className="flex flex-col gap-0.5">
@@ -586,9 +657,9 @@ export default function CustomerDetailPage() {
                           </span>
                         ) : null}
                         {/* Remaining balance if not fully paid */}
-                        {activeBooking.deposit_amount < Math.round((activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100)) && (
+                        {activeDepositAmount < activeNetPrice && (
                           <span className="text-[9px] font-black text-rose-600 uppercase tracking-wider">
-                            Còn nợ: {formatNumberWithSeparator(Math.max(0, Math.round(activeBooking.full_price * (1 - (activeBooking.discount_percent || 0)/100) - activeBooking.deposit_amount)))}đ
+                            Còn nợ: {formatNumberWithSeparator(Math.max(0, activeNetPrice - activeDepositAmount))}đ
                           </span>
                         )}
                       </div>
@@ -630,7 +701,7 @@ export default function CustomerDetailPage() {
             )}
             <div className="flex flex-wrap gap-2">
               {customer.allBookings?.length > 0 ? (
-                customer.allBookings.map((b: any) => (
+                customer.allBookings.map((b) => (
                   <button
                     key={b.id}
                     onClick={() => setActiveBooking(b)}
@@ -763,6 +834,7 @@ export default function CustomerDetailPage() {
                       
                       <button 
                         onClick={async () => {
+                          if (!activeBooking) return;
                           let token = activeBooking?.share_token;
                           if (!token) {
                             toast.loading('Đang khởi tạo link...', { id: 'portal-link' });
@@ -800,11 +872,11 @@ export default function CustomerDetailPage() {
                       {userRole === 'admin' && (
                         <>
                           <button 
-                            disabled={activeBooking?.deposit_amount < (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)}
+                            disabled={activeDepositAmount < activeNetPrice}
                             onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
                             className={cn(
                               "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all uppercase tracking-wider text-[9.5px]",
-                              activeBooking?.deposit_amount >= (activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)
+                              activeDepositAmount >= activeNetPrice
                                 ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 shadow-md"
                                 : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
                             )}
@@ -815,6 +887,7 @@ export default function CustomerDetailPage() {
  
                           <button 
                             onClick={() => {
+                              if (!activeBooking) return;
                               setEditBookingData({
                                 package_name: activeBooking.package_name || activeBooking.packages?.name || '',
                                 full_price: activeBooking.full_price || 0,
@@ -866,7 +939,7 @@ export default function CustomerDetailPage() {
                       <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Tiến độ buổi</span>
                       <span className="text-white font-black text-sm">{activeBooking.completed_sessions || 0}/{activeBooking.total_sessions || 0}</span>
                       <button 
-                        onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}&bookingId=${activeBooking.id}`)}
+                        onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}&bookingId=${activeBooking?.id || ''}`)}
                         className="p-2 hover:bg-slate-50 rounded-xl transition-colors group/btn"
                       >
                         <ChevronRight className="w-4 h-4 text-slate-300 group-hover/btn:text-primary transition-colors" />
@@ -935,7 +1008,7 @@ export default function CustomerDetailPage() {
                     </div>
                   </div>
                   <button 
-                    onClick={() => handleReusePackage(activeBooking?.id)}
+                    onClick={() => activeBooking && handleReusePackage(activeBooking.id)}
                     disabled={isReusing}
                     className="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
                   >
@@ -945,8 +1018,8 @@ export default function CustomerDetailPage() {
                 </div>
               ) : null}
 
-              {sortedSessions.filter((s: any) => s.status === 'completed').length > 0 ? (
-                sortedSessions.filter((s: any) => s.status === 'completed').map((session: any) => (
+              {sortedSessions.filter((s) => s.status === 'completed').length > 0 ? (
+                sortedSessions.filter((s) => s.status === 'completed').map((session) => (
                   <div key={session.id} className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-slate-100 transition-all group">
                     <div className="flex items-center gap-5">
                       <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform">
@@ -993,7 +1066,7 @@ export default function CustomerDetailPage() {
                     <div className="flex items-center gap-3">
                       <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">Hoàn thành</span>
                       <button 
-                        onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}&bookingId=${activeBooking.id}`)}
+                        onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}&bookingId=${activeBooking?.id || ''}`)}
                         className="p-2 hover:bg-white rounded-xl transition-all shadow-sm group/btn active:scale-90"
                       >
                         <ChevronRight className="w-5 h-5 text-slate-300 group-hover/btn:text-primary transition-colors" />
@@ -1026,7 +1099,7 @@ export default function CustomerDetailPage() {
 
               <div className="space-y-4">
                 {activeBooking.revenue && activeBooking.revenue.length > 0 ? (
-                  activeBooking.revenue.map((rev: any) => (
+                  activeBooking.revenue.map((rev) => (
                     <div key={rev.id} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-50 rounded-[2rem] hover:bg-slate-100 transition-all gap-4">
                       <div className="flex items-center gap-5">
                         <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-primary shadow-sm">
@@ -1135,7 +1208,21 @@ export default function CustomerDetailPage() {
   );
 }
 
-function EditCustomerModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData }: any) {
+function EditCustomerModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  isSubmitting,
+  data,
+  setData,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isSubmitting: boolean;
+  data: EditCustomerData;
+  setData: ModalStateSetter<EditCustomerData>;
+}) {
   const [isGeocoding, setIsGeocoding] = useState(false);
 
   if (!isOpen) return null;
@@ -1331,7 +1418,27 @@ function EditCustomerModal({ isOpen, onClose, onConfirm, isSubmitting, data, set
   );
 }
 
-function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData, file, setFile, customerName }: any) {
+function BookingPaymentModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  isSubmitting,
+  data,
+  setData,
+  file,
+  setFile,
+  customerName,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isSubmitting: boolean;
+  data: PaymentData;
+  setData: ModalStateSetter<PaymentData>;
+  file: File | null;
+  setFile: ModalStateSetter<File | null>;
+  customerName: string;
+}) {
   if (!isOpen) return null;
 
   return (
@@ -1516,7 +1623,21 @@ function BookingPaymentModal({ isOpen, onClose, onConfirm, isSubmitting, data, s
   );
 }
 
-function EditBookingModal({ isOpen, onClose, onConfirm, isSubmitting, data, setData }: any) {
+function EditBookingModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  isSubmitting,
+  data,
+  setData,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isSubmitting: boolean;
+  data: EditBookingData;
+  setData: ModalStateSetter<EditBookingData>;
+}) {
   if (!isOpen) return null;
 
   return (

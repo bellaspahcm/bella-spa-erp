@@ -34,15 +34,36 @@ import {
 
 import { createCustomer, updateCustomer, deleteCustomer } from '@/services/customer-actions';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
+import type { Database } from '@/types/database.types';
 
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type PackageRow = Database['public']['Tables']['packages']['Row'];
+type CustomerBookingSummary = Pick<
+  Database['public']['Tables']['bookings']['Row'],
+  'deposit_amount' | 'package_name' | 'full_price' | 'discount_percent' | 'created_at' | 'is_in_care'
+>;
+type CustomerListItem = CustomerRow & {
+  bookings?: CustomerBookingSummary[] | null;
+  deposit_amount?: number | '';
+  package_name?: string;
+  is_in_care?: boolean;
+  is_fully_paid?: boolean;
+};
+type CustomerActionResult =
+  | Awaited<ReturnType<typeof createCustomer>>
+  | Awaited<ReturnType<typeof updateCustomer>>;
+
+function getErrorMessage(error: unknown, fallback = 'Có lỗi xảy ra') {
+  return error instanceof Error ? error.message : fallback;
+}
 
 
 
 export default function CustomersPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [packages, setPackages] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<CustomerListItem[]>([]);
+  const [packages, setPackages] = useState<PackageRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,18 +140,20 @@ export default function CustomersPage() {
         .order('name_mother', { ascending: true });
       if (error) throw error;
       
-      const enrichedCustomers = (data || []).map((c: any) => {
+      const enrichedCustomers = ((data || []) as CustomerListItem[]).map((c) => {
         // Lấy booking mới nhất (nếu có)
         const latestBooking = c.bookings && c.bookings.length > 0 
-          ? c.bookings.sort((a: any, b: any) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0] 
+          ? [...c.bookings].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0]
           : null;
+        const latestDepositAmount: number | '' = latestBooking?.deposit_amount ?? '';
+        const latestPackageName = latestBooking?.package_name || '';
           
         return {
           ...c,
-          deposit_amount: latestBooking?.deposit_amount || '',
-          package_name: latestBooking?.package_name || '',
+          deposit_amount: latestDepositAmount,
+          package_name: latestPackageName,
           is_in_care: latestBooking?.is_in_care || false,
-          is_fully_paid: latestBooking?.deposit_amount >= ((latestBooking?.full_price || 999999999) * (1 - (latestBooking?.discount_percent || 0)/100))
+          is_fully_paid: Number(latestBooking?.deposit_amount || 0) >= ((latestBooking?.full_price || 999999999) * (1 - (latestBooking?.discount_percent || 0)/100))
         };
       });
       
@@ -166,7 +189,7 @@ export default function CustomersPage() {
     setIsSubmitting(true);
     
     try {
-      let result: any;
+      let result: CustomerActionResult;
       if (isEditMode && editingCustomerId) {
         result = await updateCustomer(editingCustomerId, {
           ...formData
@@ -212,7 +235,7 @@ export default function CustomersPage() {
     setEditingCustomerId(null);
   };
 
-  const handleEdit = (customer: any) => {
+  const handleEdit = (customer: CustomerListItem) => {
     setFormData({
       name_mother: customer.name_mother || '',
       phone: customer.phone || '',
@@ -239,8 +262,8 @@ export default function CustomersPage() {
       } else {
         toast.error(result.error || 'Lỗi khi xóa hồ sơ');
       }
-    } catch (error: any) {
-      toast.error(error?.message || 'Có lỗi xảy ra');
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, 'Có lỗi xảy ra'));
     }
     setActiveMenuId(null);
   };
@@ -443,7 +466,7 @@ export default function CustomersPage() {
             <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
             <p className="text-slate-400 font-bold">Không tìm thấy khách hàng nào khớp với bộ lọc</p>
           </div>
-        ) : paginatedCustomers.map((customer: any, idx: number) => (
+        ) : paginatedCustomers.map((customer, idx: number) => (
           <motion.div 
             key={customer.id}
             initial={{ opacity: 0, y: 10 }}

@@ -375,7 +375,7 @@ describe('Cross-Module End-to-End Integrity Tests', () => {
     expect(createResult.error).toBeUndefined();
     expect(createResult.data).toBeDefined();
 
-    const booking = createResult.data;
+    const booking = createResult.data!;
     expect(booking.status).toBe('deposit_pending');
     expect(mockStore.revenue).toHaveLength(1);
     expect(mockStore.revenue[0].amount).toBe(1000000);

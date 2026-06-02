@@ -4,6 +4,43 @@ import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { getCurrentUser } from './user-actions';
 import { resolvePackageName } from '@/lib/utils';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
+
+type AppSupabaseClient = SupabaseClient<Database>;
+type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
+type CustomerUpdate = Database['public']['Tables']['customers']['Update'];
+type CustomerCreateInput =
+  Partial<Omit<CustomerInsert, 'tenant_id' | 'name_mother' | 'phone'>> &
+  Pick<Partial<CustomerInsert>, 'tenant_id' | 'name_mother' | 'phone'> & {
+    name?: string;
+  };
+type PackageRow = Database['public']['Tables']['packages']['Row'];
+type PromotionRow = Database['public']['Tables']['promotions']['Row'];
+type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+type RevenueRow = Database['public']['Tables']['revenue']['Row'];
+type SessionReviewInsert = Database['public']['Tables']['session_reviews']['Insert'];
+
+type CustomerPortalBooking = BookingRow & {
+  customers?: Pick<CustomerRow, 'name_mother' | 'phone' | 'loyalty_points'> | null;
+  packages?: Pick<PackageRow, 'name'> | null;
+  assigned_ktv?: { id: string; full_name: string | null; phone: string | null } | null;
+  session_logs?: (SessionLogRow & {
+    completed_by_ktv?: { id: string; full_name: string | null; avatar_url: string | null } | null;
+  })[];
+  tenants?: { id: string; name: string; qr_bank_code: string | null; qr_account_number: string | null; qr_account_name: string | null } | null;
+  revenue?: RevenueRow[];
+  active_promotions?: PromotionRow[];
+};
+
+type RatingSession = Pick<
+  SessionLogRow,
+  'completed_by_ktv_id' | 'tenant_id' | 'rating' | 'rating_comment'
+> & {
+  bookings?: Pick<BookingRow, 'customer_id'> | null;
+};
 
 /**
  * Truy xuất thông tin booking qua Share Token (Dành cho khách hàng)
@@ -13,10 +50,10 @@ export async function getCustomerBookingByToken(token?: string) {
   // The token itself (64-bit random hex) IS the security boundary — anyone
   // with the token can read the booking, which is the magic-link model.
   // Anon client cannot read public.bookings (RLS policy "Guest xem bookings (Blocked)").
-  let supabase: any;
+  let supabase: AppSupabaseClient;
   if (token && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-    supabase = createSupabaseClient(
+    supabase = createSupabaseClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { persistSession: false, autoRefreshToken: false } }
@@ -85,37 +122,39 @@ export async function getCustomerBookingByToken(token?: string) {
     return null;
   }
 
+  const booking = data as CustomerPortalBooking;
+
   // Sort sessions by number
-  if (data.session_logs) {
-    data.session_logs.sort((a: any, b: any) => a.session_number - b.session_number);
+  if (booking.session_logs) {
+    booking.session_logs.sort((a, b) => (a.session_number || 0) - (b.session_number || 0));
   }
 
   // Resolve package_name correctly using resolvePackageName helper
-  data.package_name = resolvePackageName(data);
+  booking.package_name = resolvePackageName(booking);
 
   // Fetch active promotions for this tenant
-  if (data.tenant_id) {
+  if (booking.tenant_id) {
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
     const { data: promotions, error: promoError } = await supabase
       .from('promotions')
       .select('*')
-      .eq('tenant_id', data.tenant_id)
+      .eq('tenant_id', booking.tenant_id)
       .eq('is_active', true);
       
     if (promoError) {
       throw new Error(`Failed to fetch active promotions for customer booking: ${promoError.message}`);
     }
 
-    data.active_promotions = (promotions || []).filter((promo: any) => {
+    booking.active_promotions = (promotions || []).filter((promo) => {
       const startValid = !promo.start_date || promo.start_date <= todayStr;
       const endValid = !promo.end_date || promo.end_date >= todayStr;
       return startValid && endValid;
     });
   } else {
-    data.active_promotions = [];
+    booking.active_promotions = [];
   }
 
-  return data;
+  return booking;
 }
 
 /**
@@ -125,10 +164,10 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
   // Customer is anonymous (no auth session) — bypass RLS via service role.
   // Security: sessionId is a non-enumerable UUID. Caller must have already
   // obtained it via getCustomerBookingByToken (gated by share_token).
-  let supabase: any;
+  let supabase: AppSupabaseClient;
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-    supabase = createSupabaseClient(
+    supabase = createSupabaseClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { persistSession: false, autoRefreshToken: false } }
@@ -147,6 +186,7 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
   if (sessionError) {
     throw new Error(`Failed to fetch session before customer rating: ${sessionError.message}`);
   }
+  const ratingSession = session as RatingSession | null;
 
   // 2. Cập nhật rating vào session_log (Legacy support & quick read)
   const { error: updateError } = await supabase
@@ -165,8 +205,8 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
     const { error: rollbackError } = await supabase
       .from('session_logs')
       .update({
-        rating: session?.rating ?? null,
-        rating_comment: session?.rating_comment ?? null
+        rating: ratingSession?.rating ?? null,
+        rating_comment: ratingSession?.rating_comment ?? null
       })
       .eq('id', sessionId);
 
@@ -178,7 +218,7 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
   };
 
   // 3. Tạo/Cập nhật bản ghi review chính thức (Analytics source)
-  if (session) {
+  if (ratingSession) {
     // Check if a placeholder review already exists for this session log
     const { data: existingReview, error: existingReviewError } = await supabase
       .from('session_reviews')
@@ -190,14 +230,14 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
       await rollbackSessionRating(`Failed to fetch existing session review: ${existingReviewError.message}`);
     }
 
-    const reviewPayload = {
+    const reviewPayload: SessionReviewInsert = {
       session_log_id: sessionId,
-      ktv_id: session.completed_by_ktv_id,
-      reviewer_id: session.bookings?.customer_id || null,
+      ktv_id: ratingSession.completed_by_ktv_id,
+      reviewer_id: ratingSession.bookings?.customer_id || null,
       rating: rating,
       note: comment,
       status: 'approved',
-      tenant_id: session.tenant_id
+      tenant_id: ratingSession.tenant_id
     };
 
     if (existingReview) {
@@ -295,9 +335,16 @@ export async function getCustomerById(id: string) {
 /**
  * Tạo mới khách hàng
  */
-export async function createCustomer(customerData: any) {
+export async function createCustomer(customerData: CustomerCreateInput) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
+  const { name, ...customerPayload } = customerData;
+  const payload: CustomerInsert = {
+    ...customerPayload,
+    name_mother: customerData.name_mother || name || '',
+    phone: customerData.phone || '',
+    tenant_id: customerData.tenant_id || currentUser?.tenant_id || ''
+  };
 
   if (currentUser?.tenant_id) {
     const { checkSubscriptionLimit } = await import('@/lib/subscription');
@@ -305,21 +352,25 @@ export async function createCustomer(customerData: any) {
     if (customerLimit.isBlocked) {
       return { data: null, error: 'Vượt quá giới hạn khách hàng của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.', warning: null };
     }
-    customerData.tenant_id = currentUser.tenant_id;
+    payload.tenant_id = currentUser.tenant_id;
+  }
+
+  if (!payload.tenant_id) {
+    return { data: null, error: 'Không xác định được chi nhánh của khách hàng.', warning: null };
   }
 
   // Tự động geocode lấy tọa độ nếu địa chỉ được nhập và admin không truyền sẵn tọa độ
-  if (customerData.address && (customerData.latitude === undefined || customerData.latitude === null)) {
-    const coords = await geocodeAddress(customerData.address);
+  if (payload.address && (payload.latitude === undefined || payload.latitude === null)) {
+    const coords = await geocodeAddress(payload.address);
     if (coords) {
-      customerData.latitude = coords.latitude;
-      customerData.longitude = coords.longitude;
+      payload.latitude = coords.latitude;
+      payload.longitude = coords.longitude;
     }
   }
 
   const { data, error } = await supabase
     .from('customers')
-    .insert([customerData])
+    .insert([payload])
     .select();
   
   if (error) {
@@ -356,8 +407,9 @@ export async function createCustomer(customerData: any) {
 /**
  * Cập nhật khách hàng
  */
-export async function updateCustomer(id: string, customerData: any) {
+export async function updateCustomer(id: string, customerData: CustomerUpdate) {
   const supabase = await createClient();
+  const payload: CustomerUpdate = { ...customerData };
   
   // Fetch existing customer before update for audit trail
   let oldCustomer = null;
@@ -380,18 +432,18 @@ export async function updateCustomer(id: string, customerData: any) {
   }
 
   // Tự động geocode nếu địa chỉ thay đổi và admin không chủ động truyền sẵn tọa độ mới
-  if (customerData.address && customerData.address !== oldCustomer?.address && 
-      (customerData.latitude === undefined || customerData.latitude === null)) {
-    const coords = await geocodeAddress(customerData.address);
+  if (payload.address && payload.address !== oldCustomer?.address &&
+      (payload.latitude === undefined || payload.latitude === null)) {
+    const coords = await geocodeAddress(payload.address);
     if (coords) {
-      customerData.latitude = coords.latitude;
-      customerData.longitude = coords.longitude;
+      payload.latitude = coords.latitude;
+      payload.longitude = coords.longitude;
     }
   }
 
   const { data, error } = await supabase
     .from('customers')
-    .update(customerData)
+    .update(payload)
     .eq('id', id)
     .select();
   
@@ -408,7 +460,7 @@ export async function updateCustomer(id: string, customerData: any) {
         table_name: 'customers',
         record_id: id,
         old_data: oldCustomer,
-        new_data: customerData
+        new_data: payload
       });
     } catch (auditErr) {
       if (oldCustomer) {

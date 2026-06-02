@@ -1,11 +1,34 @@
 'use server';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { resolvePackageName } from '@/lib/utils';
+import type { Database } from '@/types/database.types';
+
+type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type PackageRow = Database['public']['Tables']['packages']['Row'];
+type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+type RevenueRow = Database['public']['Tables']['revenue']['Row'];
+
+type PackageRef = Pick<PackageRow, 'name'>;
+type CustomerRef = Pick<CustomerRow, 'name_mother' | 'phone'> | null;
+type BookingListItem = BookingRow & {
+  customers?: CustomerRef;
+  packages?: PackageRef | null;
+};
+type BookingCustomerDetailItem = BookingRow & {
+  assigned_ktv?: { full_name: string | null; phone: string | null } | null;
+  packages?: PackageRef | null;
+  session_logs?: (SessionLogRow & {
+    completed_by_ktv?: { full_name: string | null; phone: string | null } | null;
+  })[];
+  revenue?: (RevenueRow & {
+    recorded_by?: { full_name: string | null } | null;
+  })[];
+};
 
 export async function getPackages() {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('packages')
     .select('*')
@@ -20,7 +43,7 @@ export async function getPackages() {
 
 export async function getBookings() {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('bookings')
     .select('*, customers(name_mother, phone), packages!bookings_package_id_fkey(name)')
@@ -31,8 +54,9 @@ export async function getBookings() {
   }
   
   if (!data || data.length === 0) return [];
-  
-  return (data || []).map((b: any) => ({
+
+  const bookings = (data || []) as BookingListItem[];
+  return bookings.map((b) => ({
     ...b,
     package_name: resolvePackageName(b),
     start_date: b.start_date,
@@ -43,7 +67,7 @@ export async function getBookings() {
 
 export async function getBookingsByCustomerId(customerId: string) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from('bookings')
     .select(`
@@ -67,8 +91,9 @@ export async function getBookingsByCustomerId(customerId: string) {
   }
   
   if (!data || data.length === 0) return [];
-  
-  return (data || []).map((b: any) => ({
+
+  const bookings = (data || []) as BookingCustomerDetailItem[];
+  return bookings.map((b) => ({
     ...b,
     package_name: resolvePackageName(b),
     start_date: b.start_date,
@@ -78,7 +103,7 @@ export async function getBookingsByCustomerId(customerId: string) {
 
 export async function getDraftBooking(customerId: string) {
   const { createClient } = await import('@/lib/supabase-server');
-  const supabase = (await createClient()) as any;
+  const supabase = await createClient();
   
   const { data, error } = await supabase
     .from('bookings')
