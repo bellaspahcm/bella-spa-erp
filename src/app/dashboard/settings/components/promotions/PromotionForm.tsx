@@ -1,0 +1,139 @@
+'use client';
+
+import { Calendar, Percent, Plus, RefreshCw, Tag } from 'lucide-react';
+import type { FormEvent } from 'react';
+import type { PromotionFormState } from './types';
+
+interface PromotionFormProps {
+  form: PromotionFormState;
+  isSubmitting: boolean;
+  onChange: (patch: Partial<PromotionFormState>) => void;
+  onSubmit: (event: FormEvent) => void;
+}
+
+export function PromotionForm({
+  form,
+  isSubmitting,
+  onChange,
+  onSubmit,
+}: PromotionFormProps) {
+  return (
+    <div className="xl:col-span-1 glass-white border border-pink-50 p-6 rounded-[2rem] space-y-6 self-start">
+      <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+        <Plus className="w-5 h-5 text-primary" />
+        Thêm ưu đãi mới
+      </h3>
+
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+            Tiêu đề chương trình
+          </label>
+          <input
+            type="text"
+            required
+            value={form.title}
+            onChange={(event) => onChange({ title: event.target.value })}
+            placeholder="VD: Mừng ngày của mẹ"
+            className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+            Mô tả chi tiết
+          </label>
+          <textarea
+            required
+            value={form.description}
+            onChange={(event) => onChange({ description: event.target.value })}
+            placeholder="Mô tả quyền lợi và điều kiện áp dụng..."
+            rows={3}
+            className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm resize-none"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <Tag className="w-3 h-3 text-slate-400" />
+              Mã ưu đãi
+            </label>
+            <input
+              type="text"
+              value={form.discountCode}
+              onChange={(event) =>
+                onChange({ discountCode: event.target.value.toUpperCase().replace(/\s+/g, '') })
+              }
+              placeholder="MOTHER50"
+              className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-black text-sm font-mono text-rose-500"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <Percent className="w-3 h-3 text-slate-400" />
+              % giảm giá
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={form.discountPercent}
+              onChange={(event) => onChange({ discountPercent: event.target.value })}
+              placeholder="10"
+              className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
+          <DateField
+            label="Ngày bắt đầu"
+            value={form.startDate}
+            onChange={(value) => onChange({ startDate: value })}
+          />
+          <DateField
+            label="Ngày kết thúc"
+            value={form.endDate}
+            onChange={(value) => onChange({ endDate: value })}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-primary hover:bg-primary-hover text-white py-3.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-md disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-2 mt-4"
+        >
+          {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          <span>{isSubmitting ? 'Đang thêm...' : 'Tạo khuyến mãi'}</span>
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+        <Calendar className="w-3 h-3 text-slate-400" />
+        {label}
+      </label>
+      <input
+        type="date"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full px-4 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"
+      />
+    </div>
+  );
+}
