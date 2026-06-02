@@ -38,6 +38,8 @@ export default function CRMPage() {
   } = useCrmPageActions({ loadData, zaloConfig });
   const {
     vouchers,
+    isLoadingVouchers,
+    voucherError,
     isVoucherModalOpen,
     newVoucher,
     setNewVoucher,
@@ -96,6 +98,8 @@ export default function CRMPage() {
               birthdayCustomers={birthdayCustomers}
               vouchers={vouchers}
               loadError={loadError}
+              voucherError={voucherError}
+              isLoadingVouchers={isLoadingVouchers}
               actionLoading={actionLoading}
               onSendBirthday={handleSendBirthday}
               onOpenVoucherModal={openVoucherModal}

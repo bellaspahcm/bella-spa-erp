@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 const projectRoot = process.cwd();
+const mojibakePattern = /\uFFFD|\u00EF\u00BF\u00BD|\u00C3|\u00C4|\u00C2|\u00F0\u0178|\u00E1\u00BA|\u00E1\u00BB|\u00C6|\u00E2\u20AC|\u00E2\u20AC\u00A2/;
 
 function read(relativePath: string) {
   return fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
@@ -19,10 +20,11 @@ describe('CRM page error handling UI', () => {
       'src/app/dashboard/crm/components/CrmMarketingTab.tsx',
       'src/app/dashboard/crm/components/CrmLogsTab.tsx',
       'src/app/dashboard/crm/components/CrmVoucherModal.tsx',
+      'src/app/dashboard/crm/hooks/useCrmVoucherCampaigns.ts',
     ];
 
     for (const file of uiFiles) {
-      expect(read(file)).not.toMatch(/�|ï¿½|Ã|Ä|Â|ðŸ|áº|á»|Æ|â€|â€¢/);
+      expect(read(file)).not.toMatch(mojibakePattern);
     }
   });
 
@@ -78,7 +80,10 @@ describe('CRM page error handling UI', () => {
     expect(marketingSource).toContain('onSendBirthday');
     expect(logsSource).toContain('format(new Date(log.createdAt)');
     expect(voucherModalSource).toContain('onSubmit={onSubmit}');
-    expect(voucherHookSource).toContain('INITIAL_VOUCHER_CAMPAIGNS');
+    expect(voucherHookSource).toContain('getPromotions');
+    expect(voucherHookSource).toContain('createPromotion');
+    expect(voucherHookSource).toContain('isLoadingVouchers');
+    expect(voucherHookSource).toContain('voucherError');
     expect(voucherHookSource).toContain('handleCreateVoucher');
   });
 });
