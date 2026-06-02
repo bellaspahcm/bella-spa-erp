@@ -17,8 +17,9 @@ describe('Public promotions UI source contracts', () => {
     expect(landingSource).toContain('useState<Promotion[]>');
     expect(landingSource).not.toContain('promo: any');
     expect(landingSource).not.toContain('useState<any[]>([])');
-    expect(portalSource).toContain('import type { Promotion }');
-    expect(portalSource).toContain('as Promotion[]');
+    expect(portalSource).toContain('import type { CustomerPortalBooking }');
+    expect(portalSource).toContain('booking.active_promotions.map');
+    expect(portalSource).not.toContain('as Promotion[]');
     expect(portalSource).not.toContain('promo: any');
     expect(helperSource).toContain('isPromotionActiveOnDate');
   });

@@ -10,8 +10,7 @@ import {
   Sparkles,
   Phone,
   Check,
-  CheckCheck,
-  ChevronDown
+  CheckCheck
 } from 'lucide-react';
 import { 
   getPortalChatMessages, 
@@ -20,6 +19,13 @@ import {
 } from '@/services/portal-chat-actions';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
+import type { Database } from '@/types/database.types';
+
+type PortalChatMessage = Database['public']['Tables']['chat_messages']['Row'] & {
+  isOptimistic?: boolean;
+};
+
+const FALLBACK_MESSAGE_CREATED_AT = '1970-01-01T00:00:00.000Z';
 
 interface PortalChatWidgetProps {
   token: string;
@@ -35,7 +41,7 @@ export default function PortalChatWidget({
   phoneHotline = '0865701493'
 }: PortalChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<PortalChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -83,9 +89,7 @@ export default function PortalChatWidget({
 
         // Calculate unread count (messages sent by staff that are not read)
         if (!isOpen) {
-          const unread = newMessages.filter(
-            (m: any) => m.sender_type === 'staff' && !m.is_read
-          ).length;
+          const unread = newMessages.filter((m) => m.sender_type === 'staff' && !m.is_read).length;
           setUnreadCount(unread);
         } else {
           // If chat is open, immediately mark as read
@@ -125,10 +129,12 @@ export default function PortalChatWidget({
 
     // Optimistically add the message to the list for instant visual response
     const tempId = Math.random().toString(36).substring(7);
-    const optimisticMsg = {
+    const optimisticMsg: PortalChatMessage = {
       id: tempId,
       message: messageText,
       sender_type: 'customer',
+      customer_id: null,
+      tenant_id: null,
       sender_id: null,
       is_read: false,
       created_at: new Date().toISOString(),
@@ -151,7 +157,7 @@ export default function PortalChatWidget({
         setInputValue(messageText);
         toast.error(result.error || 'Không thể gửi tin nhắn. Vui lòng thử lại.');
       }
-    } catch (error) {
+    } catch {
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
       setInputValue(messageText);
       toast.error('Lỗi kết nối mạng khi gửi tin nhắn.');
@@ -325,12 +331,12 @@ export default function PortalChatWidget({
                   <div className="space-y-4">
                     {messages.map((msg, index) => {
                       const isCustomer = msg.sender_type === 'customer';
-                      const dateObj = new Date(msg.created_at);
+                      const dateObj = new Date(msg.created_at ?? FALLBACK_MESSAGE_CREATED_AT);
                       const timeStr = dateObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
                       
                       // Check if we should show date header
                       const showDateHeader = index === 0 || (() => {
-                        const prevDate = new Date(messages[index - 1].created_at);
+                        const prevDate = new Date(messages[index - 1].created_at ?? FALLBACK_MESSAGE_CREATED_AT);
                         return dateObj.toDateString() !== prevDate.toDateString();
                       })();
 
