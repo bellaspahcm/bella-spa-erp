@@ -40,6 +40,7 @@ export interface ZnsLog {
 }
 
 export interface VoucherCampaign {
+  id: string;
   code: string;
   discount: number;
   target: string;
@@ -47,7 +48,7 @@ export interface VoucherCampaign {
   usage: number;
 }
 
-export type NewVoucherCampaign = Omit<VoucherCampaign, 'usage'>;
+export type NewVoucherCampaign = Omit<VoucherCampaign, 'id' | 'usage'>;
 
 export type CrmStatsSnapshot = CRMStats;
 export type CrmZaloConfig = ZaloConfig;

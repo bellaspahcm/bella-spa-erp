@@ -7,6 +7,8 @@ interface CrmMarketingTabProps {
   birthdayCustomers: BirthdayCustomer[];
   vouchers: VoucherCampaign[];
   loadError: string | null;
+  voucherError: string | null;
+  isLoadingVouchers: boolean;
   actionLoading: string | null;
   onSendBirthday: (customerId: string, babyName: string) => void;
   onOpenVoucherModal: () => void;
@@ -16,6 +18,8 @@ export function CrmMarketingTab({
   birthdayCustomers,
   vouchers,
   loadError,
+  voucherError,
+  isLoadingVouchers,
   actionLoading,
   onSendBirthday,
   onOpenVoucherModal,
@@ -107,8 +111,15 @@ export function CrmMarketingTab({
           </div>
 
           <div className="space-y-4">
-            {vouchers.map((voucher) => (
-              <div key={voucher.code} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between hover:border-rose-100 hover:bg-rose-50/10 transition-all">
+            {isLoadingVouchers ? (
+              <p className="py-8 text-center text-xs font-bold text-slate-400">Đang tải danh sách voucher...</p>
+            ) : voucherError ? (
+              <p className="py-8 text-center text-xs font-bold text-rose-500">{voucherError}</p>
+            ) : vouchers.length === 0 ? (
+              <p className="py-8 text-center text-xs font-bold text-slate-400">Chưa có voucher khuyến mãi nào.</p>
+            ) : (
+              vouchers.map((voucher) => (
+              <div key={voucher.id} className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between hover:border-rose-100 hover:bg-rose-50/10 transition-all">
                 <div className="space-y-1">
                   <span className="text-xs font-black text-primary bg-rose-50 px-2 py-0.5 rounded border border-rose-100/50">{voucher.code}</span>
                   <p className="text-[11px] font-bold text-slate-600 mt-1">{voucher.target}</p>
@@ -116,10 +127,13 @@ export function CrmMarketingTab({
                 </div>
                 <div className="text-right">
                   <span className="text-lg font-black text-slate-800">-{voucher.discount}%</span>
-                  <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mt-0.5">Đang chạy</p>
+                  <p className={`text-[9px] font-black uppercase tracking-widest mt-0.5 ${voucher.status === 'active' ? 'text-emerald-500' : 'text-slate-400'}`}>
+                    {voucher.status === 'active' ? 'Đang chạy' : 'Tạm ngưng'}
+                  </p>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

@@ -231,6 +231,7 @@ export async function createPromotion(payload: {
   }
 
   revalidatePath('/dashboard/settings');
+  revalidatePath('/dashboard/crm');
   return { success: true, data };
 }
 
@@ -304,6 +305,7 @@ export async function togglePromotionActive(id: string, is_active: boolean) {
   }
 
   revalidatePath('/dashboard/settings');
+  revalidatePath('/dashboard/crm');
   return { success: true, data };
 }
 
@@ -369,5 +371,6 @@ export async function deletePromotion(id: string) {
   }
 
   revalidatePath('/dashboard/settings');
+  revalidatePath('/dashboard/crm');
   return { success: true };
 }

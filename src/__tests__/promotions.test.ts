@@ -248,6 +248,7 @@ describe('Promotions Server Actions System', () => {
         new_data: expect.objectContaining({ id: 'promo-1', tenant_id: 'tenant-123' }),
       });
       expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/crm');
     });
 
     it('returns error with DB failure', async () => {
@@ -339,6 +340,7 @@ describe('Promotions Server Actions System', () => {
         new_data: expect.objectContaining({ is_active: false }),
       });
       expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/crm');
     });
 
     it('does not update when snapshot is missing', async () => {
@@ -422,6 +424,7 @@ describe('Promotions Server Actions System', () => {
         old_data: expect.objectContaining({ id: 'promo-1', tenant_id: 'tenant-123' }),
       });
       expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+      expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/crm');
     });
 
     it('returns delete failure without audit or revalidate', async () => {
