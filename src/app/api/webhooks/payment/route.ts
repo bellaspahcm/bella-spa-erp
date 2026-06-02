@@ -23,6 +23,17 @@ interface Transaction {
   receivedDate: string;
 }
 
+type WebhookRecord = Record<string, unknown>;
+type ProcessingResult = {
+  transactionId: string;
+  status: "success" | "failed" | "skipped";
+  invoiceNumber?: string;
+  bookingNumber?: string;
+  type?: "subscription";
+  revenueId?: string;
+  reason?: string;
+};
+
 function resolveAccountingReviewStatus(
   businessEventType: ReturnType<typeof inferBusinessEventType>,
   payload: Record<string, unknown>
@@ -33,60 +44,110 @@ function resolveAccountingReviewStatus(
     : "UNREVIEWED";
 }
 
+function isRecord(value: unknown): value is WebhookRecord {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function firstPresent(...values: unknown[]) {
+  return values.find((value) => value !== undefined && value !== null && value !== "");
+}
+
+function readString(value: unknown, fallback = "") {
+  const present = firstPresent(value);
+  if (present === undefined) return fallback;
+  return String(present);
+}
+
+function readNumber(...values: unknown[]) {
+  const present = firstPresent(...values);
+  if (present === undefined) return 0;
+
+  const parsed = Number(present);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function readReceivedDate(...values: unknown[]) {
+  const present = firstPresent(...values);
+  return typeof present === "string" && present.trim() ? present : new Date().toISOString();
+}
+
+function transactionFromRecord(
+  item: WebhookRecord,
+  options: {
+    amountKeys: string[];
+    descriptionKeys: string[];
+    idKeys: string[];
+    dateKeys: string[];
+  }
+): Transaction {
+  return {
+    amount: readNumber(...options.amountKeys.map((key) => item[key])),
+    description: readString(firstPresent(...options.descriptionKeys.map((key) => item[key]))),
+    transactionId: readString(firstPresent(...options.idKeys.map((key) => item[key]))),
+    receivedDate: readReceivedDate(...options.dateKeys.map((key) => item[key])),
+  };
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
 // Extract transactions from multiple platforms: Casso, SePay, PayOS
-function extractTransactions(body: any): Transaction[] {
+function extractTransactions(body: unknown): Transaction[] {
   const txs: Transaction[] = [];
 
   // SePay format
-  if (body && typeof body === 'object' && !Array.isArray(body)) {
+  if (isRecord(body)) {
     if (body.transferAmount !== undefined || body.content !== undefined) {
-      txs.push({
-        amount: Number(body.transferAmount || body.amount || 0),
-        description: body.content || body.description || '',
-        transactionId: String(body.code || body.id || ''),
-        receivedDate: body.transactionDate || new Date().toISOString()
-      });
+      txs.push(transactionFromRecord(body, {
+        amountKeys: ["transferAmount", "amount"],
+        descriptionKeys: ["content", "description"],
+        idKeys: ["code", "id"],
+        dateKeys: ["transactionDate"],
+      }));
       return txs;
     }
   }
 
   // PayOS format
-  if (body && body.data && typeof body.data === 'object' && !Array.isArray(body.data)) {
+  if (isRecord(body) && isRecord(body.data)) {
     if (body.data.amount !== undefined && body.data.description !== undefined) {
-      txs.push({
-        amount: Number(body.data.amount || 0),
-        description: body.data.description || '',
-        transactionId: String(body.data.reference || body.data.orderCode || ''),
-        receivedDate: new Date().toISOString()
-      });
+      txs.push(transactionFromRecord(body.data, {
+        amountKeys: ["amount"],
+        descriptionKeys: ["description"],
+        idKeys: ["reference", "orderCode"],
+        dateKeys: [],
+      }));
       return txs;
     }
   }
 
   // Casso standard format
-  if (body && Array.isArray(body.data)) {
-    body.data.forEach((item: any) => {
-      txs.push({
-        amount: Number(item.amount || 0),
-        description: item.description || '',
-        transactionId: String(item.tid || item.id || ''),
-        receivedDate: item.when || new Date().toISOString()
-      });
+  if (isRecord(body) && Array.isArray(body.data)) {
+    body.data.forEach((item) => {
+      if (!isRecord(item)) return;
+      txs.push(transactionFromRecord(item, {
+        amountKeys: ["amount"],
+        descriptionKeys: ["description"],
+        idKeys: ["tid", "id"],
+        dateKeys: ["when"],
+      }));
     });
     return txs;
   }
 
   // Casso webhook events format
-  if (body && Array.isArray(body.events)) {
-    body.events.forEach((event: any) => {
-      if (event.data && Array.isArray(event.data)) {
-        event.data.forEach((item: any) => {
-          txs.push({
-            amount: Number(item.amount || 0),
-            description: item.description || '',
-            transactionId: String(item.tid || item.id || ''),
-            receivedDate: item.when || new Date().toISOString()
-          });
+  if (isRecord(body) && Array.isArray(body.events)) {
+    body.events.forEach((event) => {
+      if (isRecord(event) && Array.isArray(event.data)) {
+        event.data.forEach((item) => {
+          if (!isRecord(item)) return;
+          txs.push(transactionFromRecord(item, {
+            amountKeys: ["amount"],
+            descriptionKeys: ["description"],
+            idKeys: ["tid", "id"],
+            dateKeys: ["when"],
+          }));
         });
       }
     });
@@ -95,13 +156,14 @@ function extractTransactions(body: any): Transaction[] {
 
   // Fallback: array of transactions directly
   if (Array.isArray(body)) {
-    body.forEach((item: any) => {
-      txs.push({
-        amount: Number(item.amount || item.transferAmount || 0),
-        description: item.description || item.content || '',
-        transactionId: String(item.tid || item.code || item.id || ''),
-        receivedDate: item.when || item.transactionDate || new Date().toISOString()
-      });
+    body.forEach((item) => {
+      if (!isRecord(item)) return;
+      txs.push(transactionFromRecord(item, {
+        amountKeys: ["amount", "transferAmount"],
+        descriptionKeys: ["description", "content"],
+        idKeys: ["tid", "code", "id"],
+        dateKeys: ["when", "transactionDate"],
+      }));
     });
     return txs;
   }
@@ -145,7 +207,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
+    const body: unknown = await request.json();
     console.log("[Payment Webhook] Request body:", safeStringify(body));
 
     const transactions = extractTransactions(body);
@@ -155,7 +217,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, message: "No valid transactions found in payload" });
     }
 
-    const results = [];
+    const results: ProcessingResult[] = [];
 
     for (const tx of transactions) {
       const { amount, description, transactionId, receivedDate } = tx;
@@ -215,12 +277,18 @@ export async function POST(request: NextRequest) {
       }
 
       // Check for duplicate transaction processing by querying existing revenues
-      const { data: existingRevenue } = await supabase
+      const { data: existingRevenue, error: existingRevenueErr } = await supabase
         .from("revenue")
         .select("id")
         .eq("booking_id", booking.id)
         .like("notes", `%${transactionId}%`)
         .maybeSingle();
+
+      if (existingRevenueErr) {
+        console.error(`[Payment Webhook] Failed to check duplicate transaction for "${bookingNumber}":`, existingRevenueErr);
+        results.push({ transactionId, bookingNumber, status: "failed", reason: "Failed to check duplicate transaction" });
+        continue;
+      }
 
       if (existingRevenue) {
         console.log(`[Payment Webhook] Skip Transaction ${transactionId}: Transaction already processed (Revenue ID: ${existingRevenue.id})`);
@@ -366,8 +434,9 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, processedCount: results.filter(r => r.status === "success").length, details: results });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[Payment Webhook] Exception error in POST route:", error);
+    console.error("[Payment Webhook] Exception message:", getErrorMessage(error));
     return NextResponse.json({ error: "Đã xảy ra lỗi hệ thống." }, { status: 500 });
   }
 }
