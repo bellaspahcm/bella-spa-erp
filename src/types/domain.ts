@@ -46,7 +46,7 @@ export interface KtvSessionMatrixRecord {
   id: string;
   name: string;
   isConfirmed?: boolean;
-  [packageName: string]: any; // Dành cho các gói dịch vụ động và các trường khác
+  [packageName: string]: string | number | boolean | null | undefined; // Dành cho các gói dịch vụ động và các trường khác
 }
 
 export interface KtvSessionMatrix {
@@ -131,7 +131,9 @@ export interface HqTenantRecord {
   subscription_expires_at?: string | null;
   parent_tenant_id?: string | null;
   franchise_agreement_date?: string | null;
-}export interface HqAuditLogRecord {
+}
+
+export interface HqAuditLogRecord {
   id: string;
   created_at: string;
   changed_by_id: string | null;
@@ -139,8 +141,8 @@ export interface HqTenantRecord {
   action: 'INSERT' | 'UPDATE' | 'DELETE' | string;
   table_name: string;
   record_id: string;
-  old_data: any;
-  new_data: any;
+  old_data: Json | null;
+  new_data: Json | null;
   tenant_id: string;
   tenant_name?: string;
 }

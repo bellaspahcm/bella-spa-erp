@@ -6,6 +6,16 @@ import { checkHqAuth } from './hq-actions';
 import { HqAuditLogFilters, HqAuditLogRecord } from '@/types/domain';
 import type { Database, Json } from '@/types/database.types';
 
+type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'];
+type UserNameProjection = Pick<Database['public']['Tables']['users']['Row'], 'id' | 'full_name'>;
+type HqAuditLogRow = AuditLogRow & {
+  users?: Pick<UserNameProjection, 'full_name'> | null;
+  tenants?: { name: string | null } | null;
+};
+type BranchAuditLogRow = AuditLogRow & {
+  users?: Pick<UserNameProjection, 'full_name'> | null;
+};
+
 export async function getHqAuditLogs(filters: HqAuditLogFilters = {}): Promise<HqAuditLogRecord[]> {
   const authResult = await checkHqAuth();
   if (!authResult.authorized) {
@@ -55,7 +65,9 @@ export async function getHqAuditLogs(filters: HqAuditLogFilters = {}): Promise<H
     throw new Error(`[getHqAuditLogs] audit_logs query failed: ${error.message}`);
   }
 
-  return (data || []).map((log: any) => ({
+  const logs = (data || []) as HqAuditLogRow[];
+
+  return logs.map((log) => ({
     id: log.id,
     created_at: log.created_at,
     changed_by_id: log.changed_by_id,
@@ -105,7 +117,8 @@ export async function getAuditUsers(): Promise<{ id: string; name: string }[]> {
     throw new Error(`[getAuditUsers] users query failed: ${error.message}`);
   }
 
-  return (data || []).map((u: any) => ({ id: u.id, name: u.full_name || 'Khong ten' }));
+  const users = (data || []) as UserNameProjection[];
+  return users.map((user) => ({ id: user.id, name: user.full_name || 'Khong ten' }));
 }
 
 export async function getAuditLogs() {
@@ -134,7 +147,9 @@ export async function getAuditLogs() {
     return [];
   }
 
-  return data.map((log: any) => ({
+  const logs = data as BranchAuditLogRow[];
+
+  return logs.map((log) => ({
     id: log.id,
     user_name: log.users?.full_name || 'He thong',
     action: log.action,
@@ -180,6 +195,7 @@ export async function recordAuditLog(payload: {
   return { success: true };
 }
 
-export async function checkMonthLock(month?: string): Promise<{ isLocked: boolean }> {
+export async function checkMonthLock(_month?: string): Promise<{ isLocked: boolean }> {
+  void _month;
   return { isLocked: false };
 }
