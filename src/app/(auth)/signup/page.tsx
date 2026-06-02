@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase-client';
 import { registerNewTenant } from '@/services/onboarding-actions';
+import Image from 'next/image';
 import { 
   Store, 
   User, 
@@ -20,6 +21,10 @@ import {
   Zap
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Có lỗi xảy ra. Vui lòng thử lại.';
+}
 
 export default function SignupPage() {
   const [step, setStep] = useState(1);
@@ -106,9 +111,9 @@ export default function SignupPage() {
         }
         window.location.href = '/dashboard';
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Signup submit error:', err);
-      setError(err?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+      setError(getErrorMessage(err));
       setLoading(false);
     }
   };
@@ -134,7 +139,7 @@ export default function SignupPage() {
               whileHover={{ scale: 1.05 }}
               className="mb-4 drop-shadow-xl"
             >
-              <img src="/logo.png" alt="Bella Spa" className="h-16 w-auto object-contain" />
+              <Image src="/logo.png" alt="Bella Spa" width={64} height={64} className="h-16 w-auto object-contain" />
             </motion.div>
             <h1 className="text-2xl font-black text-foreground tracking-tight uppercase">
               ĐĂNG KÝ HỆ THỐNG BELLA SPA
