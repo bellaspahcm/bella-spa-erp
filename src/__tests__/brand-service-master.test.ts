@@ -231,6 +231,40 @@ describe('Brand Service Master System (Phase 2)', () => {
     });
   });
 
+  describe('distributeTemplateToTenants', () => {
+    it('records tenant failure and skips package mutation when existing distribution lookup fails', async () => {
+      mockCheckHqAuth.mockResolvedValue({ authorized: true, user: hqAdminUser });
+
+      const templateQuery = new MockQueryBuilder({
+        id: 'template-1',
+        name: 'VIP Template',
+        price: 1000000,
+        duration: '90 phut',
+        total_sessions: 10,
+        details: [],
+        offer: '',
+        ktv_commission: 150000,
+        price_cap: 1200000,
+        price_floor: 800000,
+        allowed_franchise_override: true,
+      });
+      const lookupQuery = new MockQueryBuilder(null, { message: 'distribution lookup failed' });
+
+      mockFrom
+        .mockReturnValueOnce(templateQuery)
+        .mockReturnValueOnce(lookupQuery);
+
+      const result = await distributeTemplateToTenants('template-1', ['branch-1']);
+
+      expect(result.success).toBe(true);
+      expect(result.results).toEqual([
+        { tenantId: 'branch-1', success: false, error: 'distribution lookup failed' },
+      ]);
+      expect(lookupQuery.updateSpy).not.toHaveBeenCalled();
+      expect(lookupQuery.insertSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe('overrideTenantPackagePrice', () => {
     it('should allow price override if override is allowed and price is within bounds', async () => {
       mockGetCurrentUser.mockResolvedValue(tenantAdminUser);
