@@ -7,6 +7,22 @@ import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 
+interface TelegramWebhookPayload {
+  message?: {
+    text?: unknown;
+    chat?: {
+      id?: unknown;
+    } | null;
+  } | null;
+}
+
+interface AnomalySummary {
+  name: string;
+  gpsAnomaly: number;
+  late: number;
+  deductions: number;
+}
+
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -24,6 +40,36 @@ function secureCompare(a: string, b: string): boolean {
   const bufB = Buffer.from(b);
   if (bufA.length !== bufB.length) return false;
   return timingSafeEqual(bufA, bufB);
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Lỗi hệ thống trong Telegram webhook.";
+}
+
+function readNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function normalizeAnomaly(value: unknown): AnomalySummary | string {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return "Bất thường chưa xác định";
+
+  const anomaly = value as Record<string, unknown>;
+  return {
+    name: typeof anomaly.name === "string" ? anomaly.name : "Bất thường chưa xác định",
+    gpsAnomaly: readNumber(anomaly.gpsAnomaly),
+    late: readNumber(anomaly.late),
+    deductions: readNumber(anomaly.deductions),
+  };
+}
+
+function formatAnomalyLine(value: unknown, idx: number) {
+  const anomaly = normalizeAnomaly(value);
+  if (typeof anomaly === "string") {
+    return `${idx + 1}. ${anomaly}\n`;
+  }
+
+  return `${idx + 1}. *${anomaly.name}*: ${anomaly.gpsAnomaly > 0 ? `Lệch GPS ${anomaly.gpsAnomaly} ca.` : ''} ${anomaly.late > 0 ? `Đi muộn ${anomaly.late} ca.` : ''} ${anomaly.deductions > 0 ? `Khấu trừ ${anomaly.deductions.toLocaleString('vi-VN')}đ.` : ''}\n`;
 }
 
 /**
@@ -47,7 +93,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const payload = await request.json();
+    const payload = (await request.json()) as TelegramWebhookPayload;
     const message = payload?.message;
 
     if (!message || !message.text || !message.chat) {
@@ -139,8 +185,8 @@ export async function POST(request: NextRequest) {
 
     if (result.analysis.anomaliesFound && result.analysis.anomaliesFound.length > 0) {
       replyText += `*⚠️ Phát hiện Bất thường:* \n`;
-      result.analysis.anomaliesFound.forEach((a: any, idx: number) => {
-        replyText += `${idx + 1}. *${a.name}*: ${a.gpsAnomaly > 0 ? `Lệch GPS ${a.gpsAnomaly} ca.` : ''} ${a.late > 0 ? `Đi muộn ${a.late} ca.` : ''} ${a.deductions > 0 ? `Khấu trừ ${a.deductions.toLocaleString('vi-VN')}đ.` : ''}\n`;
+      result.analysis.anomaliesFound.forEach((anomaly, idx) => {
+        replyText += formatAnomalyLine(anomaly, idx);
       });
       replyText += `\n`;
     }
@@ -182,9 +228,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, status: "success" });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("[Telegram Webhook] Ngoại lệ nghiêm trọng:", err);
     // Trả về 200 ok nhưng báo lỗi để tránh Telegram retry liên tục làm treo webhook
-    return NextResponse.json({ ok: false, error: err?.message }, { status: 200 });
+    return NextResponse.json({ ok: false, error: getErrorMessage(err) }, { status: 200 });
   }
 }
