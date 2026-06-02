@@ -36,6 +36,16 @@ import { reusePackage, syncBookingProgress } from '@/modules/booking/actions/lif
 import { createClient } from '@/lib/supabase-client';
 import { SessionBooking, SessionLog } from '../types';
 
+function getErrorMessage(error: unknown, fallback = 'Khong ro nguyen nhan') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string') return error || fallback;
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message) return message;
+  }
+  return fallback;
+}
+
 interface SessionLogsDetailsModalProps {
   isOpen: boolean;
   activeBooking: SessionBooking | null;
@@ -71,7 +81,7 @@ export function SessionLogsDetailsModal({
   const calendarCells = useMemo(() => {
     if (!sessionLogs || sessionLogs.length === 0) return [];
     
-    // Fallback: If any log is missing assigned_date, just render consecutively
+    // Fallback: If a log is missing assigned_date, just render consecutively
     const hasMissingDates = sessionLogs.some(log => !log.assigned_date);
     if (hasMissingDates) return sessionLogs;
 
@@ -244,9 +254,9 @@ export function SessionLogsDetailsModal({
       } else if (result.error) {
         toast.error('Lỗi lưu thay đổi: ' + result.error);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Update failed:', error);
-      toast.error('Lỗi hệ thống: ' + (error.message || 'Không rõ nguyên nhân'));
+      toast.error('Lỗi hệ thống: ' + getErrorMessage(error, 'Không rõ nguyên nhân'));
     } finally {
       setIsSavingNote(false);
     }
@@ -274,9 +284,9 @@ export function SessionLogsDetailsModal({
       } else if (result.error) {
         toast.error('Lỗi: ' + result.error);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Status change failed:', error);
-      toast.error('Lỗi: ' + (error.message || 'Không rõ'));
+      toast.error('Lỗi: ' + getErrorMessage(error, 'Không rõ'));
     } finally {
       setIsSavingNote(false);
     }
