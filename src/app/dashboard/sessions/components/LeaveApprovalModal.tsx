@@ -20,6 +20,16 @@ import { getPendingLeaveRequests, getKTVConflictSessions, approveLeaveRequest, r
 import { getUsers } from '@/services/user-actions';
 import { LeaveRequest, ConflictSession, KtvUser } from '../types';
 
+function getErrorMessage(error: unknown, fallback = 'Da xay ra loi') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string') return error || fallback;
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message) return message;
+  }
+  return fallback;
+}
+
 interface LeaveApprovalModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -115,9 +125,9 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
       } else {
         toast.error(res?.error || "Phê duyệt thất bại");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Đã xảy ra lỗi");
+      toast.error(getErrorMessage(err));
     } finally {
       setIsApprovingLeave(false);
     }
@@ -145,9 +155,9 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
       } else {
         toast.error(res?.error || "Từ chối thất bại");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Đã xảy ra lỗi");
+      toast.error(getErrorMessage(err));
     } finally {
       setIsRejectingLeave(false);
     }
@@ -330,8 +340,8 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
                                       <PremiumSelect
                                         value={reassignmentMapping[session.id] || ''}
                                         options={allKTVs
-                                          .filter((u: any) => u.id !== selectedLeave.user_id)
-                                          .map((u: any) => ({
+                                          .filter((u) => u.id !== selectedLeave.user_id)
+                                          .map((u) => ({
                                             value: u.id,
                                             label: u.full_name,
                                             icon: <UserCircle className="w-4 h-4" />

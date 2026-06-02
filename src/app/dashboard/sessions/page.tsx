@@ -32,6 +32,16 @@ import { SessionCard } from './components/SessionCard';
 import { SessionLogsDetailsModal } from './components/SessionLogsDetailsModal';
 import { LeaveApprovalModal } from './components/LeaveApprovalModal';
 
+function getErrorMessage(error: unknown, fallback = 'Loi khong xac dinh') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string') return error || fallback;
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message) return message;
+  }
+  return fallback;
+}
+
 function SessionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -91,11 +101,11 @@ function SessionsContent() {
       setSessions(data || []);
       applyFilters(data || [], searchQuery, statusFilter, sortFilter);
       return data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load sessions:', error);
       setSessions([]);
       applyFilters([], searchQuery, statusFilter, sortFilter);
-      toast.error('Khong the tai danh sach buoi dich vu: ' + (error.message || 'Loi khong xac dinh'));
+      toast.error('Khong the tai danh sach buoi dich vu: ' + getErrorMessage(error));
       return [];
     } finally {
       setIsSyncing(false);
@@ -260,9 +270,9 @@ function SessionsContent() {
     
     try {
       const logs = await getSessionLogs(bookingId);
-      const nextSession = logs.find((log: any) => ['scheduled', 'in_progress'].includes(log.status));
+      const nextSession = logs.find((log) => log.status && ['scheduled', 'in_progress'].includes(log.status));
       
-      if (nextSession) {
+      if (nextSession?.id) {
         // Save note if provided
         if (quickNote) {
           await saveSessionNote(nextSession.id, quickNote);
@@ -288,9 +298,9 @@ function SessionsContent() {
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Update failed:', error);
-      setToastMessage('Lỗi hệ thống: ' + (error.message || 'Không rõ nguyên nhân'));
+      setToastMessage('Lỗi hệ thống: ' + getErrorMessage(error, 'Không rõ nguyên nhân'));
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);
     } finally {
