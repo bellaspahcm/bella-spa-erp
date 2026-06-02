@@ -10,8 +10,7 @@ import {
   RefreshCw, 
   ArrowRight,
   QrCode,
-  X,
-  CreditCard
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -21,6 +20,16 @@ import {
   simulateFranchiseRoyaltyPayment, 
   FranchiseRoyaltyInvoice 
 } from '@/services/franchise-actions';
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message.trim() ? message : fallback;
+  }
+  return fallback;
+}
 
 export default function HqBillingTab() {
   const [invoices, setInvoices] = useState<FranchiseRoyaltyInvoice[]>([]);
@@ -35,15 +44,34 @@ export default function HqBillingTab() {
     try {
       const data = await getFranchiseRoyaltyInvoices();
       setInvoices(data);
-    } catch (err: any) {
-      toast.error('Không thể tải danh sách hóa đơn: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Không thể tải danh sách hóa đơn: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadInvoices();
+    let cancelled = false;
+
+    async function loadInitialInvoices() {
+      try {
+        const data = await getFranchiseRoyaltyInvoices();
+        if (!cancelled) setInvoices(data);
+      } catch (err: unknown) {
+        if (!cancelled) {
+          toast.error('Không thể tải danh sách hóa đơn: ' + getErrorMessage(err));
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadInitialInvoices();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSimulatePayment = async () => {
@@ -61,8 +89,8 @@ export default function HqBillingTab() {
       } else {
         toast.error(res.error || 'Thanh toán thất bại.');
       }
-    } catch (err: any) {
-      toast.error('Lỗi cổng thanh toán sandbox: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Lỗi cổng thanh toán sandbox: ' + getErrorMessage(err));
     } finally {
       setPaying(false);
     }
