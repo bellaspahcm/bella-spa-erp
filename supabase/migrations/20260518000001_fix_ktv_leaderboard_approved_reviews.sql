@@ -1,6 +1,8 @@
 -- Migration: Fix get_ktv_leaderboard to only aggregate approved reviews
 -- Date: 2026-05-18
 
+DROP FUNCTION IF EXISTS public.get_ktv_leaderboard(uuid, date);
+
 CREATE OR REPLACE FUNCTION public.get_ktv_leaderboard(p_tenant_id uuid, p_month date)
  RETURNS TABLE(ktv_id uuid, full_name text, sessions bigint, average_rating numeric, commissions numeric, total_kpi_bonus numeric, rank bigint)
  LANGUAGE plpgsql

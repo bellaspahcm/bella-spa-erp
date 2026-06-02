@@ -8,6 +8,8 @@ This worktree is the isolated lab for core-platform conversion:
 - Branch: `core-platform-lab`
 - Baseline tag: `pre-core-platform-baseline-2026-06-03`
 - Vercel project: `bella-erp-core-platform`
+- Supabase lab project: `bella-erp-core-platform-lab`
+- Supabase lab ref: `avinnjksfgmsriaahqmy`
 
 The lab must never use the production Supabase project or production Vercel project.
 
@@ -17,16 +19,25 @@ The lab must never use the production Supabase project or production Vercel proj
 - Vercel project is linked locally via `.vercel/project.json`.
 - `.vercel/` is ignored by git.
 - Vercel project currently has no environment variables.
-- Supabase CLI is installed but not logged in on this machine for project management.
+- Supabase CLI is authenticated via `SUPABASE_ACCESS_TOKEN` from User env.
+- Supabase lab project is linked via `supabase/.temp/project-ref`.
+- Supabase lab migrations are pushed and `supabase db push` reports the remote database is up to date.
+- Vercel project environment variables are still not configured.
 
 ## Required Supabase Lab Project
 
-Create a separate Supabase project before deploying the lab.
+Use the separate Supabase project before deploying the lab.
 
 Recommended project name:
 
 ```text
 bella-erp-core-platform-lab
+```
+
+Current project ref:
+
+```text
+avinnjksfgmsriaahqmy
 ```
 
 Required values after project creation:
@@ -74,6 +85,10 @@ npx.cmd supabase link --project-ref <LAB_PROJECT_REF>
 ```powershell
 npx.cmd supabase db push
 ```
+
+Migration note:
+
+The legacy migration chain originally could not run from an empty Supabase project because several early migrations depended on production-era/manual schema objects. The lab branch now carries compatibility fixes in the migration history so a new lab database can be brought up by `supabase db push`.
 
 5. Seed only safe lab/demo data.
 

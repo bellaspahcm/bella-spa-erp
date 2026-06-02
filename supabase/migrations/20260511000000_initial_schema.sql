@@ -16,6 +16,19 @@ CREATE TABLE IF NOT EXISTS tenants (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 17. PACKAGES
+CREATE TABLE IF NOT EXISTS packages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    description TEXT,
+    full_price NUMERIC DEFAULT 0,
+    total_sessions INTEGER DEFAULT 0,
+    tenant_id UUID,
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 1. USERS
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -31,11 +44,65 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Compatibility stub for early migrations that still referenced profiles.
+CREATE TABLE IF NOT EXISTS profiles (
+    id UUID PRIMARY KEY,
+    tenant_id UUID REFERENCES tenants(id)
+);
+
+-- Compatibility stubs removed by the later purge migration.
+CREATE TABLE IF NOT EXISTS employees (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID REFERENCES tenants(id)
+);
+
+CREATE TABLE IF NOT EXISTS projects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID REFERENCES tenants(id)
+);
+
+CREATE TABLE IF NOT EXISTS units (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID REFERENCES tenants(id)
+);
+
+CREATE TABLE IF NOT EXISTS sale_contracts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID REFERENCES tenants(id)
+);
+
+CREATE OR REPLACE FUNCTION public.get_my_tenant_id()
+RETURNS UUID
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+AS $$
+    SELECT tenant_id FROM public.users WHERE id = auth.uid() LIMIT 1;
+$$;
+
+-- 18. INVENTORY_ITEMS
+CREATE TABLE IF NOT EXISTS inventory_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id),
+    name TEXT NOT NULL,
+    sku TEXT,
+    unit TEXT NOT NULL DEFAULT 'cai',
+    stock_level NUMERIC NOT NULL DEFAULT 0,
+    min_stock_level NUMERIC NOT NULL DEFAULT 0,
+    price_per_unit NUMERIC NOT NULL DEFAULT 0,
+    category TEXT,
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_inventory_items_tenant_id ON inventory_items(tenant_id);
+
 -- 2. CUSTOMERS
 CREATE TABLE IF NOT EXISTS customers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     phone TEXT UNIQUE NOT NULL,
     name_mother TEXT NOT NULL,
+    full_name TEXT,
     name_baby TEXT,
     dob_baby DATE,
     dob_expected DATE,
@@ -55,6 +122,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     booking_number TEXT UNIQUE NOT NULL, 
     customer_id UUID REFERENCES customers(id) NOT NULL,
     package_id UUID, 
+    package_name TEXT,
     status TEXT CHECK (status IN ('inquiry', 'deposit_pending', 'booked', 'in_progress', 'completed', 'cancelled')) DEFAULT 'inquiry',
     deposit_amount DECIMAL DEFAULT 0,
     full_price DECIMAL DEFAULT 0,
@@ -86,6 +154,33 @@ CREATE TABLE IF NOT EXISTS session_logs (
 );
 CREATE INDEX IF NOT EXISTS idx_session_logs_booking_id ON session_logs(booking_id);
 CREATE INDEX IF NOT EXISTS idx_session_logs_completed_date ON session_logs(completed_date);
+
+-- 19. INVENTORY_LOGS
+CREATE TABLE IF NOT EXISTS inventory_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id),
+    item_id UUID NOT NULL REFERENCES inventory_items(id),
+    change_amount NUMERIC NOT NULL,
+    reason TEXT NOT NULL DEFAULT 'manual',
+    session_log_id UUID REFERENCES session_logs(id),
+    notes TEXT,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_tenant_id ON inventory_logs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_logs_item_id ON inventory_logs(item_id);
+
+-- 20. PACKAGE_MATERIALS
+CREATE TABLE IF NOT EXISTS package_materials (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id),
+    package_id UUID NOT NULL REFERENCES packages(id),
+    item_id UUID NOT NULL REFERENCES inventory_items(id),
+    quantity_per_session NUMERIC NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_package_materials_package_id ON package_materials(package_id);
+CREATE INDEX IF NOT EXISTS idx_package_materials_item_id ON package_materials(item_id);
 
 -- 5. SESSION_REVIEWS
 CREATE TABLE IF NOT EXISTS session_reviews (
@@ -145,6 +240,7 @@ CREATE TABLE IF NOT EXISTS revenue (
     revenue_type TEXT CHECK (revenue_type IN ('deposit', 'session_completed', 'additional')),
     payment_method TEXT CHECK (payment_method IN ('cash', 'bank_transfer', 'zalo_pay', 'momo')),
     received_date DATE NOT NULL,
+    revenue_date DATE,
     recorded_by_id UUID REFERENCES users(id),
     status TEXT CHECK (status IN ('pending', 'confirmed')) DEFAULT 'pending',
     notes TEXT,
@@ -231,10 +327,16 @@ CREATE TABLE IF NOT EXISTS chat_threads (
 CREATE TABLE IF NOT EXISTS chat_messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     thread_id UUID REFERENCES chat_threads(id) NOT NULL,
+    customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
     sender_id UUID REFERENCES users(id),
+    sender_type TEXT DEFAULT 'staff',
+    sender_role TEXT,
+    message TEXT DEFAULT '',
     content TEXT,
     message_type TEXT CHECK (message_type IN ('text', 'system', 'file')) DEFAULT 'text',
     file_url TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    metadata JSONB DEFAULT '{}'::jsonb,
     edited_at TIMESTAMPTZ,
     deleted_at TIMESTAMPTZ,
     tenant_id UUID REFERENCES tenants(id),

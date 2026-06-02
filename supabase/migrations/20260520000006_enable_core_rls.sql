@@ -1,11 +1,10 @@
--- Bật RLS cho các bảng core
+-- Enable RLS for core tables.
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE session_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE revenue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 
--- Tạo các policy cho bookings
-CREATE POLICY "Admin có toàn quyền trên bookings của chi nhánh"
+CREATE POLICY "Admin can manage bookings in tenant"
     ON bookings
     FOR ALL
     TO authenticated
@@ -13,7 +12,7 @@ CREATE POLICY "Admin có toàn quyền trên bookings của chi nhánh"
         tenant_id = (SELECT tenant_id FROM users WHERE id = auth.uid() AND role = 'admin')
     );
 
-CREATE POLICY "KTV xem bookings được phân công"
+CREATE POLICY "KTV can view assigned bookings"
     ON bookings
     FOR SELECT
     TO authenticated
@@ -21,7 +20,7 @@ CREATE POLICY "KTV xem bookings được phân công"
         assigned_ktv_id = auth.uid()
     );
 
-CREATE POLICY "KTV cập nhật bookings được phân công"
+CREATE POLICY "KTV can update assigned bookings"
     ON bookings
     FOR UPDATE
     TO authenticated
@@ -29,8 +28,7 @@ CREATE POLICY "KTV cập nhật bookings được phân công"
         assigned_ktv_id = auth.uid()
     );
 
--- Tạo các policy cho session_logs
-CREATE POLICY "Admin có toàn quyền trên session_logs của chi nhánh"
+CREATE POLICY "Admin can manage session logs in tenant"
     ON session_logs
     FOR ALL
     TO authenticated
@@ -38,24 +36,23 @@ CREATE POLICY "Admin có toàn quyền trên session_logs của chi nhánh"
         tenant_id = (SELECT tenant_id FROM users WHERE id = auth.uid() AND role = 'admin')
     );
 
-CREATE POLICY "KTV xem session_logs được phân công"
+CREATE POLICY "KTV can view completed session logs"
     ON session_logs
     FOR SELECT
     TO authenticated
     USING (
-        assigned_ktv_id = auth.uid() OR completed_by_ktv_id = auth.uid()
+        completed_by_ktv_id = auth.uid()
     );
 
-CREATE POLICY "KTV cập nhật session_logs được phân công"
+CREATE POLICY "KTV can update completed session logs"
     ON session_logs
     FOR UPDATE
     TO authenticated
     USING (
-        assigned_ktv_id = auth.uid() OR completed_by_ktv_id = auth.uid()
+        completed_by_ktv_id = auth.uid()
     );
 
--- Tạo các policy cho revenue (Chỉ Admin)
-CREATE POLICY "Admin quản lý revenue"
+CREATE POLICY "Admin can manage revenue"
     ON revenue
     FOR ALL
     TO authenticated
@@ -63,8 +60,7 @@ CREATE POLICY "Admin quản lý revenue"
         tenant_id = (SELECT tenant_id FROM users WHERE id = auth.uid() AND role = 'admin')
     );
 
--- Tạo các policy cho expenses (Chỉ Admin)
-CREATE POLICY "Admin quản lý expenses"
+CREATE POLICY "Admin can manage expenses"
     ON expenses
     FOR ALL
     TO authenticated
@@ -72,15 +68,13 @@ CREATE POLICY "Admin quản lý expenses"
         tenant_id = (SELECT tenant_id FROM users WHERE id = auth.uid() AND role = 'admin')
     );
 
--- Cho phép Guest (Anon) tạo bookings từ Landing Page
-CREATE POLICY "Guest tạo bookings"
+CREATE POLICY "Guest can create bookings"
     ON bookings
     FOR INSERT
     TO anon
     WITH CHECK (true);
-    
--- Cho phép Guest (Anon) xem bookings vừa tạo bằng ID (nếu cần cho webhook hoặc success page)
-CREATE POLICY "Guest xem bookings"
+
+CREATE POLICY "Guest can view bookings"
     ON bookings
     FOR SELECT
     TO anon

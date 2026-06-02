@@ -1,4 +1,6 @@
 -- Migration: Blended KTV monthly rating
+DROP FUNCTION IF EXISTS public.get_ktv_leaderboard(uuid, date);
+
 -- Replaces the hard-coded COALESCE(..., 5.0) fallback with a real formula:
 --   composite = 0.6 * customer_rating + 0.4 * discipline_score
 -- Customer rating: AVG of approved session_reviews.rating in the month.
