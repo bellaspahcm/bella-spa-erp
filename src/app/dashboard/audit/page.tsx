@@ -15,22 +15,71 @@ import {
   ArrowRight,
   Info
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import type { Database, Json } from '@/types/database.types';
+
+type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE' | 'UNKNOWN';
+type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'] & {
+  users?: { full_name: string | null } | null;
+};
+type JsonRecord = { [key: string]: Json | undefined };
 
 interface AuditLog {
   id: string;
   user_name: string;
-  action: 'INSERT' | 'UPDATE' | 'DELETE';
+  action: AuditAction;
   table_name: string;
   record_id: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  old_data: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  new_data: any;
+  old_data: JsonRecord | null;
+  new_data: JsonRecord | null;
   created_at: string;
+}
+
+function isJsonRecord(value: Json | null | undefined): value is JsonRecord {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toJsonRecord(value: Json | null): JsonRecord | null {
+  return isJsonRecord(value) ? value : null;
+}
+
+function toAuditAction(action: string): AuditAction {
+  if (action === 'INSERT' || action === 'UPDATE' || action === 'DELETE') return action;
+  return 'UNKNOWN';
+}
+
+function getActionLabel(action: AuditAction) {
+  switch (action) {
+    case 'INSERT':
+      return 'Thêm mới';
+    case 'UPDATE':
+      return 'Cập nhật';
+    case 'DELETE':
+      return 'Xóa';
+    default:
+      return 'Không rõ';
+  }
+}
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string') return error || fallback;
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message) return message;
+  }
+  return fallback;
+}
+
+function formatJsonText(value: Json | undefined, fallback = 'Trống') {
+  if (value === null || value === undefined || value === '') return fallback;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return JSON.stringify(value);
 }
 
 const FIELD_TRANSLATIONS: Record<string, string> = {
@@ -256,11 +305,8 @@ const EXCLUDED_KEYS = [
   'share_token'
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const formatReadableValueOuter = (key: string, val: any) => String(val);
-
 export default function AuditPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -278,10 +324,10 @@ export default function AuditPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const formatReadableValue = (key: string, val: any) => {
+  const formatReadableValue = (key: string, val: Json | undefined) => {
     if (val === null || val === undefined || val === '') return 'Trống';
     if (typeof val === 'boolean') return val ? 'Có' : 'Không';
+    if (typeof val === 'object') return JSON.stringify(val);
     
     // Format currency
     if (
@@ -325,7 +371,7 @@ export default function AuditPage() {
         const amount = formatReadableValue('amount', log.new_data.amount);
         const method = formatReadableValue('payment_method', log.new_data.payment_method);
         const type = formatReadableValue('revenue_type', log.new_data.revenue_type);
-        const notes = log.new_data.notes ? ` (${log.new_data.notes})` : '';
+        const notes = log.new_data.notes ? ` (${formatJsonText(log.new_data.notes)})` : '';
         return (
           <span>
             Đã ghi nhận doanh thu <strong className="text-emerald-600 font-semibold">{amount}</strong> (Loại: <span className="font-medium text-slate-700">{type}</span>, Hình thức: <span className="font-medium text-slate-700">{method}</span>){notes}.
@@ -345,9 +391,9 @@ export default function AuditPage() {
       }
       
       if (log.table_name === 'session_logs') {
-        const num = log.new_data.session_number;
-        const date = log.new_data.assigned_date;
-        const time = log.new_data.assigned_time;
+        const num = formatJsonText(log.new_data.session_number);
+        const date = formatJsonText(log.new_data.assigned_date);
+        const time = formatJsonText(log.new_data.assigned_time);
         const ktv = log.new_data.completed_by_ktv_id ? ` cho KTV ${formatReadableValue('completed_by_ktv_id', log.new_data.completed_by_ktv_id)}` : '';
         return (
           <span>
@@ -357,9 +403,9 @@ export default function AuditPage() {
       }
 
       if (log.table_name === 'customers') {
-        const mother = log.new_data.name_mother || 'Trống';
-        const baby = log.new_data.name_baby ? ` (Bé: ${log.new_data.name_baby})` : '';
-        const phone = log.new_data.phone ? ` - SĐT: ${log.new_data.phone}` : '';
+        const mother = formatJsonText(log.new_data.name_mother);
+        const baby = log.new_data.name_baby ? ` (Bé: ${formatJsonText(log.new_data.name_baby)})` : '';
+        const phone = log.new_data.phone ? ` - SĐT: ${formatJsonText(log.new_data.phone)}` : '';
         return (
           <span>
             Đã đăng ký khách hàng mới: Mẹ <strong className="text-slate-800 font-semibold">{mother}</strong>{baby}{phone}.
@@ -368,7 +414,7 @@ export default function AuditPage() {
       }
 
       if (log.table_name === 'users') {
-        const name = log.new_data.full_name;
+        const name = formatJsonText(log.new_data.full_name);
         const role = formatReadableValue('role', log.new_data.role);
         return (
           <span>
@@ -380,7 +426,7 @@ export default function AuditPage() {
       if (log.table_name === 'expenses') {
         const amount = formatReadableValue('amount', log.new_data.amount);
         const cat = formatReadableValue('category', log.new_data.category);
-        const notes = log.new_data.notes ? ` (${log.new_data.notes})` : '';
+        const notes = log.new_data.notes ? ` (${formatJsonText(log.new_data.notes)})` : '';
         return (
           <span>
             Đã ghi nhận chi phí <strong className="text-rose-600 font-semibold">{amount}</strong> cho mục <span className="font-medium text-slate-700">{cat}</span>{notes}.
@@ -389,8 +435,8 @@ export default function AuditPage() {
       }
 
       if (log.table_name === 'tenants') {
-        const name = log.new_data.name;
-        const addr = log.new_data.address ? ` tại ${log.new_data.address}` : '';
+        const name = formatJsonText(log.new_data.name);
+        const addr = log.new_data.address ? ` tại ${formatJsonText(log.new_data.address)}` : '';
         return (
           <span>
             Đã khởi tạo đối tác chi nhánh mới: <strong className="text-slate-800 font-semibold">{name}</strong>{addr}.
@@ -480,11 +526,16 @@ export default function AuditPage() {
     return <span>Không có thông tin chi tiết.</span>;
   };
 
-  const fetchReferenceMaps = async () => {
+  const fetchReferenceMaps = useCallback(async () => {
     try {
-      const { data: users } = await supabase.from('users').select('id, full_name');
-      const { data: packages } = await supabase.from('packages').select('id, name');
-      const { data: customers } = await supabase.from('customers').select('id, name_mother, name_baby');
+      const { data: users, error: usersError } = await supabase.from('users').select('id, full_name');
+      if (usersError) throw usersError;
+
+      const { data: packages, error: packagesError } = await supabase.from('packages').select('id, name');
+      if (packagesError) throw packagesError;
+
+      const { data: customers, error: customersError } = await supabase.from('customers').select('id, name_mother, name_baby');
+      if (customersError) throw customersError;
       
       const uMap: Record<string, string> = {};
       users?.forEach(u => { uMap[u.id] = u.full_name; });
@@ -499,15 +550,17 @@ export default function AuditPage() {
         cMap[c.id] = c.name_mother ? `Mẹ ${c.name_mother}${c.name_baby ? ` (Bé ${c.name_baby})` : ''}` : c.name_baby || 'Khách hàng';
       });
       setCustomersMap(cMap);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error fetching reference maps:', err);
+      toast.error('Không thể tải dữ liệu tham chiếu nhật ký: ' + getErrorMessage(err));
     }
-  };
+  }, [supabase]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
       
       if (!user) {
         toast.error('Vui lòng đăng nhập để xem nhật ký.');
@@ -516,11 +569,12 @@ export default function AuditPage() {
         return;
       }
       
-      const { data: userData } = await supabase
+      const { data: userData, error: userDataError } = await supabase
         .from('users')
         .select('tenant_id')
         .eq('id', user.id)
         .single();
+      if (userDataError) throw userDataError;
         
       if (!userData?.tenant_id) {
         toast.error('Lỗi hệ thống: Không xác định được Tenant ID.');
@@ -546,40 +600,46 @@ export default function AuditPage() {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const formattedLogs = data?.map((log: any) => ({
+      const formattedLogs: AuditLog[] = ((data ?? []) as AuditLogRow[]).map((log) => ({
         id: log.id,
         user_name: log.users?.full_name || 'Hệ thống',
-        action: log.action,
+        action: toAuditAction(log.action),
         table_name: log.table_name,
         record_id: log.record_id,
-        old_data: log.old_data,
-        new_data: log.new_data,
+        old_data: toJsonRecord(log.old_data),
+        new_data: toJsonRecord(log.new_data),
         created_at: log.created_at
-      })) || [];
+      }));
 
       setLogs(formattedLogs);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching logs:', error);
-      toast.error('Không thể tải nhật ký hệ thống: ' + (error.message || 'Lỗi không xác định'));
+      toast.error('Không thể tải nhật ký hệ thống: ' + getErrorMessage(error));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
-    fetchReferenceMaps();
+    const referenceTimer = setTimeout(() => {
+      fetchReferenceMaps();
+    }, 0);
     const timer = setTimeout(() => {
       fetchLogs();
     }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      clearTimeout(referenceTimer);
+      clearTimeout(timer);
+    };
+  }, [fetchLogs, fetchReferenceMaps]);
 
   // Reset pagination on filter change
   useEffect(() => {
-    setCurrentPage(1);
+    const timer = setTimeout(() => {
+      setCurrentPage(1);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [searchTerm, filterTable, filterAction]);
 
   // Derived state to avoid cascading state update eslint warnings
@@ -606,8 +666,7 @@ export default function AuditPage() {
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
   const paginatedLogs = filteredLogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const formatValue = (val: any) => {
+  const formatValue = (val: JsonRecord | null) => {
     if (val === null || val === undefined) return 'N/A';
     if (typeof val === 'object') return JSON.stringify(val, null, 2);
     return String(val);
@@ -757,7 +816,7 @@ export default function AuditPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${getActionColor(log.action)}`}>
-                        {log.action === 'INSERT' ? 'Thêm mới' : log.action === 'UPDATE' ? 'Cập nhật' : 'Xóa'}
+                        {getActionLabel(log.action)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
