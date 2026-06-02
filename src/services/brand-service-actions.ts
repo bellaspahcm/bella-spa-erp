@@ -5,6 +5,25 @@ import { checkHqAuth } from './hq-actions';
 import { HqPackageTemplate } from '@/types/domain';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { getCurrentUser } from './user-actions';
+import type { Database } from '@/types/database.types';
+
+type PackageRow = Database['public']['Tables']['packages']['Row'];
+type PackageInsert = Database['public']['Tables']['packages']['Insert'];
+type PackageUpdate = Database['public']['Tables']['packages']['Update'];
+type TenantRow = Pick<Database['public']['Tables']['tenants']['Row'], 'id' | 'name'>;
+type DistributionResult =
+  | { tenantId: string; success: true; action: 'updated' | 'created'; packageId: string }
+  | { tenantId: string; success: false; error: string };
+
+function getErrorMessage(error: unknown, fallback = 'Unexpected error') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message.trim() ? message : fallback;
+  }
+  return fallback;
+}
 
 /**
  * Fetches all package templates designed by HQ
@@ -100,9 +119,9 @@ export async function createHqPackageTemplate(templateData: Partial<HqPackageTem
 
     safeRevalidatePath('/hq');
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[createHqPackageTemplate] Exception:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -187,7 +206,7 @@ export async function updateHqPackageTemplate(id: string, templateData: Partial<
     // For example, if allowed_franchise_override is false, we should force all distributed packages
     // to match the new template price. Let's do that in background.
     if (!dbData.allowed_franchise_override || templateData.price !== oldPackage?.price) {
-      const propagateData: any = {
+      const propagateData: PackageUpdate = {
         name: dbData.name,
         duration: dbData.duration,
         total_sessions: dbData.total_sessions,
@@ -211,9 +230,9 @@ export async function updateHqPackageTemplate(id: string, templateData: Partial<
 
     safeRevalidatePath('/hq');
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[updateHqPackageTemplate] Exception:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -274,9 +293,9 @@ export async function deleteHqPackageTemplate(id: string) {
 
     safeRevalidatePath('/hq');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[deleteHqPackageTemplate] Exception:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -304,18 +323,24 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
       return { success: false, error: 'Không tìm thấy gói mẫu chuẩn.' };
     }
 
-    const results = [];
+    const results: DistributionResult[] = [];
 
     for (const tenantId of tenantIds) {
       // Check if already distributed to this tenant
-      const { data: existingPkg } = await supabase
+      const { data: existingPkg, error: existingPkgError } = await supabase
         .from('packages')
         .select('*')
         .eq('template_id', templateId)
         .eq('tenant_id', tenantId)
         .maybeSingle();
 
-      const dbData = {
+      if (existingPkgError) {
+        console.error(`Failed to check template distribution for tenant ${tenantId}:`, existingPkgError);
+        results.push({ tenantId, success: false, error: existingPkgError.message });
+        continue;
+      }
+
+      const dbData: PackageInsert = {
         name: template.name,
         duration: template.duration,
         total_sessions: template.total_sessions,
@@ -332,7 +357,7 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
 
       if (existingPkg) {
         // Update existing distribution
-        const updateData: any = { ...dbData };
+        const updateData: PackageUpdate = { ...dbData };
         // If not allowed override or existing price is out of bounds, reset it
         if (!template.allowed_franchise_override) {
           updateData.price = template.price;
@@ -383,9 +408,9 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
     safeRevalidatePath('/hq');
     safeRevalidatePath('/dashboard/services');
     return { success: true, results };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[distributeTemplateToTenants] Exception:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -475,9 +500,9 @@ export async function overrideTenantPackagePrice(packageId: string, newPrice: nu
 
     safeRevalidatePath('/dashboard/services');
     return { success: true, data: updatedPkg };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[overrideTenantPackagePrice] Exception:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -520,18 +545,18 @@ export async function getBrandDistributionMatrix() {
     throw new Error(`Failed to fetch distributed packages: ${distributedError.message}`);
   }
 
-  const tenantNamesById = new Map((tenants || []).map((tenant: any) => [tenant.id, tenant.name]));
+  const tenantNamesById = new Map((tenants || []).map((tenant: TenantRow) => [tenant.id, tenant.name]));
 
   return {
     templates: (templates || []) as HqPackageTemplate[],
-    distributed: (distributed || []).map((d: any) => ({
+    distributed: (distributed || []).map((d: PackageRow) => ({
       id: d.id,
       name: d.name,
       price: Number(d.price),
-      tenant_id: d.tenant_id,
-      tenant_name: tenantNamesById.get(d.tenant_id) || 'Chi nhanh',
-      template_id: d.template_id,
-      status: d.status
+      tenant_id: d.tenant_id || '',
+      tenant_name: d.tenant_id ? tenantNamesById.get(d.tenant_id) || 'Chi nhanh' : 'Chi nhanh',
+      template_id: d.template_id || '',
+      status: d.status || 'active'
     })),
     tenants: tenants || []
   };
