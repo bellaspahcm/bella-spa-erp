@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Search, 
   Send, 
@@ -15,31 +15,104 @@ import {
   Clock, 
   Star,
   CheckCheck,
-  Circle,
-  Filter,
   Image as ImageIcon,
-  Mic,
   Calendar,
   CreditCard,
   ChevronRight,
   ChevronLeft,
   Sparkles,
-  MessageSquare,
-  TrendingUp
+  MessageSquare
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
-import { getChatCustomers, getChatMessages, sendChatMessage, markMessagesAsRead } from '@/services/chat-actions';
+import {
+  getChatCustomers,
+  getChatMessages,
+  sendChatMessage,
+  markMessagesAsRead,
+  type ChatCustomerSummary,
+  type ChatMessageRow
+} from '@/services/chat-actions';
 import { createClient } from '@/lib/supabase-client';
-import { getCurrentUser } from '@/services/user-actions';
+
+type ChatListItem = {
+  id: string;
+  name: string;
+  avatar: string;
+  lastMessage: string;
+  time: Date;
+  unread: number;
+  online: boolean;
+  level: string;
+  phone: string;
+  lastBooking: string;
+  totalSpent: string;
+};
+
+type ChatMessageView = {
+  id: string;
+  chatId: string | null;
+  sender: 'spa' | 'customer';
+  text: string;
+  time: Date;
+};
+
+type PresenceEntry = {
+  customer_id?: string;
+};
+
+type ChatInsertPayload = {
+  new: ChatMessageRow;
+};
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message.trim() ? error.message : fallback;
+  if (typeof error === 'string') return error.trim() ? error : fallback;
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  return fallback;
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase() || 'KH';
+}
+
+function mapCustomerToChat(customer: ChatCustomerSummary, onlineIds: Set<string>): ChatListItem {
+  return {
+    id: customer.id,
+    name: customer.full_name,
+    avatar: getInitials(customer.full_name),
+    lastMessage: 'Nhấn để xem tin nhắn...',
+    time: new Date(customer.created_at),
+    unread: customer.unread_count || 0,
+    online: onlineIds.has(customer.id),
+    level: customer.customer_level || 'Thành viên',
+    phone: customer.phone || 'N/A',
+    lastBooking: customer.last_package_name || 'Chưa có',
+    totalSpent: `${(customer.total_spent || 0).toLocaleString()}đ`
+  };
+}
+
+function mapMessageRow(message: ChatMessageRow): ChatMessageView {
+  return {
+    id: message.id,
+    chatId: message.customer_id,
+    sender: message.sender_type === 'staff' ? 'spa' : 'customer',
+    text: message.message,
+    time: new Date(message.created_at || Date.now())
+  };
+}
 
 export default function ChatPage() {
-  const [chats, setChats] = useState<any[]>([]);
-  const [selectedChat, setSelectedChat] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [chats, setChats] = useState<ChatListItem[]>([]);
+  const [selectedChat, setSelectedChat] = useState<ChatListItem | null>(null);
+  const [messages, setMessages] = useState<ChatMessageView[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isTyping] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [messageError, setMessageError] = useState<string | null>(null);
   const [showChatMobile, setShowChatMobile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const onlineIdsRef = useRef<Set<string>>(new Set());
@@ -53,8 +126,8 @@ export default function ChatPage() {
       .on('presence', { event: 'sync' }, () => {
         const state = presenceChannel.presenceState();
         const onlineIds = new Set<string>();
-        Object.values(state).forEach((presences: any) => {
-          presences.forEach((p: any) => {
+        Object.values(state).forEach((presences) => {
+          (presences as PresenceEntry[]).forEach((p) => {
             if (p.customer_id) {
               onlineIds.add(p.customer_id);
             }
@@ -73,7 +146,7 @@ export default function ChatPage() {
         );
 
         // Dynamically update selectedChat state
-        setSelectedChat((prevSelected: any) => {
+        setSelectedChat((prevSelected) => {
           if (!prevSelected) return null;
           return {
             ...prevSelected,
@@ -87,39 +160,20 @@ export default function ChatPage() {
       supabase.removeChannel(presenceChannel);
     };
   }, []);
-
   useEffect(() => {
     async function loadChats() {
       try {
-        const supabase = createClient();
-        const { data: customers, error } = await supabase.rpc('get_chat_customers');
-        
-        if (error) {
-          console.error('Error fetching chat customers:', error);
-          return;
-        }
+        setLoadError(null);
+        const customers = await getChatCustomers();
+        const mappedChats = customers.map((customer) => mapCustomerToChat(customer, onlineIdsRef.current));
 
-        if (customers) {
-          const mappedChats = customers.map((c: any) => ({
-            id: c.id,
-            name: c.full_name,
-            avatar: c.full_name?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'KH',
-            lastMessage: 'Nhấn để xem tin nhắn...',
-            time: new Date(c.created_at),
-            unread: c.unread_count || 0,
-            online: onlineIdsRef.current.has(c.id),
-            level: c.customer_level || 'Thành viên',
-            phone: c.phone || 'N/A',
-            lastBooking: c.last_package_name || 'Chưa có',
-            totalSpent: `${(c.total_spent || 0).toLocaleString()}đ`
-          }));
-          setChats(mappedChats);
-          if (mappedChats.length > 0 && !selectedChat) {
-            setSelectedChat(mappedChats[0]);
-          }
-        }
-      } catch (error) {
+        setChats(mappedChats);
+        setSelectedChat((current) => current ?? mappedChats[0] ?? null);
+      } catch (error: unknown) {
         console.error('Error loading chats:', error);
+        setChats([]);
+        setSelectedChat(null);
+        setLoadError(getErrorMessage(error, 'Không thể tải danh sách hội thoại.'));
       } finally {
         setLoading(false);
       }
@@ -130,42 +184,22 @@ export default function ChatPage() {
   // Fetch messages when selectedChat changes
   useEffect(() => {
     if (!selectedChat?.id) return;
+    const selectedChatId = selectedChat.id;
 
     async function loadMessages() {
       try {
-        const supabase = createClient();
-        const { data, error } = await supabase.from('chat_messages')
-          .select('*')
-          .eq('customer_id', selectedChat.id)
-          .order('created_at', { ascending: true });
+        setMessageError(null);
+        const data = await getChatMessages(selectedChatId);
+        setMessages(data.map(mapMessageRow));
 
-        if (error) {
-          console.error('Error fetching chat messages:', error);
-          return;
-        }
-
-        if (data) {
-          const mappedMessages = data.map((m: any) => ({
-            id: m.id,
-            chatId: m.customer_id,
-            sender: m.sender_type === 'staff' ? 'spa' : 'customer',
-            text: m.message,
-            time: new Date(m.created_at)
-          }));
-          setMessages(mappedMessages);
-          
-          // Mark as read without awaiting to prevent blocking UI
-          supabase.from('chat_messages')
-            .update({ is_read: true })
-            .eq('customer_id', selectedChat.id)
-            .eq('sender_type', 'customer')
-            .eq('is_read', false)
-            .then((res: any) => {
-              if (res.error) console.error('Error marking read:', res.error);
-            });
-        }
-      } catch (error) {
+        void markMessagesAsRead(selectedChatId).catch((error: unknown) => {
+          console.error('Error marking read:', error);
+          setMessageError(getErrorMessage(error, 'Không thể đánh dấu tin nhắn đã đọc.'));
+        });
+      } catch (error: unknown) {
         console.error('Error loading messages:', error);
+        setMessages([]);
+        setMessageError(getErrorMessage(error, 'Không thể tải tin nhắn.'));
       }
     }
 
@@ -174,36 +208,27 @@ export default function ChatPage() {
     // Subscribe to new messages
     const supabase = createClient();
     const channel = supabase
-      .channel(`chat:${selectedChat.id}`)
+      .channel(`chat:${selectedChatId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'chat_messages',
-          filter: `customer_id=eq.${selectedChat.id}`
+          filter: `customer_id=eq.${selectedChatId}`
         },
-        (payload: any) => {
-          const newMessage = {
-            id: payload.new.id,
-            chatId: payload.new.customer_id,
-            sender: payload.new.sender_type === 'staff' ? 'spa' : 'customer',
-            text: payload.new.message,
-            time: new Date(payload.new.created_at)
-          };
+        (payload: ChatInsertPayload) => {
+          const newMessage = mapMessageRow(payload.new);
           setMessages(prev => {
             // Prevent duplicate messages if the sender is also the current user
             if (prev.some(m => m.id === newMessage.id)) return prev;
             return [...prev, newMessage];
           });
           if (payload.new.sender_type === 'customer') {
-            supabase.from('chat_messages')
-              .update({ is_read: true })
-              .eq('customer_id', selectedChat.id)
-              .eq('sender_type', 'customer')
-              .eq('is_read', false)
-              .then((res: any) => {
-                if (res.error) console.error('Error marking read from subscription:', res.error);
+            void markMessagesAsRead(selectedChatId)
+              .catch((error: unknown) => {
+                console.error('Error marking read from subscription:', error);
+                setMessageError(getErrorMessage(error, 'Không thể đánh dấu tin nhắn đã đọc.'));
               });
           }
         }
@@ -231,48 +256,19 @@ export default function ChatPage() {
     setInputValue('');
 
     try {
-      const supabase = createClient();
-      
-      const { data: customerData } = await supabase.from('customers').select('tenant_id').eq('id', selectedChat.id).single();
-      if (!customerData?.tenant_id) {
-        alert('Lỗi hệ thống: Không xác định được Tenant ID của khách hàng.');
-        return;
-      }
-      const tenantId = customerData.tenant_id;
-      
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      setMessageError(null);
+      const sentMsg = await sendChatMessage(selectedChat.id, messageText, 'staff');
+      const newMessage = mapMessageRow(sentMsg);
 
-      const { data: sentMsg, error } = await supabase.from('chat_messages')
-        .insert({
-          customer_id: selectedChat.id,
-          message: messageText,
-          sender_type: 'staff',
-          sender_id: authUser?.id || null,
-          tenant_id: tenantId,
-          is_read: false
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      if (sentMsg) {
-        // Optimistically add message (though subscription will also add it, we check for duplicates)
-        const newMessage = {
-          id: sentMsg.id,
-          chatId: selectedChat.id,
-          sender: 'spa',
-          text: messageText,
-          time: new Date()
-        };
-        setMessages(prev => {
-          if (prev.some(m => m.id === newMessage.id)) return prev;
-          return [...prev, newMessage];
-        });
-      }
-    } catch (error) {
+      setMessages(prev => {
+        if (prev.some(m => m.id === newMessage.id)) return prev;
+        return [...prev, newMessage];
+      });
+    } catch (error: unknown) {
       console.error('Error sending message:', error);
-      alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
+      const errorMessage = getErrorMessage(error, 'Không thể gửi tin nhắn. Vui lòng thử lại.');
+      setMessageError(errorMessage);
+      alert(errorMessage);
     }
   };
 
@@ -309,6 +305,10 @@ export default function ChatPage() {
               <div className="flex flex-col items-center justify-center h-full gap-3 opacity-50">
                 <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                 <p className="text-xs font-black uppercase tracking-widest text-primary">Đang tải...</p>
+              </div>
+            ) : loadError ? (
+              <div className="m-2 rounded-2xl border border-red-100 bg-red-50 p-4 text-xs font-bold text-red-600">
+                {loadError}
               </div>
             ) : chats.map((chat) => (
               <button
@@ -402,10 +402,16 @@ export default function ChatPage() {
                 </div>
               </div>
 
+              {messageError && (
+                <div className="mx-6 mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-xs font-bold text-red-600">
+                  {messageError}
+                </div>
+              )}
+
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar bg-gradient-to-b from-pink-50/20 to-transparent">
                 {messages.length > 0 ? (
-                  messages.map((msg, i) => (
+                  messages.map((msg) => (
                     <motion.div
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
