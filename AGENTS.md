@@ -4,6 +4,10 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+# Project Knowledge Entry Points
+- Trước khi làm việc diện rộng, bắt đầu từ `docs/index.md`.
+- Với AI agent onboarding và lưu trữ context, làm theo `docs/AI_AGENT_ONBOARDING.md` và `docs/KNOWLEDGE_STORAGE_PROCESS.md`.
+
 # CRITICAL BELLA ERP DEVELOPMENT & TESTING RULES
 
 You must strictly adhere to the following rules when working on this codebase to prevent regression bugs:
