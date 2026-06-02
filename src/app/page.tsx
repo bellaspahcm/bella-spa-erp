@@ -22,11 +22,7 @@ import {
   LogIn, 
   Menu, 
   X, 
-  Baby, 
-  Scissors, 
   UserCheck,
-  Zap,
-  Info,
   Gift,
   Check,
   Copy
@@ -37,6 +33,7 @@ import { ServiceWizard } from '@/components/features/landing/ServiceWizard';
 import { FeedbackCarousel } from '@/components/features/landing/FeedbackCarousel';
 import { submitOnlineBooking } from '@/modules/booking/actions/lifecycle-actions';
 import { filterActivePromotions, type Promotion } from '@/lib/promotions';
+import type { Database } from '@/types/database.types';
 
 
 // Types for packages
@@ -48,10 +45,43 @@ interface ServicePackage {
   description: string;
   benefits: string[];
   tag?: string;
+  total_sessions?: number;
+}
+
+type PackageRow = Database['public']['Tables']['packages']['Row'];
+type LandingCategoryKey = ' bầu' | 'sau-sinh' | 'baby' | 'combo';
+
+interface LandingCategory {
+  title: string;
+  description: string;
+  packages: ServicePackage[];
+}
+
+type LandingCategories = Record<LandingCategoryKey, LandingCategory>;
+
+function cloneLandingCategories(categories: LandingCategories): LandingCategories {
+  return {
+    ' bầu': {
+      ...categories[' bầu'],
+      packages: [...categories[' bầu'].packages],
+    },
+    'sau-sinh': {
+      ...categories['sau-sinh'],
+      packages: [...categories['sau-sinh'].packages],
+    },
+    baby: {
+      ...categories.baby,
+      packages: [...categories.baby.packages],
+    },
+    combo: {
+      ...categories.combo,
+      packages: [...categories.combo.packages],
+    },
+  };
 }
 
 export default function LandingPage() {
-  const [activeTab, setActiveTab] = useState<' bầu' | 'sau-sinh' | 'baby' | 'combo'>('combo');
+  const [activeTab, setActiveTab] = useState<LandingCategoryKey>('combo');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [bookingName, setBookingName] = useState('');
@@ -76,7 +106,7 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const serviceCategories = {
+  const serviceCategories = useMemo<LandingCategories>(() => ({
     ' bầu': {
       title: 'Chăm Sóc Mẹ Bầu',
       description: 'Liệu trình massage bầu chuyên sâu giúp giải tỏa stress, giảm đau nhức lưng hông, cải thiện giấc ngủ và chống rạn nứt da hiệu quả.',
@@ -214,20 +244,20 @@ export default function LandingPage() {
         }
       ]
     }
-  };
+  }), []);
 
-  const [categories, setCategories] = useState<any>(null);
+  const [categories, setCategories] = useState<LandingCategories | null>(null);
 
   const serviceOptions = useMemo(() => {
     const activeCategories = categories || serviceCategories;
-    return Object.entries(activeCategories).flatMap(([_, cat]: [string, any]) => {
-      return cat.packages.map((pkg: any) => ({
+    return Object.values(activeCategories).flatMap((cat) => {
+      return cat.packages.map((pkg) => ({
         value: pkg.name,
         label: `${pkg.name} (${pkg.price})`,
         group: cat.title
       }));
     });
-  }, [categories]);
+  }, [categories, serviceCategories]);
 
   useEffect(() => {
     const fetchActivePackages = async () => {
@@ -245,7 +275,7 @@ export default function LandingPage() {
         }
 
         if (data && data.length > 0) {
-          const newCategories: any = {
+          const newCategories: LandingCategories = {
             ' bầu': {
               title: 'Chăm Sóc Mẹ Bầu',
               description: 'Liệu trình massage bầu chuyên sâu giúp giải tỏa stress, giảm đau nhức lưng hông, cải thiện giấc ngủ và chống rạn nứt da hiệu quả.',
@@ -268,9 +298,9 @@ export default function LandingPage() {
             }
           };
 
-          data.forEach((pkg: any) => {
+          data.forEach((pkg: PackageRow) => {
             const nameLower = pkg.name.toLowerCase();
-            let catKey = ' bầu';
+            let catKey: LandingCategoryKey = ' bầu';
 
             if (nameLower.includes('combo') || nameLower.includes('home-care') || nameLower.includes('signature')) {
               catKey = 'combo';
@@ -301,10 +331,10 @@ export default function LandingPage() {
             });
           });
 
-          const finalCategories: any = { ...serviceCategories };
-          Object.keys(newCategories).forEach((key) => {
-            if (newCategories[key].packages.length > 0) {
-              finalCategories[key].packages = newCategories[key].packages;
+          const finalCategories = cloneLandingCategories(serviceCategories);
+          (Object.entries(newCategories) as Array<[LandingCategoryKey, LandingCategory]>).forEach(([key, category]) => {
+            if (category.packages.length > 0) {
+              finalCategories[key].packages = category.packages;
             }
           });
           
@@ -316,7 +346,7 @@ export default function LandingPage() {
     };
 
     fetchActivePackages();
-  }, []);
+  }, [serviceCategories]);
 
   const [promotions, setPromotions] = useState<Promotion[]>([]);
 
@@ -830,7 +860,7 @@ export default function LandingPage() {
           {/* Packages Display with smooth animation */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left max-w-5xl mx-auto">
             <AnimatePresence mode="wait">
-              {(categories || serviceCategories)[activeTab].packages.map((pkg: any) => {
+              {(categories || serviceCategories)[activeTab].packages.map((pkg) => {
                 const isFeatured = pkg.name.includes('Hạnh Phúc');
                 const maxVisible = 7;
                 const totalBenefits = pkg.benefits.length;
@@ -932,7 +962,7 @@ export default function LandingPage() {
                               Quy trình liệu trình gồm:
                             </h5>
                             <ul className="space-y-3.5">
-                              {visibleBenefits.map((benefit: any, i: number) => (
+                              {visibleBenefits.map((benefit, i) => (
                                 <li key={i} className="flex gap-3 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-medium">
                                   <div className="w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mt-0.5 shrink-0">
                                     <Check className="w-3 h-3" />
@@ -1018,7 +1048,7 @@ export default function LandingPage() {
 
                       <h5 className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest mb-4">Quy trình liệu trình gồm:</h5>
                       <ul className="space-y-3">
-                        {visibleBenefits.map((benefit: any, i: number) => (
+                        {visibleBenefits.map((benefit, i) => (
                           <li key={i} className="flex gap-3 text-slate-600 dark:text-slate-300 text-xs font-medium">
                             <div className="w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mt-0.5 shrink-0">
                               <Check className="w-2.5 h-2.5" />
