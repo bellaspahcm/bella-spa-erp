@@ -25,6 +25,7 @@ import { getCustomerBookingByToken, submitCustomerRating } from '@/services/cust
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
 import PortalChatWidget from '@/components/features/portal/PortalChatWidget';
+import type { Promotion } from '@/lib/promotions';
 
 export default function CustomerPortal({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
@@ -198,7 +199,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 </div>
                 
                 <div className="space-y-4">
-                  {booking.active_promotions.map((promo: any) => (
+                  {(booking.active_promotions as Promotion[]).map((promo) => (
                     <div key={promo.id} className="border-b border-pink-100/40 last:border-0 pb-3 last:pb-0 space-y-1.5">
                       <div className="flex items-baseline justify-between gap-4">
                         <h5 className="text-sm font-black text-primary leading-snug">{promo.title}</h5>
@@ -216,7 +217,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                           <div className="flex items-center bg-white border border-pink-100 rounded-xl pl-3 pr-1.5 py-1">
                             <code className="text-xs font-black text-rose-500 tracking-wider font-mono mr-3">{promo.discount_code}</code>
                             <button
-                              onClick={() => copyToClipboard(promo.discount_code)}
+                              onClick={() => copyToClipboard(promo.discount_code || '')}
                               className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-primary active:scale-90 transition-all"
                               title="Sao chép mã"
                             >
