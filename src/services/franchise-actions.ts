@@ -5,6 +5,19 @@ import { getCurrentUser } from './user-actions';
 import { checkHqAuth } from './hq-actions';
 import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import type { Database } from '@/types/database.types';
+
+type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message.trim() ? message : fallback;
+  }
+  return fallback;
+}
 
 export interface FranchiseRoyaltyInvoice {
   id: string;
@@ -36,7 +49,7 @@ export async function getFranchiseRoyaltyInvoices(tenantId?: string): Promise<Fr
   try {
     const supabase = await createClient();
     const user = await getCurrentUser();
-    if (!user) throw new Error('Chưa đăng nhập');
+    if (!user) return [];
 
     const authResult = await checkHqAuth();
     
@@ -69,7 +82,7 @@ export async function getFranchiseRoyaltyInvoices(tenantId?: string): Promise<Fr
     return (data || []) as unknown as FranchiseRoyaltyInvoice[];
   } catch (e) {
     console.error('[getFranchiseRoyaltyInvoices] Exception:', e);
-    return [];
+    throw e;
   }
 }
 
@@ -120,12 +133,12 @@ export async function payFranchiseRoyaltyInvoice(invoiceNumber: string, paymentM
       revalidatePath('/hq');
       await safeRevalidatePath('/hq');
       await safeRevalidatePath('/dashboard/settings');
-    } catch (_) {}
+    } catch {}
 
     return { success: true };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[payFranchiseRoyaltyInvoice] exception:', e);
-    return { success: false, error: e.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
 
@@ -145,7 +158,7 @@ export async function updateFranchiseRoyaltyConfig(
     }
 
     const supabase = await createClient();
-    const updatePayload: any = {
+    const updatePayload: TenantUpdate = {
       royalty_type: type,
       royalty_fixed_amount: fixedAmount !== undefined ? fixedAmount : 0.00
     };
@@ -167,12 +180,12 @@ export async function updateFranchiseRoyaltyConfig(
     try {
       revalidatePath('/hq');
       await safeRevalidatePath('/hq');
-    } catch (_) {}
+    } catch {}
 
     return { success: true };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[updateFranchiseRoyaltyConfig] exception:', e);
-    return { success: false, error: e.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
 
