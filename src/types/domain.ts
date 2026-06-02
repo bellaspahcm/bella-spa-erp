@@ -1,3 +1,5 @@
+import type { Json } from './database.types';
+
 export interface KtvSalaryRecord {
   id: string;
   name: string;
@@ -53,6 +55,7 @@ export interface KtvSessionMatrix {
 }
 
 export interface TenantSalaryConfig {
+  [key: string]: Json | undefined;
   bonus_5_star: number;
   bonus_4_5_star: number;
   bonus_4_star: number;
@@ -172,4 +175,3 @@ export interface HqPackageTemplate {
   created_at?: string;
   updated_at?: string;
 }
-

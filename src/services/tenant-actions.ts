@@ -5,6 +5,19 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';
+import type { Database, Json } from '@/types/database.types';
+
+type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message.trim() ? message : fallback;
+  }
+  return fallback;
+}
 
 export async function getTenantSettings() {
   const supabase = await createClient();
@@ -60,8 +73,8 @@ export async function saveTenantSettings(settings: {
   qr_bank_code?: string;
   qr_account_number?: string;
   qr_account_name?: string;
-  salary_config?: any;
-  role_permissions?: any;
+  salary_config?: Json;
+  role_permissions?: Json;
 }) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -75,7 +88,7 @@ export async function saveTenantSettings(settings: {
     // Load old data for audit logs
     const oldSettings = await getTenantSettings();
 
-    const updatePayload: any = { updated_at: new Date().toISOString() };
+    const updatePayload: TenantUpdate = { updated_at: new Date().toISOString() };
     if (settings.name !== undefined) updatePayload.name = settings.name;
     if (settings.phone !== undefined) updatePayload.contact_phone = settings.phone;
     if (settings.email !== undefined) updatePayload.email = settings.email;
@@ -132,8 +145,8 @@ export async function saveTenantSettings(settings: {
 
     revalidatePath('/dashboard/settings');
     return { success: true, data: updatedTenant };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Exception saving tenant settings:', error);
-    return { success: false, error: error.message || 'Lỗi không xác định' };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
