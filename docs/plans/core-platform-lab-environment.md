@@ -8,6 +8,7 @@ This worktree is the isolated lab for core-platform conversion:
 - Branch: `core-platform-lab`
 - Baseline tag: `pre-core-platform-baseline-2026-06-03`
 - Vercel project: `bella-erp-core-platform`
+- Vercel lab URL: `https://bella-erp-core-platform.vercel.app`
 - Supabase lab project: `bella-erp-core-platform-lab`
 - Supabase lab ref: `avinnjksfgmsriaahqmy`
 
@@ -22,7 +23,13 @@ The lab must never use the production Supabase project or production Vercel proj
 - Supabase CLI is authenticated via `SUPABASE_ACCESS_TOKEN` from User env.
 - Supabase lab project is linked via `supabase/.temp/project-ref`.
 - Supabase lab migrations are pushed and `supabase db push` reports the remote database is up to date.
-- Vercel project environment variables are still not configured.
+- Vercel Production and Development environment variables are configured for the lab project.
+- Vercel Preview environment variables are not configured because the lab Vercel project is not connected to a Git repository.
+- The lab has been deployed with `vercel --prod` to the separate lab project.
+- Current production deployment status: `Ready`.
+- Current production deployment alias: `https://bella-erp-core-platform.vercel.app`.
+- Basic HTTP check against the lab alias returns `200`.
+- Minimal lab tenant exists for `DEFAULT_TENANT_ID`.
 
 ## Required Supabase Lab Project
 
@@ -94,6 +101,12 @@ The legacy migration chain originally could not run from an empty Supabase proje
 
 Do not copy production customer, salary, phone, Zalo, or payment data into the lab.
 
+Current seed status:
+
+- A minimal lab tenant exists: `Bella Spa Headquarter`.
+- `DEFAULT_TENANT_ID` points to that lab tenant.
+- The full `supabase/seed.sql` demo seed currently needs repair before it can run on an empty lab DB because it inserts bookings before assigning a non-null `package_id`.
+
 6. Add Vercel environment variables to `bella-erp-core-platform`.
 
 Use only lab Supabase credentials.
@@ -120,6 +133,12 @@ npx.cmd vercel env pull .env.local
 
 ```powershell
 npx.cmd vercel
+```
+
+Because the lab Vercel project is not Git-connected, use the lab project's isolated production target:
+
+```powershell
+npx.cmd vercel --prod --yes
 ```
 
 ## Guardrails
