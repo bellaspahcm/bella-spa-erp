@@ -26,7 +26,6 @@ jest.mock('@supabase/supabase-js', () => ({
 
 // ── Mock Bookkeeping Handlers ──
 import { RevenueRecognitionService } from '@/services/revenue-recognition';
-import { AccountingEngineService } from '@/services/accounting-engine';
 
 jest.mock('@/services/revenue-recognition', () => ({
   RevenueRecognitionService: {
@@ -306,6 +305,48 @@ describe('Accounting Outbox Worker API', () => {
       expect(mockRpc).toHaveBeenCalledWith('mark_outbox_failed', {
         p_outbox_id: 'outbox-fail-1',
         p_error: 'Mất kết nối tài khoản COA',
+      });
+    });
+
+    it('fails malformed payloads instead of silently completing the outbox item', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-invalid-payload-1',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'PACKAGE_SALE',
+          reference_id: 'ref-invalid-1',
+          payload: {
+            vatRate: 0,
+            description: 'Missing amount sale',
+          },
+          retry_count: 0,
+        },
+      ];
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      expect(response.status).toBe(200);
+
+      const json = await response.json();
+      expect(json.success).toBe(false);
+      expect(json.status).toBe('partial_failure');
+      expect(json.successCount).toBe(0);
+      expect(json.failureCount).toBe(1);
+
+      expect(RevenueRecognitionService.handlePackageSale).not.toHaveBeenCalled();
+      expect(mockRpc).not.toHaveBeenCalledWith('mark_outbox_completed', expect.anything());
+      expect(mockRpc).toHaveBeenCalledWith('mark_outbox_failed', {
+        p_outbox_id: 'outbox-invalid-payload-1',
+        p_error: 'Invalid outbox payload: totalAmount must be a number.',
       });
     });
   });
