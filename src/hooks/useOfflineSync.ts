@@ -5,6 +5,11 @@ import { offlineDB, type OfflineAction } from '@/lib/offline-db';
 import { syncOfflineAction } from '@/services/sync-actions';
 import { toast } from 'sonner';
 
+type OfflineQueuedResult = {
+  success: true;
+  offline: true;
+};
+
 export function useOfflineSync() {
   const [isOnline, setIsOnline] = useState<boolean>(
     typeof window !== 'undefined' ? navigator.onLine : true
@@ -73,11 +78,11 @@ export function useOfflineSync() {
     };
   }, []);
 
-  const executeAction = async <T extends (...args: any[]) => Promise<any>>(
-    actionType: OfflineAction['actionType'] | 'KTV_SHIFT_CHECKIN' | 'KTV_SHIFT_CHECKOUT',
-    payload: any,
-    serverAction: T
-  ): Promise<any> => {
+  const executeAction = async <TResult>(
+    actionType: OfflineAction['actionType'],
+    payload: OfflineAction['payload'],
+    serverAction: () => Promise<TResult>
+  ): Promise<TResult | OfflineQueuedResult> => {
     if (typeof window !== 'undefined' && !navigator.onLine) {
       // Offline mode: save to Dexie database queue
       if (!offlineDB) {
