@@ -6,6 +6,16 @@ import { checkHqAuth } from './hq-actions';
 import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
 
+function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message.trim() ? message : fallback;
+  }
+  return fallback;
+}
+
 export interface InterBranchClearingRecord {
   id: string;
   clearing_number: string;
@@ -39,7 +49,7 @@ export async function getInterBranchClearingRecords(tenantId?: string): Promise<
   try {
     const supabase = await createClient();
     const user = await getCurrentUser();
-    if (!user) throw new Error('Chưa đăng nhập');
+    if (!user) return [];
 
     const authResult = await checkHqAuth();
     
@@ -70,7 +80,7 @@ export async function getInterBranchClearingRecords(tenantId?: string): Promise<
     return (data || []) as unknown as InterBranchClearingRecord[];
   } catch (e) {
     console.error('[getInterBranchClearingRecords] Exception:', e);
-    return [];
+    throw e;
   }
 }
 
@@ -121,12 +131,12 @@ export async function clearInterBranchRecord(recordId: string, paymentMethod: st
       revalidatePath('/hq');
       await safeRevalidatePath('/hq');
       await safeRevalidatePath('/dashboard/finance/reconciliation');
-    } catch (_) {}
+    } catch {}
 
     return { success: true };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[clearInterBranchRecord] exception:', e);
-    return { success: false, error: e.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
 
@@ -156,12 +166,12 @@ export async function updateTenantClearingRate(tenantId: string, rate: number) {
     try {
       revalidatePath('/hq');
       await safeRevalidatePath('/hq');
-    } catch (_) {}
+    } catch {}
 
     return { success: true };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('[updateTenantClearingRate] exception:', e);
-    return { success: false, error: e.message || 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
 
