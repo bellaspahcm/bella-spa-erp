@@ -2,6 +2,16 @@ import { startSession, completeKTVSession } from '@/services/ktv-actions';
 import { ktvCheckIn, ktvCheckOut } from '@/services/attendance-actions';
 import { offlineDB, type OfflineAction } from '@/lib/offline-db';
 
+function getErrorMessage(error: unknown, fallback = 'Offline sync failed') {
+  if (error instanceof Error) return error.message.trim() ? error.message : fallback;
+  if (typeof error === 'string') return error.trim() ? error : fallback;
+  if (error && typeof error === 'object') {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  return String(error) || fallback;
+}
+
 export async function syncOfflineAction(action: OfflineAction) {
   if (!offlineDB) return;
 
@@ -29,14 +39,14 @@ export async function syncOfflineAction(action: OfflineAction) {
 
     // Successfully completed! Delete from IndexedDB queue
     await offlineDB.offlineQueue.delete(action.id);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`[SyncService] Failed to sync offline action ${action.id}:`, error);
     
     // Set status to failed and increment retry count
     await offlineDB.offlineQueue.update(action.id, {
       status: 'failed',
       retryCount: (action.retryCount || 0) + 1,
-      errorMessage: error?.message || String(error)
+      errorMessage: getErrorMessage(error)
     });
   }
 }
