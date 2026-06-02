@@ -4,6 +4,10 @@ import { triggerBatchReminders } from '@/services/crm-actions';
 // Force dynamic execution so headers and query params are read in real-time
 export const dynamic = 'force-dynamic';
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Lỗi hệ thống trong cron job.';
+}
+
 export async function GET(request: NextRequest) {
   try {
     // 1. Authorization check
@@ -52,12 +56,12 @@ export async function GET(request: NextRequest) {
       ...result
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Exception in Zalo reminders cron handler:', error);
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || 'Lỗi hệ thống trong cron job.' 
+        error: getErrorMessage(error)
       },
       { status: 500 }
     );
