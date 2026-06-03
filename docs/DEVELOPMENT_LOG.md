@@ -7,6 +7,26 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden Unlock Month Partial Failure
+* **Mục tiêu kỹ thuật**:
+  * Không để thao tác mở khóa sổ tháng làm lệch trạng thái `is_locked` giữa `revenue`, `expenses`, và `salary_records`.
+  * Giữ nguyên contract hiện tại của `unlockMonth` nhưng thêm rollback bù trừ khi một bảng update thất bại.
+* **Thay đổi chính**:
+  * `unlockMonth` dùng Supabase generated `Update` types cho 3 payload tài chính.
+  * Tập trung hóa helper update theo cùng tenant + month/date filters cho cả unlock và rollback, đồng thời sửa drift ngày cuối tháng do `toISOString`.
+  * Snapshot các record đang locked trước khi unlock, nên rollback chỉ khóa lại record vốn bị tác động bởi thao tác hiện tại.
+  * Nếu bất kỳ update mở khóa nào thất bại hoặc reject, hệ thống cố gắng khóa lại các record đã snapshot.
+  * Nếu rollback cũng thất bại hoặc reject, error trả về giữ cả lỗi mở khóa gốc và lỗi rollback để điều tra được.
+  * Bổ sung regression tests cho partial unlock failure rollback, rejected update, rollback failure detail và rollback scope filters.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-unlock-month-partial-failure.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/finance.lockMonth.test.ts --runInBand` pass, 11/11 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/finance/unlock-month-action.ts src/__tests__/finance.lockMonth.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 66 suites / 731 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden AI Action Approval Side Effects
 * **Mục tiêu kỹ thuật**:
   * Không để API phê duyệt hành động AI tạo thông báo thành công nhưng thiếu audit log.
