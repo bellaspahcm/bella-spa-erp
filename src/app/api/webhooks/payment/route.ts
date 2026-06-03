@@ -39,9 +39,16 @@ type ProcessingResult = {
   revenueId?: string;
   reason?: string;
 };
+type WebhookSupabaseClient = ReturnType<typeof createWebhookSupabaseClient>;
+type BookingRow = Database["public"]["Tables"]["bookings"]["Row"];
+type RevenueRow = Database["public"]["Tables"]["revenue"]["Row"];
 type BookingUpdate = Database["public"]["Tables"]["bookings"]["Update"];
 type RevenueInsert = Database["public"]["Tables"]["revenue"]["Insert"];
 type AuditLogInsert = Database["public"]["Tables"]["audit_logs"]["Insert"];
+type SupabaseErrorLike = {
+  code?: string;
+  message?: string;
+};
 
 function resolveAccountingReviewStatus(
   businessEventType: ReturnType<typeof inferBusinessEventType>,
@@ -104,6 +111,132 @@ function getErrorMessage(error: unknown) {
 function withRollbackFailures(reason: string, rollbackFailures: string[]) {
   if (rollbackFailures.length === 0) return reason;
   return `${reason}; rollback failed: ${rollbackFailures.join("; ")}`;
+}
+
+function isUniqueViolation(error: unknown) {
+  const maybeError = error as SupabaseErrorLike | null;
+  return maybeError?.code === "23505";
+}
+
+function buildWebhookAccountingPayload(transaction: Transaction, bookingId: string) {
+  return {
+    amount: transaction.amount,
+    payment_method: "VietQR",
+    booking_id: bookingId,
+    reason: `Webhook VietQR transaction ${transaction.transactionId}: ${transaction.description}`,
+    webhook_provider: "VietQR",
+    webhook_transaction_id: transaction.transactionId,
+    webhook_description: transaction.description,
+    webhook_received_date: transaction.receivedDate,
+  };
+}
+
+function buildWebhookRevenueNotes(transaction: Transaction) {
+  return `[Đối soát Webhook] Tự động đối soát thành công qua VietQR. Mã GD ngân hàng: ${transaction.transactionId}. Nội dung CK: ${transaction.description}`;
+}
+
+function escapeLikePattern(value: string) {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+async function findExistingWebhookRevenue(
+  supabase: WebhookSupabaseClient,
+  bookingId: string,
+  transactionId: string
+): Promise<{ revenue: RevenueRow | null; error: string | null }> {
+  const selectFields = "*";
+  const { data: metadataMatch, error: metadataErr } = await supabase
+    .from("revenue")
+    .select(selectFields)
+    .eq("booking_id", bookingId)
+    .contains("accounting_metadata", { webhook_transaction_id: transactionId })
+    .maybeSingle();
+
+  if (metadataErr) {
+    return { revenue: null, error: `Failed to check duplicate transaction metadata: ${metadataErr.message}` };
+  }
+
+  if (metadataMatch) {
+    return { revenue: metadataMatch, error: null };
+  }
+
+  const { data: legacyMatch, error: legacyErr } = await supabase
+    .from("revenue")
+    .select(selectFields)
+    .eq("booking_id", bookingId)
+    .like("notes", `%${escapeLikePattern(transactionId)}%`)
+    .maybeSingle();
+
+  if (legacyErr) {
+    return { revenue: null, error: `Failed to check duplicate transaction notes: ${legacyErr.message}` };
+  }
+
+  return { revenue: legacyMatch ?? null, error: null };
+}
+
+async function ensureWebhookRevenueSideEffects(
+  supabase: WebhookSupabaseClient,
+  booking: BookingRow,
+  revenue: RevenueRow,
+  transaction: Transaction
+) {
+  if (revenue.revenue_type === "deposit" && (booking.status === "deposit_pending" || booking.status === "inquiry")) {
+    const bookingPayload: BookingUpdate = { status: "booked" };
+    const { error: bookingErr } = await supabase
+      .from("bookings")
+      .update(bookingPayload)
+      .eq("id", booking.id);
+
+    if (bookingErr) {
+      return `Failed to restore booking status: ${bookingErr.message}`;
+    }
+  }
+
+  const { data: existingAudit, error: auditCheckErr } = await supabase
+    .from("audit_logs")
+    .select("id")
+    .eq("table_name", "revenue")
+    .eq("record_id", revenue.id)
+    .eq("tenant_id", booking.tenant_id)
+    .maybeSingle();
+
+  if (auditCheckErr) {
+    return `Failed to check revenue audit log: ${auditCheckErr.message}`;
+  }
+
+  if (!existingAudit) {
+    const auditPayload: AuditLogInsert = {
+      action: "INSERT",
+      table_name: "revenue",
+      record_id: revenue.id,
+      new_data: revenue,
+      tenant_id: booking.tenant_id,
+      changed_by_id: null,
+    };
+    const { error: auditErr } = await supabase.from("audit_logs").insert(auditPayload);
+    if (auditErr) {
+      return `Failed to insert audit log: ${auditErr.message}`;
+    }
+  }
+
+  const outboxEnqueued = await enqueueWithAutoClient(
+    supabase,
+    {
+      tenantId: booking.tenant_id,
+      eventType: "PACKAGE_SALE",
+      referenceType: "REVENUE",
+      referenceId: revenue.id,
+      payload: {
+        totalAmount: revenue.amount,
+        vatRate: 0,
+        description: revenue.notes || buildWebhookRevenueNotes(transaction),
+        branchId: booking.tenant_id,
+      },
+    },
+    "[Payment Webhook]"
+  );
+
+  return outboxEnqueued ? null : "Failed to enqueue accounting outbox";
 }
 
 // Extract transactions from multiple platforms: Casso, SePay, PayOS
@@ -245,6 +378,11 @@ export async function POST(request: NextRequest) {
       const { amount, description, transactionId, receivedDate } = tx;
       console.log(`[Payment Webhook] Processing Transaction ID: ${transactionId}, Amount: ${amount}, Desc: "${description}"`);
 
+      if (!transactionId.trim()) {
+        results.push({ transactionId, status: "failed", reason: "Missing payment transaction id" });
+        continue;
+      }
+
       // 2a. Check if it's a subscription payment: SUB [invoice_number] (e.g. SUB INV-1002, SUB-1002)
       const subRegex = /SUB\s*([\w\-]+)/i;
       const subMatch = description.match(subRegex);
@@ -298,23 +436,28 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Check for duplicate transaction processing by querying existing revenues
-      const { data: existingRevenue, error: existingRevenueErr } = await supabase
-        .from("revenue")
-        .select("id")
-        .eq("booking_id", booking.id)
-        .like("notes", `%${transactionId}%`)
-        .maybeSingle();
+      const { revenue: existingRevenue, error: existingRevenueErr } = await findExistingWebhookRevenue(
+        supabase,
+        booking.id,
+        transactionId
+      );
 
       if (existingRevenueErr) {
         console.error(`[Payment Webhook] Failed to check duplicate transaction for "${bookingNumber}":`, existingRevenueErr);
-        results.push({ transactionId, bookingNumber, status: "failed", reason: "Failed to check duplicate transaction" });
+        results.push({ transactionId, bookingNumber, status: "failed", reason: existingRevenueErr });
         continue;
       }
 
       if (existingRevenue) {
+        const ensureErr = await ensureWebhookRevenueSideEffects(supabase, booking, existingRevenue, tx);
+        if (ensureErr) {
+          console.error(`[Payment Webhook] Failed to ensure side effects for existing revenue "${existingRevenue.id}":`, ensureErr);
+          results.push({ transactionId, bookingNumber, status: "failed", revenueId: existingRevenue.id, reason: ensureErr });
+          continue;
+        }
+
         console.log(`[Payment Webhook] Skip Transaction ${transactionId}: Transaction already processed (Revenue ID: ${existingRevenue.id})`);
-        results.push({ transactionId, bookingNumber, status: "skipped", reason: "Already processed" });
+        results.push({ transactionId, bookingNumber, status: "skipped", revenueId: existingRevenue.id, reason: "Already processed" });
         continue;
       }
 
@@ -373,6 +516,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
         bookingStatusChanged = true;
+        booking.status = "booked";
         console.log(`[Payment Webhook] Updated Booking status from "${oldStatus}" to "booked"`);
       }
 
@@ -381,12 +525,7 @@ export async function POST(request: NextRequest) {
         sourceTable: "revenue",
         revenueType,
       });
-      const accountingPayload = {
-        amount,
-        payment_method: "VietQR",
-        booking_id: booking.id,
-        reason: `Webhook VietQR transaction ${transactionId}: ${description}`,
-      };
+      const accountingPayload = buildWebhookAccountingPayload(tx, booking.id);
       const revenuePayload: RevenueInsert = {
         booking_id: booking.id,
         amount,
@@ -394,7 +533,7 @@ export async function POST(request: NextRequest) {
         payment_method: "VietQR",
         received_date: cleanDate,
         status: "confirmed",
-        notes: `[Đối soát Webhook] Tự động đối soát thành công qua VietQR. Mã GD ngân hàng: ${transactionId}. Nội dung CK: ${description}`,
+        notes: buildWebhookRevenueNotes(tx),
         tenant_id: booking.tenant_id,
         business_event_type: businessEventType,
         accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
@@ -407,6 +546,42 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (revErr || !newRevenue) {
+        if (isUniqueViolation(revErr)) {
+          const { revenue: racedRevenue, error: racedLookupErr } = await findExistingWebhookRevenue(
+            supabase,
+            booking.id,
+            transactionId
+          );
+
+          if (racedLookupErr) {
+            console.error(`[Payment Webhook] Failed to recover duplicate transaction for "${bookingNumber}":`, racedLookupErr);
+            const bookingRollbackFailure = await rollbackBookingStatus();
+            pushFailedTransaction(
+              racedLookupErr,
+              bookingRollbackFailure ? [bookingRollbackFailure] : []
+            );
+            continue;
+          }
+
+          if (racedRevenue) {
+            const ensureErr = await ensureWebhookRevenueSideEffects(supabase, booking, racedRevenue, tx);
+            if (ensureErr) {
+              console.error(`[Payment Webhook] Failed to ensure side effects for raced revenue "${racedRevenue.id}":`, ensureErr);
+              pushFailedTransaction(ensureErr);
+              continue;
+            }
+
+            results.push({
+              transactionId,
+              bookingNumber,
+              status: "skipped",
+              revenueId: racedRevenue.id,
+              reason: "Already processed",
+            });
+            continue;
+          }
+        }
+
         console.error(`[Payment Webhook] Failed to insert revenue for "${bookingNumber}":`, revErr);
         const bookingRollbackFailure = await rollbackBookingStatus();
         pushFailedTransaction(
@@ -434,42 +609,10 @@ export async function POST(request: NextRequest) {
         pushFailedTransaction(reason, rollbackFailures);
       };
 
-      // 6. Record Audit Log
-      const auditPayload: AuditLogInsert = {
-        action: "INSERT",
-        table_name: "revenue",
-        record_id: newRevenue.id,
-        new_data: newRevenue,
-        tenant_id: booking.tenant_id,
-        changed_by_id: null,
-      };
-      const { error: auditErr } = await supabase.from("audit_logs").insert(auditPayload);
-      if (auditErr) {
-        console.error("[Payment Webhook] Failed to insert audit log:", auditErr.message);
-        await rollbackWebhookRevenue("Failed to insert audit log");
-        continue;
-      }
-      console.log(`[Payment Webhook] Audit log recorded successfully`);
-
-      const outboxEnqueued = await enqueueWithAutoClient(
-        supabase,
-        {
-          tenantId: booking.tenant_id,
-          eventType: "PACKAGE_SALE",
-          referenceType: "REVENUE",
-          referenceId: newRevenue.id,
-          payload: {
-            totalAmount: amount,
-            vatRate: 0,
-            description: revenuePayload.notes || "VietQR webhook payment",
-            branchId: booking.tenant_id,
-          },
-        },
-        "[Payment Webhook]"
-      );
-
-      if (!outboxEnqueued) {
-        await rollbackWebhookRevenue("Failed to enqueue accounting outbox");
+      const ensureErr = await ensureWebhookRevenueSideEffects(supabase, booking, newRevenue, tx);
+      if (ensureErr) {
+        console.error(`[Payment Webhook] Failed to ensure revenue side effects for "${newRevenue.id}":`, ensureErr);
+        await rollbackWebhookRevenue(ensureErr);
         continue;
       }
 
