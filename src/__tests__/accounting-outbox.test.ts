@@ -371,5 +371,181 @@ describe('Accounting Outbox Worker API', () => {
         p_error: 'Invalid outbox payload: totalAmount must be a number.',
       });
     });
+
+    it('reports critical failure details when mark_outbox_failed fails', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-critical-1',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'PACKAGE_SALE',
+          reference_id: 'ref-critical-1',
+          payload: {
+            totalAmount: 1000000,
+            vatRate: 0,
+            description: 'Critical failed sale',
+          },
+          retry_count: 0,
+        },
+      ];
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      (RevenueRecognitionService.handlePackageSale as jest.Mock).mockRejectedValueOnce(new Error('COA unavailable'));
+      mockRpc.mockResolvedValueOnce({ error: { message: 'failed-state write unavailable' } });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      expect(response.status).toBe(200);
+
+      const json = await response.json();
+      expect(json.success).toBe(false);
+      expect(json.status).toBe('critical_failure');
+      expect(json.failureCount).toBe(1);
+      expect(json.criticalFailureCount).toBe(1);
+      expect(json.details).toEqual([
+        expect.objectContaining({
+          eventId: 'outbox-critical-1',
+          eventType: 'PACKAGE_SALE',
+          referenceId: 'ref-critical-1',
+          status: 'critical_failed',
+          error: 'COA unavailable',
+          markFailedError: 'failed-state write unavailable',
+        }),
+      ]);
+      expect(mockRpc).toHaveBeenCalledWith('mark_outbox_failed', {
+        p_outbox_id: 'outbox-critical-1',
+        p_error: 'COA unavailable',
+      });
+    });
+
+    it('marks the event failed when mark_outbox_completed fails after handler success', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-complete-fail-1',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'PACKAGE_SALE',
+          reference_id: 'ref-complete-fail-1',
+          payload: {
+            totalAmount: 1000000,
+            vatRate: 0,
+            description: 'Completion mark fails',
+          },
+          retry_count: 0,
+        },
+      ];
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      (RevenueRecognitionService.handlePackageSale as jest.Mock).mockResolvedValueOnce('journal-complete-fail');
+      mockRpc.mockResolvedValueOnce({ error: { message: 'completed-state write unavailable' } });
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      expect(response.status).toBe(200);
+
+      const json = await response.json();
+      expect(json.success).toBe(false);
+      expect(json.status).toBe('partial_failure');
+      expect(json.successCount).toBe(0);
+      expect(json.failureCount).toBe(1);
+      expect(json.criticalFailureCount).toBe(0);
+      expect(mockRpc).toHaveBeenNthCalledWith(2, 'mark_outbox_completed', {
+        p_outbox_id: 'outbox-complete-fail-1',
+        p_journal_entry_id: 'journal-complete-fail',
+      });
+      expect(mockRpc).toHaveBeenNthCalledWith(3, 'mark_outbox_failed', {
+        p_outbox_id: 'outbox-complete-fail-1',
+        p_error: 'Failed to mark outbox completed: completed-state write unavailable',
+      });
+      expect(json.details).toEqual([
+        expect.objectContaining({
+          eventId: 'outbox-complete-fail-1',
+          status: 'failed',
+          error: 'Failed to mark outbox completed: completed-state write unavailable',
+        }),
+      ]);
+    });
+
+    it('continues processing mixed success and failure events with per-event details', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-mixed-success',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'PACKAGE_SALE',
+          reference_id: 'ref-mixed-success',
+          payload: {
+            totalAmount: 1000000,
+            vatRate: 0,
+            description: 'Mixed success sale',
+          },
+          retry_count: 0,
+        },
+        {
+          id: 'outbox-mixed-failure',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'SESSION_DONE',
+          reference_id: 'ref-mixed-failure',
+          payload: {
+            earnedRevenueAmount: 200000,
+            commissionAmount: 50000,
+            ktvId: 'ktv-id-1',
+            description: 'Mixed failed session',
+          },
+          retry_count: 0,
+        },
+      ];
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      (RevenueRecognitionService.handlePackageSale as jest.Mock).mockResolvedValueOnce('journal-mixed-success');
+      mockRpc.mockResolvedValueOnce({ error: null });
+      (RevenueRecognitionService.handleSessionDone as jest.Mock).mockRejectedValueOnce(new Error('session journal failed'));
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      expect(response.status).toBe(200);
+
+      const json = await response.json();
+      expect(json.success).toBe(false);
+      expect(json.status).toBe('partial_failure');
+      expect(json.processed).toBe(2);
+      expect(json.successCount).toBe(1);
+      expect(json.failureCount).toBe(1);
+      expect(json.criticalFailureCount).toBe(0);
+      expect(json.details).toEqual([
+        expect.objectContaining({
+          eventId: 'outbox-mixed-success',
+          status: 'completed',
+          journalEntryId: 'journal-mixed-success',
+        }),
+        expect.objectContaining({
+          eventId: 'outbox-mixed-failure',
+          status: 'failed',
+          error: 'session journal failed',
+        }),
+      ]);
+      expect(RevenueRecognitionService.handleSessionDone).toHaveBeenCalled();
+      expect(mockRpc).toHaveBeenCalledWith('mark_outbox_failed', {
+        p_outbox_id: 'outbox-mixed-failure',
+        p_error: 'session journal failed',
+      });
+    });
   });
 });

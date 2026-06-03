@@ -7,6 +7,25 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden Accounting Worker Side Effects
+* **Mục tiêu kỹ thuật**:
+  * Không để accounting worker chỉ log khi `mark_outbox_failed` lỗi mà response không chỉ ra event nào bị kẹt.
+  * Làm rõ kết quả từng outbox event để vận hành phân biệt success, partial failure và critical failure.
+* **Thay đổi chính**:
+  * `GET /api/cron/accounting-worker` trả thêm `details` cho từng event đã completed, failed hoặc critical_failed.
+  * Thêm `criticalFailureCount` và status `critical_failure` khi handler lỗi nhưng RPC `mark_outbox_failed` cũng lỗi.
+  * Completion-mark failure sau khi handler đã tạo journal entry được đưa về failed event và gọi `mark_outbox_failed` với lỗi completion.
+  * Giữ xử lý tuần tự và tiếp tục event sau dù một event fail, đồng thời response phản ánh đủ success/failure counts.
+  * Bổ sung regression tests cho mark-failed RPC failure, mark-completed failure và batch mixed success/failure details.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-accounting-worker-side-effects.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/accounting-outbox.test.ts --runInBand` pass, 11/11 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/app/api/cron/accounting-worker/route.ts src/__tests__/accounting-outbox.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 66 suites / 742 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden Payment Webhook Side Effects
 * **Mục tiêu kỹ thuật**:
   * Không để webhook thanh toán đổi booking sang `booked` nhưng thiếu revenue/audit/outbox bắt buộc.
