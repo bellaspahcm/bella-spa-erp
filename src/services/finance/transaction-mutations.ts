@@ -213,19 +213,19 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
       try {
         const enqueued = await enqueueWithAutoClient(
-        supabase,
-        {
-          tenantId: updatedRev.tenant_id,
-          eventType: 'REFUND_ISSUED',
-          referenceType: 'REVENUE',
-          referenceId: updatedRev.id,
-          payload: buildRefundOutboxPayload({
-            amount: Number(updatedRev.amount),
-            paymentMethod: updatedRev.payment_method,
-            description: updatedRev.notes,
-            branchId: updatedRev.tenant_id,
-          }),
-        },
+          supabase,
+          {
+            tenantId: updatedRev.tenant_id,
+            eventType: 'REFUND_ISSUED',
+            referenceType: 'REVENUE',
+            referenceId: updatedRev.id,
+            payload: buildRefundOutboxPayload({
+              amount: Number(updatedRev.amount),
+              paymentMethod: updatedRev.payment_method,
+              description: updatedRev.notes,
+              branchId: updatedRev.tenant_id,
+            }),
+          },
           '[confirmTransaction]'
         );
         assertOutboxEnqueued(enqueued, 'REFUND_ISSUED');
@@ -236,23 +236,24 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
     } else if (updatedRev && updatedRev.tenant_id && PACKAGE_SALE_REVENUE_TYPES.includes(updatedRev.revenue_type || '')) {
       const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
       try {
-        await enqueueWithAutoClient(
-        supabase,
-        {
-          tenantId: updatedRev.tenant_id,
-          eventType: 'PACKAGE_SALE',
-          referenceType: 'REVENUE',
-          referenceId: updatedRev.id,
-          payload: {
-            totalAmount: Number(updatedRev.amount),
-            vatRate: 0,
-            description: updatedRev.notes || 'Xác nhận thanh toán gói dịch vụ',
-            // TODO Phase 29: dùng branch_id thực khi multi-branch
-            branchId: updatedRev.tenant_id,
+        const enqueued = await enqueueWithAutoClient(
+          supabase,
+          {
+            tenantId: updatedRev.tenant_id,
+            eventType: 'PACKAGE_SALE',
+            referenceType: 'REVENUE',
+            referenceId: updatedRev.id,
+            payload: {
+              totalAmount: Number(updatedRev.amount),
+              vatRate: 0,
+              description: updatedRev.notes || 'Xác nhận thanh toán gói dịch vụ',
+              // TODO Phase 29: dùng branch_id thực khi multi-branch
+              branchId: updatedRev.tenant_id,
+            },
           },
-        },
           '[confirmTransaction]'
         );
+        assertOutboxEnqueued(enqueued, 'PACKAGE_SALE');
       } catch (outboxError) {
         const rollbackError = await rollbackRevenueConfirmation(supabase, id, revenueRollbackPayload);
         throw new Error(withRollbackFailure(outboxError, rollbackError));
@@ -374,24 +375,25 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
           }
 
           try {
-            await enqueueWithAutoClient(
-            supabase,
-            {
-              tenantId: updatedExpense.tenant_id,
-              eventType: 'SALARY_PAID',
-              referenceType: 'SALARY_RECORD',
-              referenceId: salaryRecordId,
-              payload: {
-                amount: Number(updatedExpense.amount),
-                paymentMethod: 'bank_transfer',
-                description: updatedExpense.description || 'Thanh toán lương',
-                ktvId,
-                // TODO Phase 29: dùng branch_id thực khi multi-branch
-                branchId: updatedExpense.tenant_id,
+            const enqueued = await enqueueWithAutoClient(
+              supabase,
+              {
+                tenantId: updatedExpense.tenant_id,
+                eventType: 'SALARY_PAID',
+                referenceType: 'SALARY_RECORD',
+                referenceId: salaryRecordId,
+                payload: {
+                  amount: Number(updatedExpense.amount),
+                  paymentMethod: 'bank_transfer',
+                  description: updatedExpense.description || 'Thanh toán lương',
+                  ktvId,
+                  // TODO Phase 29: dùng branch_id thực khi multi-branch
+                  branchId: updatedExpense.tenant_id,
+                },
               },
-            },
               '[confirmTransaction]'
             );
+            assertOutboxEnqueued(enqueued, 'SALARY_PAID');
           } catch (outboxError) {
             const salaryRollbackError = await rollbackSalaryRecord(supabase, salaryRecordId, salaryRecordRollbackPayload);
             const expenseRollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
@@ -404,24 +406,25 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       }
 
       try {
-        await enqueueWithAutoClient(
-        supabase,
-        {
-          tenantId: updatedExpense.tenant_id,
-          eventType: 'EXPENSE_RECORDED',
-          referenceType: 'EXPENSE',
-          referenceId: updatedExpense.id,
-          payload: {
-            amount: Number(updatedExpense.amount),
-            category: updatedExpense.category,
-            paymentMethod: 'bank_transfer', // default
-            description: updatedExpense.description || 'Chi phí vận hành',
-            // TODO Phase 29: dùng branch_id thực khi multi-branch
-            branchId: updatedExpense.tenant_id,
+        const enqueued = await enqueueWithAutoClient(
+          supabase,
+          {
+            tenantId: updatedExpense.tenant_id,
+            eventType: 'EXPENSE_RECORDED',
+            referenceType: 'EXPENSE',
+            referenceId: updatedExpense.id,
+            payload: {
+              amount: Number(updatedExpense.amount),
+              category: updatedExpense.category,
+              paymentMethod: 'bank_transfer', // default
+              description: updatedExpense.description || 'Chi phí vận hành',
+              // TODO Phase 29: dùng branch_id thực khi multi-branch
+              branchId: updatedExpense.tenant_id,
+            },
           },
-        },
           '[confirmTransaction]'
         );
+        assertOutboxEnqueued(enqueued, 'EXPENSE_RECORDED');
       } catch (outboxError) {
         const rollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
         throw new Error(withRollbackFailure(outboxError, rollbackError));
@@ -504,24 +507,25 @@ export async function recordTransaction(data: {
       if (dbStatus === 'approved' && result) {
         const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
         try {
-          await enqueueWithAutoClient(
-          supabase,
-          {
-            tenantId,
-            eventType: 'EXPENSE_RECORDED',
-            referenceType: 'EXPENSE',
-            referenceId: result.id,
-            payload: {
-              amount: Math.abs(data.amount),
-              category: dbCategory,
-              paymentMethod: 'bank_transfer',
-              description: data.notes || 'Chi phí vận hành',
-              // TODO Phase 29: dùng branch_id thực khi multi-branch
-              branchId: tenantId,
+          const enqueued = await enqueueWithAutoClient(
+            supabase,
+            {
+              tenantId,
+              eventType: 'EXPENSE_RECORDED',
+              referenceType: 'EXPENSE',
+              referenceId: result.id,
+              payload: {
+                amount: Math.abs(data.amount),
+                category: dbCategory,
+                paymentMethod: 'bank_transfer',
+                description: data.notes || 'Chi phí vận hành',
+                // TODO Phase 29: dùng branch_id thực khi multi-branch
+                branchId: tenantId,
+              },
             },
-          },
             '[recordTransaction]'
           );
+          assertOutboxEnqueued(enqueued, 'EXPENSE_RECORDED');
         } catch (outboxError) {
           const rollbackError = await deleteInsertedFinanceRow(supabase, 'expenses', result.id);
           throw new Error(withRollbackFailure(outboxError, rollbackError));
@@ -593,19 +597,19 @@ export async function recordTransaction(data: {
         const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
         try {
           const enqueued = await enqueueWithAutoClient(
-          supabase,
-          {
-            tenantId,
-            eventType: 'REFUND_ISSUED',
-            referenceType: 'REVENUE',
-            referenceId: result.id,
-            payload: buildRefundOutboxPayload({
-              amount: data.amount,
-              paymentMethod: 'bank_transfer',
-              description: data.notes,
-              branchId: tenantId,
-            }),
-          },
+            supabase,
+            {
+              tenantId,
+              eventType: 'REFUND_ISSUED',
+              referenceType: 'REVENUE',
+              referenceId: result.id,
+              payload: buildRefundOutboxPayload({
+                amount: data.amount,
+                paymentMethod: 'bank_transfer',
+                description: data.notes,
+                branchId: tenantId,
+              }),
+            },
             '[recordTransaction]'
           );
           assertOutboxEnqueued(enqueued, 'REFUND_ISSUED');
@@ -616,23 +620,24 @@ export async function recordTransaction(data: {
       } else if (dbStatus === 'confirmed' && result && PACKAGE_SALE_REVENUE_TYPES.includes(dbRevenueType)) {
         const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
         try {
-          await enqueueWithAutoClient(
-          supabase,
-          {
-            tenantId,
-            eventType: 'PACKAGE_SALE',
-            referenceType: 'REVENUE',
-            referenceId: result.id,
-            payload: {
-              totalAmount: Math.abs(data.amount),
-              vatRate: 0,
-              description: data.notes || 'Giao dịch doanh thu cọc/thanh toán gói',
-              // TODO Phase 29: dùng branch_id thực khi multi-branch
-              branchId: tenantId,
+          const enqueued = await enqueueWithAutoClient(
+            supabase,
+            {
+              tenantId,
+              eventType: 'PACKAGE_SALE',
+              referenceType: 'REVENUE',
+              referenceId: result.id,
+              payload: {
+                totalAmount: Math.abs(data.amount),
+                vatRate: 0,
+                description: data.notes || 'Giao dịch doanh thu cọc/thanh toán gói',
+                // TODO Phase 29: dùng branch_id thực khi multi-branch
+                branchId: tenantId,
+              },
             },
-          },
             '[recordTransaction]'
           );
+          assertOutboxEnqueued(enqueued, 'PACKAGE_SALE');
         } catch (outboxError) {
           const rollbackError = await deleteInsertedFinanceRow(supabase, 'revenue', result.id);
           throw new Error(withRollbackFailure(outboxError, rollbackError));

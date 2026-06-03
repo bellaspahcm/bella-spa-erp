@@ -129,8 +129,9 @@ export async function getOutboxClient<T extends RpcCapableClient>(
  * Idempotency is enforced by the UNIQUE (event_type, reference_id) constraint —
  * calling this twice for the same (eventType, referenceId) is a no-op.
  *
- * This helper does NOT throw — callers should not let accounting failures block
- * business flow. The error is logged with `logPrefix` for observability.
+ * This helper returns an explicit boolean instead of throwing. Callers on
+ * accounting-critical flows must treat `false` as a failed side effect and
+ * rollback/return an explicit error.
  */
 export async function enqueueAccountingEvent(
   client: RpcCapableClient,

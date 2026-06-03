@@ -352,33 +352,43 @@ export async function ensureSessionReviewPlaceholder(params: {
 }) {
   const { supabase, sessionId, ktvId, tenantId, currentBooking } = params;
 
-  try {
-    if (currentBooking?.assigned_ktv_id) {
-      const { data: existingReview } = await supabase
-        .from('session_reviews')
-        .select('id')
-        .eq('session_log_id', sessionId)
-        .maybeSingle();
-
-      if (!existingReview) {
-        const reviewPayload: SessionReviewInsert = {
-          session_log_id: sessionId,
-          reviewer_id: currentBooking.assigned_ktv_id,
-          ktv_id: ktvId,
-          rating: 5,
-          note: 'Chờ khách hàng đánh giá',
-          status: 'pending_review',
-          tenant_id: tenantId,
-        };
-
-        await supabase
-          .from('session_reviews')
-          .insert([reviewPayload]);
-      }
-    }
-  } catch (reviewErr) {
-    console.warn('Failed to auto-create review placeholder:', reviewErr);
+  if (!currentBooking?.assigned_ktv_id) {
+    return { success: true };
   }
+
+  const { data: existingReview, error: reviewLookupError } = await supabase
+    .from('session_reviews')
+    .select('id')
+    .eq('session_log_id', sessionId)
+    .maybeSingle();
+
+  if (reviewLookupError) {
+    return { error: 'Không thể kiểm tra review chờ đánh giá: ' + reviewLookupError.message };
+  }
+
+  if (existingReview) {
+    return { success: true };
+  }
+
+  const reviewPayload: SessionReviewInsert = {
+    session_log_id: sessionId,
+    reviewer_id: currentBooking.assigned_ktv_id,
+    ktv_id: ktvId,
+    rating: 5,
+    note: 'Chờ khách hàng đánh giá',
+    status: 'pending_review',
+    tenant_id: tenantId,
+  };
+
+  const { error: reviewInsertError } = await supabase
+    .from('session_reviews')
+    .insert([reviewPayload]);
+
+  if (reviewInsertError) {
+    return { error: 'Không thể tạo review chờ đánh giá: ' + reviewInsertError.message };
+  }
+
+  return { success: true };
 }
 
 export async function enqueueSessionDoneAccountingOutbox(params: {
@@ -399,7 +409,6 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
     bookingId,
     tenantId,
     ktvId,
-    today,
     existingLog,
     currentBooking,
     isInventoryConsumed,
@@ -421,7 +430,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
     const commission = Number(currentBooking?.ktv_commission) || 0;
 
     const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-    await enqueueWithAutoClient(
+    const outboxEnqueued = await enqueueWithAutoClient(
       supabase,
       {
         tenantId,
@@ -441,21 +450,14 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
       },
       '[processSessionCompletion]'
     );
+    if (!outboxEnqueued) {
+      throw new Error('Failed to enqueue SESSION_DONE accounting event');
+    }
 
     return { success: true };
   } catch (outboxError) {
     const error = outboxError instanceof Error ? outboxError : new Error(String(outboxError));
     console.error('[processSessionCompletion] Error enqueuing accounting outbox event, rolling back...', error);
-
-    if (ktvId && tenantId) {
-      const monthYear = `${today.substring(0, 7)}-01`;
-      try {
-        const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
-        await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
-      } catch (salaryRollbackError) {
-        console.error('[processSessionCompletion] Error rolling back KTV salary record:', salaryRollbackError);
-      }
-    }
 
     await rollbackCompletionSideEffects({
       supabase,

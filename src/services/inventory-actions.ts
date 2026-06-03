@@ -695,7 +695,7 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
     // Enqueue INVENTORY_CONSUMED outbox event if totalCost > 0
     if (totalCost > 0) {
       const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-      await enqueueWithAutoClient(
+      const outboxEnqueued = await enqueueWithAutoClient(
         supabase,
         {
           tenantId,
@@ -711,6 +711,9 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
         },
         '[autoConsumeForSession]'
       );
+      if (!outboxEnqueued) {
+        throw new Error('Failed to enqueue INVENTORY_CONSUMED accounting event');
+      }
     }
 
     return { success: true, processed: consumedItems.length, totalCost };

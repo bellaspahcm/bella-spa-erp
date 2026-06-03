@@ -28,6 +28,8 @@ const mockInsert = jest.fn(() => ({ select: mockSelect }));
 const mockInsertLines = jest.fn();
 const mockUpdateEq = jest.fn();
 const mockUpdate = jest.fn(() => ({ eq: mockUpdateEq }));
+const mockDeleteLinesEq = jest.fn();
+const mockDeleteLines = jest.fn(() => ({ eq: mockDeleteLinesEq }));
 const mockDeleteEq = jest.fn();
 const mockDelete = jest.fn(() => ({ eq: mockDeleteEq }));
 
@@ -65,6 +67,7 @@ beforeEach(() => {
   mockInsertLines.mockResolvedValue({ error: null });
   mockUpdateEq.mockResolvedValue({ error: null });
   mockDeleteEq.mockResolvedValue({ error: null });
+  mockDeleteLinesEq.mockResolvedValue({ error: null });
 
   // Router: trả về API tương ứng tên bảng
   fromHandler.mockImplementation((table: string) => {
@@ -78,6 +81,7 @@ beforeEach(() => {
     if (table === 'journal_lines') {
       return {
         insert: mockInsertLines, // promise
+        delete: mockDeleteLines, // returns { eq }
       };
     }
     if (table === 'accounting_accounts') {
@@ -187,7 +191,7 @@ describe('AccountingEngineService.postJournalEntry', () => {
     expect(mockDeleteEq).toHaveBeenCalledWith('id', 'entry-uuid-1');
   });
 
-  it('propagates POST update error', async () => {
+  it('rolls back header and lines when POST update fails', async () => {
     mockUpdateEq.mockResolvedValueOnce({ error: { message: 'Post failed' } });
 
     await expect(
@@ -200,6 +204,11 @@ describe('AccountingEngineService.postJournalEntry', () => {
         ],
       })
     ).rejects.toThrow(/Failed to post journal entry.*Post failed/);
+
+    expect(mockDeleteLines).toHaveBeenCalled();
+    expect(mockDeleteLinesEq).toHaveBeenCalledWith('entry_id', 'entry-uuid-1');
+    expect(mockDelete).toHaveBeenCalled();
+    expect(mockDeleteEq).toHaveBeenCalledWith('id', 'entry-uuid-1');
   });
 });
 
@@ -359,6 +368,32 @@ describe('RevenueRecognitionService.handleSessionDone', () => {
 
     expect(result).toBeNull();
     expect(mockInsertLines).not.toHaveBeenCalled();
+  });
+});
+
+describe('RevenueRecognitionService.handleExpenseRecorded', () => {
+  it('maps salary expenses to TT133 account 6421', async () => {
+    mockSingle
+      .mockResolvedValueOnce({ data: { id: EXPENSE_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: BANK_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: 'entry-uuid-expense-salary' }, error: null });
+
+    const id = await RevenueRecognitionService.handleExpenseRecorded({
+      tenantId: TENANT_ID,
+      expenseId: 'expense-salary-1',
+      amount: 7000000,
+      category: 'salary',
+      paymentMethod: 'bank_transfer',
+      description: 'Luong nhan vien thang 05',
+    });
+
+    expect(id).toBe('entry-uuid-expense-salary');
+
+    const linesCall = mockInsertLines.mock.calls[0][0];
+    expect(linesCall).toEqual(expect.arrayContaining([
+      expect.objectContaining({ account_id: EXPENSE_ID, debit_amount: 7000000, credit_amount: 0 }),
+      expect.objectContaining({ account_id: BANK_ID, debit_amount: 0, credit_amount: 7000000 }),
+    ]));
   });
 });
 

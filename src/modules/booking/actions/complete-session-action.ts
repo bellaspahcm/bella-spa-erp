@@ -5,6 +5,15 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
 import { processSessionCompletion } from './session-completion-engine';
 
+function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return fallback;
+}
+
 export async function completeSession(sessionId: string, bookingId: string, customNote?: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
@@ -91,11 +100,25 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   if (result.error) {
     console.error('[completeSession] Failed to process session completion, rolling back status:', result.error);
     // Rollback session status
-    await supabase.from('session_logs').update({
+    const { error: rollbackError } = await supabase.from('session_logs').update({
       status: existingLog?.status || 'scheduled',
       completed_date: null,
       completed_by_ktv_id: null
     }).eq('id', sessionId);
+
+    if (rollbackError) {
+      return { error: `${result.error}; rollback session failed: ${rollbackError.message}` };
+    }
+
+    if (ktvId && tenantId) {
+      try {
+        const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+        const monthYear = `${today.substring(0, 7)}-01`;
+        await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+      } catch (salaryRollbackError) {
+        return { error: `${result.error}; rollback salary failed: ${getErrorMessage(salaryRollbackError)}` };
+      }
+    }
     
     return { error: result.error };
   }
