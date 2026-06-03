@@ -7,6 +7,24 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden AI Orchestrator Side Effects
+* **Mục tiêu kỹ thuật**:
+  * Khóa regression cho `ai_agent_logs.insert` failure: lỗi DB bắt buộc phải làm API trả 500.
+  * Không để Gemini enrichment rỗng làm mất draft proposal từ sub-agent nền.
+* **Thay đổi chính**:
+  * `runCOOOrchestrator` chỉ dùng `draftActions` từ Gemini khi Gemini trả array không rỗng.
+  * CFO `reconciliation_audit` proposal vẫn được giữ khi Gemini trả `draftActions: []`.
+  * Gemini HTTP failure vẫn là trạng thái degraded enrichment: response 200, giữ `fullData` từ sub-agent để người vận hành còn dữ liệu nền.
+  * Bổ sung tests API-level cho log failure, proposal preservation, Gemini degraded fallback.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-ai-orchestrator-side-effects.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/ai-agent.test.ts --runInBand` pass, 11/11 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/ai/orchestrator.ts src/__tests__/ai-agent.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 66 suites / 725 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden CFO Agent Reconciliation RPC
 * **Mục tiêu kỹ thuật**:
   * Chặn CFO agent hiểu nhầm response RPC đối soát sai shape thành báo cáo rỗng hợp lệ.
