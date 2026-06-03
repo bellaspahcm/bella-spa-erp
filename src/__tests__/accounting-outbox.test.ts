@@ -74,6 +74,7 @@ describe('Accounting Outbox Worker API', () => {
       return {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
+        neq: jest.fn().mockReturnThis(),
         maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
       };
     });
@@ -592,6 +593,171 @@ describe('Accounting Outbox Worker API', () => {
           error: 'Failed to mark outbox completed: completed-state write unavailable',
         }),
       ]);
+    });
+
+    it('completes a retry with an existing posted journal instead of posting a duplicate', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-complete-fail-1',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'PACKAGE_SALE',
+          reference_id: 'ref-complete-fail-1',
+          payload: {
+            totalAmount: 1000000,
+            vatRate: 0,
+            description: 'Completion mark fails',
+          },
+          retry_count: 1,
+        },
+      ];
+      const journalMaybeSingle = jest.fn()
+        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({
+          data: { id: 'journal-complete-fail', status: 'POSTED' },
+          error: null,
+        });
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'journal_entries') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            neq: jest.fn().mockReturnThis(),
+            maybeSingle: journalMaybeSingle,
+          };
+        }
+
+        if (table === 'accounting_outbox') {
+          return {
+            update: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockResolvedValue({ error: null }),
+          };
+        }
+
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          neq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      });
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      (RevenueRecognitionService.handlePackageSale as jest.Mock).mockResolvedValueOnce('journal-complete-fail');
+      mockRpc.mockResolvedValueOnce({ error: { message: 'completed-state write unavailable' } });
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const firstResponse = await GET(req);
+      const firstJson = await firstResponse.json();
+
+      expect(firstResponse.status).toBe(200);
+      expect(firstJson.success).toBe(false);
+      expect(firstJson.failureCount).toBe(1);
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const secondResponse = await GET(req);
+      const secondJson = await secondResponse.json();
+
+      expect(secondResponse.status).toBe(200);
+      expect(secondJson.success).toBe(true);
+      expect(secondJson.successCount).toBe(1);
+      expect(secondJson.failureCount).toBe(0);
+      expect(secondJson.details).toEqual([
+        expect.objectContaining({
+          eventId: 'outbox-complete-fail-1',
+          status: 'completed',
+          journalEntryId: 'journal-complete-fail',
+        }),
+      ]);
+      expect(RevenueRecognitionService.handlePackageSale).toHaveBeenCalledTimes(1);
+      expect(journalMaybeSingle).toHaveBeenCalledTimes(2);
+
+      const completedCalls = mockRpc.mock.calls.filter(([fn]) => fn === 'mark_outbox_completed');
+      expect(completedCalls).toHaveLength(2);
+      expect(completedCalls[1]).toEqual([
+        'mark_outbox_completed',
+        {
+          p_outbox_id: 'outbox-complete-fail-1',
+          p_journal_entry_id: 'journal-complete-fail',
+        },
+      ]);
+    });
+
+    it('fails explicitly when a retry finds an existing active journal that is not posted', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-existing-draft-1',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'PACKAGE_SALE',
+          reference_id: 'ref-existing-draft-1',
+          payload: {
+            totalAmount: 1000000,
+            vatRate: 0,
+            description: 'Existing draft journal',
+          },
+          retry_count: 1,
+        },
+      ];
+
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'journal_entries') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            neq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { id: 'journal-draft-1', status: 'DRAFT' },
+              error: null,
+            }),
+          };
+        }
+
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          neq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+        };
+      });
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(false);
+      expect(json.failureCount).toBe(1);
+      expect(json.details).toEqual([
+        expect.objectContaining({
+          eventId: 'outbox-existing-draft-1',
+          status: 'failed',
+          error: expect.stringContaining('is DRAFT, not POSTED'),
+        }),
+      ]);
+      expect(RevenueRecognitionService.handlePackageSale).not.toHaveBeenCalled();
+      expect(mockRpc).toHaveBeenCalledWith('mark_outbox_failed', {
+        p_outbox_id: 'outbox-existing-draft-1',
+        p_error: 'Existing active journal journal-draft-1 for PACKAGE_SALE:ref-existing-draft-1 is DRAFT, not POSTED.',
+      });
+      expect(mockRpc).not.toHaveBeenCalledWith('mark_outbox_completed', expect.anything());
     });
 
     it('continues processing mixed success and failure events with per-event details', async () => {

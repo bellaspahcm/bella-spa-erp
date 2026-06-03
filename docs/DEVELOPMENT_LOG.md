@@ -5,6 +5,22 @@
 
 ---
 
+### 03/06/2026: Harden Accounting Worker Idempotency
+* **Muc tieu ke toan**:
+  * Khong de retry accounting worker tao trung active `journal_entries` cho cung business reference neu post journal da thanh cong nhung `mark_outbox_completed` bi loi.
+  * Giu stale `SESSION_DONE` dead-letter truoc khi idempotent-complete de khong che mat source session da bi doi trang thai.
+* **Thay doi chinh**:
+  * Worker map `event_type` sang `journal_entries.reference_type`, query journal active (`status <> CANCELED`) truoc khi goi posting handler.
+  * Neu journal ton tai va `POSTED`, worker skip handler va mark outbox completed bang journal id da co.
+  * Neu journal active ton tai nhung chua `POSTED`, worker fail ro rang thay vi post them journal moi.
+  * Them migration `20260603050000_unique_active_journal_reference.sql` voi duplicate audit va unique partial index `idx_journal_entries_worker_reference_unique`.
+  * Mo rong `accounting-outbox.test.ts` voi retry-after-complete-fail, existing DRAFT journal, va giu stale SESSION_DONE regression.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-accounting-worker-idempotency.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/accounting-outbox.test.ts --runInBand` pass, 1 suite / 14 tests.
+  * `npm.cmd run build` pass.
+
 ### 03/06/2026: Branch Legacy Revenue Sync By Type
 * **Muc tieu ke toan**:
   * Khong de legacy SIMPLE -> PROFESSIONAL sync day moi confirmed `revenue` vao `PACKAGE_SALE` va credit truc tiep doanh thu.

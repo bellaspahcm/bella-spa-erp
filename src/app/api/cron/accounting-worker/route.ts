@@ -22,6 +22,11 @@ type MarkOutboxCompletedRpc = (
   fn: 'mark_outbox_completed',
   args: { p_outbox_id: string; p_journal_entry_id: string | null }
 ) => ReturnType<AdminClient['rpc']>;
+type WorkerJournalReferenceType = NonNullable<JournalEntryInput['reference_type']>;
+type ExistingJournalReference = {
+  id: string;
+  status: string;
+};
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -120,6 +125,49 @@ async function markOutboxDead(supabase: AdminClient, outboxId: string, reason: s
     .eq('id', outboxId);
 }
 
+function getJournalReferenceType(eventType: string): WorkerJournalReferenceType | null {
+  switch (eventType) {
+    case 'PACKAGE_SALE':
+      return 'PACKAGE_SALE';
+    case 'SESSION_DONE':
+      return 'SESSION_DONE';
+    case 'EXPENSE_RECORDED':
+      return 'EXPENSE';
+    case 'SALARY_PAID':
+      return 'SALARY_PAYMENT';
+    case 'INVENTORY_CONSUMED':
+      return 'INVENTORY_CONSUMPTION';
+    case 'REFUND_ISSUED':
+      return 'REFUND';
+    case 'MANUAL_ENTRY':
+      return 'MANUAL';
+    default:
+      return null;
+  }
+}
+
+async function findExistingActiveJournal(
+  supabase: AdminClient,
+  tenantId: string,
+  referenceType: WorkerJournalReferenceType,
+  referenceId: string,
+): Promise<ExistingJournalReference | null> {
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('id,status')
+    .eq('tenant_id', tenantId)
+    .eq('reference_type', referenceType)
+    .eq('reference_id', referenceId)
+    .neq('status', 'CANCELED')
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to check existing journal reference: ${error.message}`);
+  }
+
+  return data ? { id: data.id, status: data.status } : null;
+}
+
 async function assertSessionDoneStillValid(supabase: AdminClient, tenantId: string, sessionLogId: string) {
   const { data, error } = await supabase
     .from('session_logs')
@@ -199,10 +247,62 @@ export async function GET(req: NextRequest) {
         const eventType = event.event_type;
         const refId = event.reference_id;
         const payload = asPayloadRecord(event.payload);
+        const journalReferenceType = getJournalReferenceType(eventType);
 
         console.log(`[Accounting Worker] Processing event ${event.id} | Type: ${eventType} | Tenant: ${tenantId}`);
 
         let journalEntryId: string | null = null;
+
+        if (!journalReferenceType) {
+          throw new Error(`Unsupported outbox event type: ${eventType}`);
+        }
+
+        if (eventType === 'SESSION_DONE') {
+          const staleReason = await assertSessionDoneStillValid(supabase, tenantId, refId);
+          if (staleReason) {
+            const { error: deadErr } = await markOutboxDead(supabase, event.id, staleReason);
+            if (deadErr) {
+              throw new Error(`Failed to dead-letter stale SESSION_DONE outbox: ${deadErr.message}`);
+            }
+
+            console.warn(`[Accounting Worker] ${staleReason}`);
+            deadLetterCount++;
+            details.push({
+              eventId: event.id,
+              eventType,
+              referenceId: refId,
+              status: 'dead_lettered',
+              journalEntryId: null,
+              error: staleReason,
+            });
+            continue;
+          }
+        }
+
+        const existingJournal = await findExistingActiveJournal(supabase, tenantId, journalReferenceType, refId);
+        if (existingJournal) {
+          if (existingJournal.status !== 'POSTED') {
+            throw new Error(
+              `Existing active journal ${existingJournal.id} for ${journalReferenceType}:${refId} is ${existingJournal.status}, not POSTED.`
+            );
+          }
+
+          const { error: completeErr } = await markOutboxCompleted(supabase, event.id, existingJournal.id);
+          if (completeErr) {
+            throw new Error(`Failed to mark outbox completed: ${completeErr.message}`);
+          }
+
+          console.log(`[Accounting Worker] Event ${event.id} completed from existing journal ${existingJournal.id}.`);
+          successCount++;
+          details.push({
+            eventId: event.id,
+            eventType,
+            referenceId: refId,
+            status: 'completed',
+            journalEntryId: existingJournal.id,
+          });
+          continue;
+        }
 
         // Định tuyến xử lý theo event_type
         switch (eventType) {
@@ -218,28 +318,6 @@ export async function GET(req: NextRequest) {
             break;
 
           case 'SESSION_DONE':
-            {
-              const staleReason = await assertSessionDoneStillValid(supabase, tenantId, refId);
-              if (staleReason) {
-                const { error: deadErr } = await markOutboxDead(supabase, event.id, staleReason);
-                if (deadErr) {
-                  throw new Error(`Failed to dead-letter stale SESSION_DONE outbox: ${deadErr.message}`);
-                }
-
-                console.warn(`[Accounting Worker] ${staleReason}`);
-                deadLetterCount++;
-                details.push({
-                  eventId: event.id,
-                  eventType,
-                  referenceId: refId,
-                  status: 'dead_lettered',
-                  journalEntryId: null,
-                  error: staleReason,
-                });
-                continue;
-              }
-            }
-
             journalEntryId = await RevenueRecognitionService.handleSessionDone({
               tenantId,
               sessionLogId: refId,
