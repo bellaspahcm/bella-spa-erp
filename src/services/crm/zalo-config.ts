@@ -6,6 +6,16 @@ import { recordAuditLog } from '../audit-actions';
 import { encrypt, decrypt } from '@/lib/crypto';
 import type { ZaloConfig } from './types';
 
+function getErrorMessage(error: unknown, fallback = 'Unknown error') {
+  if (error instanceof Error && error.message.trim()) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message.trim() ? message : fallback;
+  }
+  return fallback;
+}
+
 export async function getZaloConfig(): Promise<ZaloConfig> {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
@@ -96,48 +106,48 @@ export async function saveZaloConfig(config: Partial<ZaloConfig>) {
 
 export async function getOrRefreshZaloToken(tenantId: string): Promise<string | null> {
   const supabase = await createClient();
-  
+
+  const { data: tenant, error } = await supabase
+    .from('tenants')
+    .select('zalo_app_id, zalo_secret_key, zalo_access_token, zalo_refresh_token, zalo_token_expires_at')
+    .eq('id', tenantId)
+    .single();
+
+  if (error) {
+    throw new Error(`[getOrRefreshZaloToken] tenants token query failed for tenant ${tenantId}: ${error.message}`);
+  }
+
+  if (!tenant) {
+    throw new Error(`[getOrRefreshZaloToken] tenant token row not found for tenant ${tenantId}`);
+  }
+
+  const { zalo_app_id, zalo_secret_key, zalo_access_token, zalo_refresh_token, zalo_token_expires_at } = tenant;
+
+  const decryptedSecretKey = decrypt(zalo_secret_key || '');
+  const decryptedAccessToken = decrypt(zalo_access_token || '');
+  const decryptedRefreshToken = decrypt(zalo_refresh_token || '');
+
+  if (!zalo_app_id || !decryptedSecretKey || !decryptedAccessToken || !decryptedRefreshToken) {
+    return null;
+  }
+  if (decryptedSecretKey.includes('••') || decryptedAccessToken.includes('••') || decryptedRefreshToken.includes('••') ||
+      decryptedSecretKey === '' || decryptedAccessToken === '' || decryptedRefreshToken === '') {
+    return null;
+  }
+
+  const now = new Date();
+  const bufferTime = new Date(now.getTime() + 5 * 60 * 1000);
+  if (zalo_token_expires_at) {
+    const expiresAt = new Date(zalo_token_expires_at);
+    if (expiresAt > bufferTime) {
+      return decryptedAccessToken;
+    }
+  }
+
+  console.log(`Zalo access token expired for tenant ${tenantId}. Refreshing...`);
+
+  let result: { access_token?: string; refresh_token?: string; expires_in?: string | number; error_code?: unknown };
   try {
-    const { data: tenant, error } = await supabase
-      .from('tenants')
-      .select('zalo_app_id, zalo_secret_key, zalo_access_token, zalo_refresh_token, zalo_token_expires_at')
-      .eq('id', tenantId)
-      .single();
-
-    if (error || !tenant) {
-      console.error('Error fetching tenant for Zalo token:', error);
-      return null;
-    }
-
-    const { zalo_app_id, zalo_secret_key, zalo_access_token, zalo_refresh_token, zalo_token_expires_at } = tenant;
-
-    // Decrypt fields
-    const decryptedSecretKey = decrypt(zalo_secret_key || '');
-    const decryptedAccessToken = decrypt(zalo_access_token || '');
-    const decryptedRefreshToken = decrypt(zalo_refresh_token || '');
-
-    // Check if configuration is missing or using mock values
-    if (!zalo_app_id || !decryptedSecretKey || !decryptedAccessToken || !decryptedRefreshToken) {
-      return null;
-    }
-    if (decryptedSecretKey.includes('••') || decryptedAccessToken.includes('••') || decryptedRefreshToken.includes('••') ||
-        decryptedSecretKey === '' || decryptedAccessToken === '' || decryptedRefreshToken === '') {
-      return null;
-    }
-
-    // Check if the current token is still valid (with a 5-minute buffer)
-    const now = new Date();
-    const bufferTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 mins in the future
-    if (zalo_token_expires_at) {
-      const expiresAt = new Date(zalo_token_expires_at);
-      if (expiresAt > bufferTime) {
-        return decryptedAccessToken;
-      }
-    }
-
-    // Access token has expired or is about to expire, refresh it!
-    console.log(`Zalo access token expired for tenant ${tenantId}. Refreshing...`);
-    
     const response = await fetch('https://oauth.zaloapp.com/v4/oa/access_token', {
       method: 'POST',
       headers: {
@@ -152,42 +162,38 @@ export async function getOrRefreshZaloToken(tenantId: string): Promise<string | 
     });
 
     if (!response.ok) {
-      console.error(`Failed to refresh Zalo token for tenant ${tenantId}. HTTP status: ${response.status}.`);
-      return null;
+      throw new Error(`HTTP ${response.status}`);
     }
 
-    const result = await response.json();
-    if (!result || !result.access_token) {
-      console.error(`Invalid response from Zalo OAuth for tenant ${tenantId}. Error code: ${result?.error_code ?? 'unknown'}.`);
-      return null;
-    }
-
-    const newAccessToken = result.access_token;
-    const newRefreshToken = result.refresh_token || decryptedRefreshToken; // Keep old refresh token if not returned
-    const expiresIn = parseInt(result.expires_in) || 86400; // default 24h if missing
-    const newExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
-
-    // Save the new tokens to the DB
-    const { error: saveError } = await supabase
-      .from('tenants')
-      .update({
-        zalo_access_token: encrypt(newAccessToken),
-        zalo_refresh_token: encrypt(newRefreshToken),
-        zalo_token_expires_at: newExpiresAt
-      })
-      .eq('id', tenantId);
-
-    if (saveError) {
-      console.error(`Error saving refreshed Zalo tokens to DB for tenant ${tenantId}:`, saveError);
-    } else {
-      console.log(`Successfully refreshed Zalo access token for tenant ${tenantId}. Expires at: ${newExpiresAt}`);
-    }
-
-    return newAccessToken;
-  } catch (err) {
-    console.error(`Exception in getOrRefreshZaloToken for tenant ${tenantId}:`, err);
-    return null;
+    result = await response.json();
+  } catch (error: unknown) {
+    throw new Error(`[getOrRefreshZaloToken] Zalo OAuth refresh failed for tenant ${tenantId}: ${getErrorMessage(error)}`);
   }
+
+  if (!result || !result.access_token) {
+    throw new Error(`[getOrRefreshZaloToken] Zalo OAuth response missing access_token for tenant ${tenantId}: ${String(result?.error_code ?? 'unknown')}`);
+  }
+
+  const newAccessToken = result.access_token;
+  const newRefreshToken = result.refresh_token || decryptedRefreshToken;
+  const expiresIn = parseInt(String(result.expires_in || '86400'), 10) || 86400;
+  const newExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+
+  const { error: saveError } = await supabase
+    .from('tenants')
+    .update({
+      zalo_access_token: encrypt(newAccessToken),
+      zalo_refresh_token: encrypt(newRefreshToken),
+      zalo_token_expires_at: newExpiresAt
+    })
+    .eq('id', tenantId);
+
+  if (saveError) {
+    throw new Error(`[getOrRefreshZaloToken] failed to save refreshed token for tenant ${tenantId}: ${saveError.message}`);
+  }
+
+  console.log(`Successfully refreshed Zalo access token for tenant ${tenantId}. Expires at: ${newExpiresAt}`);
+  return newAccessToken;
 }
 
 export async function getZaloZnsLogs() {

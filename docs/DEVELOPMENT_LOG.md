@@ -5,6 +5,25 @@
 
 ---
 
+### 03/06/2026: Harden CRM Zalo Token Refresh Failures
+* **Muc tieu ky thuat**:
+  * Phan biet ro "chua cau hinh Zalo" voi loi DB/OAuth/save token that.
+  * Khong de refresh token that bai bi bien thanh `null` im lang.
+* **Thay doi chinh**:
+  * `getOrRefreshZaloToken` chi return `null` khi thieu credential hoac credential bi masked.
+  * Loi query tenant token, tenant row khong ton tai, OAuth HTTP failure, OAuth response thieu `access_token`, va loi save token moi deu throw explicit error.
+  * Neu OAuth refresh thanh cong nhung save token moi vao tenant row that bai, function khong return token moi de tranh trang thai token tren DB bi lech.
+  * `sendZaloZNS` giu error response hien co vi catch da surface exception message tu token lifecycle.
+  * Mo rong `crm-zalo-config.test.ts` len 17 case, them 8 case cho token lifecycle.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-crm-zalo-token-refresh-failures.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/crm-zalo-config.test.ts --runInBand` pass, 17/17 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/crm/zalo-config.ts src/__tests__/crm-zalo-config.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 70 suites / 784 tests.
+  * `npm.cmd run build` pass.
+
 ### 03/06/2026: Harden CRM Zalo Config Read Failures
 * **Muc tieu ky thuat**:
   * Khong de loi doc cau hinh Zalo bi bien thanh config rong mac dinh.
