@@ -5,6 +5,23 @@
 
 ---
 
+### 03/06/2026: Harden Payment Webhook Idempotency
+* **Muc tieu ke toan/thanh toan**:
+  * Khong de webhook retry tao trung `revenue` cho cung giao dich ngan hang.
+  * Neu lan truoc da tao revenue nhung audit/outbox bi thieu, retry phai sua side-effect thieu hoac fail ro rang.
+* **Thay doi chinh**:
+  * Payment webhook luu `webhook_transaction_id`, provider, description va received date trong `revenue.accounting_metadata`.
+  * Duplicate check uu tien metadata id, van fallback legacy `notes` de nhan dien giao dich cu.
+  * Khi gap existing revenue, route ensure booking deposit status, audit log va accounting outbox thay vi skip im lang.
+  * Neu insert bi unique violation do race, route re-query revenue co san va ensure side effects.
+  * Them migration `20260603060000_unique_payment_webhook_transaction.sql` voi duplicate audit va partial unique index cho VietQR webhook transaction id.
+  * Them `payment-webhook.test.ts` bao phu insert moi, duplicate repair, repair fail va race unique-index.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-payment-webhook-idempotency.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/payment-webhook.test.ts --runInBand` pass, 1 suite / 4 tests.
+  * `npm.cmd run build` pass.
+
 ### 03/06/2026: Harden Accounting Worker Idempotency
 * **Muc tieu ke toan**:
   * Khong de retry accounting worker tao trung active `journal_entries` cho cung business reference neu post journal da thanh cong nhung `mark_outbox_completed` bi loi.
