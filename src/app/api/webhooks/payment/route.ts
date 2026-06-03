@@ -6,15 +6,21 @@ import { assertOpenAccountingPeriod } from "@/services/accounting/period-guards"
 import { findMissingRequiredFields, inferBusinessEventType } from "@/services/accounting/template-rules";
 import type { Database } from "@/types/database.types";
 
-// Initialize standard Supabase client without cookies for webhook execution
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
+function createWebhookSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.");
   }
-});
+
+  return createClient<Database>(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    }
+  });
+}
 
 interface Transaction {
   amount: number;
@@ -215,6 +221,14 @@ export async function POST(request: NextRequest) {
 
     if (transactions.length === 0) {
       return NextResponse.json({ success: true, message: "No valid transactions found in payload" });
+    }
+
+    let supabase: ReturnType<typeof createWebhookSupabaseClient>;
+    try {
+      supabase = createWebhookSupabaseClient();
+    } catch (configError: unknown) {
+      console.error("[Payment Webhook] Supabase server credentials are not configured:", getErrorMessage(configError));
+      return NextResponse.json({ error: "Server Configuration Error" }, { status: 500 });
     }
 
     const results: ProcessingResult[] = [];

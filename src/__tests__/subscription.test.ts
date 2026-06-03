@@ -595,6 +595,23 @@ describe('Subscription Constraints & Webhook Suite', () => {
       expect(response.status).toBe(401);
     });
 
+    it('should reject valid webhook calls with 500 when Supabase service env is missing', async () => {
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const supabaseModule = require('@supabase/supabase-js');
+
+      const req = createMockRequest({ transferAmount: 200000, content: 'SUB INV-1002', code: 'TX-MISSING-ENV' }, {
+        authorization: 'Bearer super-secret-webhook-key',
+      });
+
+      const response = await POST(req);
+      const resData = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(resData.error).toBe('Server Configuration Error');
+      expect(supabaseModule.createClient).not.toHaveBeenCalled();
+      expect(mockRouteRpc).not.toHaveBeenCalled();
+    });
+
     it('should process a valid SePay webhook call matching subscription pattern and call renew_tenant_subscription RPC', async () => {
       // 1. Mock successful RPC
       mockRouteRpc.mockResolvedValue({ data: true, error: null });
