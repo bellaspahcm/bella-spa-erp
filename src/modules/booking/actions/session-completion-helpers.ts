@@ -20,6 +20,7 @@ type CompletionBooking = Pick<
   | 'assigned_ktv_id'
   | 'tenant_id'
   | 'full_price'
+  | 'deposit_amount'
   | 'discount_percent'
 >;
 
@@ -159,7 +160,7 @@ export async function syncBookingCompletionProgress(params: {
 
   const { data: currentBooking } = await supabase
     .from('bookings')
-    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, discount_percent')
+    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, deposit_amount, discount_percent')
     .eq('id', bookingId)
     .single();
 
@@ -411,6 +412,12 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
     const targetPrice = fullPrice * (1 - discountPercent / 100);
     const totalSessions = Number(currentBooking?.total_sessions || 1);
     const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
+    const paidAmount = Math.max(0, Number(currentBooking?.deposit_amount || 0));
+    const currentSessionNumber = Math.max(1, Number(existingLog?.session_number || 1));
+    const revenueRecognizedBefore = earnedRevenueAmount * Math.max(0, currentSessionNumber - 1);
+    const deferredRevenueAvailable = Math.max(0, paidAmount - revenueRecognizedBefore);
+    const deferredRevenueAmount = Math.min(earnedRevenueAmount, deferredRevenueAvailable);
+    const receivableAmount = Math.max(0, earnedRevenueAmount - deferredRevenueAmount);
     const commission = Number(currentBooking?.ktv_commission) || 0;
 
     const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
@@ -423,6 +430,9 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
         referenceId: sessionId,
         payload: {
           earnedRevenueAmount,
+          deferredRevenueAmount,
+          receivableAmount,
+          bookingId,
           commissionAmount: commission,
           ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
           branchId: tenantId,

@@ -58,7 +58,7 @@ function readRequiredNumber(payload: OutboxPayload, key: string) {
   throw new Error(`Invalid outbox payload: ${key} must be a number.`);
 }
 
-function readOptionalNumber(payload: OutboxPayload, key: string, defaultValue = 0) {
+function readOptionalNumber(payload: OutboxPayload, key: string, defaultValue: number | undefined = 0) {
   const value = payload[key];
   if (value === undefined || value === null) return defaultValue;
   return readRequiredNumber(payload, key);
@@ -244,6 +244,8 @@ export async function GET(req: NextRequest) {
               tenantId,
               sessionLogId: refId,
               earnedRevenueAmount: readRequiredNumber(payload, 'earnedRevenueAmount'),
+              deferredRevenueAmount: readOptionalNumber(payload, 'deferredRevenueAmount', undefined),
+              receivableAmount: readOptionalNumber(payload, 'receivableAmount', undefined),
               commissionAmount: readRequiredNumber(payload, 'commissionAmount'),
               ktvId: readRequiredString(payload, 'ktvId'),
               branchId: readOptionalString(payload, 'branchId'),
