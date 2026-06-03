@@ -350,7 +350,11 @@ export default function DashboardPage() {
                             key={idx}
                             onClick={async () => {
                               if (alert.isAppNotification && alert.id) {
-                                await markNotificationAsRead(alert.id);
+                                const result = await markNotificationAsRead(alert.id);
+                                if (!result.success) {
+                                  toast.error(result.error);
+                                  return;
+                                }
                               }
                               if (alert.link) {
                                 router.push(alert.link);
@@ -699,7 +703,11 @@ export default function DashboardPage() {
                 key={idx} 
                 onClick={async () => {
                   if (alert.isAppNotification && alert.id) {
-                    await markNotificationAsRead(alert.id);
+                    const result = await markNotificationAsRead(alert.id);
+                    if (!result.success) {
+                      toast.error(result.error);
+                      return;
+                    }
                   }
                   if (alert.link) {
                     router.push(alert.link);

@@ -5,6 +5,26 @@
 
 ---
 
+### 03/06/2026: Harden App Notification Actions
+* **Muc tieu ky thuat**:
+  * Khong de loi doc profile hoac `app_notifications` bi bien thanh danh sach rong im lang.
+  * Khong update mark-as-read theo notification id ma thieu scope `tenant_id`.
+* **Thay doi chinh**:
+  * `getUnreadNotifications` resolve tenant hien tai qua helper dung chung va tra failure ro rang cho unauthorized, profile DB error, missing tenant, hoac notification query error.
+  * `markNotificationAsRead` update `app_notifications` bang payload type generated, filter theo `id + tenant_id`, yeu cau row tra ve va fail neu khong co row.
+  * `markAllNotificationsAsRead` scope theo `tenant_id` va `is_read=false`, surface update error thay vi gia thanh cong.
+  * Dashboard app-notification caller chi tiep tuc navigation khi mark-as-read thanh cong.
+  * KTV dashboard legacy `Notification` flow khong nam trong slice nay vi dang di qua `src/services/ktv-actions.ts`.
+  * Them `notification-actions.test.ts` voi 9 case bao phu unauthorized, profile failure, unread query success/failure, scoped mark one success/failure va mark-all success/failure.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-app-notification-actions.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/notification-actions.test.ts --runInBand` pass, 9/9 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/notification-actions.ts src/__tests__/notification-actions.test.ts src/app/dashboard/page.tsx` pass, chi con warning ton tai san trong `dashboard/page.tsx`.
+  * `npm.cmd test -- --runInBand` pass, 71 suites / 793 tests.
+  * `npm.cmd run build` pass.
+
 ### 03/06/2026: Harden CRM Zalo Token Refresh Failures
 * **Muc tieu ky thuat**:
   * Phan biet ro "chua cau hinh Zalo" voi loi DB/OAuth/save token that.
