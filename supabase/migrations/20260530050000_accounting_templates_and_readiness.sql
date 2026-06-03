@@ -222,7 +222,8 @@ INSERT INTO public.accounting_event_templates (
     (NULL, 'TT133', 'REFUND_TO_CUSTOMER', 'Hoàn tiền khách hàng', 'Hoàn tiền/giảm trừ doanh thu theo tình huống được kế toán rà soát.',
      'finance',
      '[
-        {"side":"DEBIT","account_code":"521","amount_source":"amount"},
+        {"side":"DEBIT","account_code":"5113","amount_source":"revenue_reduction_amount"},
+        {"side":"DEBIT","account_code":"3387","amount_source":"deferred_refund_amount","optional":true},
         {"side":"CREDIT","account_code":"111_OR_112","amount_source":"amount"}
       ]'::JSONB,
      ARRAY['amount','payment_method','reason'], false, true, true),

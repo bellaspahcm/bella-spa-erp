@@ -292,6 +292,8 @@ export async function GET(req: NextRequest) {
               tenantId,
               refundId: refId,
               amount: readRequiredNumber(payload, 'amount'),
+              deferredRefundAmount: readOptionalNumber(payload, 'deferredRefundAmount', undefined),
+              revenueReductionAmount: readOptionalNumber(payload, 'revenueReductionAmount', undefined),
               paymentMethod: readOptionalString(payload, 'paymentMethod'),
               description: readRequiredString(payload, 'description'),
               branchId: readOptionalString(payload, 'branchId'),
