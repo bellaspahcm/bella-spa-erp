@@ -7,6 +7,25 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden AI Action Approval Side Effects
+* **Mục tiêu kỹ thuật**:
+  * Không để API phê duyệt hành động AI tạo thông báo thành công nhưng thiếu audit log.
+  * Đảm bảo payload phê duyệt không hợp lệ bị chặn trước mọi side-effect DB.
+* **Thay đổi chính**:
+  * `action-approval` validate đủ `type`, `recipient`, `reason`, `draftMessage` trước khi tạo notification/audit.
+  * Payload insert `app_notifications` và `ai_agent_logs` dùng Supabase generated types thay vì object lỏng.
+  * Nếu ghi `ai_agent_logs` thất bại sau khi tạo notification, hệ thống rollback bằng cách xóa notification vừa tạo và trả 500 rõ ràng.
+  * Nếu rollback notification cũng thất bại, response details giữ cả lỗi audit và lỗi rollback để điều tra được.
+  * Bổ sung regression tests cho invalid payload, notification failure, audit rollback, rollback failure và success path.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-ai-action-approval-side-effects.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/ai-agent.test.ts --runInBand` pass, 15/15 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/app/api/v1/ai/action-approval/route.ts src/__tests__/ai-agent.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 66 suites / 729 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden AI Orchestrator Side Effects
 * **Mục tiêu kỹ thuật**:
   * Khóa regression cho `ai_agent_logs.insert` failure: lỗi DB bắt buộc phải làm API trả 500.

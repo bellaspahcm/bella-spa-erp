@@ -418,6 +418,181 @@ describe("AI Action Approval Security & Side-Effects", () => {
     expect(body.error).toContain("Quyền hạn không hợp lệ");
   });
 
+  it("rejects invalid approval payload without notification or audit side effects", async () => {
+    mockFrom.mockImplementationOnce(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+      insert: mockInsert
+    } as any));
+
+    const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "attendance_warning",
+        recipient: "KTV Hoa",
+        draftMessage: "Cảnh báo vi phạm GPS"
+      })
+    });
+
+    const res = await approvePOST(req);
+    expect(res.status).toBe(400);
+    expect(mockFrom).not.toHaveBeenCalledWith("app_notifications");
+    expect(mockFrom).not.toHaveBeenCalledWith("ai_agent_logs");
+  });
+
+  it("returns 500 when approval notification creation fails", async () => {
+    mockFrom.mockImplementationOnce(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+      insert: mockInsert
+    } as any));
+
+    const notificationInsert = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({
+          data: null,
+          error: { message: "notification insert failed" }
+        })
+      })
+    });
+
+    mockFrom.mockImplementation((table?: string) => {
+      if (table === "app_notifications") {
+        return { insert: notificationInsert } as any;
+      }
+      return {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+        insert: mockInsert
+      } as any;
+    });
+
+    const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "attendance_warning",
+        recipient: "KTV Hoa",
+        reason: "GPS Lệch",
+        draftMessage: "Cảnh báo vi phạm GPS"
+      })
+    });
+
+    const res = await approvePOST(req);
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.details).toContain("notification insert failed");
+    expect(mockFrom).not.toHaveBeenCalledWith("ai_agent_logs");
+  });
+
+  it("rolls back the notification when approval audit log insert fails", async () => {
+    mockFrom.mockImplementationOnce(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+      insert: mockInsert
+    } as any));
+
+    const notificationInsert = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({ data: { id: "notif-uuid" }, error: null })
+      })
+    });
+    const notificationDelete = jest.fn().mockReturnValue({
+      eq: jest.fn().mockReturnThis(),
+      then: (onfulfilled: any) => Promise.resolve({ error: null }).then(onfulfilled)
+    });
+    const auditInsert = jest.fn().mockResolvedValue({ error: { message: "audit insert failed" } });
+
+    mockFrom.mockImplementation((table?: string) => {
+      if (table === "app_notifications") {
+        return {
+          insert: notificationInsert,
+          delete: notificationDelete,
+        } as any;
+      }
+      if (table === "ai_agent_logs") {
+        return { insert: auditInsert } as any;
+      }
+      return {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+      } as any;
+    });
+
+    const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "attendance_warning",
+        recipient: "KTV Hoa",
+        reason: "GPS Lệch",
+        draftMessage: "Cảnh báo vi phạm GPS"
+      })
+    });
+
+    const res = await approvePOST(req);
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.details).toContain("audit insert failed");
+    expect(notificationDelete).toHaveBeenCalled();
+  });
+
+  it("reports rollback failure when approval audit log insert and notification delete both fail", async () => {
+    mockFrom.mockImplementationOnce(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+      insert: mockInsert
+    } as any));
+
+    const notificationInsert = jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        single: jest.fn().mockResolvedValue({ data: { id: "notif-uuid" }, error: null })
+      })
+    });
+    const notificationDelete = jest.fn().mockReturnValue({
+      eq: jest.fn().mockReturnThis(),
+      then: (onfulfilled: any) => Promise.resolve({ error: { message: "notification rollback failed" } }).then(onfulfilled)
+    });
+    const auditInsert = jest.fn().mockResolvedValue({ error: { message: "audit insert failed" } });
+
+    mockFrom.mockImplementation((table?: string) => {
+      if (table === "app_notifications") {
+        return {
+          insert: notificationInsert,
+          delete: notificationDelete,
+        } as any;
+      }
+      if (table === "ai_agent_logs") {
+        return { insert: auditInsert } as any;
+      }
+      return {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+      } as any;
+    });
+
+    const req = new NextRequest("http://localhost/api/v1/ai/action-approval", {
+      method: "POST",
+      body: JSON.stringify({
+        type: "attendance_warning",
+        recipient: "KTV Hoa",
+        reason: "GPS Lệch",
+        draftMessage: "Cảnh báo vi phạm GPS"
+      })
+    });
+
+    const res = await approvePOST(req);
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.details).toContain("audit insert failed");
+    expect(body.details).toContain("notification rollback failed");
+  });
+
   it("inserts system notification and writes audit log upon approval", async () => {
     mockFrom.mockImplementationOnce(() => ({
       select: jest.fn().mockReturnThis(),
