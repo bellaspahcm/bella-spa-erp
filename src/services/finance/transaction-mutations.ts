@@ -81,6 +81,63 @@ async function deleteInsertedFinanceRow(
   return error?.message || '';
 }
 
+const PACKAGE_SALE_REVENUE_TYPES = ['deposit', 'remaining_payment', 'package_payment', 'package_sale'];
+const VALID_REVENUE_TYPES = ['deposit', 'session_completed', 'additional', 'package_payment', 'remaining_payment', 'refund'];
+
+function normalizeFinanceCategory(value: string | null | undefined) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function isRevenueRefundInput(amount: number, category: string) {
+  return amount < 0 || normalizeFinanceCategory(category) === 'refund';
+}
+
+function isRevenueRefundType(revenueType: string | null | undefined) {
+  return normalizeFinanceCategory(revenueType) === 'refund';
+}
+
+function buildRefundAccountingPayload(input: {
+  amount: number;
+  paymentMethod?: string | null;
+  bookingId?: string | null;
+  notes?: string | null;
+}) {
+  const amount = Math.abs(input.amount);
+
+  return {
+    amount,
+    payment_method: input.paymentMethod || 'bank_transfer',
+    booking_id: input.bookingId || null,
+    reason: input.notes || 'Hoan tien khach hang',
+    deferredRefundAmount: 0,
+    revenueReductionAmount: amount,
+  };
+}
+
+function buildRefundOutboxPayload(input: {
+  amount: number;
+  paymentMethod?: string | null;
+  description?: string | null;
+  branchId: string;
+}) {
+  const amount = Math.abs(input.amount);
+
+  return {
+    amount,
+    deferredRefundAmount: 0,
+    revenueReductionAmount: amount,
+    paymentMethod: input.paymentMethod || 'bank_transfer',
+    description: input.description || 'Hoan tien khach hang',
+    branchId: input.branchId,
+  };
+}
+
+function assertOutboxEnqueued(result: unknown, eventType: string) {
+  if (result === false) {
+    throw new Error(`Failed to enqueue ${eventType} accounting event`);
+  }
+}
+
 export async function confirmTransaction(id: string, type: 'revenue' | 'expense') {
   const { assertLegacyFinanceWriteAllowed } = await import('../accounting-actions');
   await assertLegacyFinanceWriteAllowed('Xác nhận giao dịch Finance legacy');
@@ -106,12 +163,19 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       sourceTable: 'revenue',
       revenueType: existingRev?.revenue_type,
     });
-    const accountingPayload = {
-      amount: Number(existingRev?.amount || 0),
-      payment_method: existingRev?.payment_method || 'bank_transfer',
-      booking_id: existingRev?.booking_id,
-      reason: existingRev?.notes,
-    };
+    const accountingPayload = isRevenueRefundType(existingRev?.revenue_type)
+      ? buildRefundAccountingPayload({
+          amount: Number(existingRev?.amount || 0),
+          paymentMethod: existingRev?.payment_method,
+          bookingId: existingRev?.booking_id,
+          notes: existingRev?.notes,
+        })
+      : {
+          amount: Number(existingRev?.amount || 0),
+          payment_method: existingRev?.payment_method || 'bank_transfer',
+          booking_id: existingRev?.booking_id,
+          reason: existingRev?.notes,
+        };
     const revenueRollbackPayload: RevenueUpdate = {
       status: existingRev?.status,
       received_date: existingRev?.received_date,
@@ -144,8 +208,32 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       throw new Error(`Failed to confirm revenue: ${error.message}`);
     }
 
-    // ⭐ Enqueue PACKAGE_SALE if type is deposit/remaining_payment/package_payment
-    if (updatedRev && updatedRev.tenant_id && ['deposit', 'remaining_payment', 'package_payment', 'package_sale'].includes(updatedRev.revenue_type || '')) {
+    // Enqueue the accounting event that matches the confirmed revenue source type.
+    if (updatedRev && updatedRev.tenant_id && isRevenueRefundType(updatedRev.revenue_type)) {
+      const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+      try {
+        const enqueued = await enqueueWithAutoClient(
+        supabase,
+        {
+          tenantId: updatedRev.tenant_id,
+          eventType: 'REFUND_ISSUED',
+          referenceType: 'REVENUE',
+          referenceId: updatedRev.id,
+          payload: buildRefundOutboxPayload({
+            amount: Number(updatedRev.amount),
+            paymentMethod: updatedRev.payment_method,
+            description: updatedRev.notes,
+            branchId: updatedRev.tenant_id,
+          }),
+        },
+          '[confirmTransaction]'
+        );
+        assertOutboxEnqueued(enqueued, 'REFUND_ISSUED');
+      } catch (outboxError) {
+        const rollbackError = await rollbackRevenueConfirmation(supabase, id, revenueRollbackPayload);
+        throw new Error(withRollbackFailure(outboxError, rollbackError));
+      }
+    } else if (updatedRev && updatedRev.tenant_id && PACKAGE_SALE_REVENUE_TYPES.includes(updatedRev.revenue_type || '')) {
       const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
       try {
         await enqueueWithAutoClient(
@@ -447,19 +535,29 @@ export async function recordTransaction(data: {
       const dbStatus = data.status === 'confirmed' ? 'confirmed' : 'pending';
 
       // Map frontend categories to valid DB revenue_type values
-      const validRevenueTypes = ['deposit', 'session_completed', 'additional', 'package_payment', 'remaining_payment'];
-      const dbRevenueType = validRevenueTypes.includes(data.category) ? data.category : 'additional';
+      const dbRevenueType = isRevenueRefundInput(data.amount, data.category)
+        ? 'refund'
+        : VALID_REVENUE_TYPES.includes(data.category)
+          ? data.category
+          : 'additional';
       const receivedDate = getLocalDateString();
       const businessEventType = inferBusinessEventType({
         sourceTable: 'revenue',
         revenueType: dbRevenueType,
       });
-      const accountingPayload = {
-        amount: Math.abs(data.amount),
-        payment_method: 'bank_transfer',
-        booking_id: data.booking_id || null,
-        reason: data.notes,
-      };
+      const accountingPayload = isRevenueRefundType(dbRevenueType)
+        ? buildRefundAccountingPayload({
+            amount: data.amount,
+            paymentMethod: 'bank_transfer',
+            bookingId: data.booking_id || null,
+            notes: data.notes,
+          })
+        : {
+            amount: Math.abs(data.amount),
+            payment_method: 'bank_transfer',
+            booking_id: data.booking_id || null,
+            reason: data.notes,
+          };
       await assertOpenAccountingPeriod(supabase, {
         tenantId,
         date: receivedDate,
@@ -490,8 +588,32 @@ export async function recordTransaction(data: {
         throw error;
       }
 
-      // ⭐ Ghi nhận Outbox nếu đã confirmed và thuộc loại cọc/thanh toán gói
-      if (dbStatus === 'confirmed' && result && ['deposit', 'remaining_payment', 'package_payment', 'package_sale'].includes(dbRevenueType)) {
+      // Enqueue the accounting event that matches the newly recorded revenue source type.
+      if (dbStatus === 'confirmed' && result && isRevenueRefundType(dbRevenueType)) {
+        const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+        try {
+          const enqueued = await enqueueWithAutoClient(
+          supabase,
+          {
+            tenantId,
+            eventType: 'REFUND_ISSUED',
+            referenceType: 'REVENUE',
+            referenceId: result.id,
+            payload: buildRefundOutboxPayload({
+              amount: data.amount,
+              paymentMethod: 'bank_transfer',
+              description: data.notes,
+              branchId: tenantId,
+            }),
+          },
+            '[recordTransaction]'
+          );
+          assertOutboxEnqueued(enqueued, 'REFUND_ISSUED');
+        } catch (outboxError) {
+          const rollbackError = await deleteInsertedFinanceRow(supabase, 'revenue', result.id);
+          throw new Error(withRollbackFailure(outboxError, rollbackError));
+        }
+      } else if (dbStatus === 'confirmed' && result && PACKAGE_SALE_REVENUE_TYPES.includes(dbRevenueType)) {
         const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
         try {
           await enqueueWithAutoClient(
