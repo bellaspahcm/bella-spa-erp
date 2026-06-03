@@ -2,7 +2,7 @@
  * Salary Reconciliation Report Tests (M2)
  *
  * Verify:
- *   1. getSalaryReconciliationReport calls RPC with auth + set_session_tenant
+ *   1. getSalaryReconciliationReport calls salary reconciliation RPC with authenticated user context
  *   2. Rejects non-admin users (KTV)
  *   3. Allows accountant role (M2 extended RBAC)
  *   4. Rejects users without tenant_id
@@ -93,10 +93,7 @@ describe('getSalaryReconciliationReport', () => {
       },
     ];
 
-    // First RPC call = set_session_tenant, second = actual report
-    mockRpc
-      .mockResolvedValueOnce({ data: null, error: null }) // set_session_tenant
-      .mockResolvedValueOnce({ data: fakeRows, error: null }); // get_salary_reconciliation_report
+    mockRpc.mockResolvedValueOnce({ data: fakeRows, error: null });
 
     const result = await getSalaryReconciliationReport(MONTH);
 
@@ -106,8 +103,7 @@ describe('getSalaryReconciliationReport', () => {
     expect(result[2].status).toBe('PENDING_LEGACY');
     expect(result[1].diff_total).toBe(-3000);
 
-    // Verify both RPCs called
-    expect(mockRpc).toHaveBeenCalledWith('set_session_tenant', { p_tenant_id: TENANT_ID });
+    expect(mockRpc).toHaveBeenCalledTimes(1);
     expect(mockRpc).toHaveBeenCalledWith('get_salary_reconciliation_report', {
       p_tenant_id: TENANT_ID,
       p_month_year: MONTH,
@@ -116,9 +112,7 @@ describe('getSalaryReconciliationReport', () => {
 
   it('allows accountant role (M2 extended RBAC)', async () => {
     mockGetCurrentUser.mockResolvedValue(ACCOUNTANT_USER);
-    mockRpc
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({ data: [], error: null });
+    mockRpc.mockResolvedValueOnce({ data: [], error: null });
 
     const result = await getSalaryReconciliationReport(MONTH);
     expect(result).toEqual([]);
@@ -138,35 +132,26 @@ describe('getSalaryReconciliationReport', () => {
 
   it('propagates RPC errors from get_salary_reconciliation_report', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
-    mockRpc
-      .mockResolvedValueOnce({ data: null, error: null }) // set_session_tenant ok
-      .mockResolvedValueOnce({ data: null, error: { message: 'Function does not exist' } });
+    mockRpc.mockResolvedValueOnce({ data: null, error: { message: 'Function does not exist' } });
 
     await expect(getSalaryReconciliationReport(MONTH)).rejects.toMatchObject({
       message: expect.stringContaining('does not exist'),
     });
   });
 
-  it('propagates tenant context errors before loading the report', async () => {
+  it('does not call set_session_tenant because PostgREST RPC context is per request', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
-    mockRpc.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'tenant context failed' },
-    });
+    mockRpc.mockResolvedValueOnce({ data: [], error: null });
 
-    await expect(getSalaryReconciliationReport(MONTH)).rejects.toMatchObject({
-      message: expect.stringContaining('tenant context failed'),
-    });
+    await expect(getSalaryReconciliationReport(MONTH)).resolves.toEqual([]);
 
     expect(mockRpc).toHaveBeenCalledTimes(1);
-    expect(mockRpc).toHaveBeenCalledWith('set_session_tenant', { p_tenant_id: TENANT_ID });
+    expect(mockRpc).not.toHaveBeenCalledWith('set_session_tenant', expect.anything());
   });
 
   it('returns empty array when RPC data is null', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
-    mockRpc
-      .mockResolvedValueOnce({ data: null, error: null })
-      .mockResolvedValueOnce({ data: null, error: null });
+    mockRpc.mockResolvedValueOnce({ data: null, error: null });
 
     const result = await getSalaryReconciliationReport(MONTH);
     expect(result).toEqual([]);

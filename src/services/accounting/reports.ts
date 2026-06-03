@@ -158,46 +158,11 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
     throw new Error('Unauthorized: chỉ admin/kế toán mới được xem báo cáo đối soát lương.');
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  // Fallback sang user client nếu hoàn toàn không có serviceKey (ví dụ: trên Vercel chưa cấu hình)
-  if (!serviceKey) {
-    console.warn('[getSalaryReconciliationReport] SUPABASE_SERVICE_ROLE_KEY is missing. Using user client fallback.');
-    const supabase = await createClient();
-    const { data, error } = await callSalaryReconciliationReportRpc(supabase, {
-      p_tenant_id: user.tenant_id,
-      p_month_year: monthYear,
-    });
-
-    if (error) {
-      console.error('[getSalaryReconciliationReport] Fallback RPC error:', JSON.stringify({
-        message: error.message, code: error.code, details: error.details, hint: error.hint,
-      }, null, 2));
-      throw error; // Zero Silent Database Failures
-    }
-    return (data as unknown as SalaryReconciliationRow[]) || [];
-  }
-
-  // Sử dụng adminClient chính thức (service role)
-  const { createClient: createAdmin } = await import('@supabase/supabase-js');
-  const adminClient = createAdmin(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-
-  // Set tenant context (calculate_ktv_salary_sheet requires it for service_role)
-  const { error: tenantContextError } = await adminClient.rpc('set_session_tenant', { p_tenant_id: user.tenant_id });
-  if (tenantContextError) {
-    console.error('[getSalaryReconciliationReport] Failed to set tenant context:', JSON.stringify({
-      message: tenantContextError.message,
-      code: tenantContextError.code,
-      details: tenantContextError.details,
-      hint: tenantContextError.hint,
-    }, null, 2));
-    throw tenantContextError;
-  }
-
-  const { data, error } = await callSalaryReconciliationReportRpc(adminClient, {
+  // Use the authenticated user client here, not service_role. The report RPC calls
+  // calculate_ktv_salary_sheet(), whose tenant guard relies on auth context.
+  // A separate set_session_tenant() RPC does not persist across PostgREST requests.
+  const supabase = await createClient();
+  const { data, error } = await callSalaryReconciliationReportRpc(supabase, {
     p_tenant_id: user.tenant_id,
     p_month_year: monthYear,
   });
