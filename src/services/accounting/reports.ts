@@ -21,6 +21,14 @@ type SalaryReconciliationRpc = (
   args: SalaryReconciliationRpcArgs
 ) => Promise<{ data: unknown; error: ReportRpcError | null }>;
 
+type SalaryReconciliationRpcClient = {
+  rpc: SalaryReconciliationRpc;
+};
+
+function callSalaryReconciliationReportRpc(client: unknown, args: SalaryReconciliationRpcArgs) {
+  return (client as SalaryReconciliationRpcClient).rpc('get_salary_reconciliation_report', args);
+}
+
 export async function getTrialBalanceReport(asOfDate: string) {
   const supabase = await createClient();
   const user = await getCurrentUser();
@@ -157,8 +165,7 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
   if (!serviceKey) {
     console.warn('[getSalaryReconciliationReport] SUPABASE_SERVICE_ROLE_KEY is missing. Using user client fallback.');
     const supabase = await createClient();
-    const rpcCall = supabase.rpc as unknown as SalaryReconciliationRpc;
-    const { data, error } = await rpcCall('get_salary_reconciliation_report', {
+    const { data, error } = await callSalaryReconciliationReportRpc(supabase, {
       p_tenant_id: user.tenant_id,
       p_month_year: monthYear,
     });
@@ -190,8 +197,7 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
     throw tenantContextError;
   }
 
-  const rpcCall = adminClient.rpc as unknown as SalaryReconciliationRpc;
-  const { data, error } = await rpcCall('get_salary_reconciliation_report', {
+  const { data, error } = await callSalaryReconciliationReportRpc(adminClient, {
     p_tenant_id: user.tenant_id,
     p_month_year: monthYear,
   });

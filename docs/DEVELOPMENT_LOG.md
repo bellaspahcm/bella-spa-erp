@@ -5,6 +5,26 @@
 
 ---
 
+### 04/06/2026: Fix Supabase RPC Binding In Accounting Tabs
+* **Muc tieu van hanh**:
+  * Sua loi production hien trong tab ke toan dang bao `An error occurred in the Server Components render`.
+  * Xac dinh log goc Vercel: `POST /dashboard/accounting/salary-reconciliation` fail voi `TypeError: Cannot read properties of undefined (reading 'rest')`.
+* **Nguyen nhan**:
+  * Code tach `supabase.rpc` ra bien roi moi goi, lam mat binding `this` cua Supabase client. Supabase `rpc` can `this.rest`, nen production bi undefined.
+* **Thay doi chinh**:
+  * `getSalaryReconciliationReport` goi RPC qua object client de giu binding.
+  * Loai bo cung pattern detached `.rpc` trong payment helper, accounting worker, onboarding va helper pending RPC.
+  * Them regression test mock Supabase `rpc` yeu cau `this.rest` de bat dung loi production neu tai phat.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-fix-supabase-rpc-binding.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/salary-reconciliation.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/rate-limit.test.ts src/__tests__/onboarding.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/transaction-safety.test.ts src/__tests__/e2e-pipeline.test.ts src/__tests__/accounting-outbox.test.ts --runInBand` pass.
+  * `npm.cmd run build` pass.
+  * `npm.cmd test -- --runInBand` pass, 75 suites / 823 tests.
+  * `git diff --check` pass, chi co canh bao LF/CRLF cua Windows.
+
 ### 04/06/2026: Month-Close UX Guard
 * **Muc tieu ke toan**:
   * Khong de admin bam khoa thang trong man Finance P&L khi accounting preflight dang co blocker hoac khong tai duoc.
