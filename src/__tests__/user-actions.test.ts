@@ -1,4 +1,4 @@
-import { createUser, deleteUser, updateBaseSalary, updateUser, updateUserStatus } from '../services/user-actions';
+import { createUser, deleteUser, getCurrentUser, updateBaseSalary, updateUser, updateUserStatus } from '../services/user-actions';
 
 const mockFrom = jest.fn();
 const mockGetSession = jest.fn();
@@ -128,7 +128,15 @@ describe('user update audit rollback', () => {
         },
       },
     });
-    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockGetUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'admin-1',
+          email: 'admin@bella.test',
+        },
+      },
+      error: null,
+    });
     mockCreateAdminUser.mockResolvedValue({
       data: { user: { id: 'created-user-1' } },
       error: null,
@@ -174,6 +182,21 @@ describe('user update audit rollback', () => {
     full_name: 'New User',
     role: 'manager',
   };
+
+  it('validates the current auth user with getUser instead of trusting getSession', async () => {
+    installCurrentUser();
+
+    const result = await getCurrentUser();
+
+    expect(result).toEqual(expect.objectContaining({
+      id: 'admin-1',
+      email: 'admin@bella.test',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+    }));
+    expect(mockGetUser).toHaveBeenCalledTimes(1);
+    expect(mockGetSession).not.toHaveBeenCalled();
+  });
 
   const deletedUserSnapshot = {
     avatar_url: null,
