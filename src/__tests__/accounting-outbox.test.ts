@@ -50,6 +50,9 @@ import { NextRequest } from 'next/server';
 describe('Accounting Outbox Worker API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+    process.env.CRON_SECRET = 'test-cron-secret-123';
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -100,6 +103,25 @@ describe('Accounting Outbox Worker API', () => {
       const json = await response.json();
       expect(json.success).toBe(true);
       expect(json.processed).toBe(0);
+    });
+
+    it('returns 500 and does not claim outbox when Supabase admin env is missing', async () => {
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      expect(response.status).toBe(500);
+
+      const json = await response.json();
+      expect(json.success).toBe(false);
+      expect(json.error).toContain('SUPABASE_SERVICE_ROLE_KEY');
+      expect(mockRpc).not.toHaveBeenCalled();
     });
   });
 
