@@ -589,6 +589,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
     type WebhookQueryChain = {
       select: jest.Mock;
       eq: jest.Mock;
+      contains: jest.Mock;
       not: jest.Mock;
       like: jest.Mock;
       maybeSingle: jest.Mock;
@@ -691,6 +692,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         const chain: any = {
           select: jest.fn(() => chain),
           eq: jest.fn(() => chain),
+          contains: jest.fn(() => chain),
           not: jest.fn(() => chain),
           like: jest.fn(() => chain),
           maybeSingle: jest.fn(() => {
@@ -793,6 +795,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         const chain: WebhookQueryChain = {
           select: jest.fn(() => chain),
           eq: jest.fn(() => chain),
+          contains: jest.fn(() => chain),
           not: jest.fn(() => chain),
           like: jest.fn(() => chain),
           maybeSingle: jest.fn(() => {
@@ -832,8 +835,9 @@ describe('Subscription Constraints & Webhook Suite', () => {
         transactionId: 'TX-DUP-LOOKUP-FAIL',
         bookingNumber: 'BK-1001',
         status: 'failed',
-        reason: 'Failed to check duplicate transaction',
+        reason: expect.stringContaining('Failed to check duplicate transaction metadata'),
       });
+      expect(resData.details[0].reason).toContain('duplicate lookup unavailable');
       expect(bookingStatusUpdates).toEqual([]);
       expect(revenueInsertPayloads).toEqual([]);
       expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
@@ -862,6 +866,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         const chain: any = {
           select: jest.fn(() => chain),
           eq: jest.fn(() => chain),
+          contains: jest.fn(() => chain),
           not: jest.fn(() => chain),
           like: jest.fn(() => chain),
           maybeSingle: jest.fn(() => {
@@ -920,6 +925,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
             if (table === 'revenue' && field === 'id') deletedRevenueIds.push(value);
             return chain;
           }),
+          contains: jest.fn(() => chain),
           not: jest.fn(() => chain),
           like: jest.fn(() => chain),
           maybeSingle: jest.fn(() => {
@@ -967,8 +973,9 @@ describe('Subscription Constraints & Webhook Suite', () => {
       expect(resData.processedCount).toBe(0);
       expect(resData.details[0]).toMatchObject({
         status: 'failed',
-        reason: 'Failed to insert audit log',
+        reason: expect.stringContaining('Failed to insert audit log'),
       });
+      expect(resData.details[0].reason).toContain('audit unavailable');
       expect(bookingStatusUpdates).toEqual([{ status: 'booked' }, { status: 'deposit_pending' }]);
       expect(deletedRevenueIds).toContain('rev-rollback');
       expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
@@ -989,6 +996,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         const chain: WebhookQueryChain = {
           select: jest.fn(() => chain),
           eq: jest.fn(() => chain),
+          contains: jest.fn(() => chain),
           not: jest.fn(() => chain),
           like: jest.fn(() => chain),
           maybeSingle: jest.fn(() => {
@@ -1060,6 +1068,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
         const chain: WebhookQueryChain = {
           select: jest.fn(() => chain),
           eq: jest.fn(() => chain),
+          contains: jest.fn(() => chain),
           not: jest.fn(() => chain),
           like: jest.fn(() => chain),
           maybeSingle: jest.fn(() => {
@@ -1134,6 +1143,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
             if (table === 'revenue' && field === 'id') deletedRevenueIds.push(value);
             return chain;
           }),
+          contains: jest.fn(() => chain),
           not: jest.fn(() => chain),
           like: jest.fn(() => chain),
           maybeSingle: jest.fn(() => {
@@ -1209,6 +1219,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
             if (table === 'revenue' && field === 'id') deletedRevenueIds.push(value);
             return chain;
           }),
+          contains: jest.fn(() => chain),
           not: jest.fn(() => chain),
           like: jest.fn(() => chain),
           maybeSingle: jest.fn(() => {
@@ -1259,8 +1270,9 @@ describe('Subscription Constraints & Webhook Suite', () => {
       expect(resData.processedCount).toBe(0);
       expect(resData.details[0]).toMatchObject({
         status: 'failed',
-        reason: 'Failed to insert audit log',
+        reason: expect.stringContaining('Failed to insert audit log'),
       });
+      expect(resData.details[0].reason).toContain('audit unavailable');
       expect(deletedRevenueIds).toContain('rev-already-booked');
       expect(bookingStatusUpdates).toEqual([]);
       expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();

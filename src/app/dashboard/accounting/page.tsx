@@ -14,17 +14,18 @@ import {
   PlusCircle, 
   RefreshCw,
   AlertCircle,
-  Activity
+  Activity,
+  ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
-import { getBalanceSheetReport, getOutboxEvents } from '@/services/accounting-actions';
+import { getAccountingHealthSummary, getBalanceSheetReport } from '@/services/accounting-actions';
 import { getFinancialOverview } from '@/services/finance-actions';
 import { toast } from 'sonner';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 type BalanceSheetReport = Awaited<ReturnType<typeof getBalanceSheetReport>>;
 type FinancialOverview = Awaited<ReturnType<typeof getFinancialOverview>>;
-type OutboxEventRow = Awaited<ReturnType<typeof getOutboxEvents>>[number];
+type AccountingHealthSummary = Awaited<ReturnType<typeof getAccountingHealthSummary>>;
 type OutboxStatusCounts = {
   pending: number;
   processing: number;
@@ -38,6 +39,7 @@ export default function AccountingOverviewPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [bsData, setBsData] = useState<BalanceSheetReport | null>(null);
   const [finOverview, setFinOverview] = useState<FinancialOverview | null>(null);
+  const [healthSummary, setHealthSummary] = useState<AccountingHealthSummary | null>(null);
   const [outboxCounts, setOutboxCounts] = useState<OutboxStatusCounts>({
     pending: 0,
     processing: 0,
@@ -51,10 +53,10 @@ export default function AccountingOverviewPage() {
     try {
       const nowStr = new Date().toISOString().slice(0, 10);
       
-      const [bsRes, finRes, outboxRes] = await Promise.allSettled([
+      const [bsRes, finRes, healthRes] = await Promise.allSettled([
         getBalanceSheetReport(nowStr),
         getFinancialOverview(),
-        getOutboxEvents()
+        getAccountingHealthSummary()
       ]);
 
       if (bsRes.status === 'fulfilled' && bsRes.value) {
@@ -63,16 +65,16 @@ export default function AccountingOverviewPage() {
       if (finRes.status === 'fulfilled' && finRes.value) {
         setFinOverview(finRes.value);
       }
-      if (outboxRes.status === 'fulfilled' && outboxRes.value) {
-        const events = outboxRes.value || [];
-        const counts: OutboxStatusCounts = { pending: 0, processing: 0, completed: 0, failed: 0, dead: 0 };
-        events.forEach((ev: OutboxEventRow) => {
-          if (ev.status === 'PENDING') counts.pending++;
-          else if (ev.status === 'PROCESSING') counts.processing++;
-          else if (ev.status === 'COMPLETED') counts.completed++;
-          else if (ev.status === 'FAILED') counts.failed++;
-          else if (ev.status === 'DEAD') counts.dead++;
-        });
+      if (healthRes.status === 'fulfilled' && healthRes.value) {
+        setHealthSummary(healthRes.value);
+        const metrics = healthRes.value.metrics;
+        const counts: OutboxStatusCounts = {
+          pending: metrics.outbox_pending,
+          processing: metrics.outbox_processing,
+          completed: metrics.outbox_completed,
+          failed: metrics.outbox_failed,
+          dead: metrics.outbox_dead,
+        };
         setOutboxCounts(counts);
       }
     } catch (err: unknown) {
@@ -95,8 +97,10 @@ export default function AccountingOverviewPage() {
   // Comparison metrics: Old Finance Module (Revenues - Expenses) vs. Ledger Revenue & Expense
   const oldNetIncome = (finOverview?.totalRevenueMonth || 0) - (finOverview?.totalExpenseMonth || 0);
   // Ledger net profit is calculated in real-time in balance sheet's retained earnings difference or from P&L, let's fetch it or show live matched info
-  const ledgerMatchedPercent = 100; // Visual demo indicator
+  const ledgerMatchedPercent = healthSummary?.metrics.readiness_score ?? 100;
+  const hasOutboxBlockers = outboxCounts.dead > 0 || outboxCounts.failed > 0;
   const hasDeadEvents = outboxCounts.dead > 0;
+  const canCloseMonth = healthSummary?.can_close_month ?? true;
 
   return (
     <div className="space-y-8 relative">
@@ -182,8 +186,12 @@ export default function AccountingOverviewPage() {
                 <CheckCircle2 className="w-5.5 h-5.5 text-emerald-500" />
                 Đối chiếu Song song (Dual Running)
               </h4>
-              <span className="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-wider">
-                Khớp {ledgerMatchedPercent}%
+              <span className={`px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                canCloseMonth
+                  ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'
+              }`}>
+                Health {ledgerMatchedPercent}/100
               </span>
             </div>
 
@@ -208,12 +216,28 @@ export default function AccountingOverviewPage() {
             </div>
           </div>
 
-          <div className="p-4 bg-emerald-50/50 dark:bg-emerald-500/5 rounded-2xl border border-emerald-100/60 dark:border-emerald-500/10 flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+          <div className={`p-4 rounded-2xl border flex items-start gap-3 ${
+            canCloseMonth
+              ? 'bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100/60 dark:border-emerald-500/10'
+              : 'bg-rose-50/70 dark:bg-rose-500/10 border-rose-100/80 dark:border-rose-500/20'
+          }`}>
+            {canCloseMonth ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            )}
             <div>
-              <p className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Trạng thái tự động đối chiếu: BÌNH THƯỜNG</p>
-              <p className="text-2xs font-bold text-emerald-600/80 dark:text-emerald-500/80 mt-0.5">
-                100% sự kiện đã hạch toán thành công. Sai lệch kế toán hiện hữu: 0đ. Hệ thống đủ điều kiện vận hành an toàn.
+              <p className={`text-xs font-black uppercase tracking-wider ${
+                canCloseMonth ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
+              }`}>
+                {canCloseMonth ? 'Preflight khóa tháng: ĐẠT' : 'Preflight khóa tháng: ĐANG BỊ CHẶN'}
+              </p>
+              <p className={`text-2xs font-bold mt-0.5 ${
+                canCloseMonth ? 'text-emerald-600/80 dark:text-emerald-500/80' : 'text-rose-600/80 dark:text-rose-400/80'
+              }`}>
+                {canCloseMonth
+                  ? 'Không có FAILED/DEAD outbox, bút toán nháp hoặc reference active bị trùng trong phạm vi kiểm tra.'
+                  : healthSummary?.blockers[0]?.message ?? 'Có blocker kế toán cần xử lý trước khi khóa tháng.'}
               </p>
             </div>
           </div>
@@ -268,11 +292,11 @@ export default function AccountingOverviewPage() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-slate-50 dark:border-[#3E3A35]/30">
-            {hasDeadEvents ? (
+            {hasOutboxBlockers ? (
               <div className="flex items-center gap-2 text-red-500 bg-red-50/50 dark:bg-red-950/10 p-3 rounded-xl">
                 <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
                 <span className="text-2xs font-extrabold uppercase tracking-wide leading-tight">
-                  CẢNH BÁO: Phát hiện {outboxCounts.dead} DEAD events kẹt! Vui lòng vào trang Giám sát để Replay.
+                  CẢNH BÁO: Phát hiện {outboxCounts.failed} FAILED và {outboxCounts.dead} DEAD events. Vào Health/Outbox để xử lý trước khi khóa tháng.
                 </span>
               </div>
             ) : (
@@ -288,7 +312,20 @@ export default function AccountingOverviewPage() {
       {/* ── SECTION 3: QUICK ACTIONS BENTO GRID ── */}
       <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
         <h4 className="text-lg font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wide mb-6">Thao tác Nhanh</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6">
+          {/* Accounting Health */}
+          <Link href="/dashboard/accounting/health" className="group">
+            <div className="p-6 rounded-2xl border border-[#FFE4E6]/60 dark:border-[#3E3A35]/40 hover:border-primary dark:hover:border-[#A67D44] bg-slate-50/40 dark:bg-[#11100F]/30 hover:bg-white dark:hover:bg-[#1C1B19] transition-all duration-300 h-full flex flex-col justify-between">
+              <ShieldCheck className={`w-8 h-8 mb-4 group-hover:scale-105 transition-transform ${
+                canCloseMonth ? 'text-emerald-500' : 'text-rose-500'
+              }`} />
+              <div>
+                <h5 className="font-extrabold text-sm text-slate-800 dark:text-[#EFE9E1] uppercase tracking-wider">Sức Khỏe Sổ</h5>
+                <p className="text-2xs text-slate-400 dark:text-[#CDBCAB]/60 mt-1">Kiểm tra preflight trước khi khóa tháng.</p>
+              </div>
+            </div>
+          </Link>
+
           {/* Manual Entry */}
           <Link href="/dashboard/accounting/manual-entry" className="group">
             <div className="p-6 rounded-2xl border border-[#FFE4E6]/60 dark:border-[#3E3A35]/40 hover:border-primary dark:hover:border-[#A67D44] bg-slate-50/40 dark:bg-[#11100F]/30 hover:bg-white dark:hover:bg-[#1C1B19] transition-all duration-300 h-full flex flex-col justify-between">
@@ -315,7 +352,7 @@ export default function AccountingOverviewPage() {
           <Link href="/dashboard/accounting/outbox" className="group">
             <div className="p-6 rounded-2xl border border-[#FFE4E6]/60 dark:border-[#3E3A35]/40 hover:border-primary dark:hover:border-[#A67D44] bg-slate-50/40 dark:bg-[#11100F]/30 hover:bg-white dark:hover:bg-[#1C1B19] transition-all duration-300 h-full flex flex-col justify-between">
               <AlertTriangle className={`w-8 h-8 mb-4 group-hover:scale-105 transition-transform ${
-                hasDeadEvents ? 'text-red-500 animate-bounce' : 'text-slate-400 dark:text-[#CDBCAB]/80'
+                hasOutboxBlockers ? 'text-red-500 animate-bounce' : 'text-slate-400 dark:text-[#CDBCAB]/80'
               }`} />
               <div>
                 <h5 className="font-extrabold text-sm text-slate-800 dark:text-[#EFE9E1] uppercase tracking-wider">Giám Sát Outbox</h5>

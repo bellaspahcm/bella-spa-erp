@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { assertMonthClosePreflight } from '@/services/accounting/health';
 import type { Database } from '@/types/database.types';
 
 type RevenueUpdate = Database['public']['Tables']['revenue']['Update'];
@@ -428,6 +429,12 @@ export async function lockMonth(month: string) {
     if (!user.tenant_id) return { success: false, error: 'Không tìm thấy tenant_id' };
 
     const scope = getMonthScope(month);
+    try {
+      await assertMonthClosePreflight(month, { supabase, tenantId: user.tenant_id });
+    } catch (preflightError) {
+      return { success: false, error: getErrorMessage(preflightError) };
+    }
+
     const snapshot = await fetchPreLockSnapshot(supabase, user.tenant_id, scope);
 
     const { error } = await supabase.rpc('lock_monthly_records', {
@@ -447,10 +454,12 @@ export async function lockMonth(month: string) {
       console.error('[lockMonth] Side-effect error after lock RPC:', sideEffectError);
       const restoreFailures = await restorePreLockState(supabase, user.tenant_id, scope, snapshot);
       revalidatePath('/dashboard/finance');
+      revalidatePath('/dashboard/accounting/health');
       return { success: false, error: withRestoreFailures(sideEffectError, restoreFailures) };
     }
 
     revalidatePath('/dashboard/finance');
+    revalidatePath('/dashboard/accounting/health');
     return { success: true, month };
   } catch (e: unknown) {
     console.error('[lockMonth]', e);
