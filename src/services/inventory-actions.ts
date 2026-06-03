@@ -31,6 +31,22 @@ async function getSupabaseWithTenant() {
   return { supabase, tenantId: user?.tenant_id || null, userId: user?.id || null };
 }
 
+type SupabaseClient = Awaited<ReturnType<typeof getSupabaseWithTenant>>['supabase'];
+
+async function deleteInventoryItemById(
+  supabase: SupabaseClient,
+  itemId: string,
+  tenantId: string,
+) {
+  const { error } = await supabase
+    .from('inventory_items')
+    .delete()
+    .eq('id', itemId)
+    .eq('tenant_id', tenantId);
+
+  return error;
+}
+
 // ─── READ: apply tenant filter when available, never early-return ──────────────
 
 export async function getInventoryItems() {
@@ -428,10 +444,20 @@ export async function addInventoryItem(item: {
   notes?: string;
 }) {
   try {
-    const { supabase, tenantId } = await getSupabaseWithTenant();
+    const { supabase, tenantId, userId } = await getSupabaseWithTenant();
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
+    if (!item.name || !item.unit) return { success: false, error: 'Nhập tên và đơn vị' };
 
-    const insertPayload: InventoryItemInsert = { ...item, tenant_id: tenantId };
+    const initialStock = Number(item.stock_level || 0);
+    if (!Number.isFinite(initialStock) || initialStock < 0) {
+      return { success: false, error: 'Tồn kho ban đầu không hợp lệ' };
+    }
+
+    const insertPayload: InventoryItemInsert = {
+      ...item,
+      stock_level: initialStock,
+      tenant_id: tenantId,
+    };
 
     const { data, error } = await supabase
       .from('inventory_items')
@@ -439,13 +465,38 @@ export async function addInventoryItem(item: {
       .select()
       .single();
 
-    if (error) { console.error('[addInventoryItem]', error); return { success: false, error: 'Không thể thêm vật tư' }; }
+    if (error) {
+      console.error('[addInventoryItem]', error);
+      return { success: false, error: 'Không thể thêm vật tư: ' + error.message };
+    }
+
+    if (initialStock > 0) {
+      const logPayload: InventoryLogInsert = {
+        item_id: data.id,
+        change_amount: initialStock,
+        reason: 'initial',
+        notes: 'Tồn kho ban đầu',
+        created_by: userId,
+        tenant_id: tenantId,
+      };
+
+      const { error: logError } = await supabase.from('inventory_logs').insert(logPayload);
+      if (logError) {
+        const rollbackError = await deleteInventoryItemById(supabase, data.id, tenantId);
+        return {
+          success: false,
+          error: rollbackError
+            ? `Lỗi ghi log tồn kho ban đầu: ${logError.message}; rollback thất bại: ${rollbackError.message}`
+            : `Lỗi ghi log tồn kho ban đầu: ${logError.message}`,
+        };
+      }
+    }
 
     revalidatePath('/dashboard/inventory');
     return { success: true, data };
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('[addInventoryItem]', e);
-    return { success: false, error: 'Lỗi hệ thống' };
+    return { success: false, error: getErrorMessage(e) };
   }
 }
 

@@ -7,6 +7,23 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden Manual Inventory Mutations
+* **Mục tiêu kỹ thuật**:
+  * Đưa thao tác nhập thêm kho và tạo vật tư mới về Server Actions để không còn client tự ghi `inventory_items` và `inventory_logs` thành hai bước rời rạc.
+  * Chặn lệch audit kho khi item/stock đã thay đổi nhưng log bắt buộc thất bại.
+* **Thay đổi chính**:
+  * `addInventoryItem` giờ ghi log tồn kho ban đầu khi stock > 0 và xóa item mới nếu ghi log thất bại.
+  * `useInventoryPageState` gọi `addInventoryItem` và `restockItem` thay vì tự insert/update/log trực tiếp từ client.
+  * Bổ sung regression tests cho add item success, zero opening stock, và rollback delete item khi initial log fail.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-manual-inventory-mutations.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/inventory-actions.test.ts --runInBand` pass, 20/20 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/inventory-actions.ts src/app/dashboard/inventory/hooks/useInventoryPageState.ts src/__tests__/inventory-actions.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 65 suites / 713 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden Inventory Transfer New Item Rollback
 * **Mục tiêu kỹ thuật**:
   * Đóng lỗi rollback khi chi nhánh nhận chuyển kho và hệ thống tự tạo item mới nhưng bước ghi log hoặc cập nhật trạng thái đơn thất bại.
