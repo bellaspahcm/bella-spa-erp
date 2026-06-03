@@ -2,6 +2,15 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import type { SubAgentResponse } from '../types';
 
+type ReconciliationReportRow = { status: string };
+
+function assertReconciliationRows(data: unknown): ReconciliationReportRow[] {
+  if (!Array.isArray(data)) {
+    throw new Error("Invalid get_reconciliation_report response: expected an array");
+  }
+  return data as ReconciliationReportRow[];
+}
+
 export async function runCFOAgent(
   supabase: SupabaseClient<Database>,
   tenantId: string,
@@ -76,13 +85,15 @@ export async function runCFOAgent(
       console.error("[CFO Agent] Lỗi đối soát sổ sách:", error);
       throw error;
     }
-    reportData = data;
-    const rows = (data || []) as { status: string }[];
+    const rows = assertReconciliationRows(data);
+    reportData = rows;
     const diffCount = rows.filter((r) => r.status === "MAJOR_DIFF").length;
     summaryText = `Đã hoàn tất kiểm tra đối soát quỹ. Phát hiện ${diffCount} chênh lệch Sổ cái & Sổ quỹ lớn (> 1%) cần chú ý xử lý.`;
   }
 
-  const rows = (reportType === "reconciliation" ? (reportData as { status: string }[] | null) : null) || [];
+  const rows = reportType === "reconciliation"
+    ? assertReconciliationRows(reportData)
+    : [];
   const hasMajorDiff = rows.some((r) => r.status === "MAJOR_DIFF");
 
   return {

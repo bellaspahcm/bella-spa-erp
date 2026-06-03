@@ -7,6 +7,24 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden CFO Agent Reconciliation RPC
+* **Mục tiêu kỹ thuật**:
+  * Chặn CFO agent hiểu nhầm response RPC đối soát sai shape thành báo cáo rỗng hợp lệ.
+  * Đảm bảo lỗi RPC tài chính tiếp tục propagate rõ theo quy tắc Zero Silent Database Failures.
+* **Thay đổi chính**:
+  * `runCFOAgent` validate `get_reconciliation_report` phải trả array trước khi tổng hợp diff/proposal.
+  * Empty array vẫn là báo cáo hợp lệ với 0 chênh lệch và không tạo draft proposal.
+  * Non-array payload không còn fallback về `[]`, mà throw lỗi invalid response rõ ràng.
+  * Thêm test trực tiếp cho CFO agent: RPC error, empty valid report, MAJOR_DIFF proposal, invalid shape.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-cfo-agent-reconciliation-rpc.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/cfo-agent.test.ts --runInBand` pass, 4/4 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/ai/agents/cfo.ts src/__tests__/cfo-agent.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 66 suites / 722 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden Monthly Inventory Reconciliation
 * **Mục tiêu kỹ thuật**:
   * Không để kiểm kê cuối tháng kho bị báo thành công khi chỉ lưu được một phần entries.
