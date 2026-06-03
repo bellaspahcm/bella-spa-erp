@@ -216,7 +216,7 @@ INSERT INTO public.accounting_event_templates (
      'booking',
      '[
         {"side":"DEBIT","account_code":"3387","amount_source":"earned_revenue"},
-        {"side":"CREDIT","account_code":"511","amount_source":"earned_revenue"}
+        {"side":"CREDIT","account_code":"5113","amount_source":"earned_revenue"}
       ]'::JSONB,
      ARRAY['session_log_id','booking_id','earned_revenue'], true, false, true),
     (NULL, 'TT133', 'REFUND_TO_CUSTOMER', 'Hoàn tiền khách hàng', 'Hoàn tiền/giảm trừ doanh thu theo tình huống được kế toán rà soát.',

@@ -50,8 +50,9 @@ import { RevenueRecognitionService } from '../services/revenue-recognition';
 const TENANT_ID = 'tenant-uuid-1';
 const CASH_ID = 'acct-111';
 const UNEARNED_ID = 'acct-3387';
+const RECEIVABLE_ID = 'acct-131';
 const VAT_ID = 'acct-3331';
-const REV_ID = 'acct-5111';
+const REV_ID = 'acct-5113';
 const EXPENSE_ID = 'acct-6421';
 const PAYABLE_ID = 'acct-334';
 
@@ -278,6 +279,7 @@ describe('RevenueRecognitionService.handleSessionDone', () => {
     // Mock 4 account lookups: 3387, 5111, 6421, 334
     mockSingle
       .mockResolvedValueOnce({ data: { id: UNEARNED_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: RECEIVABLE_ID }, error: null })
       .mockResolvedValueOnce({ data: { id: REV_ID }, error: null })
       .mockResolvedValueOnce({ data: { id: EXPENSE_ID }, error: null })
       .mockResolvedValueOnce({ data: { id: PAYABLE_ID }, error: null })
@@ -307,10 +309,40 @@ describe('RevenueRecognitionService.handleSessionDone', () => {
     expect(ktvLines).toHaveLength(2);
   });
 
+  it('splits completed session revenue between deferred revenue and receivables', async () => {
+    mockSingle
+      .mockResolvedValueOnce({ data: { id: UNEARNED_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: RECEIVABLE_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: REV_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: EXPENSE_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: PAYABLE_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: 'entry-uuid-5' }, error: null });
+
+    await RevenueRecognitionService.handleSessionDone({
+      tenantId: TENANT_ID,
+      sessionLogId: 'session-log-split',
+      earnedRevenueAmount: 180000,
+      deferredRevenueAmount: 100000,
+      receivableAmount: 80000,
+      commissionAmount: 30000,
+      ktvId: 'ktv-uuid-1',
+      description: 'Buoi da lam nhung chua thu du tien',
+    });
+
+    const linesCall = mockInsertLines.mock.calls[0][0];
+    expect(linesCall).toHaveLength(5);
+    expect(linesCall).toEqual(expect.arrayContaining([
+      expect.objectContaining({ account_id: UNEARNED_ID, debit_amount: 100000, credit_amount: 0 }),
+      expect.objectContaining({ account_id: RECEIVABLE_ID, debit_amount: 80000, credit_amount: 0 }),
+      expect.objectContaining({ account_id: REV_ID, debit_amount: 0, credit_amount: 180000 }),
+    ]));
+  });
+
   it('returns null when both revenue and commission are zero', async () => {
     // Mock 4 account lookups (vẫn fetch dù không dùng)
     mockSingle
       .mockResolvedValueOnce({ data: { id: UNEARNED_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: RECEIVABLE_ID }, error: null })
       .mockResolvedValueOnce({ data: { id: REV_ID }, error: null })
       .mockResolvedValueOnce({ data: { id: EXPENSE_ID }, error: null })
       .mockResolvedValueOnce({ data: { id: PAYABLE_ID }, error: null });

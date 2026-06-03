@@ -179,6 +179,8 @@ describe('Accounting Outbox Worker API', () => {
           reference_id: 'ref-id-2',
           payload: {
             earnedRevenueAmount: 200000,
+            deferredRevenueAmount: 150000,
+            receivableAmount: 50000,
             commissionAmount: 50000,
             ktvId: 'ktv-id-1',
             branchId: 'branch-1',
@@ -232,6 +234,8 @@ describe('Accounting Outbox Worker API', () => {
         tenantId: 'tenant-uuid-1',
         sessionLogId: 'ref-id-2',
         earnedRevenueAmount: 200000,
+        deferredRevenueAmount: 150000,
+        receivableAmount: 50000,
         commissionAmount: 50000,
         ktvId: 'ktv-id-1',
         branchId: 'branch-1',

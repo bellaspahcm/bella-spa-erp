@@ -4,6 +4,10 @@ import { AccountingEngineService, type JournalEntryInput } from './accounting-en
 
 type AdminClient = SupabaseClient<Database>;
 
+function asFiniteAmount(value: number | undefined, fallback = 0) {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback;
+}
+
 function getAdminClient(): AdminClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -30,6 +34,22 @@ export class RevenueRecognitionService {
       throw new Error(`Account code ${accountCode} not found for tenant ${tenantId}`);
     }
     return data.id;
+  }
+
+  private static async getAccountByCodeFallback(tenantId: string, accountCodes: string[]): Promise<string> {
+    let lastError: unknown = null;
+
+    for (const accountCode of accountCodes) {
+      try {
+        return await this.getAccountByCode(tenantId, accountCode);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(`Account codes ${accountCodes.join(', ')} not found for tenant ${tenantId}`);
   }
 
   /**
@@ -80,28 +100,51 @@ export class RevenueRecognitionService {
     sessionLogId: string;
     packageId?: string;
     earnedRevenueAmount: number;
+    deferredRevenueAmount?: number;
+    receivableAmount?: number;
     commissionAmount: number;
     ktvId: string;
     branchId?: string;
     description: string;
   }) {
-    const { tenantId, sessionLogId, earnedRevenueAmount, commissionAmount, ktvId, branchId, description } = params;
+    const {
+      tenantId,
+      sessionLogId,
+      earnedRevenueAmount,
+      deferredRevenueAmount,
+      receivableAmount,
+      commissionAmount,
+      ktvId,
+      branchId,
+      description,
+    } = params;
 
-    // 5111 = Doanh thu gói dịch vụ; 6421 = Hoa hồng KTV
-    const [unearnedRevAccountId, revAccountId, expenseAccountId, payableAccountId] = await Promise.all([
+    // 5113 = doanh thu cung cấp dịch vụ; fallback 5111 keeps old tenants safe until migration is applied.
+    const [unearnedRevAccountId, receivableAccountId, revAccountId, expenseAccountId, payableAccountId] = await Promise.all([
       this.getAccountByCode(tenantId, '3387'),
-      this.getAccountByCode(tenantId, '5111'),
+      this.getAccountByCode(tenantId, '131'),
+      this.getAccountByCodeFallback(tenantId, ['5113', '5111']),
       this.getAccountByCode(tenantId, '6421'),
       this.getAccountByCode(tenantId, '334'),
     ]);
 
     const lines: JournalEntryInput['lines'] = [];
+    const earnedAmount = asFiniteAmount(earnedRevenueAmount);
+    const hasExplicitSplit = deferredRevenueAmount !== undefined || receivableAmount !== undefined;
+    const rawDeferredAmount = deferredRevenueAmount !== undefined
+      ? asFiniteAmount(deferredRevenueAmount)
+      : Math.max(0, earnedAmount - asFiniteAmount(receivableAmount));
+    const deferredAmount = hasExplicitSplit ? Math.min(rawDeferredAmount, earnedAmount) : earnedAmount;
+    const receivableSessionAmount = hasExplicitSplit ? Math.max(0, earnedAmount - deferredAmount) : 0;
 
-    if (earnedRevenueAmount > 0) {
-      lines.push(
-        { account_id: unearnedRevAccountId, debit_amount: earnedRevenueAmount, credit_amount: 0, branch_id: branchId },
-        { account_id: revAccountId, debit_amount: 0, credit_amount: earnedRevenueAmount, branch_id: branchId }
-      );
+    if (earnedAmount > 0) {
+      if (deferredAmount > 0) {
+        lines.push({ account_id: unearnedRevAccountId, debit_amount: deferredAmount, credit_amount: 0, branch_id: branchId });
+      }
+      if (receivableSessionAmount > 0) {
+        lines.push({ account_id: receivableAccountId, debit_amount: receivableSessionAmount, credit_amount: 0, branch_id: branchId });
+      }
+      lines.push({ account_id: revAccountId, debit_amount: 0, credit_amount: earnedAmount, branch_id: branchId });
     }
 
     if (commissionAmount > 0) {
