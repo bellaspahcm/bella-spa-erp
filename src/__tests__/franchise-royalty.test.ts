@@ -54,6 +54,7 @@ class MockQueryBuilder {
   public orderSpy = jest.fn().mockReturnThis();
   public gteSpy = jest.fn().mockReturnThis();
   public lteSpy = jest.fn().mockReturnThis();
+  public ltSpy = jest.fn().mockReturnThis();
 
   constructor(data: any = null, error: any = null) {
     this.data = data;
@@ -65,6 +66,7 @@ class MockQueryBuilder {
   order(...args: any[]) { this.orderSpy(...args); return this; }
   gte(...args: any[]) { this.gteSpy(...args); return this; }
   lte(...args: any[]) { this.lteSpy(...args); return this; }
+  lt(...args: any[]) { this.ltSpy(...args); return this; }
   update(...args: any[]) { this.updateSpy(...args); return this; }
   insert(...args: any[]) { this.insertSpy(...args); return this; }
   
