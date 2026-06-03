@@ -5,6 +5,22 @@
 
 ---
 
+### 03/06/2026: Normalize Finance Refund Outbox Source Payload
+* **Muc tieu nghiep vu**:
+  * Khong de giao dich doanh thu am dung de hoan tien bi `Math.abs` lam mat ngu nghia refund truoc khi vao accounting outbox.
+  * Noi tiep fix TT133 refund runtime: source Finance phai phat `REFUND_ISSUED` voi split `3387/5113` ro rang.
+* **Thay doi chinh**:
+  * `recordTransaction` nhan dien refund theo `amount < 0` hoac `category='refund'`, luu `revenue.amount` duong de giu SIMPLE reporting, va luu `revenue_type='refund'`.
+  * Confirmed refund enqueue `REFUND_ISSUED` voi `deferredRefundAmount=0`, `revenueReductionAmount=amount`, `paymentMethod`, `description`, `branchId`; khong di qua `PACKAGE_SALE`.
+  * `confirmTransaction` voi pending refund cung enqueue `REFUND_ISSUED` va rollback trang thai neu outbox fail.
+  * Them migration cho phep `refund` trong CHECK constraint `revenue.revenue_type`, dong thoi giu cac revenue type app dang dung.
+  * Mo rong `finance-transaction-mutations.test.ts` de assert insert payload, outbox side-effect, rollback va legacy package sale khong doi.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-normalize-finance-refund-outbox-split.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/finance-transaction-mutations.test.ts src/__tests__/accounting-outbox.test.ts --runInBand` pass, 2 suites / 21 tests.
+  * `npm.cmd run build` pass.
+
 ### 03/06/2026: Fix TT133 Refund Mapping
 * **Muc tieu nghiep vu**:
   * Khong de hoan tien khach hang phat sinh but toan moi vao `521` trong runtime TT133.

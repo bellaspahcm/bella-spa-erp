@@ -27,7 +27,12 @@ jest.mock('../services/accounting/period-guards', () => ({
 }));
 
 jest.mock('../services/accounting/template-rules', () => ({
-  inferBusinessEventType: jest.fn(() => 'PACKAGE_SALE'),
+  inferBusinessEventType: jest.fn((input: { sourceTable?: string; revenueType?: string | null }) => {
+    if (input.sourceTable === 'revenue' && input.revenueType === 'refund') {
+      return 'REFUND_TO_CUSTOMER';
+    }
+    return 'PACKAGE_SALE';
+  }),
 }));
 
 jest.mock('../services/finance/transaction-review', () => ({
@@ -256,6 +261,243 @@ describe('finance transaction mutation outbox rollbacks', () => {
     ).rejects.toThrow('record revenue outbox failed');
 
     expect(calls.map(c => `${c.table}.${c.op}`)).toEqual(['revenue.insert', 'revenue.delete']);
+  });
+
+  it('records confirmed negative finance revenue as refund and enqueues REFUND_ISSUED split payload', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'revenue',
+        op: 'insert',
+        data: {
+          id: 'rev-refund',
+          revenue_type: 'refund',
+          amount: 300000,
+          notes: 'refund customer',
+          payment_method: 'bank_transfer',
+          tenant_id: 'tenant-1',
+        },
+      },
+    ]);
+
+    await recordTransaction({
+      amount: -300000,
+      type: 'revenue',
+      category: 'refund',
+      notes: 'refund customer',
+      status: 'confirmed',
+      booking_id: 'booking-1',
+    });
+
+    expect(calls).toEqual([
+      expect.objectContaining({
+        table: 'revenue',
+        op: 'insert',
+        payload: expect.objectContaining({
+          amount: 300000,
+          revenue_type: 'refund',
+          business_event_type: 'REFUND_TO_CUSTOMER',
+          accounting_metadata: expect.objectContaining({
+            amount: 300000,
+            booking_id: 'booking-1',
+            deferredRefundAmount: 0,
+            revenueReductionAmount: 300000,
+          }),
+        }),
+      }),
+    ]);
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        eventType: 'REFUND_ISSUED',
+        referenceType: 'REVENUE',
+        referenceId: 'rev-refund',
+        payload: {
+          amount: 300000,
+          deferredRefundAmount: 0,
+          revenueReductionAmount: 300000,
+          paymentMethod: 'bank_transfer',
+          description: 'refund customer',
+          branchId: 'tenant-1',
+        },
+      }),
+      '[recordTransaction]'
+    );
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ eventType: 'PACKAGE_SALE' }),
+      expect.anything()
+    );
+  });
+
+  it('confirms pending refund revenue by enqueuing REFUND_ISSUED split payload', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'revenue',
+        op: 'select',
+        data: {
+          id: 'rev-refund-pending',
+          revenue_type: 'refund',
+          amount: 300000,
+          payment_method: 'bank_transfer',
+          booking_id: 'booking-1',
+          notes: 'pending refund',
+          tenant_id: 'tenant-1',
+          status: 'pending',
+          received_date: null,
+          business_event_type: null,
+          accounting_review_status: null,
+          accounting_metadata: null,
+        },
+      },
+      {
+        table: 'revenue',
+        op: 'update',
+        data: {
+          id: 'rev-refund-pending',
+          revenue_type: 'refund',
+          amount: 300000,
+          payment_method: 'bank_transfer',
+          notes: 'pending refund',
+          tenant_id: 'tenant-1',
+        },
+      },
+    ]);
+
+    await confirmTransaction('rev-refund-pending', 'revenue');
+
+    expect(calls.filter(c => c.table === 'revenue' && c.op === 'update').map(c => c.payload)).toEqual([
+      expect.objectContaining({
+        status: 'confirmed',
+        business_event_type: 'REFUND_TO_CUSTOMER',
+        accounting_metadata: expect.objectContaining({
+          amount: 300000,
+          deferredRefundAmount: 0,
+          revenueReductionAmount: 300000,
+        }),
+      }),
+    ]);
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        eventType: 'REFUND_ISSUED',
+        referenceType: 'REVENUE',
+        referenceId: 'rev-refund-pending',
+        payload: {
+          amount: 300000,
+          deferredRefundAmount: 0,
+          revenueReductionAmount: 300000,
+          paymentMethod: 'bank_transfer',
+          description: 'pending refund',
+          branchId: 'tenant-1',
+        },
+      }),
+      '[confirmTransaction]'
+    );
+  });
+
+  it('restores pending refund state when confirm refund outbox enqueue fails', async () => {
+    mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('refund outbox failed'));
+    const calls = installScriptedSupabase([
+      {
+        table: 'revenue',
+        op: 'select',
+        data: {
+          id: 'rev-refund-fail',
+          revenue_type: 'refund',
+          amount: 300000,
+          payment_method: 'bank_transfer',
+          booking_id: 'booking-1',
+          notes: 'pending refund',
+          tenant_id: 'tenant-1',
+          status: 'pending',
+          received_date: null,
+          business_event_type: null,
+          accounting_review_status: null,
+          accounting_metadata: null,
+        },
+      },
+      {
+        table: 'revenue',
+        op: 'update',
+        data: {
+          id: 'rev-refund-fail',
+          revenue_type: 'refund',
+          amount: 300000,
+          payment_method: 'bank_transfer',
+          notes: 'pending refund',
+          tenant_id: 'tenant-1',
+        },
+      },
+      { table: 'revenue', op: 'update' },
+    ]);
+
+    await expect(confirmTransaction('rev-refund-fail', 'revenue')).rejects.toThrow('refund outbox failed');
+
+    expect(calls.filter(c => c.table === 'revenue' && c.op === 'update').map(c => c.payload)).toEqual([
+      expect.objectContaining({ status: 'confirmed', business_event_type: 'REFUND_TO_CUSTOMER' }),
+      {
+        status: 'pending',
+        received_date: null,
+        business_event_type: null,
+        accounting_review_status: null,
+        accounting_metadata: null,
+      },
+    ]);
+  });
+
+  it('keeps positive package payment revenue on the PACKAGE_SALE outbox path', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'revenue',
+        op: 'insert',
+        data: {
+          id: 'rev-package',
+          revenue_type: 'package_payment',
+          amount: 500000,
+          notes: 'package payment',
+          tenant_id: 'tenant-1',
+        },
+      },
+    ]);
+
+    await recordTransaction({
+      amount: 500000,
+      type: 'revenue',
+      category: 'package_payment',
+      notes: 'package payment',
+      status: 'confirmed',
+      booking_id: 'booking-1',
+    });
+
+    expect(calls).toEqual([
+      expect.objectContaining({
+        table: 'revenue',
+        op: 'insert',
+        payload: expect.objectContaining({
+          amount: 500000,
+          revenue_type: 'package_payment',
+        }),
+      }),
+    ]);
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        eventType: 'PACKAGE_SALE',
+        referenceType: 'REVENUE',
+        referenceId: 'rev-package',
+        payload: expect.objectContaining({
+          totalAmount: 500000,
+          vatRate: 0,
+          branchId: 'tenant-1',
+        }),
+      }),
+      '[recordTransaction]'
+    );
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ eventType: 'REFUND_ISSUED' }),
+      expect.anything()
+    );
   });
 
   it('reports rollback failure when deleting inserted expense fails after outbox failure', async () => {
