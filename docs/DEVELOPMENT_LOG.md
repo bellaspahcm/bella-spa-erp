@@ -7,6 +7,24 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden AI Autopilot Notification Failures
+* **Mục tiêu kỹ thuật**:
+  * Không để cron Autopilot báo `success` khi cảnh báo Telegram thực tế không gửi được.
+  * Không skip im lặng lỗi DB khi đọc cấu hình Telegram của tenant active.
+* **Thay đổi chính**:
+  * `GET /api/cron/ai-autopilot` giờ biến lỗi query `ai_agent_configs` thành tenant-scoped failure thay vì bỏ qua như tenant chưa cấu hình.
+  * Telegram API non-2xx hoặc exception khi decrypt/fetch được đưa vào `tenant_errors` và làm summary thành `partial_failure`.
+  * Thêm `alerts_failed` vào response summary để vận hành phân biệt không có cảnh báo, gửi thành công và gửi thất bại.
+  * Bổ sung regression tests cho config DB failure, Telegram delivery failure, success path và continuation sang tenant sau.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-ai-autopilot-notification-failures.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/ai-autopilot-cron.test.ts --runInBand` pass, 4/4 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/app/api/cron/ai-autopilot/route.ts src/__tests__/ai-autopilot-cron.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 67 suites / 746 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden Accounting Worker Side Effects
 * **Mục tiêu kỹ thuật**:
   * Không để accounting worker chỉ log khi `mark_outbox_failed` lỗi mà response không chỉ ra event nào bị kẹt.

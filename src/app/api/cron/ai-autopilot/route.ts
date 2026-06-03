@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
 
     let tenantsChecked = 0;
     let alertsSent = 0;
+    let alertsFailed = 0;
     const tenantErrors: TenantError[] = [];
 
     for (const tenant of tenants || []) {
@@ -85,7 +86,11 @@ export async function GET(req: NextRequest) {
           .eq("is_active", true)
           .maybeSingle();
 
-        if (configErr || !config || !config.telegram_bot_token || !config.telegram_chat_id) {
+        if (configErr) {
+          throw new Error(`Failed to fetch Telegram config: ${configErr.message}`);
+        }
+
+        if (!config || !config.telegram_bot_token || !config.telegram_chat_id) {
           continue; // Bỏ qua nếu tenant không cấu hình Telegram
         }
 
@@ -154,24 +159,28 @@ export async function GET(req: NextRequest) {
           alertText += `2. Kế toán trưởng đối chiếu trực tiếp các hóa đơn doanh thu/chi phí bị lệch.\n`;
           alertText += `3. Truy cập Bella ERP Dashboard để ký duyệt các bản nháp giải trình do AI chuẩn bị.`;
 
-          // Gửi tin nhắn — H4 FIX: decrypt bot token
-          const botToken = decrypt(config.telegram_bot_token);
-          const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-          const teleResponse = await fetch(telegramUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              chat_id: config.telegram_chat_id,
-              text: alertText,
-              parse_mode: "Markdown"
-            })
-          });
+          try {
+            const botToken = decrypt(config.telegram_bot_token);
+            const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+            const teleResponse = await fetch(telegramUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                chat_id: config.telegram_chat_id,
+                text: alertText,
+                parse_mode: "Markdown"
+              })
+            });
 
-          if (!teleResponse.ok) {
-            const errText = await teleResponse.text();
-            console.error(`[AI Autopilot Cron] Lỗi gửi Telegram cho tenant ${tenant.name}:`, errText);
-          } else {
+            if (!teleResponse.ok) {
+              const errText = await teleResponse.text();
+              throw new Error(`Telegram delivery failed: ${errText}`);
+            }
+
             alertsSent++;
+          } catch (telegramErr: unknown) {
+            alertsFailed++;
+            throw telegramErr;
           }
         }
 
@@ -187,6 +196,7 @@ export async function GET(req: NextRequest) {
       date: formattedDate,
       tenants_checked: tenantsChecked,
       alerts_sent: alertsSent,
+      alerts_failed: alertsFailed,
       tenant_errors: tenantErrors.length > 0 ? tenantErrors : undefined
     };
 
