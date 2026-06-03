@@ -89,6 +89,8 @@ export class AccountingEngineService {
       .eq('id', header.id);
 
     if (postError) {
+      await supabase.from('journal_lines').delete().eq('entry_id', header.id);
+      await supabase.from('journal_entries').delete().eq('id', header.id);
       throw new Error(`Failed to post journal entry: ${postError.message}`);
     }
 

@@ -5,6 +5,24 @@
 
 ---
 
+### 03/06/2026: TT133 Accounting Full Audit And Fix
+* **Muc tieu ke toan**:
+  * Lam mot pass tron ven cho runtime accounting, legacy sync, report/reconciliation va rollback side-effect theo TT133 hien tai.
+  * Khong de loi DB/outbox bi im lang trong cac luong ke toan quan trong.
+* **Thay doi chinh**:
+  * `AccountingEngineService.postJournalEntry` rollback ca `journal_lines` va `journal_entries` neu buoc update `POSTED` fail.
+  * `RevenueRecognitionService.handleExpenseRecorded` map chi phi `salary` sang `6421` theo template TT133.
+  * Them migration `20260603070000_tt133_legacy_expense_paid_status.sql` de RPC sync/preview legacy ledger tinh ca expense `approved` va `paid`.
+  * Finance mutations, booking deposit revenue, single-session revenue, session done outbox va inventory consumption deu coi `enqueueWithAutoClient=false` la loi ro rang va rollback side-effect.
+  * Session completion khong con nuot loi tao review placeholder; rollback session co check loi va recalc salary sau khi rollback session de tranh drift luong draft.
+  * Them `session-completion-accounting.test.ts` va mo rong tests ke toan/finance/inventory/dual-mode cho false-return rollback, `6421`, POST rollback va migration invariant.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-tt133-accounting-full-audit.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/accounting-engine.test.ts src/__tests__/accounting-outbox.test.ts src/__tests__/dual-mode-accounting.test.ts src/__tests__/finance-transaction-mutations.test.ts src/__tests__/inventory-actions.test.ts src/__tests__/session-completion-accounting.test.ts src/__tests__/accounting-reports.test.ts src/__tests__/reconciliation.test.ts src/__tests__/salary-reconciliation.test.ts --runInBand` pass, 9 suites / 106 tests.
+  * `npm.cmd run build` pass.
+  * `git diff --check` pass, chi co canh bao LF/CRLF cua Windows.
+
 ### 03/06/2026: Harden Payment Webhook Idempotency
 * **Muc tieu ke toan/thanh toan**:
   * Khong de webhook retry tao trung `revenue` cho cung giao dich ngan hang.

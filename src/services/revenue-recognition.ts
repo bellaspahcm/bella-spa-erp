@@ -168,7 +168,7 @@ export class RevenueRecognitionService {
   }
 
   /**
-   * Ghi nhận chi phí: Nợ 642 (hoặc tài khoản chi phí con) / Có 111 (Tiền mặt) hoặc 112 (Tiền gửi ngân hàng)
+   * Ghi nhận chi phí: Nợ tài khoản chi phí/giá vốn phù hợp / Có 111 hoặc 112
    */
   static async handleExpenseRecorded(params: {
     tenantId: string;
@@ -195,7 +195,7 @@ export class RevenueRecognitionService {
     } else if (normCategory === 'materials') {
       expenseAccountCode = '632';  // Giá vốn hàng bán (vật tư tiêu hao)
     } else if (normCategory === 'salary') {
-      expenseAccountCode = '642';  // Chi phí nhân viên nói chung
+      expenseAccountCode = '6421'; // Chi phí lương/nhân viên theo template TT133
     }
 
     const payAccountCode = paymentMethod?.toLowerCase() === 'cash' ? '111' : '112';

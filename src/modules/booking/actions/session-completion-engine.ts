@@ -3,6 +3,7 @@ import {
   enqueueSessionDoneAccountingOutbox,
   ensureSessionReviewPlaceholder,
   recordSingleSessionRevenueIfNeeded,
+  rollbackCompletionSideEffects,
   syncBookingCompletionProgress,
   syncKtvSalaryAfterCompletion,
   validateCompletionAccountingPeriod,
@@ -85,13 +86,24 @@ export async function processSessionCompletion(
     return { error: salaryResult.error };
   }
 
-  await ensureSessionReviewPlaceholder({
+  const reviewResult = await ensureSessionReviewPlaceholder({
     supabase,
     sessionId,
     ktvId: resolvedKtvId,
     tenantId,
     currentBooking,
   });
+  if ('error' in reviewResult) {
+    await rollbackCompletionSideEffects({
+      supabase,
+      sessionId,
+      bookingId,
+      currentBooking,
+      isInventoryConsumed,
+      isRevenueCreated,
+    });
+    return { error: reviewResult.error };
+  }
 
   const outboxResult = await enqueueSessionDoneAccountingOutbox({
     supabase,

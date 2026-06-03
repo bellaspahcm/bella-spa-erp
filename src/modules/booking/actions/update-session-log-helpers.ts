@@ -31,6 +31,15 @@ const ALLOWED_UPDATE_KEYS: AllowedUpdateKey[] = [
   'assigned_time',
 ];
 
+function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return fallback;
+}
+
 export function normalizeSessionLogUpdate(payload: UpdateSessionLogInput): UpdateSessionLogInput {
   const updates: UpdateSessionLogInput = { ...payload };
 
@@ -134,7 +143,7 @@ export async function processCompletedSessionUpdate(params: {
 
   if (result.error) {
     console.error('[updateSessionLog] Failed to process session completion, rolling back status:', result.error);
-    await supabase
+    const { error: rollbackError } = await supabase
       .from('session_logs')
       .update({
         status: existingLog.status || 'scheduled',
@@ -142,6 +151,20 @@ export async function processCompletedSessionUpdate(params: {
         completed_by_ktv_id: existingLog.completed_by_ktv_id || null,
       })
       .eq('id', sessionId);
+
+    if (rollbackError) {
+      return { error: `${result.error}; rollback session failed: ${rollbackError.message}` };
+    }
+
+    if (ktvId && tenantId) {
+      try {
+        const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+        const monthYear = `${today.substring(0, 7)}-01`;
+        await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId);
+      } catch (salaryRollbackError) {
+        return { error: `${result.error}; rollback salary failed: ${getErrorMessage(salaryRollbackError)}` };
+      }
+    }
 
     return { error: result.error };
   }

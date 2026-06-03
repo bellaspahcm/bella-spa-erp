@@ -137,8 +137,8 @@ describe('finance transaction mutation outbox rollbacks', () => {
     return calls;
   }
 
-  it('restores revenue state when confirm revenue outbox enqueue fails', async () => {
-    mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('outbox failed'));
+  it('restores revenue state when confirm revenue outbox enqueue returns false', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
     const calls = installScriptedSupabase([
       {
         table: 'revenue',
@@ -172,7 +172,9 @@ describe('finance transaction mutation outbox rollbacks', () => {
       { table: 'revenue', op: 'update' },
     ]);
 
-    await expect(confirmTransaction('rev-1', 'revenue')).rejects.toThrow('outbox failed');
+    await expect(confirmTransaction('rev-1', 'revenue')).rejects.toThrow(
+      'Failed to enqueue PACKAGE_SALE accounting event'
+    );
 
     expect(calls.filter(c => c.table === 'revenue' && c.op === 'update').map(c => c.payload)).toEqual([
       expect.objectContaining({ status: 'confirmed' }),
@@ -186,8 +188,8 @@ describe('finance transaction mutation outbox rollbacks', () => {
     ]);
   });
 
-  it('restores expense state when confirm expense outbox enqueue fails', async () => {
-    mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('expense outbox failed'));
+  it('restores expense state when confirm expense outbox enqueue returns false', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
     const calls = installScriptedSupabase([
       {
         table: 'expenses',
@@ -219,7 +221,9 @@ describe('finance transaction mutation outbox rollbacks', () => {
       { table: 'expenses', op: 'update' },
     ]);
 
-    await expect(confirmTransaction('exp-1', 'expense')).rejects.toThrow('expense outbox failed');
+    await expect(confirmTransaction('exp-1', 'expense')).rejects.toThrow(
+      'Failed to enqueue EXPENSE_RECORDED accounting event'
+    );
 
     expect(calls.filter(c => c.table === 'expenses' && c.op === 'update').map(c => c.payload)).toEqual([
       expect.objectContaining({ status: 'approved' }),
@@ -233,8 +237,8 @@ describe('finance transaction mutation outbox rollbacks', () => {
     ]);
   });
 
-  it('deletes inserted confirmed revenue when record revenue outbox enqueue fails', async () => {
-    mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('record revenue outbox failed'));
+  it('deletes inserted confirmed revenue when record revenue outbox enqueue returns false', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
     const calls = installScriptedSupabase([
       {
         table: 'revenue',
@@ -258,7 +262,7 @@ describe('finance transaction mutation outbox rollbacks', () => {
         notes: 'deposit',
         status: 'confirmed',
       })
-    ).rejects.toThrow('record revenue outbox failed');
+    ).rejects.toThrow('Failed to enqueue PACKAGE_SALE accounting event');
 
     expect(calls.map(c => `${c.table}.${c.op}`)).toEqual(['revenue.insert', 'revenue.delete']);
   });
@@ -528,8 +532,8 @@ describe('finance transaction mutation outbox rollbacks', () => {
     ).rejects.toThrow(/record expense outbox failed.*rollback failed: delete failed/i);
   });
 
-  it('restores salary record and expense state when salary paid outbox enqueue fails', async () => {
-    mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('salary outbox failed'));
+  it('restores salary record and expense state when salary paid outbox enqueue returns false', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
     const calls = installScriptedSupabase([
       {
         table: 'expenses',
@@ -575,7 +579,9 @@ describe('finance transaction mutation outbox rollbacks', () => {
       { table: 'expenses', op: 'update' },
     ]);
 
-    await expect(confirmTransaction('exp-salary', 'expense')).rejects.toThrow('salary outbox failed');
+    await expect(confirmTransaction('exp-salary', 'expense')).rejects.toThrow(
+      'Failed to enqueue SALARY_PAID accounting event'
+    );
 
     expect(calls.filter(c => c.table === 'salary_records' && c.op === 'update').map(c => c.payload)).toEqual([
       expect.objectContaining({ status: 'paid' }),

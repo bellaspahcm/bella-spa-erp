@@ -366,7 +366,7 @@ export async function recordBookingDepositRevenue(params: {
 
   if (insertedRevenue?.id && tenantId) {
     const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
-    await enqueueWithAutoClient(
+    const outboxEnqueued = await enqueueWithAutoClient(
       supabase,
       {
         tenantId,
@@ -382,6 +382,11 @@ export async function recordBookingDepositRevenue(params: {
       },
       '[createBooking]'
     );
+    if (!outboxEnqueued) {
+      await supabase.from('revenue').delete().eq('id', insertedRevenue.id);
+      await supabase.from('bookings').delete().eq('id', booking.id);
+      return { error: 'Không thể ghi nhận hàng đợi kế toán cho doanh thu đặt cọc. Đã hủy tạo booking.' };
+    }
   }
 
   return { success: true };

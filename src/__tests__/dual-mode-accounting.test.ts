@@ -301,6 +301,19 @@ describe('Legacy revenue sync SQL migration', () => {
   });
 });
 
+describe('Legacy expense paid-status sync SQL migration', () => {
+  const paidExpenseStatusMigrationSql = fs.readFileSync(
+    path.join(process.cwd(), 'supabase/migrations/20260603070000_tt133_legacy_expense_paid_status.sql'),
+    'utf8'
+  );
+
+  it('upgrades legacy sync and preview to include paid expenses', () => {
+    expect(paidExpenseStatusMigrationSql).toContain("e.status IN (''approved'', ''paid'')");
+    expect(paidExpenseStatusMigrationSql).toContain('sync_legacy_to_ledger_atomic');
+    expect(paidExpenseStatusMigrationSql).toContain('preview_legacy_ledger_sync');
+  });
+});
+
 describe('Application Layer protection', () => {
   it('blocks manually recordTransaction if mode is PROFESSIONAL', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);

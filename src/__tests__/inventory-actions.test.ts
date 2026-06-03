@@ -682,8 +682,8 @@ describe('inventory write action side effects', () => {
     expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
   });
 
-  it('rolls back auto consumption when accounting outbox enqueue fails', async () => {
-    mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('outbox failed'));
+  it('rolls back auto consumption when accounting outbox enqueue returns false', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
     const calls = installScriptedSupabase([
       { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
       {
@@ -705,7 +705,7 @@ describe('inventory write action side effects', () => {
     const result = await autoConsumeForSession('pkg-1', 'session-1');
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('outbox failed');
+    expect(result.error).toContain('Failed to enqueue INVENTORY_CONSUMED accounting event');
     expect(calls.filter(c => c.table === 'inventory_items' && c.op === 'update').map(c => c.payload)).toEqual([
       { stock_level: 8 },
       { stock_level: 10 },
