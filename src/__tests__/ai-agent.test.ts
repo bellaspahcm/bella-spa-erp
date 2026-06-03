@@ -77,7 +77,7 @@ global.fetch = jest.fn().mockImplementation((url, options) => {
 
 const mockRpc = jest.fn();
 const mockInsert = jest.fn().mockResolvedValue({ error: null });
-const mockFrom = jest.fn((table?: string) => ({
+const mockFrom = jest.fn(() => ({
   insert: mockInsert,
   select: jest.fn().mockReturnThis(),
   eq: jest.fn().mockReturnThis(),
@@ -184,7 +184,7 @@ describe("AI COO Orchestrator Routing & RPC execution", () => {
     } as any));
 
     // Mock RPC responses
-    mockRpc.mockImplementation((fnName, args) => {
+    mockRpc.mockImplementation((fnName) => {
       if (fnName === "get_ai_attendance_kpis") {
         return Promise.resolve({
           data: [
@@ -237,7 +237,7 @@ describe("AI COO Orchestrator Routing & RPC execution", () => {
       insert: mockInsert
     } as any));
 
-    mockRpc.mockImplementation((fnName, args) => {
+    mockRpc.mockImplementation((fnName) => {
       if (fnName === "get_trial_balance") {
         return Promise.resolve({
           data: [
@@ -260,6 +260,86 @@ describe("AI COO Orchestrator Routing & RPC execution", () => {
 
     expect(body.routedAgent).toBe("cfo");
     expect(body.analysis.executiveSummary).toContain("Bảng cân đối tài khoản phát sinh");
+  });
+
+  it("preserves CFO reconciliation proposal when Gemini returns empty draftActions", async () => {
+    mockFrom.mockImplementationOnce(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+      insert: mockInsert
+    } as any));
+
+    mockRpc.mockImplementation((fnName) => {
+      if (fnName === "get_reconciliation_report") {
+        return Promise.resolve({
+          data: [
+            { status: "MAJOR_DIFF", reference_id: "cash-1", difference_amount: 250000 }
+          ],
+          error: null
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const req = new NextRequest("http://localhost/api/v1/ai/coo-orchestrator", {
+      method: "POST",
+      body: JSON.stringify({ command: "Đối soát sổ cái và sổ quỹ" })
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+
+    expect(body.routedAgent).toBe("cfo");
+    expect(body.draftActions).toEqual([
+      expect.objectContaining({
+        type: "reconciliation_audit",
+      })
+    ]);
+  });
+
+  it("keeps sub-agent data when Gemini enrichment fails", async () => {
+    mockFrom.mockImplementationOnce(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+      insert: mockInsert
+    } as any));
+
+    mockRpc.mockImplementation((fnName) => {
+      if (fnName === "get_trial_balance") {
+        return Promise.resolve({
+          data: [
+            { account_code: "111", account_name: "Tiền mặt", debit_balance: 10000000, credit_balance: 0 }
+          ],
+          error: null
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      json: jest.fn().mockResolvedValue({ error: "Gemini unavailable" }),
+    });
+
+    const req = new NextRequest("http://localhost/api/v1/ai/coo-orchestrator", {
+      method: "POST",
+      body: JSON.stringify({ command: "Xuất bảng cân đối phát sinh" })
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+
+    expect(body.analysis.executiveSummary).toContain("HTTP Status: 503");
+    expect(body.analysis.fullData).toEqual([
+      expect.objectContaining({
+        account_code: "111",
+        debit_balance: 10000000,
+      })
+    ]);
   });
 });
 
@@ -288,6 +368,28 @@ describe("AI COO Orchestrator Error propagation (Zero Silent DB Failures)", () =
     const body = await res.json();
     expect(body.error).toContain("lỗi nghiêm trọng");
     expect(body.details).toContain("Database connection timeout");
+  });
+
+  it("returns 500 when required ai_agent_logs insert fails", async () => {
+    mockFrom.mockImplementationOnce(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: ADMIN_USER, error: null }),
+      insert: mockInsert
+    } as any));
+
+    mockRpc.mockResolvedValue({ data: [], error: null });
+    mockInsert.mockResolvedValueOnce({ error: { message: "ai log insert failed" } });
+
+    const req = new NextRequest("http://localhost/api/v1/ai/coo-orchestrator", {
+      method: "POST",
+      body: JSON.stringify({ command: "Kiểm tra vận hành chung" })
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.details).toContain("ai log insert failed");
   });
 });
 
@@ -362,4 +464,3 @@ describe("AI Action Approval Security & Side-Effects", () => {
     expect(body.notificationId).toBe("notif-uuid");
   });
 });
-

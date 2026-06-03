@@ -340,7 +340,9 @@ Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa 
           if (parsed.executiveSummary) executiveSummary = parsed.executiveSummary as string;
           if (parsed.anomaliesFound) anomaliesFound = parsed.anomaliesFound as unknown[];
           if (parsed.strategicRecommendations) strategicRecommendations = parsed.strategicRecommendations as string[];
-          if (parsed.draftActions) draftActions = parsed.draftActions as unknown[];
+          if (Array.isArray(parsed.draftActions) && parsed.draftActions.length > 0) {
+            draftActions = parsed.draftActions;
+          }
           console.log("[AI COO Service] Gọi Gemini thành công và phân tích số liệu thành công!");
         }
       } else {
