@@ -5,6 +5,25 @@
 
 ---
 
+### 04/06/2026: Accounting Health And Month-Close Preflight
+* **Muc tieu ke toan**:
+  * Them mot man hinh suc khoe so ke toan de admin thay blocker truoc khi khoa thang.
+  * Chan `lockMonth` truoc RPC `lock_monthly_records` neu outbox/journal dang co rui ro lam sai so.
+* **Thay doi chinh**:
+  * Them `getAccountingHealthSummary`, `getMonthClosePreflight`, `assertMonthClosePreflight` cho accounting health.
+  * Health summary gom outbox `FAILED/DEAD/PENDING/PROCESSING`, but toan `DRAFT`, duplicate active reference, readiness TT133 va legacy ledger sync advisory.
+  * Them trang `/dashboard/accounting/health` va tab "Suc khoe so".
+  * Accounting overview dung health summary that thay vi trang thai outbox gia lap.
+  * `lockMonth` tra loi preflight ro rang va khong goi RPC khoa thang khi co blocker.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-accounting-health-preflight.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/accounting-health.test.ts src/__tests__/finance.lockMonth.test.ts --runInBand` pass, 2 suites / 19 tests.
+  * `npm.cmd test -- src/__tests__/franchise-royalty.test.ts src/__tests__/inter-branch-clearing.test.ts src/__tests__/security-hardening.test.ts --runInBand` pass, 3 suites / 37 tests.
+  * `npm.cmd run build` pass.
+  * `git diff --check` pass, chi co canh bao LF/CRLF cua Windows.
+  * Full `npm.cmd test -- --runInBand`: 72/74 suites pass; con unrelated fail o `idempotency.test.ts` va `subscription.test.ts`.
+
 ### 03/06/2026: TT133 Accounting Full Audit And Fix
 * **Muc tieu ke toan**:
   * Lam mot pass tron ven cho runtime accounting, legacy sync, report/reconciliation va rollback side-effect theo TT133 hien tai.
