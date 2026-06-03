@@ -39,6 +39,10 @@ jest.mock('@/services/inventory-actions', () => ({
   autoConsumeForSession: jest.fn().mockResolvedValue({ success: true }),
 }));
 
+jest.mock('@/lib/accounting-outbox', () => ({
+  enqueueWithAutoClient: jest.fn().mockResolvedValue(true),
+}));
+
 jest.mock('next/headers', () => ({
   headers: jest.fn().mockResolvedValue({
     get: jest.fn().mockReturnValue('127.0.0.1'),
