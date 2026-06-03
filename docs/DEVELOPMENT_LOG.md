@@ -5,6 +5,24 @@
 
 ---
 
+### 03/06/2026: Harden CRM Stats Read Failures
+* **Muc tieu ky thuat**:
+  * Khong de loi doc CRM dashboard bi bien thanh chi so `0` hoac danh sach rong.
+  * Giu truong hop user khong co `tenant_id` la empty-state hop le.
+* **Thay doi chinh**:
+  * `getCRMStats` gio throw loi ro rang khi count reminder da gui, count reminder cho gui, hoac query birthday customers bi loi.
+  * `getUpcomingSessions` gio throw loi query `session_logs` thay vi tra `[]` khi DB/RLS loi.
+  * UI CRM khong can doi vi `useCrmPageData` da co `try/catch` va `loadError` banner.
+  * Them `crm-stats.test.ts` voi 8 case bao phu success, no-tenant empty state va tung failure path.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-crm-stats-read-failures.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/crm-stats.test.ts --runInBand` pass, 8/8 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/crm/stats.ts src/__tests__/crm-stats.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 69 suites / 767 tests.
+  * `npm.cmd run build` pass.
+
 ### ðŸŸ¢ NgÃ y 03/06/2026: Harden Tenant Settings Read Failures
 * **Má»¥c tiÃªu ká»¹ thuáº­t**:
   * KhÃ´ng Ä‘á»ƒ lá»—i Ä‘á»c cáº¥u hÃ¬nh chi nhÃ¡nh bá»‹ biáº¿n thÃ nh tráº¡ng thÃ¡i `null` im láº·ng.
