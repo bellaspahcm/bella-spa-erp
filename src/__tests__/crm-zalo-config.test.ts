@@ -26,6 +26,8 @@ type QueryResult = {
 
 type QueryCall = {
   table: string;
+  operation: 'select' | 'update';
+  payload?: unknown;
   selectColumns?: string;
   filters: Array<{ method: string; args: unknown[] }>;
   orders: Array<{ column: string; options?: unknown }>;
@@ -36,6 +38,8 @@ const queryCalls: QueryCall[] = [];
 let scriptedResults: QueryResult[] = [];
 
 class QueryBuilder implements PromiseLike<QueryResult> {
+  private operation: 'select' | 'update' = 'select';
+  private payload?: unknown;
   private selectColumns?: string;
   private filters: Array<{ method: string; args: unknown[] }> = [];
   private orders: Array<{ column: string; options?: unknown }> = [];
@@ -45,6 +49,12 @@ class QueryBuilder implements PromiseLike<QueryResult> {
 
   select(columns?: string) {
     this.selectColumns = columns;
+    return this;
+  }
+
+  update(payload: unknown) {
+    this.operation = 'update';
+    this.payload = payload;
     return this;
   }
 
@@ -78,6 +88,8 @@ class QueryBuilder implements PromiseLike<QueryResult> {
   ): Promise<TResult1 | TResult2> {
     queryCalls.push({
       table: this.table,
+      operation: this.operation,
+      payload: this.payload,
       selectColumns: this.selectColumns,
       filters: [...this.filters],
       orders: [...this.orders],
@@ -94,6 +106,7 @@ const mockSupabase = {
 };
 
 import { getZaloConfig, getZaloZnsLogs } from '@/services/crm/zalo-config';
+import { getOrRefreshZaloToken } from '@/services/crm/zalo-config';
 
 describe('CRM Zalo config read actions', () => {
   beforeEach(() => {
@@ -106,6 +119,11 @@ describe('CRM Zalo config read actions', () => {
       tenant_id: 'tenant-1',
       role: 'admin',
     });
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('returns decrypted Zalo config when the tenant query succeeds', async () => {
@@ -263,5 +281,184 @@ describe('CRM Zalo config read actions', () => {
     await expect(getZaloZnsLogs()).resolves.toEqual([]);
 
     expect(queryCalls).toHaveLength(0);
+  });
+
+  it('returns the current Zalo access token when it is still valid', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-03T00:00:00.000Z'));
+    scriptedResults = [
+      {
+        data: {
+          zalo_app_id: 'app-1',
+          zalo_secret_key: 'secret-key',
+          zalo_access_token: 'access-token',
+          zalo_refresh_token: 'refresh-token',
+          zalo_token_expires_at: '2026-06-03T00:10:01.000Z',
+        },
+        error: null,
+      },
+    ];
+
+    await expect(getOrRefreshZaloToken('tenant-1')).resolves.toBe('decrypted:access-token');
+
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(queryCalls).toHaveLength(1);
+    expect(queryCalls[0].operation).toBe('select');
+  });
+
+  it('returns null when required Zalo credential config is missing', async () => {
+    scriptedResults = [
+      {
+        data: {
+          zalo_app_id: 'app-1',
+          zalo_secret_key: null,
+          zalo_access_token: 'access-token',
+          zalo_refresh_token: 'refresh-token',
+          zalo_token_expires_at: '2026-06-03T00:10:01.000Z',
+        },
+        error: null,
+      },
+    ];
+
+    await expect(getOrRefreshZaloToken('tenant-1')).resolves.toBeNull();
+
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(queryCalls).toHaveLength(1);
+  });
+
+  it('rejects token tenant query failures instead of returning null', async () => {
+    scriptedResults = [
+      { data: null, error: { message: 'token query blocked' } },
+    ];
+
+    await expect(getOrRefreshZaloToken('tenant-1')).rejects.toThrow(
+      '[getOrRefreshZaloToken] tenants token query failed for tenant tenant-1: token query blocked',
+    );
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects missing tenant token rows instead of returning null', async () => {
+    scriptedResults = [
+      { data: null, error: null },
+    ];
+
+    await expect(getOrRefreshZaloToken('tenant-1')).rejects.toThrow(
+      '[getOrRefreshZaloToken] tenant token row not found for tenant tenant-1',
+    );
+  });
+
+  it('rejects OAuth HTTP failures during token refresh', async () => {
+    scriptedResults = [
+      {
+        data: {
+          zalo_app_id: 'app-1',
+          zalo_secret_key: 'secret-key',
+          zalo_access_token: 'access-token',
+          zalo_refresh_token: 'refresh-token',
+          zalo_token_expires_at: '2026-06-02T00:00:00.000Z',
+        },
+        error: null,
+      },
+    ];
+    global.fetch = jest.fn(async () => ({
+      ok: false,
+      status: 503,
+    } as Response));
+
+    await expect(getOrRefreshZaloToken('tenant-1')).rejects.toThrow(
+      '[getOrRefreshZaloToken] Zalo OAuth refresh failed for tenant tenant-1: HTTP 503',
+    );
+
+    expect(queryCalls).toHaveLength(1);
+  });
+
+  it('rejects OAuth responses without an access token', async () => {
+    scriptedResults = [
+      {
+        data: {
+          zalo_app_id: 'app-1',
+          zalo_secret_key: 'secret-key',
+          zalo_access_token: 'access-token',
+          zalo_refresh_token: 'refresh-token',
+          zalo_token_expires_at: '2026-06-02T00:00:00.000Z',
+        },
+        error: null,
+      },
+    ];
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({ error_code: 190 }),
+    } as Response));
+
+    await expect(getOrRefreshZaloToken('tenant-1')).rejects.toThrow(
+      '[getOrRefreshZaloToken] Zalo OAuth response missing access_token for tenant tenant-1: 190',
+    );
+
+    expect(queryCalls).toHaveLength(1);
+  });
+
+  it('rejects save failures after OAuth refresh instead of returning the new token', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-03T00:00:00.000Z'));
+    scriptedResults = [
+      {
+        data: {
+          zalo_app_id: 'app-1',
+          zalo_secret_key: 'secret-key',
+          zalo_access_token: 'access-token',
+          zalo_refresh_token: 'refresh-token',
+          zalo_token_expires_at: '2026-06-02T00:00:00.000Z',
+        },
+        error: null,
+      },
+      { data: null, error: { message: 'save denied' } },
+    ];
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        access_token: 'new-access-token',
+        refresh_token: 'new-refresh-token',
+        expires_in: 7200,
+      }),
+    } as Response));
+
+    await expect(getOrRefreshZaloToken('tenant-1')).rejects.toThrow(
+      '[getOrRefreshZaloToken] failed to save refreshed token for tenant tenant-1: save denied',
+    );
+
+    expect(queryCalls.map((call) => call.operation)).toEqual(['select', 'update']);
+  });
+
+  it('returns the refreshed token after OAuth refresh and tenant save both succeed', async () => {
+    jest.useFakeTimers().setSystemTime(new Date('2026-06-03T00:00:00.000Z'));
+    scriptedResults = [
+      {
+        data: {
+          zalo_app_id: 'app-1',
+          zalo_secret_key: 'secret-key',
+          zalo_access_token: 'access-token',
+          zalo_refresh_token: 'refresh-token',
+          zalo_token_expires_at: '2026-06-02T00:00:00.000Z',
+        },
+        error: null,
+      },
+      { data: null, error: null },
+    ];
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        access_token: 'new-access-token',
+        refresh_token: 'new-refresh-token',
+        expires_in: 7200,
+      }),
+    } as Response));
+
+    await expect(getOrRefreshZaloToken('tenant-1')).resolves.toBe('new-access-token');
+
+    expect(queryCalls.map((call) => call.operation)).toEqual(['select', 'update']);
+    expect(queryCalls[1].payload).toEqual({
+      zalo_access_token: 'encrypted:new-access-token',
+      zalo_refresh_token: 'encrypted:new-refresh-token',
+      zalo_token_expires_at: '2026-06-03T02:00:00.000Z',
+    });
   });
 });
