@@ -42,9 +42,11 @@ export async function callPendingRpc<K extends keyof PendingRpcDefs>(
 ): Promise<{ data: PendingRpcDefs[K]['Returns'] | null; error: { message: string } | null }> {
   // The generated client type does not know about this RPC name yet; the cast is
   // localized here so no other call site needs `any`.
-  const rpc = client.rpc as unknown as (
-    fn: K,
-    args: PendingRpcDefs[K]['Args']
-  ) => Promise<{ data: PendingRpcDefs[K]['Returns'] | null; error: { message: string } | null }>;
-  return rpc(fn, args);
+  const rpcClient = client as unknown as {
+    rpc: (
+      fn: K,
+      args: PendingRpcDefs[K]['Args']
+    ) => Promise<{ data: PendingRpcDefs[K]['Returns'] | null; error: { message: string } | null }>;
+  };
+  return rpcClient.rpc(fn, args);
 }

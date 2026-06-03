@@ -1,10 +1,30 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3, Calendar, Lock, Unlock, ShieldCheck } from 'lucide-react';
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Activity,
+  PieChart,
+  Lock,
+  Unlock,
+  ShieldCheck,
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  RefreshCw,
+  XCircle,
+} from 'lucide-react';
 import { lockMonth, unlockMonth } from '@/services/finance-actions';
+import {
+  getMonthClosePreflight,
+  type AccountingHealthCheck,
+  type AccountingHealthSummary,
+} from '@/services/accounting-actions';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 interface PnLData {
@@ -35,12 +55,158 @@ interface FinancePnLSummaryProps {
   onRefresh: () => void;
 }
 
+const monthCloseLinks = [
+  { href: '/dashboard/accounting/health', label: 'Health' },
+  { href: '/dashboard/accounting/outbox', label: 'Outbox' },
+  { href: '/dashboard/accounting/journals', label: 'Journals' },
+];
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Không thể kiểm tra preflight khóa tháng.';
+}
+
+function formatChecksForConfirmation(checks: AccountingHealthCheck[]) {
+  return checks
+    .slice(0, 4)
+    .map((check) => `- ${check.label}: ${check.message}`)
+    .join('\n');
+}
+
 export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChange, onRefresh }: FinancePnLSummaryProps) {
   const [isLocking, setIsLocking] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [preflight, setPreflight] = useState<AccountingHealthSummary | null>(null);
+  const [isCheckingPreflight, setIsCheckingPreflight] = useState(false);
+  const [preflightError, setPreflightError] = useState<string | null>(null);
+
+  const selectedMonthLabel = selectedMonth.substring(0, 7);
+
+  const loadPreflight = useCallback(async (options?: { showToast?: boolean }) => {
+    setIsCheckingPreflight(true);
+    setPreflightError(null);
+
+    try {
+      const summary = await getMonthClosePreflight(selectedMonth);
+      setPreflight(summary);
+
+      if (options?.showToast) {
+        if (summary.can_close_month) {
+          toast.success('Preflight khóa tháng đạt yêu cầu.');
+        } else {
+          toast.error(`Preflight còn ${summary.blocker_count} blocker cần xử lý.`);
+        }
+      }
+
+      return summary;
+    } catch (error) {
+      const message = getErrorMessage(error);
+      setPreflight(null);
+      setPreflightError(message);
+
+      if (options?.showToast) {
+        toast.error(message);
+      }
+
+      return null;
+    } finally {
+      setIsCheckingPreflight(false);
+    }
+  }, [selectedMonth]);
+
+  useEffect(() => {
+    if (pnl?.is_locked) {
+      setPreflight(null);
+      setPreflightError(null);
+      return;
+    }
+
+    void loadPreflight();
+  }, [loadPreflight, pnl?.is_locked]);
+
+  const preflightMonthMatches = preflight?.month === selectedMonthLabel;
+  const preflightBlockers = preflightMonthMatches ? preflight.blockers : [];
+  const preflightWarnings = preflightMonthMatches ? preflight.warnings : [];
+  const canLockFromPreflight = preflightMonthMatches && !preflightError && preflight?.can_close_month === true;
+  const isLockDisabled = isLocking || isCheckingPreflight || !canLockFromPreflight;
+
+  const preflightStatus = useMemo(() => {
+    if (preflightError) {
+      return {
+        label: 'Không kiểm tra được',
+        detail: preflightError,
+        className: 'border-rose-200 bg-rose-50 text-rose-700',
+        icon: XCircle,
+      };
+    }
+
+    if (isCheckingPreflight && !preflightMonthMatches) {
+      return {
+        label: 'Đang kiểm tra',
+        detail: `Đang kiểm tra dữ liệu kế toán tháng ${selectedMonthLabel}.`,
+        className: 'border-slate-200 bg-slate-50 text-slate-600',
+        icon: Activity,
+      };
+    }
+
+    if (!preflightMonthMatches || !preflight) {
+      return {
+        label: 'Chưa có kết quả',
+        detail: `Cần kiểm tra preflight tháng ${selectedMonthLabel} trước khi chốt sổ.`,
+        className: 'border-slate-200 bg-slate-50 text-slate-600',
+        icon: RefreshCw,
+      };
+    }
+
+    if (!preflight.can_close_month) {
+      return {
+        label: 'Đang bị chặn',
+        detail: `${preflight.blocker_count} blocker cần xử lý trước khi chốt sổ tháng.`,
+        className: 'border-rose-200 bg-rose-50 text-rose-700',
+        icon: XCircle,
+      };
+    }
+
+    if (preflight.warning_count > 0) {
+      return {
+        label: 'Có cảnh báo',
+        detail: `${preflight.warning_count} cảnh báo, vẫn có thể chốt sau khi xác nhận.`,
+        className: 'border-amber-200 bg-amber-50 text-amber-700',
+        icon: AlertTriangle,
+      };
+    }
+
+    return {
+      label: 'Đủ điều kiện',
+      detail: 'Không có blocker kế toán cho tháng này.',
+      className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+      icon: CheckCircle2,
+    };
+  }, [isCheckingPreflight, preflight, preflightError, preflightMonthMatches, selectedMonthLabel]);
+
+  const PreflightStatusIcon = preflightStatus.icon;
+  const preflightIssues = [
+    ...preflightBlockers.map((check) => ({ check, tone: 'blocker' as const })),
+    ...preflightWarnings.map((check) => ({ check, tone: 'warning' as const })),
+  ];
 
   const handleLock = async () => {
-    if (!window.confirm(`Bạn có chắc chắn muốn CHỐT SỔ tháng ${selectedMonth.substring(0, 7)} không?\nSau khi chốt, toàn bộ giao dịch và lương sẽ được khóa để ngăn chặn thay đổi.`)) {
+    const latestPreflight = await loadPreflight();
+
+    if (!latestPreflight) {
+      toast.error('Không thể kiểm tra sức khỏe sổ trước khi chốt tháng.');
+      return;
+    }
+
+    if (!latestPreflight.can_close_month) {
+      toast.error(`Chưa thể chốt sổ tháng ${selectedMonthLabel}: còn ${latestPreflight.blocker_count} blocker.`);
+      return;
+    }
+
+    const warningText = latestPreflight.warnings.length > 0
+      ? `\n\nCảnh báo đang mở:\n${formatChecksForConfirmation(latestPreflight.warnings)}`
+      : '';
+
+    if (!window.confirm(`Bạn có chắc chắn muốn CHỐT SỔ tháng ${selectedMonthLabel} không?\nSau khi chốt, toàn bộ giao dịch và lương sẽ được khóa để ngăn chặn thay đổi.${warningText}`)) {
       return;
     }
 
@@ -142,11 +308,12 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
            ) : (
               <button 
                 onClick={handleLock}
-                disabled={isLocking}
+                disabled={isLockDisabled}
+                title={!canLockFromPreflight ? 'Cần preflight kế toán sạch trước khi chốt tháng' : undefined}
                 className="flex items-center gap-1.5 bg-slate-900 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all disabled:opacity-50"
               >
-                {isLocking ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
-                Chốt sổ tháng
+                {isLocking || isCheckingPreflight ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+                {isCheckingPreflight ? 'Đang kiểm tra' : isLocking ? 'Đang chốt sổ' : 'Chốt sổ tháng'}
               </button>
            )}
         </div>
@@ -177,6 +344,113 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
           </div>
         </div>
       </div>
+
+      {!pnl.is_locked && (
+        <section
+          data-testid="month-close-preflight"
+          className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-5 md:p-6"
+        >
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+            <div className="flex items-start gap-4 min-w-0">
+              <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 ${preflightStatus.className}`}>
+                <PreflightStatusIcon className={`w-5 h-5 ${isCheckingPreflight ? 'animate-spin' : ''}`} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    Preflight khóa tháng {selectedMonthLabel}
+                  </p>
+                  <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${preflightStatus.className}`}>
+                    {preflightStatus.label}
+                  </span>
+                </div>
+                <p className="text-sm font-bold text-slate-700 leading-relaxed">
+                  {preflightStatus.detail}
+                </p>
+                {preflightMonthMatches && preflight && (
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    <span className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 text-[10px] font-black uppercase tracking-widest border border-rose-100">
+                      {preflight.blocker_count} blocker
+                    </span>
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-widest border border-amber-100">
+                      {preflight.warning_count} cảnh báo
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void loadPreflight({ showToast: true })}
+                disabled={isCheckingPreflight}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:border-slate-300 hover:text-slate-900 transition-all disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isCheckingPreflight ? 'animate-spin' : ''}`} />
+                Kiểm tra lại
+              </button>
+              {monthCloseLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-white hover:text-slate-900 transition-all"
+                >
+                  {item.label}
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {preflightError ? (
+              <div className="lg:col-span-2 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                {preflightError}
+              </div>
+            ) : preflightIssues.length > 0 ? (
+              preflightIssues.slice(0, 4).map(({ check, tone }) => {
+                const issueClassName = tone === 'blocker'
+                  ? 'border-rose-100 bg-rose-50 text-rose-700'
+                  : 'border-amber-100 bg-amber-50 text-amber-700';
+                const IssueIcon = tone === 'blocker' ? XCircle : AlertTriangle;
+                const content = (
+                  <>
+                    <IssueIcon className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span className="min-w-0">
+                      <span className="block text-xs font-black uppercase tracking-widest">{check.label}</span>
+                      <span className="block text-xs font-bold leading-relaxed mt-1">{check.message}</span>
+                    </span>
+                  </>
+                );
+
+                return check.href ? (
+                  <Link
+                    key={check.id}
+                    href={check.href}
+                    className={`flex items-start gap-3 rounded-2xl border px-4 py-3 hover:brightness-[0.98] transition-all ${issueClassName}`}
+                  >
+                    {content}
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0 ml-auto mt-0.5" />
+                  </Link>
+                ) : (
+                  <div
+                    key={check.id}
+                    className={`flex items-start gap-3 rounded-2xl border px-4 py-3 ${issueClassName}`}
+                  >
+                    {content}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="lg:col-span-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                Không có blocker hoặc cảnh báo trọng yếu cho tháng này.
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* P&L Snapshot */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
