@@ -7,6 +7,25 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden Tenant Settings Audit Rollback
+* **Mục tiêu kỹ thuật**:
+  * Không để cấu hình chi nhánh đã đổi nhưng audit log bị thiếu.
+  * Không update tenant nếu không snapshot được trạng thái cũ.
+* **Thay đổi chính**:
+  * `saveTenantSettings` snapshot tenant bằng query fail-closed trước khi update.
+  * Nếu audit settings fail sau update, action rollback các field thuộc settings surface về snapshot cũ.
+  * Nếu rollback cũng fail, response trả cả lỗi audit và rollback.
+  * Revalidate `/dashboard/settings` chỉ chạy sau khi update và audit đều thành công.
+  * Thêm `tenant-actions.test.ts` bao phủ success, snapshot failure, update failure, audit rollback và rollback failure.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-tenant-settings-audit-rollback.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/tenant-actions.test.ts --runInBand` pass, 5/5 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/tenant-actions.ts src/__tests__/tenant-actions.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 68 suites / 754 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden Onboarding Audit And Auth Cleanup
 * **Mục tiêu kỹ thuật**:
   * Không để đăng ký chi nhánh mới trả `success` khi audit onboarding không ghi được.
