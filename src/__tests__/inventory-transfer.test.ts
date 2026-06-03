@@ -695,7 +695,7 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
       expect(order?.status).toBe('completed');
     });
 
-    it('should reset new branch item stock and keep order shipped when new-item receipt log insert fails', async () => {
+    it('should delete new branch item and keep order shipped when new-item receipt log insert fails', async () => {
       mockGetCurrentUser.mockResolvedValue(branchAAdmin);
       mockFailures = [
         { table: 'inventory_logs', op: 'insert', error: { message: 'new item log failed' } },
@@ -708,8 +708,7 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
       const newBranchCream = mockDb.inventory_items.find(
         i => i.tenant_id === 'tenant-branch-a' && i.sku === 'CRM-002'
       );
-      expect(newBranchCream).toBeDefined();
-      expect(newBranchCream?.stock_level).toBe(0);
+      expect(newBranchCream).toBeUndefined();
       expect(mockDb.inventory_logs).toHaveLength(0);
       const order = mockDb.inventory_transfer_orders.find(o => o.id === 'trf-shipped-a-cream-new');
       expect(order?.status).toBe('shipped');
@@ -735,8 +734,7 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
       const newBranchCream = mockDb.inventory_items.find(
         i => i.tenant_id === 'tenant-branch-a' && i.sku === 'CRM-002'
       );
-      expect(newBranchCream).toBeDefined();
-      expect(newBranchCream?.stock_level).toBe(0);
+      expect(newBranchCream).toBeUndefined();
       expect(mockDb.inventory_logs).toHaveLength(0);
       expect(order.status).toBe('shipped');
       expect(order.completed_at).toBeUndefined();
@@ -761,8 +759,7 @@ describe('Internal Supply Chain & Inventory Transfer Order System', () => {
       const newBranchCream = mockDb.inventory_items.find(
         i => i.tenant_id === 'tenant-branch-a' && i.sku === 'CRM-002'
       );
-      expect(newBranchCream).toBeDefined();
-      expect(newBranchCream?.stock_level).toBe(0);
+      expect(newBranchCream).toBeUndefined();
       expect(mockDb.inventory_logs).toHaveLength(0);
       expect(order.status).toBe('shipped');
       expect(order.completed_at).toBeUndefined();

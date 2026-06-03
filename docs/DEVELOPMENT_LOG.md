@@ -1,11 +1,28 @@
 # 📔 Nhật ký Phát triển & Bảo trì Tổng hợp (Development & Maintenance Log)
 **Dự án**: Bella Spa Enterprise Resource Planning (ERP) System  
-**Ngày cập nhật**: 02/06/2026
+**Ngày cập nhật**: 03/06/2026
 **Mục tiêu**: Gom và tổng hợp tất cả các nhật ký làm việc hàng ngày của AI Agent và nhà phát triển để giúp việc tra cứu lịch sử được dễ dàng, tránh làm tràn context của AI Coding.
 
 ---
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
+
+### 🟢 Ngày 03/06/2026: Harden Inventory Transfer New Item Rollback
+* **Mục tiêu kỹ thuật**:
+  * Đóng lỗi rollback khi chi nhánh nhận chuyển kho và hệ thống tự tạo item mới nhưng bước ghi log hoặc cập nhật trạng thái đơn thất bại.
+  * Tránh để lại item ảo stock 0 trong `inventory_items` sau một receipt operation thất bại.
+* **Thay đổi chính**:
+  * `confirmTransferReceipt` phân biệt item đã tồn tại với item mới tạo trong cùng operation.
+  * Rollback receipt giờ xóa item mới sinh ra và xóa receipt log liên quan; item cũ vẫn restore stock như trước.
+  * Cập nhật regression tests để assert receipt lỗi không để lại branch item với SKU mới.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-inventory-transfer-new-item-rollback.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/inventory-transfer.test.ts --runInBand` pass, 29/29 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/inventory-transfer-actions.ts src/__tests__/inventory-transfer.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 65 suites / 710 tests.
+  * `npm.cmd run build` pass.
 
 ### 🟢 Ngày 02/06/2026: Super Admin Subscription Quota Production Fixes
 * **Mục tiêu kỹ thuật**:

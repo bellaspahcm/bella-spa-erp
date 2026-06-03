@@ -21,6 +21,7 @@ type TransferInventoryMutation = {
   logReason: TransferLogReason;
   logNotes: string;
   tenantId: string;
+  createdNewItem?: boolean;
 };
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
@@ -74,11 +75,37 @@ async function deleteTransferInventoryLog(
   return error;
 }
 
+async function deleteInventoryItem(
+  supabase: SupabaseClient,
+  itemId: string,
+) {
+  const { error } = await supabase
+    .from('inventory_items')
+    .delete()
+    .eq('id', itemId);
+
+  return error;
+}
+
 async function rollbackTransferInventoryMutations(
   supabase: SupabaseClient,
   mutations: TransferInventoryMutation[],
 ) {
   for (const mutation of [...mutations].reverse()) {
+    if (mutation.createdNewItem) {
+      const logError = await deleteTransferInventoryLog(supabase, mutation);
+      if (logError) {
+        return `delete log ${mutation.itemId} failed: ${logError.message}`;
+      }
+
+      const deleteItemError = await deleteInventoryItem(supabase, mutation.itemId);
+      if (deleteItemError) {
+        return `delete item ${mutation.itemId} failed: ${deleteItemError.message}`;
+      }
+
+      continue;
+    }
+
     const stockError = await restoreInventoryStock(supabase, mutation.itemId, mutation.previousStock);
     if (stockError) {
       return `restore ${mutation.itemId} failed: ${stockError.message}`;
@@ -560,13 +587,14 @@ export async function confirmTransferReceipt(transferId: string) {
       const { error: logErr } = await supabase.from('inventory_logs').insert(logPayload);
 
       if (logErr) {
-        const rollbackStock = createdNewItem ? 0 : previousStock;
-        const rollbackErr = rollbackStock === null
-          ? null
-          : await restoreInventoryStock(supabase, itemId, rollbackStock);
+        const rollbackErr = createdNewItem
+          ? await deleteInventoryItem(supabase, itemId)
+          : previousStock === null
+            ? null
+            : await restoreInventoryStock(supabase, itemId, previousStock);
         const priorRollbackErr = await rollbackTransferInventoryMutations(supabase, receiptMutations);
         const rollbackParts = [
-          rollbackErr ? `current item restore failed: ${rollbackErr.message}` : '',
+          rollbackErr ? `current item rollback failed: ${rollbackErr.message}` : '',
           priorRollbackErr,
         ].filter(Boolean);
         const rollbackNote = rollbackParts.length > 0 ? `; rollback failed: ${rollbackParts.join('; ')}` : '';
@@ -582,6 +610,7 @@ export async function confirmTransferReceipt(transferId: string) {
         logReason: 'transfer_receipt',
         logNotes,
         tenantId: branchTenantId,
+        createdNewItem,
       });
     }
 
