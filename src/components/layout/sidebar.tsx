@@ -88,16 +88,20 @@ const customerMenuItems: SidebarMenuItem[] = [
   { icon: Settings,      label: 'Hồ sơ cá nhân',          href: '/dashboard/customer/profile' },
 ];
 
-export function Sidebar() {
+type SidebarProps = {
+  initialUser?: CurrentUser | null;
+};
+
+export function Sidebar({ initialUser = null }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(initialUser);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      const userData = await getCurrentUser();
+      const userData = initialUser || await getCurrentUser();
       setUser(userData);
       
       if (userData?.role && userData.role !== 'admin' && userData.role !== 'customer') {
@@ -113,7 +117,7 @@ export function Sidebar() {
       }
     };
     fetchData();
-  }, []);
+  }, [initialUser]);
 
   const handleNavigation = () => {
     setIsOpen(false);
