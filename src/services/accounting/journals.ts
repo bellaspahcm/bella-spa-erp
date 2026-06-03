@@ -116,23 +116,11 @@ export async function reverseJournalEntry(entryId: string, reason: string) {
   // 3. Post reversing entry (atomic bypasses RLS safely via service-role AccountingEngineService)
   const reversalEntryId = await AccountingEngineService.postJournalEntry(reversalInput);
 
-  // 4. Mark original entry as CANCELED
-  const { error: cancelError } = await supabase
-    .from('journal_entries')
-    .update({ status: 'CANCELED' })
-    .eq('id', entryId)
-    .eq('tenant_id', user.tenant_id);
-
-  if (cancelError) {
-    // If setting original status fails, log and throw
-    throw new Error(`Failed to cancel original entry: ${cancelError.message}`);
-  }
-
   await recordAuditLog({
-    action: 'UPDATE',
+    action: 'INSERT',
     table_name: 'journal_entries',
-    record_id: entryId,
-    new_data: { status: 'CANCELED', reversed_by: reversalEntryId, reason },
+    record_id: reversalEntryId,
+    new_data: { reversal_of: original.id, reason },
   });
 
   await safeRevalidatePath(`/dashboard/accounting/journals`);

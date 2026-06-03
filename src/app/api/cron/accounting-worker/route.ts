@@ -13,7 +13,7 @@ type WorkerEventResult = {
   eventId: string;
   eventType: string;
   referenceId: string;
-  status: 'completed' | 'failed' | 'critical_failed';
+  status: 'completed' | 'dead_lettered' | 'failed' | 'critical_failed';
   journalEntryId?: string | null;
   error?: string;
   markFailedError?: string;
@@ -107,6 +107,42 @@ async function markOutboxCompleted(supabase: AdminClient, outboxId: string, jour
   });
 }
 
+async function markOutboxDead(supabase: AdminClient, outboxId: string, reason: string) {
+  const updatePayload: Database['public']['Tables']['accounting_outbox']['Update'] = {
+    status: 'DEAD',
+    last_error: reason,
+    processed_at: new Date().toISOString(),
+  };
+
+  return supabase
+    .from('accounting_outbox')
+    .update(updatePayload)
+    .eq('id', outboxId);
+}
+
+async function assertSessionDoneStillValid(supabase: AdminClient, tenantId: string, sessionLogId: string) {
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select('id,status')
+    .eq('id', sessionLogId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to validate SESSION_DONE source: ${error.message}`);
+  }
+
+  if (!data) {
+    return `Stale SESSION_DONE outbox: session ${sessionLogId} no longer exists.`;
+  }
+
+  if (data.status !== 'completed') {
+    return `Stale SESSION_DONE outbox: session ${sessionLogId} is ${data.status}, not completed.`;
+  }
+
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
@@ -151,6 +187,7 @@ export async function GET(req: NextRequest) {
     console.log(`[Accounting Worker] Claimed ${typedBatch.length} events for processing.`);
 
     let successCount = 0;
+    let deadLetterCount = 0;
     let failureCount = 0;
     let criticalFailureCount = 0;
     const details: WorkerEventResult[] = [];
@@ -181,6 +218,28 @@ export async function GET(req: NextRequest) {
             break;
 
           case 'SESSION_DONE':
+            {
+              const staleReason = await assertSessionDoneStillValid(supabase, tenantId, refId);
+              if (staleReason) {
+                const { error: deadErr } = await markOutboxDead(supabase, event.id, staleReason);
+                if (deadErr) {
+                  throw new Error(`Failed to dead-letter stale SESSION_DONE outbox: ${deadErr.message}`);
+                }
+
+                console.warn(`[Accounting Worker] ${staleReason}`);
+                deadLetterCount++;
+                details.push({
+                  eventId: event.id,
+                  eventType,
+                  referenceId: refId,
+                  status: 'dead_lettered',
+                  journalEntryId: null,
+                  error: staleReason,
+                });
+                continue;
+              }
+            }
+
             journalEntryId = await RevenueRecognitionService.handleSessionDone({
               tenantId,
               sessionLogId: refId,
@@ -319,7 +378,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    console.log(`[Accounting Worker] Finished batch. Success: ${successCount}, Failures: ${failureCount}`);
+    console.log(`[Accounting Worker] Finished batch. Success: ${successCount}, Dead-lettered: ${deadLetterCount}, Failures: ${failureCount}`);
     const status = criticalFailureCount > 0
       ? 'critical_failure'
       : failureCount === 0 ? 'success' : 'partial_failure';
@@ -329,6 +388,7 @@ export async function GET(req: NextRequest) {
       status,
       processed: typedBatch.length,
       successCount,
+      deadLetterCount,
       failureCount,
       criticalFailureCount,
       details,
