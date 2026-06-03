@@ -35,4 +35,4 @@ Give admins one operational view for accounting health and prevent month close f
 - `npm.cmd test -- src/__tests__/franchise-royalty.test.ts src/__tests__/inter-branch-clearing.test.ts src/__tests__/security-hardening.test.ts --runInBand` passed.
 - `npm.cmd run build` passed.
 - `git diff --check` passed with Windows LF/CRLF warnings only.
-- Full `npm.cmd test -- --runInBand` result: 72/74 suites passed; existing unrelated failures remain in `src/__tests__/idempotency.test.ts` and `src/__tests__/subscription.test.ts`.
+- Follow-up test mock cleanup: `npm.cmd test -- --runInBand` passed, 74 suites / 820 tests.

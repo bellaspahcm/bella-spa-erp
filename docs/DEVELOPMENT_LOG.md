@@ -22,7 +22,7 @@
   * `npm.cmd test -- src/__tests__/franchise-royalty.test.ts src/__tests__/inter-branch-clearing.test.ts src/__tests__/security-hardening.test.ts --runInBand` pass, 3 suites / 37 tests.
   * `npm.cmd run build` pass.
   * `git diff --check` pass, chi co canh bao LF/CRLF cua Windows.
-  * Full `npm.cmd test -- --runInBand`: 72/74 suites pass; con unrelated fail o `idempotency.test.ts` va `subscription.test.ts`.
+  * Follow-up cleanup: `npm.cmd test -- --runInBand` pass, 74 suites / 820 tests.
 
 ### 03/06/2026: TT133 Accounting Full Audit And Fix
 * **Muc tieu ke toan**:
