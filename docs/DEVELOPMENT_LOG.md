@@ -5,6 +5,25 @@
 
 ---
 
+### 03/06/2026: Harden CRM Zalo Config Read Failures
+* **Muc tieu ky thuat**:
+  * Khong de loi doc cau hinh Zalo bi bien thanh config rong mac dinh.
+  * Khong de loi doc ZNS logs bi bien thanh danh sach rong.
+* **Thay doi chinh**:
+  * `getZaloConfig` gio throw loi ro rang khi query tenant Zalo config loi hoac khong tra row.
+  * Config rong chi con hop le khi tenant row doc thanh cong va cac field Zalo that su dang null/rong.
+  * `getZaloZnsLogs` gio throw loi query `Notification` thay vi tra `[]` khi DB/RLS loi.
+  * Chua dung `getOrRefreshZaloToken` trong slice nay de tranh anh huong luong gui Zalo that va batch reminders.
+  * Them `crm-zalo-config.test.ts` voi 9 case bao phu config success/default, DB failure, missing row, logs success/empty/failure va no-tenant.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-crm-zalo-config-read-failures.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/crm-zalo-config.test.ts --runInBand` pass, 9/9 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/crm/zalo-config.ts src/__tests__/crm-zalo-config.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 70 suites / 776 tests.
+  * `npm.cmd run build` pass.
+
 ### 03/06/2026: Harden CRM Stats Read Failures
 * **Muc tieu ky thuat**:
   * Khong de loi doc CRM dashboard bi bien thanh chi so `0` hoac danh sach rong.
