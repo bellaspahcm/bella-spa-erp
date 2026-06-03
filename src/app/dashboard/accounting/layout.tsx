@@ -13,6 +13,7 @@ import {
   BarChart3,
   GitCompareArrows,
   ClipboardCheck,
+  ShieldCheck,
   ChevronDown,
   Check
 } from 'lucide-react';
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils';
 
 const tabs = [
   { label: 'Tổng quan', href: '/dashboard/accounting', icon: Scale },
+  { label: 'Sức khỏe sổ', href: '/dashboard/accounting/health', icon: ShieldCheck },
   { label: 'Hệ thống tài khoản (COA)', href: '/dashboard/accounting/chart-of-accounts', icon: BookOpen },
   { label: 'Nhật ký chung', href: '/dashboard/accounting/journals', icon: Activity },
   { label: 'Bút toán thủ công', href: '/dashboard/accounting/manual-entry', icon: PenTool },

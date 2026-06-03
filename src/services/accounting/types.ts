@@ -170,3 +170,57 @@ export interface AccountingBackfillResult {
   classified_records: number;
   review_created: number;
 }
+
+export type AccountingHealthStatus = 'pass' | 'warn' | 'fail';
+
+export type AccountingHealthSeverity = 'healthy' | 'warning' | 'critical';
+
+export interface AccountingHealthCheck {
+  id: string;
+  label: string;
+  status: AccountingHealthStatus;
+  count: number;
+  message: string;
+  href?: string;
+}
+
+export interface AccountingDuplicateJournalReference {
+  reference_type: string;
+  reference_id: string;
+  active_count: number;
+  entry_ids: string[];
+}
+
+export interface AccountingHealthMetrics {
+  outbox_pending: number;
+  outbox_processing: number;
+  outbox_completed: number;
+  outbox_failed: number;
+  outbox_dead: number;
+  journal_draft: number;
+  journal_posted: number;
+  journal_canceled: number;
+  duplicate_active_references: number;
+  readiness_score: number;
+  missing_business_event: number;
+  needs_review: number;
+  posting_failed: number;
+  legacy_pending_revenue: number;
+  legacy_pending_expense: number;
+  legacy_pending_salary: number;
+  legacy_journal_entries_to_create: number;
+}
+
+export interface AccountingHealthSummary {
+  generated_at: string;
+  month: string | null;
+  severity: AccountingHealthSeverity;
+  can_close_month: boolean;
+  blocker_count: number;
+  warning_count: number;
+  metrics: AccountingHealthMetrics;
+  checks: AccountingHealthCheck[];
+  blockers: AccountingHealthCheck[];
+  warnings: AccountingHealthCheck[];
+  duplicate_journal_references: AccountingDuplicateJournalReference[];
+}
