@@ -7,7 +7,9 @@ import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';
 import type { Database, Json } from '@/types/database.types';
 
+type TenantRow = Database['public']['Tables']['tenants']['Row'];
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
+type TenantSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định') {
   if (error instanceof Error) return error.message || fallback;
@@ -17,6 +19,79 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định')
     return typeof message === 'string' && message.trim() ? message : fallback;
   }
   return fallback;
+}
+
+function getAdminTenantClient() {
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!serviceRoleKey || !supabaseUrl) {
+    return null;
+  }
+
+  return createSupabaseClient<Database>(supabaseUrl, serviceRoleKey);
+}
+
+async function fetchTenantSnapshot(
+  supabase: TenantSupabaseClient,
+  tenantId: string,
+): Promise<{ data: TenantRow | null; error: string | null }> {
+  let { data, error } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('id', tenantId)
+    .single();
+
+  if ((error || !data) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const supabaseAdmin = getAdminTenantClient();
+    if (supabaseAdmin) {
+      const adminRes = await supabaseAdmin
+        .from('tenants')
+        .select('*')
+        .eq('id', tenantId)
+        .single();
+
+      data = adminRes.data;
+      error = adminRes.error;
+    }
+  }
+
+  if (error) {
+    return { data: null, error: error.message };
+  }
+
+  if (!data) {
+    return { data: null, error: 'Tenant not found' };
+  }
+
+  return { data: data as TenantRow, error: null };
+}
+
+function mapTenantSettingsRollbackPayload(snapshot: TenantRow): TenantUpdate {
+  return {
+    name: snapshot.name,
+    contact_phone: snapshot.contact_phone,
+    email: snapshot.email,
+    address: snapshot.address,
+    qr_bank_code: snapshot.qr_bank_code,
+    qr_account_number: snapshot.qr_account_number,
+    qr_account_name: snapshot.qr_account_name,
+    salary_config: snapshot.salary_config,
+    role_permissions: snapshot.role_permissions,
+    updated_at: snapshot.updated_at,
+  };
+}
+
+async function rollbackTenantSettings(
+  supabase: TenantSupabaseClient,
+  tenantId: string,
+  snapshot: TenantRow,
+) {
+  const { error } = await supabase
+    .from('tenants')
+    .update(mapTenantSettingsRollbackPayload(snapshot))
+    .eq('id', tenantId);
+
+  return error?.message || '';
 }
 
 export async function getTenantSettings() {
@@ -85,8 +160,13 @@ export async function saveTenantSettings(settings: {
   }
 
   try {
-    // Load old data for audit logs
-    const oldSettings = await getTenantSettings();
+    const { data: oldSettings, error: snapshotError } = await fetchTenantSnapshot(supabase, tenantId);
+    if (snapshotError || !oldSettings) {
+      return {
+        success: false,
+        error: `Failed to snapshot tenant settings: ${snapshotError || 'Tenant not found'}`,
+      };
+    }
 
     const updatePayload: TenantUpdate = { updated_at: new Date().toISOString() };
     if (settings.name !== undefined) updatePayload.name = settings.name;
@@ -107,10 +187,10 @@ export async function saveTenantSettings(settings: {
 
     if ((!data || data.length === 0) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.warn('Update returned 0 rows with auth client, trying with admin client...');
-      const supabaseAdmin = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminTenantClient();
+      if (!supabaseAdmin) {
+        return { success: false, error: 'Không thể tạo Supabase admin client để cập nhật cấu hình chi nhánh.' };
+      }
       
       const adminRes = await supabaseAdmin
         .from('tenants')
@@ -134,14 +214,22 @@ export async function saveTenantSettings(settings: {
 
     const updatedTenant = data[0];
 
-    // Record audit log
-    await recordAuditLog({
-      action: 'UPDATE',
-      table_name: 'tenants',
-      record_id: tenantId,
-      old_data: oldSettings,
-      new_data: updatedTenant
-    });
+    try {
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'tenants',
+        record_id: tenantId,
+        old_data: oldSettings,
+        new_data: updatedTenant
+      });
+    } catch (auditError: unknown) {
+      const rollbackError = await rollbackTenantSettings(supabase, tenantId, oldSettings);
+      const rollbackNote = rollbackError ? `; rollback failed: ${rollbackError}` : '';
+      return {
+        success: false,
+        error: `Failed to record tenant settings audit log: ${getErrorMessage(auditError)}${rollbackNote}`,
+      };
+    }
 
     revalidatePath('/dashboard/settings');
     return { success: true, data: updatedTenant };
