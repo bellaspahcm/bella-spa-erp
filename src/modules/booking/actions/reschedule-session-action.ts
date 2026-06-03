@@ -68,46 +68,79 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
     return { error: futureError.message };
   }
 
-  const updates = futureSessions.map((futureSession) => {
-    let currentAssignedDate = futureSession.assigned_date;
+  const plannedUpdates = (futureSessions || []).map((futureSession) => {
+    const originalAssignedDate = futureSession.assigned_date || addDaysToDateString(
+      effectiveOldDateStr,
+      futureSession.session_number - session.session_number
+    );
 
-    if (!currentAssignedDate) {
-      currentAssignedDate = addDaysToDateString(
-        effectiveOldDateStr,
-        futureSession.session_number - session.session_number
-      );
-    }
-
-    const newAssignedDate = addDaysToDateString(currentAssignedDate, diffDays);
-
-    return supabase
-      .from('session_logs')
-      .update({ assigned_date: newAssignedDate })
-      .eq('id', futureSession.id);
+    return {
+      id: futureSession.id,
+      originalAssignedDate,
+      newAssignedDate: addDaysToDateString(originalAssignedDate, diffDays),
+    };
   });
 
-  const results = await Promise.all(updates);
-  const hasError = results.some((result) => result.error);
-  if (hasError) {
-    return { error: 'Có lỗi xảy ra khi cập nhật một số buổi học.' };
+  const appliedUpdates: typeof plannedUpdates = [];
+  const rollbackReschedule = async () => {
+    const rollbackErrors: string[] = [];
+
+    for (const appliedUpdate of appliedUpdates) {
+      const { error: rollbackError } = await supabase
+        .from('session_logs')
+        .update({ assigned_date: appliedUpdate.originalAssignedDate })
+        .eq('id', appliedUpdate.id);
+
+      if (rollbackError) {
+        rollbackErrors.push(`${appliedUpdate.id}: ${rollbackError.message}`);
+      }
+    }
+
+    return rollbackErrors;
+  };
+
+  for (const plannedUpdate of plannedUpdates) {
+    const { error: updateError } = await supabase
+      .from('session_logs')
+      .update({ assigned_date: plannedUpdate.newAssignedDate })
+      .eq('id', plannedUpdate.id);
+
+    if (updateError) {
+      const rollbackErrors = await rollbackReschedule();
+      const rollbackMessage = rollbackErrors.length > 0
+        ? ` Rollback failed: ${rollbackErrors.join('; ')}`
+        : '';
+
+      return {
+        error: `Failed to reschedule all future sessions: ${updateError.message}.${rollbackMessage}`,
+      };
+    }
+
+    appliedUpdates.push(plannedUpdate);
   }
 
-  const rollbackReschedule = async () => {
-    await Promise.all((futureSessions || []).map((futureSession) => {
-      let rollbackDate = futureSession.assigned_date;
-      if (!rollbackDate) {
-        rollbackDate = addDaysToDateString(
-          effectiveOldDateStr,
-          futureSession.session_number - session.session_number
-        );
-      }
+  try {
+    const { recordAuditLog } = await import('@/services/audit-actions');
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'session_logs',
+      record_id: sessionId,
+      old_data: session,
+      new_data: {
+        assigned_date: newDate,
+        notes: `Dời lịch các buổi từ buổi ${session.session_number} thêm ${diffDays} ngày.`,
+      },
+    });
+  } catch (auditErr) {
+    const rollbackErrors = await rollbackReschedule();
+    const rollbackMessage = rollbackErrors.length > 0
+      ? ` Rollback failed: ${rollbackErrors.join('; ')}`
+      : '';
 
-      return supabase
-        .from('session_logs')
-        .update({ assigned_date: rollbackDate })
-        .eq('id', futureSession.id);
-    }));
-  };
+    return {
+      error: `${auditErr instanceof Error ? auditErr.message : 'Failed to record rescheduleSession audit log'}${rollbackMessage}`,
+    };
+  }
 
   const { data: bookingData } = await supabase
     .from('bookings')
@@ -117,28 +150,12 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
 
   const revalPaths = [
     '/dashboard/bookings',
-    '/dashboard/sessions'
+    '/dashboard/sessions',
   ];
   if (bookingData?.customer_id) {
     revalPaths.push(`/dashboard/customers/${bookingData.customer_id}`);
   }
   await Promise.all(revalPaths.map((path) => safeRevalidatePath(path)));
-
-  try {
-    const { recordAuditLog } = await import('@/services/audit-actions');
-    await recordAuditLog({
-      action: 'UPDATE',
-      table_name: 'session_logs',
-      record_id: sessionId,
-      old_data: session,
-      new_data: { assigned_date: newDate, notes: `Dời lịch các buổi từ buổi ${session.session_number} thêm ${diffDays} ngày.` }
-    });
-  } catch (auditErr) {
-    await rollbackReschedule();
-    return {
-      error: auditErr instanceof Error ? auditErr.message : 'Failed to record rescheduleSession audit log'
-    };
-  }
 
   return { success: true };
 }

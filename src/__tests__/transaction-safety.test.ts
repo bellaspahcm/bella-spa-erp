@@ -8,7 +8,7 @@
  */
 
 import { createBooking, recordRemainingPayment, reusePackage, submitOnlineBooking, updateBooking } from '../modules/booking/actions/lifecycle-actions';
-import { addExtraSession, completeSession, createSessionLog } from '../modules/booking/actions/session-actions';
+import { addExtraSession, completeSession, createSessionLog, rescheduleSession } from '../modules/booking/actions/session-actions';
 
 // Setup environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
@@ -63,30 +63,34 @@ class MockQueryBuilder {
     this.forceError = forceError;
   }
 
-  select(fields?: string, options?: any) {
+  select() {
     return this;
   }
 
-  eq(field: string, value: any) {
+  eq(field: string) {
     if (field === 'id') {
       this.idLookup = true;
     }
     return this;
   }
 
-  in(field: string, values: any[]) {
+  in() {
     return this;
   }
 
-  gt(field: string, value: any) {
+  gt() {
     return this;
   }
 
-  order(field: string, options?: any) {
+  gte() {
     return this;
   }
 
-  limit(count: number) {
+  order() {
+    return this;
+  }
+
+  limit() {
     return this;
   }
 
@@ -523,5 +527,133 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
 
     expect(result.error).toBe('Audit write failed');
     expect(sessionLogsQueryBuilder.deleteCalled).toBe(true);
+  });
+
+  it('rolls back already rescheduled future sessions when a later session update fails', async () => {
+    const updateCalls: Array<{ id: string; payload: any }> = [];
+    const makeUpdateQuery = (error: { message: string } | null = null) => ({
+      update: (payload: any) => ({
+        eq: (_field: string, id: string) => {
+          updateCalls.push({ id, payload });
+          return Promise.resolve({ error });
+        },
+      }),
+    });
+    const queryQueue = [
+      {
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({
+              data: {
+                booking_id: 'booking-1',
+                assigned_date: '2026-06-10',
+                session_number: 2,
+                status: 'scheduled',
+              },
+              error: null,
+            }),
+          }),
+        }),
+      },
+      {
+        select: () => {
+          const chain: any = {
+            eq: () => chain,
+            gte: () => chain,
+            order: () => Promise.resolve({
+              data: [
+                { id: 'session-2', session_number: 2, assigned_date: '2026-06-10' },
+                { id: 'session-3', session_number: 3, assigned_date: '2026-06-11' },
+              ],
+              error: null,
+            }),
+          };
+          return chain;
+        },
+      },
+      makeUpdateQuery(null),
+      makeUpdateQuery({ message: 'second update failed' }),
+      makeUpdateQuery(null),
+    ];
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'session_logs') return queryQueue.shift();
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await rescheduleSession('session-2', '2026-06-13');
+
+    expect(result.error).toContain('second update failed');
+    expect(updateCalls).toEqual([
+      { id: 'session-2', payload: { assigned_date: '2026-06-13' } },
+      { id: 'session-3', payload: { assigned_date: '2026-06-14' } },
+      { id: 'session-2', payload: { assigned_date: '2026-06-10' } },
+    ]);
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('rolls back all rescheduled sessions when reschedule audit logging fails', async () => {
+    const updateCalls: Array<{ id: string; payload: any }> = [];
+    const makeUpdateQuery = () => ({
+      update: (payload: any) => ({
+        eq: (_field: string, id: string) => {
+          updateCalls.push({ id, payload });
+          return Promise.resolve({ error: null });
+        },
+      }),
+    });
+    const queryQueue = [
+      {
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve({
+              data: {
+                booking_id: 'booking-1',
+                assigned_date: '2026-06-10',
+                session_number: 2,
+                status: 'scheduled',
+              },
+              error: null,
+            }),
+          }),
+        }),
+      },
+      {
+        select: () => {
+          const chain: any = {
+            eq: () => chain,
+            gte: () => chain,
+            order: () => Promise.resolve({
+              data: [
+                { id: 'session-2', session_number: 2, assigned_date: '2026-06-10' },
+                { id: 'session-3', session_number: 3, assigned_date: '2026-06-11' },
+              ],
+              error: null,
+            }),
+          };
+          return chain;
+        },
+      },
+      makeUpdateQuery(),
+      makeUpdateQuery(),
+      makeUpdateQuery(),
+      makeUpdateQuery(),
+    ];
+    mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+
+    mockSupabase.from.mockImplementation((table: string) => {
+      if (table === 'session_logs') return queryQueue.shift();
+      return new MockQueryBuilder(table);
+    });
+
+    const result = await rescheduleSession('session-2', '2026-06-13');
+
+    expect(result.error).toBe('Audit write failed');
+    expect(updateCalls).toEqual([
+      { id: 'session-2', payload: { assigned_date: '2026-06-13' } },
+      { id: 'session-3', payload: { assigned_date: '2026-06-14' } },
+      { id: 'session-2', payload: { assigned_date: '2026-06-10' } },
+      { id: 'session-3', payload: { assigned_date: '2026-06-11' } },
+    ]);
   });
 });
