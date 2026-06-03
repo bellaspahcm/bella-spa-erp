@@ -57,6 +57,8 @@ import {
   updateAccountingMode,
   syncLegacyToLedger,
 } from '../services/accounting-actions';
+import fs from 'fs';
+import path from 'path';
 import { recordTransaction, confirmTransaction } from '../services/finance-actions';
 import { allocateOrphanedRevenue, collectDebtPayment } from '../services/reconciliation-actions';
 import { safeRevalidatePath } from '../lib/revalidate';
@@ -254,15 +256,48 @@ describe('Legacy Syncing Engine', () => {
       if (fnName === 'sync_legacy_to_ledger_atomic') {
         return Promise.resolve({
           data: null,
-          error: { message: 'Missing required COA accounts 111, 112 or 5111.' },
+          error: { message: 'Missing required COA accounts 111, 112, 5113 or 3387.' },
         });
       }
       return Promise.resolve({ data: null, error: null });
     });
 
     await expect(syncLegacyToLedger()).rejects.toMatchObject({
-      message: 'Missing required COA accounts 111, 112 or 5111.',
+      message: 'Missing required COA accounts 111, 112, 5113 or 3387.',
     });
+  });
+});
+
+describe('Legacy revenue sync SQL migration', () => {
+  const migrationSql = fs.readFileSync(
+    path.join(process.cwd(), 'supabase/migrations/20260603040000_branch_legacy_revenue_sync_by_type.sql'),
+    'utf8'
+  );
+
+  it('branches historical package payments to deferred revenue 3387', () => {
+    expect(migrationSql).toContain("IN ('deposit', 'remaining_payment', 'package_payment', 'package_sale') THEN 'PACKAGE_SALE'");
+    expect(migrationSql).toContain("account_code = '3387'");
+    expect(migrationSql).toContain('(v_entry_id, v_unearned_revenue_acc, 0, v_amount)');
+  });
+
+  it('branches historical direct service revenue to TT133 service revenue 5113', () => {
+    expect(migrationSql).toContain("account_code = '5113'");
+    expect(migrationSql).toContain("ELSE 'REVENUE'");
+    expect(migrationSql).toContain('(v_entry_id, v_service_revenue_acc, 0, v_amount)');
+    expect(migrationSql).not.toContain("account_code = '5111'");
+    expect(migrationSql).not.toContain('111, 112 or 5111');
+  });
+
+  it('branches historical refund rows to debit 5113 and credit the payment account', () => {
+    expect(migrationSql).toContain("= 'refund' THEN 'REFUND'");
+    expect(migrationSql).toContain("IF rec.legacy_reference_type = 'REFUND' THEN");
+    expect(migrationSql).toContain('(v_entry_id, v_service_revenue_acc, v_amount, 0)');
+    expect(migrationSql).toContain('(v_entry_id, v_payment_account_id, 0, v_amount)');
+  });
+
+  it('uses branch-specific idempotency in preview and sync', () => {
+    expect(migrationSql).toContain('AND je.reference_type = r.legacy_reference_type');
+    expect(migrationSql).toContain('AND je.reference_type = CASE');
   });
 });
 

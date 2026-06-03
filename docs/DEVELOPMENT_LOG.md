@@ -5,6 +5,21 @@
 
 ---
 
+### 03/06/2026: Branch Legacy Revenue Sync By Type
+* **Muc tieu ke toan**:
+  * Khong de legacy SIMPLE -> PROFESSIONAL sync day moi confirmed `revenue` vao `PACKAGE_SALE` va credit truc tiep doanh thu.
+  * Can dong bo luong lich su voi runtime TT133 hien tai: tien coc/goi treo `3387`, doanh thu dich vu vao `5113`, refund giam `5113`.
+* **Thay doi chinh**:
+  * Them migration `20260603040000_branch_legacy_revenue_sync_by_type.sql` override `sync_legacy_to_ledger_atomic`.
+  * Revenue sync branch theo `revenue_type`: `deposit/remaining_payment/package_payment/package_sale` tao `PACKAGE_SALE` credit `3387`; `session_completed/additional` tao `REVENUE` credit `5113`; `refund` tao `REFUND` debit `5113` va credit cash/bank.
+  * `preview_legacy_ledger_sync` dung cung branch-specific reference type de khong dem lai cac journal da ton tai.
+  * Cap nhat regression test doc SQL trong `dual-mode-accounting.test.ts`, dong thoi bo expectation cu yeu cau account `5111`.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-branch-legacy-revenue-sync-by-type.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/dual-mode-accounting.test.ts --runInBand` pass, 1 suite / 16 tests.
+  * `npm.cmd run build` pass.
+
 ### 03/06/2026: Normalize Finance Refund Outbox Source Payload
 * **Muc tieu nghiep vu**:
   * Khong de giao dich doanh thu am dung de hoan tien bi `Math.abs` lam mat ngu nghia refund truoc khi vao accounting outbox.
