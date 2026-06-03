@@ -2,6 +2,37 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import type { Database } from '@/types/database.types';
+
+type AuthUser = { id: string };
+type AdminAuthClient = {
+  auth: {
+    admin: {
+      deleteUser: (id: string) => Promise<{ error: { message: string } | null }>;
+    };
+  };
+};
+type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Lỗi không xác định xảy ra';
+}
+
+function formatCleanupNote(label: string, message: string) {
+  return message ? `; ${label} failed: ${message}` : '';
+}
+
+async function rollbackCreatedAuthUser(
+  supabaseAdmin: AdminAuthClient | null,
+  authUserId: string,
+) {
+  if (!supabaseAdmin) {
+    return '';
+  }
+
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(authUserId);
+  return error?.message || '';
+}
 
 export interface RegisterTenantInput {
   spaName: string;
@@ -31,13 +62,14 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     // Create the Auth User. If SUPABASE_SERVICE_ROLE_KEY is available, we use the Admin API
     // with email_confirm: true to completely bypass email sending and avoid "email rate limit exceeded".
     const password = input.adminPassword || 'Password123!';
-    let authUser;
+    let authUser: AuthUser | null = null;
+    let supabaseAdminForAuthRollback: AdminAuthClient | null = null;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (serviceRoleKey) {
       console.log('[registerNewTenant] Creating confirmed user via admin client to bypass email rate limits');
       const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createSupabaseClient(
+      const supabaseAdmin = createSupabaseClient<Database>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         serviceRoleKey,
         {
@@ -47,6 +79,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
           }
         }
       );
+      supabaseAdminForAuthRollback = supabaseAdmin as AdminAuthClient;
 
       const { data: adminData, error: adminError } = await supabaseAdmin.auth.admin.createUser({
         email: input.adminEmail,
@@ -62,7 +95,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
         return { success: false, error: adminError.message };
       }
 
-      authUser = adminData?.user;
+      authUser = adminData?.user?.id ? { id: adminData.user.id } : null;
     } else {
       console.log('[registerNewTenant] SUPABASE_SERVICE_ROLE_KEY not found. Attempting custom RPC create_onboarding_user to bypass rate limits');
       const { data: userId, error: rpcErr } = await supabase.rpc('create_onboarding_user', {
@@ -90,7 +123,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
           return { success: false, error: signUpError.message };
         }
 
-        authUser = signUpData?.user;
+        authUser = signUpData?.user?.id ? { id: signUpData.user.id } : null;
       } else if (!userId) {
         console.error('[registerNewTenant] Custom RPC returned null user ID');
         return { success: false, error: 'Không thể tạo tài khoản xác thực qua database.' };
@@ -130,27 +163,21 @@ export async function registerNewTenant(input: RegisterTenantInput) {
  
     if (rpcError) {
       console.error('[registerNewTenant] Database onboarding RPC failed:', rpcError.message);
-      
-      // Attempt clean up of auth user since DB creation failed
-      try {
-        // Can only delete if admin client is used, but returning clear error is helpful
-        console.warn('[registerNewTenant] DB creation failed. Auth user created: ', authUser.id);
-      } catch (e) {
-        console.error('Failed to clean up auth user:', e);
-      }
- 
-      return { success: false, error: rpcError.message };
+      const authRollbackError = await rollbackCreatedAuthUser(supabaseAdminForAuthRollback, authUser.id);
+      const rollbackNote = formatCleanupNote('auth cleanup', authRollbackError);
+      return { success: false, error: `${rpcError.message}${rollbackNote}` };
     }
 
     // 3.1. Update franchise agreement details if Nhượng quyền (Franchise) is chosen
     if (input.branchType === 'franchise') {
       const today = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
+      const franchiseUpdate: TenantUpdate = {
+        franchise_agreement_date: today,
+        royalty_type: 'percentage'
+      };
       const { error: updateError } = await supabase
         .from('tenants')
-        .update({
-          franchise_agreement_date: today,
-          royalty_type: 'percentage'
-        })
+        .update(franchiseUpdate)
         .eq('id', tenantId as string);
 
       if (updateError) {
@@ -175,7 +202,15 @@ export async function registerNewTenant(input: RegisterTenantInput) {
         }
       });
     } catch (auditErr) {
-      console.warn('Failed to record onboarding audit log:', auditErr);
+      return {
+        success: false,
+        error: `Failed to record onboarding audit log: ${getErrorMessage(auditErr)}`,
+        data: {
+          tenantId,
+          userId: authUser.id,
+          email: input.adminEmail
+        }
+      };
     }
 
     // 5. Clear caches
@@ -192,7 +227,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
 
   } catch (error: unknown) {
     console.error('[registerNewTenant] Unexpected error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Lỗi không xác định xảy ra';
+    const errorMessage = getErrorMessage(error);
     return { success: false, error: errorMessage };
   }
 }

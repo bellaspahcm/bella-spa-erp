@@ -7,6 +7,25 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden Onboarding Audit And Auth Cleanup
+* **Mục tiêu kỹ thuật**:
+  * Không để đăng ký chi nhánh mới trả `success` khi audit onboarding không ghi được.
+  * Cleanup Auth user đã tạo nếu `onboard_tenant` RPC thất bại sau bước tạo Auth.
+* **Thay đổi chính**:
+  * `registerNewTenant` giữ service-role admin client để gọi `auth.admin.deleteUser` khi DB onboarding fail sau Auth create.
+  * Nếu cleanup Auth cũng fail, response trả cả lỗi RPC gốc và lỗi cleanup để vận hành xử lý.
+  * Audit onboarding trở thành side-effect bắt buộc: nếu `recordAuditLog` throw, action trả failure, kèm `tenantId/userId/email` để điều tra thủ công và không revalidate dashboard.
+  * Payload update cấu hình nhượng quyền dùng generated `TenantUpdate` type.
+  * Mở rộng `onboarding.test.ts` lên 6 test, bao phủ audit success ordering, franchise update failure no-audit/no-revalidate, Auth cleanup success/failure và audit failure.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-onboarding-audit-and-auth-cleanup.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/onboarding.test.ts --runInBand` pass, 6/6 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/onboarding-actions.ts src/__tests__/onboarding.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 67 suites / 749 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden AI Autopilot Notification Failures
 * **Mục tiêu kỹ thuật**:
   * Không để cron Autopilot báo `success` khi cảnh báo Telegram thực tế không gửi được.

@@ -21,12 +21,15 @@ jest.mock('server-only', () => ({}), { virtual: true });
 // Setup global spies and mocks
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
-
 jest.mock('@/lib/supabase-server', () => ({
   createClient: () => Promise.resolve({
     rpc: mockRpc,
     from: mockFrom,
   }),
+}));
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(),
 }));
 
 jest.mock('@/services/audit-actions', () => ({
@@ -55,6 +58,15 @@ class MockQueryBuilder {
 }
 
 import { registerNewTenant } from '../services/onboarding-actions';
+import { recordAuditLog } from '@/services/audit-actions';
+import { safeRevalidatePath } from '@/lib/revalidate';
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
+
+const mockRecordAuditLog = recordAuditLog as jest.Mock;
+const mockSafeRevalidatePath = safeRevalidatePath as jest.Mock;
+const mockCreateSupabaseJsClient = createSupabaseJsClient as jest.Mock;
+const mockCreateUser = jest.fn();
+const mockDeleteUser = jest.fn();
 
 describe('Branch Onboarding System (Owned vs Franchise)', () => {
   let tenantQueryMock: MockQueryBuilder;
@@ -65,6 +77,21 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     // Default setup: mock service role key for bypassing email signup
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock-service-role-key';
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://mock.supabase.co';
+    mockCreateUser.mockResolvedValue({
+      data: { user: { id: 'mock-auth-user-id' } },
+      error: null,
+    });
+    mockDeleteUser.mockResolvedValue({ error: null });
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+    mockSafeRevalidatePath.mockResolvedValue(undefined);
+    mockCreateSupabaseJsClient.mockReturnValue({
+      auth: {
+        admin: {
+          createUser: mockCreateUser,
+          deleteUser: mockDeleteUser,
+        },
+      },
+    });
 
     tenantQueryMock = new MockQueryBuilder({ success: true });
     mockFrom.mockImplementation((table: string) => {
@@ -73,7 +100,7 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     });
 
     // Mock successful RPC calls
-    mockRpc.mockImplementation((name: string, params: any) => {
+    mockRpc.mockImplementation((name: string) => {
       if (name === 'onboard_tenant') {
         return Promise.resolve({ data: 'mock-tenant-id-123', error: null });
       }
@@ -98,23 +125,6 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
       branchType: 'owned' as const,
     };
 
-    // Standard createUser mock to bypass auth signup
-    const mockCreateUser = jest.fn().mockResolvedValue({
-      data: { user: { id: 'mock-auth-user-id' } },
-      error: null,
-    });
-    
-    // We mock the @supabase/supabase-js library internally inside registerNewTenant
-    jest.mock('@supabase/supabase-js', () => ({
-      createClient: () => ({
-        auth: {
-          admin: {
-            createUser: mockCreateUser,
-          },
-        },
-      }),
-    }), { virtual: true });
-
     const result = await registerNewTenant(input);
 
     // Verify success
@@ -130,6 +140,15 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     // Verify that the table was NOT updated (since it is owned, not franchise)
     expect(mockFrom).not.toHaveBeenCalledWith('tenants');
     expect(tenantQueryMock.updateSpy).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'INSERT',
+      table_name: 'tenants',
+      record_id: 'mock-tenant-id-123',
+    }));
+    expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard');
+    expect(mockRecordAuditLog.mock.invocationCallOrder[0]).toBeLessThan(
+      mockSafeRevalidatePath.mock.invocationCallOrder[0],
+    );
   });
 
   it('should successfully onboard a Franchise branch and update agreement date and royalty type', async () => {
@@ -184,5 +203,86 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     // Verify failure propagation (Zero Silent Database Failures)
     expect(result.success).toBe(false);
     expect(result.error).toContain('Lỗi cập nhật cấu hình nhượng quyền: Database constraint violation');
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('should roll back the admin auth user when database onboarding fails after auth creation', async () => {
+    mockRpc.mockImplementation((name: string) => {
+      if (name === 'onboard_tenant') {
+        return Promise.resolve({ data: null, error: { message: 'onboard tenant failed' } });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const result = await registerNewTenant({
+      spaName: 'Bella Spa Test',
+      contactPhone: '0912345678',
+      address: '123 Test',
+      email: 'test@bellaspa.vn',
+      adminName: 'Admin Test',
+      adminEmail: 'admin.test@bellaspa.vn',
+      adminPassword: 'Password123!',
+      branchType: 'owned',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('onboard tenant failed');
+    expect(mockDeleteUser).toHaveBeenCalledWith('mock-auth-user-id');
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('should report auth cleanup failure when database onboarding and cleanup both fail', async () => {
+    mockRpc.mockImplementation((name: string) => {
+      if (name === 'onboard_tenant') {
+        return Promise.resolve({ data: null, error: { message: 'onboard tenant failed' } });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+    mockDeleteUser.mockResolvedValueOnce({ error: { message: 'delete auth failed' } });
+
+    const result = await registerNewTenant({
+      spaName: 'Bella Spa Cleanup Fail',
+      contactPhone: '0912345678',
+      address: '123 Test',
+      email: 'cleanup@bellaspa.vn',
+      adminName: 'Admin Cleanup',
+      adminEmail: 'cleanup.admin@bellaspa.vn',
+      adminPassword: 'Password123!',
+      branchType: 'owned',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('onboard tenant failed');
+    expect(result.error).toContain('auth cleanup failed: delete auth failed');
+    expect(mockDeleteUser).toHaveBeenCalledWith('mock-auth-user-id');
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('should fail onboarding explicitly when audit logging fails after tenant creation', async () => {
+    mockRecordAuditLog.mockRejectedValueOnce(new Error('audit unavailable'));
+
+    const result = await registerNewTenant({
+      spaName: 'Bella Spa Audit Fail',
+      contactPhone: '0912345678',
+      address: '123 Test',
+      email: 'audit@bellaspa.vn',
+      adminName: 'Admin Audit',
+      adminEmail: 'audit.admin@bellaspa.vn',
+      adminPassword: 'Password123!',
+      branchType: 'owned',
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Failed to record onboarding audit log: audit unavailable');
+    expect(result.data).toEqual({
+      tenantId: 'mock-tenant-id-123',
+      userId: 'mock-auth-user-id',
+      email: 'audit.admin@bellaspa.vn',
+    });
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+    expect(mockDeleteUser).not.toHaveBeenCalled();
   });
 });
