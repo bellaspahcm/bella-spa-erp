@@ -15,7 +15,7 @@ jest.mock('@/lib/supabase-server', () => ({
 
 const mockGetCurrentUser = jest.fn();
 jest.mock('@/services/user-actions', () => ({
-  getCurrentUser: mockGetCurrentUser,
+  getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
 }));
 
 // Avoid "must be called in server context" errors
@@ -308,6 +308,41 @@ describe('lockMonth', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/đăng nhập/i);
+  });
+
+  it('blocks before lock RPC when accounting preflight has failed outbox events', async () => {
+    mockGetCurrentUser.mockResolvedValue(adminUser);
+    mockFrom.mockImplementation((table: string) => {
+      const chain: any = {
+        select: jest.fn(() => chain),
+        eq: jest.fn(() => chain),
+        then: (cb: any, onRejected?: any) => {
+          const data = table === 'accounting_outbox'
+            ? [
+                {
+                  id: 'outbox-failed-1',
+                  tenant_id: 'tenant-a',
+                  status: 'FAILED',
+                  event_type: 'PACKAGE_SALE',
+                  reference_type: 'REVENUE',
+                  reference_id: 'revenue-1',
+                  retry_count: 1,
+                  last_error: 'posting failed',
+                  created_at: '2026-05-02T08:00:00Z',
+                },
+              ]
+            : [];
+          return Promise.resolve({ data, error: null }).then(cb, onRejected);
+        },
+      };
+      return chain;
+    });
+
+    const result = await lockMonth('2026-05-01');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/Outbox FAILED/);
+    expect(mockRpc).not.toHaveBeenCalledWith('lock_monthly_records', expect.anything());
   });
 
   it('trả về error khi RPC thất bại', async () => {

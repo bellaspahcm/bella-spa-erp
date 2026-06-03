@@ -5,6 +5,12 @@
 export type {
   AccountingEventTemplate,
   AccountingBackfillResult,
+  AccountingDuplicateJournalReference,
+  AccountingHealthCheck,
+  AccountingHealthMetrics,
+  AccountingHealthSeverity,
+  AccountingHealthStatus,
+  AccountingHealthSummary,
   AccountingReadinessSummary,
   AccountingReviewItem,
   AccountingReviewResolutionStatus,
@@ -51,3 +57,9 @@ export {
   runAccountingMetadataBackfill,
   classifyAccountingSourcePreview,
 } from './accounting/templates';
+
+export {
+  getAccountingHealthSummary,
+  getMonthClosePreflight,
+  assertMonthClosePreflight,
+} from './accounting/health';
