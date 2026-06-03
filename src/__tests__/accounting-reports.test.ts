@@ -5,7 +5,7 @@
  *   1. Multitenant RLS isolation for accounts, journals, periods, and reports.
  *   2. Chart of Accounts (COA) creation, dynamic updates, and validation guards.
  *   3. Adjusting Manual double-entry journals creation and balanced assertions.
- *   4. Reversal entry logic: original status changes to CANCELED, reversed lines swapped.
+ *   4. Reversal entry logic: original stays POSTED, reversed lines swapped.
  *   5. Real-time SQL reports RPC routing (Trial Balance, P&L, Balance Sheet, Ledger).
  */
 
@@ -233,10 +233,8 @@ describe('Accounting Core Reports & Server Actions', () => {
         ],
       }));
 
-      // Verify original updated to CANCELED
-      expect(qb.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'CANCELED',
-      }));
+      expect(qb.updateSpy).not.toHaveBeenCalled();
+      expect(mockFrom).toHaveBeenCalledWith('audit_logs');
     });
 
     it('throws error if original entry is not POSTED', async () => {

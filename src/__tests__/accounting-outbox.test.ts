@@ -16,8 +16,10 @@ process.env.CRON_SECRET = 'test-cron-secret-123';
 
 // ── Mock Supabase Client ──
 const mockRpc = jest.fn();
+const mockFrom = jest.fn();
 const mockClient = {
   rpc: mockRpc,
+  from: mockFrom,
 };
 
 jest.mock('@supabase/supabase-js', () => ({
@@ -50,6 +52,31 @@ import { NextRequest } from 'next/server';
 describe('Accounting Outbox Worker API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'session_logs') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: { id: 'session-id', status: 'completed' },
+            error: null,
+          }),
+        };
+      }
+
+      if (table === 'accounting_outbox') {
+        return {
+          update: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({ error: null }),
+        };
+      }
+
+      return {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    });
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
     process.env.CRON_SECRET = 'test-cron-secret-123';
@@ -220,6 +247,80 @@ describe('Accounting Outbox Worker API', () => {
         p_outbox_id: 'outbox-id-2',
         p_journal_entry_id: 'journal-entry-2',
       });
+    });
+
+    it('dead-letters stale SESSION_DONE events when the source session is no longer completed', async () => {
+      const outboxUpdate = jest.fn().mockReturnThis();
+      const outboxEq = jest.fn().mockResolvedValue({ error: null });
+      mockFrom.mockImplementation((table: string) => {
+        if (table === 'session_logs') {
+          return {
+            select: jest.fn().mockReturnThis(),
+            eq: jest.fn().mockReturnThis(),
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: { id: 'ref-stale-session', status: 'scheduled' },
+              error: null,
+            }),
+          };
+        }
+
+        if (table === 'accounting_outbox') {
+          return {
+            update: outboxUpdate,
+            eq: outboxEq,
+          };
+        }
+
+        throw new Error(`Unexpected table ${table}`);
+      });
+
+      mockRpc.mockResolvedValueOnce({
+        data: [{
+          id: 'outbox-stale-session',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'SESSION_DONE',
+          reference_id: 'ref-stale-session',
+          payload: {
+            earnedRevenueAmount: 180000,
+            commissionAmount: 150000,
+            ktvId: 'ktv-id-1',
+            description: 'Stale completed session',
+          },
+          retry_count: 0,
+        }],
+        error: null,
+      });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.successCount).toBe(0);
+      expect(json.deadLetterCount).toBe(1);
+      expect(json.failureCount).toBe(0);
+      expect(json.details).toEqual([
+        expect.objectContaining({
+          eventId: 'outbox-stale-session',
+          status: 'dead_lettered',
+          error: expect.stringContaining('not completed'),
+        }),
+      ]);
+      expect(RevenueRecognitionService.handleSessionDone).not.toHaveBeenCalled();
+      expect(outboxUpdate).toHaveBeenCalledWith(expect.objectContaining({
+        status: 'DEAD',
+        last_error: expect.stringContaining('not completed'),
+      }));
+      expect(outboxEq).toHaveBeenCalledWith('id', 'outbox-stale-session');
+      expect(mockRpc).not.toHaveBeenCalledWith('mark_outbox_completed', expect.anything());
+      expect(mockRpc).not.toHaveBeenCalledWith('mark_outbox_failed', expect.anything());
     });
 
     it('handles other event types: EXPENSE_RECORDED, SALARY_PAID, INVENTORY_CONSUMED, REFUND_ISSUED', async () => {
