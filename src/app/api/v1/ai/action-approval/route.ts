@@ -1,5 +1,9 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase-server";
+import type { Database } from "@/types/database.types";
+
+type AppNotificationInsert = Database["public"]["Tables"]["app_notifications"]["Insert"];
+type AIAgentLogInsert = Database["public"]["Tables"]["ai_agent_logs"]["Insert"];
 
 interface ApprovalRequest {
   type: string;
@@ -15,6 +19,10 @@ function getErrorMessage(error: unknown) {
     return typeof message === "string" && message ? message : "Lỗi hệ thống.";
   }
   return "Lỗi hệ thống.";
+}
+
+function appendRollbackError(message: string, rollbackError?: string) {
+  return rollbackError ? `${message}; rollback failed: ${rollbackError}` : message;
 }
 
 export async function POST(request: NextRequest) {
@@ -55,27 +63,29 @@ export async function POST(request: NextRequest) {
     const body: ApprovalRequest = await request.json();
     const { type, recipient, reason, draftMessage } = body;
 
-    if (!type || !recipient || !draftMessage) {
+    if (!type || !recipient || !reason || !draftMessage) {
       return NextResponse.json({ error: "Vui lòng cung cấp đầy đủ thông tin hành động nháp." }, { status: 400 });
     }
 
     console.log(`[AI Action Approval] CEO ${userData.full_name} phê duyệt hành động: "${type}" cho "${recipient}"`);
 
     // 4. Tạo thông báo hệ thống chính thức (Side-effect 1)
+    const notificationPayload: AppNotificationInsert = {
+      tenant_id: userData.tenant_id,
+      type: type,
+      title: `Phê duyệt từ CEO: Giải trình ${type === "attendance_warning" ? "chấm công KTV" : "đối soát quỹ"}`,
+      message: draftMessage,
+      data: {
+        recipient: recipient,
+        reason: reason,
+        approved_by: userData.full_name
+      },
+      is_read: false
+    };
+
     const { data: notif, error: notifError } = await supabase
       .from("app_notifications")
-      .insert({
-        tenant_id: userData.tenant_id,
-        type: type,
-        title: `Phê duyệt từ CEO: Giải trình ${type === "attendance_warning" ? "chấm công KTV" : "đối soát quỹ"}`,
-        message: draftMessage,
-        data: {
-          recipient: recipient,
-          reason: reason,
-          approved_by: userData.full_name
-        },
-        is_read: false
-      })
+      .insert(notificationPayload)
       .select("id")
       .single();
 
@@ -85,24 +95,32 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Ghi nhật ký audit logs (Side-effect 2)
+    const logPayload: AIAgentLogInsert = {
+      tenant_id: userData.tenant_id,
+      user_id: userData.id,
+      sender: "ceo",
+      message: `CEO ${userData.full_name} chính thức phê duyệt hành động nháp "${type}" cho "${recipient}". Lý do: ${reason}`,
+      metadata: {
+        action_type: type,
+        recipient: recipient,
+        notification_id: notif.id,
+        reason: reason
+      }
+    };
+
     const { error: logError } = await supabase
       .from("ai_agent_logs")
-      .insert({
-        tenant_id: userData.tenant_id,
-        user_id: userData.id,
-        sender: "ceo",
-        message: `CEO ${userData.full_name} chính thức phê duyệt hành động nháp "${type}" cho "${recipient}". Lý do: ${reason}`,
-        metadata: {
-          action_type: type,
-          recipient: recipient,
-          notification_id: notif.id,
-          reason: reason
-        }
-      });
+      .insert(logPayload);
 
     if (logError) {
       console.error("[AI Action Approval] Lỗi khi ghi audit log:", logError);
-      throw logError; // Zero Silent DB Failures
+      const { error: rollbackError } = await supabase
+        .from("app_notifications")
+        .delete()
+        .eq("id", notif.id)
+        .eq("tenant_id", userData.tenant_id);
+
+      throw new Error(appendRollbackError(logError.message, rollbackError?.message));
     }
 
     return NextResponse.json({
