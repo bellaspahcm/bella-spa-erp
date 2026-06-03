@@ -92,7 +92,14 @@ jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(),
 }));
 
-import { saveTenantSettings } from '@/services/tenant-actions';
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
+import { getTenantSettings, saveTenantSettings } from '@/services/tenant-actions';
+
+const mockCreateSupabaseJsClient = jest.mocked(createSupabaseJsClient);
+
+const mockAdminSupabase = {
+  from: jest.fn((table: string) => new QueryBuilder(table)),
+};
 
 function tenantRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -127,7 +134,85 @@ describe('tenant settings actions', () => {
       tenant_id: 'tenant-1',
       role: 'admin',
     });
+    mockCreateSupabaseJsClient.mockReturnValue(
+      mockAdminSupabase as unknown as ReturnType<typeof createSupabaseJsClient>,
+    );
     mockRecordAuditLog.mockResolvedValue({ success: true });
+  });
+
+  it('returns null without querying when current user has no tenant id', async () => {
+    mockGetCurrentUser.mockResolvedValueOnce({
+      id: 'admin-1',
+      tenant_id: null,
+      role: 'admin',
+    });
+
+    await expect(getTenantSettings()).resolves.toBeNull();
+
+    expect(queryCalls).toHaveLength(0);
+    expect(mockCreateSupabaseJsClient).not.toHaveBeenCalled();
+  });
+
+  it('returns tenant settings from the auth client read path', async () => {
+    const tenant = tenantRow({ name: 'Bella Settings' });
+    scriptedResults = [
+      { data: tenant, error: null },
+    ];
+
+    await expect(getTenantSettings()).resolves.toEqual(tenant);
+
+    expect(queryCalls).toEqual([
+      expect.objectContaining({
+        table: 'tenants',
+        operation: 'select',
+        selectColumns: '*',
+        filters: [{ column: 'id', value: 'tenant-1' }],
+      }),
+    ]);
+    expect(mockCreateSupabaseJsClient).not.toHaveBeenCalled();
+  });
+
+  it('rejects tenant settings read failures instead of returning silent null', async () => {
+    scriptedResults = [
+      { data: null, error: { message: 'rls blocked' } },
+    ];
+
+    await expect(getTenantSettings()).rejects.toThrow(
+      '[getTenantSettings] Failed to load tenant settings: rls blocked',
+    );
+
+    expect(queryCalls).toHaveLength(1);
+    expect(mockCreateSupabaseJsClient).not.toHaveBeenCalled();
+  });
+
+  it('returns tenant settings when admin fallback recovers an auth read failure', async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role';
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://bella.test';
+    const tenant = tenantRow({ name: 'Bella Admin Fallback' });
+    scriptedResults = [
+      { data: null, error: { message: 'rls blocked' } },
+      { data: tenant, error: null },
+    ];
+
+    await expect(getTenantSettings()).resolves.toEqual(tenant);
+
+    expect(mockCreateSupabaseJsClient).toHaveBeenCalledWith('https://bella.test', 'service-role');
+    expect(queryCalls.map((call) => call.operation)).toEqual(['select', 'select']);
+  });
+
+  it('rejects tenant settings when auth read and admin fallback both fail', async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role';
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://bella.test';
+    scriptedResults = [
+      { data: null, error: { message: 'rls blocked' } },
+      { data: null, error: { message: 'admin denied' } },
+    ];
+
+    await expect(getTenantSettings()).rejects.toThrow(
+      '[getTenantSettings] Failed to load tenant settings: admin denied',
+    );
+
+    expect(queryCalls.map((call) => call.operation)).toEqual(['select', 'select']);
   });
 
   it('updates tenant settings, records audit, and revalidates after audit succeeds', async () => {

@@ -5,6 +5,24 @@
 
 ---
 
+### ðŸŸ¢ NgÃ y 03/06/2026: Harden Tenant Settings Read Failures
+* **Má»¥c tiÃªu ká»¹ thuáº­t**:
+  * KhÃ´ng Ä‘á»ƒ lá»—i Ä‘á»c cáº¥u hÃ¬nh chi nhÃ¡nh bá»‹ biáº¿n thÃ nh tráº¡ng thÃ¡i `null` im láº·ng.
+  * Giá»¯ riÃªng tráº¡ng thÃ¡i há»£p lá»‡ khi user hiá»‡n táº¡i chÆ°a cÃ³ `tenant_id`.
+* **Thay Ä‘á»•i chÃ­nh**:
+  * `getTenantSettings` dÃ¹ng láº¡i `fetchTenantSnapshot` Ä‘á»ƒ Ä‘á»c tenant theo auth client vÃ  service-role fallback thá»‘ng nháº¥t vá»›i write path.
+  * Lá»—i DB/RLS hoáº·c tenant row khÃ´ng tá»“n táº¡i khi Ä‘Ã£ cÃ³ `tenant_id` giá» throw lá»—i rÃµ rÃ ng thay vÃ¬ `console.error` rá»“i `return null`.
+  * CÃ¡c caller hiá»‡n cÃ³ (`settings/page`, `PermissionsTab`, `Sidebar`) Ä‘Ã£ cÃ³ `try/catch`, nÃªn lá»—i Ä‘á»c settings Ä‘Æ°á»£c surface qua toast/log fallback thay vÃ¬ giáº£ vá» khÃ´ng cÃ³ dá»¯ liá»‡u.
+  * Má»Ÿ rá»™ng `tenant-actions.test.ts` lÃªn 10 test, bao phá»§ no-tenant null, auth read success/failure, admin fallback success/failure vÃ  write-path audit rollback hiá»‡n cÃ³.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-tenant-settings-read-failures.md`
+* **Kiá»ƒm tra**:
+  * `npm.cmd test -- src/__tests__/tenant-actions.test.ts --runInBand` pass, 10/10 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/tenant-actions.ts src/__tests__/tenant-actions.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 68 suites / 759 tests.
+  * `npm.cmd run build` pass.
+
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
 ### 🟢 Ngày 03/06/2026: Harden Tenant Settings Audit Rollback

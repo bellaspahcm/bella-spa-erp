@@ -94,7 +94,7 @@ async function rollbackTenantSettings(
   return error?.message || '';
 }
 
-export async function getTenantSettings() {
+export async function getTenantSettings(): Promise<TenantRow | null> {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
@@ -104,40 +104,12 @@ export async function getTenantSettings() {
     return null;
   }
 
-  try {
-    let { data, error } = await supabase
-      .from('tenants')
-      .select('*')
-      .eq('id', tenantId)
-      .single();
-
-    if (error && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.warn('Error fetching tenant settings with auth client, trying with admin client...', error.message);
-      const supabaseAdmin = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      const adminRes = await supabaseAdmin
-        .from('tenants')
-        .select('*')
-        .eq('id', tenantId)
-        .single();
-        
-      data = adminRes.data;
-      error = adminRes.error;
-    }
-
-    if (error) {
-      console.error('Error fetching tenant settings:', error);
-      return null;
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Exception fetching tenant settings:', error);
-    return null;
+  const { data, error } = await fetchTenantSnapshot(supabase, tenantId);
+  if (error || !data) {
+    throw new Error(`[getTenantSettings] Failed to load tenant settings: ${error || 'Tenant not found'}`);
   }
+
+  return data;
 }
 
 export async function saveTenantSettings(settings: {
