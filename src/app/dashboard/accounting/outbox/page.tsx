@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, 
   RefreshCw, 
-  AlertTriangle, 
   CheckCircle2, 
-  HelpCircle,
   Play,
   Clock,
   Eye,
@@ -15,7 +13,7 @@ import {
 } from 'lucide-react';
 import { getOutboxEvents, replayOutboxEvent } from '@/services/accounting-actions';
 import { toast } from 'sonner';
-import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 type OutboxEventRow = Awaited<ReturnType<typeof getOutboxEvents>>[number];
 type OutboxFilters = NonNullable<Parameters<typeof getOutboxEvents>[0]>;
@@ -47,7 +45,7 @@ export default function OutboxMonitorPage() {
   // Payload viewer state
   const [viewingPayload, setViewingPayload] = useState<OutboxEventRow['payload'] | null>(null);
 
-  const fetchOutbox = async () => {
+  const fetchOutbox = useCallback(async () => {
     setRefreshing(true);
     try {
       const filters: OutboxFilters = {};
@@ -63,11 +61,13 @@ export default function OutboxMonitorPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [activeTab]);
 
   useEffect(() => {
-    fetchOutbox();
-  }, [activeTab]);
+    queueMicrotask(() => {
+      void fetchOutbox();
+    });
+  }, [fetchOutbox]);
 
   const handleReplay = async (outboxId: string, eventType: string) => {
     setRefreshing(true);
@@ -75,7 +75,9 @@ export default function OutboxMonitorPage() {
       const res = await replayOutboxEvent(outboxId);
       if (res.success) {
         toast.success(`Đã xếp lịch hạch toán lại cho sự kiện "${eventType}" thành công!`);
-        fetchOutbox();
+        await fetchOutbox();
+      } else {
+        toast.error(`Không thể xếp lịch hạch toán lại cho sự kiện "${eventType}".`);
       }
     } catch (err: unknown) {
       console.error('Replay failed:', err);

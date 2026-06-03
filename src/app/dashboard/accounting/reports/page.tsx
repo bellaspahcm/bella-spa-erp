@@ -1,17 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  BarChart3,
-  FileSpreadsheet,
   RefreshCw,
   Calendar,
-  HelpCircle,
-  TrendingUp,
   Download,
-  BookOpen,
-  ArrowRight,
   AlertTriangle
 } from 'lucide-react';
 import {
@@ -28,8 +21,7 @@ import {
   type AccountingReportRecord,
   type TrialBalanceExportRow,
 } from '@/services/export-actions';
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { toast } from 'sonner';
 
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
@@ -37,6 +29,15 @@ type AccountLedgerRow = AccountingReportRecord;
 type ExportableReportType = 'trial_balance' | 'income_statement' | 'balance_sheet' | 'cash_flow';
 
 const toReportNumber = (value: string | number | null | undefined) => Number(value || 0);
+
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    return typeof message === 'string' && message ? message : fallback;
+  }
+  return fallback;
+}
 
 const reportTabs = [
   { value: 'trial_balance', label: 'Bảng cân đối phát sinh' },
@@ -80,12 +81,13 @@ export default function AccountingReportsPage() {
         }
       } catch (err) {
         console.error('Error fetching accounts for report selector:', err);
+        toast.error(getErrorMessage(err, 'Không thể tải danh sách tài khoản cho báo cáo sổ chi tiết.'));
       }
     };
     loadAccounts();
   }, []);
 
-  const loadReportData = async () => {
+  const loadReportData = useCallback(async () => {
     setRefreshing(true);
     try {
       if (activeTab === 'trial_balance') {
@@ -111,11 +113,13 @@ export default function AccountingReportsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [activeTab, asOfDate, fromDate, selectedAccountId, toDate]);
 
   useEffect(() => {
-    loadReportData();
-  }, [activeTab, asOfDate, fromDate, toDate, selectedAccountId]);
+    queueMicrotask(() => {
+      void loadReportData();
+    });
+  }, [loadReportData]);
 
   // Trigger base64 compilation and force local browser download
   const handleExportExcel = async () => {
