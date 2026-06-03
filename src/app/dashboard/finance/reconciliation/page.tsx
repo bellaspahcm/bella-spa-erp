@@ -147,15 +147,16 @@ export default function FinancialReconciliationPage() {
     try {
       const supabase = createClient();
       
-      // Get current user and tenant
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) throw new Error('Không tìm thấy phiên đăng nhập');
+      // Get current user and tenant from Supabase Auth server validation.
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw new Error(authError.message);
+      if (!user) throw new Error('Không tìm thấy phiên đăng nhập');
       
       // First try users table
       const { data: userData, error: profileErr } = await supabase
         .from('users')
         .select('tenant_id, role')
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .single();
       let profile: ProfileRow | null = userData;
         
@@ -165,7 +166,7 @@ export default function FinancialReconciliationPage() {
          const { data: fallbackProfile } = await legacyProfilesClient
            .from('profiles')
            .select('tenant_id, role')
-           .eq('id', session.user.id)
+           .eq('id', user.id)
            .single();
          profile = fallbackProfile;
       }
@@ -230,7 +231,11 @@ export default function FinancialReconciliationPage() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    const timer = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [fetchData]);
 
   const handleAllocate = async () => {

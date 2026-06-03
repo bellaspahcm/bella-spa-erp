@@ -25,6 +25,7 @@ type UserUpdate = Database['public']['Tables']['users']['Update'];
 type StaffLeaveInsert = Database['public']['Tables']['staff_leaves']['Insert'];
 type StaffLeaveRow = Database['public']['Tables']['staff_leaves']['Row'];
 type SalarySupabaseClient = SupabaseJsClient<Database>;
+type SupabaseQueryError = { code?: string; message?: string } | null;
 
 interface UserWithLogsAndReviews {
   id: string;
@@ -44,19 +45,42 @@ export interface CreateUserInput {
   role: string;
 }
 
+function isMissingSingleRowError(error: SupabaseQueryError) {
+  if (!error) return false;
+  const message = error.message?.toLowerCase() || '';
+  return (
+    error.code === 'PGRST116' ||
+    message.includes('json object requested') ||
+    message.includes('0 rows') ||
+    message.includes('no rows')
+  );
+}
+
+function isMissingAuthSessionError(error: unknown) {
+  const message = getErrorMessage(error, '').toLowerCase();
+  return (
+    message.includes('auth session missing') ||
+    message.includes('session missing') ||
+    message.includes('no current user')
+  );
+}
+
+function assertNonMissingQueryError(error: SupabaseQueryError, context: string) {
+  if (!error || isMissingSingleRowError(error)) return;
+  throw new Error(`${context}: ${error.message || 'Unknown database error'}`);
+}
+
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   const supabase = await createClient();
   
-  // Use getSession() first — getSession() validates JWT locally
-  // (no extra network round-trip to Supabase Auth server and avoids concurrent session refresh token race conditions).
-  // Fallback to getUser() only if getSession() is null.
-  const { data: { session } } = await supabase.auth.getSession();
-  let user = session?.user ?? null;
-  
-  if (!user) { 
-    const { data: { user: authUser } } = await supabase.auth.getUser(); 
-    user = authUser ?? null;
-    console.log("[getCurrentUser] Fallback Auth result:", !!user, user?.id); 
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError && !isMissingAuthSessionError(authError)) {
+    console.error('[getCurrentUser] Auth user validation failed:', authError);
+    throw new Error(`Failed to validate current user: ${getErrorMessage(authError)}`);
   }
   
   if (!user) {
@@ -73,20 +97,28 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
           process.env.SUPABASE_SERVICE_ROLE_KEY,
           { auth: { persistSession: false, autoRefreshToken: false } },
         );
-        const { data: mockProfile } = await adminClient
+        const { data: mockProfile, error: mockProfileError } = await adminClient
           .from('users')
           .select('*')
           .eq('email', mockEmail)
           .single();
+        assertNonMissingQueryError(
+          mockProfileError as SupabaseQueryError,
+          '[getCurrentUser] Failed to fetch development mock profile',
+        );
         if (mockProfile) {
           const profile = mockProfile as unknown as CurrentUser;
           profile.role = profile.role?.toLowerCase();
           if (profile.tenant_id) {
-            const { data: tenant } = await adminClient
+            const { data: tenant, error: tenantError } = await adminClient
               .from('tenants')
               .select('status')
               .eq('id', profile.tenant_id)
               .single();
+            assertNonMissingQueryError(
+              tenantError as SupabaseQueryError,
+              '[getCurrentUser] Failed to fetch development mock tenant',
+            );
             if (tenant?.status === 'suspended') profile.isSuspended = true;
           }
           return profile;
@@ -100,11 +132,15 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   // Try fetching from 'users' table by ID (primary path)
   let profile: CurrentUser | null = null;
-  const { data: mainProfile } = await supabase
+  const { data: mainProfile, error: mainProfileError } = await supabase
     .from('users')
     .select('*')
     .eq('id', user.id)
     .single();
+  assertNonMissingQueryError(
+    mainProfileError as SupabaseQueryError,
+    '[getCurrentUser] Failed to fetch profile by auth id',
+  );
   
   if (mainProfile) {
     profile = mainProfile as unknown as CurrentUser;
@@ -112,11 +148,15 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   // Fallback 1: lookup by email (handles auth users created separately from public.users)
   if (!profile && user.email) {
-    const { data: emailProfile } = await supabase
+    const { data: emailProfile, error: emailProfileError } = await supabase
       .from('users')
       .select('*')
       .eq('email', user.email)
       .single();
+    assertNonMissingQueryError(
+      emailProfileError as SupabaseQueryError,
+      '[getCurrentUser] Failed to fetch profile by email',
+    );
     
     if (emailProfile) {
       profile = emailProfile as unknown as CurrentUser;
@@ -133,11 +173,15 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
     // Check if the tenant is suspended
     if (profile.tenant_id) {
-      const { data: tenant } = await supabase
+      const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
         .select('status, name')
         .eq('id', profile.tenant_id)
         .single();
+      assertNonMissingQueryError(
+        tenantError as SupabaseQueryError,
+        '[getCurrentUser] Failed to fetch tenant status',
+      );
       
       if (tenant && tenant.status === 'suspended') {
         console.warn(`[getCurrentUser] Tenant ${tenant.name} (${profile.tenant_id}) is suspended. Blocking user.`);

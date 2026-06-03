@@ -275,14 +275,14 @@ export function useServicesPageState() {
 
   const getTenantId = async () => {
     const supabase = createBrowserClient();
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError) throw new Error(sessionError.message);
-    if (!session) throw new Error('Vui lòng đăng nhập để thực hiện');
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError) throw new Error(userError.message);
+    if (!user) throw new Error('Vui lòng đăng nhập để thực hiện');
 
     const { data: profile, error: profileError } = await supabase
       .from('users')
       .select('tenant_id')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single();
 
     if (profileError) throw new Error(profileError.message);
