@@ -355,7 +355,13 @@ describe('Accounting Outbox Worker API', () => {
           tenant_id: 'tenant-uuid-1',
           event_type: 'REFUND_ISSUED',
           reference_id: 'ref-id-6',
-          payload: { amount: 300000, paymentMethod: 'cash', description: 'Hoàn tiền khách' },
+          payload: {
+            amount: 300000,
+            deferredRefundAmount: 120000,
+            revenueReductionAmount: 180000,
+            paymentMethod: 'cash',
+            description: 'Hoàn tiền khách',
+          },
         },
       ];
 
@@ -385,7 +391,13 @@ describe('Accounting Outbox Worker API', () => {
       expect(RevenueRecognitionService.handleExpenseRecorded).toHaveBeenCalledWith(expect.objectContaining({ expenseId: 'ref-id-3' }));
       expect(RevenueRecognitionService.handleSalaryPaid).toHaveBeenCalledWith(expect.objectContaining({ salaryRecordId: 'ref-id-4' }));
       expect(RevenueRecognitionService.handleInventoryConsumed).toHaveBeenCalledWith(expect.objectContaining({ sessionLogId: 'ref-id-5' }));
-      expect(RevenueRecognitionService.handleRefundIssued).toHaveBeenCalledWith(expect.objectContaining({ refundId: 'ref-id-6' }));
+      expect(RevenueRecognitionService.handleRefundIssued).toHaveBeenCalledWith(expect.objectContaining({
+        refundId: 'ref-id-6',
+        amount: 300000,
+        deferredRefundAmount: 120000,
+        revenueReductionAmount: 180000,
+        paymentMethod: 'cash',
+      }));
     });
   });
 

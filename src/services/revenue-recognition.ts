@@ -290,31 +290,86 @@ export class RevenueRecognitionService {
   }
 
   /**
-   * Hoàn tiền khách hàng: Nợ 521 (Các khoản giảm trừ DT) / Có 111 hoặc 112
+   * Hoan tien khach hang theo TT133:
+   * - Phan dich vu chua thuc hien: No 3387 / Co 111 hoac 112
+   * - Phan dich vu da ghi nhan: No 5113 / Co 111 hoac 112
    */
   static async handleRefundIssued(params: {
     tenantId: string;
     refundId: string;
     amount: number;
+    deferredRefundAmount?: number;
+    revenueReductionAmount?: number;
     paymentMethod?: string;
     description: string;
     branchId?: string;
   }) {
-    const { tenantId, refundId, amount, paymentMethod = 'bank_transfer', description, branchId } = params;
+    const {
+      tenantId,
+      refundId,
+      amount,
+      deferredRefundAmount,
+      revenueReductionAmount,
+      paymentMethod = 'bank_transfer',
+      description,
+      branchId,
+    } = params;
 
     if (amount <= 0) return null;
 
+    const refundAmount = asFiniteAmount(amount);
+    const hasDeferredSplit = deferredRefundAmount !== undefined;
+    const hasRevenueSplit = revenueReductionAmount !== undefined;
+    const explicitDeferredAmount = hasDeferredSplit ? asFiniteAmount(deferredRefundAmount) : undefined;
+    const explicitRevenueReductionAmount = hasRevenueSplit ? asFiniteAmount(revenueReductionAmount) : undefined;
+    let deferredAmount = 0;
+    let recognizedRevenueRefundAmount = refundAmount;
+
+    if (hasDeferredSplit && hasRevenueSplit) {
+      const splitTotal = (explicitDeferredAmount ?? 0) + (explicitRevenueReductionAmount ?? 0);
+      if (Math.abs(splitTotal - refundAmount) > 0.01) {
+        throw new Error(`Refund split total ${splitTotal} does not match refund amount ${refundAmount}.`);
+      }
+      deferredAmount = explicitDeferredAmount ?? 0;
+      recognizedRevenueRefundAmount = explicitRevenueReductionAmount ?? 0;
+    } else if (hasDeferredSplit) {
+      if ((explicitDeferredAmount ?? 0) > refundAmount) {
+        throw new Error(`Deferred refund amount ${explicitDeferredAmount} exceeds refund amount ${refundAmount}.`);
+      }
+      deferredAmount = explicitDeferredAmount ?? 0;
+      recognizedRevenueRefundAmount = refundAmount - deferredAmount;
+    } else if (hasRevenueSplit) {
+      if ((explicitRevenueReductionAmount ?? 0) > refundAmount) {
+        throw new Error(`Revenue reduction amount ${explicitRevenueReductionAmount} exceeds refund amount ${refundAmount}.`);
+      }
+      recognizedRevenueRefundAmount = explicitRevenueReductionAmount ?? 0;
+      deferredAmount = refundAmount - recognizedRevenueRefundAmount;
+    }
+
     const payAccountCode = paymentMethod?.toLowerCase() === 'cash' ? '111' : '112';
 
-    const [deductAccountId, payAccountId] = await Promise.all([
-      this.getAccountByCode(tenantId, '521'),
+    const [deferredAccountId, revenueAccountId, payAccountId] = await Promise.all([
+      deferredAmount > 0 ? this.getAccountByCode(tenantId, '3387') : Promise.resolve(null),
+      recognizedRevenueRefundAmount > 0 ? this.getAccountByCodeFallback(tenantId, ['5113', '5111']) : Promise.resolve(null),
       this.getAccountByCode(tenantId, payAccountCode),
     ]);
 
-    const lines: JournalEntryInput['lines'] = [
-      { account_id: deductAccountId, debit_amount: amount, credit_amount: 0, branch_id: branchId },
-      { account_id: payAccountId, debit_amount: 0, credit_amount: amount, branch_id: branchId },
-    ];
+    const lines: JournalEntryInput['lines'] = [];
+
+    if (deferredAmount > 0 && deferredAccountId) {
+      lines.push({ account_id: deferredAccountId, debit_amount: deferredAmount, credit_amount: 0, branch_id: branchId });
+    }
+
+    if (recognizedRevenueRefundAmount > 0 && revenueAccountId) {
+      lines.push({
+        account_id: revenueAccountId,
+        debit_amount: recognizedRevenueRefundAmount,
+        credit_amount: 0,
+        branch_id: branchId,
+      });
+    }
+
+    lines.push({ account_id: payAccountId, debit_amount: 0, credit_amount: refundAmount, branch_id: branchId });
 
     return await AccountingEngineService.postJournalEntry({
       tenant_id: tenantId,

@@ -49,6 +49,7 @@ import { RevenueRecognitionService } from '../services/revenue-recognition';
 // ── Test fixtures ──
 const TENANT_ID = 'tenant-uuid-1';
 const CASH_ID = 'acct-111';
+const BANK_ID = 'acct-112';
 const UNEARNED_ID = 'acct-3387';
 const RECEIVABLE_ID = 'acct-131';
 const VAT_ID = 'acct-3331';
@@ -357,6 +358,79 @@ describe('RevenueRecognitionService.handleSessionDone', () => {
     });
 
     expect(result).toBeNull();
+    expect(mockInsertLines).not.toHaveBeenCalled();
+  });
+});
+
+describe('RevenueRecognitionService.handleRefundIssued', () => {
+  it('defaults legacy refund payloads to reducing recognized service revenue', async () => {
+    mockSingle
+      .mockResolvedValueOnce({ data: { id: REV_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: CASH_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: 'entry-uuid-refund-1' }, error: null });
+
+    const id = await RevenueRecognitionService.handleRefundIssued({
+      tenantId: TENANT_ID,
+      refundId: 'refund-legacy',
+      amount: 300000,
+      paymentMethod: 'cash',
+      description: 'Legacy refund payload',
+    });
+
+    expect(id).toBe('entry-uuid-refund-1');
+
+    const linesCall = mockInsertLines.mock.calls[0][0];
+    expect(linesCall).toHaveLength(2);
+    expect(linesCall).toEqual(expect.arrayContaining([
+      expect.objectContaining({ account_id: REV_ID, debit_amount: 300000, credit_amount: 0 }),
+      expect.objectContaining({ account_id: CASH_ID, debit_amount: 0, credit_amount: 300000 }),
+    ]));
+  });
+
+  it('splits refunds between unearned revenue and recognized service revenue', async () => {
+    mockSingle
+      .mockResolvedValueOnce({ data: { id: UNEARNED_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: REV_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: BANK_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: 'entry-uuid-refund-2' }, error: null });
+
+    await RevenueRecognitionService.handleRefundIssued({
+      tenantId: TENANT_ID,
+      refundId: 'refund-split',
+      amount: 300000,
+      deferredRefundAmount: 120000,
+      revenueReductionAmount: 180000,
+      paymentMethod: 'bank_transfer',
+      description: 'Split refund payload',
+    });
+
+    const linesCall = mockInsertLines.mock.calls[0][0];
+    expect(linesCall).toHaveLength(3);
+    expect(linesCall).toEqual(expect.arrayContaining([
+      expect.objectContaining({ account_id: UNEARNED_ID, debit_amount: 120000, credit_amount: 0 }),
+      expect.objectContaining({ account_id: REV_ID, debit_amount: 180000, credit_amount: 0 }),
+      expect.objectContaining({ account_id: BANK_ID, debit_amount: 0, credit_amount: 300000 }),
+    ]));
+
+    const totalDebit = linesCall.reduce((s: number, l: any) => s + l.debit_amount, 0);
+    const totalCredit = linesCall.reduce((s: number, l: any) => s + l.credit_amount, 0);
+    expect(totalDebit).toBe(300000);
+    expect(totalCredit).toBe(300000);
+  });
+
+  it('rejects refund splits that do not match the total refund amount', async () => {
+    await expect(
+      RevenueRecognitionService.handleRefundIssued({
+        tenantId: TENANT_ID,
+        refundId: 'refund-invalid-split',
+        amount: 300000,
+        deferredRefundAmount: 120000,
+        revenueReductionAmount: 100000,
+        paymentMethod: 'cash',
+        description: 'Invalid refund split',
+      })
+    ).rejects.toThrow(/does not match refund amount/);
+
     expect(mockInsertLines).not.toHaveBeenCalled();
   });
 });

@@ -5,6 +5,21 @@
 
 ---
 
+### 03/06/2026: Fix TT133 Refund Mapping
+* **Muc tieu nghiep vu**:
+  * Khong de hoan tien khach hang phat sinh but toan moi vao `521` trong runtime TT133.
+  * Giu dung hai tinh huong: dich vu chua thuc hien giam `3387`, dich vu da ghi nhan giam `5113`.
+* **Thay doi chinh**:
+  * `RevenueRecognitionService.handleRefundIssued` ho tro split `deferredRefundAmount` va `revenueReductionAmount`.
+  * Payload cu khong co split van xu ly duoc, mac dinh giam doanh thu dich vu `5113` thay vi `521`.
+  * Worker accounting truyen split field cho event `REFUND_ISSUED`.
+  * Template TT133 `REFUND_TO_CUSTOMER` va migration moi duoc cap nhat sang `5113 + 3387 / 111_OR_112`.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-tt133-refund-mapping.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/accounting-engine.test.ts src/__tests__/accounting-outbox.test.ts --runInBand` pass, 27/27 tests.
+  * `npm.cmd run build` pass.
+
 ### 03/06/2026: Harden App Notification Actions
 * **Muc tieu ky thuat**:
   * Khong de loi doc profile hoac `app_notifications` bi bien thanh danh sach rong im lang.
