@@ -7,6 +7,25 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden Payment Webhook Side Effects
+* **Mục tiêu kỹ thuật**:
+  * Không để webhook thanh toán đổi booking sang `booked` nhưng thiếu revenue/audit/outbox bắt buộc.
+  * Giữ response contract hiện tại của webhook, nhưng biến lỗi side-effect thành failed detail rõ ràng theo từng giao dịch.
+* **Thay đổi chính**:
+  * `POST /api/webhooks/payment` track booking status mutation trong luồng BELLA booking payment.
+  * Nếu insert `revenue` fail sau khi booking đã đổi trạng thái, webhook restore booking về status cũ trước khi trả failed detail.
+  * Rollback sau audit/outbox failure không còn throw ra catch ngoài như lỗi route generic; failed detail giữ cả lỗi gốc và lỗi rollback nếu có.
+  * Dùng generated Supabase table types cho booking/revenue/audit payloads trong route.
+  * Bổ sung regression tests cho revenue insert rollback, rollback failure detail, outbox rollback và already-booked payment không rollback booking giả.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-payment-webhook-side-effects.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/subscription.test.ts --runInBand` pass, 29/29 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/app/api/webhooks/payment/route.ts src/__tests__/subscription.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 66 suites / 739 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden Lock Month Side Effects
 * **Mục tiêu kỹ thuật**:
   * Không để `lockMonth` khóa sổ thành công nhưng thiếu hoặc lỗi side-effect nhượng quyền/bù trừ liên chi nhánh.

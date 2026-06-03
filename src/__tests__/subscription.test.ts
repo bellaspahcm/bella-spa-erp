@@ -586,6 +586,16 @@ describe('Subscription Constraints & Webhook Suite', () => {
         body: JSON.stringify(body),
       });
     };
+    type WebhookQueryChain = {
+      select: jest.Mock;
+      eq: jest.Mock;
+      not: jest.Mock;
+      like: jest.Mock;
+      maybeSingle: jest.Mock;
+      update: jest.Mock;
+      delete?: jest.Mock;
+      insert: jest.Mock;
+    };
 
     it('should reject unauthorized webhook calls with 401', async () => {
       const req = createMockRequest({ transferAmount: 200000, content: 'SUB INV-1002' }, {
@@ -780,17 +790,7 @@ describe('Subscription Constraints & Webhook Suite', () => {
       const revenueInsertPayloads: unknown[] = [];
 
       mockRouteFrom.mockImplementation((table: string) => {
-        type QueryChain = {
-          select: jest.Mock;
-          eq: jest.Mock;
-          not: jest.Mock;
-          like: jest.Mock;
-          maybeSingle: jest.Mock;
-          update: jest.Mock;
-          insert: jest.Mock;
-        };
-        let chain: QueryChain;
-        chain = {
+        const chain: WebhookQueryChain = {
           select: jest.fn(() => chain),
           eq: jest.fn(() => chain),
           not: jest.fn(() => chain),
@@ -971,6 +971,298 @@ describe('Subscription Constraints & Webhook Suite', () => {
       });
       expect(bookingStatusUpdates).toEqual([{ status: 'booked' }, { status: 'deposit_pending' }]);
       expect(deletedRevenueIds).toContain('rev-rollback');
+      expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+    });
+
+    it('should rollback booking status if revenue insert fails after booking update', async () => {
+      const booking = {
+        id: 'booking-1',
+        booking_number: 'BK-1001',
+        tenant_id: 'tenant-1',
+        status: 'deposit_pending',
+      };
+      const bookingStatusUpdates: Array<Record<string, unknown>> = [];
+      const revenueInsertPayloads: unknown[] = [];
+      const auditInsertPayloads: unknown[] = [];
+
+      mockRouteFrom.mockImplementation((table: string) => {
+        const chain: WebhookQueryChain = {
+          select: jest.fn(() => chain),
+          eq: jest.fn(() => chain),
+          not: jest.fn(() => chain),
+          like: jest.fn(() => chain),
+          maybeSingle: jest.fn(() => {
+            if (table === 'bookings') return Promise.resolve({ data: booking, error: null });
+            if (table === 'revenue') return Promise.resolve({ data: null, error: null });
+            return Promise.resolve({ data: null, error: null });
+          }),
+          update: jest.fn((payload: Record<string, unknown>) => {
+            bookingStatusUpdates.push(payload);
+            return { eq: jest.fn(() => Promise.resolve({ error: null })) };
+          }),
+          delete: jest.fn(() => chain),
+          insert: jest.fn((payload: unknown) => {
+            if (table === 'revenue') {
+              revenueInsertPayloads.push(payload);
+              return {
+                select: jest.fn(() => ({
+                  single: jest.fn(() => Promise.resolve({
+                    data: null,
+                    error: { message: 'revenue unavailable' },
+                  })),
+                })),
+              };
+            }
+            if (table === 'audit_logs') {
+              auditInsertPayloads.push(payload);
+            }
+            return Promise.resolve({ error: null });
+          }),
+        };
+        return chain;
+      });
+
+      const req = createMockRequest({
+        transferAmount: 1000000,
+        content: 'BELLA BK-1001',
+        code: 'TX-REV-FAIL',
+      }, {
+        authorization: 'Bearer super-secret-webhook-key',
+      });
+
+      const response = await POST(req);
+      const resData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(resData.processedCount).toBe(0);
+      expect(resData.details[0]).toMatchObject({
+        transactionId: 'TX-REV-FAIL',
+        bookingNumber: 'BK-1001',
+        status: 'failed',
+        reason: 'Failed to insert revenue record',
+      });
+      expect(bookingStatusUpdates).toEqual([{ status: 'booked' }, { status: 'deposit_pending' }]);
+      expect(revenueInsertPayloads).toHaveLength(1);
+      expect(auditInsertPayloads).toEqual([]);
+      expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+    });
+
+    it('should report booking rollback failure details when revenue insert fails', async () => {
+      const booking = {
+        id: 'booking-1',
+        booking_number: 'BK-1001',
+        tenant_id: 'tenant-1',
+        status: 'deposit_pending',
+      };
+      const bookingStatusUpdates: Array<Record<string, unknown>> = [];
+
+      mockRouteFrom.mockImplementation((table: string) => {
+        const chain: WebhookQueryChain = {
+          select: jest.fn(() => chain),
+          eq: jest.fn(() => chain),
+          not: jest.fn(() => chain),
+          like: jest.fn(() => chain),
+          maybeSingle: jest.fn(() => {
+            if (table === 'bookings') return Promise.resolve({ data: booking, error: null });
+            if (table === 'revenue') return Promise.resolve({ data: null, error: null });
+            return Promise.resolve({ data: null, error: null });
+          }),
+          update: jest.fn((payload: Record<string, unknown>) => {
+            bookingStatusUpdates.push(payload);
+            return {
+              eq: jest.fn(() => Promise.resolve({
+                error: payload.status === 'deposit_pending'
+                  ? { message: 'booking rollback denied' }
+                  : null,
+              })),
+            };
+          }),
+          delete: jest.fn(() => chain),
+          insert: jest.fn((payload: unknown) => {
+            if (table === 'revenue') {
+              return {
+                select: jest.fn(() => ({
+                  single: jest.fn(() => Promise.resolve({
+                    data: null,
+                    error: { message: 'revenue unavailable' },
+                  })),
+                })),
+              };
+            }
+            return Promise.resolve({ data: payload, error: null });
+          }),
+        };
+        return chain;
+      });
+
+      const req = createMockRequest({
+        transferAmount: 1000000,
+        content: 'BELLA BK-1001',
+        code: 'TX-REV-ROLLBACK-FAIL',
+      }, {
+        authorization: 'Bearer super-secret-webhook-key',
+      });
+
+      const response = await POST(req);
+      const resData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(resData.processedCount).toBe(0);
+      expect(resData.details[0].reason).toContain('Failed to insert revenue record');
+      expect(resData.details[0].reason).toContain('rollback failed');
+      expect(resData.details[0].reason).toContain('booking rollback denied');
+      expect(bookingStatusUpdates).toEqual([{ status: 'booked' }, { status: 'deposit_pending' }]);
+      expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+    });
+
+    it('should rollback revenue and booking side effects if accounting outbox enqueue fails', async () => {
+      const booking = {
+        id: 'booking-1',
+        booking_number: 'BK-1001',
+        tenant_id: 'tenant-1',
+        status: 'deposit_pending',
+      };
+      const bookingStatusUpdates: Array<Record<string, unknown>> = [];
+      const deletedRevenueIds: string[] = [];
+      const auditInsertPayloads: unknown[] = [];
+      mockEnqueueWithAutoClient.mockResolvedValue(false);
+
+      mockRouteFrom.mockImplementation((table: string) => {
+        const chain: WebhookQueryChain = {
+          select: jest.fn(() => chain),
+          eq: jest.fn((field: string, value: string) => {
+            if (table === 'revenue' && field === 'id') deletedRevenueIds.push(value);
+            return chain;
+          }),
+          not: jest.fn(() => chain),
+          like: jest.fn(() => chain),
+          maybeSingle: jest.fn(() => {
+            if (table === 'bookings') return Promise.resolve({ data: booking, error: null });
+            if (table === 'revenue') return Promise.resolve({ data: null, error: null });
+            return Promise.resolve({ data: null, error: null });
+          }),
+          update: jest.fn((payload: Record<string, unknown>) => {
+            bookingStatusUpdates.push(payload);
+            return { eq: jest.fn(() => Promise.resolve({ error: null })) };
+          }),
+          delete: jest.fn(() => chain),
+          insert: jest.fn((payload: unknown) => {
+            if (table === 'revenue') {
+              const revenuePayload = Array.isArray(payload) && typeof payload[0] === 'object' && payload[0] !== null
+                ? payload[0]
+                : {};
+              return {
+                select: jest.fn(() => ({
+                  single: jest.fn(() => Promise.resolve({
+                    data: { id: 'rev-outbox-fail', ...revenuePayload },
+                    error: null,
+                  })),
+                })),
+              };
+            }
+            if (table === 'audit_logs') {
+              auditInsertPayloads.push(payload);
+              return Promise.resolve({ error: null });
+            }
+            return Promise.resolve({ error: null });
+          }),
+        };
+        return chain;
+      });
+
+      const req = createMockRequest({
+        transferAmount: 1000000,
+        content: 'BELLA BK-1001',
+        code: 'TX-OUTBOX-FAIL',
+      }, {
+        authorization: 'Bearer super-secret-webhook-key',
+      });
+
+      const response = await POST(req);
+      const resData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(resData.processedCount).toBe(0);
+      expect(resData.details[0]).toMatchObject({
+        status: 'failed',
+        reason: 'Failed to enqueue accounting outbox',
+      });
+      expect(auditInsertPayloads).toHaveLength(1);
+      expect(deletedRevenueIds).toContain('rev-outbox-fail');
+      expect(bookingStatusUpdates).toEqual([{ status: 'booked' }, { status: 'deposit_pending' }]);
+    });
+
+    it('should not rollback booking status when an already-booked payment fails audit logging', async () => {
+      const booking = {
+        id: 'booking-1',
+        booking_number: 'BK-1001',
+        tenant_id: 'tenant-1',
+        status: 'booked',
+      };
+      const bookingStatusUpdates: Array<Record<string, unknown>> = [];
+      const deletedRevenueIds: string[] = [];
+
+      mockRouteFrom.mockImplementation((table: string) => {
+        const chain: WebhookQueryChain = {
+          select: jest.fn(() => chain),
+          eq: jest.fn((field: string, value: string) => {
+            if (table === 'revenue' && field === 'id') deletedRevenueIds.push(value);
+            return chain;
+          }),
+          not: jest.fn(() => chain),
+          like: jest.fn(() => chain),
+          maybeSingle: jest.fn(() => {
+            if (table === 'bookings') return Promise.resolve({ data: booking, error: null });
+            if (table === 'revenue') return Promise.resolve({ data: null, error: null });
+            return Promise.resolve({ data: null, error: null });
+          }),
+          update: jest.fn((payload: Record<string, unknown>) => {
+            bookingStatusUpdates.push(payload);
+            return { eq: jest.fn(() => Promise.resolve({ error: null })) };
+          }),
+          delete: jest.fn(() => chain),
+          insert: jest.fn((payload: unknown) => {
+            if (table === 'revenue') {
+              const revenuePayload = Array.isArray(payload) && typeof payload[0] === 'object' && payload[0] !== null
+                ? payload[0]
+                : {};
+              return {
+                select: jest.fn(() => ({
+                  single: jest.fn(() => Promise.resolve({
+                    data: { id: 'rev-already-booked', ...revenuePayload },
+                    error: null,
+                  })),
+                })),
+              };
+            }
+            if (table === 'audit_logs') {
+              return Promise.resolve({ error: { message: 'audit unavailable' } });
+            }
+            return Promise.resolve({ data: payload, error: null });
+          }),
+        };
+        return chain;
+      });
+
+      const req = createMockRequest({
+        transferAmount: 1000000,
+        content: 'BELLA BK-1001',
+        code: 'TX-BOOKED-AUDIT-FAIL',
+      }, {
+        authorization: 'Bearer super-secret-webhook-key',
+      });
+
+      const response = await POST(req);
+      const resData = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(resData.processedCount).toBe(0);
+      expect(resData.details[0]).toMatchObject({
+        status: 'failed',
+        reason: 'Failed to insert audit log',
+      });
+      expect(deletedRevenueIds).toContain('rev-already-booked');
+      expect(bookingStatusUpdates).toEqual([]);
       expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
     });
   });

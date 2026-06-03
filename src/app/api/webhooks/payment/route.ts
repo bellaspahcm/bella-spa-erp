@@ -39,6 +39,9 @@ type ProcessingResult = {
   revenueId?: string;
   reason?: string;
 };
+type BookingUpdate = Database["public"]["Tables"]["bookings"]["Update"];
+type RevenueInsert = Database["public"]["Tables"]["revenue"]["Insert"];
+type AuditLogInsert = Database["public"]["Tables"]["audit_logs"]["Insert"];
 
 function resolveAccountingReviewStatus(
   businessEventType: ReturnType<typeof inferBusinessEventType>,
@@ -96,6 +99,11 @@ function transactionFromRecord(
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function withRollbackFailures(reason: string, rollbackFailures: string[]) {
+  if (rollbackFailures.length === 0) return reason;
+  return `${reason}; rollback failed: ${rollbackFailures.join("; ")}`;
 }
 
 // Extract transactions from multiple platforms: Casso, SePay, PayOS
@@ -311,9 +319,32 @@ export async function POST(request: NextRequest) {
       }
 
       // 4. Update booking status and record revenue
-      let revenueType: NonNullable<Database["public"]["Tables"]["revenue"]["Insert"]["revenue_type"]> = "additional";
+      let revenueType: NonNullable<RevenueInsert["revenue_type"]> = "additional";
       const oldStatus = booking.status;
       const cleanDate = receivedDate ? new Date(receivedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      let bookingStatusChanged = false;
+
+      const pushFailedTransaction = (reason: string, rollbackFailures: string[] = []) => {
+        results.push({
+          transactionId,
+          bookingNumber,
+          status: "failed",
+          reason: withRollbackFailures(reason, rollbackFailures),
+        });
+      };
+
+      const rollbackBookingStatus = async () => {
+        if (!bookingStatusChanged) return null;
+        const bookingRollbackPayload: BookingUpdate = { status: oldStatus };
+        const { error: rollbackBookingErr } = await supabase
+          .from("bookings")
+          .update(bookingRollbackPayload)
+          .eq("id", booking.id);
+
+        return rollbackBookingErr
+          ? `booking ${booking.id}: ${rollbackBookingErr.message}`
+          : null;
+      };
 
       try {
         await assertOpenAccountingPeriod(supabase, {
@@ -341,6 +372,7 @@ export async function POST(request: NextRequest) {
           results.push({ transactionId, bookingNumber, status: "failed", reason: "Failed to update booking status" });
           continue;
         }
+        bookingStatusChanged = true;
         console.log(`[Payment Webhook] Updated Booking status from "${oldStatus}" to "booked"`);
       }
 
@@ -355,7 +387,7 @@ export async function POST(request: NextRequest) {
         booking_id: booking.id,
         reason: `Webhook VietQR transaction ${transactionId}: ${description}`,
       };
-      const revenuePayload: Database["public"]["Tables"]["revenue"]["Insert"] = {
+      const revenuePayload: RevenueInsert = {
         booking_id: booking.id,
         amount,
         revenue_type: revenueType,
@@ -376,37 +408,34 @@ export async function POST(request: NextRequest) {
 
       if (revErr || !newRevenue) {
         console.error(`[Payment Webhook] Failed to insert revenue for "${bookingNumber}":`, revErr);
-        results.push({ transactionId, bookingNumber, status: "failed", reason: "Failed to insert revenue record" });
+        const bookingRollbackFailure = await rollbackBookingStatus();
+        pushFailedTransaction(
+          "Failed to insert revenue record",
+          bookingRollbackFailure ? [bookingRollbackFailure] : []
+        );
         continue;
       }
       console.log(`[Payment Webhook] Successfully inserted revenue ID: ${newRevenue.id}`);
 
       const rollbackWebhookRevenue = async (reason: string) => {
+        const rollbackFailures: string[] = [];
         const { error: deleteRevenueErr } = await supabase
           .from("revenue")
           .delete()
           .eq("id", newRevenue.id);
 
         if (deleteRevenueErr) {
-          throw new Error(`[Payment Webhook] Failed to rollback revenue ${newRevenue.id}: ${deleteRevenueErr.message}`);
+          rollbackFailures.push(`revenue ${newRevenue.id}: ${deleteRevenueErr.message}`);
         }
 
-        if (oldStatus === "deposit_pending" || oldStatus === "inquiry") {
-          const { error: rollbackBookingErr } = await supabase
-            .from("bookings")
-            .update({ status: oldStatus })
-            .eq("id", booking.id);
+        const bookingRollbackFailure = await rollbackBookingStatus();
+        if (bookingRollbackFailure) rollbackFailures.push(bookingRollbackFailure);
 
-          if (rollbackBookingErr) {
-            throw new Error(`[Payment Webhook] Failed to rollback booking ${booking.id}: ${rollbackBookingErr.message}`);
-          }
-        }
-
-        results.push({ transactionId, bookingNumber, status: "failed", reason });
+        pushFailedTransaction(reason, rollbackFailures);
       };
 
       // 6. Record Audit Log
-      const auditPayload: Database["public"]["Tables"]["audit_logs"]["Insert"] = {
+      const auditPayload: AuditLogInsert = {
         action: "INSERT",
         table_name: "revenue",
         record_id: newRevenue.id,
