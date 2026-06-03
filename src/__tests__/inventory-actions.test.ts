@@ -1,4 +1,5 @@
 import {
+  addInventoryItem,
   autoConsumeForSession,
   consumeInventory,
   getInventoryItems,
@@ -69,8 +70,10 @@ class ScriptedQueryBuilder {
   ) {}
 
   select() {
-    this.op = 'select';
-    this.calls.push({ table: this.table, op: 'select' });
+    if (!this.op) {
+      this.op = 'select';
+      this.calls.push({ table: this.table, op: 'select' });
+    }
     return this;
   }
 
@@ -236,6 +239,79 @@ describe('inventory write action side effects', () => {
       session_log_id: 'session-1',
       tenant_id: 'tenant-1',
     });
+  });
+
+  it('creates an item and writes an initial inventory log when opening stock is positive', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_items', op: 'insert', data: { id: 'item-new' } },
+      { table: 'inventory_logs', op: 'insert' },
+    ]);
+
+    const result = await addInventoryItem({
+      name: 'Serum',
+      sku: 'SRM-001',
+      unit: 'chai',
+      stock_level: 12,
+      min_stock_level: 3,
+      price_per_unit: 100000,
+      category: 'Skincare',
+    });
+
+    expect(result.success).toBe(true);
+    expect(calls.find(c => c.table === 'inventory_items' && c.op === 'insert')?.payload).toMatchObject({
+      name: 'Serum',
+      sku: 'SRM-001',
+      unit: 'chai',
+      stock_level: 12,
+      min_stock_level: 3,
+      price_per_unit: 100000,
+      category: 'Skincare',
+      tenant_id: 'tenant-1',
+    });
+    expect(calls.find(c => c.table === 'inventory_logs' && c.op === 'insert')?.payload).toMatchObject({
+      item_id: 'item-new',
+      change_amount: 12,
+      reason: 'initial',
+      created_by: 'user-1',
+      tenant_id: 'tenant-1',
+    });
+  });
+
+  it('does not require an initial inventory log when opening stock is zero', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_items', op: 'insert', data: { id: 'item-new' } },
+    ]);
+
+    const result = await addInventoryItem({
+      name: 'Serum',
+      unit: 'chai',
+      stock_level: 0,
+      min_stock_level: 3,
+      price_per_unit: 100000,
+    });
+
+    expect(result.success).toBe(true);
+    expect(calls.filter(c => c.table === 'inventory_logs')).toHaveLength(0);
+  });
+
+  it('deletes a newly-created item when initial inventory log insert fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_items', op: 'insert', data: { id: 'item-new' } },
+      { table: 'inventory_logs', op: 'insert', error: { message: 'initial log failed' } },
+      { table: 'inventory_items', op: 'delete' },
+    ]);
+
+    const result = await addInventoryItem({
+      name: 'Serum',
+      unit: 'chai',
+      stock_level: 12,
+      min_stock_level: 3,
+      price_per_unit: 100000,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('initial log failed');
+    expect(calls.filter(c => c.table === 'inventory_items').map(c => c.op)).toEqual(['insert', 'delete']);
   });
 
   it('halts rollback and preserves logs when restoring stock fails', async () => {

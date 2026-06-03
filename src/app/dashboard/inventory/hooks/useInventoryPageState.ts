@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 
 import { getSupabase } from '@/lib/supabase-client';
 import { getLocalDateString } from '@/lib/utils';
-import type { Database } from '@/types/database.types';
 import {
   createInventoryRequest,
   getInventoryTransferOrders,
@@ -14,7 +13,9 @@ import {
   type InventoryTransferOrder,
 } from '@/services/inventory-transfer-actions';
 import {
+  addInventoryItem,
   getMonthlyReconciliation,
+  restockItem,
   saveMonthlyReconciliation,
 } from '@/services/inventory-actions';
 
@@ -37,10 +38,6 @@ const createBlankInventoryItem = (): NewInventoryItem => ({
   price_per_unit: 0,
   category: '',
 });
-
-type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Insert'];
-type InventoryItemUpdate = Database['public']['Tables']['inventory_items']['Update'];
-type InventoryLogInsert = Database['public']['Tables']['inventory_logs']['Insert'];
 
 const getErrorMessage = (error: unknown, fallback: string) => (
   error instanceof Error ? error.message : fallback
@@ -73,7 +70,6 @@ export function useInventoryPageState() {
   const [restockTarget, setRestockTarget] = useState<InventoryItem | null>(null);
   const [restockAmt, setRestockAmt] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [tenantId, setTenantId] = useState<string | null>(null);
 
   const [showAdd, setShowAdd] = useState(false);
   const [newItem, setNewItem] = useState<NewInventoryItem>(createBlankInventoryItem);
@@ -148,28 +144,6 @@ export function useInventoryPageState() {
   }, [reconMonth, reconYear]);
 
   useEffect(() => {
-    const loadTenant = async () => {
-      try {
-        const sb = getSupabase();
-        const sessionRes = await sb.auth.getSession();
-        const uid = sessionRes.data.session?.user?.id;
-        if (!uid) return;
-
-        const { data, error } = await sb
-          .from('users')
-          .select('tenant_id')
-          .eq('id', uid)
-          .single();
-        if (error) throw error;
-
-        setTenantId(data?.tenant_id || null);
-      } catch (error) {
-        console.error('[inventory tenant]', error);
-        toast.error('Lỗi tải thông tin chi nhánh');
-      }
-    };
-
-    void loadTenant();
     const timer = window.setTimeout(() => {
       void fetchData();
     }, 0);
@@ -259,40 +233,15 @@ export function useInventoryPageState() {
 
   const handleRestock = async () => {
     if (!restockTarget || restockAmt <= 0) return;
-    if (!tenantId) {
-      toast.error('Không xác định được chi nhánh');
-      return;
-    }
 
     setSubmitting(true);
     try {
-      const sb = getSupabase();
-      const { data: item, error: fetchErr } = await sb
-        .from('inventory_items')
-        .select('stock_level')
-        .eq('id', restockTarget.id)
-        .single();
-      if (fetchErr) throw fetchErr;
-
-      const updatePayload: InventoryItemUpdate = {
-        stock_level: Number(item.stock_level || 0) + restockAmt,
-        updated_at: new Date().toISOString(),
-      };
-      const { error: updateErr } = await sb
-        .from('inventory_items')
-        .update(updatePayload)
-        .eq('id', restockTarget.id);
-      if (updateErr) throw updateErr;
-
-      const logPayload: InventoryLogInsert = {
-        item_id: restockTarget.id,
-        change_amount: restockAmt,
-        reason: 'restock',
-        notes: `Điều chỉnh kho: +${restockAmt} ${restockTarget.unit}`,
-        tenant_id: tenantId,
-      };
-      const { error: logErr } = await sb.from('inventory_logs').insert(logPayload);
-      if (logErr) throw logErr;
+      const result = await restockItem(
+        restockTarget.id,
+        restockAmt,
+        `Điều chỉnh kho: +${restockAmt} ${restockTarget.unit}`,
+      );
+      if (!result.success) throw new Error(result.error || 'Lỗi điều chỉnh kho');
 
       toast.success(`Đã cập nhật +${restockAmt} ${restockTarget.unit} cho mặt hàng ${restockTarget.name}`);
       setRestockTarget(null);
@@ -311,36 +260,11 @@ export function useInventoryPageState() {
       toast.error('Nhập tên và đơn vị');
       return;
     }
-    if (!tenantId) {
-      toast.error('Không xác định được chi nhánh');
-      return;
-    }
 
     setSubmitting(true);
     try {
-      const sb = getSupabase();
-      const itemPayload: InventoryItemInsert = {
-        ...newItem,
-        tenant_id: tenantId,
-      };
-      const { data: created, error } = await sb
-        .from('inventory_items')
-        .insert(itemPayload)
-        .select('id')
-        .single();
-      if (error) throw error;
-
-      if (newItem.stock_level > 0) {
-        const logPayload: InventoryLogInsert = {
-          item_id: created.id,
-          change_amount: newItem.stock_level,
-          reason: 'initial',
-          notes: 'Tồn kho ban đầu',
-          tenant_id: tenantId,
-        };
-        const { error: logErr } = await sb.from('inventory_logs').insert(logPayload);
-        if (logErr) throw logErr;
-      }
+      const result = await addInventoryItem(newItem);
+      if (!result.success) throw new Error(result.error || 'Lỗi thêm vật tư');
 
       toast.success('Đã thêm vật tư mới');
       setShowAdd(false);
