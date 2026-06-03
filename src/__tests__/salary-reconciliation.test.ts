@@ -26,11 +26,20 @@ jest.mock('../lib/revalidate', () => ({
 }));
 
 const mockRpc = jest.fn();
+const mockCreateRpcClient = () => ({
+  rest: {},
+  rpc(this: { rest?: unknown }, fn: string, args: unknown) {
+    if (!this?.rest) {
+      throw new TypeError("Cannot read properties of undefined (reading 'rest')");
+    }
+    return mockRpc(fn, args);
+  },
+});
 jest.mock('../lib/supabase-server', () => ({
-  createClient: jest.fn(() => Promise.resolve({ rpc: mockRpc })),
+  createClient: jest.fn(() => Promise.resolve(mockCreateRpcClient())),
 }));
 jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({ rpc: mockRpc })),
+  createClient: jest.fn(() => mockCreateRpcClient()),
 }));
 
 const mockGetCurrentUser = jest.fn();

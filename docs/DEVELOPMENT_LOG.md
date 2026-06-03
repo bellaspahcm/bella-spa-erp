@@ -5,6 +5,44 @@
 
 ---
 
+### 04/06/2026: Fix Supabase RPC Binding In Accounting Tabs
+* **Muc tieu van hanh**:
+  * Sua loi production hien trong tab ke toan dang bao `An error occurred in the Server Components render`.
+  * Xac dinh log goc Vercel: `POST /dashboard/accounting/salary-reconciliation` fail voi `TypeError: Cannot read properties of undefined (reading 'rest')`.
+* **Nguyen nhan**:
+  * Code tach `supabase.rpc` ra bien roi moi goi, lam mat binding `this` cua Supabase client. Supabase `rpc` can `this.rest`, nen production bi undefined.
+* **Thay doi chinh**:
+  * `getSalaryReconciliationReport` goi RPC qua object client de giu binding.
+  * Loai bo cung pattern detached `.rpc` trong payment helper, accounting worker, onboarding va helper pending RPC.
+  * Them regression test mock Supabase `rpc` yeu cau `this.rest` de bat dung loi production neu tai phat.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-fix-supabase-rpc-binding.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/salary-reconciliation.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/rate-limit.test.ts src/__tests__/onboarding.test.ts --runInBand` pass.
+  * `npm.cmd test -- src/__tests__/transaction-safety.test.ts src/__tests__/e2e-pipeline.test.ts src/__tests__/accounting-outbox.test.ts --runInBand` pass.
+  * `npm.cmd run build` pass.
+  * `npm.cmd test -- --runInBand` pass, 75 suites / 823 tests.
+  * `git diff --check` pass, chi co canh bao LF/CRLF cua Windows.
+
+### 04/06/2026: Month-Close UX Guard
+* **Muc tieu ke toan**:
+  * Khong de admin bam khoa thang trong man Finance P&L khi accounting preflight dang co blocker hoac khong tai duoc.
+  * Dua blocker/warning ra UI truoc khi goi backend `lockMonth`.
+* **Thay doi chinh**:
+  * `FinancePnLSummary` tu tai `getMonthClosePreflight(selectedMonth)` cho thang chua khoa.
+  * Them panel preflight voi trang thai, so blocker/canh bao, link nhanh den Accounting Health, Outbox va Journals.
+  * Nut `Chot so thang` fail-closed khi preflight loi/chua sach, va re-check ngay truoc khi goi `lockMonth`.
+  * Warning-only van cho phep chot sau xac nhan, noi dung confirm hien danh sach warning dang mo.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-month-close-ux-guard.md`
+* **Kiem tra**:
+  * `src/__tests__/finance-pnl-preflight.test.tsx` bao phu blocker khong goi `lockMonth`, warning-only duoc goi sau confirm, va preflight load failure fail-closed.
+  * `npm.cmd test -- src/__tests__/finance-pnl-preflight.test.tsx src/__tests__/finance.lockMonth.test.ts --runInBand` pass, 2 suites / 19 tests.
+  * `npm.cmd run build` pass.
+  * `npm.cmd test -- --runInBand` pass, 75 suites / 823 tests.
+  * `git diff --check` pass, chi co canh bao LF/CRLF cua Windows.
+
 ### 04/06/2026: Accounting Health And Month-Close Preflight
 * **Muc tieu ke toan**:
   * Them mot man hinh suc khoe so ke toan de admin thay blocker truoc khi khoa thang.

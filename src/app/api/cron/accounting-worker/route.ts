@@ -105,8 +105,8 @@ function readJournalLines(payload: OutboxPayload): JournalEntryInput['lines'] {
 }
 
 async function markOutboxCompleted(supabase: AdminClient, outboxId: string, journalEntryId: string | null) {
-  const markCompleted = supabase.rpc as unknown as MarkOutboxCompletedRpc;
-  return markCompleted('mark_outbox_completed', {
+  const rpcClient = supabase as unknown as { rpc: MarkOutboxCompletedRpc };
+  return rpcClient.rpc('mark_outbox_completed', {
     p_outbox_id: outboxId,
     p_journal_entry_id: journalEntryId,
   });

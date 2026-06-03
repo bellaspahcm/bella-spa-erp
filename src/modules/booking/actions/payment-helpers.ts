@@ -105,12 +105,14 @@ export async function recordBookingPaymentRpc(params: {
     reason: payment.notes,
   };
 
-  const callPaymentRpc = supabase.rpc as unknown as (
-    fn: string,
-    args: Record<string, unknown>
-  ) => Promise<PaymentRpcResult>;
+  const rpcClient = supabase as unknown as {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>
+    ) => Promise<PaymentRpcResult>;
+  };
 
-  const { data: rpcResult, error: rpcError } = await callPaymentRpc(
+  const { data: rpcResult, error: rpcError } = await rpcClient.rpc(
     'record_remaining_payment_atomic',
     {
       p_booking_id: payment.booking_id,
