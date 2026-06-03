@@ -7,6 +7,28 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden Lock Month Side Effects
+* **Mục tiêu kỹ thuật**:
+  * Không để `lockMonth` khóa sổ thành công nhưng thiếu hoặc lỗi side-effect nhượng quyền/bù trừ liên chi nhánh.
+  * Restore lock state trước đó nếu royalty hoặc clearing fail sau khi RPC khóa tháng đã chạy thành công.
+* **Thay đổi chính**:
+  * `lockMonth` snapshot các record `revenue`, `expenses`, `salary_records` đang unlocked trước khi gọi `lock_monthly_records`.
+  * Nếu royalty invoice hoặc inter-branch clearing fail, hệ thống restore các record về đúng `is_locked` và `status` trước thao tác khóa sổ.
+  * Tính month scope bằng local year/month components và dùng biên `lt(nextMonthStart)` để tránh lệch ngày/timezone hoặc bỏ sót fractional seconds cuối tháng.
+  * Payload insert/update của `franchise_royalty_invoices` và `inter_branch_clearing_records` dùng Supabase generated types.
+  * Revalidate `/dashboard/finance` cả khi side-effect fail nhưng rollback đã chạy, để UI không giữ cache trạng thái khóa sổ cũ.
+  * Bổ sung regression tests cho royalty failure restore, clearing failure restore, restore failure detail, finalized paid/cleared skip, rollback filters và mock range filter cross-module.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-lock-month-side-effects.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/finance.lockMonth.test.ts --runInBand` pass, 15/15 tests.
+  * `npm.cmd test -- src/__tests__/franchise-royalty.test.ts src/__tests__/inter-branch-clearing.test.ts --runInBand` pass, 26/26 tests.
+  * `npm.cmd test -- src/__tests__/cross-module-integrity.test.ts --runInBand` pass, 1/1 test.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/finance/lock-month-action.ts src/__tests__/finance.lockMonth.test.ts src/__tests__/franchise-royalty.test.ts src/__tests__/inter-branch-clearing.test.ts src/__tests__/cross-module-integrity.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 66 suites / 735 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden Unlock Month Partial Failure
 * **Mục tiêu kỹ thuật**:
   * Không để thao tác mở khóa sổ tháng làm lệch trạng thái `is_locked` giữa `revenue`, `expenses`, và `salary_records`.

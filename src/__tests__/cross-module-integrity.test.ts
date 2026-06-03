@@ -131,6 +131,7 @@ function resetMockStore() {
 class MockQueryBuilder {
   private table: string;
   private filters: Record<string, any> = {};
+  private rangeFilters: Array<{ field: string; operator: 'gte' | 'lte' | 'lt'; value: any }> = [];
   private updatePayload: any = null;
   private isDelete: boolean = false;
 
@@ -138,7 +139,7 @@ class MockQueryBuilder {
     this.table = table;
   }
 
-  select(fields?: string, options?: any) {
+  select() {
     return this;
   }
 
@@ -153,18 +154,25 @@ class MockQueryBuilder {
   }
 
   gte(field: string, value: any) {
+    this.rangeFilters.push({ field, operator: 'gte', value });
     return this;
   }
 
   lte(field: string, value: any) {
+    this.rangeFilters.push({ field, operator: 'lte', value });
     return this;
   }
 
-  limit(count: number) {
+  lt(field: string, value: any) {
+    this.rangeFilters.push({ field, operator: 'lt', value });
     return this;
   }
 
-  order(field: string, options?: any) {
+  limit() {
+    return this;
+  }
+
+  order() {
     return this;
   }
 
@@ -224,6 +232,15 @@ class MockQueryBuilder {
         list = list.filter((item: any) => val.includes(item[field]));
       } else {
         list = list.filter((item: any) => item[field] === val);
+      }
+    }
+    for (const filter of this.rangeFilters) {
+      if (filter.operator === 'gte') {
+        list = list.filter((item: any) => item[filter.field] >= filter.value);
+      } else if (filter.operator === 'lte') {
+        list = list.filter((item: any) => item[filter.field] <= filter.value);
+      } else {
+        list = list.filter((item: any) => item[filter.field] < filter.value);
       }
     }
 
