@@ -9,6 +9,15 @@ export const dynamic = 'force-dynamic';
 type AdminClient = ReturnType<typeof getAdminClient>;
 type OutboxEvent = Database['public']['Functions']['claim_outbox_batch']['Returns'][number];
 type OutboxPayload = Record<string, Json | undefined>;
+type WorkerEventResult = {
+  eventId: string;
+  eventType: string;
+  referenceId: string;
+  status: 'completed' | 'failed' | 'critical_failed';
+  journalEntryId?: string | null;
+  error?: string;
+  markFailedError?: string;
+};
 type MarkOutboxCompletedRpc = (
   fn: 'mark_outbox_completed',
   args: { p_outbox_id: string; p_journal_entry_id: string | null }
@@ -143,6 +152,8 @@ export async function GET(req: NextRequest) {
 
     let successCount = 0;
     let failureCount = 0;
+    let criticalFailureCount = 0;
+    const details: WorkerEventResult[] = [];
 
     // 2. Process each event in the batch sequentially to maintain strict transactional order
     for (const event of typedBatch) {
@@ -249,6 +260,13 @@ export async function GET(req: NextRequest) {
           }
           console.log(`[Accounting Worker] Event ${event.id} processed successfully. Entry: ${journalEntryId}`);
           successCount++;
+          details.push({
+            eventId: event.id,
+            eventType,
+            referenceId: refId,
+            status: 'completed',
+            journalEntryId,
+          });
         } else {
           // Trường hợp không phát sinh bút toán (ví dụ doanh số/hoa hồng = 0)
           // Vẫn mark completed với journal_entry_id = null
@@ -258,6 +276,13 @@ export async function GET(req: NextRequest) {
           }
           console.log(`[Accounting Worker] Event ${event.id} completed with no journal entries generated.`);
           successCount++;
+          details.push({
+            eventId: event.id,
+            eventType,
+            referenceId: refId,
+            status: 'completed',
+            journalEntryId: null,
+          });
         }
 
       } catch (err: unknown) {
@@ -273,17 +298,40 @@ export async function GET(req: NextRequest) {
 
         if (failErr) {
           console.error(`[Accounting Worker] Critical: Failed to mark outbox as failed for ${event.id}:`, failErr);
+          criticalFailureCount++;
+          details.push({
+            eventId: event.id,
+            eventType: event.event_type,
+            referenceId: event.reference_id,
+            status: 'critical_failed',
+            error: errMsg,
+            markFailedError: failErr.message,
+          });
+        } else {
+          details.push({
+            eventId: event.id,
+            eventType: event.event_type,
+            referenceId: event.reference_id,
+            status: 'failed',
+            error: errMsg,
+          });
         }
       }
     }
 
     console.log(`[Accounting Worker] Finished batch. Success: ${successCount}, Failures: ${failureCount}`);
+    const status = criticalFailureCount > 0
+      ? 'critical_failure'
+      : failureCount === 0 ? 'success' : 'partial_failure';
+
     return NextResponse.json({
-      success: failureCount === 0,
-      status: failureCount === 0 ? 'success' : 'partial_failure',
+      success: failureCount === 0 && criticalFailureCount === 0,
+      status,
       processed: typedBatch.length,
       successCount,
       failureCount,
+      criticalFailureCount,
+      details,
     });
 
   } catch (globalErr: unknown) {
