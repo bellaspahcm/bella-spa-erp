@@ -15,53 +15,31 @@ export async function getZaloConfig(): Promise<ZaloConfig> {
     throw new Error('Unauthorized: Tenant ID is required');
   }
 
-  try {
-    const { data, error } = await supabase
-      .from('tenants')
-      .select('zalo_app_id, zalo_secret_key, zalo_oa_id, zalo_access_token, zalo_refresh_token, zalo_token_expires_at, zalo_template_reminder_id, zalo_template_birthday_id, zalo_auto_scan')
-      .eq('id', tenantId)
-      .single();
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('zalo_app_id, zalo_secret_key, zalo_oa_id, zalo_access_token, zalo_refresh_token, zalo_token_expires_at, zalo_template_reminder_id, zalo_template_birthday_id, zalo_auto_scan')
+    .eq('id', tenantId)
+    .single();
 
-    if (error) {
-      console.error('Error fetching Zalo config:', error);
-      return {
-        zalo_app_id: '',
-        zalo_secret_key: '',
-        zalo_oa_id: '',
-        zalo_access_token: '',
-        zalo_refresh_token: '',
-        zalo_token_expires_at: '',
-        zalo_template_reminder_id: '',
-        zalo_template_birthday_id: '',
-        zalo_auto_scan: true
-      };
-    }
-
-    return {
-      zalo_app_id: data.zalo_app_id || '',
-      zalo_secret_key: decrypt(data.zalo_secret_key || ''),
-      zalo_oa_id: data.zalo_oa_id || '',
-      zalo_access_token: decrypt(data.zalo_access_token || ''),
-      zalo_refresh_token: decrypt(data.zalo_refresh_token || ''),
-      zalo_token_expires_at: data.zalo_token_expires_at || '',
-      zalo_template_reminder_id: data.zalo_template_reminder_id || '',
-      zalo_template_birthday_id: data.zalo_template_birthday_id || '',
-      zalo_auto_scan: data.zalo_auto_scan !== false
-    };
-  } catch (error) {
-    console.error('Error in getZaloConfig:', error);
-    return {
-      zalo_app_id: '',
-      zalo_secret_key: '',
-      zalo_oa_id: '',
-      zalo_access_token: '',
-      zalo_refresh_token: '',
-      zalo_token_expires_at: '',
-      zalo_template_reminder_id: '',
-      zalo_template_birthday_id: '',
-      zalo_auto_scan: true
-    };
+  if (error) {
+    throw new Error(`[getZaloConfig] tenants Zalo config query failed: ${error.message}`);
   }
+
+  if (!data) {
+    throw new Error('[getZaloConfig] Tenant Zalo config not found');
+  }
+
+  return {
+    zalo_app_id: data.zalo_app_id || '',
+    zalo_secret_key: decrypt(data.zalo_secret_key || ''),
+    zalo_oa_id: data.zalo_oa_id || '',
+    zalo_access_token: decrypt(data.zalo_access_token || ''),
+    zalo_refresh_token: decrypt(data.zalo_refresh_token || ''),
+    zalo_token_expires_at: data.zalo_token_expires_at || '',
+    zalo_template_reminder_id: data.zalo_template_reminder_id || '',
+    zalo_template_birthday_id: data.zalo_template_birthday_id || '',
+    zalo_auto_scan: data.zalo_auto_scan !== false
+  };
 }
 
 export async function saveZaloConfig(config: Partial<ZaloConfig>) {
@@ -222,23 +200,17 @@ export async function getZaloZnsLogs() {
     return [];
   }
 
-  try {
-    const { data, error } = await supabase
-      .from('Notification')
-      .select('*')
-      .eq('tenantId', tenantId)
-      .in('type', ['zalo_zns', 'zalo_birthday'])
-      .order('createdAt', { ascending: false })
-      .limit(30);
+  const { data, error } = await supabase
+    .from('Notification')
+    .select('*')
+    .eq('tenantId', tenantId)
+    .in('type', ['zalo_zns', 'zalo_birthday'])
+    .order('createdAt', { ascending: false })
+    .limit(30);
 
-    if (error) {
-      console.error('Error fetching Zalo ZNS logs:', error);
-      return [];
-    }
-
-    return data || [];
-  } catch (error) {
-    console.error('Error in getZaloZnsLogs:', error);
-    return [];
+  if (error) {
+    throw new Error(`[getZaloZnsLogs] Notification ZNS logs query failed: ${error.message}`);
   }
+
+  return data || [];
 }
