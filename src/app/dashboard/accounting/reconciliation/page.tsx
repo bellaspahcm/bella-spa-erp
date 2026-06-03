@@ -123,7 +123,10 @@ export default function ReconciliationPage() {
     // Đọc cấu hình chế độ kế toán
     getAccountingMode()
       .then((mode) => setAccountingMode(mode))
-      .catch((err) => console.error('Lỗi khi đọc chế độ kế toán:', err));
+      .catch((err) => {
+        console.error('Lỗi khi đọc chế độ kế toán:', err);
+        toast.error(getErrorMessage(err, 'Không thể đọc chế độ kế toán hiện tại.'));
+      });
   }, []);
 
   const fetchData = async (fromStr: string, toStr: string, options?: { toastOnError?: boolean }) => {
