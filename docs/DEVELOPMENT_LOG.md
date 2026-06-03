@@ -7,6 +7,24 @@
 
 ## 📅 Nhật ký Chi tiết Theo Ngày
 
+### 🟢 Ngày 03/06/2026: Harden Monthly Inventory Reconciliation
+* **Mục tiêu kỹ thuật**:
+  * Không để kiểm kê cuối tháng kho bị báo thành công khi chỉ lưu được một phần entries.
+  * Giữ rollback từng item khi ghi log kiểm kê thất bại và báo lỗi rollback rõ ràng.
+* **Thay đổi chính**:
+  * `saveMonthlyReconciliation` giờ trả `success: false` nếu có bất kỳ failure nào trong batch, kèm `processed` và `failed`.
+  * Entry thiếu mã vật tư không còn bị skip im lặng mà được tính là lỗi.
+  * UI kiểm kê vẫn refresh dữ liệu nếu partial failure đã ghi được một số item, nhưng toast vẫn là lỗi.
+  * Bổ sung regression tests cho all-success, invalid entries, log failure rollback, rollback failure, và partial failure.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-monthly-inventory-reconciliation.md`
+* **Kiểm tra**:
+  * `npm.cmd test -- src/__tests__/inventory-actions.test.ts --runInBand` pass, 25/25 tests.
+  * `npx.cmd tsc --noEmit --incremental false` pass.
+  * `npx.cmd eslint src/services/inventory-actions.ts src/app/dashboard/inventory/hooks/useInventoryPageState.ts src/__tests__/inventory-actions.test.ts` pass.
+  * `npm.cmd test -- --runInBand` pass, 65 suites / 718 tests.
+  * `npm.cmd run build` pass.
+
 ### 🟢 Ngày 03/06/2026: Harden Manual Inventory Mutations
 * **Mục tiêu kỹ thuật**:
   * Đưa thao tác nhập thêm kho và tạo vật tư mới về Server Actions để không còn client tự ghi `inventory_items` và `inventory_logs` thành hai bước rời rạc.

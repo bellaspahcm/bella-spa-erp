@@ -341,7 +341,10 @@ export async function saveMonthlyReconciliation(
     const failures: string[] = [];
 
     for (const entry of entries) {
-      if (!entry.item_id) continue;
+      if (!entry.item_id) {
+        failures.push('Thiếu mã vật tư');
+        continue;
+      }
       const actual = Number(entry.actual_stock);
       if (!Number.isFinite(actual) || actual < 0) {
         failures.push(`Item ${entry.item_id}: số liệu không hợp lệ`);
@@ -419,15 +422,16 @@ export async function saveMonthlyReconciliation(
 
     if (failures.length > 0) {
       return {
-        success: processed > 0,
+        success: false,
         processed,
+        failed: failures.length,
         error: `Đã kiểm kê ${processed} mặt hàng; ${failures.length} lỗi: ${failures.slice(0, 3).join('; ')}`,
       };
     }
-    return { success: true, processed };
+    return { success: true, processed, failed: 0 };
   } catch (e: unknown) {
     console.error('[saveMonthlyReconciliation]', e);
-    return { success: false, error: getErrorMessage(e), processed: 0 };
+    return { success: false, error: getErrorMessage(e), processed: 0, failed: entries?.length || 0 };
   }
 }
 

@@ -9,6 +9,7 @@ import {
   getPackageMaterials,
   restockItem,
   rollbackInventoryConsumption,
+  saveMonthlyReconciliation,
   upsertPackageMaterials,
 } from '../services/inventory-actions';
 import type { Database } from '../types/database.types';
@@ -312,6 +313,119 @@ describe('inventory write action side effects', () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain('initial log failed');
     expect(calls.filter(c => c.table === 'inventory_items').map(c => c.op)).toEqual(['insert', 'delete']);
+  });
+
+  it('saves monthly reconciliation for all valid entries', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_items', op: 'select', data: { name: 'Serum', unit: 'chai', stock_level: 10 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert' },
+      { table: 'inventory_items', op: 'select', data: { name: 'Gel', unit: 'tuyp', stock_level: 5 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert' },
+    ]);
+
+    const result = await saveMonthlyReconciliation(2026, 6, [
+      { item_id: 'item-1', actual_stock: 12, notes: 'counted' },
+      { item_id: 'item-2', actual_stock: 5 },
+    ]);
+
+    expect(result).toEqual({ success: true, processed: 2, failed: 0 });
+    expect(calls.filter(c => c.table === 'inventory_items' && c.op === 'update').map(c => c.payload)).toEqual([
+      expect.objectContaining({ stock_level: 12 }),
+      expect.objectContaining({ stock_level: 5 }),
+    ]);
+    expect(calls.filter(c => c.table === 'inventory_logs' && c.op === 'insert').map(c => c.payload)).toEqual([
+      expect.objectContaining({
+        item_id: 'item-1',
+        change_amount: 2,
+        reason: 'monthly_reconciliation',
+        created_by: 'user-1',
+        tenant_id: 'tenant-1',
+      }),
+      expect.objectContaining({
+        item_id: 'item-2',
+        change_amount: 0,
+        reason: 'monthly_reconciliation',
+        created_by: 'user-1',
+        tenant_id: 'tenant-1',
+      }),
+    ]);
+  });
+
+  it('returns failure and skips database writes for invalid monthly reconciliation entries', async () => {
+    const calls = installScriptedSupabase([]);
+
+    const result = await saveMonthlyReconciliation(2026, 6, [
+      { item_id: 'item-1', actual_stock: -1 },
+      { item_id: '', actual_stock: 3 },
+    ]);
+
+    expect(result.success).toBe(false);
+    expect(result.processed).toBe(0);
+    expect(result.failed).toBe(2);
+    expect(result.error).toContain('2 lỗi');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('rolls back monthly reconciliation stock update when log insert fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_items', op: 'select', data: { name: 'Serum', unit: 'chai', stock_level: 10 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert', error: { message: 'monthly log failed' } },
+      { table: 'inventory_items', op: 'update' },
+    ]);
+
+    const result = await saveMonthlyReconciliation(2026, 6, [
+      { item_id: 'item-1', actual_stock: 12 },
+    ]);
+
+    expect(result.success).toBe(false);
+    expect(result.processed).toBe(0);
+    expect(result.failed).toBe(1);
+    expect(result.error).toContain('monthly log failed');
+    expect(calls.filter(c => c.table === 'inventory_items' && c.op === 'update').map(c => c.payload)).toEqual([
+      expect.objectContaining({ stock_level: 12 }),
+      expect.objectContaining({ stock_level: 10 }),
+    ]);
+  });
+
+  it('reports rollback failure when monthly reconciliation stock restore fails', async () => {
+    installScriptedSupabase([
+      { table: 'inventory_items', op: 'select', data: { name: 'Serum', unit: 'chai', stock_level: 10 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert', error: { message: 'monthly log failed' } },
+      { table: 'inventory_items', op: 'update', error: { message: 'restore stock failed' } },
+    ]);
+
+    const result = await saveMonthlyReconciliation(2026, 6, [
+      { item_id: 'item-1', actual_stock: 12 },
+    ]);
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('monthly log failed');
+    expect(result.error).toContain('rollback failed - restore stock failed');
+  });
+
+  it('does not report success when monthly reconciliation partially saves entries', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_items', op: 'select', data: { name: 'Serum', unit: 'chai', stock_level: 10 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert' },
+      { table: 'inventory_items', op: 'select', data: { name: 'Gel', unit: 'tuyp', stock_level: 5 } },
+      { table: 'inventory_items', op: 'update', error: { message: 'update failed' } },
+    ]);
+
+    const result = await saveMonthlyReconciliation(2026, 6, [
+      { item_id: 'item-1', actual_stock: 12 },
+      { item_id: 'item-2', actual_stock: 6 },
+    ]);
+
+    expect(result.success).toBe(false);
+    expect(result.processed).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result.error).toContain('update failed');
+    expect(calls.filter(c => c.table === 'inventory_logs' && c.op === 'insert')).toHaveLength(1);
   });
 
   it('halts rollback and preserves logs when restoring stock fails', async () => {

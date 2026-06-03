@@ -195,6 +195,9 @@ export function useInventoryPageState() {
         await Promise.all([fetchData(), fetchReconciliation()]);
       } else {
         toast.error(res.error || 'Lỗi lưu kiểm kê');
+        if (res.processed > 0) {
+          await Promise.all([fetchData(), fetchReconciliation()]);
+        }
       }
     } catch (error) {
       console.error('[handleSaveReconciliation]', error);
