@@ -1,36 +1,36 @@
 'use client';
 
-import { useState, useEffect, Suspense, useMemo } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Search, 
-  Filter, 
-  Calendar,
-  Loader2,
-  TrendingUp,
-  UserCircle,
-  ShieldCheck,
-  CheckCircle2
-} from 'lucide-react';
-import { 
-  getSessionsWithDetails, 
-  completeSession, 
-  getSessionLogs, 
-  saveSessionNote 
-} from '@/modules/booking/actions/session-actions';
-import { reusePackage } from '@/modules/booking/actions/lifecycle-actions';
-import { getPendingLeaveRequests } from '@/services/attendance-actions';
-import { toast } from 'sonner';
-import { cn, resolvePackageName } from '@/lib/utils';
 import { createClient } from '@/lib/supabase-client';
+import { cn,resolvePackageName } from '@/lib/utils';
+import { reusePackage } from '@/modules/booking/actions/lifecycle-actions';
+import {
+completeSession,
+getSessionLogs,
+getSessionsWithDetails,
+saveSessionNote
+} from '@/modules/booking/actions/session-actions';
+import { getPendingLeaveRequests } from '@/services/attendance-actions';
 import { getCurrentUser } from '@/services/user-actions';
+import { AnimatePresence,motion } from 'framer-motion';
+import {
+Calendar,
+CheckCircle2,
+Filter,
+Loader2,
+Search,
+ShieldCheck,
+TrendingUp,
+UserCircle
+} from 'lucide-react';
+import { useRouter,useSearchParams } from 'next/navigation';
+import { Suspense,useCallback,useEffect,useMemo,useState } from 'react';
+import { toast } from 'sonner';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { SessionBooking, LeaveRequest } from './types';
+import { LeaveApprovalModal } from './components/LeaveApprovalModal';
 import { SessionCard } from './components/SessionCard';
 import { SessionLogsDetailsModal } from './components/SessionLogsDetailsModal';
-import { LeaveApprovalModal } from './components/LeaveApprovalModal';
+import { LeaveRequest,SessionBooking } from './types';
 
 function getErrorMessage(error: unknown, fallback = 'Loi khong xac dinh') {
   if (error instanceof Error) return error.message || fallback;
@@ -56,7 +56,6 @@ function SessionsContent() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('Cập nhật thành công!');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [sortFilter, setSortFilter] = useState('Ngày tạo mới nhất');
   const [userRole, setUserRole] = useState<'KTV' | 'admin' | ''>('');
@@ -94,23 +93,21 @@ function SessionsContent() {
     }
   };
 
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     setIsSyncing(true);
     try {
       const data = await getSessionsWithDetails() as SessionBooking[];
       setSessions(data || []);
-      applyFilters(data || [], searchQuery, statusFilter, sortFilter);
       return data;
     } catch (error: unknown) {
       console.error('Failed to load sessions:', error);
       setSessions([]);
-      applyFilters([], searchQuery, statusFilter, sortFilter);
       toast.error('Khong the tai danh sach buoi dich vu: ' + getErrorMessage(error));
       return [];
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadSessions();
@@ -140,7 +137,7 @@ function SessionsContent() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [loadSessions]);
 
   // Dedicated Effect for Auto-opening from URL - Runs once after first data load
   useEffect(() => {
@@ -341,7 +338,7 @@ function SessionsContent() {
   };
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative" onClick={() => setIsFilterOpen(false)}>
+    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative">
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (

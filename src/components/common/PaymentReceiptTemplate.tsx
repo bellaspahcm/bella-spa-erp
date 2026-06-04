@@ -2,6 +2,7 @@
 
 import React, { forwardRef } from "react";
 import { User, Phone, MapPin, Flower, CreditCard, Landmark } from "lucide-react";
+import Image from "next/image";
 
 export interface ReceiptItem {
   id: number;
@@ -54,7 +55,7 @@ export const PaymentReceiptTemplate = forwardRef<HTMLDivElement, PaymentReceiptT
           {/* Header */}
           <div className="flex flex-col items-center justify-center mb-3">
             <div className="mb-1">
-              <img src="/images/logo.png" alt="Bella Spa Logo" className="h-16 object-contain" />
+              <Image src="/images/logo.png" alt="Bella Spa Logo" width={180} height={64} className="h-16 w-auto object-contain" />
             </div>
             
             <h1 className="text-2xl font-bold text-[#e6396e] tracking-wide mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>

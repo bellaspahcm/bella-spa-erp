@@ -1,33 +1,28 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { 
-  DollarSign, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  PieChart, 
-  Wallet, 
-  CreditCard,
-  TrendingUp,
-  Download,
-  Calendar,
-  Filter,
-  Search,
-  PlusCircle,
-  RefreshCw,
-  ChevronUp,
-  ChevronDown,
-  Check
-} from 'lucide-react';
-import { getFinancialOverview, confirmTransaction, getMonthlyPnL, getServicePerformance, type MappedTransaction } from '@/services/finance-actions';
-import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
-import { TransactionModal } from '@/components/features/TransactionModal';
 import { FinancePnLSummary } from '@/components/features/FinancePnLSummary';
-import { createClient } from '@/lib/supabase-client';
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { TransactionModal } from '@/components/features/TransactionModal';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import SkeletonLoader,{ SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { createClient } from '@/lib/supabase-client';
+import { confirmTransaction,getFinancialOverview,getMonthlyPnL,getServicePerformance,type MappedTransaction } from '@/services/finance-actions';
+import { motion } from 'framer-motion';
+import {
+ArrowDownRight,
+ArrowUpRight,
+Check,
+ChevronDown,
+ChevronUp,
+CreditCard,
+PlusCircle,
+RefreshCw,
+Search,
+TrendingUp,
+Wallet
+} from 'lucide-react';
+import { useCallback,useEffect,useState } from 'react';
+import { toast } from 'sonner';
 
 type FinancialOverview = Awaited<ReturnType<typeof getFinancialOverview>>;
 type MonthlyPnL = Awaited<ReturnType<typeof getMonthlyPnL>>;
@@ -62,13 +57,12 @@ export default function FinancePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const fetchData = async (month?: string) => {
+  const fetchData = useCallback(async (month = selectedMonth) => {
     setIsRefreshing(true);
     try {
-      const m = month || selectedMonth;
       const [overviewResult, pnlResult, perfResult] = await Promise.allSettled([
         getFinancialOverview(),
-        getMonthlyPnL(m),
+        getMonthlyPnL(month),
         getServicePerformance()
       ]);
 
@@ -99,12 +93,11 @@ export default function FinancePage() {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  };
+  }, [selectedMonth]);
 
 
   const handleMonthChange = (newMonth: string) => {
     setSelectedMonth(newMonth);
-    fetchData(newMonth);
   };
 
   const handleConfirm = async (tx: MappedTransaction) => {
@@ -171,7 +164,7 @@ export default function FinancePage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchData]);
 
 
 
@@ -503,13 +496,5 @@ export default function FinancePage() {
         onSuccess={fetchData}
       />
     </div>
-  );
-}
-
-function PlusCircleIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-    </svg>
   );
 }

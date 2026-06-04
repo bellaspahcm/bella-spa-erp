@@ -1,47 +1,46 @@
 'use client';
 
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { 
-  ChevronLeft, 
-  ChevronRight,
-  Phone, 
-  MapPin, 
-  Baby, 
-  Calendar, 
-  ClipboardList, 
-  DollarSign, 
-  Clock, 
-  MessageCircle,
-  Heart,
-  History,
-  TrendingUp,
-  FileText,
-  PlusCircle,
-  Sparkles,
-  User,
-  CheckCircle2,
-  Image as ImageIcon,
-  CreditCard as CreditCardIcon,
-  DollarSign as DollarIcon,
-  Share2,
-  Camera,
-  Loader2,
-  AlertCircle
-} from 'lucide-react';
-import { getCustomerById, updateCustomer, geocodeAddress } from '@/services/customer-actions';
-import { getBookingsByCustomerId, updateBooking, reusePackage, recordRemainingPayment, generateShareToken } from '@/modules/booking/actions/lifecycle-actions';
-import { completeSession } from '@/modules/booking/actions/session-actions';
-import { getUsers, getCurrentUser } from '@/services/user-actions';
-import { cn, formatNumberWithSeparator } from '@/lib/utils';
-import { useState, useEffect, useCallback, useRef, type Dispatch, type SetStateAction } from 'react';
-import { toast } from 'sonner';
-import nextDynamic from 'next/dynamic';
-import { createClient } from '@/lib/supabase-client';
+import { PaymentReceiptTemplate,ReceiptData } from '@/components/common/PaymentReceiptTemplate';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { PaymentReceiptTemplate, ReceiptData } from '@/components/common/PaymentReceiptTemplate';
-import { toPng } from 'html-to-image';
+import { createClient } from '@/lib/supabase-client';
+import { cn,formatNumberWithSeparator } from '@/lib/utils';
+import { generateShareToken,getBookingsByCustomerId,recordRemainingPayment,reusePackage,updateBooking } from '@/modules/booking/actions/lifecycle-actions';
+import { geocodeAddress,getCustomerById,updateCustomer } from '@/services/customer-actions';
+import { getCurrentUser,getUsers } from '@/services/user-actions';
 import type { Database } from '@/types/database.types';
+import { motion } from 'framer-motion';
+import { toPng } from 'html-to-image';
+import {
+AlertCircle,
+Baby,
+Camera,
+CheckCircle2,
+ChevronLeft,
+ChevronRight,
+ClipboardList,
+Clock,
+CreditCard as CreditCardIcon,
+DollarSign as DollarIcon,
+DollarSign,
+FileText,
+Heart,
+History,
+Image as ImageIcon,
+Loader2,
+MapPin,
+MessageCircle,
+Phone,
+PlusCircle,
+Share2,
+Sparkles,
+TrendingUp,
+User
+} from 'lucide-react';
+import nextDynamic from 'next/dynamic';
+import Image from 'next/image';
+import { useParams,useRouter,useSearchParams } from 'next/navigation';
+import { useCallback,useEffect,useMemo,useRef,useState,type Dispatch,type SetStateAction } from 'react';
+import { toast } from 'sonner';
 
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -127,7 +126,6 @@ export default function CustomerDetailPage() {
   const [customer, setCustomer] = useState<CustomerDetailRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [activeBooking, setActiveBooking] = useState<CustomerDetailBooking | null>(null);
   const [ktvs, setKtvs] = useState<KtvOption[]>([]);
   const [isUpdatingKTV, setIsUpdatingKTV] = useState(false);
@@ -246,7 +244,7 @@ export default function CustomerDetailPage() {
       setLoading(false);
       router.refresh();
     }
-  }, [id, targetBookingId]);
+  }, [id, router, targetBookingId]);
 
   async function fetchKtvs() {
     try {
@@ -289,24 +287,6 @@ export default function CustomerDetailPage() {
       toast.error('Lỗi: ' + getErrorMessage(error));
     } finally {
       setIsUpdatingKTV(false);
-    }
-  };
-
-  const handleCompleteSession = async (sessionId: string, bookingId: string) => {
-    if (!sessionId || !bookingId) return;
-    setIsUpdating(true);
-    try {
-      const result = await completeSession(sessionId, bookingId);
-      if (result.success) {
-        toast.success('Cập nhật tiến độ thành công!');
-        await loadData();
-      } else {
-        toast.error(result.error || 'Lỗi khi cập nhật tiến độ');
-      }
-    } catch (error) {
-      toast.error('Có lỗi xảy ra');
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -401,7 +381,7 @@ export default function CustomerDetailPage() {
         const fileName = `${activeBooking.id}-${Date.now()}.${fileExt}`;
         const filePath = `receipts/${fileName}`;
 
-        const { error: uploadError, data } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('receipts')
           .upload(filePath, paymentFile);
 
@@ -1245,7 +1225,7 @@ function EditCustomerModal({
       } else {
         toast.error('Không tìm thấy tọa độ cho địa chỉ này. Vui lòng nhập thủ công.');
       }
-    } catch (err) {
+    } catch {
       toast.error('Lỗi khi định vị địa chỉ');
     } finally {
       setIsGeocoding(false);
@@ -1439,6 +1419,14 @@ function BookingPaymentModal({
   setFile: ModalStateSetter<File | null>;
   customerName: string;
 }) {
+  const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
   if (!isOpen) return null;
 
   return (
@@ -1524,11 +1512,16 @@ function BookingPaymentModal({
             <div className="relative group">
               {file ? (
                 <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-slate-200 group">
-                  <img 
-                    src={URL.createObjectURL(file)} 
-                    alt="Preview" 
-                    className="w-full h-full object-cover"
-                  />
+                  {previewUrl && (
+                    <Image
+                      src={previewUrl}
+                      alt="Preview"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 480px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  )}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <button 
                       onClick={() => setFile(null)}

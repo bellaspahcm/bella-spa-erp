@@ -1,23 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Plus, 
-  Trash2, 
-  CheckCircle2, 
-  AlertTriangle, 
-  PenTool, 
-  Calendar,
-  Layers,
-  ArrowRight
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { getAccounts,postManualJournalEntry } from '@/services/accounting-actions';
+import { getUsers } from '@/services/user-actions';
+import {
+AlertTriangle,
+ArrowRight,
+Calendar,
+CheckCircle2,
+Layers,
+PenTool,
+Plus,
+Trash2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getAccounts, postManualJournalEntry } from '@/services/accounting-actions';
-import { getUsers } from '@/services/user-actions';
+import { useEffect,useState } from 'react';
 import { toast } from 'sonner';
-import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
 type StaffRow = Awaited<ReturnType<typeof getUsers>>[number];

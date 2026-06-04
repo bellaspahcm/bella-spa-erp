@@ -1,6 +1,6 @@
 'use server';
-import { getCurrentUser } from './user-actions';
 import type { Database } from '@/types/database.types';
+import { getCurrentUser } from './user-actions';
 
 type KtvLeaderboardRow = Database['public']['Functions']['get_ktv_leaderboard']['Returns'][number];
 
@@ -110,11 +110,6 @@ function monthRange(monthStart: string) {
 // Replaces missing RPC: get_dashboard_summary
 interface RevenueStatRow {
   amount: number | null;
-}
-
-interface RatingItem {
-  rating: number | null;
-  completed_date: string | null;
 }
 
 export async function getDashboardStats(startDate?: string, endDate?: string, todayDate?: string) {
@@ -287,11 +282,6 @@ interface RevenuePerformanceRow {
 interface ExpensePerformanceRow {
   amount: number | null;
   expense_date: string | null;
-}
-
-interface LogPerformanceRow {
-  rating: number | null;
-  completed_date: string | null;
 }
 
 interface CustomerPerformanceRow {
@@ -637,7 +627,7 @@ export async function getImportantAlerts() {
           if (notif.created_at) {
             try {
               finalTimestamp = parsePostgresTimestamp(notif.created_at).getTime();
-            } catch (e) {
+            } catch {
               // fallback
             }
           }

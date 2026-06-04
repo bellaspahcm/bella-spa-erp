@@ -1,30 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import {
-  Calendar,
-  Lock,
-  Unlock,
-  AlertTriangle,
-  RefreshCw,
-  Clock,
-  Settings,
-  X,
-  ArrowRight,
-  CheckCircle2,
-  Loader2,
-  TrendingUp,
-  TrendingDown,
-} from 'lucide-react';
-import {
-  getAccountingPeriods,
-  closePeriodAction,
-  previewClosingEntries,
-  reopenPeriodAction,
+closePeriodAction,
+getAccountingPeriods,
+previewClosingEntries,
+reopenPeriodAction,
 } from '@/services/accounting-actions';
+import { AnimatePresence,motion } from 'framer-motion';
+import {
+AlertTriangle,
+ArrowRight,
+Calendar,
+CheckCircle2,
+Loader2,
+Lock,
+RefreshCw,
+Settings,
+TrendingDown,
+TrendingUp,
+Unlock,
+X
+} from 'lucide-react';
+import { useEffect,useState } from 'react';
 import { toast } from 'sonner';
-import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 type ClosingPreviewRow = {
   step: number;

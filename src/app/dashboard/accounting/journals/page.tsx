@@ -1,23 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { getJournalEntries } from '@/services/accounting-actions';
 import { motion } from 'framer-motion';
-import { 
-  Search, 
-  Calendar, 
-  Filter, 
-  Eye, 
-  RefreshCw,
-  FileText,
-  AlertTriangle,
-  Layers,
-  ArrowUpRight,
-  ArrowDownRight
+import {
+AlertTriangle,
+Calendar,
+Eye,
+Layers,
+RefreshCw,
+Search
 } from 'lucide-react';
 import Link from 'next/link';
-import { getJournalEntries } from '@/services/accounting-actions';
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
 
 type JournalEntryRow = Awaited<ReturnType<typeof getJournalEntries>>[number];
@@ -42,7 +38,7 @@ export default function JournalsPage() {
   const [refTypeFilter, setRefTypeFilter] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchJournals = async () => {
+  const fetchJournals = useCallback(async () => {
     setRefreshing(true);
     try {
       const filters: JournalFilters = {
@@ -65,11 +61,11 @@ export default function JournalsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [fromDate, refTypeFilter, statusFilter, toDate]);
 
   useEffect(() => {
     fetchJournals();
-  }, [fromDate, toDate, statusFilter, refTypeFilter]);
+  }, [fetchJournals]);
 
   // Client side search filter
   const filteredEntries = entries.filter((e) => {

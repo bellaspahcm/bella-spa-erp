@@ -1,40 +1,39 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import { 
-  X, 
-  Flower2, 
-  Calendar, 
-  Clock, 
-  CheckCircle2, 
-  Loader2, 
-  TrendingUp, 
-  PlusCircle, 
-  RotateCcw, 
-  XCircle, 
-  Save, 
-  AlertCircle, 
-  ShieldCheck, 
-  UserCircle, 
-  FileEdit, 
-  History, 
-  Star 
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { 
-  getSessionLogs, 
-  updateSessionLog, 
-  addExtraSession, 
-  rescheduleSession,
-  saveSessionNote
-} from '@/modules/booking/actions/session-actions';
-import { reusePackage, syncBookingProgress } from '@/modules/booking/actions/lifecycle-actions';
 import { createClient } from '@/lib/supabase-client';
-import { SessionBooking, SessionLog } from '../types';
+import { cn } from '@/lib/utils';
+import { reusePackage,syncBookingProgress } from '@/modules/booking/actions/lifecycle-actions';
+import {
+addExtraSession,
+getSessionLogs,
+rescheduleSession,
+updateSessionLog
+} from '@/modules/booking/actions/session-actions';
+import { motion } from 'framer-motion';
+import {
+AlertCircle,
+Calendar,
+CheckCircle2,
+Clock,
+FileEdit,
+Flower2,
+History,
+Loader2,
+PlusCircle,
+RotateCcw,
+Save,
+ShieldCheck,
+Star,
+TrendingUp,
+UserCircle,
+X,
+XCircle
+} from 'lucide-react';
+import Link from 'next/link';
+import { useCallback,useEffect,useMemo,useState } from 'react';
+import { toast } from 'sonner';
+import { SessionBooking,SessionLog } from '../types';
 
 function getErrorMessage(error: unknown, fallback = 'Khong ro nguyen nhan') {
   if (error instanceof Error) return error.message || fallback;
@@ -128,7 +127,7 @@ export function SessionLogsDetailsModal({
     return cells;
   }, [sessionLogs]);
 
-  const fetchSessionLogs = async (bookingId: string) => {
+  const fetchSessionLogs = useCallback(async (bookingId: string) => {
     setIsLoadingLogs(true);
     try {
       // Auto-sync progress count whenever modal opens
@@ -157,10 +156,12 @@ export function SessionLogsDetailsModal({
     } finally {
       setIsLoadingLogs(false);
     }
-  };
+  }, [onSuccess]);
+
+  const activeBookingId = activeBooking?.id;
 
   useEffect(() => {
-    if (!isOpen || !activeBooking) {
+    if (!isOpen || !activeBookingId) {
       setSelectedSessionLog(null);
       setSessionLogs([]);
       setCurrentNote('');
@@ -171,23 +172,23 @@ export function SessionLogsDetailsModal({
       return;
     }
 
-    fetchSessionLogs(activeBooking.id);
+    fetchSessionLogs(activeBookingId);
 
     // Real-time subscription optimized for this booking's logs with debouncing to prevent event storms during bulk updates
     const supabase = createClient();
     let debounceTimer: NodeJS.Timeout;
 
     const channel = supabase
-      .channel(`modal-realtime-${activeBooking.id}`)
+      .channel(`modal-realtime-${activeBookingId}`)
       .on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'session_logs',
-        filter: `booking_id=eq.${activeBooking.id}`
+        filter: `booking_id=eq.${activeBookingId}`
       }, () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-          fetchSessionLogs(activeBooking.id);
+          fetchSessionLogs(activeBookingId);
         }, 300);
       })
       .subscribe();
@@ -196,7 +197,7 @@ export function SessionLogsDetailsModal({
       clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [isOpen, activeBooking?.id]);
+  }, [isOpen, activeBookingId, fetchSessionLogs]);
 
   useEffect(() => {
     if (selectedSessionLog) {
@@ -844,7 +845,7 @@ export function SessionLogsDetailsModal({
                         <div key={`empty-${i}`} className="aspect-square" />
                       ))}
                       
-                      {calendarCells.map((cell, i) => {
+                      {calendarCells.map((cell) => {
                         if ('isGap' in cell && cell.isGap) {
                           return (
                             <div 

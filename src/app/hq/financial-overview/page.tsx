@@ -2,6 +2,8 @@ import { checkHqAuth, getConsolidatedPnLReport } from '@/services/hq-actions';
 import { redirect } from 'next/navigation';
 import FinancialOverviewClient from './financial-overview-client';
 
+type ConsolidatedPnLRow = Awaited<ReturnType<typeof getConsolidatedPnLReport>>[number];
+
 export const metadata = {
   title: 'Bella Spa HQ — Tổng quan Tài chính Toàn Network',
   description: 'So sánh hiệu quả kinh doanh các chi nhánh trong hệ thống Bella Spa.',
@@ -26,25 +28,33 @@ export default async function HqFinancialOverviewPage({
   const fromDate = params.from || firstOfMonth;
   const toDate = params.to || todayStr;
 
-  let pnlRows: any[] = [];
+  let pnlRows: ConsolidatedPnLRow[] = [];
   let errorMessage: string | null = null;
 
   try {
     pnlRows = await getConsolidatedPnLReport(fromDate, toDate);
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const error = err as {
+      message?: unknown;
+      code?: unknown;
+      details?: unknown;
+      hint?: unknown;
+      name?: unknown;
+      stack?: unknown;
+    };
     // Supabase PostgrestError serializes poorly through console.error — destructure explicitly
     const fullError = {
-      message: err?.message,
-      code: err?.code,
-      details: err?.details,
-      hint: err?.hint,
-      name: err?.name,
-      stack: err?.stack?.split('\n').slice(0, 3).join('\n'),
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      name: error.name,
+      stack: typeof error.stack === 'string' ? error.stack.split('\n').slice(0, 3).join('\n') : undefined,
     };
     console.error('[HqFinancialOverview] Error loading consolidated P&L:', JSON.stringify(fullError, null, 2));
-    errorMessage = err?.message
-      || err?.details
-      || err?.hint
+    errorMessage = (typeof error.message === 'string' ? error.message : null)
+      || (typeof error.details === 'string' ? error.details : null)
+      || (typeof error.hint === 'string' ? error.hint : null)
       || (typeof err === 'string' ? err : null)
       || 'Không thể tải báo cáo P&L tổng hợp. Xem terminal server để biết chi tiết.';
   }

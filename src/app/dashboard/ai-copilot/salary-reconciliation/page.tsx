@@ -1,14 +1,13 @@
-import { Suspense } from 'react';
 import { getSalaryReconciliation } from '@/services/salary-reconciliation-actions';
 import {
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  HelpCircle,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Scale,
+AlertTriangle,
+CheckCircle2,
+DollarSign,
+HelpCircle,
+Scale,
+TrendingUp,
+Users,
+XCircle,
 } from 'lucide-react';
 
 /* ── helpers ─────────────────────────────────────────────── */
@@ -53,7 +52,7 @@ export default async function SalaryReconciliationPage({
     );
   }
 
-  const { rows, totalKtv, matchCount, minorCount, majorCount, noLegacyCount, totalDiffAbs } = data;
+  const { rows, totalKtv, matchCount, minorCount, majorCount, totalDiffAbs } = data;
   const displayMonth = new Date(month).toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
 
   return (

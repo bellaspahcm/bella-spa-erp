@@ -95,11 +95,9 @@ export default function AccountingHealthPage() {
   const severity = summary?.severity ?? 'warning';
   const tone = SEVERITY_TONE[severity];
   const StatusIcon = tone.icon;
-  const blockerChecks = summary?.blockers ?? [];
-  const warningChecks = summary?.warnings ?? [];
   const allAttentionChecks = useMemo(
-    () => [...blockerChecks, ...warningChecks],
-    [blockerChecks, warningChecks]
+    () => [...(summary?.blockers ?? []), ...(summary?.warnings ?? [])],
+    [summary]
   );
   const failedOutbox = (summary?.metrics.outbox_failed ?? 0) + (summary?.metrics.outbox_dead ?? 0);
   const pendingOutbox = (summary?.metrics.outbox_pending ?? 0) + (summary?.metrics.outbox_processing ?? 0);

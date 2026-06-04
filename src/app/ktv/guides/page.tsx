@@ -1,22 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Clock, 
-  DollarSign, 
-  Calendar as CalendarIcon, 
-  ChevronLeft, 
-  ArrowLeft,
-  Sparkles,
-  BookOpen,
-  ArrowRight,
-  Maximize2
-} from 'lucide-react';
-import { ALL_GUIDES, isManualPermitted, GuideListItem } from '@/services/user-manuals-utils';
 import { getCurrentUser } from '@/services/user-actions';
-import { Loader2 } from 'lucide-react';
+import { ALL_GUIDES,GuideListItem,isManualPermitted } from '@/services/user-manuals-utils';
+import { AnimatePresence,motion } from 'framer-motion';
+import {
+ArrowLeft,
+ArrowRight,
+Calendar as CalendarIcon,
+ChevronLeft,
+Clock,
+DollarSign,
+Loader2
+} from 'lucide-react';
+import Link from 'next/link';
+import { useEffect,useState } from 'react';
 
 export default function KtvGuidesPage() {
   const [guides, setGuides] = useState<GuideListItem[]>([]);

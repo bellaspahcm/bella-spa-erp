@@ -1,25 +1,23 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  Scale, 
-  AlertTriangle, 
-  CheckCircle2, 
-  RefreshCw, 
-  Trash2,
-  Calendar,
-  Layers,
-  User,
-  HelpCircle,
-  X
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { getJournalEntryDetails,reverseJournalEntry } from '@/services/accounting-actions';
+import { AnimatePresence,motion } from 'framer-motion';
+import {
+AlertTriangle,
+ArrowLeft,
+Calendar,
+CheckCircle2,
+Layers,
+Scale,
+Trash2,
+User,
+X
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getJournalEntryDetails, reverseJournalEntry } from '@/services/accounting-actions';
+import { use,useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
-import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 type JournalEntryDetails = Awaited<ReturnType<typeof getJournalEntryDetails>>;
 type JournalLineRow = NonNullable<JournalEntryDetails['journal_lines']>[number];
@@ -49,7 +47,7 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
   const [reversalReason, setReversalReason] = useState('');
   const [submittingReversal, setSubmittingReversal] = useState(false);
 
-  const fetchDetails = async () => {
+  const fetchDetails = useCallback(async () => {
     try {
       const data = await getJournalEntryDetails(entryId);
       setEntry(data);
@@ -60,11 +58,11 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [entryId, router]);
 
   useEffect(() => {
     fetchDetails();
-  }, [entryId]);
+  }, [fetchDetails]);
 
   const handleReversal = async (e: React.FormEvent) => {
     e.preventDefault();

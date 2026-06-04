@@ -1,27 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { getAccountingHealthSummary,getBalanceSheetReport } from '@/services/accounting-actions';
+import { getFinancialOverview } from '@/services/finance-actions';
 import { motion } from 'framer-motion';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  AlertTriangle, 
-  CheckCircle2, 
-  PenTool, 
-  FileSpreadsheet, 
-  PlusCircle, 
-  RefreshCw,
-  AlertCircle,
-  Activity,
-  ShieldCheck
+import {
+Activity,
+AlertCircle,
+AlertTriangle,
+ArrowDownRight,
+ArrowUpRight,
+CheckCircle2,
+FileSpreadsheet,
+PenTool,
+PlusCircle,
+RefreshCw,
+ShieldCheck,
+TrendingDown,
+TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
-import { getAccountingHealthSummary, getBalanceSheetReport } from '@/services/accounting-actions';
-import { getFinancialOverview } from '@/services/finance-actions';
+import { useEffect,useState } from 'react';
 import { toast } from 'sonner';
-import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 type BalanceSheetReport = Awaited<ReturnType<typeof getBalanceSheetReport>>;
 type FinancialOverview = Awaited<ReturnType<typeof getFinancialOverview>>;
@@ -95,7 +95,6 @@ export default function AccountingOverviewPage() {
   const totalEquity = bsData?.total_equity || 0;
 
   // Comparison metrics: Old Finance Module (Revenues - Expenses) vs. Ledger Revenue & Expense
-  const oldNetIncome = (finOverview?.totalRevenueMonth || 0) - (finOverview?.totalExpenseMonth || 0);
   // Ledger net profit is calculated in real-time in balance sheet's retained earnings difference or from P&L, let's fetch it or show live matched info
   const ledgerMatchedPercent = healthSummary?.metrics.readiness_score ?? 100;
   const hasOutboxBlockers = outboxCounts.dead > 0 || outboxCounts.failed > 0;

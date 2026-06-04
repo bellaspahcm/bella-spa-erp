@@ -1,8 +1,8 @@
 'use client';
 
+import { AnimatePresence,motion } from 'framer-motion';
+import { ArrowRight,Baby,CheckCircle2,Heart,MapPin,Phone,UserCheck } from 'lucide-react';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, UserCheck, Baby, MapPin, Phone, CheckCircle2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ServicePackage {
@@ -15,9 +15,12 @@ interface ServicePackage {
   tag?: string;
 }
 
+type ServiceCategoryKey = ' bầu' | 'sau-sinh' | 'baby' | 'combo';
+type ServiceCategories = Record<ServiceCategoryKey, { packages: ServicePackage[] }>;
+
 interface ServiceWizardProps {
-  categories: any;
-  serviceCategories: any;
+  categories: ServiceCategories | null;
+  serviceCategories: ServiceCategories;
   onSelectPackage: (packageName: string) => void;
 }
 
@@ -25,7 +28,6 @@ export function ServiceWizard({ categories, serviceCategories, onSelectPackage }
   const [wizardStep, setWizardStep] = useState(1);
   const [wizardUserType, setWizardUserType] = useState<string>('');
   const [wizardConcern, setWizardConcern] = useState<string>('');
-  const [wizardLocation, setWizardLocation] = useState<string>('');
   const [recommendedPackage, setRecommendedPackage] = useState<ServicePackage | null>(null);
 
   const handleWizardUserType = (type: string) => {
@@ -38,9 +40,7 @@ export function ServiceWizard({ categories, serviceCategories, onSelectPackage }
     setWizardStep(3);
   };
 
-  const handleWizardLocation = (loc: string) => {
-    setWizardLocation(loc);
-    
+  const handleWizardLocation = () => {
     // Calculate recommendation based on selections
     let pkg: ServicePackage | null = null;
     const activeCats = categories || serviceCategories;
@@ -75,7 +75,6 @@ export function ServiceWizard({ categories, serviceCategories, onSelectPackage }
     setWizardStep(1);
     setWizardUserType('');
     setWizardConcern('');
-    setWizardLocation('');
     setRecommendedPackage(null);
   };
 
@@ -225,7 +224,7 @@ export function ServiceWizard({ categories, serviceCategories, onSelectPackage }
                 <h3 className="text-lg font-black text-slate-800 uppercase tracking-wide">Mẹ mong muốn trải nghiệm dịch vụ ở đâu?</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md mx-auto">
                   <button
-                    onClick={() => handleWizardLocation('spa')}
+                    onClick={handleWizardLocation}
                     className="p-6 bg-white border border-rose-100 hover:border-primary rounded-xl shadow-sm hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group w-full"
                   >
                     <MapPin className="w-6 h-6 text-primary group-hover:scale-105 transition-transform" />
@@ -233,7 +232,7 @@ export function ServiceWizard({ categories, serviceCategories, onSelectPackage }
                     <span className="text-[10px] text-slate-400 font-semibold">Tận hưởng trọn vẹn không gian tinh tế</span>
                   </button>
                   <button
-                    onClick={() => handleWizardLocation('home')}
+                    onClick={handleWizardLocation}
                     className="p-6 bg-white border border-rose-100 hover:border-primary rounded-xl shadow-sm hover:shadow-md transition-all text-center flex flex-col items-center gap-2 group w-full"
                   >
                     <Phone className="w-6 h-6 text-primary group-hover:scale-105 transition-transform" />
