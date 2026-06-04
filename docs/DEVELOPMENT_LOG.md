@@ -21,6 +21,8 @@
   * Phat hien env Production duoc add qua Windows PowerShell stdin co BOM `U+FEFF` trong header `Authorization`/`apikey`; ghi de lai Vercel env bang `--value --force` va redeploy production.
   * Production smoke `https://bella-spa-erp.vercel.app` pass, 1 test / 11 tab ke toan, bang account admin E2E tam da cleanup khoi `public.users` va Supabase Auth.
   * Go legacy env `NEXT_PUBLIC_SUPABASE_ANON_KEY` va `SUPABASE_SERVICE_ROLE_KEY` khoi Vercel Production, redeploy lai, production smoke van pass.
+  * Them Supabase key moi vao Vercel Preview branch `codex/accounting-health-preflight` va redeploy Preview `https://bella-spa-991fke9nc-bella-spa-s-projects.vercel.app`.
+  * Preview smoke hien dang bi Vercel Deployment Protection chan truoc app login; Playwright config da ho tro `E2E_VERCEL_AUTOMATION_BYPASS_SECRET`/`VERCEL_AUTOMATION_BYPASS_SECRET` de bypass bang automation header.
   * `npm.cmd run lint` pass.
 
 ### 04/06/2026: Harden Supabase API Key Aliases

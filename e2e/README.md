@@ -47,6 +47,13 @@ e2e/
 
    Khi `E2E_BASE_URL` không phải localhost, fixture sẽ từ chối `mock_user_email` và chỉ đăng nhập qua UI bằng email/password thật.
 
+   Preview deployments có bật Vercel Deployment Protection cần thêm bypass secret cho automation:
+   ```
+   E2E_VERCEL_AUTOMATION_BYPASS_SECRET=...
+   ```
+
+   Playwright sẽ gửi `x-vercel-protection-bypass` và `x-vercel-set-bypass-cookie=true` nếu có secret này. Không commit secret vào git; đặt trong `.env.local`, CI secret storage, hoặc temp env file.
+
 4. **Browser đã cài**: `npx playwright install chromium` (đã chạy 1 lần khi setup)
 
 ## Chạy tests
