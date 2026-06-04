@@ -1,20 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { 
-  BookOpen, 
-  Search, 
-  ArrowRight, 
-  Bookmark, 
-  Sparkles,
-  HelpCircle,
-  FileText
-} from 'lucide-react';
-import { ALL_GUIDES, isManualPermitted, GuideListItem } from '@/services/user-manuals-utils';
 import { getCurrentUser } from '@/services/user-actions';
-import { Loader2 } from 'lucide-react';
+import { ALL_GUIDES,GuideListItem,isManualPermitted } from '@/services/user-manuals-utils';
+import { motion } from 'framer-motion';
+import {
+ArrowRight,
+Bookmark,
+HelpCircle,
+Loader2,
+Search,
+Sparkles
+} from 'lucide-react';
+import Link from 'next/link';
+import { useEffect,useState } from 'react';
 
 export default function UserManualsHub() {
   const [guides, setGuides] = useState<GuideListItem[]>([]);

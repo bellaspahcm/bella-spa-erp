@@ -1,17 +1,16 @@
 'use client';
 
+import { CurrentUser,KtvSalaryRecord } from '@/types/domain';
 import { motion } from 'framer-motion';
-import { 
-  Search, 
-  Filter, 
-  ShieldCheck, 
-  Star, 
-  CheckCircle2, 
-  AlertCircle, 
-  Download,
-  Clock
+import {
+AlertCircle,
+CheckCircle2,
+Download,
+Filter,
+Search,
+ShieldCheck,
+Star
 } from 'lucide-react';
-import { KtvSalaryRecord, CurrentUser } from '@/types/domain';
 
 interface SalaryTableProps {
   filteredSalaries: KtvSalaryRecord[];

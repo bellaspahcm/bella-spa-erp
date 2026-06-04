@@ -1,32 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Shield,
-  UserPlus,
-  Trash2,
-  Pencil,
-  Zap,
-  Star,
-  X,
-  Mail,
-  User,
-  ShieldAlert,
-  Sparkles,
-} from "lucide-react";
-import { toast } from "sonner";
-import {
-  createUser,
-  getUsers,
-  updateUserStatus,
-  updateUser,
-  deleteUser,
-} from "@/services/user-actions";
-import { getSupabase } from "@/lib/supabase-client";
 import { PremiumSelect } from "@/components/ui/PremiumSelect";
-import { StaffRecord } from "@/types/domain";
+import { getSupabase } from "@/lib/supabase-client";
 import { cn } from "@/lib/utils";
+import {
+createUser,
+deleteUser,
+getUsers,
+updateUser,
+updateUserStatus,
+} from "@/services/user-actions";
+import { StaffRecord } from "@/types/domain";
+import { AnimatePresence,motion } from "framer-motion";
+import {
+Mail,
+Pencil,
+Shield,
+ShieldAlert,
+Sparkles,
+Star,
+Trash2,
+User,
+UserPlus,
+X,
+Zap,
+} from "lucide-react";
+import React,{ useEffect,useState } from "react";
+import { toast } from "sonner";
 
 export default function StaffManagementTab() {
   const [users, setUsers] = useState<StaffRecord[]>([]);
@@ -128,7 +128,7 @@ export default function StaffManagementTab() {
         setNewStaff({ full_name: "", email: "", role: "ktv" });
         fetchUsers();
       }
-    } catch (error) {
+    } catch {
       toast.error("Đã xảy ra lỗi khi thêm nhân sự");
     } finally {
       setIsAdding(false);
@@ -152,7 +152,7 @@ export default function StaffManagementTab() {
         setIsEditModalOpen(false);
         fetchUsers();
       }
-    } catch (error) {
+    } catch {
       toast.error("Đã xảy ra lỗi khi cập nhật");
     } finally {
       setIsUpdating(false);
@@ -170,7 +170,7 @@ export default function StaffManagementTab() {
         setIsDeleteModalOpen(false);
         fetchUsers();
       }
-    } catch (error) {
+    } catch {
       toast.error("Đã xảy ra lỗi khi xóa");
     } finally {
       setIsDeleting(false);

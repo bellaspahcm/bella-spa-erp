@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useCallback, useEffect, useState, use } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { 
   CheckCircle2, 
   Clock, 
@@ -42,7 +43,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
     toast.success('Đã sao chép vào bộ nhớ tạm');
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getCustomerBookingByToken(token);
@@ -52,11 +53,11 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchData();
-  }, [token]);
+  }, [fetchData]);
 
   const handleSubmitRating = async () => {
     if (!selectedSession) return;
@@ -338,10 +339,13 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 {/* QR Code */}
                 <div className="flex flex-col items-center justify-center bg-slate-50/50 border border-slate-100 p-6 rounded-[2rem] relative">
                   <div className="h-[216px] w-[216px] max-w-full bg-white rounded-3xl p-3 border border-pink-100 flex items-center justify-center shadow-md shadow-pink-50 dark:shadow-none relative overflow-hidden group">
-                    <img
+                    <Image
                       src={qrUrl}
                       alt="VietQR Code"
-                      className="w-full h-full object-contain"
+                      fill
+                      sizes="216px"
+                      className="object-contain"
+                      unoptimized
                     />
                     <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
                       <QrCode className="w-10 h-10 text-primary/35 animate-pulse" />

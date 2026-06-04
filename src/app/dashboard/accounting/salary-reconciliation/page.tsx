@@ -1,21 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { getSalaryReconciliationReport,type SalaryReconciliationRow } from '@/services/accounting-actions';
 import { motion } from 'framer-motion';
-import {
-  Users,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  RefreshCw,
-  Calendar,
-  HelpCircle,
-  Clock,
-} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { getSalaryReconciliationReport, type SalaryReconciliationRow } from '@/services/accounting-actions';
+import {
+AlertTriangle,
+Calendar,
+CheckCircle2,
+Clock,
+HelpCircle,
+RefreshCw,
+Users,
+XCircle,
+} from 'lucide-react';
+import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
-import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -70,7 +70,7 @@ export default function SalaryReconciliationPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setRefreshing(true);
     try {
       const data = await getSalaryReconciliationReport(monthYear);
@@ -82,9 +82,9 @@ export default function SalaryReconciliationPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [monthYear]);
 
-  useEffect(() => { fetchData(); }, [monthYear]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const total = rows.length;
   const matchCount = rows.filter((r) => r.status === 'MATCH').length;

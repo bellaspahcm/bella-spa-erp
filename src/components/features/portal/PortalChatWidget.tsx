@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useCallback,useEffect,useRef,useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, 
@@ -46,35 +46,46 @@ export default function PortalChatWidget({
   const [isSending, setIsSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [isFetching, setIsFetching] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isFetchingRef = useRef(false);
 
   // Scroll to bottom helper
-  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior });
     }
-  };
+  }, []);
+
+  // Mark messages as read
+  const handleMarkAsRead = useCallback(async () => {
+    try {
+      const result = await markPortalMessagesAsRead(token);
+      if (result.success) {
+        setUnreadCount(0);
+      }
+    } catch (err) {
+      console.error('Error marking messages as read:', err);
+    }
+  }, [token]);
 
   // Fetch messages from database
-  const fetchMessages = async (silent = false) => {
-    if (isFetching) return;
-    if (!silent) setIsFetching(true);
+  const fetchMessages = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     
     try {
       const result = await getPortalChatMessages(token);
       if (result.success && result.data) {
         const newMessages = result.data;
         
-        // Check if we have new incoming messages from staff to play a light visual cue or toast
-        if (messages.length > 0 && newMessages.length > messages.length) {
-          const lastOldMsg = messages[messages.length - 1];
-          const lastNewMsg = newMessages[newMessages.length - 1];
-          if (lastNewMsg.sender_type === 'staff' && lastNewMsg.id !== lastOldMsg.id) {
-            // Trigger visual alert if chat is closed
-            if (!isOpen) {
+        setMessages((previousMessages) => {
+          // Check if we have new incoming messages from staff to play a light visual cue or toast
+          if (previousMessages.length > 0 && newMessages.length > previousMessages.length) {
+            const lastOldMsg = previousMessages[previousMessages.length - 1];
+            const lastNewMsg = newMessages[newMessages.length - 1];
+            if (lastNewMsg.sender_type === 'staff' && lastNewMsg.id !== lastOldMsg.id && !isOpen) {
               toast.info('Bạn có tin nhắn mới từ Bella Spa!', {
                 action: {
                   label: 'Xem ngay',
@@ -83,9 +94,8 @@ export default function PortalChatWidget({
               });
             }
           }
-        }
-
-        setMessages(newMessages);
+          return newMessages;
+        });
 
         // Calculate unread count (messages sent by staff that are not read)
         if (!isOpen) {
@@ -101,22 +111,10 @@ export default function PortalChatWidget({
     } catch (error) {
       console.error('Failed to fetch chat messages:', error);
     } finally {
-      setIsFetching(false);
+      isFetchingRef.current = false;
       setIsInitialLoad(false);
     }
-  };
-
-  // Mark messages as read
-  const handleMarkAsRead = async () => {
-    try {
-      const result = await markPortalMessagesAsRead(token);
-      if (result.success) {
-        setUnreadCount(0);
-      }
-    } catch (err) {
-      console.error('Error marking messages as read:', err);
-    }
-  };
+  }, [handleMarkAsRead, isOpen, token]);
 
   // Handle send message
   const handleSendMessage = async (e?: React.FormEvent) => {
@@ -174,11 +172,11 @@ export default function PortalChatWidget({
     // Set up polling interval
     const intervalTime = isOpen ? 4000 : 10000; // Poll faster when chat is open
     const interval = setInterval(() => {
-      fetchMessages(true);
+      fetchMessages();
     }, intervalTime);
 
     return () => clearInterval(interval);
-  }, [token, isOpen]);
+  }, [fetchMessages, isOpen]);
 
   // Realtime Presence for tracking online status
   useEffect(() => {
@@ -212,14 +210,14 @@ export default function PortalChatWidget({
       handleMarkAsRead();
       setTimeout(() => scrollToBottom('instant'), 100);
     }
-  }, [isOpen]);
+  }, [handleMarkAsRead, isOpen, scrollToBottom]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     if (isOpen && messages.length > 0) {
       scrollToBottom('smooth');
     }
-  }, [messages.length]);
+  }, [isOpen, messages.length, scrollToBottom]);
 
   return (
     <>

@@ -1,24 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  PlusCircle, 
-  Folder, 
-  FolderOpen, 
-  FileText, 
-  Search, 
-  X, 
-  HelpCircle,
-  Eye,
-  CheckCircle2,
-  ChevronRight,
-  ChevronDown
-} from 'lucide-react';
-import { getAccounts, createAccount } from '@/services/accounting-actions';
-import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { createAccount,getAccounts } from '@/services/accounting-actions';
+import { AnimatePresence,motion } from 'framer-motion';
+import {
+ChevronDown,
+ChevronRight,
+HelpCircle,
+PlusCircle,
+Search,
+X
+} from 'lucide-react';
+import { useEffect,useState } from 'react';
+import { toast } from 'sonner';
 
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
 type TreeAccount = AccountRow & { children: TreeAccount[] };

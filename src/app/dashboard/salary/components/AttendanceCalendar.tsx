@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { CalendarDays, AlertCircle, ShieldCheck, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { KtvAttendanceSummary, KtvAttendanceLog } from '@/types/domain';
 import { adminOverrideAttendance } from '@/services/attendance-actions';
+import { KtvAttendanceLog,KtvAttendanceSummary } from '@/types/domain';
+import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 interface AttendanceCalendarProps {

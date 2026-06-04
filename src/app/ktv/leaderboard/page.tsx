@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback,useEffect,useState } from 'react';
 import { 
   Trophy, 
   Medal, 
@@ -29,7 +29,7 @@ export default function KTVLeaderboardPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await getKTVLeaderboard(selectedMonth);
@@ -39,7 +39,7 @@ export default function KTVLeaderboardPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedMonth]);
 
   useEffect(() => {
     fetchData();
@@ -65,7 +65,7 @@ export default function KTVLeaderboardPage() {
     return () => {
       supabaseClient.removeChannel(channel);
     };
-  }, [selectedMonth]);
+  }, [fetchData, selectedMonth]);
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">

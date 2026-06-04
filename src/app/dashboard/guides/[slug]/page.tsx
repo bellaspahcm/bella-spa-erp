@@ -1,20 +1,18 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { getCurrentUser } from '@/services/user-actions';
+import { ALL_GUIDES,isManualPermitted } from '@/services/user-manuals-utils';
+import {
+ChevronLeft,
+Loader2,
+Maximize2,
+Minimize2,
+Printer
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  ChevronLeft, 
-  Printer, 
-  Maximize2, 
-  Minimize2,
-  Sparkles,
-  BookOpen,
-  Loader2
-} from 'lucide-react';
+import { use,useEffect,useState } from 'react';
 import { toast } from 'sonner';
-import { ALL_GUIDES, isManualPermitted } from '@/services/user-manuals-utils';
-import { getCurrentUser } from '@/services/user-actions';
 
 interface PageProps {
   params: Promise<{ slug: string }>;

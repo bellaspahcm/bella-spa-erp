@@ -1,29 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  Search, 
-  Plus, 
-  User, 
-  Phone, 
-  Calendar, 
-  Package, 
-  CreditCard, 
-  CheckCircle2,
-  ChevronRight,
-  ArrowLeft,
-  Loader2,
-  Tag
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { createBooking, getDraftBooking, getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycle-actions';
-import { createClient as createBrowserClient } from '@/lib/supabase-client';
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { formatNumberWithSeparator, cn, getLocalDateString } from '@/lib/utils';
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { createClient as createBrowserClient } from '@/lib/supabase-client';
+import { cn,formatNumberWithSeparator,getLocalDateString } from '@/lib/utils';
+import { createBooking,getBookingDetailsWithPayment,getDraftBooking } from '@/modules/booking/actions/lifecycle-actions';
 import type { Database } from '@/types/database.types';
+import { AnimatePresence,motion } from 'framer-motion';
+import {
+ArrowLeft,
+Calendar,
+CheckCircle2,
+ChevronRight,
+CreditCard,
+Loader2,
+Package,
+Phone,
+Plus,
+Search,
+Tag,
+User,
+X
+} from 'lucide-react';
+import { useEffect,useState } from 'react';
+import { toast } from 'sonner';
 
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
 type PackageRow = Database['public']['Tables']['packages']['Row'];
@@ -78,7 +78,6 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   const [ktvs, setKtvs] = useState<Pick<UserRow, 'id' | 'full_name'>[]>([]);
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [draftBooking, setDraftBooking] = useState<DraftBooking>(null);
-  const [originalPrice, setOriginalPrice] = useState<number>(0);
   const [discountPercent, setDiscountPercent] = useState<string>('');
 
   const [formData, setFormData] = useState({
@@ -159,7 +158,6 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       }
       setSearchQuery('');
       setNewCustomer({ name_mother: '', phone: '', address: '' });
-      setOriginalPrice(0);
       setDiscountPercent('');
       fetchCustomers();
       fetchKtvs();
@@ -196,8 +194,6 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
             assigned_ktv_id: draft.assigned_ktv_id || '',
           }));
           
-          setOriginalPrice(draft.full_price || 0);
-          
           if (draft.package_name) {
             toast.success(`Đã tự động nạp thông tin gói "${draft.package_name}" và số tiền cọc cũ.`);
           } else if (draftDepositAmount > 0) {
@@ -217,7 +213,6 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
               preferred_time: '08:00',
               assigned_ktv_id: '',
             });
-            setOriginalPrice(0);
             setDiscountPercent('');
           }
         }
@@ -243,8 +238,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
   const handleSelectService = (pkg: PackageRow) => {
     const pkgPrice = Number(pkg.price || pkg.full_price || 0);
-    setOriginalPrice(pkgPrice);
-    
+
     setFormData({
       ...formData,
       package_id: pkg.id,

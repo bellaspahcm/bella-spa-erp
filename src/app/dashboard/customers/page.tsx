@@ -1,43 +1,37 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { AnimatePresence,motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { useEffect,useMemo,useState } from 'react';
+import { toast } from 'sonner';
 
-import { cn, formatNumberWithSeparator, getLocalDateString } from '@/lib/utils';
+import { cn,getLocalDateString } from '@/lib/utils';
 
-import { 
-  Search, 
-  Plus, 
-  Filter, 
-  MoreVertical, 
-  UserPlus,
-  Baby,
-  Phone,
-  MapPin,
-  Calendar,
-  ChevronRight,
-  X,
-  Edit2,
-  Trash2,
-  MessageCircle,
-  ClipboardList,
-  ChevronDown,
-  ShieldCheck,
-  Sparkles
+import {
+Baby,
+Calendar,
+ChevronRight,
+ClipboardList,
+Edit2,
+Filter,
+MapPin,
+MessageCircle,
+MoreVertical,
+Phone,
+Search,
+Sparkles,
+Trash2,
+UserPlus,
+X
 } from 'lucide-react';
 
-import { createCustomer, updateCustomer, deleteCustomer } from '@/services/customer-actions';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
+import { createCustomer,deleteCustomer,updateCustomer } from '@/services/customer-actions';
 import type { Database } from '@/types/database.types';
 
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
-type PackageRow = Database['public']['Tables']['packages']['Row'];
 type CustomerBookingSummary = Pick<
   Database['public']['Tables']['bookings']['Row'],
   'deposit_amount' | 'package_name' | 'full_price' | 'discount_percent' | 'created_at' | 'is_in_care'
@@ -63,17 +57,12 @@ export default function CustomersPage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customers, setCustomers] = useState<CustomerListItem[]>([]);
-  const [packages, setPackages] = useState<PackageRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState('');
-  const [depositAmount, setDepositAmount] = useState('');
 
   // Edit states
   const [isEditMode, setIsEditMode] = useState(false);
@@ -94,43 +83,8 @@ export default function CustomersPage() {
     gender_baby: 'unknown'
   });
 
-  const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
-
-  useEffect(() => {
-    async function checkRole() {
-      const supabase = createBrowserClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        if (userData?.role) {
-          setUserRole(userData.role === 'admin' ? 'admin' : 'ktv');
-        }
-      }
-    }
-    checkRole();
-  }, []);
-
-
-  const loadPackages = async () => {
-    try {
-      const supabase = createBrowserClient();
-      const { data, error } = await supabase
-        .from('packages')
-        .select('*')
-        .eq('status', 'active')
-        .order('name', { ascending: true });
-      if (error) throw error;
-      setPackages(data || []);
-    } catch (error) {
-      console.error('Error loading packages:', error);
-    }
-  };
-
   const loadCustomers = async () => {
+    setIsLoading(true);
     setIsSyncing(true);
     try {
       const supabase = createBrowserClient();
@@ -161,14 +115,13 @@ export default function CustomersPage() {
     } catch (error) {
       console.error('Error loading customers:', error);
     } finally {
+      setIsLoading(false);
       setIsSyncing(false);
     }
   };
 
   useEffect(() => {
-
     loadCustomers();
-    loadPackages();
   }, []);
 
 
@@ -214,7 +167,7 @@ export default function CustomersPage() {
         resetForm();
         loadCustomers();
       }
-    } catch (error) {
+    } catch {
       toast.error('Có lỗi xảy ra khi lưu dữ liệu');
     } finally {
       setIsSubmitting(false);
@@ -372,7 +325,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div id="customers-list-container" className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); setIsFilterOpen(false); }}>
+    <div id="customers-list-container" className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); }}>
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (

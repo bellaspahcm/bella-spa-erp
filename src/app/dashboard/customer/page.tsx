@@ -1,22 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { getCustomerPortalData,submitSessionRating } from '@/services/customer-actions';
+import { clsx,type ClassValue } from 'clsx';
 import { motion } from 'framer-motion';
-import { 
-  Flower2, 
-  Calendar, 
-  Star, 
-  ChevronRight, 
-  CheckCircle2, 
-  Clock,
-  MessageSquare,
-  ArrowRight,
-  CheckCircle,
-  X
+import {
+Calendar,
+CheckCircle2,
+Clock,
+Flower2,
+Star
 } from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
+import { useEffect,useState } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { getCustomerPortalData, submitSessionRating } from '@/services/customer-actions';
 
 type CustomerPortalBooking = NonNullable<Awaited<ReturnType<typeof getCustomerPortalData>>>;
 type PortalSession = {

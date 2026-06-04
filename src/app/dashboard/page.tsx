@@ -1,42 +1,91 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
+import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
+import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { createClient } from '@/lib/supabase-client';
+import { cn } from '@/lib/utils';
+import { completeSession,saveSessionNote } from '@/modules/booking/actions/session-actions';
+import {
+getFullDashboardData,
+type DashboardAlert
+} from '@/services/dashboard-actions';
+import { markNotificationAsRead } from '@/services/notification-actions';
+import { AnimatePresence,motion } from 'framer-motion';
+import {
+AlertTriangle,
+ArrowRight,
+Bell,
+Calendar,
+CheckCircle2,
+ChevronRight,
+Clock,
+Lightbulb,
+Loader2,
+MessageSquare,
+Package,
+PlusCircle,
+Search,
+Sparkles as SparklesIcon,
+TrendingUp,
+User,
+X
+} from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Users, 
-  User, 
-  Calendar, 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Clock, 
-  Star,
-  ChevronRight,
-  ArrowRight,
-  PlusCircle,
-  Search,
-  Bell,
-  Award,
-  AlertTriangle,
-  Lightbulb,
-  Trophy,
-  Diamond,
-  CheckCircle2,
-  Loader2,
-  Activity,
-  MessageSquare,
-  Sparkles as SparklesIcon,
-  Wallet,
-  Package,
-  X
-} from 'lucide-react';
+import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
-import dynamic from 'next/dynamic';
-import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
-import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
-import { KtvPerformanceTable } from '@/components/features/dashboard/KtvPerformanceTable';
+
+type DashboardStat = {
+  label: string;
+  value: string;
+  trend: number;
+  iconName: 'Users' | 'Calendar' | 'DollarSign' | 'Star';
+  color: string;
+  bg: string;
+};
+
+type DashboardSessionBooking = {
+  id?: string | null;
+  package_name?: string | null;
+  preferred_time?: string | null;
+  completed_sessions?: number | null;
+  total_sessions?: number | null;
+  packages?: { name?: string | null } | null;
+  customers?: {
+    id?: string | null;
+    name_mother?: string | null;
+    name_baby?: string | null;
+  } | null;
+  assigned_ktv?: { full_name?: string | null } | null;
+};
+
+type DashboardSession = {
+  id: string;
+  booking_id: string;
+  status: string;
+  assigned_time?: string | null;
+  bookings?: DashboardSessionBooking | DashboardSessionBooking[] | null;
+};
+
+type KtvDashboardRow = {
+  name: string;
+  sessions: number;
+  rating: number;
+  status: string;
+  bonus: string;
+};
+
+type DashboardPerformancePoint = {
+  name: string;
+  customers: number;
+  revenue?: number;
+  expense?: number;
+  rating?: number;
+};
 
 // Heavy modals — lazy-loaded so they don't bloat the dashboard's initial JS bundle.
 // BookingModal (~715 LOC + form deps) only opens on user click.
@@ -49,47 +98,15 @@ const OnboardingTour = dynamic(
   () => import('@/components/features/dashboard/OnboardingTour'),
   { ssr: false }
 );
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import { 
-  getDashboardStats, 
-  getUpcomingSessions, 
-  getTopTechnicians, 
-  getImportantAlerts,
-  getMonthlyPerformance,
-  getFullDashboardData
-} from '@/services/dashboard-actions';
-import { completeSession, saveSessionNote } from '@/modules/booking/actions/session-actions';
-import { markNotificationAsRead } from '@/services/notification-actions';
-import { createClient } from '@/lib/supabase-client';
-import { cn } from '@/lib/utils';
-
-
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const item = {
-  hidden: { y: 20, opacity: 0 },
-  show: { y: 0, opacity: 1 }
-};
-
 export default function DashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState<any[]>([]);
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [topKTVs, setTopKTVs] = useState<any[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [stats, setStats] = useState<DashboardStat[]>([]);
+  const [sessions, setSessions] = useState<DashboardSession[]>([]);
+  const [topKTVs, setTopKTVs] = useState<KtvDashboardRow[]>([]);
+  const [alerts, setAlerts] = useState<DashboardAlert[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [performanceData, setPerformanceData] = useState<any[]>([]);
+  const [performanceData, setPerformanceData] = useState<DashboardPerformancePoint[]>([]);
   const [inventorySummary, setInventorySummary] = useState({ totalItems: 0, lowStockCount: 0, totalValue: 0 });
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -163,16 +180,19 @@ export default function DashboardPage() {
       };
 
       const newStats = [
-        { label: 'Tổng khách hàng', value: statsData.totalCustomers?.value || '0', trend: statsData.totalCustomers?.trend || 0, iconName: 'Users' as const, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Lịch hẹn hôm nay', value: statsData.todayBookings?.value || '0', trend: statsData.todayBookings?.trend || 0, iconName: 'Calendar' as const, color: 'text-rose-600', bg: 'bg-rose-50' },
-        ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: statsData.totalRevenue?.value || '0M', trend: statsData.totalRevenue?.trend || 0, iconName: 'DollarSign' as const, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
-        { label: 'Đánh giá KTV', value: statsData.avgRating?.value || '5.0', trend: statsData.avgRating?.trend || 0, iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { label: 'Tổng khách hàng', value: String(statsData.totalCustomers?.value || '0'), trend: Number(statsData.totalCustomers?.trend || 0), iconName: 'Users' as const, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Lịch hẹn hôm nay', value: String(statsData.todayBookings?.value || '0'), trend: Number(statsData.todayBookings?.trend || 0), iconName: 'Calendar' as const, color: 'text-rose-600', bg: 'bg-rose-50' },
+        ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: String(statsData.totalRevenue?.value || '0M'), trend: Number(statsData.totalRevenue?.trend || 0), iconName: 'DollarSign' as const, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
+        { label: 'Đánh giá KTV', value: String(statsData.avgRating?.value || '5.0'), trend: Number(statsData.avgRating?.trend || 0), iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
       ];
       
       setStats(newStats);
-      setSessions(sessionsData || []);
-      setTopKTVs(ktvsData || []);
-      setPerformanceData(perfData || []);
+      setSessions((sessionsData || []) as unknown as DashboardSession[]);
+      setTopKTVs((ktvsData || []).map((ktv) => ({
+        ...ktv,
+        rating: Number(ktv.rating) || 0,
+      })));
+      setPerformanceData((perfData || []) as DashboardPerformancePoint[]);
       setAlerts(alertsData || []);
       setInventorySummary(invSummary || { totalItems: 0, lowStockCount: 0, totalValue: 0 });
     } catch (error) {
@@ -233,16 +253,6 @@ export default function DashboardPage() {
       setUpdatingId(null);
       setQuickNoteId(null);
       setQuickNoteValue('');
-    }
-  };
-
-  const getStatusInfo = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed': return { label: 'Hoàn thành', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' };
-      case 'in_progress': return { label: 'Đang thực hiện', color: 'bg-amber-50 text-amber-600 border-amber-100' };
-      case 'scheduled': return { label: 'Chờ thực hiện', color: 'bg-blue-50 text-blue-600 border-blue-100' };
-      case 'booked': return { label: 'Đã đặt lịch', color: 'bg-rose-50 text-rose-600 border-rose-100' };
-      default: return { label: status, color: 'bg-slate-50 text-slate-600 border-slate-100' };
     }
   };
 
@@ -334,7 +344,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                       {alerts.length > 0 ? (
-                        alerts.slice(0, 5).map((alert: any, idx: number) => (
+                        alerts.slice(0, 5).map((alert, idx) => (
                           <div 
                             key={idx}
                             onClick={async () => {
@@ -484,13 +494,11 @@ export default function DashboardPage() {
               });
 
               if (filteredSessions.length > 0) {
-                return filteredSessions.map((session, idx) => {
-                  const statusInfo = getStatusInfo(session.status);
+                return filteredSessions.map((session) => {
                   const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
                   const customerName = booking?.customers?.name_mother || 'Khách hàng';
                   const babyName = booking?.customers?.name_baby;
                   const technicianName = booking?.assigned_ktv?.full_name || 'Chưa phân công';
-                  const packageName = booking?.packages?.name || booking?.package_name || 'Gói dịch vụ';
                   
                   return (
                     <div 
@@ -523,7 +531,7 @@ export default function DashboardPage() {
                                 </span>
                                 <span className={cn(
                                   "text-xs md:text-sm font-bold truncate",
-                                  session.bookings?.assigned_ktv?.full_name ? "text-slate-500" : "text-amber-600 italic"
+                                  booking?.assigned_ktv?.full_name ? "text-slate-500" : "text-amber-600 italic"
                                 )}>
                                   {technicianName}
                                 </span>
@@ -639,7 +647,7 @@ export default function DashboardPage() {
                               ) : (
                                 <>
                                   <CheckCircle2 className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                                  <span>Hoàn thành buổi {(session.bookings?.completed_sessions || 0) + 1}</span>
+                                  <span>Hoàn thành buổi {(booking?.completed_sessions || 0) + 1}</span>
                                 </>
                               )}
                             </button>
@@ -688,7 +696,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="space-y-4">
-            {alerts.slice(0, 5).map((alert: any, idx: number) => (
+            {alerts.slice(0, 5).map((alert, idx) => (
               <div 
                 key={idx} 
                 onClick={async () => {
@@ -884,7 +892,7 @@ export default function DashboardPage() {
                     const matchesSearch = (alert.title + ' ' + alert.message).toLowerCase().includes(notifSearch.toLowerCase());
                     const matchesTab = notifTab === 'all' || alert.type === notifTab;
                     return matchesSearch && matchesTab;
-                  }).map((alert: any, idx: number) => (
+                  }).map((alert, idx) => (
                     <div 
                       key={idx}
                       onClick={() => {

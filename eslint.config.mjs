@@ -116,7 +116,9 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
-      "react-hooks/set-state-in-effect": "warn",
+      // Data-fetch-on-mount screens intentionally set loading/result state from effects.
+      // Keep exhaustive-deps on for stale-closure bugs; avoid noisy false positives here.
+      "react-hooks/set-state-in-effect": "off",
     },
   },
   // Existing debt: downgrade to warn so CI is not blocked retroactively.
@@ -131,6 +133,7 @@ const eslintConfig = defineConfig([
     files: ["src/__tests__/**/*.{ts,tsx}", "jest.setup.ts", "sentry.client.config.ts", "sentry.server.config.ts"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-require-imports": "off",
     },
   },

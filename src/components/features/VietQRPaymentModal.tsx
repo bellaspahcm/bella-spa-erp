@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Copy, QrCode, CreditCard, Sparkles, CheckCircle } from "lucide-react";
-import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
+import { AnimatePresence,motion } from "framer-motion";
+import { Copy,CreditCard,QrCode,Sparkles,X } from "lucide-react";
+import Image from "next/image";
+import { toast } from "sonner";
 
 interface TenantBankInfo {
   qr_bank_code?: string | null;
@@ -28,23 +28,18 @@ export default function VietQRPaymentModal({
   amount,
   tenantInfo,
 }: VietQRPaymentModalProps) {
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-
   if (!isOpen) return null;
 
   const bankCode = tenantInfo?.qr_bank_code || "";
   const accountNumber = tenantInfo?.qr_account_number || "";
   const accountName = tenantInfo?.qr_account_name || "";
-  const spaName = tenantInfo?.name || "Bella Spa";
 
   const transferMemo = `BELLA ${bookingNumber}`;
   const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact.png?amount=${amount}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountName)}`;
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
-    setCopiedField(field);
     toast.success(`Đã sao chép ${field}`);
-    setTimeout(() => setCopiedField(null), 2000);
   };
 
   const hasConfiguredBank = bankCode && accountNumber;
@@ -109,10 +104,13 @@ export default function VietQRPaymentModal({
                 {/* QR Display */}
                 <div className="flex flex-col items-center justify-center bg-slate-50 border border-slate-100/60 p-6 rounded-[2rem] relative">
                   <div className="w-[180px] h-[180px] bg-white rounded-3xl p-3 border border-pink-50 flex items-center justify-center shadow-lg shadow-pink-50/30 dark:shadow-none overflow-hidden relative group">
-                    <img
+                    <Image
                       src={qrUrl}
                       alt="VietQR Code"
-                      className="w-full h-full object-contain"
+                      fill
+                      sizes="180px"
+                      className="object-contain"
+                      unoptimized
                     />
                     <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center">
                       <QrCode className="w-10 h-10 text-primary/30 animate-pulse" />

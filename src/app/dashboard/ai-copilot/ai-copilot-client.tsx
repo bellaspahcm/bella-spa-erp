@@ -1,25 +1,46 @@
 'use client';
 
-import { useState, useRef, useEffect } from "react";
-import { 
-  Sparkles, 
-  Send, 
-  Bot, 
-  User, 
-  Loader2, 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle,
-  TrendingUp,
-  Brain,
-  ShieldCheck
+import {
+AlertCircle,
+Bot,
+Brain,
+CheckCircle,
+Loader2,
+Send,
+ShieldCheck,
+Sparkles,
+TrendingUp,
+User,
+XCircle
 } from "lucide-react";
-import { toast, Toaster } from "sonner";
+import { useEffect,useRef,useState } from "react";
+import { toast,Toaster } from "sonner";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
-  report?: any;
+  report?: AiReport;
+}
+
+interface AiReport {
+  status?: string;
+  error?: string;
+  analysis?: {
+    executiveSummary?: string;
+  };
+  strategicRecommendations?: string[];
+  draftActions?: DraftAction[];
+}
+
+interface DraftAction {
+  type: string;
+  recipient: string;
+  reason: string;
+  draftMessage: string;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export default function AICopilotClient() {
@@ -32,7 +53,7 @@ export default function AICopilotClient() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [approvingId, setApprovingId] = useState<string | null>(null);
-  const [approvedActions, setApprovedActions] = useState<Record<number, boolean>>({});
+  const [approvedActions, setApprovedActions] = useState<Record<string, boolean>>({});
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +77,7 @@ export default function AICopilotClient() {
         body: JSON.stringify({ command: userMessage })
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as AiReport;
 
       if (!response.ok) {
         throw new Error(data.error || "Lỗi xử lý của AI Orchestrator");
@@ -66,29 +87,29 @@ export default function AICopilotClient() {
         ...prev, 
         { 
           role: "assistant", 
-          content: data.analysis.executiveSummary,
+          content: data.analysis?.executiveSummary || "AI COO đã hoàn tất phân tích nhưng chưa có tóm tắt điều hành.",
           report: data
         }
       ]);
       toast.success("AI COO đã hoàn tất phân tích số liệu!");
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Lỗi gọi AI COO:", error);
+      const message = getErrorMessage(error, "Không thể phân tích yêu cầu.");
       setMessages(prev => [
         ...prev, 
         { 
           role: "assistant", 
-          content: `⚠️ Đã xảy ra lỗi nghiêm trọng: ${error.message}. Vui lòng thử lại hoặc liên hệ bộ phận kỹ thuật.` 
+          content: `⚠️ Đã xảy ra lỗi nghiêm trọng: ${message}. Vui lòng thử lại hoặc liên hệ bộ phận kỹ thuật.`
         }
       ]);
-      toast.error(`Lỗi phân tích: ${error.message}`);
+      toast.error(`Lỗi phân tích: ${message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleApprove = async (action: any, index: number) => {
-    const actionKey = `${action.recipient}-${index}`;
+  const handleApprove = async (action: DraftAction, actionKey: string) => {
     if (approvingId === actionKey) return;
     
     setApprovingId(actionKey);
@@ -112,20 +133,20 @@ export default function AICopilotClient() {
         throw new Error(data.error || "Lỗi phê duyệt từ hệ thống");
       }
 
-      setApprovedActions(prev => ({ ...prev, [index]: true }));
+      setApprovedActions(prev => ({ ...prev, [actionKey]: true }));
       toast.success(`Đã phê duyệt thành công đề xuất cho ${action.recipient}!`, { id: toastId });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Lỗi duyệt hành động:", error);
-      toast.error(`Phê duyệt thất bại: ${error.message}`, { id: toastId });
+      toast.error(`Phê duyệt thất bại: ${getErrorMessage(error, "Không thể phê duyệt hành động.")}`, { id: toastId });
     } finally {
       setApprovingId(null);
     }
   };
 
-  const handleReject = (action: any, index: number) => {
+  const handleReject = (action: DraftAction, actionKey: string) => {
     toast.info(`Đã từ chối bản nháp đề xuất của ${action.recipient}`);
-    setApprovedActions(prev => ({ ...prev, [index]: false }));
+    setApprovedActions(prev => ({ ...prev, [actionKey]: false }));
   };
 
   return (
@@ -256,7 +277,7 @@ export default function AICopilotClient() {
 
           {/* List of draft actions */}
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
-            {messages.filter(m => m.report?.draftActions?.length > 0).length === 0 ? (
+            {messages.filter(m => (m.report?.draftActions?.length ?? 0) > 0).length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-4">
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center border border-border text-muted-foreground shadow-inner">
                   <AlertCircle className="w-8 h-8" />
@@ -268,10 +289,10 @@ export default function AICopilotClient() {
               </div>
             ) : (
               messages.flatMap((m, mIdx) => 
-                (m.report?.draftActions || []).map((action: any, actIdx: number) => {
-                  const actionKey = `${action.recipient}-${actIdx}`;
-                  const isApproved = approvedActions[actIdx] === true;
-                  const isRejected = approvedActions[actIdx] === false;
+                (m.report?.draftActions || []).map((action, actIdx) => {
+                  const actionKey = `${mIdx}-${actIdx}-${action.recipient}`;
+                  const isApproved = approvedActions[actionKey] === true;
+                  const isRejected = approvedActions[actionKey] === false;
 
                   return (
                     <div 
@@ -316,7 +337,7 @@ export default function AICopilotClient() {
                       {!isApproved && !isRejected && (
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleApprove(action, actIdx)}
+                            onClick={() => handleApprove(action, actionKey)}
                             disabled={approvingId !== null}
                             className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest py-2.5 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
                           >
@@ -329,7 +350,7 @@ export default function AICopilotClient() {
                             )}
                           </button>
                           <button
-                            onClick={() => handleReject(action, actIdx)}
+                            onClick={() => handleReject(action, actionKey)}
                             disabled={approvingId !== null}
                             className="bg-muted hover:bg-slate-100 border border-border text-muted-foreground hover:text-foreground text-[10px] font-black uppercase tracking-widest py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1 active:scale-95 disabled:opacity-50 cursor-pointer"
                           >

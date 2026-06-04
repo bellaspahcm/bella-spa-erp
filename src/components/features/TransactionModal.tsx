@@ -1,24 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  DollarSign, 
-  Plus, 
-  Minus, 
-  Tag, 
-  Wallet,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import { recordTransaction } from '@/services/finance-actions';
-import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
-import { toast } from 'sonner';
-import { useEffect } from 'react';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { User } from 'lucide-react';
 import { getLocalDateString } from '@/lib/utils';
+import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
+import { AnimatePresence,motion } from 'framer-motion';
+import {
+AlertCircle,
+CheckCircle2,
+DollarSign,
+Minus,
+Plus,
+Tag,
+User,
+Wallet,
+X
+} from 'lucide-react';
+import { useEffect,useState } from 'react';
+import { toast } from 'sonner';
 
 type BookingRow = Awaited<ReturnType<typeof getBookings>>[number];
 
