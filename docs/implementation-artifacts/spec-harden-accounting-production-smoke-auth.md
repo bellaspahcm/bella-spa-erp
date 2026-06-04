@@ -22,6 +22,7 @@ status: done
 - `e2e/tests/08-accounting-tabs-smoke.spec.ts` - skips non-local smoke unless real credentials exist and catches app-domain request failures.
 - `playwright.config.ts` - starts the dev server only for localhost base URLs.
 - `.env.example` and `e2e/README.md` - document production-safe smoke env variables.
+- `playwright.config.ts` also sends Vercel Deployment Protection bypass headers when `E2E_VERCEL_AUTOMATION_BYPASS_SECRET` or `VERCEL_AUTOMATION_BYPASS_SECRET` is provided.
 
 ## Verification
 - `npx.cmd playwright test e2e/tests/08-accounting-tabs-smoke.spec.ts` pass, 1 test / 11 accounting tabs.
@@ -32,8 +33,10 @@ status: done
 - Production smoke on `https://bella-spa-erp.vercel.app` pass, 1 test / 11 accounting tabs, using a temporary non-MFA admin account that was deleted from both `public.users` and Supabase Auth in cleanup.
 - Removed legacy Vercel Production env vars `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`, redeployed production, and reran production smoke successfully.
 - Post-run verification: `E2E_TEMP_PROFILE_REMAINING=0` and `E2E_TEMP_AUTH_REMAINING=0`.
+- Added new Supabase Preview env vars to branch `codex/accounting-health-preflight` and redeployed Preview to `https://bella-spa-991fke9nc-bella-spa-s-projects.vercel.app`.
+- Preview smoke reached Vercel Deployment Protection, not the app login page. Temporary E2E admin cleanup still verified `E2E_TEMP_PROFILE_REMAINING=0` and `E2E_TEMP_AUTH_REMAINING=0`.
 
 ## Handoff
 - commit: pending
 - pushed: pending
-- deferred: Preview environments need the new Supabase key names added per branch or via Vercel UI before Preview smoke is expected to work.
+- deferred: Protected Preview smoke needs a Vercel Automation Bypass secret available locally/CI as `E2E_VERCEL_AUTOMATION_BYPASS_SECRET` or `VERCEL_AUTOMATION_BYPASS_SECRET`.

@@ -53,6 +53,14 @@ if (envPath) {
 const PORT = Number(process.env.E2E_PORT ?? 3000);
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
 const IS_CI = !!process.env.CI;
+const VERCEL_PROTECTION_BYPASS_SECRET =
+  process.env.E2E_VERCEL_AUTOMATION_BYPASS_SECRET ?? process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "";
+const VERCEL_PROTECTION_HEADERS = VERCEL_PROTECTION_BYPASS_SECRET
+  ? {
+      "x-vercel-protection-bypass": VERCEL_PROTECTION_BYPASS_SECRET,
+      "x-vercel-set-bypass-cookie": "true",
+    }
+  : undefined;
 
 function isLocalBaseUrl(value: string): boolean {
   try {
@@ -94,6 +102,7 @@ export default defineConfig({
     viewport: { width: 1440, height: 900 },
     locale: "vi-VN",
     timezoneId: "Asia/Ho_Chi_Minh",
+    extraHTTPHeaders: VERCEL_PROTECTION_HEADERS,
   },
 
   projects: [
