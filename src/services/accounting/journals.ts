@@ -1,10 +1,10 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from '../audit-actions';
 import { getCurrentUser } from '../user-actions';
 import { AccountingEngineService } from '../accounting-engine';
+import { createAccountingDataClient } from './client';
 import type { AccountingReferenceType } from '@/lib/accounting-outbox';
 import type { ManualJournalInput } from './types';
 
@@ -14,9 +14,9 @@ export async function getJournalEntries(filters?: {
   status?: 'DRAFT' | 'POSTED' | 'CANCELED';
   reference_type?: string;
 }) {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id) throw new Error('Unauthorized or missing tenant session.');
+  const supabase = await createAccountingDataClient();
 
   let query = supabase
     .from('journal_entries')
@@ -49,9 +49,9 @@ export async function getJournalEntries(filters?: {
 }
 
 export async function getJournalEntryDetails(entryId: string) {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id) throw new Error('Unauthorized or missing tenant session.');
+  const supabase = await createAccountingDataClient();
 
   const { data, error } = await supabase
     .from('journal_entries')
@@ -71,11 +71,11 @@ export async function getJournalEntryDetails(entryId: string) {
 }
 
 export async function reverseJournalEntry(entryId: string, reason: string) {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Only branch admins can reverse journal entries.');
   }
+  const supabase = await createAccountingDataClient();
 
   // 1. Fetch original entry and lines
   const { data: original, error: fetchError } = await supabase
@@ -133,11 +133,11 @@ export async function getOutboxEvents(filters?: {
   status?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'DEAD';
   event_type?: string;
 }) {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Only branch admins can monitor the transactional outbox queue.');
   }
+  const supabase = await createAccountingDataClient();
 
   let query = supabase
     .from('accounting_outbox')
@@ -158,11 +158,11 @@ export async function getOutboxEvents(filters?: {
 }
 
 export async function replayOutboxEvent(outboxId: string) {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Only branch admins can trigger outbox retries.');
   }
+  const supabase = await createAccountingDataClient();
 
   // Reset outbox entry to PENDING, retry_count = 0, and clear last error to make cron worker claim it immediately
   const { data, error } = await supabase

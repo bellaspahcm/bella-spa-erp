@@ -38,6 +38,7 @@ export const test = base.extend<Fixtures>({
     ]);
     await page.goto("/dashboard");
     await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+    await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
 
     await use(page);
     // No teardown — Playwright closes the context after each test.

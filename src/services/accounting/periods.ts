@@ -4,11 +4,12 @@ import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from '../audit-actions';
 import { getCurrentUser } from '../user-actions';
+import { createAccountingDataClient } from './client';
 
 export async function getAccountingPeriods() {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id) throw new Error('Unauthorized or missing tenant session.');
+  const supabase = await createAccountingDataClient();
 
   const { data, error } = await supabase
     .from('accounting_periods')

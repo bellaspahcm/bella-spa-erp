@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '../user-actions';
+import { createAccountingDataClient } from './client';
 import type { ReconciliationRow, SalaryReconciliationRow } from './types';
 
 type SalaryReconciliationRpcArgs = {
@@ -158,10 +159,9 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
     throw new Error('Unauthorized: chỉ admin/kế toán mới được xem báo cáo đối soát lương.');
   }
 
-  // Use the authenticated user client here, not service_role. The report RPC calls
-  // calculate_ktv_salary_sheet(), whose tenant guard relies on auth context.
-  // A separate set_session_tenant() RPC does not persist across PostgREST requests.
-  const supabase = await createClient();
+  // The RPC sets tenant context internally when called via service-role.
+  // Jest keeps using the mocked user client via createAccountingDataClient().
+  const supabase = await createAccountingDataClient();
   const { data, error } = await callSalaryReconciliationReportRpc(supabase, {
     p_tenant_id: user.tenant_id,
     p_month_year: monthYear,
