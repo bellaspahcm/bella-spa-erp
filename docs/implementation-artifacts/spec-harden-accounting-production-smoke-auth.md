@@ -33,10 +33,13 @@ status: done
 - Production smoke on `https://bella-spa-erp.vercel.app` pass, 1 test / 11 accounting tabs, using a temporary non-MFA admin account that was deleted from both `public.users` and Supabase Auth in cleanup.
 - Removed legacy Vercel Production env vars `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`, redeployed production, and reran production smoke successfully.
 - Post-run verification: `E2E_TEMP_PROFILE_REMAINING=0` and `E2E_TEMP_AUTH_REMAINING=0`.
-- Added new Supabase Preview env vars to branch `codex/accounting-health-preflight` and redeployed Preview to `https://bella-spa-991fke9nc-bella-spa-s-projects.vercel.app`.
-- Preview smoke reached Vercel Deployment Protection, not the app login page. Temporary E2E admin cleanup still verified `E2E_TEMP_PROFILE_REMAINING=0` and `E2E_TEMP_AUTH_REMAINING=0`.
+- Added new Supabase Preview env vars to branch `codex/accounting-health-preflight` and redeployed Preview to `https://bella-spa-991fke9nc-bella-spa-s-projects.vercel.app`; that older branch still used pre-key-alias code and returned `/login` 500 without legacy env.
+- Enabled Vercel Automation Protection Bypass and stored the local bypass value only in ignored `.env.local`.
+- Deployed a fresh Preview from current local code with new Supabase envs: `https://bella-spa-kx74r6wrt-bella-spa-s-projects.vercel.app`.
+- Preview smoke on that current-code Preview passed, 1 test / 11 accounting tabs, using a temporary non-MFA admin account that was deleted from both `public.users` and Supabase Auth in cleanup.
+- Post-preview verification: `E2E_TEMP_PROFILE_REMAINING=0` and `E2E_TEMP_AUTH_REMAINING=0`.
 
 ## Handoff
 - commit: pending
 - pushed: pending
-- deferred: Protected Preview smoke needs a Vercel Automation Bypass secret available locally/CI as `E2E_VERCEL_AUTOMATION_BYPASS_SECRET` or `VERCEL_AUTOMATION_BYPASS_SECRET`.
+- deferred: CI/other machines need the same Vercel Automation Bypass secret available as `E2E_VERCEL_AUTOMATION_BYPASS_SECRET` or `VERCEL_AUTOMATION_BYPASS_SECRET`.
