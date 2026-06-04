@@ -1,6 +1,6 @@
 # Bella Spa ERP — Playwright E2E Suite
 
-Bộ test end-to-end cho **5 luồng nghiệp vụ P0** của Bella Spa ERP. Khác với Jest unit tests (mock Supabase, logic backend), E2E suite này chạy app thật trên Chromium, login thật, và đụng vào DB Supabase staging/dev.
+Bộ test end-to-end cho **5 luồng nghiệp vụ P0** của Bella Spa ERP. Khác với Jest unit tests (mock Supabase, logic backend), E2E suite này chạy app thật trên Chromium và đụng vào DB Supabase staging/dev. Localhost có thể dùng dev-bypass; production smoke phải dùng đăng nhập thật bằng account E2E riêng.
 
 ## Cấu trúc
 
@@ -35,10 +35,19 @@ e2e/
 
 2. **Tài khoản admin trong DB** (Bella Spa Headquarter tenant):
    - Có ít nhất 1 user role=`admin` trong `public.users` + tương ứng trong `auth.users`
-   - Mật khẩu của user đó phải là `password123` (dev bypass — xem `src/app/(auth)/login/page.tsx`)
+   - Localhost có thể dùng dev-bypass qua `mock_user_email` (xem `src/app/(auth)/login/page.tsx`)
    - **Tài khoản này KHÔNG bật MFA** — nếu có MFA, fixture sẽ fail nhanh với message rõ ràng. Tạm tắt MFA hoặc tạo account riêng cho E2E.
 
-3. **Browser đã cài**: `npx playwright install chromium` (đã chạy 1 lần khi setup)
+3. **Production-safe smoke auth** (chỉ đặt trong `.env.local` hoặc secret storage, không commit):
+   ```
+   E2E_BASE_URL=https://bella-spa-erp.vercel.app
+   E2E_ADMIN_EMAIL=...
+   E2E_ADMIN_PASSWORD=...
+   ```
+
+   Khi `E2E_BASE_URL` không phải localhost, fixture sẽ từ chối `mock_user_email` và chỉ đăng nhập qua UI bằng email/password thật.
+
+4. **Browser đã cài**: `npx playwright install chromium` (đã chạy 1 lần khi setup)
 
 ## Chạy tests
 
@@ -63,20 +72,23 @@ npx playwright test e2e/tests/01-booking-creation.spec.ts
 
 # Chạy với grep
 npx playwright test -g "Đặt lịch"
+
+# Smoke 11 tab kế toán trên production bằng auth thật
+npx playwright test e2e/tests/08-accounting-tabs-smoke.spec.ts
 ```
 
 ## Cách hoạt động
 
 ### Auto dev server
-`playwright.config.ts` có `webServer: { command: "npm run dev" }` — tự động start `next dev` ở port 3000 trước khi test, share session nếu đã chạy sẵn.
+`playwright.config.ts` tự động start `next dev` khi `E2E_BASE_URL` là localhost. Khi trỏ `E2E_BASE_URL` ra production/preview, Playwright không start dev server local.
 
-### Login bypass
+### Auth fixture
 Mỗi spec import `test` từ `e2e/fixtures/auth.ts` — fixture `adminPage` đã login bằng:
-1. Query DB lấy email admin đầu tiên trong tenant HQ
-2. Login với password `password123` (dev bypass)
-3. Verify URL chuyển sang `/dashboard`
+1. Nếu có `E2E_ADMIN_EMAIL` + `E2E_ADMIN_PASSWORD`: login thật qua UI, dùng được cho production smoke.
+2. Nếu không có credential và `E2E_BASE_URL` là localhost: query DB lấy email admin đầu tiên trong tenant HQ rồi dùng dev-only `mock_user_email`.
+3. Nếu `E2E_BASE_URL` không phải localhost mà thiếu credential thật: fail/skip rõ ràng, không dùng mock auth ngoài local.
 
-Nếu có MFA → fail rõ ràng. Cách fix: tắt MFA tạm thời cho account E2E.
+Nếu có MFA → fail rõ ràng. Cách fix: tắt MFA tạm thời cho account E2E hoặc thêm hỗ trợ TOTP riêng cho smoke.
 
 ### Data seeding & cleanup
 Mỗi spec dùng `e2e/helpers/supabase-admin.ts` (service-role client) để:

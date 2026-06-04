@@ -54,6 +54,17 @@ const PORT = Number(process.env.E2E_PORT ?? 3000);
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
 const IS_CI = !!process.env.CI;
 
+function isLocalBaseUrl(value: string): boolean {
+  try {
+    const hostname = new URL(value).hostname;
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
+  }
+}
+
+const SHOULD_START_DEV_SERVER = isLocalBaseUrl(BASE_URL);
+
 export default defineConfig({
   testDir: "./e2e/tests",
   testMatch: "**/*.spec.ts",
@@ -97,15 +108,17 @@ export default defineConfig({
   ],
 
   // Auto-start dev server. Detects port reuse so concurrent runs share it.
-  webServer: {
-    command: "npm run dev",
-    url: BASE_URL,
-    reuseExistingServer: !IS_CI,
-    timeout: 180_000,
-    stdout: "pipe",
-    stderr: "pipe",
-    env: {
-      NODE_ENV: "development", // enables `password123` bypass for E2E
-    },
-  },
+  webServer: SHOULD_START_DEV_SERVER
+    ? {
+        command: "npm run dev",
+        url: BASE_URL,
+        reuseExistingServer: !IS_CI,
+        timeout: 180_000,
+        stdout: "pipe",
+        stderr: "pipe",
+        env: {
+          NODE_ENV: "development", // enables local mock_user_email bypass for E2E
+        },
+      }
+    : undefined,
 });

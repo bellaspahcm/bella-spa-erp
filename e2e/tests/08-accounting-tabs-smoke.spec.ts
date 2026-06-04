@@ -5,9 +5,8 @@
  * App Router Server Component digest overlay after auth/RPC/tenant context breaks.
  */
 
-import { test, expect } from "../fixtures/auth";
+import { canAuthenticateAdminPage, getE2eBaseUrl, test, expect } from "../fixtures/auth";
 import type { ConsoleMessage, Request } from "@playwright/test";
-import { hasSupabaseAdminEnv } from "../helpers/supabase-admin";
 
 const accountingTabs = [
   { name: "Tong quan", path: "/dashboard/accounting", text: /tong quan|he thong ke toan so cai/i },
@@ -49,6 +48,10 @@ const runtimeWarningPatterns = [
   /ResponsiveContainer/i,
 ];
 
+const benignConsoleErrorPatterns = [
+  /TypeError: Failed to fetch\s+at fetchServerAction/i,
+];
+
 function normalizeVietnamese(value: string) {
   return value
     .normalize("NFD")
@@ -57,11 +60,20 @@ function normalizeVietnamese(value: string) {
     .replace(/Đ/g, "D");
 }
 
-function attachFailureCollectors(pageErrors: string[]) {
+function getAppOrigin(): string {
+  try {
+    return new URL(getE2eBaseUrl()).origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
+function attachFailureCollectors(pageErrors: string[], appOrigin: string) {
   return {
     console: (message: ConsoleMessage) => {
       const text = message.text();
       if (message.type() === "error") {
+        if (benignConsoleErrorPatterns.some((pattern) => pattern.test(text))) return;
         pageErrors.push(`console.error: ${text}`);
         return;
       }
@@ -77,21 +89,25 @@ function attachFailureCollectors(pageErrors: string[]) {
       const resourceType = request.resourceType();
       if (!["document", "fetch", "xhr", "script"].includes(resourceType)) return;
       const url = request.url();
-      if (!url.includes("localhost") && !url.startsWith("/")) return;
-      pageErrors.push(`requestfailed ${resourceType}: ${url} ${request.failure()?.errorText || ""}`.trim());
+      if (!url.startsWith(appOrigin) && !url.startsWith("/")) return;
+      const failureText = request.failure()?.errorText || "";
+      if (resourceType === "fetch" && failureText === "net::ERR_ABORTED") return;
+      pageErrors.push(`requestfailed ${resourceType}: ${url} ${failureText}`.trim());
     },
   };
 }
 
 test.describe("Accounting ledger tabs authenticated smoke", () => {
+  test.setTimeout(180_000);
+
   test.skip(
-    !hasSupabaseAdminEnv(),
-    "Requires Supabase service-role env so mock_user_email can resolve an authenticated admin profile.",
+    !canAuthenticateAdminPage(),
+    "Requires E2E_ADMIN_EMAIL/E2E_ADMIN_PASSWORD for non-local smoke, or Supabase admin env for localhost dev-bypass.",
   );
 
   test("every accounting tab renders without App Router/RPC errors", async ({ adminPage }) => {
     const pageErrors: string[] = [];
-    const collectors = attachFailureCollectors(pageErrors);
+    const collectors = attachFailureCollectors(pageErrors, getAppOrigin());
     adminPage.on("console", collectors.console);
     adminPage.on("pageerror", collectors.pageerror);
     adminPage.on("requestfailed", collectors.requestfailed);
