@@ -32,17 +32,6 @@ import {
   Package,
   X
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area, 
-  BarChart,
-  Bar,
-  Tooltip, 
-  XAxis,
-  YAxis,
-  CartesianGrid
-} from 'recharts';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
@@ -596,10 +585,10 @@ export default function DashboardPage() {
 
                             </div>
 
-                            <AnimatePresence mode="wait">
+                            <AnimatePresence>
                               {quickNoteId === session.id ? (
                                 <motion.div 
-                                  key="note-input"
+                                  key={`note-input-${session.id}`}
                                   initial={{ opacity: 0, scale: 0.95 }}
                                   animate={{ opacity: 1, scale: 1 }}
                                   exit={{ opacity: 0, scale: 0.95 }}
@@ -626,6 +615,7 @@ export default function DashboardPage() {
                                 </motion.div>
                               ) : (
                                 <button 
+                                  key={`note-button-${session.id}`}
                                   onClick={() => {
                                     setQuickNoteId(session.id);
                                     setQuickNoteValue('');

@@ -43,6 +43,12 @@ const appErrorPatterns = [
   /digest property is included/i,
 ];
 
+const runtimeWarningPatterns = [
+  /AnimatePresence.*mode=["']wait["']/i,
+  /width\(-?\d+\).*height\(-?\d+\).*chart/i,
+  /ResponsiveContainer/i,
+];
+
 function normalizeVietnamese(value: string) {
   return value
     .normalize("NFD")
@@ -54,8 +60,15 @@ function normalizeVietnamese(value: string) {
 function attachFailureCollectors(pageErrors: string[]) {
   return {
     console: (message: ConsoleMessage) => {
-      if (message.type() !== "error") return;
-      pageErrors.push(`console.error: ${message.text()}`);
+      const text = message.text();
+      if (message.type() === "error") {
+        pageErrors.push(`console.error: ${text}`);
+        return;
+      }
+
+      if (message.type() === "warning" && runtimeWarningPatterns.some((pattern) => pattern.test(text))) {
+        pageErrors.push(`console.warning: ${text}`);
+      }
     },
     pageerror: (error: Error) => {
       pageErrors.push(`pageerror: ${error.message}`);

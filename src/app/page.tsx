@@ -860,7 +860,7 @@ export default function LandingPage() {
 
           {/* Packages Display with smooth animation */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left max-w-5xl mx-auto">
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               {(categories || serviceCategories)[activeTab].packages.map((pkg) => {
                 const isFeatured = pkg.name.includes('Hạnh Phúc');
                 const maxVisible = 7;

@@ -96,7 +96,7 @@ function BookingsContent() {
       />
 
       {/* Switch Rendering Views */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {view === 'calendar' ? (
           <motion.div
             key="calendar-view"

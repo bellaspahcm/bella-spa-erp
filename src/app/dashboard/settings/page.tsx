@@ -186,7 +186,7 @@ export default function SettingsPage() {
 
         {/* Content Area */}
         <div className="lg:col-span-3">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div
               key={activeTab}
               initial={{ opacity: 0, x: 20 }}
