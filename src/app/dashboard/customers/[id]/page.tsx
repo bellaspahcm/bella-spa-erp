@@ -1,37 +1,17 @@
 'use client';
 
 import { PaymentReceiptTemplate,ReceiptData } from '@/components/common/PaymentReceiptTemplate';
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { createClient } from '@/lib/supabase-client';
 import { cn,formatNumberWithSeparator } from '@/lib/utils';
 import { generateShareToken,getBookingsByCustomerId,recordRemainingPayment,reusePackage,updateBooking } from '@/modules/booking/actions/lifecycle-actions';
 import { getCustomerById,updateCustomer } from '@/services/customer-actions';
 import { getCurrentUser,getUsers } from '@/services/user-actions';
-import type { Database } from '@/types/database.types';
-import { motion } from 'framer-motion';
 import { toPng } from 'html-to-image';
 import {
-Baby,
 ChevronLeft,
-ChevronRight,
-ClipboardList,
 Clock,
-CreditCard as CreditCardIcon,
-DollarSign as DollarIcon,
 DollarSign,
-FileText,
-Heart,
-History,
-Image as ImageIcon,
-Loader2,
-MapPin,
-MessageCircle,
-Phone,
-PlusCircle,
-Share2,
-Sparkles,
 TrendingUp,
-User
 } from 'lucide-react';
 import nextDynamic from 'next/dynamic';
 import { useParams,useRouter,useSearchParams } from 'next/navigation';
@@ -40,39 +20,11 @@ import { toast } from 'sonner';
 import { BookingPaymentModal, EditBookingModal, EditCustomerModal } from './components/CustomerDetailModals';
 import { CustomerProfilePanel } from './components/CustomerProfilePanel';
 import { BookingSelectorPanel } from './components/BookingSelectorPanel';
+import { ActiveBookingPanel } from './components/ActiveBookingPanel';
 import { PaymentHistoryPanel } from './components/PaymentHistoryPanel';
 import { SessionHistoryPanel } from './components/SessionHistoryPanel';
+import type { CustomerDetailBooking, CustomerDetailRecord, KtvOption } from './types';
 
-type CustomerRow = Database['public']['Tables']['customers']['Row'];
-type BookingRow = Database['public']['Tables']['bookings']['Row'];
-type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
-type RevenueRow = Database['public']['Tables']['revenue']['Row'];
-type UserRow = Database['public']['Tables']['users']['Row'];
-
-type CustomerDetailSession = SessionLogRow & {
-  completed_by_ktv?: { full_name: string | null; phone?: string | null } | null;
-  type?: string | null;
-};
-type CustomerDetailRevenue = RevenueRow & {
-  recorded_by?: { full_name: string | null } | null;
-};
-type CustomerDetailBooking = BookingRow & {
-  packages?: { name?: string | null } | null;
-  assigned_ktv?: { full_name: string | null; phone?: string | null } | null;
-  session_logs?: CustomerDetailSession[];
-  revenue?: CustomerDetailRevenue[];
-};
-type CustomerDetailRecord = CustomerRow & {
-  baby: {
-    name: string;
-    dob: string;
-    gender: string;
-  };
-  sessions: unknown[];
-  allBookings: CustomerDetailBooking[];
-  is_fully_paid?: boolean;
-};
-type KtvOption = Pick<UserRow, 'id' | 'full_name' | 'role'>;
 function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định') {
   return error instanceof Error ? error.message : fallback;
 }
@@ -458,7 +410,7 @@ export default function CustomerDetailPage() {
     </div>
   );
 
-  const isDepositOnly = activeBooking && activeBooking.status === 'deposit_pending' && !activeBooking.package_id;
+  const isDepositOnly = Boolean(activeBooking && activeBooking.status === 'deposit_pending' && !activeBooking.package_id);
   const sortedSessions = activeBooking?.session_logs
     ? [...activeBooking.session_logs].sort((a, b) => (a.session_number || 0) - (b.session_number || 0))
     : [];
@@ -468,6 +420,64 @@ export default function CustomerDetailPage() {
   const activeDiscountPercent = activeBooking?.discount_percent || 0;
   const activeNetPrice = Math.round(activeFullPrice * (1 - activeDiscountPercent / 100));
   const isCompleted = Boolean(activeBooking && (activeBooking.completed_sessions || 0) >= (activeBooking.total_sessions || 15));
+
+  const handlePayRemaining = (amount: number) => {
+    setPaymentData(prev => ({
+      ...prev,
+      amount,
+    }));
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleOpenZalo = () => {
+    const cleanPhone = customer.phone.replace(/[^\d]/g, '');
+    window.open(`https://zalo.me/${cleanPhone}`, '_blank');
+  };
+
+  const handleSharePortal = async () => {
+    if (!activeBooking) return;
+    let token = activeBooking.share_token;
+
+    if (!token) {
+      toast.loading('Đang khởi tạo link...', { id: 'portal-link' });
+      const result = await generateShareToken(activeBooking.id);
+      if (result.error || !result.data) {
+        toast.error('Lỗi khởi tạo link: ' + (result.error || 'Unknown error'), { id: 'portal-link' });
+        return;
+      }
+      token = result.data.share_token;
+      setActiveBooking({ ...activeBooking, share_token: token });
+      toast.dismiss('portal-link');
+    }
+
+    const url = `${window.location.origin}/portal/${token}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Đã sao chép link Cổng thông tin khách hàng');
+  };
+
+  const handleExportContract = () => {
+    toast.success('Đang khởi tạo tệp hợp đồng...');
+  };
+
+  const handleOpenEditBooking = () => {
+    if (!activeBooking) return;
+    setEditBookingData({
+      package_name: activeBooking.package_name || activeBooking.packages?.name || '',
+      full_price: activeBooking.full_price || 0,
+      deposit_amount: activeBooking.deposit_amount || 0,
+      discount_percent: activeBooking.discount_percent || 0,
+      total_sessions: activeBooking.total_sessions || 0,
+      completed_sessions: activeBooking.completed_sessions || 0,
+      preferred_time: activeBooking.preferred_time || '08:00',
+      start_date: activeBooking.start_date || '',
+      status: activeBooking.status || 'in_progress',
+    });
+    setIsEditBookingModalOpen(true);
+  };
+
+  const handleOpenBookingSessions = () => {
+    router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}&bookingId=${activeBooking?.id || ''}`);
+  };
 
   return (
     <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto">
@@ -558,238 +568,25 @@ export default function CustomerDetailPage() {
             onSelectBooking={setActiveBooking}
           />
 
-          <div className="luxury-card-pink rounded-[3rem] p-8 relative shadow-2xl group">
-            {/* Background Decorative Layer - Clipped */}
-            <div className="absolute inset-0 overflow-hidden rounded-[3rem] pointer-events-none">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-700 group-hover:scale-110" />
-            </div>
-
-            <div className="relative z-10">
-              <div className="flex flex-col md:flex-row justify-between gap-8 mb-8">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
-                      <Sparkles className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex flex-col md:flex-row md:items-center gap-4">
-                      <div>
-                        <p className="text-rose-200 text-[10px] font-black uppercase tracking-[0.3em] mb-1">
-                          {isDepositOnly ? 'Trạng thái: Chờ chọn gói' : 'Gói dịch vụ hiện tại'}
-                        </p>
-                        <h2 className="text-3xl font-black text-white">
-                          {isDepositOnly ? 'Đã đặt cọc (Chưa chọn gói)' : (activeBooking?.packages?.name || activeBooking?.package_name || 'Chưa có gói liệu trình')}
-                        </h2>
-                      </div>
-
-                      {!isDepositOnly && activeBooking?.preferred_time && (
-                        <div className="bg-white px-5 py-2.5 rounded-2xl shadow-xl shadow-rose-900/20 dark:shadow-none border border-white flex flex-col items-center justify-center min-w-[120px] self-start md:self-center mt-2 md:mt-0">
-                          <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest leading-none mb-1">GIỜ MẶC ĐỊNH</span>
-                          <span className="text-2xl font-black text-slate-900 leading-none">{activeBooking.preferred_time}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 mt-4">
-                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
-                      <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Tổng cộng (Giá gốc)</p>
-                      <p className="font-black text-lg text-white">
-                        {isDepositOnly ? '---' : formatNumberWithSeparator(activeBooking?.full_price || 0) + 'đ'}
-                      </p>
-                    </div>
-
-                    {!isDepositOnly && (activeBooking?.discount_percent || 0) > 0 && (
-                      <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
-                        <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Khuyến mãi ({activeBooking?.discount_percent}%)</p>
-                        <p className="font-black text-lg text-rose-200">
-                          -{formatNumberWithSeparator((activeBooking?.full_price || 0) * (activeBooking?.discount_percent || 0) / 100)}đ
-                        </p>
-                      </div>
-                    )}
-
-                    {(!activeBooking || isDepositOnly || ((activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100)) > (activeBooking.deposit_amount || 0)) && (
-                      <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
-                        <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Đã cọc</p>
-                        <p className="font-black text-lg text-white">
-                          {formatNumberWithSeparator(activeBooking?.deposit_amount || 0)}đ
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20 flex items-center gap-4">
-                      <div>
-                        <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Còn lại</p>
-                        <p className="font-black text-lg text-white">
-                          {isDepositOnly ? '---' : (
-                            ((activeBooking?.full_price || 0) > 0 || (activeBooking?.deposit_amount || 0) > 0) && Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0)) === 0
-                              ? <span className="text-emerald-300">Đã thanh toán đủ</span>
-                              : formatNumberWithSeparator(Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0))) + 'đ'
-                          )}
-                        </p>
-                      </div>
-                      {!isDepositOnly && ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0) > 0 && (
-                        <button
-                          onClick={() => {
-                            setPaymentData({
-                              ...paymentData,
-                              amount: ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0)
-                            });
-                            setIsPaymentModalOpen(true);
-                          }}
-                          className="bg-white text-rose-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-md active:scale-95 border border-white ml-2"
-                        >
-                          Thanh toán nốt
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 min-w-[200px]">
-                  {isDepositOnly ? (
-                    <button
-                      onClick={() => setIsBookingModalOpen(true)}
-                      className="col-span-2 flex items-center justify-center gap-2 bg-white text-rose-500 px-4 py-2.5 rounded-xl font-bold transition-all hover:scale-105 shadow-md"
-                    >
-                      CHỌN GÓI NGAY
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => {
-                          const cleanPhone = customer.phone.replace(/[^\d]/g, '');
-                          window.open(`https://zalo.me/${cleanPhone}`, '_blank');
-                        }}
-                        className="flex items-center justify-center gap-2 bg-white text-slate-900 px-4 py-2.5 rounded-xl font-bold transition-all hover:bg-slate-50 uppercase tracking-wider text-[9.5px] shadow-md border border-slate-100"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
-                        Zalo
-                      </button>
-
-                      <button
-                        onClick={async () => {
-                          if (!activeBooking) return;
-                          let token = activeBooking?.share_token;
-                          if (!token) {
-                            toast.loading('Đang khởi tạo link...', { id: 'portal-link' });
-                            const result = await generateShareToken(activeBooking.id);
-                            if (result.error || !result.data) {
-                              toast.error('Lỗi khởi tạo link: ' + (result.error || 'Unknown error'), { id: 'portal-link' });
-                              return;
-                            }
-                            token = result.data.share_token;
-                            setActiveBooking({ ...activeBooking, share_token: token });
-                            toast.dismiss('portal-link');
-                          }
-                          const url = `${window.location.origin}/portal/${token}`;
-                          navigator.clipboard.writeText(url);
-                          toast.success('Đã sao chép link Cổng thông tin khách hàng');
-                        }}
-                        className="flex items-center justify-center gap-2 bg-white/20 backdrop-blur-md text-white px-4 py-2.5 rounded-xl font-bold transition-all hover:bg-white/30 uppercase tracking-wider text-[9.5px] border border-white/20 shadow-md"
-                      >
-                        <Share2 className="w-3.5 h-3.5" />
-                        Link Portal
-                      </button>
-
-                      <button
-                        onClick={handleExportQuotation}
-                        disabled={isExportingQuotation}
-                        className={cn(
-                          "flex items-center justify-center gap-2 bg-white text-slate-900 px-4 py-2.5 rounded-xl font-bold transition-all hover:bg-slate-50 uppercase tracking-wider text-[9.5px] shadow-md border border-slate-100 disabled:opacity-50",
-                          userRole !== 'admin' ? "col-span-2" : ""
-                        )}
-                      >
-                        {isExportingQuotation ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-                        Xuất báo giá
-                      </button>
-
-                      {userRole === 'admin' && (
-                        <>
-                          <button
-                            disabled={activeDepositAmount < activeNetPrice}
-                            onClick={() => toast.success('Đang khởi tạo tệp hợp đồng...')}
-                            className={cn(
-                              "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all uppercase tracking-wider text-[9.5px]",
-                              activeDepositAmount >= activeNetPrice
-                                ? "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 shadow-md"
-                                : "bg-white/5 text-white/30 border border-white/5 cursor-not-allowed"
-                            )}
-                          >
-                            <FileText className="w-3.5 h-3.5" />
-                            Xuất hợp đồng
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              if (!activeBooking) return;
-                              setEditBookingData({
-                                package_name: activeBooking.package_name || activeBooking.packages?.name || '',
-                                full_price: activeBooking.full_price || 0,
-                                deposit_amount: activeBooking.deposit_amount || 0,
-                                discount_percent: activeBooking.discount_percent || 0,
-                                total_sessions: activeBooking.total_sessions || 0,
-                                completed_sessions: activeBooking.completed_sessions || 0,
-                                preferred_time: activeBooking.preferred_time || '08:00',
-                                start_date: activeBooking.start_date || '',
-                                status: activeBooking.status || 'in_progress'
-                              });
-                              setIsEditBookingModalOpen(true);
-                            }}
-                            className="col-span-2 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-bold transition-all uppercase tracking-wider text-[9.5px] shadow-lg shadow-amber-500/20 active:scale-95 hover:scale-105"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Sửa dịch vụ
-                          </button>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {activeBooking && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 border-t border-white/10">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-white/60">
-                      <User className="w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">KTV Phụ trách chính</span>
-                    </div>
-                    <div className="relative">
-                      <PremiumSelect
-                        value={activeBooking.assigned_ktv_id || ''}
-                        options={[
-                          { value: '', label: 'Chưa phân công' },
-                          ...ktvs.map(k => ({ value: k.id, label: k.full_name }))
-                        ]}
-                        onChange={(val) => handleUpdateKTV(val)}
-                        disabled={isUpdatingKTV}
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-white/5 rounded-3xl p-5 border border-white/10 flex flex-col justify-center">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Tiến độ buổi</span>
-                      <span className="text-white font-black text-sm">{activeBooking.completed_sessions || 0}/{activeBooking.total_sessions || 0}</span>
-                      <button
-                        onClick={() => router.push(`/dashboard/sessions?search=${encodeURIComponent(customer.name_mother)}&bookingId=${activeBooking?.id || ''}`)}
-                        className="p-2 hover:bg-slate-50 rounded-xl transition-colors group/btn"
-                      >
-                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover/btn:text-primary transition-colors" />
-                      </button>
-                    </div>
-                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-white rounded-full transition-all duration-1000"
-                        style={{ width: `${((activeBooking.completed_sessions || 0) / Math.max(1, activeBooking.total_sessions || 15)) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <ActiveBookingPanel
+            activeBooking={activeBooking}
+            ktvs={ktvs}
+            userRole={userRole}
+            isDepositOnly={isDepositOnly}
+            activeDepositAmount={activeDepositAmount}
+            activeNetPrice={activeNetPrice}
+            isExportingQuotation={isExportingQuotation}
+            isUpdatingKtv={isUpdatingKTV}
+            onOpenBooking={() => setIsBookingModalOpen(true)}
+            onPayRemaining={handlePayRemaining}
+            onOpenZalo={handleOpenZalo}
+            onSharePortal={handleSharePortal}
+            onExportQuotation={handleExportQuotation}
+            onExportContract={handleExportContract}
+            onEditBooking={handleOpenEditBooking}
+            onUpdateKtv={handleUpdateKTV}
+            onOpenBookingSessions={handleOpenBookingSessions}
+          />
 
           <SessionHistoryPanel
             activeBooking={activeBooking}
