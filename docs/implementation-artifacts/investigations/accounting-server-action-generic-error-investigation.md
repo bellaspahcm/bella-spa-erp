@@ -65,3 +65,48 @@ When the caught `Error.message` was the masked Next.js production string, the UI
 1. Apply the Supabase migration to production before relying on the fixed RPC.
 2. After deployment, check Vercel logs for new `/dashboard/accounting/reconciliation` errors.
 3. If other accounting Server Actions have expected business blockers, convert those blockers to structured results too; keep database/query failures explicit.
+
+## Follow-up: 2026-06-04 #2
+
+### New Evidence
+
+| Source | Result |
+| --- | --- |
+| Vercel production error logs, last 30 minutes | No error logs found for branch `main`. |
+| Production readiness counts for Bella Spa Headquarter | Original blockers were 2 `inventory_logs`, 1 `salary_records`, and 1 `session_logs` with missing `business_event_type`. |
+| Production row details | Inventory rows were `restock` records without amount/payment metadata; salary row was `pending_approval`; session row was `completed` but not part of legacy ledger sync. |
+| `sync_legacy_to_ledger_atomic` source trace | The atomic legacy sync posts only confirmed revenue, approved/paid expenses, and paid salary records. |
+
+### Additional Findings
+
+1. The four readiness blockers should not be force-approved. The two restock inventory rows lack amount/payment data, and approving them would create a false accounting signal.
+2. The readiness gate was broader than the legacy sync surface. It counted session/inventory rows and pending salary, even though activation sync does not post those records.
+3. Production preview after the gate fix showed `0` pending revenue, `0` pending expenses, `0` pending salary, and `0` journal entries to create for Bella Spa Headquarter.
+
+### Fix Applied
+
+Added `supabase/migrations/20260604160000_scope_professional_readiness_to_legacy_sync.sql`.
+
+The migration:
+
+1. Recreates `get_accounting_readiness` so Professional Core readiness covers only confirmed revenue, approved/paid expenses, and paid salary rows with positive amount.
+2. Updates the internal readiness block inside `sync_legacy_to_ledger_atomic` to use the same scoped gate.
+3. Leaves session and inventory metadata review available for later accounting automation, but stops those rows from blocking legacy ledger activation.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| Supabase migration list | Remote includes `20260604160000`. |
+| `get_accounting_readiness(HQ tenant)` | Returns revenue/expenses/salary rows all with `0` missing/review/posting failures. |
+| `sync_legacy_to_ledger_atomic` functiondef check | Old session/inventory readiness gate positions are `0`; scoped revenue/expense filters are present. |
+| Vercel production error logs | No new error logs. |
+| Jest | `npm.cmd test -- src/__tests__/dual-mode-accounting.test.ts --runInBand` passed, 20 tests. |
+| ESLint | `npm.cmd run lint -- src/__tests__/dual-mode-accounting.test.ts` passed. |
+| Playwright accounting smoke | Could not execute authenticated smoke because pulled Vercel env contained Supabase keys with empty values in this environment; test skipped by design. |
+
+### Updated Conclusion
+
+**Confidence:** High
+
+The remaining `0/100` readiness block was not caused by accounting data that should be manually approved. It was caused by a gate scope mismatch: readiness was counting rows outside the legacy sync implementation. Production readiness is now clean for activation, while incomplete inventory/session metadata remains available for future review without blocking the Professional Core switch.
