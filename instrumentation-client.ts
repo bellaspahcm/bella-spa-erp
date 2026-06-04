@@ -1,7 +1,10 @@
 import * as Sentry from "@sentry/nextjs";
-import { sentryBeforeSend } from "@/lib/log-redactor";
+import {
+  redact,
+  redactString,
+  sentryBeforeSend,
+} from "@/lib/log-redactor";
 
-// Only initialize Sentry when DSN is configured
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -20,10 +23,14 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     },
     beforeBreadcrumb(breadcrumb) {
       if (breadcrumb.data) {
-        const { redact } = require("@/lib/log-redactor");
         breadcrumb.data = redact(breadcrumb.data);
+      }
+      if (typeof breadcrumb.message === "string") {
+        breadcrumb.message = redactString(breadcrumb.message);
       }
       return breadcrumb;
     },
   });
 }
+
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

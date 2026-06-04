@@ -130,7 +130,14 @@ const eslintConfig = defineConfig([
   },
   // Test files and setup/config files legitimately use `any` for mocks and `require` for imports — exempt.
   {
-    files: ["src/__tests__/**/*.{ts,tsx}", "jest.setup.ts", "sentry.client.config.ts", "sentry.server.config.ts"],
+    files: [
+      "src/__tests__/**/*.{ts,tsx}",
+      "jest.setup.ts",
+      "instrumentation-client.ts",
+      "instrumentation.ts",
+      "sentry.edge.config.ts",
+      "sentry.server.config.ts",
+    ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "off",
