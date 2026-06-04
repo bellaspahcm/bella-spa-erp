@@ -1,9 +1,27 @@
 # 📔 Nhật ký Phát triển & Bảo trì Tổng hợp (Development & Maintenance Log)
 **Dự án**: Bella Spa Enterprise Resource Planning (ERP) System  
-**Ngày cập nhật**: 03/06/2026
+**Ngày cập nhật**: 04/06/2026
 **Mục tiêu**: Gom và tổng hợp tất cả các nhật ký làm việc hàng ngày của AI Agent và nhà phát triển để giúp việc tra cứu lịch sử được dễ dàng, tránh làm tràn context của AI Coding.
 
 ---
+
+### 04/06/2026: Harden Accounting Production Smoke Auth
+* **Muc tieu bao mat/van hanh**:
+  * Cho smoke 11 tab ke toan co the chay tren production bang dang nhap that, khong dung `mock_user_email` ngoai localhost.
+  * Dam bao khi `E2E_BASE_URL` tro ra Vercel, Playwright khong start `next dev` local.
+* **Thay doi chinh**:
+  * `e2e/fixtures/auth.ts` uu tien `E2E_ADMIN_EMAIL` + `E2E_ADMIN_PASSWORD`; neu thieu credential va base URL khong phai localhost thi tu choi mock auth.
+  * `08-accounting-tabs-smoke` bat request failure theo origin cua `E2E_BASE_URL`, khong chi localhost.
+  * Cap nhat `.env.example` va `e2e/README.md` cho production-safe smoke.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-accounting-production-smoke-auth.md`
+* **Kiem tra**:
+  * `npx.cmd playwright test e2e/tests/08-accounting-tabs-smoke.spec.ts` pass, 1 test / 11 tab ke toan.
+  * `E2E_BASE_URL=https://bella-spa-erp.vercel.app` khong co credential that -> skip 1 test, khong start dev server.
+  * Phat hien env Production duoc add qua Windows PowerShell stdin co BOM `U+FEFF` trong header `Authorization`/`apikey`; ghi de lai Vercel env bang `--value --force` va redeploy production.
+  * Production smoke `https://bella-spa-erp.vercel.app` pass, 1 test / 11 tab ke toan, bang account admin E2E tam da cleanup khoi `public.users` va Supabase Auth.
+  * Go legacy env `NEXT_PUBLIC_SUPABASE_ANON_KEY` va `SUPABASE_SERVICE_ROLE_KEY` khoi Vercel Production, redeploy lai, production smoke van pass.
+  * `npm.cmd run lint` pass.
 
 ### 04/06/2026: Harden Supabase API Key Aliases
 * **Muc tieu bao mat**:
