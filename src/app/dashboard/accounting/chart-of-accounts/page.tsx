@@ -14,19 +14,11 @@ X
 } from 'lucide-react';
 import { useEffect,useState } from 'react';
 import { toast } from 'sonner';
+import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
 type TreeAccount = AccountRow & { children: TreeAccount[] };
 type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message || fallback;
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' && message ? message : fallback;
-  }
-  return fallback;
-}
 
 const ACCOUNT_TYPES_SET: ReadonlySet<AccountType> = new Set(['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']);
 const accountTypes: { value: AccountType; label: string }[] = [

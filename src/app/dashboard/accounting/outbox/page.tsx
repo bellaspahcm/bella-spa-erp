@@ -14,19 +14,11 @@ import {
 import { getOutboxEvents, replayOutboxEvent } from '@/services/accounting-actions';
 import { toast } from 'sonner';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 
 type OutboxEventRow = Awaited<ReturnType<typeof getOutboxEvents>>[number];
 type OutboxFilters = NonNullable<Parameters<typeof getOutboxEvents>[0]>;
 type OutboxStatusFilter = 'ALL' | NonNullable<OutboxFilters['status']>;
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message || fallback;
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' && message ? message : fallback;
-  }
-  return fallback;
-}
 
 const statuses: { value: OutboxStatusFilter; label: string }[] = [
   { value: 'ALL', label: 'TẤT CẢ EVENTS' },

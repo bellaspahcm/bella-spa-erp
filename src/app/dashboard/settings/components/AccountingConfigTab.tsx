@@ -18,6 +18,7 @@ import {
   updateAccountingMode,
 } from "@/services/accounting-actions";
 import type { LegacyLedgerSyncPreview, ProfessionalModeReadinessGate } from "@/services/accounting/types";
+import { getAccountingErrorMessage as getErrorMessage } from "@/lib/accounting-error-message";
 
 type AccountingMode = "SIMPLE" | "PROFESSIONAL";
 const EMPTY_SYNC_PREVIEW: LegacyLedgerSyncPreview = {
@@ -29,10 +30,6 @@ const EMPTY_SYNC_PREVIEW: LegacyLedgerSyncPreview = {
   expense_amount: 0,
   salary_amount: 0,
 };
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("vi-VN", {
@@ -88,10 +85,14 @@ export default function AccountingConfigTab() {
     setIsSyncing(true);
     try {
       const result = await syncLegacyToLedger();
-      if (result.success) {
-        toast.success(`Đồng bộ thành công: ${result.syncedRevenueCount} doanh thu, ${result.syncedExpenseCount} chi phí, ${result.syncedSalaryCount} bảng lương.`);
+      if (!result.success) {
+        toast.warning(result.error || "Chưa thể bật Professional Core. Kiểm tra Sẵn sàng dữ liệu trước khi đồng bộ.");
         await refreshConfig();
+        return;
       }
+
+      toast.success(`Đồng bộ thành công: ${result.syncedRevenueCount} doanh thu, ${result.syncedExpenseCount} chi phí, ${result.syncedSalaryCount} bảng lương.`);
+      await refreshConfig();
     } catch (error) {
       toast.error(getErrorMessage(error, "Đã xảy ra lỗi trong quá trình đồng bộ."));
     } finally {
@@ -102,7 +103,12 @@ export default function AccountingConfigTab() {
   const handleToggleMode = async (newMode: AccountingMode) => {
     setIsUpdating(true);
     try {
-      await updateAccountingMode(newMode);
+      const result = await updateAccountingMode(newMode);
+      if (!result.success) {
+        toast.warning(result.error || "Chưa thể bật Professional Core. Kiểm tra Sẵn sàng dữ liệu trước khi chuyển chế độ.");
+        await refreshConfig();
+        return;
+      }
       await refreshConfig();
       toast.success(`Đã chuyển sang chế độ ${newMode === "PROFESSIONAL" ? "Professional Core" : "Simple Finance"}.`);
     } catch (error) {

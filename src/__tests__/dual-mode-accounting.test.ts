@@ -186,7 +186,7 @@ describe('Dual-Mode Accounting Configuration', () => {
     });
   });
 
-  it('blocks PROFESSIONAL mode when accounting readiness is not clean', async () => {
+  it('returns an explicit failure when accounting readiness blocks PROFESSIONAL mode', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
     mockRpc.mockImplementationOnce((fnName: string) => {
       if (fnName === 'get_accounting_readiness') {
@@ -207,7 +207,13 @@ describe('Dual-Mode Accounting Configuration', () => {
       return Promise.resolve({ data: null, error: null });
     });
 
-    await expect(updateAccountingMode('PROFESSIONAL')).rejects.toThrow(/Professional Core/);
+    const res = await updateAccountingMode('PROFESSIONAL');
+
+    expect(res.success).toBe(false);
+    if (res.success) throw new Error('Expected readiness gate to block PROFESSIONAL mode');
+    expect(res.error).toMatch(/Professional Core/);
+    expect(res.blockingReasons.join(' ')).toMatch(/chưa phân loại nghiệp vụ kế toán/);
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it('blocks non-admin users from changing accounting mode', async () => {
@@ -245,6 +251,41 @@ describe('Legacy Syncing Engine', () => {
     });
     expect(safeRevalidatePath).toHaveBeenCalledWith('/dashboard/accounting/reconciliation');
     expect(safeRevalidatePath).toHaveBeenCalledWith('/dashboard/accounting/readiness');
+  });
+
+  it('returns an explicit failure when readiness gate blocks legacy sync', async () => {
+    mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
+    mockRpc.mockImplementation((fnName: string) => {
+      if (fnName === 'get_accounting_readiness') {
+        return Promise.resolve({
+          data: [
+            {
+              source_table: 'revenue',
+              total_records: 4,
+              classified_records: 0,
+              missing_business_event: 4,
+              needs_review: 0,
+              posting_failed: 0,
+            },
+          ],
+          error: null,
+        });
+      }
+      if (fnName === 'sync_legacy_to_ledger_atomic') {
+        throw new Error('sync should not run when readiness blocks');
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const res = await syncLegacyToLedger();
+
+    expect(res.success).toBe(false);
+    if (res.success) throw new Error('Expected readiness gate to block legacy sync');
+    expect(res.error).toMatch(/Professional Core/);
+    expect(res.readinessScore).toBeLessThan(95);
+    expect(res.blockingReasons.join(' ')).toMatch(/4/);
+    expect(mockRpc).not.toHaveBeenCalledWith('sync_legacy_to_ledger_atomic', expect.anything());
+    expect(safeRevalidatePath).not.toHaveBeenCalled();
   });
 
   it('propagates atomic sync RPC failures without silently succeeding', async () => {

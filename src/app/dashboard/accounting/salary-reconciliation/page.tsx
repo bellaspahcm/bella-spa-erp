@@ -16,18 +16,10 @@ XCircle,
 } from 'lucide-react';
 import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
+import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(n) || 0);
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message || fallback;
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' && message ? message : fallback;
-  }
-  return fallback;
-}
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; border: string; text: string; icon: LucideIcon }> = {
   MATCH: {

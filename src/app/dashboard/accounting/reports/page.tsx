@@ -23,21 +23,13 @@ import {
 } from '@/services/export-actions';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { toast } from 'sonner';
+import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
 type AccountLedgerRow = AccountingReportRecord;
 type ExportableReportType = 'trial_balance' | 'income_statement' | 'balance_sheet' | 'cash_flow';
 
 const toReportNumber = (value: string | number | null | undefined) => Number(value || 0);
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message || fallback;
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' && message ? message : fallback;
-  }
-  return fallback;
-}
 
 const reportTabs = [
   { value: 'trial_balance', label: 'Bảng cân đối phát sinh' },
