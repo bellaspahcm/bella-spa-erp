@@ -1,10 +1,10 @@
 'use client';
 
+import { cloneElement, useEffect, useRef, useState, type ReactElement } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { TrendingUp, ChevronRight, DollarSign, Star } from 'lucide-react';
 import { 
-  ResponsiveContainer, 
   AreaChart, 
   Area, 
   BarChart,
@@ -29,6 +29,70 @@ interface RevenueChartProps {
   performanceData: PerformanceDataPoint[];
   userRole: 'admin' | 'ktv' | null;
   isLoading?: boolean;
+}
+
+type ChartSize = { width: number; height: number };
+type SizedChartElement = ReactElement<{ width?: number; height?: number }>;
+
+function MeasuredChartFrame({
+  className,
+  children,
+}: {
+  className: string;
+  children: SizedChartElement;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [chartSize, setChartSize] = useState<ChartSize | null>(null);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) {
+      return;
+    }
+
+    let frameId = 0;
+    const measure = () => {
+      const { width, height } = node.getBoundingClientRect();
+      if (width <= 0 || height <= 0) {
+        setChartSize(null);
+        return;
+      }
+
+      const nextSize = {
+        width: Math.max(1, Math.floor(width)),
+        height: Math.max(1, Math.floor(height)),
+      };
+      setChartSize((previousSize) => (
+        previousSize?.width === nextSize.width && previousSize.height === nextSize.height
+          ? previousSize
+          : nextSize
+      ));
+    };
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(measure);
+    };
+
+    if (typeof ResizeObserver === 'undefined') {
+      scheduleMeasure();
+      return () => cancelAnimationFrame(frameId);
+    }
+
+    const observer = new ResizeObserver(scheduleMeasure);
+    observer.observe(node);
+    scheduleMeasure();
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      observer.disconnect();
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className={`${className} min-w-0`}>
+      {chartSize ? cloneElement(children, chartSize) : null}
+    </div>
+  );
 }
 
 export function RevenueChart({ performanceData, userRole, isLoading }: RevenueChartProps) {
@@ -125,8 +189,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
             </div>
           </div>
           
-          <div className="h-40 w-full relative mb-6">
-            <ResponsiveContainer width="100%" height="100%">
+          <MeasuredChartFrame className="h-40 w-full relative mb-6">
               <AreaChart data={performanceData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorPerf" x1="0" y1="0" x2="0" y2="1">
@@ -163,8 +226,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
                   animationDuration={2000}
                 />
               </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          </MeasuredChartFrame>
         </div>
         
         {userRole === 'admin' && (
@@ -198,8 +260,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
             </div>
           </div>
           
-          <div className="h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <MeasuredChartFrame className="h-56 w-full">
               <BarChart data={performanceData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                 <XAxis 
@@ -227,8 +288,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
                 <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} />
                 <Bar dataKey="expense" fill="#f43f5e" radius={[4, 4, 0, 0]} barSize={20} />
               </BarChart>
-            </ResponsiveContainer>
-          </div>
+          </MeasuredChartFrame>
         </motion.div>
       )}
 
@@ -273,8 +333,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
             })()}
           </div>
 
-          <div className="h-28 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <MeasuredChartFrame className="h-28 w-full">
               <AreaChart data={performanceData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRating" x1="0" y1="0" x2="0" y2="1">
@@ -286,8 +345,7 @@ export function RevenueChart({ performanceData, userRole, isLoading }: RevenueCh
                 <YAxis hide domain={[4, 5]} />
                 <Area type="monotone" dataKey="rating" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorRating)" />
               </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          </MeasuredChartFrame>
         </div>
       </motion.div>
     </div>

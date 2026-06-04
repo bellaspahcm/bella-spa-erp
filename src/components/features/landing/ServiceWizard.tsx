@@ -118,7 +118,7 @@ export function ServiceWizard({ categories, serviceCategories, onSelectPackage }
             ))}
           </div>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             {/* Step 1: User Type */}
             {wizardStep === 1 && (
               <motion.div

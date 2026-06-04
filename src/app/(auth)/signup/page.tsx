@@ -172,7 +172,7 @@ export default function SignupPage() {
           </div>
 
           <form onSubmit={handleSignup}>
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               {/* STEP 1: SPA BRANDING INFO */}
               {step === 1 && (
                 <motion.div
