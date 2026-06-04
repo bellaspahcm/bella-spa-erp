@@ -3,15 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  AlertTriangle,
   DollarSign,
-  Link as LinkIcon,
   Search,
   ExternalLink,
-  ShieldAlert,
   ArrowRightLeft,
-  X,
-  CheckCircle2,
   RefreshCw,
   Wallet,
   ChevronDown
@@ -21,95 +16,29 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase-client';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { AllocateRevenueModal } from './components/AllocateRevenueModal';
+import { DebtPaymentModal } from './components/DebtPaymentModal';
+import { ReconciliationHeader } from './components/ReconciliationHeader';
+import { ReconciliationKpiCards } from './components/ReconciliationKpiCards';
+import type {
+  CollectionHistory,
+  DebtAlert,
+  FinancialAnomaliesData,
+  FinancialAnomaliesRpcData,
+  FinancialReconciliationTab,
+  LegacyProfilesClient,
+  OrphanedRevenue,
+  PaymentMethod,
+  ProfileRow,
+  RevenueHistoryRow,
+} from './types';
+import { formatNumberishCurrency, getErrorMessage } from './utils';
 import {
   getInterBranchClearingRecords,
   simulateInterBranchClearing,
   type InterBranchClearingRecord,
 } from '@/services/clearing-actions';
 import { allocateOrphanedRevenue, collectDebtPayment } from '@/services/reconciliation-actions';
-
-type Numberish = string | number | null | undefined;
-type ProfileRow = {
-  tenant_id: string | null;
-  role: string | null;
-};
-
-type DebtAlert = {
-  booking_id: string;
-  customer_id?: string | null;
-  customer_name?: string | null;
-  package_name?: string | null;
-  full_price?: Numberish;
-  total_paid?: Numberish;
-  debt?: Numberish;
-};
-
-type OrphanedRevenue = {
-  revenue_id: string;
-  revenue_type?: string | null;
-  received_date?: string | null;
-  notes?: string | null;
-  amount?: Numberish;
-};
-
-type MismatchAlert = DebtAlert & {
-  mismatch?: Numberish;
-};
-
-type CollectionHistory = {
-  revenue_id: string;
-  amount: Numberish;
-  received_date: string | null;
-  notes: string | null;
-  payment_method: string | null;
-  booking_id: string | null;
-  customer_name: string;
-};
-
-type FinancialAnomaliesData = {
-  debt_alerts: DebtAlert[];
-  orphaned_revenue: OrphanedRevenue[];
-  mismatch_alerts: MismatchAlert[];
-  collection_history: CollectionHistory[];
-};
-
-type FinancialAnomaliesRpcData = Partial<Omit<FinancialAnomaliesData, 'collection_history'>>;
-
-type RevenueHistoryRow = {
-  id: string;
-  amount: Numberish;
-  received_date: string | null;
-  notes: string | null;
-  payment_method: string | null;
-  booking_id: string | null;
-  bookings?: {
-    customers?: {
-      name_mother?: string | null;
-      name_baby?: string | null;
-    } | null;
-  } | null;
-};
-
-type LegacyProfilesClient = {
-  from(table: 'profiles'): {
-    select(columns: string): {
-      eq(column: string, value: string): {
-        single(): Promise<{ data: ProfileRow | null; error: unknown }>;
-      };
-    };
-  };
-};
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message || fallback;
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' && message ? message : fallback;
-  }
-  return fallback;
-}
-
-const formatNumberishCurrency = (value: Numberish) => formatCurrency(Number(value || 0));
 
 export default function FinancialReconciliationPage() {
   const [data, setData] = useState<FinancialAnomaliesData>({
@@ -119,7 +48,7 @@ export default function FinancialReconciliationPage() {
     collection_history: []
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'debt' | 'orphan' | 'mismatch' | 'history' | 'clearing'>('debt');
+  const [activeTab, setActiveTab] = useState<FinancialReconciliationTab>('debt');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState(''); // YYYY-MM-DD
   const [isTabDropdownOpen, setIsTabDropdownOpen] = useState(false);
@@ -139,7 +68,7 @@ export default function FinancialReconciliationPage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<DebtAlert | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'bank_transfer' | 'cash'>('bank_transfer');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer');
   const [isPaying, setIsPaying] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -352,81 +281,21 @@ export default function FinancialReconciliationPage() {
 
   return (
     <div className="p-4 sm:p-8 space-y-8 max-w-7xl mx-auto pb-24 w-full max-w-full overflow-x-hidden">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-8">
-        <div>
-          <div className="flex items-center gap-2 text-primary/80 mb-2">
-            <ShieldAlert className="w-5 h-5" />
-            <span className="text-sm font-black uppercase tracking-widest">Trung tâm Giám sát</span>
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Đối soát Tài chính</h1>
-          <p className="text-slate-500 mt-2 font-medium">Tự động phát hiện công nợ, tiền treo và chênh lệch doanh thu</p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm w-full sm:w-auto transition-all hover:border-slate-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">LỌC NGÀY:</span>
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="bg-transparent border-none p-0 text-sm font-black text-slate-700 focus:ring-0 outline-none cursor-pointer w-full sm:w-auto"
-            />
-          </div>
-          <button 
-            onClick={fetchData} 
-            disabled={isLoading}
-            className="flex w-full sm:w-auto justify-center items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl font-black text-sm hover:bg-slate-800 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-          >
-            <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
-            QUÉT LẠI
-          </button>
-        </div>
-      </div>
+      <ReconciliationHeader
+        filterDate={filterDate}
+        isLoading={isLoading}
+        onFilterDateChange={setFilterDate}
+        onRefresh={() => void fetchData()}
+      />
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-rose-200 dark:shadow-none relative overflow-hidden w-full">
-          <div className="relative z-10">
-            <div className="flex justify-between items-center mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                <Wallet className="w-6 h-6 text-white" />
-              </div>
-              <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md">{data.debt_alerts.length} khách</span>
-            </div>
-            <p className="text-white/80 font-black text-xs uppercase tracking-widest mb-1">Cần thu hồi nợ</p>
-            <h3 className="text-2xl sm:text-3xl font-black break-words">{formatCurrency(totalDebt)}</h3>
-          </div>
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-        </div>
-
-        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-amber-200 relative overflow-hidden w-full">
-          <div className="relative z-10">
-            <div className="flex justify-between items-center mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                <LinkIcon className="w-6 h-6 text-white" />
-              </div>
-              <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md">{data.orphaned_revenue.length} khoản</span>
-            </div>
-            <p className="text-white/80 font-black text-xs uppercase tracking-widest mb-1">Tiền thu bị treo</p>
-            <h3 className="text-2xl sm:text-3xl font-black break-words">{formatCurrency(totalOrphaned)}</h3>
-          </div>
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-        </div>
-
-        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl sm:rounded-[32px] p-5 sm:p-6 text-white shadow-lg shadow-purple-200 relative overflow-hidden w-full">
-          <div className="relative z-10">
-            <div className="flex justify-between items-center mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                <AlertTriangle className="w-6 h-6 text-white" />
-              </div>
-              <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black backdrop-blur-md">Xử lý ngay</span>
-            </div>
-            <p className="text-white/80 font-black text-xs uppercase tracking-widest mb-1">Booking lệch giá trị</p>
-            <h3 className="text-2xl sm:text-3xl font-black break-words">{totalMismatches} <span className="text-lg opacity-80">vụ việc</span></h3>
-          </div>
-          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-        </div>
-      </div>
+      <ReconciliationKpiCards
+        debtCount={data.debt_alerts.length}
+        totalDebt={totalDebt}
+        orphanedCount={data.orphaned_revenue.length}
+        totalOrphaned={totalOrphaned}
+        totalMismatches={totalMismatches}
+      />
 
       {/* TABS & SEARCH */}
       <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-2 flex flex-col lg:flex-row justify-between items-center gap-4">
@@ -894,178 +763,27 @@ export default function FinancialReconciliationPage() {
         )}
       </div>
 
-      {/* MODAL: PHÂN BỔ TIỀN TREO */}
-      <AnimatePresence>
-        {showAllocateModal && selectedOrphan && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
-            onClick={(e) => e.target === e.currentTarget && setShowAllocateModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden"
-            >
-              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-amber-50/50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
-                    <ArrowRightLeft className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-black text-slate-900">Phân Bổ Tiền Treo</h3>
-                </div>
-                <button onClick={() => setShowAllocateModal(false)} className="w-8 h-8 flex items-center justify-center hover:bg-slate-200 rounded-full transition-colors text-slate-500">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+      <AllocateRevenueModal
+        isOpen={showAllocateModal}
+        selectedOrphan={selectedOrphan}
+        targetBookingId={targetBookingId}
+        isAllocating={isAllocating}
+        onClose={() => setShowAllocateModal(false)}
+        onTargetBookingIdChange={setTargetBookingId}
+        onConfirm={() => void handleAllocate()}
+      />
 
-              <div className="p-6 space-y-6">
-                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Số tiền đang treo</p>
-                  <p className="text-3xl font-black text-amber-600 mb-2">{formatNumberishCurrency(selectedOrphan.amount)}</p>
-                  {selectedOrphan.notes && (
-                    <p className="text-xs text-slate-600 font-medium italic border-l-2 border-amber-200 pl-2">
-                      Ghi chú: {selectedOrphan.notes}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                    Nhập Booking ID cần phân bổ vào
-                  </label>
-                  <input
-                    type="text"
-                    value={targetBookingId}
-                    onChange={(e) => setTargetBookingId(e.target.value)}
-                    placeholder="VD: 123e4567-e89b-12d3..."
-                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-sm font-mono focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-2">
-                    Lưu ý: Bạn có thể vào màn hình Hồ sơ khách hàng hoặc Bookings để copy chính xác ID của Booking.
-                  </p>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    onClick={handleAllocate}
-                    disabled={isAllocating || !targetBookingId.trim()}
-                    className="w-full bg-primary hover:bg-primary-hover text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2"
-                  >
-                    {isAllocating ? 'Đang Xử Lý...' : 'Xác Nhận Phân Bổ'}
-                    {!isAllocating && <CheckCircle2 className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* MODAL: THU NỢ */}
-      <AnimatePresence>
-        {showPaymentModal && selectedDebt && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
-            onClick={(e) => e.target === e.currentTarget && setShowPaymentModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-[32px] w-full max-w-md shadow-2xl overflow-hidden"
-            >
-              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-rose-50/50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
-                    <DollarSign className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-black text-slate-900">Thu Nợ Khách Hàng</h3>
-                </div>
-                <button onClick={() => setShowPaymentModal(false)} className="w-8 h-8 flex items-center justify-center hover:bg-slate-200 rounded-full transition-colors text-slate-500">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="p-6 space-y-6">
-                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Khách hàng</p>
-                      <p className="text-sm font-black text-slate-900 mb-2">{selectedDebt.customer_name}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Mã Booking</p>
-                      <p className="text-sm font-mono font-bold text-slate-700 bg-slate-200/50 px-2 py-0.5 rounded-lg border border-slate-200">
-                        {selectedDebt.booking_id?.split('-')[0]?.toUpperCase()}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 mt-3">Gói Dịch Vụ</p>
-                  <p className="text-sm font-black text-slate-600">{selectedDebt.package_name || 'Chưa cập nhật tên gói'}</p>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                    Số tiền thu (VNĐ)
-                  </label>
-                  <input
-                    type="text"
-                    value={paymentAmount ? Number(paymentAmount.toString().replace(/\D/g, '')).toLocaleString() : ''}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    placeholder="VD: 5,000,000"
-                    className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-lg font-black focus:ring-2 focus:ring-primary/20 outline-none transition-all text-rose-600"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-2">
-                    Mặc định là số tiền khách còn nợ: <strong className="text-rose-500">{formatNumberishCurrency(selectedDebt.debt)}</strong>
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                    Phương thức thanh toán
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('bank_transfer')}
-                      className={cn(
-                        "py-3.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all text-center",
-                        paymentMethod === 'bank_transfer'
-                          ? "bg-slate-900 text-white border-slate-900 shadow-sm"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                      )}
-                    >
-                      Chuyển khoản
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('cash')}
-                      className={cn(
-                        "py-3.5 rounded-2xl border text-xs font-black uppercase tracking-widest transition-all text-center",
-                        paymentMethod === 'cash'
-                          ? "bg-slate-900 text-white border-slate-900 shadow-sm"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                      )}
-                    >
-                      Tiền mặt
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    onClick={handlePayment}
-                    disabled={isPaying || !paymentAmount}
-                    className="w-full bg-rose-500 hover:bg-rose-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg shadow-rose-200 dark:shadow-none"
-                  >
-                    {isPaying ? 'Đang Xử Lý...' : 'Xác Nhận Thu Nợ'}
-                    {!isPaying && <CheckCircle2 className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <DebtPaymentModal
+        isOpen={showPaymentModal}
+        selectedDebt={selectedDebt}
+        paymentAmount={paymentAmount}
+        paymentMethod={paymentMethod}
+        isPaying={isPaying}
+        onClose={() => setShowPaymentModal(false)}
+        onPaymentAmountChange={setPaymentAmount}
+        onPaymentMethodChange={setPaymentMethod}
+        onConfirm={() => void handlePayment()}
+      />
     </div>
   );
 }
