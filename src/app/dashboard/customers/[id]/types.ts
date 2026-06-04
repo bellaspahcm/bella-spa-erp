@@ -1,4 +1,40 @@
 import type { Dispatch, SetStateAction } from 'react';
+import type { Database } from '@/types/database.types';
+
+export type CustomerRow = Database['public']['Tables']['customers']['Row'];
+export type BookingRow = Database['public']['Tables']['bookings']['Row'];
+export type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+export type RevenueRow = Database['public']['Tables']['revenue']['Row'];
+export type UserRow = Database['public']['Tables']['users']['Row'];
+
+export type CustomerDetailSession = SessionLogRow & {
+  completed_by_ktv?: { full_name: string | null; phone?: string | null } | null;
+  type?: string | null;
+};
+
+export type CustomerDetailRevenue = RevenueRow & {
+  recorded_by?: { full_name: string | null } | null;
+};
+
+export type CustomerDetailBooking = BookingRow & {
+  packages?: { name?: string | null } | null;
+  assigned_ktv?: { full_name: string | null; phone?: string | null } | null;
+  session_logs?: CustomerDetailSession[];
+  revenue?: CustomerDetailRevenue[];
+};
+
+export type CustomerDetailRecord = CustomerRow & {
+  baby: {
+    name: string;
+    dob: string;
+    gender: string;
+  };
+  sessions: unknown[];
+  allBookings: CustomerDetailBooking[];
+  is_fully_paid?: boolean;
+};
+
+export type KtvOption = Pick<UserRow, 'id' | 'full_name' | 'role'>;
 
 export type EditCustomerData = {
   name_mother: string;

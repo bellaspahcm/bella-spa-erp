@@ -1,10 +1,9 @@
 'use client';
 
-import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { geocodeAddress } from '@/services/customer-actions';
 import { motion } from 'framer-motion';
-import { AlertCircle, Baby, Camera, CheckCircle2, CreditCard as CreditCardIcon, DollarSign as DollarIcon, FileText, Image as ImageIcon, Loader2, MapPin, Phone, PlusCircle, Sparkles, User } from 'lucide-react';
+import { AlertCircle, Camera, CheckCircle2, CreditCard as CreditCardIcon, DollarSign as DollarIcon, FileText, Image as ImageIcon, Loader2, PlusCircle, Sparkles, User } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
