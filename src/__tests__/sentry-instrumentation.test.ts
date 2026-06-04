@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 jest.mock("@sentry/nextjs", () => ({
   captureConsoleIntegration: jest.fn(() => ({ name: "CaptureConsole" })),
   captureRequestError: jest.fn(),
@@ -77,5 +80,11 @@ describe("Sentry instrumentation bootstrap", () => {
         replaysSessionSampleRate: 0.1,
       }),
     );
+  });
+
+  it("allows Sentry Replay blob workers in production CSP", () => {
+    const nextConfig = readFileSync(resolve(process.cwd(), "next.config.ts"), "utf8");
+
+    expect(nextConfig.match(/worker-src 'self' blob:/g)).toHaveLength(2);
   });
 });

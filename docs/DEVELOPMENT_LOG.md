@@ -12,14 +12,15 @@
 * **Thay doi chinh**:
   * Them `instrumentation.ts` voi runtime-specific import cho node/edge Sentry config va `onRequestError = Sentry.captureRequestError`.
   * Chuyen client Sentry init tu `sentry.client.config.ts` sang `instrumentation-client.ts`, giu replay masking va PII redaction.
+  * Cho phep `worker-src 'self' blob:` trong CSP de Sentry Replay khong bi browser chan worker.
   * Them regression test cho Sentry request-error hook, node bootstrap va router transition capture.
 * **Artifact**:
   * `docs/implementation-artifacts/spec-harden-error-monitoring.md`
 * **Kiem tra**:
-  * `npm.cmd test -- src\__tests__\sentry-instrumentation.test.ts src\__tests__\log-redactor.test.ts --runInBand` pass, 2 suites / 21 tests.
+  * `npm.cmd test -- src\__tests__\sentry-instrumentation.test.ts src\__tests__\log-redactor.test.ts --runInBand` pass, 2 suites / 22 tests.
   * `npm.cmd run lint` pass.
   * `npm.cmd run build` pass.
-  * `npm.cmd test -- --runInBand` pass, 80 suites / 854 tests.
+  * `npm.cmd test -- --runInBand` pass, 80 suites / 855 tests.
   * `git diff --check` pass.
 
 ### 04/06/2026: Harden Accounting Production Smoke Auth
