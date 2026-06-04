@@ -131,6 +131,8 @@ export default function ChatPage() {
   const [showChatMobile, setShowChatMobile] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const onlineIdsRef = useRef<Set<string>>(new Set());
+  const selectedChatIdRef = useRef<string | null>(null);
+  const chatIdsRef = useRef<Set<string>>(new Set());
 
   const filteredChats = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -140,6 +142,14 @@ export default function ChatPage() {
       `${chat.name} ${chat.phone} ${chat.level} ${chat.lastMessage}`.toLowerCase().includes(query)
     );
   }, [chats, searchQuery]);
+
+  useEffect(() => {
+    selectedChatIdRef.current = selectedChat?.id ?? null;
+  }, [selectedChat?.id]);
+
+  useEffect(() => {
+    chatIdsRef.current = new Set(chats.map((chat) => chat.id));
+  }, [chats]);
 
   const clearUnreadForChat = useCallback((customerId: string) => {
     setChats((prevChats) =>
@@ -185,6 +195,27 @@ export default function ChatPage() {
     );
   }, []);
 
+  const loadChats = useCallback(async () => {
+    try {
+      setLoading(true);
+      setLoadError(null);
+      const customers = await getChatCustomers();
+      const mappedChats = sortChatsByTime(
+        customers.map((customer) => mapCustomerToChat(customer, onlineIdsRef.current))
+      );
+
+      setChats(mappedChats);
+      setSelectedChat((current) => current ?? mappedChats[0] ?? null);
+    } catch (error: unknown) {
+      console.error('Error loading chats:', error);
+      setChats([]);
+      setSelectedChat(null);
+      setLoadError(getErrorMessage(error, 'Không thể tải danh sách hội thoại.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const supabase = createClient();
     const presenceChannel = supabase.channel('online_customers');
@@ -220,32 +251,15 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
-    async function loadChats() {
-      try {
-        setLoading(true);
-        setLoadError(null);
-        const customers = await getChatCustomers();
-        const mappedChats = sortChatsByTime(
-          customers.map((customer) => mapCustomerToChat(customer, onlineIdsRef.current))
-        );
-
-        setChats(mappedChats);
-        setSelectedChat((current) => current ?? mappedChats[0] ?? null);
-      } catch (error: unknown) {
-        console.error('Error loading chats:', error);
-        setChats([]);
-        setSelectedChat(null);
-        setLoadError(getErrorMessage(error, 'Không thể tải danh sách hội thoại.'));
-      } finally {
-        setLoading(false);
-      }
-    }
-
     void loadChats();
-  }, []);
+  }, [loadChats]);
 
   useEffect(() => {
-    if (!selectedChat?.id) return;
+    if (!selectedChat?.id) {
+      setMessages([]);
+      return;
+    }
+
     const selectedChatId = selectedChat.id;
 
     async function loadMessages() {
@@ -268,42 +282,54 @@ export default function ChatPage() {
     }
 
     void loadMessages();
+  }, [clearUnreadForChat, selectedChat?.id]);
 
+  useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel(`chat:${selectedChatId}`)
+      .channel('dashboard-chat:all')
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chat_messages',
-          filter: `customer_id=eq.${selectedChatId}`
+          table: 'chat_messages'
         },
         (payload: ChatInsertPayload) => {
+          const incomingCustomerId = payload.new.customer_id;
+          if (!incomingCustomerId) return;
+
+          const isSelectedChat = incomingCustomerId === selectedChatIdRef.current;
+          const customerIsKnown = chatIdsRef.current.has(incomingCustomerId);
           const newMessage = mapMessageRow(payload.new);
 
-          setMessages((previousMessages) => {
-            if (previousMessages.some((message) => message.id === newMessage.id)) {
-              return previousMessages;
-            }
-            return [...previousMessages, newMessage];
-          });
+          if (isSelectedChat) {
+            setMessages((previousMessages) => {
+              if (previousMessages.some((message) => message.id === newMessage.id)) {
+                return previousMessages;
+              }
 
-          const incomingCustomerId = payload.new.customer_id;
-          if (incomingCustomerId) {
-            const isUnreadCustomerMessage = payload.new.sender_type === 'customer';
+              return [...previousMessages, newMessage];
+            });
+          }
+
+          if (customerIsKnown) {
             updateChatPreview(
               incomingCustomerId,
               payload.new.message,
               payload.new.created_at,
-              (currentUnread) => (isUnreadCustomerMessage ? 0 : currentUnread)
+              (currentUnread) => {
+                if (payload.new.sender_type !== 'customer') return currentUnread;
+                return isSelectedChat ? 0 : currentUnread + 1;
+              }
             );
+          } else {
+            void loadChats();
           }
 
-          if (payload.new.sender_type === 'customer') {
-            void markMessagesAsRead(selectedChatId)
-              .then(() => clearUnreadForChat(selectedChatId))
+          if (payload.new.sender_type === 'customer' && isSelectedChat) {
+            void markMessagesAsRead(incomingCustomerId)
+              .then(() => clearUnreadForChat(incomingCustomerId))
               .catch((error: unknown) => {
                 console.error('Error marking read from subscription:', error);
                 setMessageError(getErrorMessage(error, 'Không thể đánh dấu tin nhắn đã đọc.'));
@@ -316,7 +342,7 @@ export default function ChatPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [clearUnreadForChat, selectedChat?.id, updateChatPreview]);
+  }, [clearUnreadForChat, loadChats, updateChatPreview]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
