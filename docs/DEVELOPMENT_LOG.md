@@ -5,6 +5,21 @@
 
 ---
 
+### 05/06/2026: Harden Export Actions Coverage
+* **Muc tieu kiem thu**:
+  * Dong diem mu test coverage cua `src/services/export-actions.ts`, noi tao file Excel cho bao cao ke toan va luong.
+  * Bat regression o muc workbook that thay vi chi kiem tra chuoi base64.
+* **Thay doi chinh**:
+  * Them `src/__tests__/export-actions.test.ts` de decode XLSX va assert sheet names, tong trial balance, mapping P&L/balance sheet/cash-flow, session matrix totals.
+  * Them test salary export gom nhom package/hoa hong va propagate loi query `session_logs`, khong tra workbook gia khi DB fail.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-export-actions-coverage.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src\__tests__\export-actions.test.ts --runInBand` pass, 1 suite / 7 tests.
+  * `npm.cmd run lint` pass.
+  * `npm.cmd test -- --runInBand` pass, 81 suites / 862 tests.
+  * `git diff --check` pass.
+
 ### 05/06/2026: Harden Error Monitoring Instrumentation
 * **Muc tieu van hanh**:
   * Sua khoang trong monitoring duoc report danh gia neu production errors chi phu thuoc vao Vercel logs thu cong.
