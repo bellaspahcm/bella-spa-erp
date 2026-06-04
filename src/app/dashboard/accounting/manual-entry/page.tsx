@@ -17,18 +17,10 @@ Trash2
 import { useRouter } from 'next/navigation';
 import { useEffect,useState } from 'react';
 import { toast } from 'sonner';
+import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
 type StaffRow = Awaited<ReturnType<typeof getUsers>>[number];
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message || fallback;
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' && message ? message : fallback;
-  }
-  return fallback;
-}
 
 interface JournalLineRow {
   account_id: string;

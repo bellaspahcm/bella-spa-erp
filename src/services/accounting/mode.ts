@@ -137,15 +137,13 @@ async function loadProfessionalModeReadinessGate(
   };
 }
 
-async function assertCanEnableProfessional(
-  supabase: SupabaseClient,
-  tenantId: string
-): Promise<ProfessionalModeReadinessGate> {
-  const gate = await loadProfessionalModeReadinessGate(supabase, tenantId);
-  if (!gate.can_enable_professional) {
-    throw new Error(`Chưa thể bật Professional Core: ${gate.blocking_reasons.join(' ')}`);
-  }
-  return gate;
+function buildProfessionalModeBlockedResult(gate: ProfessionalModeReadinessGate) {
+  return {
+    success: false as const,
+    error: `Chưa thể bật Professional Core: ${gate.blocking_reasons.join(' ')}`,
+    blockingReasons: gate.blocking_reasons,
+    readinessScore: gate.readiness_score,
+  };
 }
 
 export async function getAccountingMode(): Promise<AccountingMode> {
@@ -221,9 +219,13 @@ export async function updateAccountingMode(mode: AccountingMode) {
     throw new Error('Unauthorized: chỉ admin mới được thay đổi chế độ kế toán.');
   }
 
-  const readinessGate = mode === 'PROFESSIONAL'
-    ? await assertCanEnableProfessional(supabase, user.tenant_id)
-    : null;
+  let readinessGate: ProfessionalModeReadinessGate | null = null;
+  if (mode === 'PROFESSIONAL') {
+    readinessGate = await loadProfessionalModeReadinessGate(supabase, user.tenant_id);
+    if (!readinessGate.can_enable_professional) {
+      return buildProfessionalModeBlockedResult(readinessGate);
+    }
+  }
   const payload: Database['public']['Tables']['tenants']['Update'] = {
     accounting_mode: mode,
   };
@@ -248,7 +250,7 @@ export async function updateAccountingMode(mode: AccountingMode) {
 
   await safeRevalidatePath('/dashboard/accounting/reconciliation');
   await safeRevalidatePath('/dashboard/accounting/readiness');
-  return { success: true };
+  return { success: true as const };
 }
 
 export async function syncLegacyToLedger() {
@@ -259,7 +261,10 @@ export async function syncLegacyToLedger() {
 
   const tenantId = user.tenant_id;
   const supabase = await createClient();
-  const readinessGate = await assertCanEnableProfessional(supabase, tenantId);
+  const readinessGate = await loadProfessionalModeReadinessGate(supabase, tenantId);
+  if (!readinessGate.can_enable_professional) {
+    return buildProfessionalModeBlockedResult(readinessGate);
+  }
 
   const { data, error } = await supabase.rpc('sync_legacy_to_ledger_atomic', {
     p_tenant_id: tenantId,
@@ -289,7 +294,7 @@ export async function syncLegacyToLedger() {
   await safeRevalidatePath('/dashboard/accounting/reconciliation');
   await safeRevalidatePath('/dashboard/accounting/readiness');
   return {
-    success: true,
+    success: true as const,
     syncedRevenueCount: result.synced_revenue_count,
     syncedExpenseCount: result.synced_expense_count,
     syncedSalaryCount: result.synced_salary_count,

@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { getReconciliationReport, getAccountingMode, syncLegacyToLedger, type ReconciliationRow } from '@/services/accounting-actions';
 import { toast } from 'sonner';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', {
@@ -23,9 +24,6 @@ const fmtVND = (n: number) =>
     currency: 'VND',
     maximumFractionDigits: 0,
   }).format(Number(n) || 0);
-
-const getErrorMessage = (error: unknown, fallback: string) =>
-  error instanceof Error ? error.message : fallback;
 
 const STATUS_CONFIG = {
   MATCH: {
@@ -153,32 +151,35 @@ export default function ReconciliationPage() {
     setSyncing(true);
     try {
       const res = await syncLegacyToLedger();
-      if (res.success) {
-        toast.success(`Đồng bộ thành công! Đã hạch toán ${res.syncedRevenueCount} doanh thu, ${res.syncedExpenseCount} chi phí, và ${res.syncedSalaryCount} bảng lương KTV.`);
-        setAccountingMode('PROFESSIONAL');
-        setShowSyncModal(false);
-        if (fromDate && toDate) {
-          try {
-            const refreshedRows = await fetchData(fromDate, toDate, { toastOnError: false });
-            const summary = buildPostSyncSummary({
-              rows: refreshedRows,
-              syncedRevenueCount: res.syncedRevenueCount,
-              syncedExpenseCount: res.syncedExpenseCount,
-              syncedSalaryCount: res.syncedSalaryCount,
-              checkedFrom: fromDate,
-              checkedTo: toDate,
-            });
-            setPostSyncSummary(summary);
+      if (!res.success) {
+        toast.warning(res.error || 'Chưa thể bật Professional Core. Kiểm tra tab Sẵn sàng dữ liệu trước khi đồng bộ.');
+        return;
+      }
 
-            if (summary.majorDiffCount > 0) {
-              toast.warning(`Đồng bộ xong nhưng còn ${summary.majorDiffCount} chỉ tiêu lệch lớn. Vui lòng xử lý trước khi dùng báo cáo CFO.`);
-            } else {
-              toast.success('Đối soát sau sync không phát hiện lệch lớn.');
-            }
-          } catch (reportError: unknown) {
-            console.error('Post-sync reconciliation failed:', reportError);
-            toast.error(getErrorMessage(reportError, 'Đồng bộ thành công nhưng không tải được báo cáo đối soát sau sync.'));
+      toast.success(`Đồng bộ thành công! Đã hạch toán ${res.syncedRevenueCount} doanh thu, ${res.syncedExpenseCount} chi phí, và ${res.syncedSalaryCount} bảng lương KTV.`);
+      setAccountingMode('PROFESSIONAL');
+      setShowSyncModal(false);
+      if (fromDate && toDate) {
+        try {
+          const refreshedRows = await fetchData(fromDate, toDate, { toastOnError: false });
+          const summary = buildPostSyncSummary({
+            rows: refreshedRows,
+            syncedRevenueCount: res.syncedRevenueCount,
+            syncedExpenseCount: res.syncedExpenseCount,
+            syncedSalaryCount: res.syncedSalaryCount,
+            checkedFrom: fromDate,
+            checkedTo: toDate,
+          });
+          setPostSyncSummary(summary);
+
+          if (summary.majorDiffCount > 0) {
+            toast.warning(`Đồng bộ xong nhưng còn ${summary.majorDiffCount} chỉ tiêu lệch lớn. Vui lòng xử lý trước khi dùng báo cáo CFO.`);
+          } else {
+            toast.success('Đối soát sau sync không phát hiện lệch lớn.');
           }
+        } catch (reportError: unknown) {
+          console.error('Post-sync reconciliation failed:', reportError);
+          toast.error(getErrorMessage(reportError, 'Đồng bộ thành công nhưng không tải được báo cáo đối soát sau sync.'));
         }
       }
     } catch (err: unknown) {

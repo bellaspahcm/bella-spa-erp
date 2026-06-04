@@ -41,6 +41,8 @@ jest.mock('../services/user-actions', () => ({
 }));
 
 import { getReconciliationReport } from '../services/accounting-actions';
+import fs from 'fs';
+import path from 'path';
 
 const TENANT_ID = 'tenant-uuid-1';
 const ADMIN_USER = { id: 'user-admin', tenant_id: TENANT_ID, role: 'admin' };
@@ -153,5 +155,27 @@ describe('getReconciliationReport', () => {
     await expect(getReconciliationReport(FROM, TO)).rejects.toMatchObject({
       message: expect.stringContaining('does not exist'),
     });
+  });
+});
+
+describe('get_reconciliation_report SQL migration', () => {
+  const reconciliationOverflowMigrationSql = fs.readFileSync(
+    path.join(process.cwd(), 'supabase/migrations/20260604143000_widen_reconciliation_diff_percent.sql'),
+    'utf8'
+  );
+
+  it('widens diff_percent so large percentages do not overflow', () => {
+    expect(reconciliationOverflowMigrationSql).toContain('diff_percent NUMERIC');
+    expect(reconciliationOverflowMigrationSql).toContain('ROUND(');
+    expect(reconciliationOverflowMigrationSql).not.toContain('DECIMAL(7,2)');
+    expect(reconciliationOverflowMigrationSql).not.toContain('NUMERIC(7,2)');
+  });
+
+  it('uses saved total_salary as the legacy salary source of truth', () => {
+    expect(reconciliationOverflowMigrationSql).toContain('COALESCE(SUM(COALESCE(');
+    expect(reconciliationOverflowMigrationSql).toContain('total_salary');
+    expect(reconciliationOverflowMigrationSql).toContain('+ COALESCE(session_bonus, 0)');
+    expect(reconciliationOverflowMigrationSql).toContain('+ COALESCE(rating_bonus, 0)');
+    expect(reconciliationOverflowMigrationSql).toContain('- COALESCE(service_percentage_bonus, 0)');
   });
 });

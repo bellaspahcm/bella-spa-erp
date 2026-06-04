@@ -18,18 +18,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use,useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
+import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 
 type JournalEntryDetails = Awaited<ReturnType<typeof getJournalEntryDetails>>;
 type JournalLineRow = NonNullable<JournalEntryDetails['journal_lines']>[number];
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message || fallback;
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' && message ? message : fallback;
-  }
-  return fallback;
-}
 
 interface PageProps {
   params: Promise<{ entryId: string }>;

@@ -24,6 +24,7 @@ X
 } from 'lucide-react';
 import { useEffect,useState } from 'react';
 import { toast } from 'sonner';
+import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 
 type ClosingPreviewRow = {
   step: number;
@@ -41,15 +42,6 @@ type Period = {
   end_date: string;
   status: 'OPEN' | 'CLOSED';
 };
-
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message || fallback;
-  if (typeof error === 'object' && error && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    return typeof message === 'string' && message ? message : fallback;
-  }
-  return fallback;
-}
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n || 0);
