@@ -5,6 +5,23 @@
 
 ---
 
+### 04/06/2026: Harden Supabase API Key Aliases
+* **Muc tieu bao mat**:
+  * Khong bat lai legacy Supabase JWT API keys sau khi key cu tung bi lo.
+  * Cho app va E2E dung key moi cua Supabase: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` va `SUPABASE_SECRET_KEY`.
+* **Thay doi chinh**:
+  * Them helper `supabase-public-env` va `supabase-admin-env` de uu tien key moi, fallback key cu trong giai doan rollout.
+  * Chuyen cac client tao Supabase trong server actions, cron, webhook, proxy, accounting, onboarding, tenant/user/customer, portal chat sang helper chung.
+  * Cap nhat E2E helper, `.env.example`, Playwright note va README E2E theo ten key moi.
+  * Them regression test `supabase-env.test.ts` cho precedence/fallback cua publishable, secret va legacy keys.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-supabase-api-key-aliases.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src\__tests__\supabase-env.test.ts --runInBand` pass, 1 suite / 5 tests.
+  * Targeted Jest cho accounting/payment/onboarding/tenant/user/customer/portal pass, 9 suites / 94 tests.
+  * `npm.cmd run build` pass.
+  * `npm.cmd test -- --runInBand` pass, 79 suites / 851 tests.
+
 ### 04/06/2026: Fix Supabase RPC Binding In Accounting Tabs
 * **Muc tieu van hanh**:
   * Sua loi production hien trong tab ke toan dang bao `An error occurred in the Server Components render`.

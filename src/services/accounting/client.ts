@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import type { Database } from '@/types/database.types';
 
 export type AccountingSupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -8,8 +9,8 @@ export async function createAccountingDataClient(): Promise<AccountingSupabaseCl
     return createClient();
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
 
   if (!url || !serviceKey) {
     return createClient();

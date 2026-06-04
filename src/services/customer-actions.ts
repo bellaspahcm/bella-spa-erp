@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { getCurrentUser } from './user-actions';
 import { resolvePackageName } from '@/lib/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -51,11 +52,13 @@ export async function getCustomerBookingByToken(token?: string) {
   // with the token can read the booking, which is the magic-link model.
   // Anon client cannot read public.bookings (RLS policy "Guest xem bookings (Blocked)").
   let supabase: AppSupabaseClient;
-  if (token && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+  if (token && adminUrl && adminKey) {
     const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
     supabase = createSupabaseClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      adminUrl,
+      adminKey,
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
   } else {
@@ -165,11 +168,13 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
   // Security: sessionId is a non-enumerable UUID. Caller must have already
   // obtained it via getCustomerBookingByToken (gated by share_token).
   let supabase: AppSupabaseClient;
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+  if (adminUrl && adminKey) {
     const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
     supabase = createSupabaseClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      adminUrl,
+      adminKey,
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
   } else {

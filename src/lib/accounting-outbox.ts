@@ -15,6 +15,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/types/database.types';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Strict union types — keep in sync with CHECK constraint on accounting_outbox
@@ -95,8 +96,8 @@ function asEnqueueAccountingRpcClient(client: RpcCapableClient): EnqueueAccounti
 async function loadAdminClient(): Promise<AdminClient | null> {
   if (cachedAdminClient) return cachedAdminClient;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getSupabaseAdminUrl();
+  const key = getSupabaseAdminKey();
   if (!url || !key) return null;
 
   // Dynamic import keeps client-bundle clean if this module is ever imported
@@ -110,7 +111,7 @@ async function loadAdminClient(): Promise<AdminClient | null> {
 
 /**
  * Get the best available client for outbox writes:
- *   1. Admin (service-role) client if SUPABASE_SERVICE_ROLE_KEY is set → bypasses RLS.
+ *   1. Admin client if SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY is set → bypasses RLS.
  *   2. Fallback to the user-session client (subject to RLS — may fail in dev bypass mode).
  *
  * Returning a fallback ensures business hooks degrade gracefully instead of throwing.

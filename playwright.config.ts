@@ -10,7 +10,7 @@
  *
  * Behaviour:
  *   - Auto-starts `next dev` on port 3000 (reuses if already running).
- *   - Reads .env.local for SUPABASE_URL / SERVICE_ROLE_KEY (test seed/teardown).
+ *   - Reads .env.local for Supabase URL / publishable key / secret key (test seed/teardown).
  *   - Single browser project (chromium) — add Firefox/WebKit later.
  *   - Retries 1 in CI, 0 locally.
  */

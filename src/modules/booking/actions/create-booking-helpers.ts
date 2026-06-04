@@ -1,4 +1,5 @@
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
@@ -333,11 +334,12 @@ export async function recordBookingDepositRevenue(params: {
 
   if (revenueError) {
     console.warn('Error recording initial deposit revenue with standard client, trying with admin client fallback:', revenueError);
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (serviceRoleKey) {
+    const adminUrl = getSupabaseAdminUrl();
+    const serviceRoleKey = getSupabaseAdminKey();
+    if (adminUrl && serviceRoleKey) {
       const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
       const supabaseAdmin = createSupabaseClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        adminUrl,
         serviceRoleKey
       );
       const { data: adminRevenueData, error: adminRevenueError } = await supabaseAdmin

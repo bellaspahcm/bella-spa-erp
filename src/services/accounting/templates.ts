@@ -5,6 +5,7 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from '../audit-actions';
 import { getCurrentUser } from '../user-actions';
 import { createAccountingDataClient } from './client';
+import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import {
   calculateReadinessScore,
   findMissingRequiredFields,
@@ -147,13 +148,9 @@ export async function createAccountingReviewItem(params: {
   }
 
   const { createClient: createAdmin } = await import('@supabase/supabase-js');
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) {
-    throw new Error('Thiếu SUPABASE_SERVICE_ROLE_KEY để tạo hàng chờ kế toán an toàn.');
-  }
+  const { url, adminKey } = requireSupabaseAdminEnv();
 
-  const adminClient = createAdmin(url, serviceKey, {
+  const adminClient = createAdmin(url, adminKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 

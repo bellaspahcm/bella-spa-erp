@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import type { AccountingReferenceType } from '@/lib/accounting-outbox';
+import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 
 export type JournalEntryInput = {
   tenant_id: string;
@@ -25,12 +26,8 @@ type AdminClient = SupabaseClient<Database>;
  * Use ONLY in trusted server-side code (accounting engine, webhooks, cron jobs).
  */
 function getAdminClient(): AdminClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
-  }
-  return createClient<Database>(url, key, {
+  const { url, adminKey } = requireSupabaseAdminEnv();
+  return createClient<Database>(url, adminKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

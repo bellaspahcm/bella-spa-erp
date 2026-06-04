@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/types/database.types';
 import { RevenueRecognitionService } from '@/services/revenue-recognition';
 import { AccountingEngineService, type JournalEntryInput } from '@/services/accounting-engine';
+import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,12 +30,8 @@ type ExistingJournalReference = {
 };
 
 function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.');
-  }
-  return createClient<Database>(url, key, {
+  const { url, adminKey } = requireSupabaseAdminEnv();
+  return createClient<Database>(url, adminKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

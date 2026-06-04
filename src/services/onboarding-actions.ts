@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import type { Database } from '@/types/database.types';
 
 type AuthUser = { id: string };
@@ -59,18 +60,19 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     }
 
     // 2. Auth SignUp
-    // Create the Auth User. If SUPABASE_SERVICE_ROLE_KEY is available, we use the Admin API
+    // Create the Auth User. If a Supabase admin key is available, we use the Admin API
     // with email_confirm: true to completely bypass email sending and avoid "email rate limit exceeded".
     const password = input.adminPassword || 'Password123!';
     let authUser: AuthUser | null = null;
     let supabaseAdminForAuthRollback: AdminAuthClient | null = null;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const adminUrl = getSupabaseAdminUrl();
+    const serviceRoleKey = getSupabaseAdminKey();
 
-    if (serviceRoleKey) {
+    if (adminUrl && serviceRoleKey) {
       console.log('[registerNewTenant] Creating confirmed user via admin client to bypass email rate limits');
       const { createClient: createSupabaseClient } = await import('@supabase/supabase-js');
       const supabaseAdmin = createSupabaseClient<Database>(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        adminUrl,
         serviceRoleKey,
         {
           auth: {
@@ -97,7 +99,7 @@ export async function registerNewTenant(input: RegisterTenantInput) {
 
       authUser = adminData?.user?.id ? { id: adminData.user.id } : null;
     } else {
-      console.log('[registerNewTenant] SUPABASE_SERVICE_ROLE_KEY not found. Attempting custom RPC create_onboarding_user to bypass rate limits');
+      console.log('[registerNewTenant] Supabase admin key not found. Attempting custom RPC create_onboarding_user to bypass rate limits');
       const { data: userId, error: rpcErr } = await supabase.rpc('create_onboarding_user', {
         p_email: input.adminEmail,
         p_password: password,

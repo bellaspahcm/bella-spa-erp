@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import { Database } from '@/types/database.types';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -15,13 +16,10 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 // Helper to create the Supabase client using the service role key to bypass RLS for portal guests
 function getServiceRoleClient() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error('Hệ thống thiếu cấu hình bảo mật SUPABASE_SERVICE_ROLE_KEY.');
-  }
+  const { url, adminKey } = requireSupabaseAdminEnv();
   return createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    serviceRoleKey,
+    url,
+    adminKey,
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 }

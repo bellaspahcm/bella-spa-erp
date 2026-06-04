@@ -2,19 +2,15 @@ import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { enqueueWithAutoClient } from "@/lib/accounting-outbox";
 import { safeStringify } from "@/lib/log-redactor";
+import { requireSupabaseAdminEnv } from "@/lib/supabase-admin-env";
 import { assertOpenAccountingPeriod } from "@/services/accounting/period-guards";
 import { findMissingRequiredFields, inferBusinessEventType } from "@/services/accounting/template-rules";
 import type { Database } from "@/types/database.types";
 
 function createWebhookSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const { url, adminKey } = requireSupabaseAdminEnv();
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.");
-  }
-
-  return createClient<Database>(supabaseUrl, serviceRoleKey, {
+  return createClient<Database>(url, adminKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

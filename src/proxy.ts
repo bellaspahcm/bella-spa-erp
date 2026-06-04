@@ -1,11 +1,15 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import { requireSupabasePublicEnv } from '@/lib/supabase-public-env';
 
 // Next.js 16 proxy (formerly middleware): runs before page/API handlers
 // on the routes matched by `config.matcher` below. Used to refresh the
 // Supabase auth session cookie, handle server-side authorization check (triệt tiêu ui-flicker),
 // and inject mock headers in local dev bypass mode.
 export async function proxy(request: NextRequest) {
+  const { url, publicKey } = requireSupabasePublicEnv();
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -13,8 +17,8 @@ export async function proxy(request: NextRequest) {
   });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    publicKey,
     {
       cookies: {
         get(name: string) {
@@ -71,12 +75,12 @@ export async function proxy(request: NextRequest) {
       .eq('id', user.id)
       .single();
     role = profile?.role?.toLowerCase() || null;
-  } else if (isMockDev && mockUserEmail && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  } else if (isMockDev && mockUserEmail && getSupabaseAdminKey()) {
     // Development bypass: sử dụng service_role_key để truy cập thông tin vai trò từ DB
     const { createClient: createAdmin } = await import('@supabase/supabase-js');
     const adminClient = createAdmin(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      getSupabaseAdminUrl(),
+      getSupabaseAdminKey(),
       { auth: { persistSession: false, autoRefreshToken: false } }
     );
     const { data: profile } = await adminClient

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { recordAuditLog } from './audit-actions';
 import { CurrentUser, StaffRecord } from '@/types/domain';
 import { randomBytes } from 'crypto';
@@ -89,12 +90,14 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     if (process.env.NODE_ENV === 'development') {
       const { headers } = await import('next/headers');
       const mockEmail = (await headers()).get('x-mock-user-email');
-      if (mockEmail && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const adminUrl = getSupabaseAdminUrl();
+      const adminKey = getSupabaseAdminKey();
+      if (mockEmail && adminUrl && adminKey) {
         // Anon client is blocked by RLS without a session — use service role to bypass.
         const { createClient: createAdmin } = await import('@supabase/supabase-js');
         const adminClient = createAdmin(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY,
+          adminUrl,
+          adminKey,
           { auth: { persistSession: false, autoRefreshToken: false } },
         );
         const { data: mockProfile, error: mockProfileError } = await adminClient
@@ -407,15 +410,15 @@ export async function createUser(formData: CreateUserInput) {
   // STEP 1 — Create the Supabase Auth account first so the employee can log in.
   // Without this, the public.users row was a dead record (no auth → no login).
   // Pattern mirrors registerNewTenant() in onboarding-actions.ts.
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = getSupabaseAdminKey();
+  const supabaseUrl = getSupabaseAdminUrl();
   console.warn('[createUser] env check', {
-    hasServiceRoleKey: !!serviceRoleKey,
+    hasAdminKey: !!serviceRoleKey,
     hasUrl: !!supabaseUrl,
   });
 
   if (!serviceRoleKey) {
-    return { error: 'Hệ thống chưa cấu hình SUPABASE_SERVICE_ROLE_KEY ở Vercel — không thể tạo tài khoản đăng nhập. Vào Vercel → Settings → Environment Variables để thêm.' };
+    return { error: 'Hệ thống chưa cấu hình SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY ở Vercel — không thể tạo tài khoản đăng nhập. Vào Vercel → Settings → Environment Variables để thêm.' };
   }
   if (!supabaseUrl) {
     return { error: 'Hệ thống chưa cấu hình NEXT_PUBLIC_SUPABASE_URL — không thể kết nối Supabase.' };
