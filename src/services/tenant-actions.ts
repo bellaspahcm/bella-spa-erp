@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';
@@ -22,8 +23,8 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định')
 }
 
 function getAdminTenantClient() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = getSupabaseAdminKey();
+  const supabaseUrl = getSupabaseAdminUrl();
   if (!serviceRoleKey || !supabaseUrl) {
     return null;
   }
@@ -41,7 +42,7 @@ async function fetchTenantSnapshot(
     .eq('id', tenantId)
     .single();
 
-  if ((error || !data) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if ((error || !data) && getSupabaseAdminKey()) {
     const supabaseAdmin = getAdminTenantClient();
     if (supabaseAdmin) {
       const adminRes = await supabaseAdmin
@@ -157,7 +158,7 @@ export async function saveTenantSettings(settings: {
       .eq('id', tenantId)
       .select();
 
-    if ((!data || data.length === 0) && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if ((!data || data.length === 0) && getSupabaseAdminKey()) {
       console.warn('Update returned 0 rows with auth client, trying with admin client...');
       const supabaseAdmin = getAdminTenantClient();
       if (!supabaseAdmin) {

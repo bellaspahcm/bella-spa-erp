@@ -1,8 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import {
+  getSupabasePublicKey,
+  SUPABASE_PUBLIC_KEY_ENV_LABEL,
+} from '@/lib/supabase-public-env';
+
+const supabaseUrl = getSupabaseAdminUrl();
+const supabaseKey = getSupabaseAdminKey() || getSupabasePublicKey();
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error(
+    `Missing Supabase credentials (NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL and SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY/${SUPABASE_PUBLIC_KEY_ENV_LABEL}).`,
+  );
+}
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  supabaseUrl,
+  supabaseKey
 );
 
 async function runMigration() {

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { getCurrentUser } from '../user-actions';
 import { createAccountingDataClient } from './client';
 import type { ReconciliationRow, SalaryReconciliationRow } from './types';
@@ -110,12 +111,12 @@ export async function getReconciliationReport(fromDate: string, toDate: string):
     throw new Error('Unauthorized: chỉ admin hoặc kế toán của chi nhánh mới được xem báo cáo đối soát chéo.');
   }
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
 
   // Fallback sang user client nếu hoàn toàn không có serviceKey (ví dụ: trên Vercel chưa cấu hình)
   if (!serviceKey) {
-    console.warn('[getReconciliationReport] SUPABASE_SERVICE_ROLE_KEY is missing. Using user client fallback.');
+    console.warn('[getReconciliationReport] SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY is missing. Using user client fallback.');
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('get_reconciliation_report', {
       p_tenant_id: user.tenant_id,

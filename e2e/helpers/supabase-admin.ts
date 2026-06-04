@@ -4,7 +4,8 @@
  *
  * Cần biến môi trường trong .env.local:
  *   NEXT_PUBLIC_SUPABASE_URL=
- *   SUPABASE_SERVICE_ROLE_KEY=
+ *   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY= (hoặc NEXT_PUBLIC_SUPABASE_ANON_KEY= legacy)
+ *   SUPABASE_SECRET_KEY= (hoặc SUPABASE_SERVICE_ROLE_KEY= legacy)
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
@@ -14,6 +15,14 @@ import { join, resolve } from "node:path";
 
 let _admin: SupabaseClient | null = null;
 let _envLoaded = false;
+
+function getSupabasePublicKey(): string {
+  return process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+}
+
+function getSupabaseAdminKey(): string {
+  return process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+}
 
 function loadEnvFile(filePath: string): void {
   if (!existsSync(filePath)) return;
@@ -58,8 +67,8 @@ export function hasSupabaseAdminEnv(): boolean {
   loadE2eEnv();
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    getSupabasePublicKey() &&
+    getSupabaseAdminKey(),
   );
 }
 
@@ -67,10 +76,10 @@ export function admin(): SupabaseClient {
   loadE2eEnv();
   if (_admin) return _admin;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = getSupabaseAdminKey();
   if (!url || !key) {
     throw new Error(
-      "Thiếu NEXT_PUBLIC_SUPABASE_URL hoặc SUPABASE_SERVICE_ROLE_KEY trong .env.local — E2E test cần để seed/teardown data.",
+      "Thiếu NEXT_PUBLIC_SUPABASE_URL hoặc SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY trong .env.local — E2E test cần để seed/teardown data.",
     );
   }
   _admin = createClient(url, key, {
