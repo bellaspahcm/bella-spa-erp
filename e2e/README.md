@@ -16,7 +16,10 @@ e2e/
     ├── 02-session-checkin-checkout.spec.ts # KTV check-in/out session
     ├── 03-bank-reconciliation.spec.ts     # Đối soát ngân hàng
     ├── 04-period-closing.spec.ts          # Đóng kỳ kế toán
-    └── 05-payroll-finalization.spec.ts    # Chốt & duyệt lương
+    ├── 05-payroll-finalization.spec.ts    # Chốt & duyệt lương
+    ├── 06-cross-module-verification.spec.ts
+    ├── 07-security-boundary.spec.ts
+    └── 08-accounting-tabs-smoke.spec.ts   # Smoke toàn bộ tab Kế toán/Sổ cái
 ```
 
 ## Yêu cầu
@@ -82,7 +85,7 @@ Mỗi spec dùng `e2e/helpers/supabase-admin.ts` (service-role client) để:
 ### Serial execution
 `fullyParallel: false`, `workers: 1` — Bella business flows chia sẻ DB rows (tenants, packages, accounting_periods). Chạy serial để tránh race condition.
 
-## Phạm vi 5 spec hiện tại
+## Phạm vi spec hiện tại
 
 | Spec | Smoke | API/DB | UI workflow |
 |---|:-:|:-:|:-:|
@@ -91,6 +94,7 @@ Mỗi spec dùng `e2e/helpers/supabase-admin.ts` (service-role client) để:
 | 03 bank-reconciliation | ✓ Trang reconciliation | ✓ revenue pending → confirmed | △ Upload control hiển thị |
 | 04 period-closing | ✓ Accounting routes | ✓ accounting_periods state | ✓ COA seeded |
 | 05 payroll-finalization | ✓ Salary pages | ✓ salary_records state machine | △ tenant.salary_config |
+| 08 accounting-tabs-smoke | ✓ All accounting tabs | △ Auth/RPC smoke | ✓ No App Router error boundary |
 
 **Legend**: ✓ = đã test đầy đủ · △ = smoke check (verify load + có element key)
 
