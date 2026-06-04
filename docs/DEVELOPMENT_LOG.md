@@ -5,6 +5,23 @@
 
 ---
 
+### 05/06/2026: Harden Error Monitoring Instrumentation
+* **Muc tieu van hanh**:
+  * Sua khoang trong monitoring duoc report danh gia neu production errors chi phu thuoc vao Vercel logs thu cong.
+  * Dua Sentry bootstrap ve convention Next 16 de bat duoc Server Components/request errors va client navigation events.
+* **Thay doi chinh**:
+  * Them `instrumentation.ts` voi runtime-specific import cho node/edge Sentry config va `onRequestError = Sentry.captureRequestError`.
+  * Chuyen client Sentry init tu `sentry.client.config.ts` sang `instrumentation-client.ts`, giu replay masking va PII redaction.
+  * Them regression test cho Sentry request-error hook, node bootstrap va router transition capture.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-harden-error-monitoring.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src\__tests__\sentry-instrumentation.test.ts src\__tests__\log-redactor.test.ts --runInBand` pass, 2 suites / 21 tests.
+  * `npm.cmd run lint` pass.
+  * `npm.cmd run build` pass.
+  * `npm.cmd test -- --runInBand` pass, 80 suites / 854 tests.
+  * `git diff --check` pass.
+
 ### 04/06/2026: Harden Accounting Production Smoke Auth
 * **Muc tieu bao mat/van hanh**:
   * Cho smoke 11 tab ke toan co the chay tren production bang dang nhap that, khong dung `mock_user_email` ngoai localhost.
