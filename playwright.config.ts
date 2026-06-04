@@ -16,16 +16,37 @@
  */
 
 import { defineConfig, devices } from "@playwright/test";
-import fs from "node:fs";
-import path from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
-// Load .env.local manually so tests can use service-role key
-const envPath = path.resolve(process.cwd(), ".env.local");
-if (fs.existsSync(envPath)) {
-  const text = fs.readFileSync(envPath, "utf8");
+// Load .env.local manually so tests can use service-role key.
+// E2E_ENV_FILE lets local runs point at a temporary pulled env file without
+// writing secrets into the workspace .env.local.
+const tempE2eEnvPath = join(tmpdir(), "bella-spa-e2e.env");
+const envPath = [
+  process.env.E2E_ENV_FILE,
+  tempE2eEnvPath,
+  resolve(process.cwd(), ".env.local"),
+]
+  .filter((filePath): filePath is string => Boolean(filePath))
+  .map((filePath) => resolve(filePath))
+  .find((filePath) => existsSync(filePath));
+
+if (envPath) {
+  const text = readFileSync(envPath, "utf8");
   for (const line of text.split(/\r?\n/)) {
     const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
-    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
+    if (m && !process.env[m[1]]) {
+      const rawValue = m[2].trim();
+      const unquotedValue = (
+        (rawValue.startsWith('"') && rawValue.endsWith('"')) ||
+        (rawValue.startsWith("'") && rawValue.endsWith("'"))
+      )
+        ? rawValue.slice(1, -1)
+        : rawValue;
+      process.env[m[1]] = unquotedValue;
+    }
   }
 }
 

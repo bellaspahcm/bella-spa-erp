@@ -7,6 +7,7 @@
 
 import { test, expect } from "../fixtures/auth";
 import type { ConsoleMessage, Request } from "@playwright/test";
+import { hasSupabaseAdminEnv } from "../helpers/supabase-admin";
 
 const accountingTabs = [
   { name: "Tong quan", path: "/dashboard/accounting", text: /tong quan|he thong ke toan so cai/i },
@@ -21,7 +22,11 @@ const accountingTabs = [
     path: "/dashboard/accounting/salary-reconciliation",
     text: /doi soat luong|salary/i,
   },
-  { name: "Bao cao tai chinh", path: "/dashboard/accounting/reports", text: /bao cao tai chinh|trial|financial/i },
+  {
+    name: "Bao cao tai chinh",
+    path: "/dashboard/accounting/reports",
+    text: /bang can doi phat sinh|bao cao ket qua|luu chuyen tien te|trial|financial/i,
+  },
   {
     name: "He thong tai khoan",
     path: "/dashboard/accounting/chart-of-accounts",
@@ -67,7 +72,7 @@ function attachFailureCollectors(pageErrors: string[]) {
 
 test.describe("Accounting ledger tabs authenticated smoke", () => {
   test.skip(
-    !process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY,
+    !hasSupabaseAdminEnv(),
     "Requires Supabase service-role env so mock_user_email can resolve an authenticated admin profile.",
   );
 

@@ -1,15 +1,15 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from '../audit-actions';
 import { getCurrentUser } from '../user-actions';
+import { createAccountingDataClient } from './client';
 import type { CreateAccountInput } from './types';
 
 export async function getAccounts() {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id) throw new Error('Unauthorized or missing tenant session.');
+  const supabase = await createAccountingDataClient();
 
   const { data, error } = await supabase
     .from('accounting_accounts')
@@ -22,11 +22,11 @@ export async function getAccounts() {
 }
 
 export async function createAccount(input: CreateAccountInput) {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Only branch admins can manage the Chart of Accounts.');
   }
+  const supabase = await createAccountingDataClient();
 
   // Validate parent_id belongs to the same tenant if provided
   if (input.parent_id) {
@@ -74,11 +74,11 @@ export async function createAccount(input: CreateAccountInput) {
 }
 
 export async function updateAccount(id: string, input: Partial<CreateAccountInput> & { is_active?: boolean }) {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Only branch admins can manage the Chart of Accounts.');
   }
+  const supabase = await createAccountingDataClient();
 
   const { data, error } = await supabase
     .from('accounting_accounts')

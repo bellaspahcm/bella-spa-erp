@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from '../audit-actions';
 import { getCurrentUser } from '../user-actions';
+import { createAccountingDataClient } from './client';
 import {
   calculateReadinessScore,
   findMissingRequiredFields,
@@ -24,9 +25,9 @@ import type { Json } from '@/types/database.types';
 export async function getAccountingEventTemplates(
   standardProfile: AccountingStandardProfile = 'TT133'
 ): Promise<AccountingEventTemplate[]> {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id) throw new Error('Unauthorized or missing tenant session.');
+  const supabase = await createAccountingDataClient();
 
   const { data, error } = await supabase
     .from('accounting_event_templates')
@@ -45,11 +46,12 @@ export async function getAccountingReviewQueue(filters?: {
   status?: 'AUTO_POSTED' | 'NEEDS_REVIEW' | 'APPROVED_FOR_POSTING' | 'REJECTED' | 'POSTING_FAILED';
   severity?: 'low' | 'medium' | 'high' | 'critical';
 }): Promise<AccountingReviewItem[]> {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
     throw new Error('Unauthorized: chỉ admin/kế toán mới được xem hàng chờ kế toán.');
   }
+
+  const supabase = await createAccountingDataClient();
 
   let query = supabase
     .from('accounting_review_queue')
@@ -65,11 +67,12 @@ export async function getAccountingReviewQueue(filters?: {
 }
 
 export async function getAccountingReadinessSummary(): Promise<AccountingReadinessSummary> {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
     throw new Error('Unauthorized: chỉ admin/kế toán mới được xem mức sẵn sàng kế toán.');
   }
+
+  const supabase = await createAccountingDataClient();
 
   const { data, error } = await supabase.rpc('get_accounting_readiness', {
     p_tenant_id: user.tenant_id,

@@ -8,10 +8,63 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { existsSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 let _admin: SupabaseClient | null = null;
+let _envLoaded = false;
+
+function loadEnvFile(filePath: string): void {
+  if (!existsSync(filePath)) return;
+
+  const text = readFileSync(filePath, "utf8");
+  for (const line of text.split(/\r?\n/)) {
+    const match = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+    if (!match || process.env[match[1]]?.trim()) continue;
+
+    const rawValue = match[2].trim();
+    const unquotedValue = (
+      (rawValue.startsWith('"') && rawValue.endsWith('"')) ||
+      (rawValue.startsWith("'") && rawValue.endsWith("'"))
+    )
+      ? rawValue.slice(1, -1)
+      : rawValue;
+
+    process.env[match[1]] = unquotedValue;
+  }
+}
+
+function candidateEnvFiles(): string[] {
+  const candidates = [
+    process.env.E2E_ENV_FILE,
+    join(tmpdir(), "bella-spa-e2e.env"),
+    resolve(process.cwd(), ".env.local"),
+  ].filter((filePath): filePath is string => Boolean(filePath));
+
+  return [...new Set(candidates.map((filePath) => resolve(filePath)))];
+}
+
+export function loadE2eEnv(): void {
+  if (_envLoaded) return;
+
+  for (const filePath of candidateEnvFiles()) {
+    loadEnvFile(filePath);
+  }
+  _envLoaded = true;
+}
+
+export function hasSupabaseAdminEnv(): boolean {
+  loadE2eEnv();
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+}
 
 export function admin(): SupabaseClient {
+  loadE2eEnv();
   if (_admin) return _admin;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -5,6 +5,7 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from '../audit-actions';
 import { getCurrentUser } from '../user-actions';
 import { calculateReadinessScore } from './template-rules';
+import { createAccountingDataClient } from './client';
 import type { LegacyLedgerSyncPreview, ProfessionalModeReadinessGate } from './types';
 import type { Database, Json } from '@/types/database.types';
 
@@ -148,9 +149,9 @@ async function assertCanEnableProfessional(
 }
 
 export async function getAccountingMode(): Promise<AccountingMode> {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id) throw new Error('Unauthorized: missing tenant session.');
+  const supabase = await createAccountingDataClient();
 
   const { data, error } = await supabase
     .from('tenants')
@@ -175,21 +176,23 @@ export async function assertLegacyFinanceWriteAllowed(actionLabel = 'Legacy fina
 }
 
 export async function getProfessionalModeReadinessGate(): Promise<ProfessionalModeReadinessGate> {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
     throw new Error('Unauthorized: chỉ admin/kế toán mới được xem điều kiện bật Professional Core.');
   }
 
+  const supabase = await createAccountingDataClient();
+
   return loadProfessionalModeReadinessGate(supabase, user.tenant_id);
 }
 
 export async function getLegacyLedgerSyncPreview(): Promise<LegacyLedgerSyncPreview> {
-  const supabase = await createClient();
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
     throw new Error('Unauthorized: chỉ admin/kế toán mới được xem preview đồng bộ sổ cái.');
   }
+
+  const supabase = await createAccountingDataClient();
 
   const { data, error } = await supabase.rpc('preview_legacy_ledger_sync', {
     p_tenant_id: user.tenant_id,

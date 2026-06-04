@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+import { createAccountingDataClient, type AccountingSupabaseClient } from './client';
 import { getCurrentUser } from '../user-actions';
 import { calculateReadinessScore } from './template-rules';
 import type { Database } from '@/types/database.types';
@@ -12,7 +12,7 @@ import type {
   AccountingReadinessRow,
 } from './types';
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+type SupabaseClient = AccountingSupabaseClient;
 type OutboxRow = Pick<
   Database['public']['Tables']['accounting_outbox']['Row'],
   'id' | 'status' | 'event_type' | 'reference_type' | 'reference_id' | 'retry_count' | 'last_error' | 'created_at'
@@ -98,8 +98,8 @@ function addCheck(checks: AccountingHealthCheck[], check: AccountingHealthCheck)
 }
 
 async function resolveTenantContext(context?: HealthContext) {
-  const supabase = context?.supabase ?? await createClient();
   if (context?.tenantId) {
+    const supabase = context?.supabase ?? await createAccountingDataClient();
     return { supabase, tenantId: context.tenantId };
   }
 
@@ -108,6 +108,7 @@ async function resolveTenantContext(context?: HealthContext) {
     throw new Error('Unauthorized: chi admin moi duoc xem suc khoe so ke toan.');
   }
 
+  const supabase = context?.supabase ?? await createAccountingDataClient();
   return { supabase, tenantId: user.tenant_id };
 }
 
