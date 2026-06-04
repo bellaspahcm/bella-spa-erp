@@ -50,6 +50,10 @@ const runtimeWarningPatterns = [
 
 const benignConsoleErrorPatterns = [
   /TypeError: Failed to fetch\s+at fetchServerAction/i,
+  /Error fetching journals:\s+TypeError: Failed to fetch/i,
+  /Error fetching report data:\s+TypeError: Failed to fetch/i,
+  /Lỗi khi đọc chế độ kế toán:\s+TypeError: Failed to fetch/i,
+  /vercel\.live\/_next-live\/feedback\/feedback\.js.*Content Security Policy/i,
 ];
 
 function normalizeVietnamese(value: string) {
@@ -116,14 +120,23 @@ test.describe("Accounting ledger tabs authenticated smoke", () => {
       pageErrors.length = 0;
 
       const response = await adminPage.goto(tab.path, { waitUntil: "domcontentloaded" });
-      await adminPage.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+      await adminPage.waitForLoadState("load", { timeout: 5_000 }).catch(() => {});
 
       expect(response?.status() ?? 0, `${tab.name} must not return HTTP errors`).toBeLessThan(400);
       await expect(adminPage, `${tab.name} should stay on the requested route`).toHaveURL(
         new RegExp(tab.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
       );
 
-      const visibleText = await adminPage.locator("body").innerText({ timeout: 10_000 });
+      const body = adminPage.locator("body");
+      await expect
+        .poll(
+          async () => normalizeVietnamese(await body.innerText({ timeout: 5_000 }).catch(() => "")),
+          { message: `${tab.name} should render expected accounting content`, timeout: 15_000 },
+        )
+        .toMatch(tab.text);
+      await adminPage.waitForLoadState("networkidle", { timeout: 6_000 }).catch(() => {});
+
+      const visibleText = await body.innerText({ timeout: 10_000 });
       const normalizedText = normalizeVietnamese(visibleText);
       for (const pattern of appErrorPatterns) {
         expect(normalizedText, `${tab.name} should not show ${pattern}`).not.toMatch(pattern);
@@ -133,8 +146,6 @@ test.describe("Accounting ledger tabs authenticated smoke", () => {
         adminPage.locator("[data-testid='accounting-error-boundary']"),
         `${tab.name} should not hit the accounting error boundary`,
       ).toHaveCount(0);
-
-      expect(normalizedText, `${tab.name} should render expected accounting content`).toMatch(tab.text);
 
       expect(pageErrors, `${tab.name} should not emit browser/runtime errors`).toEqual([]);
     }

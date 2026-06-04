@@ -22,7 +22,9 @@
   * Production smoke `https://bella-spa-erp.vercel.app` pass, 1 test / 11 tab ke toan, bang account admin E2E tam da cleanup khoi `public.users` va Supabase Auth.
   * Go legacy env `NEXT_PUBLIC_SUPABASE_ANON_KEY` va `SUPABASE_SERVICE_ROLE_KEY` khoi Vercel Production, redeploy lai, production smoke van pass.
   * Them Supabase key moi vao Vercel Preview branch `codex/accounting-health-preflight` va redeploy Preview `https://bella-spa-991fke9nc-bella-spa-s-projects.vercel.app`.
-  * Preview smoke hien dang bi Vercel Deployment Protection chan truoc app login; Playwright config da ho tro `E2E_VERCEL_AUTOMATION_BYPASS_SECRET`/`VERCEL_AUTOMATION_BYPASS_SECRET` de bypass bang automation header.
+  * Preview smoke ban dau bi Vercel Deployment Protection chan truoc app login; Playwright config da ho tro `E2E_VERCEL_AUTOMATION_BYPASS_SECRET`/`VERCEL_AUTOMATION_BYPASS_SECRET` de bypass bang automation header.
+  * Bat Vercel Automation Protection Bypass, luu bypass secret chi trong `.env.local` da gitignore, deploy Preview moi tu code hien tai `https://bella-spa-kx74r6wrt-bella-spa-s-projects.vercel.app`.
+  * Preview smoke tren URL moi pass, 1 test / 11 tab ke toan; account admin E2E tam cleanup `E2E_TEMP_PROFILE_REMAINING=0`, `E2E_TEMP_AUTH_REMAINING=0`.
   * `npm.cmd run lint` pass.
 
 ### 04/06/2026: Harden Supabase API Key Aliases
