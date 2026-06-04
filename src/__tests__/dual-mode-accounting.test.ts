@@ -355,6 +355,28 @@ describe('Legacy expense paid-status sync SQL migration', () => {
   });
 });
 
+describe('Professional readiness scope SQL migration', () => {
+  const readinessScopeMigrationSql = fs.readFileSync(
+    path.join(process.cwd(), 'supabase/migrations/20260604160000_scope_professional_readiness_to_legacy_sync.sql'),
+    'utf8'
+  );
+
+  it('scopes readiness to rows the legacy sync can actually post', () => {
+    expect(readinessScopeMigrationSql).toContain('CREATE OR REPLACE FUNCTION public.get_accounting_readiness');
+    expect(readinessScopeMigrationSql).toContain("AND status = 'confirmed'");
+    expect(readinessScopeMigrationSql).toContain("AND status IN ('approved', 'paid')");
+    expect(readinessScopeMigrationSql).toContain("AND status = 'paid'");
+    expect(readinessScopeMigrationSql).toContain('Session logs and inventory logs can still need metadata review');
+  });
+
+  it('updates sync_legacy_to_ledger_atomic to use the same scoped readiness gate', () => {
+    expect(readinessScopeMigrationSql).toContain("pg_get_functiondef('public.sync_legacy_to_ledger_atomic(uuid, uuid)'::regprocedure)");
+    expect(readinessScopeMigrationSql).toContain('v_old_readiness_sql');
+    expect(readinessScopeMigrationSql).toContain('v_new_readiness_sql');
+    expect(readinessScopeMigrationSql).toContain('readiness gate is scoped to rows this sync actually posts');
+  });
+});
+
 describe('Application Layer protection', () => {
   it('blocks manually recordTransaction if mode is PROFESSIONAL', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
