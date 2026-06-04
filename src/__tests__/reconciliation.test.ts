@@ -163,6 +163,10 @@ describe('get_reconciliation_report SQL migration', () => {
     path.join(process.cwd(), 'supabase/migrations/20260604143000_widen_reconciliation_diff_percent.sql'),
     'utf8'
   );
+  const scopedLegacyReconciliationMigrationSql = fs.readFileSync(
+    path.join(process.cwd(), 'supabase/migrations/20260604173000_scope_reconciliation_to_legacy_journals.sql'),
+    'utf8'
+  );
 
   it('widens diff_percent so large percentages do not overflow', () => {
     expect(reconciliationOverflowMigrationSql).toContain('diff_percent NUMERIC');
@@ -177,5 +181,26 @@ describe('get_reconciliation_report SQL migration', () => {
     expect(reconciliationOverflowMigrationSql).toContain('+ COALESCE(session_bonus, 0)');
     expect(reconciliationOverflowMigrationSql).toContain('+ COALESCE(rating_bonus, 0)');
     expect(reconciliationOverflowMigrationSql).toContain('- COALESCE(service_percentage_bonus, 0)');
+  });
+
+  it('scopes ledger comparison to legacy finance journal references', () => {
+    expect(scopedLegacyReconciliationMigrationSql).toContain(
+      "e.reference_type IN ('REVENUE', 'REFUND', 'PACKAGE_SALE')"
+    );
+    expect(scopedLegacyReconciliationMigrationSql).toContain(
+      "e.reference_type IN ('EXPENSE', 'SALARY_ACCRUAL')"
+    );
+    expect(scopedLegacyReconciliationMigrationSql).not.toContain("'SESSION_DONE'");
+    expect(scopedLegacyReconciliationMigrationSql).not.toContain("'INVENTORY_CONSUMPTION'");
+    expect(scopedLegacyReconciliationMigrationSql).not.toContain("'MANUAL'");
+  });
+
+  it('compares TT133-recognized legacy revenue instead of package cash receipts', () => {
+    expect(scopedLegacyReconciliationMigrationSql).toContain(
+      "WHEN lower(COALESCE(revenue_type, '')) = 'refund' THEN -ABS(COALESCE(amount, 0))"
+    );
+    expect(scopedLegacyReconciliationMigrationSql).toContain(
+      "WHEN lower(COALESCE(revenue_type, '')) IN ('deposit', 'remaining_payment', 'package_payment', 'package_sale') THEN 0"
+    );
   });
 });

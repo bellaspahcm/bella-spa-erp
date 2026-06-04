@@ -110,3 +110,44 @@ The migration:
 **Confidence:** High
 
 The remaining `0/100` readiness block was not caused by accounting data that should be manually approved. It was caused by a gate scope mismatch: readiness was counting rows outside the legacy sync implementation. Production readiness is now clean for activation, while incomplete inventory/session metadata remains available for future review without blocking the Professional Core switch.
+
+## Follow-up: 2026-06-04 #3
+
+### New Evidence
+
+| Source | Result |
+| --- | --- |
+| Production activation | Bella Spa Headquarter is now in `PROFESSIONAL` accounting mode. |
+| `preview_legacy_ledger_sync` | `0` pending revenue, expenses, salary, and journal entries. |
+| `get_reconciliation_report(2026-06-01, 2026-06-04)` before fix | Report returned `MAJOR_DIFF` rows because it compared legacy totals of `0` against one Professional runtime journal. |
+| Journal trace | The only 5xx/6xx activity in that period was `reference_type = SESSION_DONE`: revenue `180,000d` and KTV commission expense `150,000d`. |
+
+### Additional Finding
+
+The reconciliation RPC still summed all posted ledger 5xx/6xx lines for the selected period. After Professional Core is enabled, runtime journals such as completed sessions are valid ledger activity, but they have no matching legacy finance row. Counting those rows in a "Legacy vs Ledger" migration-check report creates false `MAJOR_DIFF` alerts.
+
+### Fix Applied
+
+Added `supabase/migrations/20260604173000_scope_reconciliation_to_legacy_journals.sql`.
+
+The migration:
+
+1. Scopes ledger revenue comparison to legacy finance references: `REVENUE`, `REFUND`, and `PACKAGE_SALE`.
+2. Scopes ledger expense comparison to legacy finance references: `EXPENSE` and `SALARY_ACCRUAL`.
+3. Calculates legacy recognized revenue under the current TT133 model: refunds reduce revenue, package/deposit/remaining payments are excluded from recognized revenue because they credit `3387`.
+4. Keeps `diff_percent NUMERIC`, saved salary source of truth, explicit RPC authorization, and no anon grant.
+
+### Verification
+
+| Check | Result |
+| --- | --- |
+| Supabase migration push | Applied `20260604173000_scope_reconciliation_to_legacy_journals.sql` to production. |
+| Production RPC | `REVENUE_TOTAL`, `EXPENSE_TOTAL`, and `NET_PROFIT` returned `MATCH` for 2026-06-01 to 2026-06-04. |
+| Jest | `npm.cmd test -- src/__tests__/reconciliation.test.ts --runInBand` passed, 10 tests. |
+| ESLint | `npm.cmd run lint -- src/__tests__/reconciliation.test.ts` passed. |
+
+### Updated Conclusion
+
+**Confidence:** High
+
+The generic Next.js Server Component error is fixed, Professional Core activation is complete, and the reconciliation tab no longer reports valid Professional runtime journals as legacy migration drift.
