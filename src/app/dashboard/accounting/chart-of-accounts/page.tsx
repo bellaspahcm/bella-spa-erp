@@ -32,7 +32,7 @@ const accountTypes: { value: AccountType; label: string }[] = [
 const treeScrollClassName =
   'overflow-x-auto overscroll-x-contain -mx-6 px-6 pb-2 shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)] md:-mx-8 md:px-8';
 const stickyAccountCellClassName =
-  'sticky left-0 z-20 bg-inherit pr-4 shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
+  'bg-inherit pr-4';
 
 export default function ChartOfAccountsPage() {
   const [loading, setLoading] = useState(true);

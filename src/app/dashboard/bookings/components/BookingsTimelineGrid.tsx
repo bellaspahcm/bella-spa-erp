@@ -127,7 +127,7 @@ export function BookingsTimelineGrid({
       )}
 
       <div className="flex bg-slate-50/50 border-b border-slate-100 sticky top-0 z-20">
-        <div className="w-20 md:w-24 border-r border-slate-100 flex-shrink-0 bg-slate-50 sticky left-0 z-30 flex items-center justify-center text-[10px] font-black uppercase text-slate-400 tracking-wider select-none">
+        <div className="w-20 md:w-24 border-r border-slate-100 flex-shrink-0 bg-slate-50 flex items-center justify-center text-[10px] font-black uppercase text-slate-400 tracking-wider select-none">
           Giờ
         </div>
 
@@ -175,7 +175,7 @@ export function BookingsTimelineGrid({
         }}
       >
         <div className="flex relative">
-          <div className="w-20 md:w-24 border-r border-slate-100 flex-shrink-0 bg-white sticky left-0 z-10 flex flex-col select-none shadow-[4px_0_12px_rgba(0,0,0,0.015)]">
+          <div className="w-20 md:w-24 border-r border-slate-100 flex-shrink-0 bg-white flex flex-col select-none">
             {hours.map((hour) => (
               <div key={hour} className="h-[116px] border-b border-slate-100/60 flex items-center justify-center">
                 <span className="text-xs font-black text-slate-400 tracking-wider bg-slate-50 px-2.5 py-1 rounded-xl">

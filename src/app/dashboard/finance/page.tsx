@@ -32,7 +32,7 @@ type SortableTransactionKey = keyof MappedTransaction;
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.42)]';
 const stickyBodyCellClassName =
-  'sticky left-0 z-20 bg-white shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)]';
+  'bg-white';
 
 export default function FinancePage() {
   const [data, setData] = useState<FinancialOverview>({
