@@ -188,6 +188,46 @@ describe('finance transaction mutation outbox rollbacks', () => {
     ]);
   });
 
+  it('reports rollback failure when confirm revenue rollback update fails', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
+    installScriptedSupabase([
+      {
+        table: 'revenue',
+        op: 'select',
+        data: {
+          id: 'rev-rollback-fail',
+          revenue_type: 'deposit',
+          amount: 100000,
+          payment_method: 'bank_transfer',
+          booking_id: 'booking-1',
+          notes: 'deposit',
+          tenant_id: 'tenant-1',
+          status: 'pending',
+          received_date: null,
+          business_event_type: null,
+          accounting_review_status: null,
+          accounting_metadata: null,
+        },
+      },
+      {
+        table: 'revenue',
+        op: 'update',
+        data: {
+          id: 'rev-rollback-fail',
+          revenue_type: 'deposit',
+          amount: 100000,
+          notes: 'deposit',
+          tenant_id: 'tenant-1',
+        },
+      },
+      { table: 'revenue', op: 'update', error: { message: 'revenue rollback failed' } },
+    ]);
+
+    await expect(confirmTransaction('rev-rollback-fail', 'revenue')).rejects.toThrow(
+      /Failed to enqueue PACKAGE_SALE accounting event; rollback failed: revenue rollback failed/
+    );
+  });
+
   it('restores expense state when confirm expense outbox enqueue returns false', async () => {
     mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
     const calls = installScriptedSupabase([
@@ -265,6 +305,34 @@ describe('finance transaction mutation outbox rollbacks', () => {
     ).rejects.toThrow('Failed to enqueue PACKAGE_SALE accounting event');
 
     expect(calls.map(c => `${c.table}.${c.op}`)).toEqual(['revenue.insert', 'revenue.delete']);
+  });
+
+  it('reports rollback failure when deleting inserted confirmed revenue fails after outbox failure', async () => {
+    mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('record revenue outbox failed'));
+    installScriptedSupabase([
+      {
+        table: 'revenue',
+        op: 'insert',
+        data: {
+          id: 'rev-delete-fail',
+          revenue_type: 'deposit',
+          amount: 120000,
+          notes: 'deposit',
+          tenant_id: 'tenant-1',
+        },
+      },
+      { table: 'revenue', op: 'delete', error: { message: 'delete revenue failed' } },
+    ]);
+
+    await expect(
+      recordTransaction({
+        amount: 120000,
+        type: 'revenue',
+        category: 'deposit',
+        notes: 'deposit',
+        status: 'confirmed',
+      })
+    ).rejects.toThrow(/record revenue outbox failed; rollback failed: delete revenue failed/);
   });
 
   it('records confirmed negative finance revenue as refund and enqueues REFUND_ISSUED split payload', async () => {
@@ -604,5 +672,57 @@ describe('finance transaction mutation outbox rollbacks', () => {
         accounting_metadata: null,
       },
     ]);
+  });
+
+  it('reports salary and expense rollback failures when salary paid outbox enqueue fails', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
+    installScriptedSupabase([
+      {
+        table: 'expenses',
+        op: 'select',
+        data: {
+          id: 'exp-salary-rollback-fail',
+          category: 'salary',
+          amount: 7000000,
+          description: 'salary [salary_record_id:salary-1] [ktv_id:ktv-1]',
+          tenant_id: 'tenant-1',
+          status: 'submitted',
+          expense_date: '2026-05-31',
+          business_event_type: null,
+          accounting_review_status: null,
+          accounting_metadata: null,
+        },
+      },
+      {
+        table: 'expenses',
+        op: 'update',
+        data: {
+          id: 'exp-salary-rollback-fail',
+          category: 'salary',
+          amount: 7000000,
+          description: 'salary [salary_record_id:salary-1] [ktv_id:ktv-1]',
+          tenant_id: 'tenant-1',
+        },
+      },
+      {
+        table: 'salary_records',
+        op: 'select',
+        data: {
+          status: 'published',
+          paid_date: null,
+          paid_method: null,
+          business_event_type: null,
+          accounting_review_status: null,
+          accounting_metadata: null,
+        },
+      },
+      { table: 'salary_records', op: 'update' },
+      { table: 'salary_records', op: 'update', error: { message: 'salary rollback failed' } },
+      { table: 'expenses', op: 'update', error: { message: 'expense rollback failed' } },
+    ]);
+
+    await expect(confirmTransaction('exp-salary-rollback-fail', 'expense')).rejects.toThrow(
+      /Failed to enqueue SALARY_PAID accounting event; rollback failed: salary rollback failed; expense rollback failed/
+    );
   });
 });
