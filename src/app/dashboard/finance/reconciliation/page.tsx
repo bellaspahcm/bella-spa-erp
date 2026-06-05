@@ -422,7 +422,7 @@ export default function FinancialReconciliationPage() {
               
               <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
                 <div className={tableWrapperClassName}>
-                  <table className="w-[80rem] table-fixed border-collapse">
+                  <table className="bella-data-table min-w-[80rem]">
                     <colgroup>
                       <col className="w-[14rem]" />
                       <col className="w-[18rem]" />
@@ -524,7 +524,7 @@ export default function FinancialReconciliationPage() {
               
               <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
                 <div className={tableWrapperClassName}>
-                  <table className="w-[80rem] table-fixed border-collapse">
+                  <table className="bella-data-table min-w-[80rem]">
                     <colgroup>
                       <col className="w-[14rem]" />
                       <col className="w-[18rem]" />
@@ -599,7 +599,7 @@ export default function FinancialReconciliationPage() {
           </div>
         ) : (
           <div className={tableWrapperClassName}>
-            <table className="w-[76rem] table-fixed border-collapse">
+            <table className="bella-data-table min-w-[76rem]">
               <colgroup>
                 <col className="w-[24rem]" />
                 <col className="w-[14rem]" />
