@@ -44,11 +44,11 @@ function mockSessionQuery(
   return query;
 }
 
-function mockSalaryQuery(data: Record<string, unknown> | null) {
+function mockSalaryQuery(data: Record<string, unknown> | null, error: Error | null = null) {
   const query = {
     select: jest.fn(() => query),
     eq: jest.fn(() => query),
-    single: jest.fn().mockResolvedValue({ data, error: null }),
+    maybeSingle: jest.fn().mockResolvedValue({ data, error }),
   };
   return query;
 }
@@ -253,6 +253,36 @@ describe("exportSalaryToExcel", () => {
       exportSalaryToExcel("ktv-1", "KTV A", "2026-05-01"),
     ).rejects.toThrow("session query failed");
     expect(from).not.toHaveBeenCalledWith("salary_records");
+
+    consoleError.mockRestore();
+  });
+
+  it("propagates salary record query failures instead of using fallback salary amounts", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    const sessionQuery = mockSessionQuery({
+      data: [
+        {
+          bookings: {
+            package_name: "VIP Package",
+            ktv_commission: 200_000,
+            customers: { name_mother: "Customer A" },
+          },
+        },
+      ],
+      error: null,
+    });
+    const salaryQuery = mockSalaryQuery(null, new Error("salary record query failed"));
+    const from = jest.fn((table: string) => {
+      if (table === "session_logs") return sessionQuery;
+      if (table === "salary_records") return salaryQuery;
+      throw new Error(`Unexpected table ${table}`);
+    });
+    mockCreateClient.mockResolvedValueOnce({ from });
+
+    await expect(
+      exportSalaryToExcel("ktv-1", "KTV A", "2026-05-01"),
+    ).rejects.toThrow("salary record query failed");
+    expect(from).toHaveBeenCalledWith("salary_records");
 
     consoleError.mockRestore();
   });

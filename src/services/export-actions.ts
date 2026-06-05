@@ -58,12 +58,14 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
     if (sessionsError) throw sessionsError;
 
     // 2. Fetch salary record for fixed amounts
-    const { data: record } = await supabase
+    const { data: record, error: salaryRecordError } = await supabase
       .from('salary_records')
       .select('*')
       .eq('ktv_id', ktvId)
       .eq('month_year', monthYear)
-      .single();
+      .maybeSingle();
+
+    if (salaryRecordError) throw salaryRecordError;
 
     // 3. Process data into groups by package
     const packageGroups: Record<string, PackageGroup> = {};
