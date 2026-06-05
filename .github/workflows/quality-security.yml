@@ -27,6 +27,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: API documentation coverage
+        run: npm run docs:api:check
+
+      - name: Production build
+        run: npm run build
+
       - name: Export actions regression tests
         run: npm test -- src/__tests__/export-actions.test.ts --runInBand
 
