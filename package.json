@@ -10,6 +10,7 @@
     "lint:strict": "eslint --config eslint.strict.config.mjs \"src/**/*.{ts,tsx}\"",
     "docs:api:check": "node scripts/check-api-docs.mjs",
     "security:audit": "node scripts/audit-production.mjs",
+    "security:secrets": "node scripts/check-secret-leaks.mjs",
     "test": "jest",
     "test:critical": "jest src/__tests__/payment-webhook.test.ts src/__tests__/accounting-outbox.test.ts src/__tests__/finance.test.ts src/__tests__/finance-transaction-mutations.test.ts src/__tests__/admin-salary-actions.test.ts src/__tests__/salary-reconciliation.test.ts src/__tests__/salary-reconciliation-summary.test.ts src/__tests__/ai-autopilot-cron.test.ts src/__tests__/test-upcoming-route.test.ts --runInBand",
     "test:coverage": "jest --coverage",

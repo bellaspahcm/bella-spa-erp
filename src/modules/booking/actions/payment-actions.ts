@@ -70,7 +70,7 @@ export async function generateShareToken(bookingId: string) {
   const result = await updateBookingShareToken(supabase, bookingId, token);
 
   if ('error' in result) {
-    console.error('Error generating share token:', result.error);
+    console.error('Error generating booking share link:', result.error);
     return { error: result.error };
   }
 
