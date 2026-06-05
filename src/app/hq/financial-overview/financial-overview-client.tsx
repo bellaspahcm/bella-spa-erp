@@ -251,8 +251,8 @@ export default function FinancialOverviewClient({
           {initialRows.length === 0 ? (
             <div className="py-12 text-center text-slate-400 italic">Chưa có chi nhánh nào hoạt động.</div>
           ) : (
-            <div className="overflow-x-auto -mx-6 px-6 pb-2">
-              <table className="w-full border-collapse min-w-[800px]">
+            <div className="-mx-6 overflow-x-auto overscroll-x-contain px-6 pb-2 custom-scrollbar">
+              <table className="bella-data-table min-w-[800px]">
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
                     <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center whitespace-nowrap">#</th>

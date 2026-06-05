@@ -17,8 +17,8 @@ export function CrmLogsTab({ znsLogs, loadError }: CrmLogsTabProps) {
         <p className="text-xs text-slate-400 font-medium">Lưu trữ để kiểm tra đối soát chất lượng dịch vụ chăm sóc</p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
+        <table className="bella-data-table min-w-[72rem] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
               <th className="py-4 px-6">Thời gian gửi</th>

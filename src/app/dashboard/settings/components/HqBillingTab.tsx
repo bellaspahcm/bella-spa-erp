@@ -165,8 +165,8 @@ export default function HqBillingTab() {
             <p className="text-[10px] text-slate-400">Các hóa đơn sẽ tự động phát sinh khi bạn thực hiện Khóa sổ tháng đầu tiên.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+          <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
+            <table className="bella-data-table min-w-[76rem] text-left text-sm">
               <thead className="text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50 border-b border-slate-100">
                 <tr>
                   <th className="px-8 py-5">Mã hóa đơn</th>

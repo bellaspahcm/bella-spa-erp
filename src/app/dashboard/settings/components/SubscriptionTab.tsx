@@ -602,8 +602,8 @@ export default function SubscriptionTab() {
           <History className="w-5 h-5 text-indigo-500" /> Lịch sử hóa đơn thanh toán
         </h4>
         <div className="overflow-hidden rounded-[2rem] bg-white border border-slate-100 shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs font-semibold text-slate-600">
+          <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
+            <table className="bella-data-table min-w-[64rem] text-left text-xs font-semibold text-slate-600">
               <thead className="bg-slate-50 border-b border-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-wider">
                 <tr>
                   <th className="px-6 py-4">Mã hóa đơn</th>
