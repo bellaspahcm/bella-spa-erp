@@ -1,11 +1,29 @@
 jest.mock('server-only', () => ({}), { virtual: true });
 
 const mockEnqueueWithAutoClient = jest.fn();
+const mockAssertOpenAccountingPeriod = jest.fn();
+const mockAutoConsumeForSession = jest.fn();
+const mockRollbackInventoryConsumption = jest.fn();
+const mockRecalculateAndSaveSalaryRecord = jest.fn();
 
 jest.mock('@/lib/accounting-outbox', () => ({
   enqueueWithAutoClient: (...args: unknown[]) => mockEnqueueWithAutoClient(...args),
 }));
 
+jest.mock('@/services/accounting/period-guards', () => ({
+  assertOpenAccountingPeriod: (...args: unknown[]) => mockAssertOpenAccountingPeriod(...args),
+}));
+
+jest.mock('@/services/inventory-actions', () => ({
+  autoConsumeForSession: (...args: unknown[]) => mockAutoConsumeForSession(...args),
+  rollbackInventoryConsumption: (...args: unknown[]) => mockRollbackInventoryConsumption(...args),
+}));
+
+jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
+  recalculateAndSaveSalaryRecord: (...args: unknown[]) => mockRecalculateAndSaveSalaryRecord(...args),
+}));
+
+import { processSessionCompletion } from '../modules/booking/actions/session-completion-engine';
 import {
   enqueueSessionDoneAccountingOutbox,
   ensureSessionReviewPlaceholder,
@@ -19,7 +37,7 @@ type DbCall = {
   filters: Array<[string, unknown]>;
 };
 
-function createSupabaseMock(results: Array<{ data?: unknown; error?: { message: string } }> = []) {
+function createSupabaseMock(results: Array<{ data?: unknown; count?: number; error?: { message: string } }> = []) {
   const calls: DbCall[] = [];
 
   class QueryBuilder {
@@ -70,7 +88,7 @@ function createSupabaseMock(results: Array<{ data?: unknown; error?: { message: 
 
     private resolve() {
       const next = results.shift() ?? {};
-      return Promise.resolve({ data: next.data ?? null, error: next.error ?? null });
+      return Promise.resolve({ data: next.data ?? null, count: next.count ?? null, error: next.error ?? null });
     }
   }
 
@@ -86,6 +104,10 @@ describe('session completion accounting side effects', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockEnqueueWithAutoClient.mockResolvedValue(true);
+    mockAssertOpenAccountingPeriod.mockResolvedValue(undefined);
+    mockAutoConsumeForSession.mockResolvedValue({ success: true, bypassed: true });
+    mockRollbackInventoryConsumption.mockResolvedValue({ success: true });
+    mockRecalculateAndSaveSalaryRecord.mockResolvedValue({ success: true });
   });
 
   it('rolls back single-session revenue and booking progress when SESSION_DONE enqueue returns false', async () => {
@@ -281,5 +303,177 @@ describe('session completion accounting side effects', () => {
         filters: [['id', 'booking-1']],
       }),
     ]));
+  });
+
+  it('processes booking progress, single-session revenue, salary, review, and SESSION_DONE outbox end to end', async () => {
+    mockAutoConsumeForSession.mockResolvedValueOnce({ success: true, bypassed: false });
+    const currentBooking = {
+      package_name: 'G\u00f3i d\u1ecbch v\u1ee5 l\u1ebb',
+      completed_sessions: 1,
+      status: 'booked',
+      total_sessions: 5,
+      ktv_commission: 30000,
+      assigned_ktv_id: 'ktv-1',
+      tenant_id: 'tenant-1',
+      full_price: 500000,
+      deposit_amount: 200000,
+      discount_percent: 0,
+    };
+    const { calls, supabase } = createSupabaseMock([
+      { count: 2 },
+      { data: currentBooking },
+      {},
+      { data: { id: 'revenue-1' } },
+      { data: null },
+      {},
+    ]);
+
+    const result = await processSessionCompletion(
+      supabase as never,
+      'session-1',
+      'booking-1',
+      'tenant-1',
+      'ktv-1',
+      '2026-06-03',
+      'package-1',
+      { session_number: 2 },
+      { id: 'user-1' }
+    );
+
+    expect(result).toEqual({ success: true });
+    expect(mockAssertOpenAccountingPeriod).toHaveBeenCalledWith(
+      supabase,
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        date: '2026-06-03',
+        context: 'Complete booking session',
+      })
+    );
+    expect(mockAutoConsumeForSession).toHaveBeenCalledWith('package-1', 'session-1');
+    expect(mockRecalculateAndSaveSalaryRecord).toHaveBeenCalledWith(
+      supabase,
+      'ktv-1',
+      '2026-06-01',
+      'tenant-1'
+    );
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'bookings',
+        op: 'update',
+        payload: expect.objectContaining({
+          completed_sessions: 2,
+          last_updated_date: '2026-06-03',
+          status: 'in_progress',
+        }),
+        filters: [['id', 'booking-1']],
+      }),
+      expect.objectContaining({
+        table: 'revenue',
+        op: 'insert',
+        payload: [expect.objectContaining({
+          booking_id: 'booking-1',
+          amount: 350000,
+          status: 'confirmed',
+        })],
+      }),
+      expect.objectContaining({
+        table: 'session_reviews',
+        op: 'insert',
+        payload: [expect.objectContaining({
+          session_log_id: 'session-1',
+          reviewer_id: 'ktv-1',
+          ktv_id: 'ktv-1',
+          status: 'pending_review',
+          tenant_id: 'tenant-1',
+        })],
+      }),
+    ]));
+    expect(mockEnqueueWithAutoClient).toHaveBeenNthCalledWith(
+      1,
+      supabase,
+      expect.objectContaining({ eventType: 'PACKAGE_SALE', referenceId: 'revenue-1' }),
+      '[processSessionCompletion:single-session-revenue]'
+    );
+    expect(mockEnqueueWithAutoClient).toHaveBeenNthCalledWith(
+      2,
+      supabase,
+      expect.objectContaining({
+        eventType: 'SESSION_DONE',
+        referenceType: 'SESSION_LOG',
+        referenceId: 'session-1',
+        payload: expect.objectContaining({
+          bookingId: 'booking-1',
+          ktvId: 'ktv-1',
+          earnedRevenueAmount: 100000,
+          deferredRevenueAmount: 100000,
+          receivableAmount: 0,
+          commissionAmount: 30000,
+        }),
+      }),
+      '[processSessionCompletion]'
+    );
+  });
+
+  it('rolls back revenue, booking progress, and inventory when review placeholder fails in the engine', async () => {
+    mockAutoConsumeForSession.mockResolvedValueOnce({ success: true, bypassed: false });
+    const currentBooking = {
+      package_name: 'G\u00f3i d\u1ecbch v\u1ee5 l\u1ebb',
+      completed_sessions: 1,
+      status: 'booked',
+      total_sessions: 5,
+      ktv_commission: 30000,
+      assigned_ktv_id: 'ktv-1',
+      tenant_id: 'tenant-1',
+      full_price: 500000,
+      deposit_amount: 200000,
+      discount_percent: 0,
+    };
+    const { calls, supabase } = createSupabaseMock([
+      { count: 2 },
+      { data: currentBooking },
+      {},
+      { data: { id: 'revenue-1' } },
+      { data: null },
+      { error: { message: 'review insert failed' } },
+      {},
+      {},
+    ]);
+
+    const result = await processSessionCompletion(
+      supabase as never,
+      'session-1',
+      'booking-1',
+      'tenant-1',
+      'ktv-1',
+      '2026-06-03',
+      'package-1',
+      { session_number: 2 },
+      { id: 'user-1' }
+    );
+
+    expect(result).toEqual({ error: expect.stringContaining('review insert failed') });
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'revenue',
+        op: 'delete',
+        filters: expect.arrayContaining([
+          ['booking_id', 'booking-1'],
+          ['amount', 350000],
+        ]),
+      }),
+      expect.objectContaining({
+        table: 'bookings',
+        op: 'update',
+        payload: { completed_sessions: 1, status: 'booked' },
+        filters: [['id', 'booking-1']],
+      }),
+    ]));
+    expect(mockRollbackInventoryConsumption).toHaveBeenCalledWith('session-1');
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledTimes(1);
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      supabase,
+      expect.objectContaining({ eventType: 'PACKAGE_SALE', referenceId: 'revenue-1' }),
+      '[processSessionCompletion:single-session-revenue]'
+    );
   });
 });
