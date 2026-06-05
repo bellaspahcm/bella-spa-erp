@@ -30,6 +30,9 @@ Không thực hiện thay đổi kiến trúc rộng nếu chưa ghi rõ intent 
 | Một lát cắt triển khai cụ thể | `docs/implementation-artifacts/spec-*.md` |
 | Điều tra trước khi sửa rủi ro cao | `docs/implementation-artifacts/investigations/*.md` |
 | Tài liệu lịch sử business/technical | Các file `docs/*.md` cấp cao |
+| Báo cáo kế toán chi tiết TT133 | `docs/bella_spa_accounting_report.html` |
+| Báo cáo sức khỏe vận hành hệ thống | `docs/bella_spa_business_report.html` |
+| Cẩm nang kế toán song song | `docs/bella_spa_dual_mode_accounting_guide.html` |
 | Lưu trữ bất biến | `docs/archive/*.md` |
 
 ## Quy Tắc Vàng
