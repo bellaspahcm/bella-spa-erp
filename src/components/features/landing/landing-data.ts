@@ -14,6 +14,62 @@ export interface ServicePackage {
 export type PackageRow = Database['public']['Tables']['packages']['Row'];
 export type LandingCategoryKey = 'bau' | 'sau-sinh' | 'baby' | 'combo';
 
+type LandingPackageCategoryInput = Pick<PackageRow, 'name' | 'total_sessions'>;
+
+const LANDING_PACKAGE_CATEGORY_KEYWORDS: Array<{
+  category: LandingCategoryKey;
+  keywords: string[];
+}> = [
+  {
+    category: 'combo',
+    keywords: ['combo', 'home-care', 'home care', 'signature'],
+  },
+  {
+    category: 'sau-sinh',
+    keywords: ['sau sinh', 'phuc hoi', 'eo thon', 'dang ngoc', 'tia sua'],
+  },
+  {
+    category: 'baby',
+    keywords: ['be', 'tam', 'hydrotherapy', 'con yeu'],
+  },
+  {
+    category: 'bau',
+    keywords: ['bau', 'thai'],
+  },
+];
+
+function normalizeLandingPackageName(name: string) {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase();
+}
+
+function matchesLandingPackageKeyword(normalizedName: string, keyword: string) {
+  const searchableName = normalizedName.replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const normalizedKeyword = normalizeLandingPackageName(keyword).replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+  if (normalizedKeyword.includes(' ')) {
+    return searchableName.includes(normalizedKeyword);
+  }
+
+  return ` ${searchableName} `.includes(` ${normalizedKeyword} `);
+}
+
+export function getLandingCategoryForPackage(pkg: LandingPackageCategoryInput): LandingCategoryKey {
+  const normalizedName = normalizeLandingPackageName(pkg.name);
+
+  for (const { category, keywords } of LANDING_PACKAGE_CATEGORY_KEYWORDS) {
+    if (keywords.some((keyword) => matchesLandingPackageKeyword(normalizedName, keyword))) {
+      return category;
+    }
+  }
+
+  return Number(pkg.total_sessions || 0) >= 10 ? 'combo' : 'bau';
+}
+
 export interface LandingCategory {
   title: string;
   description: string;
