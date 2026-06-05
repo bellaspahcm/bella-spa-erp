@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import {
 AlertTriangle,
-Calendar,
 CheckCircle2,
 Clock,
 HelpCircle,
@@ -20,6 +19,18 @@ import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-e
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(n) || 0);
+
+const monthInputClassName =
+  'h-11 w-full min-w-[10.75rem] rounded-xl border border-slate-100 bg-slate-50 px-4 pr-10 text-xs font-bold text-slate-800 outline-none [color-scheme:light] dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1] dark:[color-scheme:dark]';
+const filterLabelClassName =
+  'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap';
+const tableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
+const tableClassName = 'w-max min-w-[58rem] border-collapse whitespace-nowrap';
+const stickyHeaderCellClassName =
+  'sticky left-0 z-30 bg-slate-50 shadow-[10px_0_16px_-14px_rgba(15,23,42,0.65)] dark:bg-[#11100F]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-inherit shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; border: string; text: string; icon: LucideIcon }> = {
   MATCH: {
@@ -120,14 +131,13 @@ export default function SalaryReconciliationPage() {
       {/* FILTER + SUMMARY */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2 bg-white dark:bg-[#1C1B19] rounded-2xl border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 shadow-sm">
-          <p className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest mb-3">Tháng đối soát</p>
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-primary dark:text-[#A67D44]" />
+          <p className={`${filterLabelClassName} mb-3`}>Tháng đối soát</p>
+          <div className="grid grid-cols-1">
             <input
               type="month"
               value={monthYear.slice(0, 7)}
               onChange={(e) => setMonthYear(`${e.target.value}-01`)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]"
+              className={monthInputClassName}
             />
           </div>
         </div>
@@ -174,11 +184,11 @@ export default function SalaryReconciliationPage() {
             <p className="text-xs font-bold uppercase tracking-wider">Chưa có dữ liệu đối soát lương cho tháng này</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+          <div className={tableWrapperClassName}>
+            <table className={tableClassName}>
               <thead>
                 <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
-                  <th className="px-3 py-3 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">KTV</th>
+                  <th className={`${stickyHeaderCellClassName} px-3 py-3 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>KTV</th>
                   <th className="px-3 py-3 text-3xs font-black text-blue-500 uppercase tracking-widest text-right">Legacy</th>
                   <th className="px-3 py-3 text-3xs font-black text-pink-500 uppercase tracking-widest text-right">AI</th>
                   <th className="px-3 py-3 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Chênh lệch</th>
@@ -196,7 +206,7 @@ export default function SalaryReconciliationPage() {
                       whileHover={{ backgroundColor: 'rgba(244,63,94,0.02)' }}
                       className="transition-colors"
                     >
-                      <td className="px-3 py-3 font-bold text-slate-900 dark:text-[#EFE9E1]">
+                      <td className={`${stickyBodyCellClassName} px-3 py-3 font-bold text-slate-900 dark:text-[#EFE9E1]`}>
                         {row.ktv_name}
                         <p className="text-3xs text-slate-400 mt-0.5">Status: {row.legacy_status}</p>
                       </td>
@@ -224,7 +234,7 @@ export default function SalaryReconciliationPage() {
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-slate-200 dark:border-[#3E3A35]/40 bg-slate-50/40 dark:bg-[#11100F]/40 font-black">
-                  <td className="px-3 py-4 text-xs uppercase tracking-widest text-slate-900 dark:text-[#EFE9E1]">Tổng cộng</td>
+                  <td className={`${stickyBodyCellClassName} px-3 py-4 text-xs uppercase tracking-widest text-slate-900 dark:text-[#EFE9E1]`}>Tổng cộng</td>
                   <td className="px-3 py-4 text-right font-mono text-sm text-blue-700 dark:text-blue-300">{fmtVND(totalLegacy)}</td>
                   <td className="px-3 py-4 text-right font-mono text-sm text-pink-700 dark:text-pink-300">{fmtVND(totalAi)}</td>
                   <td className={`px-3 py-4 text-right font-mono text-sm ${Math.abs(totalDiff) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>

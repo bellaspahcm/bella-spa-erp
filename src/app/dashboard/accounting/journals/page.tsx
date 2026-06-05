@@ -6,7 +6,6 @@ import { getJournalEntries } from '@/services/accounting-actions';
 import { motion } from 'framer-motion';
 import {
 AlertTriangle,
-Calendar,
 Eye,
 Layers,
 RefreshCw,
@@ -19,6 +18,18 @@ import { toast } from 'sonner';
 type JournalEntryRow = Awaited<ReturnType<typeof getJournalEntries>>[number];
 type JournalLineRow = NonNullable<JournalEntryRow['journal_lines']>[number];
 type JournalFilters = NonNullable<Parameters<typeof getJournalEntries>[0]>;
+
+const dateInputClassName =
+  'h-11 w-full min-w-[10.75rem] rounded-xl border border-slate-100 bg-slate-50 px-4 pr-10 text-xs font-bold text-slate-800 outline-none [color-scheme:light] dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1] dark:[color-scheme:dark]';
+const fieldLabelClassName =
+  'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/50 uppercase tracking-wider block whitespace-nowrap';
+const tableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
+const tableClassName = 'w-[82rem] table-fixed border-collapse whitespace-nowrap';
+const stickyHeaderCellClassName =
+  'sticky left-0 z-30 bg-slate-50 shadow-[10px_0_16px_-14px_rgba(15,23,42,0.65)] dark:bg-[#11100F]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-inherit shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
 
 export default function JournalsPage() {
   const [loading, setLoading] = useState(true);
@@ -91,39 +102,37 @@ export default function JournalsPage() {
       )}
 
       {/* ── SEARCH FILTERS & QUICK ACTIONS ── */}
-      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 flex-1">
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 sm:p-6 shadow-sm">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-[repeat(2,minmax(10.75rem,12rem))_minmax(12rem,1fr)_minmax(14rem,1.35fr)_minmax(16rem,1.35fr)]">
           {/* Start Date */}
           <div className="space-y-1">
-            <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/50 uppercase tracking-wider block">Từ ngày</span>
+            <span className={fieldLabelClassName}>Từ ngày</span>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 type="date" 
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]" 
+                className={dateInputClassName}
               />
             </div>
           </div>
 
           {/* End Date */}
           <div className="space-y-1">
-            <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/50 uppercase tracking-wider block">Đến ngày</span>
+            <span className={fieldLabelClassName}>Đến ngày</span>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 type="date" 
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]" 
+                className={dateInputClassName}
               />
             </div>
           </div>
 
           {/* Status filter */}
           <div className="space-y-1">
-            <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/50 uppercase tracking-wider block">Trạng thái</span>
+            <span className={fieldLabelClassName}>Trạng thái</span>
             <PremiumSelect
               value={statusFilter}
               onChange={(val) => {
@@ -143,7 +152,7 @@ export default function JournalsPage() {
 
           {/* Reference type filter */}
           <div className="space-y-1">
-            <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/50 uppercase tracking-wider block">Loại nghiệp vụ</span>
+            <span className={fieldLabelClassName}>Loại nghiệp vụ</span>
             <PremiumSelect
               value={refTypeFilter}
               onChange={(val) => setRefTypeFilter(val)}
@@ -163,7 +172,7 @@ export default function JournalsPage() {
 
           {/* Search bar */}
           <div className="space-y-1">
-            <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/50 uppercase tracking-wider block">Tìm kiếm nhanh</span>
+            <span className={fieldLabelClassName}>Tìm kiếm nhanh</span>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
@@ -171,7 +180,7 @@ export default function JournalsPage() {
                 placeholder="Mã TK, tên nghiệp vụ..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]" 
+                className="h-11 w-full min-w-0 rounded-xl border border-slate-100 bg-slate-50 pl-10 pr-3 text-xs font-bold text-slate-800 outline-none dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1]"
               />
             </div>
           </div>
@@ -198,11 +207,19 @@ export default function JournalsPage() {
             <p className="font-extrabold uppercase text-xs tracking-wider">Không tìm thấy bút toán phù hợp</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+          <div className={tableWrapperClassName}>
+            <table className={tableClassName}>
+              <colgroup>
+                <col className="w-[10rem]" />
+                <col className="w-[31rem]" />
+                <col className="w-[13rem]" />
+                <col className="w-[13rem]" />
+                <col className="w-[9rem]" />
+                <col className="w-[8rem]" />
+              </colgroup>
               <thead>
                 <tr className="text-left bg-slate-50/50 dark:bg-[#11100F]/40 border-b border-slate-100 dark:border-[#3E3A35]/30">
-                  <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Ngày ghi sổ</th>
+                  <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Ngày ghi sổ</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Diễn giải nghiệp vụ</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Nghiệp vụ gốc</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Tổng phát sinh Nợ/Có</th>
@@ -231,17 +248,17 @@ export default function JournalsPage() {
                       whileHover={{ backgroundColor: 'rgba(244,63,94,0.01)' }}
                       className="hover:bg-slate-50/20 dark:hover:bg-[#11100F]/10 transition-colors"
                     >
-                      <td className="px-6 py-4 text-2xs font-bold text-slate-500 dark:text-[#CDBCAB]/80 font-mono">
+                      <td className={`${stickyBodyCellClassName} px-6 py-4 text-2xs font-bold text-slate-500 dark:text-[#CDBCAB]/80 font-mono`}>
                         {entry.entry_date}
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <p className="text-xs font-black text-slate-800 dark:text-[#EFE9E1] leading-snug">{entry.description}</p>
-                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                          <p className="truncate text-xs font-black leading-snug text-slate-800 dark:text-[#EFE9E1]" title={entry.description || ''}>{entry.description}</p>
+                          <div className="mt-1.5 flex flex-nowrap items-center gap-1.5 overflow-hidden">
                             {entry.journal_lines?.map((line: JournalLineRow) => (
                               <span 
                                 key={line.id} 
-                                className={`text-4xs font-mono px-2 py-0.5 rounded border ${
+                                className={`shrink-0 text-4xs font-mono px-2 py-0.5 rounded border ${
                                   line.debit_amount > 0 
                                     ? 'bg-emerald-50/50 text-emerald-700 dark:bg-emerald-500/5 dark:text-emerald-400 border-emerald-100/30' 
                                     : 'bg-rose-50/50 text-rose-700 dark:bg-rose-500/5 dark:text-rose-400 border-rose-100/30'

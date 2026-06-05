@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   RefreshCw,
-  Calendar,
   Download,
   AlertTriangle
 } from 'lucide-react';
@@ -38,6 +37,18 @@ const reportTabs = [
   { value: 'cash_flow', label: 'Lưu chuyển Tiền tệ (CFS)' },
   { value: 'account_ledger', label: 'Sổ chi tiết tài khoản' },
 ];
+
+const dateInputClassName =
+  'h-11 w-full min-w-[10.75rem] rounded-xl border border-slate-100 bg-slate-50 px-4 pr-10 text-xs font-bold text-slate-800 outline-none [color-scheme:light] dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1] dark:[color-scheme:dark]';
+const dateFieldClassName = 'grid w-full min-w-0 grid-cols-1 gap-1.5 sm:w-auto sm:min-w-[10.75rem]';
+const dateLabelClassName = 'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap';
+const reportTableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
+const reportTableClassName = 'w-max min-w-[64rem] border-collapse whitespace-nowrap';
+const stickyHeaderCellClassName =
+  'sticky left-0 z-30 bg-slate-50 shadow-[10px_0_16px_-14px_rgba(15,23,42,0.65)] dark:bg-[#11100F]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-inherit shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
 
 export default function AccountingReportsPage() {
   const [activeTab, setActiveTab] = useState<string>('trial_balance');
@@ -171,9 +182,9 @@ export default function AccountingReportsPage() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6 flex-wrap">
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 sm:p-6 shadow-sm grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         {/* Switch report type tabs */}
-        <div className="flex flex-wrap items-center gap-1 bg-slate-50 dark:bg-[#11100F] p-1.5 rounded-2xl border border-slate-100 dark:border-none w-fit max-w-full shrink-0">
+        <div className="flex max-w-full flex-wrap items-center gap-1 rounded-2xl border border-slate-100 bg-slate-50 p-1.5 dark:border-none dark:bg-[#11100F]">
           {reportTabs.map((t) => (
             <button 
               key={t.value}
@@ -190,29 +201,26 @@ export default function AccountingReportsPage() {
         </div>
 
         {/* Dynamic Filters Bar based on active tab */}
-        <div className="flex flex-wrap items-center gap-4 shrink-0">
+        <div className="grid w-full min-w-0 grid-cols-1 gap-4 xl:w-auto xl:justify-items-end">
           {activeTab === 'trial_balance' || activeTab === 'balance_sheet' ? (
-            <div className="flex items-center gap-2">
-              <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Tính đến ngày:</span>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input 
-                  type="date" 
-                  value={asOfDate}
-                  onChange={(e) => setAsOfDate(e.target.value)}
-                  className="pl-10 pr-3 py-2 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]" 
-                />
-              </div>
+            <div className={dateFieldClassName}>
+              <span className={dateLabelClassName}>Tính đến ngày:</span>
+              <input
+                type="date"
+                value={asOfDate}
+                onChange={(e) => setAsOfDate(e.target.value)}
+                className={dateInputClassName}
+              />
             </div>
           ) : activeTab === 'account_ledger' ? (
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="grid w-full min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(14rem,22rem)_auto] lg:items-end">
               {/* Account Dropdown */}
-              <div className="flex items-center gap-2">
-                <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Tài khoản:</span>
+              <div className={dateFieldClassName}>
+                <span className={dateLabelClassName}>Tài khoản:</span>
                 <select
                   value={selectedAccountId}
                   onChange={(e) => setSelectedAccountId(e.target.value)}
-                  className="px-3.5 py-2 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]"
+                  className="h-11 w-full min-w-0 rounded-xl border border-slate-100 bg-slate-50 px-3.5 text-xs font-bold text-slate-800 outline-none dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1]"
                 >
                   {accounts.map(a => (
                     <option key={a.id} value={a.id}>
@@ -223,39 +231,39 @@ export default function AccountingReportsPage() {
               </div>
 
               {/* Date Ranges */}
-              <div className="flex items-center gap-2">
-                <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Từ ngày:</span>
+              <div className={dateFieldClassName}>
+                <span className={dateLabelClassName}>Từ ngày:</span>
                 <input 
                   type="date" 
                   value={fromDate}
                   onChange={(e) => setFromDate(e.target.value)}
-                  className="px-3.5 py-1.5 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]" 
+                  className={dateInputClassName}
                 />
-                <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Đến:</span>
+                <span className={dateLabelClassName}>Đến:</span>
                 <input 
                   type="date" 
                   value={toDate}
                   onChange={(e) => setToDate(e.target.value)}
-                  className="px-3.5 py-1.5 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]" 
+                  className={dateInputClassName}
                 />
               </div>
             </div>
           ) : (
             // P&L Date Range
-            <div className="flex items-center gap-2">
-              <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Từ ngày:</span>
+            <div className={dateFieldClassName}>
+              <span className={dateLabelClassName}>Từ ngày:</span>
               <input 
                 type="date" 
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="px-3.5 py-1.5 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]" 
+                className={dateInputClassName}
               />
-              <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Đến ngày:</span>
+              <span className={dateLabelClassName}>Đến ngày:</span>
               <input 
                 type="date" 
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="px-3.5 py-1.5 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]" 
+                className={dateInputClassName}
               />
             </div>
           )}
@@ -264,7 +272,7 @@ export default function AccountingReportsPage() {
           {activeTab !== 'account_ledger' && (
             <button 
               onClick={handleExportExcel}
-              className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-2xl font-black transition-all shadow-md shadow-emerald-100 uppercase tracking-widest text-3xs shrink-0 active:scale-95 cursor-pointer border-none"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border-none bg-emerald-600 px-5 py-2.5 text-3xs font-black uppercase tracking-widest text-white shadow-md shadow-emerald-100 transition-all hover:bg-emerald-500 active:scale-95 sm:w-auto xl:justify-self-end"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Xuất Excel TT133</span>
@@ -283,11 +291,11 @@ export default function AccountingReportsPage() {
              ========================================== */
           <div className="space-y-6">
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">BẢNG CÂN ĐỐI PHÁT SINH TÀI KHOẢN (TT 133/2016/TT-BTC)</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+            <div className={reportTableWrapperClassName}>
+              <table className={reportTableClassName}>
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
-                    <th rowSpan={2} className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20">Mã TK</th>
+                    <th rowSpan={2} className={`${stickyHeaderCellClassName} px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20`}>Mã TK</th>
                     <th rowSpan={2} className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20">Tên Tài Khoản</th>
                     <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-r border-slate-100 dark:border-[#3E3A35]/20">Số dư đầu kỳ</th>
                     <th colSpan={2} className="px-4 py-2 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center border-b border-r border-slate-100 dark:border-[#3E3A35]/20">Số phát sinh trong kỳ</th>
@@ -305,7 +313,7 @@ export default function AccountingReportsPage() {
                 <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-mono text-2xs">
                   {trialBalance.map((row) => (
                     <tr key={row.account_id} className="hover:bg-slate-50/40 dark:hover:bg-[#11100F]/10 transition-colors">
-                      <td className="px-4 py-3 font-black text-slate-800 dark:text-[#EFE9E1] border-r border-slate-100 dark:border-[#3E3A35]/20">{row.account_code}</td>
+                      <td className={`${stickyBodyCellClassName} px-4 py-3 font-black text-slate-800 dark:text-[#EFE9E1] border-r border-slate-100 dark:border-[#3E3A35]/20`}>{row.account_code}</td>
                       <td className="px-4 py-3 font-sans font-semibold text-slate-600 dark:text-[#CDBCAB] border-r border-slate-100 dark:border-[#3E3A35]/20 text-xs">{row.account_name}</td>
                       
                       <td className="px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 text-slate-700 dark:text-[#EFE9E1]/85">{Number(row.opening_debit) > 0 ? Number(row.opening_debit).toLocaleString() : '-'}</td>
@@ -321,7 +329,7 @@ export default function AccountingReportsPage() {
 
                   {/* Totals row */}
                   <tr className="bg-slate-50 dark:bg-[#11100F]/30 font-black border-t border-slate-200 dark:border-[#3E3A35]">
-                    <td colSpan={2} className="px-4 py-4 font-sans text-xs text-slate-800 dark:text-[#EFE9E1] uppercase tracking-wider border-r border-slate-100 dark:border-[#3E3A35]/20">TỔNG CỘNG</td>
+                    <td colSpan={2} className={`${stickyBodyCellClassName} px-4 py-4 font-sans text-xs text-slate-800 dark:text-[#EFE9E1] uppercase tracking-wider border-r border-slate-100 dark:border-[#3E3A35]/20`}>TỔNG CỘNG</td>
                     <td className="px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20">{trialBalance.reduce((sum, r) => sum + Number(r.opening_debit), 0).toLocaleString()}đ</td>
                     <td className="px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20">{trialBalance.reduce((sum, r) => sum + Number(r.opening_credit), 0).toLocaleString()}đ</td>
                     <td className="px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20">{trialBalance.reduce((sum, r) => sum + Number(r.period_debit), 0).toLocaleString()}đ</td>
@@ -339,11 +347,11 @@ export default function AccountingReportsPage() {
              ========================================== */
           <div className="space-y-6">
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH (TT 133/2016/TT-BTC)</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+            <div className={reportTableWrapperClassName}>
+              <table className={reportTableClassName}>
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
-                    <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Chỉ tiêu</th>
+                    <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Chỉ tiêu</th>
                     <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Mã số</th>
                     <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Thuyết minh</th>
                     <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Số phát sinh Kỳ này (VND)</th>
@@ -375,7 +383,7 @@ export default function AccountingReportsPage() {
                       <tr key={idx} className={`hover:bg-slate-50/40 dark:hover:bg-[#11100F]/10 transition-colors ${
                         item.isBold ? 'font-black bg-slate-50/20 dark:bg-[#11100F]/20 text-slate-900 dark:text-[#EFE9E1]' : 'text-slate-600 dark:text-[#CDBCAB]'
                       }`}>
-                        <td className="px-6 py-3.5 text-xs">{item.label}</td>
+                        <td className={`${stickyBodyCellClassName} px-6 py-3.5 text-xs`}>{item.label}</td>
                         <td className="px-6 py-3.5 text-center font-mono font-bold">{item.code}</td>
                         <td className="px-6 py-3.5 text-center font-bold">—</td>
                         <td className="px-6 py-3.5 text-right font-mono font-bold text-slate-900 dark:text-[#EFE9E1]">
@@ -395,11 +403,11 @@ export default function AccountingReportsPage() {
              ========================================== */
           <div className="space-y-6">
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">BẢNG CÂN ĐỐI KẾ TOÁN (TT 133/2016/TT-BTC)</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+            <div className={reportTableWrapperClassName}>
+              <table className={reportTableClassName}>
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
-                    <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Tài sản / Nguồn vốn</th>
+                    <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Tài sản / Nguồn vốn</th>
                     <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Mã số</th>
                     <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Thuyết minh</th>
                     <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Số cuối kỳ (VND)</th>
@@ -441,7 +449,7 @@ export default function AccountingReportsPage() {
                       <tr key={idx} className={`hover:bg-slate-50/40 dark:hover:bg-[#11100F]/10 transition-colors ${
                         item.isBold ? 'font-black bg-slate-50/20 dark:bg-[#11100F]/20 text-slate-900 dark:text-[#EFE9E1]' : 'text-slate-600 dark:text-[#CDBCAB]'
                       }`}>
-                        <td className="px-6 py-3.5 text-xs">{item.label}</td>
+                        <td className={`${stickyBodyCellClassName} px-6 py-3.5 text-xs`}>{item.label}</td>
                         <td className="px-6 py-3.5 text-center font-mono font-bold">{item.code}</td>
                         <td className="px-6 py-3.5 text-center font-bold">—</td>
                         <td className={`px-6 py-3.5 text-right font-mono font-bold ${
@@ -502,11 +510,11 @@ export default function AccountingReportsPage() {
                 </div>
 
                 {/* ── Detail table ── */}
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
+                <div className={reportTableWrapperClassName}>
+                  <table className={reportTableClassName}>
                     <thead>
                       <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
-                        <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Chỉ tiêu</th>
+                        <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Chỉ tiêu</th>
                         <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Mã</th>
                         <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Số tiền (VND)</th>
                       </tr>
@@ -552,7 +560,7 @@ export default function AccountingReportsPage() {
                             item.isSection ? 'bg-pink-50/30 dark:bg-[#5D1C34]/20 font-black text-primary dark:text-[#A67D44] uppercase tracking-wider' :
                             'text-slate-600 dark:text-[#CDBCAB]'
                           }`}>
-                            <td className="px-6 py-3 text-xs">{item.label}</td>
+                            <td className={`${stickyBodyCellClassName} px-6 py-3 text-xs`}>{item.label}</td>
                             <td className="px-6 py-3 text-center font-mono font-bold">{item.code}</td>
                             <td className={`px-6 py-3 text-right font-mono font-bold ${
                               Number(item.val) < 0 ? 'text-rose-500' : ''
@@ -585,11 +593,19 @@ export default function AccountingReportsPage() {
              ========================================== */
           <div className="space-y-6">
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">SỔ CHI TIẾT TÀI KHOẢN KẾ TOÁN</h4>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+            <div className={reportTableWrapperClassName}>
+              <table className="w-[82rem] table-fixed border-collapse whitespace-nowrap">
+                <colgroup>
+                  <col className="w-[10rem]" />
+                  <col className="w-[32rem]" />
+                  <col className="w-[10rem]" />
+                  <col className="w-[12rem]" />
+                  <col className="w-[12rem]" />
+                  <col className="w-[12rem]" />
+                </colgroup>
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40 border-t border-slate-100 dark:border-[#3E3A35]/30">
-                    <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest font-mono">Ngày</th>
+                    <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest font-mono`}>Ngày</th>
                     <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Nghiệp vụ (Diễn giải)</th>
                     <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Loại Ref</th>
                     <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Phát sinh Nợ</th>
@@ -608,9 +624,11 @@ export default function AccountingReportsPage() {
                           isOpening ? 'bg-slate-50/50 dark:bg-[#11100F]/20 font-black text-slate-900 dark:text-[#EFE9E1]' : 'text-slate-600 dark:text-[#CDBCAB]'
                         }`}
                       >
-                        <td className="px-6 py-3.5 font-mono text-2xs text-slate-500 dark:text-[#CDBCAB]/80">{row.entry_date}</td>
+                        <td className={`${stickyBodyCellClassName} px-6 py-3.5 font-mono text-2xs text-slate-500 dark:text-[#CDBCAB]/80`}>{row.entry_date}</td>
                         <td className={`px-6 py-3.5 text-xs ${isOpening ? 'font-black' : 'font-medium'}`}>
+                          <span className="block max-w-[30rem] truncate" title={String(row.description ?? '')}>
                           {row.description}
+                          </span>
                         </td>
                         <td className="px-6 py-3.5 text-center">
                           {row.reference_type ? (

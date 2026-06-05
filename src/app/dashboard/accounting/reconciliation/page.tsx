@@ -8,8 +8,6 @@ import {
   AlertTriangle,
   XCircle,
   RefreshCw,
-  Calendar,
-  ArrowRight,
   HelpCircle,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -24,6 +22,18 @@ const fmtVND = (n: number) =>
     currency: 'VND',
     maximumFractionDigits: 0,
   }).format(Number(n) || 0);
+
+const dateInputClassName =
+  'h-11 w-full min-w-[10.75rem] rounded-xl border border-slate-100 bg-slate-50 px-4 pr-10 text-xs font-bold text-slate-800 outline-none [color-scheme:light] dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1] dark:[color-scheme:dark]';
+const dateLabelClassName =
+  'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap';
+const tableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
+const tableClassName = 'w-max min-w-[64rem] border-collapse whitespace-nowrap';
+const stickyHeaderCellClassName =
+  'sticky left-0 z-30 bg-slate-50 shadow-[10px_0_16px_-14px_rgba(15,23,42,0.65)] dark:bg-[#11100F]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-inherit shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
 
 const STATUS_CONFIG = {
   MATCH: {
@@ -326,21 +336,19 @@ export default function ReconciliationPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Date filter */}
         <div className="lg:col-span-2 bg-white dark:bg-[#1C1B19] rounded-2xl border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 shadow-sm">
-          <p className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest mb-3">Kỳ đối soát</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Calendar className="w-4 h-4 text-primary dark:text-[#A67D44]" />
+          <p className={`${dateLabelClassName} mb-3`}>Kỳ đối soát</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input
               type="date"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]"
+              className={dateInputClassName}
             />
-            <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             <input
               type="date"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-2xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]"
+              className={dateInputClassName}
             />
           </div>
         </div>
@@ -391,11 +399,11 @@ export default function ReconciliationPage() {
             <p className="text-xs font-bold uppercase tracking-wider">Chưa có dữ liệu đối soát cho kỳ này</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+          <div className={tableWrapperClassName}>
+            <table className={tableClassName}>
               <thead>
                 <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
-                  <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Chỉ tiêu</th>
+                  <th className={`${stickyHeaderCellClassName} px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Chỉ tiêu</th>
                   <th className="px-4 py-4 text-3xs font-black text-blue-500 dark:text-blue-400 uppercase tracking-widest text-right">Nguồn cũ (Legacy)</th>
                   <th className="px-4 py-4 text-3xs font-black text-pink-500 dark:text-pink-400 uppercase tracking-widest text-right">Nguồn mới (Ledger)</th>
                   <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Chênh lệch</th>
@@ -416,7 +424,7 @@ export default function ReconciliationPage() {
                       whileHover={{ backgroundColor: 'rgba(244,63,94,0.02)' }}
                       className="transition-colors"
                     >
-                      <td className="px-4 py-4 font-bold text-slate-900 dark:text-[#EFE9E1]">
+                      <td className={`${stickyBodyCellClassName} px-4 py-4 font-bold text-slate-900 dark:text-[#EFE9E1]`}>
                         {row.category_label}
                         <p className="text-3xs text-slate-400 font-mono mt-0.5">{row.category}</p>
                       </td>

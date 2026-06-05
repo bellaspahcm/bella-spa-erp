@@ -65,6 +65,15 @@ const SEVERITY_CLASS: Record<string, string> = {
   critical: 'bg-rose-50 text-rose-700 border-rose-200',
 };
 
+const tableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
+const tableClassName = 'w-max min-w-[56rem] border-collapse whitespace-nowrap text-xs';
+const reviewTableClassName = 'w-max min-w-[68rem] border-collapse whitespace-nowrap text-xs';
+const stickyHeaderCellClassName =
+  'sticky left-0 z-30 bg-white shadow-[10px_0_16px_-14px_rgba(15,23,42,0.65)] dark:bg-[#1C1B19]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-inherit shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
+
 function formatPercent(value: number) {
   return `${Math.round(value)}%`;
 }
@@ -278,7 +287,7 @@ export default function AccountingReadinessPage() {
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
-          <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">
                 Chất lượng dữ liệu theo nguồn
@@ -291,7 +300,7 @@ export default function AccountingReadinessPage() {
               type="button"
               onClick={loadData}
               disabled={refreshing}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-[#3E3A35] px-3.5 py-2 text-3xs font-black uppercase tracking-widest text-slate-600 dark:text-[#CDBCAB] hover:bg-slate-50 dark:hover:bg-[#11100F] disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2 text-3xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 disabled:opacity-60 dark:border-[#3E3A35] dark:text-[#CDBCAB] dark:hover:bg-[#11100F] sm:w-auto"
             >
               <RefreshCw className={cn('w-3.5 h-3.5', refreshing && 'animate-spin')} />
               Tải lại
@@ -301,11 +310,11 @@ export default function AccountingReadinessPage() {
           {loading ? (
             <SkeletonTable />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-xs">
+            <div className={tableWrapperClassName}>
+              <table className={tableClassName}>
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-[#3E3A35]/50 text-left">
-                    <th className="py-3 pr-4 text-3xs font-black uppercase tracking-widest text-slate-400">Nguồn</th>
+                    <th className={`${stickyHeaderCellClassName} py-3 pr-4 text-3xs font-black uppercase tracking-widest text-slate-400`}>Nguồn</th>
                     <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400 text-right">Tổng</th>
                     <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400 text-right">Đã map</th>
                     <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400 text-right">Thiếu</th>
@@ -323,7 +332,7 @@ export default function AccountingReadinessPage() {
                     const rowRate = row.total_records > 0 ? (row.classified_records / row.total_records) * 100 : 100;
                     return (
                       <tr key={row.source_table}>
-                        <td className="py-4 pr-4 min-w-[220px]">
+                        <td className={`${stickyBodyCellClassName} min-w-[220px] py-4 pr-4`}>
                           <div className="font-black text-slate-900 dark:text-[#EFE9E1]">{source.label}</div>
                           <div className="mt-1 text-3xs font-medium text-slate-400">{source.note}</div>
                         </td>
@@ -398,7 +407,7 @@ export default function AccountingReadinessPage() {
           </div>
           <Link
             href="/dashboard/accounting/reconciliation"
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-950 dark:bg-[#EFE9E1] px-4 py-2.5 text-3xs font-black uppercase tracking-widest text-white dark:text-[#11100F] hover:opacity-90"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-3xs font-black uppercase tracking-widest text-white hover:opacity-90 dark:bg-[#EFE9E1] dark:text-[#11100F] sm:w-auto"
           >
             Đối soát
             <ArrowRight className="w-3.5 h-3.5" />
@@ -418,11 +427,11 @@ export default function AccountingReadinessPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-xs">
+          <div className={tableWrapperClassName}>
+            <table className={reviewTableClassName}>
               <thead>
                 <tr className="border-b border-slate-100 dark:border-[#3E3A35]/50 text-left">
-                  <th className="py-3 pr-4 text-3xs font-black uppercase tracking-widest text-slate-400">Nguồn</th>
+                  <th className={`${stickyHeaderCellClassName} py-3 pr-4 text-3xs font-black uppercase tracking-widest text-slate-400`}>Nguồn</th>
                   <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400">Nghiệp vụ</th>
                   <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400">Lý do</th>
                   <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400 text-right">Mức độ</th>
@@ -432,14 +441,14 @@ export default function AccountingReadinessPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/30">
                 {reviewItems.slice(0, 12).map((item) => (
                   <tr key={item.id}>
-                    <td className="py-4 pr-4">
+                    <td className={`${stickyBodyCellClassName} py-4 pr-4`}>
                       <div className="font-black text-slate-900 dark:text-[#EFE9E1]">{SOURCE_LABELS[item.source_table]?.label ?? item.source_table}</div>
                       <div className="mt-1 font-mono text-4xs text-slate-400">{item.source_id}</div>
                     </td>
                     <td className="py-4 px-4 font-mono text-2xs font-bold text-slate-700 dark:text-[#CDBCAB]">
                       {item.business_event_type ?? 'UNCLASSIFIED'}
                     </td>
-                    <td className="py-4 px-4 min-w-[240px]">
+                    <td className="min-w-[24rem] px-4 py-4 whitespace-normal">
                       <div className="font-bold text-slate-700 dark:text-[#CDBCAB]">{item.reason_code}</div>
                       <div className="mt-1 text-3xs font-medium text-slate-400">{item.message}</div>
                       {item.missing_fields.length > 0 && (
@@ -458,7 +467,7 @@ export default function AccountingReadinessPage() {
                       </span>
                     </td>
                     <td className="py-4 pl-4">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex min-w-[11rem] justify-end gap-2">
                         <button
                           type="button"
                           disabled={resolvingItemId === item.id}
