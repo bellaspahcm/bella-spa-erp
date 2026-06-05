@@ -24,6 +24,7 @@ import { getCustomerBookingByToken, submitCustomerRating } from '@/services/cust
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
 import PortalChatWidget from '@/components/features/portal/PortalChatWidget';
+import { calculatePortalPaymentSummary } from './payment-utils';
 import type { CustomerPortalBooking } from '@/services/customer-actions';
 
 type CustomerPortalSession = NonNullable<CustomerPortalBooking['session_logs']>[number];
@@ -239,15 +240,15 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
 
         {/* Premium VietQR Dynamic Payment Card */}
         {(() => {
-          const fullPrice = booking.full_price || 0;
-          const discountPercent = booking.discount_percent || 0;
-          const priceAfterDiscount = fullPrice * (1 - discountPercent / 100);
-          
-          const confirmedRevenues = booking.revenue?.filter((r) => r.status === 'confirmed') || [];
-          const totalPaid = confirmedRevenues.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-          
-          const remainingDebt = priceAfterDiscount - totalPaid;
-          const hasOutstandingDebt = remainingDebt > 0;
+          const paymentSummary = calculatePortalPaymentSummary({
+            fullPrice: Number(booking.full_price || 0),
+            discountPercent: Number(booking.discount_percent || 0),
+            depositAmount: Number(booking.deposit_amount || 0),
+            bookingStatus: booking.status,
+            revenues: booking.revenue,
+            selectedTab: paymentTab,
+          });
+          const { priceAfterDiscount, remainingDebt, hasOutstandingDebt } = paymentSummary;
 
           if (!hasOutstandingDebt) {
             return (
@@ -287,13 +288,9 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
           }
 
           // Calculate payment amount based on tab
-          const isDepositPending = booking.status === 'deposit_pending';
-          const depositAmount = booking.deposit_amount || 0;
-          
-          let amountToPay = remainingDebt;
-          if (isDepositPending && paymentTab === 'deposit') {
-            amountToPay = depositAmount;
-          }
+          const amountToPay = paymentSummary.amountToPay;
+          const showDepositTab = paymentSummary.showDepositTab;
+          const effectivePaymentTab = paymentSummary.effectiveTab;
 
           const transferMemo = `BELLA ${booking.booking_number}`;
           const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact.png?amount=${amountToPay}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountName || '')}`;
@@ -310,22 +307,22 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 </div>
               </div>
 
-              {isDepositPending && (
+              {showDepositTab && (
                 <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
                   <button
                     onClick={() => setPaymentTab('deposit')}
                     className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
-                      paymentTab === 'deposit'
+                      effectivePaymentTab === 'deposit'
                         ? 'bg-white text-primary shadow-md border border-pink-50'
                         : 'text-slate-500 hover:text-slate-800'
                     }`}
                   >
-                    Đặt cọc ({formatCurrency(depositAmount)})
+                    Cọc còn thiếu ({formatCurrency(paymentSummary.depositDue)})
                   </button>
                   <button
                     onClick={() => setPaymentTab('full')}
                     className={`flex-1 py-3 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
-                      paymentTab === 'full'
+                      effectivePaymentTab === 'full'
                         ? 'bg-white text-primary shadow-md border border-pink-50'
                         : 'text-slate-500 hover:text-slate-800'
                     }`}
