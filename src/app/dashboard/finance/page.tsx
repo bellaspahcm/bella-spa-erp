@@ -29,6 +29,11 @@ type MonthlyPnL = Awaited<ReturnType<typeof getMonthlyPnL>>;
 type ServicePerformanceRow = Awaited<ReturnType<typeof getServicePerformance>>[number];
 type SortableTransactionKey = keyof MappedTransaction;
 
+const tableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.42)]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-white shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)]';
+
 export default function FinancePage() {
   const [data, setData] = useState<FinancialOverview>({
     totalBalance: 0,
@@ -188,7 +193,7 @@ export default function FinancePage() {
     currentPage * itemsPerPage
   );
   return (
-    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative">
+    <div className="flex-1 p-4 sm:p-6 md:p-10 bg-background/30 overflow-auto relative">
       {isRefreshing && (
         <div className="fixed top-0 left-0 right-0 h-1 bg-primary/20 z-[100]">
           <motion.div 
@@ -205,11 +210,11 @@ export default function FinancePage() {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Tài chính</h1>
           <p className="text-slate-500 font-medium mt-1">Theo dõi dòng tiền và hiệu quả kinh doanh</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center gap-3">
           <PremiumExportButton />
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none uppercase tracking-widest text-xs active:scale-95"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none uppercase tracking-widest text-xs active:scale-95"
           >
             <PlusCircle className="w-5 h-5" />
             <span>Ghi nhận thu chi</span>
@@ -218,10 +223,10 @@ export default function FinancePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm w-fit mb-8">
+      <div className="flex w-full overflow-x-auto items-center gap-1 bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm sm:w-fit mb-8">
         <button 
           onClick={() => setActiveTab('transactions')}
-          className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            className={`shrink-0 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
             activeTab === 'transactions' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
@@ -229,7 +234,7 @@ export default function FinancePage() {
         </button>
         <button 
           onClick={() => setActiveTab('analysis')}
-          className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+            className={`shrink-0 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
             activeTab === 'analysis' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'
           }`}
         >
@@ -258,7 +263,7 @@ export default function FinancePage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           <motion.div 
             whileHover={{ y: -5 }}
-            className="luxury-card-pink p-8 rounded-[40px] relative overflow-hidden"
+            className="luxury-card-pink p-6 sm:p-8 rounded-3xl sm:rounded-[40px] relative overflow-hidden"
           >
             <div className="relative z-10">
               <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/20">
@@ -277,7 +282,7 @@ export default function FinancePage() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+            className="luxury-card-white p-6 sm:p-8 rounded-3xl sm:rounded-[40px] flex flex-col justify-center"
           >
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
@@ -297,7 +302,7 @@ export default function FinancePage() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+            className="luxury-card-white p-6 sm:p-8 rounded-3xl sm:rounded-[40px] flex flex-col justify-center"
           >
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center">
@@ -317,7 +322,7 @@ export default function FinancePage() {
       )}
 
       {/* Recent Transactions */}
-      <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl sm:rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 whitespace-nowrap">
             <CreditCard className="w-6 h-6 text-rose-500" />
@@ -347,13 +352,21 @@ export default function FinancePage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto custom-scrollbar">
+        <div className={tableWrapperClassName}>
           {isLoading ? (
             <div className="p-8">
               <SkeletonTable />
             </div>
           ) : (
-            <table className="w-full min-w-[1000px]">
+            <table className="w-[72rem] table-fixed border-collapse">
+              <colgroup>
+                <col className="w-[15rem]" />
+                <col className="w-[24rem]" />
+                <col className="w-[10rem]" />
+                <col className="w-[11rem]" />
+                <col className="w-[12rem]" />
+                <col className="w-[14rem]" />
+              </colgroup>
               <thead>
                 <tr className="text-left bg-slate-50/50">
                   <th 
@@ -399,7 +412,7 @@ export default function FinancePage() {
               <tbody className="divide-y divide-slate-50">
                 {currentTransactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
-                     <td className="px-8 py-5 whitespace-nowrap">
+                     <td className={`${stickyBodyCellClassName} px-8 py-5 whitespace-nowrap`}>
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                           tx.type === 'revenue' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
@@ -410,7 +423,7 @@ export default function FinancePage() {
                       </div>
                     </td>
                     <td className="px-8 py-5 whitespace-nowrap">
-                      <p className="text-sm font-bold text-slate-700 whitespace-nowrap">{tx.details || 'N/A'}</p>
+                      <p className="truncate text-sm font-bold text-slate-700" title={tx.details || 'N/A'}>{tx.details || 'N/A'}</p>
                     </td>
                     <td className="px-8 py-5 text-sm font-medium text-slate-500 whitespace-nowrap">{tx.date}</td>
                     <td className="px-8 py-5 text-sm font-medium text-slate-500 whitespace-nowrap">{tx.method}</td>
@@ -448,12 +461,12 @@ export default function FinancePage() {
             </table>
           )}
         </div>
-        <div className="p-8 border-t border-slate-50 flex items-center justify-between bg-slate-50/30">
+        <div className="p-4 sm:p-8 border-t border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/30">
           <p className="text-xs font-bold text-slate-500">
             Hiển thị <span className="text-slate-900">{currentTransactions.length}</span> trên <span className="text-slate-900">{filteredTransactions.length}</span> giao dịch
           </p>
           
-          <div className="flex items-center gap-2">
+          <div className="flex w-full sm:w-auto items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
             <button 
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
@@ -462,7 +475,7 @@ export default function FinancePage() {
               Trải về
             </button>
             
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               {Array.from({ length: totalPages }).map((_, i) => (
                 <button
                   key={i}
