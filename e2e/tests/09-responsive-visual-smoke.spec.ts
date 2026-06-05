@@ -133,7 +133,19 @@ test.describe("Responsive visual smoke", () => {
         await expect(adminPage).toHaveURL(routePattern);
 
         const body = adminPage.locator("body");
-        const normalizedText = normalizeVietnamese(await body.innerText({ timeout: 10_000 }));
+        let normalizedText = "";
+        await expect
+          .poll(
+            async () => {
+              normalizedText = normalizeVietnamese(await body.innerText({ timeout: 5_000 }).catch(() => ""));
+              return normalizedText;
+            },
+            {
+              message: `${route.name} should finish rendering visible page content`,
+              timeout: 20_000,
+            },
+          )
+          .toMatch(route.content);
         expect(normalizedText, `${route.name} should render expected content`).toMatch(route.content);
         for (const pattern of appErrorPatterns) {
           expect(normalizedText, `${route.name} should not show ${pattern}`).not.toMatch(pattern);

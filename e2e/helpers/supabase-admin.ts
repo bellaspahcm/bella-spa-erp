@@ -15,6 +15,8 @@ import { join, resolve } from "node:path";
 
 let _admin: SupabaseClient | null = null;
 let _envLoaded = false;
+let _hqTenantIdPromise: Promise<string> | null = null;
+let _adminUserPromise: Promise<{ id: string; email: string }> | null = null;
 
 function getSupabasePublicKey(): string {
   return process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -90,6 +92,9 @@ export function admin(): SupabaseClient {
 
 /** Get HQ tenant id (Bella Spa Headquarter) — created by seed or onboarding. */
 export async function getHqTenantId(): Promise<string> {
+  if (_hqTenantIdPromise) return _hqTenantIdPromise;
+
+  _hqTenantIdPromise = (async () => {
   const { data, error } = await admin()
     .from("tenants")
     .select("id")
@@ -99,10 +104,16 @@ export async function getHqTenantId(): Promise<string> {
     throw new Error(`Không tìm thấy tenant 'Bella Spa Headquarter' — ${error?.message ?? "no row"}`);
   }
   return data.id as string;
+  })();
+
+  return _hqTenantIdPromise;
 }
 
 /** Get an admin user id for the HQ tenant. */
 export async function getAnyAdminUser(): Promise<{ id: string; email: string }> {
+  if (_adminUserPromise) return _adminUserPromise;
+
+  _adminUserPromise = (async () => {
   const tenantId = await getHqTenantId();
   const { data, error } = await admin()
     .from("users")
@@ -115,6 +126,9 @@ export async function getAnyAdminUser(): Promise<{ id: string; email: string }> 
     throw new Error(`Không có user role=admin nào trong tenant HQ — ${error?.message ?? "no row"}`);
   }
   return { id: data.id, email: data.email as string };
+  })();
+
+  return _adminUserPromise;
 }
 
 /** Get any KTV user id (for assigning bookings/sessions in tests). */
