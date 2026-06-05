@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getCurrentUser } from './user-actions';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
@@ -9,7 +9,6 @@ import type { Database } from '@/types/database.types';
 
 type TenantRow = Database['public']['Tables']['tenants']['Row'];
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
-type TenantLookupClient = Pick<Awaited<ReturnType<typeof createClient>>, 'from'>;
 type TenantStatusAuditData = {
   id: string;
   name: string;
@@ -35,28 +34,6 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định')
   return fallback;
 }
 
-async function createTenantLookupClient(): Promise<TenantLookupClient> {
-  const supabase = await createClient();
-
-  if (process.env.NODE_ENV !== 'development') {
-    return supabase;
-  }
-
-  const { headers } = await import('next/headers');
-  const mockEmail = (await headers()).get('x-mock-user-email');
-  const adminUrl = getSupabaseAdminUrl();
-  const adminKey = getSupabaseAdminKey();
-
-  if (!mockEmail || !adminUrl || !adminKey) {
-    return supabase;
-  }
-
-  const { createClient: createAdminClient } = await import('@supabase/supabase-js');
-  return createAdminClient<Database>(adminUrl, adminKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
 /**
  * Checks if the current user belongs to the Headquarter and is an admin
  */
@@ -70,7 +47,7 @@ export async function checkHqAuth() {
     return { authorized: false, error: 'Tài khoản không thuộc chi nhánh nào.' };
   }
   
-  const supabase = await createTenantLookupClient();
+  const supabase = await createDevelopmentBypassClient();
   const { data: tenant, error: tenantError } = await supabase
     .from('tenants')
     .select('name')

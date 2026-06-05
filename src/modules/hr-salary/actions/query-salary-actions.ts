@@ -2,12 +2,10 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/services/user-actions';
-import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import { calcProRataBaseSalary } from './base-salary-actions';
 import { KtvSalaryRecord, KtvSessionMatrix, KtvSessionMatrixRecord, TenantSalaryConfig } from '@/types/domain';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database.types';
 
 // Interfaces for Database Records
 interface KtvUserData {
@@ -83,34 +81,11 @@ interface MatrixKtvUser {
   full_name: string | null;
 }
 
-type SalaryQueryClient = SupabaseClient<Database>;
-
-async function createSalaryQueryClient(): Promise<SalaryQueryClient> {
-  const supabase = await createClient();
-
-  if (process.env.NODE_ENV !== 'development') {
-    return supabase as SalaryQueryClient;
-  }
-
-  const { headers } = await import('next/headers');
-  const mockEmail = (await headers()).get('x-mock-user-email');
-  const adminUrl = getSupabaseAdminUrl();
-  const adminKey = getSupabaseAdminKey();
-  if (!mockEmail || !adminUrl || !adminKey) {
-    return supabase as SalaryQueryClient;
-  }
-
-  const { createClient: createAdminClient } = await import('@supabase/supabase-js');
-  return createAdminClient<Database>(adminUrl, adminKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
 export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
   try {
     const now = new Date();
     const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    const supabase = await createSalaryQueryClient();
+    const supabase = await createDevelopmentBypassClient();
     const currentUser = await getCurrentUser();
     const tenantId = currentUser?.tenant_id;
     if (!tenantId) {
