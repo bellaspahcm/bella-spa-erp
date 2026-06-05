@@ -9,7 +9,7 @@
  *   npm run e2e:report       # open last report
  *
  * Behaviour:
- *   - Auto-starts `next dev` on port 3000 (reuses if already running).
+ *   - Auto-starts `next dev` on the configured local E2E port.
  *   - Reads .env.local for Supabase URL / publishable key / secret key (test seed/teardown).
  *   - Single browser project (chromium) — add Firefox/WebKit later.
  *   - Retries 1 in CI, 0 locally.
@@ -53,6 +53,9 @@ if (envPath) {
 const PORT = Number(process.env.E2E_PORT ?? 3000);
 const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
 const IS_CI = !!process.env.CI;
+const REUSE_EXISTING_SERVER = process.env.E2E_REUSE_SERVER
+  ? process.env.E2E_REUSE_SERVER !== "0"
+  : !IS_CI;
 const VERCEL_PROTECTION_BYPASS_SECRET =
   process.env.E2E_VERCEL_AUTOMATION_BYPASS_SECRET ?? process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "";
 const VERCEL_PROTECTION_HEADERS = VERCEL_PROTECTION_BYPASS_SECRET
@@ -116,12 +119,12 @@ export default defineConfig({
     // { name: 'mobile-android', use: { ...devices['Pixel 7'] } },
   ],
 
-  // Auto-start dev server. Detects port reuse so concurrent runs share it.
+  // Auto-start dev server on the same port used by baseURL.
   webServer: SHOULD_START_DEV_SERVER
     ? {
-        command: "npm run dev",
+        command: `npm run dev -- --port ${PORT}`,
         url: BASE_URL,
-        reuseExistingServer: !IS_CI,
+        reuseExistingServer: REUSE_EXISTING_SERVER,
         timeout: 180_000,
         stdout: "pipe",
         stderr: "pipe",

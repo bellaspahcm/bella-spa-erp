@@ -13,7 +13,7 @@
     "test:coverage": "jest --coverage",
     "test:report": "jest --json --outputFile=test-results.json && node generate-report.js",
     "e2e": "playwright test",
-    "e2e:visual": "playwright test e2e/tests/09-responsive-visual-smoke.spec.ts",
+    "e2e:visual": "node scripts/run-responsive-visual-smoke.mjs",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
     "e2e:debug": "playwright test --debug",

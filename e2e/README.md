@@ -74,6 +74,9 @@ npm run e2e:debug
 # Mở HTML report sau khi chạy xong
 npm run e2e:report
 
+# Responsive visual smoke local
+npm run e2e:visual
+
 # Chạy 1 file cụ thể
 npx playwright test e2e/tests/01-booking-creation.spec.ts
 
