@@ -25,7 +25,7 @@ export default function SalaryStats({
 }: SalaryStatsProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="mb-6 grid grid-cols-1 gap-4 md:mb-10 md:grid-cols-3 md:gap-6">
         <SkeletonLoader variant="card" className="w-full h-48 bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-pink-500/10 border-pink-200/20" />
         <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40" />
         <SkeletonLoader variant="card" className="w-full h-48 bg-white/40 dark:bg-zinc-800/40" />
@@ -38,11 +38,11 @@ export default function SalaryStats({
     : 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+    <div className="mb-6 grid grid-cols-1 gap-4 md:mb-10 md:grid-cols-3 md:gap-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="luxury-card-pink p-8 rounded-[40px] relative overflow-hidden"
+        className="luxury-card-pink relative overflow-hidden rounded-[2rem] p-5 sm:p-6 md:rounded-[40px] md:p-8"
       >
         <div className="relative z-10">
           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-md border border-white/20">
@@ -51,7 +51,7 @@ export default function SalaryStats({
           <p className="text-sm font-black text-white/90 uppercase tracking-widest mb-2">
             {currentUser?.role?.toLowerCase() === 'ktv' ? 'Thu nhập của bạn' : 'Tổng quỹ lương tháng'}
           </p>
-          <h3 className="text-4xl font-black mb-4">{totalPayout.toLocaleString()}đ</h3>
+          <h3 className="mb-4 text-3xl font-black sm:text-4xl">{totalPayout.toLocaleString()}đ</h3>
           <div className="flex items-center gap-2 text-white/90 font-black text-sm">
             <TrendingUp className="w-4 h-4" />
             So với tháng {prevMonthYear}
@@ -63,7 +63,7 @@ export default function SalaryStats({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+        className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-5 sm:p-6 md:rounded-[40px] md:p-8"
       >
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center">
@@ -80,7 +80,7 @@ export default function SalaryStats({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="luxury-card-white p-8 rounded-[40px] flex flex-col justify-center"
+        className="luxury-card-white flex flex-col justify-center rounded-[2rem] p-5 sm:p-6 md:rounded-[40px] md:p-8"
       >
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center">

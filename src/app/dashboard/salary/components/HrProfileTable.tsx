@@ -14,11 +14,11 @@ export default function HrProfileTable({
   openHrEditModal,
 }: HrProfileTableProps) {
   return (
-    <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
-      <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm md:rounded-[40px]">
+      <div className="flex flex-col gap-4 border-b border-slate-50 p-4 sm:p-6 md:flex-row md:items-center md:justify-between md:p-8">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
-            <UserCog className="w-8 h-8 text-primary" />
+          <h2 className="flex items-center gap-3 text-lg font-black tracking-tight text-slate-900 sm:text-2xl">
+            <UserCog className="h-6 w-6 shrink-0 text-primary sm:h-8 sm:w-8" />
             Quản lý hồ sơ nhân sự (HR)
           </h2>
           <p className="text-slate-500 font-medium text-sm mt-1">
@@ -27,8 +27,8 @@ export default function HrProfileTable({
         </div>
       </div>
       
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.32)]">
+        <table className="w-max min-w-[68rem] text-left whitespace-nowrap">
           <thead>
             <tr className="bg-slate-50/80 backdrop-blur-md">
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px]">

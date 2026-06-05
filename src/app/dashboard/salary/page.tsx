@@ -391,32 +391,32 @@ export default function SalaryPage() {
   const totalSessions = ktvSalaries.reduce((acc, curr) => acc + curr.sessions, 0);
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto">
+    <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+      <div className="mb-6 flex flex-col gap-4 md:mb-10 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest">
               Kỳ lương: {currentMonthYear}
             </span>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Lương KTV</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter sm:text-4xl">Lương KTV</h1>
           <p className="text-slate-500 font-medium mt-1">Quản lý thu nhập và hiệu suất làm việc của kỹ thuật viên</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <PremiumExportButton />
           {currentUser?.role?.toLowerCase() !== 'ktv' && (
             <>
               <button
                 onClick={handlePublishAll}
-                className="flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-4 rounded-2xl font-black transition-all shadow-lg shadow-amber-100 uppercase tracking-widest text-xs"
+                className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-amber-100 transition-all hover:bg-amber-600 sm:px-6 sm:py-4"
               >
                 <Send className="w-4 h-4" />
                 <span>Gửi đối soát</span>
               </button>
               <button
                 onClick={handleFinalizeAll}
-                className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none uppercase tracking-widest text-xs"
+                className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-pink-100 transition-all hover:bg-primary-hover dark:shadow-none sm:px-6 sm:py-4"
               >
                 <Lock className="w-4 h-4" />
                 <span>Chốt sổ</span>
@@ -438,7 +438,7 @@ export default function SalaryPage() {
 
       {/* Premium Tab Selector */}
       {currentUser?.role?.toLowerCase() !== 'ktv' && (
-        <div className="overflow-x-auto custom-scrollbar w-full max-w-full mb-10">
+        <div className="mb-6 w-full max-w-full overflow-x-auto overscroll-x-contain custom-scrollbar md:mb-10">
           <div className="flex bg-white/60 p-2 rounded-2xl border border-slate-100 gap-2 w-fit backdrop-blur-md whitespace-nowrap">
             <button
               onClick={() => setActiveTab('payroll')}
@@ -484,7 +484,7 @@ export default function SalaryPage() {
       {(activeTab === 'payroll' || currentUser?.role?.toLowerCase() === 'ktv') && (
         <>
           {isLoading ? (
-            <div className="bg-white/80 dark:bg-zinc-900/60 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 shadow-sm mb-10">
+            <div className="mb-6 rounded-[2rem] border border-slate-100 bg-white/80 p-4 shadow-sm dark:border-slate-800/60 dark:bg-zinc-900/60 sm:p-6 md:mb-10 md:rounded-[2.5rem] md:p-8">
               <SkeletonTable />
             </div>
           ) : (
@@ -500,11 +500,11 @@ export default function SalaryPage() {
           )}
 
           {/* Info Banner */}
-          <div className="bg-amber-50 border border-amber-100 p-6 rounded-[32px] flex items-start gap-4 mb-10">
-            <div className="p-3 bg-amber-100 rounded-2xl">
+          <div className="mb-6 flex items-start gap-3 rounded-[24px] border border-amber-100 bg-amber-50 p-4 md:mb-10 md:gap-4 md:rounded-[32px] md:p-6">
+            <div className="shrink-0 rounded-2xl bg-amber-100 p-3">
               <AlertCircle className="w-6 h-6 text-amber-600" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h4 className="font-black text-amber-900 uppercase tracking-widest text-xs mb-1">Quy định tính lương</h4>
               <p className="text-amber-800/80 text-sm font-medium">
                 Lương KTV được tính dựa trên số buổi thực tế hoàn thành (Hoa hồng theo từng loại dịch vụ) + Lương cứng + Thưởng hiệu suất KPI. 
@@ -515,7 +515,7 @@ export default function SalaryPage() {
 
           {/* Session Matrix Table */}
           {isLoading ? (
-            <div className="bg-white/80 dark:bg-zinc-900/60 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 shadow-sm">
+            <div className="rounded-[2rem] border border-slate-100 bg-white/80 p-4 shadow-sm dark:border-slate-800/60 dark:bg-zinc-900/60 sm:p-6 md:rounded-[2.5rem] md:p-8">
               <div className="h-6 w-48 mb-6"><SkeletonLoader variant="text" width={200} height={20} /></div>
               <SkeletonTable />
             </div>
@@ -537,7 +537,7 @@ export default function SalaryPage() {
       {/* Attendance Tab */}
       {activeTab === 'attendance' && currentUser?.role?.toLowerCase() !== 'ktv' && (
         isLoading ? (
-          <div className="bg-white/80 dark:bg-zinc-900/60 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 shadow-sm">
+          <div className="rounded-[2rem] border border-slate-100 bg-white/80 p-4 shadow-sm dark:border-slate-800/60 dark:bg-zinc-900/60 sm:p-6 md:rounded-[2.5rem] md:p-8">
             <SkeletonTable />
           </div>
         ) : (
@@ -551,7 +551,7 @@ export default function SalaryPage() {
       {/* HR Profile Tab */}
       {activeTab === 'hr_profile' && currentUser?.role?.toLowerCase() !== 'ktv' && (
         isLoading ? (
-          <div className="bg-white/80 dark:bg-zinc-900/60 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800/60 shadow-sm">
+          <div className="rounded-[2rem] border border-slate-100 bg-white/80 p-4 shadow-sm dark:border-slate-800/60 dark:bg-zinc-900/60 sm:p-6 md:rounded-[2.5rem] md:p-8">
             <SkeletonTable />
           </div>
         ) : (

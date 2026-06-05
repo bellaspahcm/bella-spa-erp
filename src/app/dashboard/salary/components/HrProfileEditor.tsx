@@ -56,14 +56,14 @@ export default function HrProfileEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 backdrop-blur-sm sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl"
+        className="max-h-[92vh] w-full max-w-md overflow-hidden rounded-[28px] bg-white shadow-2xl sm:rounded-[32px]"
       >
-        <div className="p-8">
-          <h3 className="text-2xl font-black text-slate-900 mb-6">Thiết lập nhân sự (HR)</h3>
+        <div className="max-h-[calc(92vh-6.5rem)] overflow-y-auto p-5 sm:p-8">
+          <h3 className="mb-5 text-xl font-black text-slate-900 sm:mb-6 sm:text-2xl">Thiết lập nhân sự (HR)</h3>
           <p className="text-slate-500 font-bold text-sm mb-6">
             Hồ sơ kỹ thuật viên: <span className="text-primary font-black">{hrKtvProfile.name}</span>
           </p>
@@ -121,7 +121,7 @@ export default function HrProfileEditor({
           </div>
         </div>
 
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+        <div className="flex gap-3 border-t border-slate-100 bg-slate-50 p-4 sm:p-6">
           <button
             onClick={onClose}
             className="flex-1 py-4 bg-white border border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all text-sm"
