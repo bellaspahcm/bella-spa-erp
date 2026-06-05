@@ -76,7 +76,7 @@ for (const cfg of configs || []) {
   if (updErr) {
     console.error(`❌ ${cfg.id}: failed to update:`, updErr);
   } else {
-    console.log(`✅ ${cfg.id}: encrypted plaintext token`);
+    console.log(`✅ ${cfg.id}: encrypted plaintext credential`);
     encrypted++;
   }
 }

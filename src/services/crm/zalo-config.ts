@@ -144,7 +144,7 @@ export async function getOrRefreshZaloToken(tenantId: string): Promise<string | 
     }
   }
 
-  console.log(`Zalo access token expired for tenant ${tenantId}. Refreshing...`);
+  console.log(`Zalo credential expired for tenant ${tenantId}. Refreshing...`);
 
   let result: { access_token?: string; refresh_token?: string; expires_in?: string | number; error_code?: unknown };
   try {
@@ -192,7 +192,7 @@ export async function getOrRefreshZaloToken(tenantId: string): Promise<string | 
     throw new Error(`[getOrRefreshZaloToken] failed to save refreshed token for tenant ${tenantId}: ${saveError.message}`);
   }
 
-  console.log(`Successfully refreshed Zalo access token for tenant ${tenantId}. Expires at: ${newExpiresAt}`);
+  console.log(`Successfully refreshed Zalo credential for tenant ${tenantId}. Expires at: ${newExpiresAt}`);
   return newAccessToken;
 }
 

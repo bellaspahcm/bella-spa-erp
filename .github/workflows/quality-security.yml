@@ -42,6 +42,12 @@ jobs:
       - name: Dependency audit
         run: npm run security:audit
 
+      - name: Secret and log leak guard
+        run: npm run security:secrets
+
+      - name: Log redaction tests
+        run: npm test -- src/__tests__/log-redactor.test.ts --runInBand
+
       - name: Install Playwright Chromium
         if: ${{ vars.RUN_VISUAL_SMOKE == 'true' }}
         run: npx playwright install --with-deps chromium

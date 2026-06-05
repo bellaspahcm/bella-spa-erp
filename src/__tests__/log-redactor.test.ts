@@ -86,6 +86,26 @@ describe("log-redactor: redact (deep)", () => {
     expect(out.SECRET_KEY).toBe("[REDACTED]");
   });
 
+  it("masks operational secret fields used by integrations", () => {
+    const out = redact({
+      SUPABASE_SERVICE_ROLE_KEY: "sb_secret_live_123456789",
+      PAYMENT_WEBHOOK_SECRET: "webhook-secret-value",
+      TELEGRAM_WEBHOOK_SECRET: "telegram-secret-value",
+      telegram_bot_token: "123456789:AAExampleTelegramBotToken",
+      nested: {
+        client_secret: "client-secret-value",
+        refresh_token: "refresh-token-value",
+      },
+    });
+
+    expect(out.SUPABASE_SERVICE_ROLE_KEY).toBe("[REDACTED]");
+    expect(out.PAYMENT_WEBHOOK_SECRET).toBe("[REDACTED]");
+    expect(out.TELEGRAM_WEBHOOK_SECRET).toBe("[REDACTED]");
+    expect(out.telegram_bot_token).toBe("[REDACTED]");
+    expect(out.nested.client_secret).toBe("[REDACTED]");
+    expect(out.nested.refresh_token).toBe("[REDACTED]");
+  });
+
   it("walks arrays and redacts string values", () => {
     const out = redact({
       bookings: [
