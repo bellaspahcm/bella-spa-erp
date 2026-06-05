@@ -8,6 +8,7 @@
  */
 
 import { canAuthenticateAdminPage, test, expect } from "../fixtures/auth";
+import type { Page } from "@playwright/test";
 
 type VisualRoute = {
   name: string;
@@ -103,6 +104,73 @@ function normalizeVietnamese(value: string) {
     .replace(/Đ/g, "D");
 }
 
+async function expectDateInputsFitMobile(page: Page, routeName: string) {
+  const dateInputBoxes = await page.locator('input[type="date"]').evaluateAll((inputs) =>
+    inputs.map((input) => {
+      const rect = input.getBoundingClientRect();
+      const styles = window.getComputedStyle(input);
+      return {
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        viewportWidth: window.innerWidth,
+        minWidth: styles.minWidth,
+        maxWidth: styles.maxWidth,
+      };
+    }),
+  );
+
+  expect(dateInputBoxes.length, `${routeName} should render date filters`).toBeGreaterThan(0);
+  for (const box of dateInputBoxes) {
+    expect(box.left, `${routeName} date input should stay inside viewport`).toBeGreaterThanOrEqual(0);
+    expect(box.right, `${routeName} date input should not overflow viewport`).toBeLessThanOrEqual(
+      box.viewportWidth + 1,
+    );
+    expect(box.width, `${routeName} date input should fit mobile content width`).toBeLessThanOrEqual(
+      box.viewportWidth - 24,
+    );
+    expect(box.minWidth, `${routeName} date input should be allowed to shrink`).toBe("0px");
+  }
+}
+
+async function expectFinanceTransactionCellsDoNotBleed(page: Page) {
+  const result = await page.evaluate(() => {
+    const table = Array.from(document.querySelectorAll("table")).find((candidate) =>
+      candidate.textContent?.includes("Chi tiết nghiệp vụ"),
+    );
+    const row = table?.querySelector("tbody tr");
+    const cells = row ? (Array.from(row.children).slice(0, 2) as HTMLElement[]) : [];
+
+    return {
+      foundTable: Boolean(table),
+      foundRow: Boolean(row),
+      cells: cells.map((cell) => {
+        const rect = cell.getBoundingClientRect();
+        const styles = window.getComputedStyle(cell);
+        return {
+          left: rect.left,
+          right: rect.right,
+          overflowX: styles.overflowX,
+          textOverflow: styles.textOverflow,
+        };
+      }),
+    };
+  });
+
+  expect(result.foundTable, "finance transaction table should render").toBe(true);
+  if (!result.foundRow) {
+    return;
+  }
+  expect(result.cells.length, "finance transaction table should expose first two data cells").toBe(2);
+  expect(result.cells[0].right, "finance category cell should not overlap detail cell").toBeLessThanOrEqual(
+    result.cells[1].left + 1,
+  );
+  for (const cell of result.cells) {
+    expect(cell.overflowX, "long finance text cells should clip overflowing text").not.toBe("visible");
+    expect(cell.textOverflow, "long finance text cells should ellipsize overflowing text").toBe("ellipsis");
+  }
+}
+
 test.describe("Responsive visual smoke", () => {
   test.setTimeout(180_000);
 
@@ -160,6 +228,14 @@ test.describe("Responsive visual smoke", () => {
           pageOverflow.documentWidth,
           `${route.name} should not create document-level horizontal scroll`,
         ).toBeLessThanOrEqual(pageOverflow.viewportWidth + 8);
+
+        if (viewport.name === "mobile" && route.name === "accounting-journals") {
+          await expectDateInputsFitMobile(adminPage, route.name);
+        }
+
+        if (viewport.name === "mobile" && route.name === "finance") {
+          await expectFinanceTransactionCellsDoNotBleed(adminPage);
+        }
 
         await testInfo.attach(`${viewport.name}-${route.name}.png`, {
           body: await adminPage.screenshot({ fullPage: true }),
