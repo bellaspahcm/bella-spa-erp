@@ -97,15 +97,15 @@ export default function CustomerDetailPage() {
   }
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto">
-      <button onClick={handleBack} className="flex items-center gap-2 text-slate-500 hover:text-primary font-bold mb-8 group">
+    <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10">
+      <button onClick={handleBack} className="mb-6 flex items-center gap-2 font-bold text-slate-500 hover:text-primary group md:mb-8">
         <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border border-slate-100 group-hover:bg-primary group-hover:text-white transition-all">
           <ChevronLeft className="w-5 h-5" />
         </div>
         Quay lại danh sách
       </button>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:gap-8">
         <CustomerProfilePanel
           customer={customer}
           userRole={userRole}
@@ -113,7 +113,7 @@ export default function CustomerDetailPage() {
           onOpenBooking={() => setIsBookingModalOpen(true)}
         />
 
-        <div className="xl:col-span-2 space-y-8">
+        <div className="space-y-6 xl:col-span-2 xl:space-y-8">
           <CustomerStatsPanel
             activeBooking={activeBooking}
             activeDepositAmount={activeDepositAmount}

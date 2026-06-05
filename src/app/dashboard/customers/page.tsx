@@ -325,7 +325,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div id="customers-list-container" className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative" onClick={() => { setActiveMenuId(null); }}>
+    <div id="customers-list-container" className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative" onClick={() => { setActiveMenuId(null); }}>
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (
@@ -339,27 +339,27 @@ export default function CustomersPage() {
         )}
       </AnimatePresence>
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Khách hàng</h1>
+      <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Khách hàng</h1>
           <p className="text-slate-500 font-medium mt-1">Quản lý hồ sơ mẹ và bé</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <PremiumExportButton />
           <button 
             onClick={handleAddNew}
-            className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-rose-200 dark:shadow-none active:scale-95"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 dark:shadow-none sm:px-6"
           >
-            <UserPlus className="w-5 h-5" />
+            <UserPlus className="w-5 h-5 shrink-0" />
             <span>Thêm khách hàng</span>
           </button>
         </div>
       </div>
 
       {/* Filters & Search */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-8 flex flex-col md:flex-row gap-3 items-center flex-wrap">
+      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4 md:mb-8 lg:flex-row lg:items-center lg:flex-wrap">
         {/* Search — all fields */}
-        <div className="relative flex-1 min-w-[220px] group">
+        <div className="relative w-full min-w-0 flex-1 group lg:min-w-[260px]">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-500 transition-colors w-5 h-5" />
           <input
             type="text"
@@ -370,7 +370,7 @@ export default function CustomersPage() {
           />
         </div>
         {/* Status dropdown */}
-        <div className="w-full md:w-52">
+        <div className="w-full sm:min-w-52 sm:flex-1 lg:w-52 lg:flex-none">
           <PremiumSelect
             value={statusFilter}
             options={statusOptions.map(opt => ({ value: opt, label: opt, icon: <Filter className="w-4 h-4" /> }))}
@@ -379,7 +379,7 @@ export default function CustomersPage() {
           />
         </div>
         {/* Month dropdown */}
-        <div className="w-full md:w-40">
+        <div className="w-full sm:min-w-40 sm:flex-1 lg:w-40 lg:flex-none">
           <PremiumSelect
             value={monthFilter}
             options={monthOptions}
@@ -388,7 +388,7 @@ export default function CustomersPage() {
           />
         </div>
         {/* Year dropdown */}
-        <div className="w-full md:w-32">
+        <div className="w-full sm:min-w-32 sm:flex-1 lg:w-32 lg:flex-none">
           <PremiumSelect
             value={yearFilter}
             options={yearOptions.map(y => ({ value: y, label: y }))}
@@ -397,7 +397,7 @@ export default function CustomersPage() {
           />
         </div>
         {/* Sort dropdown */}
-        <div className="w-full md:w-48">
+        <div className="w-full sm:min-w-48 sm:flex-1 lg:w-48 lg:flex-none">
           <PremiumSelect
             value={sortBy}
             options={sortOptions}
@@ -410,12 +410,12 @@ export default function CustomersPage() {
       {/* Customer Grid/Table */}
       <div className="grid grid-cols-1 gap-4">
         {isLoading && customers.length === 0 ? (
-          <div className="bg-white rounded-3xl p-20 text-center border border-slate-100 shadow-sm">
+          <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm sm:p-20">
             <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Đang tải dữ liệu...</p>
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <div className="bg-white rounded-3xl p-20 text-center border border-dashed border-slate-200">
+          <div className="bg-white rounded-3xl p-10 text-center border border-dashed border-slate-200 sm:p-20">
             <Search className="w-12 h-12 text-slate-200 mx-auto mb-4" />
             <p className="text-slate-400 font-bold">Không tìm thấy khách hàng nào khớp với bộ lọc</p>
           </div>
@@ -425,9 +425,9 @@ export default function CustomersPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="group luxury-card-white p-6 rounded-3xl transition-all flex flex-col md:flex-row md:items-center gap-6 relative"
+            className="group luxury-card-white relative flex flex-col gap-4 rounded-3xl p-4 transition-all sm:p-6 lg:flex-row lg:items-center lg:gap-6"
           >
-            <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform sm:h-14 sm:w-14">
               <UserPlus className="text-rose-500 w-7 h-7" />
             </div>
             
@@ -462,13 +462,13 @@ export default function CustomersPage() {
 
               </div>
               <div className="flex flex-wrap gap-y-2 gap-x-6 text-sm font-medium text-slate-500">
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-slate-400" />
-                  {customer.phone}
+                <div className="flex min-w-0 items-center gap-2">
+                  <Phone className="w-4 h-4 shrink-0 text-slate-400" />
+                  <span className="break-all">{customer.phone}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Baby className="w-4 h-4 text-slate-400" />
-                  {customer.status === 'deposit' ? `Dự sinh: ${customer.dob_expected}` : `Bé: ${customer.name_baby}`}
+                <div className="flex min-w-0 items-center gap-2">
+                  <Baby className="w-4 h-4 shrink-0 text-slate-400" />
+                  <span className="break-words">{customer.status === 'deposit' ? `Dự sinh: ${customer.dob_expected}` : `Bé: ${customer.name_baby}`}</span>
                   {customer.gender_baby && (
                     <span className={cn(
                       "ml-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase",
@@ -482,19 +482,19 @@ export default function CustomersPage() {
                   )}
                 </div>
                 {customer.package_name && (
-                  <div className="flex items-center gap-2 text-rose-500/80">
-                    <ClipboardList className="w-4 h-4" />
-                    Gói: {customer.package_name}
+                  <div className="flex min-w-0 items-center gap-2 text-rose-500/80">
+                    <ClipboardList className="w-4 h-4 shrink-0" />
+                    <span className="break-words">Gói: {customer.package_name}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-slate-400" />
-                  {customer.address}
+                <div className="flex min-w-0 items-start gap-2">
+                  <MapPin className="mt-0.5 w-4 h-4 shrink-0 text-slate-400" />
+                  <span className="break-words">{customer.address}</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 md:border-l md:pl-6 border-slate-100 relative">
+            <div className="flex flex-wrap items-center gap-3 lg:border-l lg:pl-6 border-slate-100 relative">
               <button 
                 onClick={() => router.push(`/dashboard/bookings?customer=${customer.name_mother}`)}
                 className="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-slate-600 transition-colors shadow-sm"
@@ -504,7 +504,7 @@ export default function CustomersPage() {
               </button>
               <button 
                 onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
-                className="flex items-center gap-2 bg-primary hover:bg-rose-600 text-white px-5 py-3 rounded-xl font-bold transition-all text-sm shadow-lg shadow-rose-200 dark:shadow-none"
+                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 dark:shadow-none sm:flex-none sm:px-5"
               >
                 Chi tiết
                 <ChevronRight className="w-4 h-4" />
@@ -526,7 +526,7 @@ export default function CustomersPage() {
                       initial={{ opacity: 0, scale: 0.95, y: 10 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute right-0 top-full mt-4 w-64 bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_70px_rgba(0,0,0,0.15)] border border-white/20 z-50 overflow-hidden p-2.5"
+                      className="absolute right-0 top-full mt-3 w-[min(16rem,calc(100vw-2rem))] bg-white/95 backdrop-blur-xl rounded-[1.5rem] shadow-[0_20px_70px_rgba(0,0,0,0.15)] border border-white/20 z-50 overflow-hidden p-2.5 sm:mt-4 sm:rounded-[2rem]"
                     >
                       <div className="space-y-1">
                         <button 
@@ -578,12 +578,12 @@ export default function CustomersPage() {
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mt-10 flex flex-col items-center justify-between gap-6 md:flex-row">
           <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
             Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{filteredCustomers.length}</span> khách hàng
           </p>
           
-          <div className="flex items-center gap-2">
+          <div className="flex max-w-full items-center gap-2 overflow-x-auto pb-1">
             <button 
               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
@@ -635,7 +635,7 @@ export default function CustomersPage() {
       {/* Add Customer Modal Placeholder */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -647,16 +647,16 @@ export default function CustomersPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden"
+              className="relative max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-[28px] bg-white shadow-2xl sm:rounded-[40px]"
             >
-              <div className="p-10">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
+              <div className="max-h-[92vh] overflow-y-auto p-5 sm:p-8 lg:p-10">
+                <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
+                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                     <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200 dark:shadow-none">
                       <UserPlus className="w-6 h-6" />
                     </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-slate-900">{isEditMode ? 'Cập nhật thông tin' : 'Thêm khách hàng mới'}</h2>
+                    <div className="min-w-0">
+                      <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{isEditMode ? 'Cập nhật thông tin' : 'Thêm khách hàng mới'}</h2>
                       <p className="text-slate-500 font-medium">{isEditMode ? 'Chỉnh sửa hồ sơ mẹ và bé' : 'Nhập thông tin cơ bản của mẹ và bé'}</p>
                     </div>
                   </div>
@@ -668,8 +668,8 @@ export default function CustomersPage() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Họ tên Mẹ</label>
                       <input 
@@ -719,7 +719,7 @@ export default function CustomersPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700 ml-1">Giới tính của Bé</label>
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                         {[
                           { id: 'boy', label: 'Bé Trai', color: 'bg-blue-50 text-blue-600 border-blue-100' },
                           { id: 'girl', label: 'Bé Gái', color: 'bg-rose-50 text-rose-600 border-rose-100' },
@@ -754,7 +754,7 @@ export default function CustomersPage() {
                     ></textarea>
                   </div>
                   
-                  <div className="pt-6 flex gap-4">
+                  <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:gap-4 sm:pt-6">
                     <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition-all">
                       Hủy bỏ
                     </button>
