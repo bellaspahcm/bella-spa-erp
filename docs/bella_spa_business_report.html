@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo Đánh Giá Vận Hành & Hiệu Quả Hệ Thống – Bella Spa ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --rose-50: #fff1f2;
+      --rose-100: #ffe4e6;
+      --rose-200: #fecdd3;
+      --rose-300: #fda4af;
+      --rose-400: #fb7185;
+      --rose-500: #f43f5e;
+      --rose-600: #e11d48;
+      --rose-700: #be123c;
+      --rose-800: #9f1239;
+
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+
+      --emerald-400: #34d399;
+      --emerald-500: #10b981;
+      --emerald-600: #059669;
+      --amber-400: #fbbf24;
+      --amber-500: #f59e0b;
+      --sky-400: #38bdf8;
+      --sky-500: #0ea5e9;
+      --violet-400: #a78bfa;
+      --violet-500: #8b5cf6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #090d16;
+      color: #e2e8f0;
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    /* ========== HERO ========== */
+    .hero {
+      position: relative;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 24px 60px;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(244,63,94,0.18) 0%, transparent 70%),
+                  radial-gradient(ellipse 50% 45% at 20% 90%, rgba(139,92,246,0.12) 0%, transparent 60%),
+                  linear-gradient(180deg, #0f172a 0%, #090d16 100%);
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 800px;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(244,63,94,0.12);
+      border: 1px solid rgba(244,63,94,0.3);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--rose-400);
+      margin-bottom: 24px;
+    }
+
+    .hero-tag .dot {
+      width: 6px; height: 6px;
+      background: var(--rose-400);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--rose-400);
+    }
+
+    .hero h1 {
+      font-size: clamp(24px, 4.5vw, 42px);
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      color: #fff;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fff 40%, var(--rose-200) 80%, var(--violet-400) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--slate-300);
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    /* ========== SCORE BADGE ========== */
+    .score-container {
+      max-width: 1000px;
+      margin: -30px auto 48px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .score-card {
+      background: rgba(30, 41, 59, 0.45);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border-radius: 20px;
+      padding: 36px;
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      flex-wrap: wrap;
+    }
+
+    .score-badge {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--rose-500), var(--violet-500));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(244, 63, 94, 0.3);
+      flex-shrink: 0;
+    }
+
+    .score-num {
+      font-size: 42px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .score-max {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 600;
+    }
+
+    .score-text {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .score-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .score-desc {
+      font-size: 14.5px;
+      color: var(--slate-300);
+      line-height: 1.6;
+    }
+
+    /* ========== CONTENT ========== */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section {
+      margin-bottom: 56px;
+    }
+
+    .section-header {
+      margin-bottom: 28px;
+      border-left: 4px solid var(--rose-500);
+      padding-left: 16px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .section-sub {
+      font-size: 13.5px;
+      color: var(--slate-400);
+    }
+
+    /* ========== PILLARS GRID ========== */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .pillar-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .pillar-card:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(244, 63, 94, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .pillar-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+
+    .pillar-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pillar-score {
+      font-size: 13px;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--emerald-400);
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .pillar-desc {
+      font-size: 13.5px;
+      color: var(--slate-300);
+      line-height: 1.6;
+    }
+
+    /* ========== BENEFIT CARD ========== */
+    .benefit-banner {
+      background: linear-gradient(135deg, rgba(244,63,94,0.06) 0%, rgba(139,92,246,0.06) 100%);
+      border: 1px solid rgba(244,63,94,0.15);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 32px;
+    }
+
+    .benefit-banner h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .benefit-banner p {
+      font-size: 14px;
+      color: var(--slate-300);
+      line-height: 1.65;
+    }
+
+    /* ========== COMPARE TABLE ========== */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+
+    .compare-table th {
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+      font-weight: 700;
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .compare-table td {
+      padding: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--slate-300);
+      vertical-align: middle;
+    }
+
+    .compare-table tr:hover td {
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .compare-table .feature-bold {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .status-ok { color: var(--emerald-400); font-weight: 600; }
+    .status-warn { color: var(--amber-400); }
+    .status-no { color: var(--rose-400); }
+
+    /* ========== RECOMMENDATIONS ========== */
+    .rec-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .rec-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .rec-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+    }
+
+    .badge-now { background: rgba(244, 63, 94, 0.15); color: var(--rose-400); border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-later { background: rgba(245, 158, 11, 0.15); color: var(--amber-400); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .rec-content {
+      flex: 1;
+    }
+
+    .rec-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .rec-desc {
+      font-size: 13.5px;
+      color: var(--slate-300);
+      line-height: 1.6;
+    }
+
+    /* ========== EXPANSION CARDS ========== */
+    .industry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .industry-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .industry-card:hover {
+      border-color: rgba(139, 92, 246, 0.3);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .industry-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+    }
+
+    .industry-name {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .industry-time {
+      font-size: 11px;
+      background: rgba(52, 211, 153, 0.1);
+      color: var(--emerald-400);
+      padding: 3px 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .industry-time.medium {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--amber-400);
+    }
+
+    /* ========== INFO BOX ========== */
+    .info-box {
+      background: rgba(14, 165, 233, 0.05);
+      border: 1px solid rgba(14, 165, 233, 0.15);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-top: 16px;
+    }
+
+    .info-box-icon {
+      font-size: 18px;
+      margin-top: 2px;
+    }
+
+    .info-box-text {
+      font-size: 13.5px;
+      color: var(--slate-300);
+      line-height: 1.6;
+    }
+
+    /* ========== FOOTER ========== */
+    .footer {
+      margin-top: 80px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--slate-500);
+      font-size: 12.5px;
+    }
+
+    .footer strong {
+      color: var(--slate-400);
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 640px) {
+      .score-card {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 24px;
+      }
+      .rec-item {
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================== HERO ============================== -->
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-tag"><span class="dot"></span> Đánh Giá Vận Hành Hệ Thống</div>
+      <h1>Báo Cáo Sức Khỏe Bella Spa ERP</h1>
+      <p class="hero-sub">Dành cho Nhà Quản lý & Chủ Doanh nghiệp. Phân tích hiệu quả kinh doanh, chống thất thoát, quản lý nhân viên và tiềm năng nhượng quyền chi nhánh.</p>
+    </div>
+  </div>
+
+  <!-- ============================== OVERALL SCORE ============================== -->
+  <div class="score-container">
+    <div class="score-card">
+      <div class="score-badge">
+        <div class="score-num">88</div>
+        <div class="score-max">/ 100 điểm</div>
+      </div>
+      <div class="score-text">
+        <div class="score-title">Xếp hạng vận hành: Xuất Sắc</div>
+        <p class="score-desc">
+          Hệ thống được phát triển bài bản, bảo mật thông tin khách hàng tuyệt đối và đã sẵn sàng cho mô hình nhượng quyền chuỗi chi nhánh. Các chức năng tài chính kế toán và quản lý kỹ thuật viên đạt chất lượng vận hành cao, giảm thiểu 95% thao tác thủ công.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================== MAIN CONTENT ============================== -->
+  <div class="container">
+
+    <!-- ===== PILLARS ===== -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">5 Trụ Cột Vận Hành Cốt Lõi</div>
+        <div class="section-sub">Các bộ phận giúp doanh nghiệp tự động hóa và ngăn chặn thất thoát</div>
+      </div>
+
+      <div class="benefit-banner">
+        <h3>💡 Giải pháp "đo ni đóng giày" cho mô hình Spa Mẹ & Bé</h3>
+        <p>
+          Không giống các phần mềm bán hàng thông thường, hệ thống này được thiết kế riêng cho việc quản lý kỹ thuật viên đi làm tại nhà khách hàng, kiểm soát chất lượng ca trị liệu và đồng bộ dòng tiền nhượng quyền một cách tự động.
+        </p>
+      </div>
+
+      <div class="pillars-grid">
+        <div class="pillar-card">
+          <div class="pillar-icon">💰</div>
+          <div class="pillar-title">Tài Chính & Kế Toán <span class="pillar-score">93 điểm</span></div>
+          <p class="pillar-desc">
+            Sổ sách kế toán tự động minh bạch. Chống tuyệt đối lỗi double giao dịch hoặc trùng hóa đơn. Hệ thống tự ngăn khóa sổ tháng khi phát hiện tiền mặt hoặc kho bị lệch số liệu.
+          </p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon">👩‍⚕️</div>
+          <div class="pillar-title">Nhân Sự & Lương KTV <span class="pillar-score">92 điểm</span></div>
+          <p class="pillar-desc">
+            Tính lương tự động dựa trên hệ số gói dịch vụ mẹ làm (ca VIP tính hệ số cao hơn). Chấm công xác thực định vị GPS tại nhà khách hàng giúp quản lý KTV từ xa hiệu quả, chống gian lận ca.
+          </p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon">📦</div>
+          <div class="pillar-title">Khấu Hao Kho Tự Động <span class="pillar-score">90 điểm</span></div>
+          <p class="pillar-desc">
+            Tự động trừ tinh dầu massage, vật tư trong kho của chi nhánh ngay khi KTV hoàn thành ca làm. Có phiếu chuyển kho điện tử khi luân chuyển đồ giữa các cơ sở.
+          </p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon">🏢</div>
+          <div class="pillar-title">Quản Lý Nhượng Quyền <span class="pillar-score">89 điểm</span></div>
+          <p class="pillar-desc">
+            Tự động tính và thu phí bản quyền 10% (Royalty) của các chi nhánh về tài khoản tổng của công ty mẹ khi chốt tháng. Hỗ trợ bù trừ công nợ nội bộ giữa các chi nhánh.
+          </p>
+        </div>
+
+        <div class="pillar-card">
+          <div class="pillar-icon">🤖</div>
+          <div class="pillar-title">Trợ Lý Ảo Trí Tuệ Nhân Tạo <span class="pillar-score">88/100</span></div>
+          <p class="pillar-desc">
+            Tích hợp AI đóng vai trò Giám đốc vận hành (COO). Tự động theo dõi các chỉ số tài chính lệch, nhắc nhở sinh nhật khách hàng và gửi báo cáo khẩn cấp cho chủ qua Telegram.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== COMPARISON ===== -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Tại Sao Nên Dùng Phần Mềm Tự Chủ Thay Vì Thuê Ngoài?</div>
+        <div class="section-sub">So sánh lợi ích thực tế của Bella Spa ERP với các phần mềm SaaS thuê bao</div>
+      </div>
+
+      <div class="table-container">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Tiêu chí so sánh</th>
+              <th>Hệ thống Bella Spa ERP</th>
+              <th>Phần mềm thuê ngoài (SaaS)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="feature-bold">Quyền sở hữu phần mềm</td>
+              <td class="status-ok">Sở hữu vĩnh viễn 100% mã nguồn và dữ liệu</td>
+              <td class="status-no">Phải đóng tiền thuê bao hàng tháng để duy trì</td>
+            </tr>
+            <tr>
+              <td class="feature-bold">Phí duy trì hàng tháng</td>
+              <td class="status-ok">Cực thấp (~800k VNĐ tiền máy chủ Cloud)</td>
+              <td class="status-warn">Tăng dần theo số nhân viên và chi nhánh (3M - 8M/tháng)</td>
+            </tr>
+            <tr>
+              <td class="feature-bold">Chống gian lận KTV từ xa</td>
+              <td class="status-ok">Xác thực vị trí GPS của nhân viên trùng với nhà khách hàng</td>
+              <td class="status-no">Không hỗ trợ (KTV tự điền báo cáo thủ công)</td>
+            </tr>
+            <tr>
+              <td class="feature-bold">Kế toán chuyên sâu (TT133)</td>
+              <td class="status-ok">Có sẵn sổ kế toán kép chuẩn quy định Bộ Tài Chính</td>
+              <td class="status-no">Chỉ là sổ ghi chép thu chi đơn giản</td>
+            </tr>
+            <tr>
+              <td class="feature-bold">Bảo mật thông tin khách hàng</td>
+              <td class="status-ok">Tự động che số điện thoại/email trong log để chống rò rỉ</td>
+              <td class="status-no">Dữ liệu nằm trên máy chủ chung của nhà cung cấp</td>
+            </tr>
+            <tr>
+              <td class="feature-bold">Hỗ trợ mất mạng (Offline)</td>
+              <td class="status-ok">KTV vẫn lưu được lịch trình khi điện thoại mất 4G</td>
+              <td class="status-no">Không kết nối mạng thì không thao tác được</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== EXPANSION ===== -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Tiềm Năng Nhân Bản Sang Các Ngành Dịch Vụ Khác</div>
+        <div class="section-sub">Bạn có thể dùng lõi hệ thống này để mở rộng sang các mảng kinh doanh mới</div>
+      </div>
+
+      <div class="benefit-banner" style="border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.02)">
+        <h3>🚀 Bản chất hệ thống là "Đặt lịch - Nhân viên di động - Thanh toán"</h3>
+        <p>
+          Toàn bộ các từ khóa "Spa", "Mẹ & Bé" chỉ là nhãn hiển thị bên ngoài giao diện. Lõi hệ thống được thiết kế để xử lý bất kỳ dịch vụ hẹn giờ hoặc dịch vụ tại nhà nào. Khi bạn muốn mở rộng kinh doanh, bạn không cần phải mua phần mềm mới.
+        </p>
+      </div>
+
+      <div class="industry-grid">
+        <div class="industry-card">
+          <div class="industry-icon">🏠</div>
+          <div class="industry-name">Dịch vụ Chăm sóc y tế tại nhà</div>
+          <div class="industry-time">Mở rộng ngay (1-2 tuần)</div>
+        </div>
+        <div class="industry-card">
+          <div class="industry-icon">🧹</div>
+          <div class="industry-name">Dọn dẹp nhà cửa / Giúp việc</div>
+          <div class="industry-time">Mở rộng ngay (2-3 tuần)</div>
+        </div>
+        <div class="industry-card">
+          <div class="industry-icon">🎓</div>
+          <div class="industry-name">Gia sư dạy kèm tại nhà</div>
+          <div class="industry-time">Mở rộng ngay (2-3 tuần)</div>
+        </div>
+        <div class="industry-card">
+          <div class="industry-icon">🏋️</div>
+          <div class="industry-name">Huấn luyện viên cá nhân (PT)</div>
+          <div class="industry-time medium">Cần 3-4 tuần setup</div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <span class="info-box-icon">💡</span>
+        <div class="info-box-text">
+          <strong>Điều gì thay đổi khi đổi ngành?</strong> Bạn chỉ cần cấu hình lại danh mục dịch vụ trên màn hình cài đặt, đổi tên nhãn hiển thị và cập nhật thông tin tiếp thị trên trang chủ. Lõi tính lương KTV, chốt doanh thu và quản lý kho vẫn chạy bình thường.
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RECOMMENDATIONS ===== -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Khuyến Nghị & Kế Hoạch Nâng Cấp Thực Tế</div>
+        <div class="section-sub">Các hành động thực tế cần làm để tối ưu hệ thống trong các đợt cập nhật tới</div>
+      </div>
+
+      <div class="rec-list">
+        <div class="rec-item">
+          <span class="rec-badge badge-now">Ưu tiên 1</span>
+          <div class="rec-content">
+            <div class="rec-name">Hoàn thiện kiểm thử tính năng Xuất báo cáo Excel</div>
+            <p class="rec-desc">
+              Cần yêu cầu đội kỹ thuật bổ sung phần tự động kiểm tra cho chức năng xuất dữ liệu báo cáo ra file Excel. Việc này đảm bảo khi nâng cấp hệ thống, các báo cáo tài chính chốt lương xuất ra cho chủ doanh nghiệp luôn chính xác 100%, không bị lỗi định dạng hoặc lệch số.
+            </p>
+          </div>
+        </div>
+
+        <div class="rec-item">
+          <span class="rec-badge badge-now">Ưu tiên 2</span>
+          <div class="rec-content">
+            <div class="rec-name">Chia nhỏ các trang giao diện lớn để tăng tốc độ tải</div>
+            <p class="rec-desc">
+              Trang chủ giới thiệu dịch vụ và trang quản trị tổng quan hiện đang có dung lượng file thiết kế khá lớn. Cần phân nhỏ để nhân viên kỹ thuật hoặc khách hàng truy cập bằng điện thoại tải trang nhanh hơn, đặc biệt khi mạng 3G/4G yếu.
+            </p>
+          </div>
+        </div>
+
+        <div class="rec-item">
+          <span class="rec-badge badge-later">Ưu tiên 3</span>
+          <div class="rec-content">
+            <div class="rec-name">Chuyển các nhãn hiển thị thành dạng cấu hình động</div>
+            <p class="rec-desc">
+              Để phục vụ mục tiêu mở rộng kinh doanh đa ngành dễ dàng, cần chuyển các nhãn hiển thị (như chữ "Spa", "Kỹ thuật viên") từ dạng cố định trong code thành dạng nhập liệu cấu hình từ trang quản trị tối cao (Super Admin).
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- ============================== FOOTER ============================== -->
+  <div class="footer">
+    <p><strong>Báo Cáo Đánh Giá Vận Hành Bella Spa ERP V1.0</strong></p>
+    <p style="margin-top:6px; color: #475569;">Báo cáo tối giản hóa các thông số kỹ thuật, tập trung vào giá trị nghiệp vụ, tối ưu hóa dòng tiền và quản lý nhân sự thực tế.</p>
+    <p style="margin-top:6px; color: #334155;">Ngày cập nhật: 05/06/2026 · Trạng thái hệ thống: Đang vận hành Production Live</p>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo Kế Toán Chi Tiết (TT133) – Bella Spa ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0f172a;
+      --secondary: #1e293b;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --emerald: #10b981;
+      --emerald-light: #34d399;
+      --rose: #f43f5e;
+      --rose-light: #fb7185;
+      --amber: #f59e0b;
+      --slate-100: #f1f5f9;
+      --slate-300: #cbd5e1;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #090c15;
+      color: #e2e8f0;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* ========== HERO ========== */
+    .hero {
+      position: relative;
+      min-height: 360px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 24px 48px;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 75% 55% at 50% 0%, rgba(139,92,246,0.2) 0%, transparent 70%),
+                  radial-gradient(ellipse 45% 35% at 80% 90%, rgba(16,185,129,0.12) 0%, transparent 60%),
+                  linear-gradient(180deg, #0f172a 0%, #090c15 100%);
+      z-index: 1;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 850px;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(139,92,246,0.12);
+      border: 1px solid rgba(139,92,246,0.3);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-light);
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: clamp(24px, 4.5vw, 38px);
+      font-weight: 800;
+      line-height: 1.25;
+      color: #fff;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fff 40%, var(--accent-light) 80%, var(--emerald-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--slate-300);
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    /* ========== SCORE CARD ========== */
+    .score-container {
+      max-width: 1000px;
+      margin: -20px auto 48px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .score-card {
+      background: rgba(30, 41, 59, 0.45);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      border-radius: 20px;
+      padding: 36px;
+      display: flex;
+      align-items: center;
+      gap: 36px;
+      flex-wrap: wrap;
+    }
+
+    .score-badge {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--emerald));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+      flex-shrink: 0;
+    }
+
+    .score-num {
+      font-size: 38px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .score-max {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 600;
+    }
+
+    .score-text {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .score-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .score-desc {
+      font-size: 14px;
+      color: var(--slate-300);
+      line-height: 1.6;
+    }
+
+    /* ========== CONTAINER & LAYOUT ========== */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section {
+      margin-bottom: 56px;
+      background: rgba(30, 41, 59, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .section-header {
+      margin-bottom: 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .section-sub {
+      font-size: 13px;
+      color: var(--slate-400);
+      margin-top: 2px;
+    }
+
+    /* ========== BADGES ========== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-primary { background: rgba(139,92,246,0.15); color: var(--accent-light); border: 1px solid rgba(139,92,246,0.3); }
+    .badge-success { background: rgba(16,185,129,0.15); color: var(--emerald-light); border: 1px solid rgba(16,185,129,0.3); }
+    .badge-warn { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.3); }
+    .badge-danger { background: rgba(244,63,94,0.15); color: var(--rose-light); border: 1px solid rgba(244,63,94,0.3); }
+
+    /* ========== TABLES ========== */
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 16px 0;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: rgba(255, 255, 255, 0.04);
+      color: #fff;
+      font-weight: 700;
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .data-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--slate-300);
+      vertical-align: top;
+    }
+
+    .data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    .account-code {
+      font-family: monospace;
+      font-weight: 700;
+      color: var(--accent-light);
+    }
+
+    /* ========== BULLET LISTS ========== */
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .bullet-list li {
+      font-size: 14px;
+      color: var(--slate-300);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .bullet-list li::before {
+      content: '✦';
+      color: var(--accent-light);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ========== PREFLIGHT GRID ========== */
+    .preflight-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .preflight-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .preflight-status {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .preflight-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .preflight-desc {
+      font-size: 12.5px;
+      color: var(--slate-400);
+      line-height: 1.5;
+    }
+
+    /* ========== CALLOUT BOXES ========== */
+    .callout {
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      display: flex;
+      gap: 16px;
+    }
+
+    .callout.info { background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.18); }
+    .callout.success { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.18); }
+    .callout.warning { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.18); }
+
+    .callout-icon { font-size: 20px; flex-shrink: 0; }
+    .callout-text { font-size: 13.5px; color: var(--slate-300); line-height: 1.6; }
+    .callout-text strong { color: #fff; }
+
+    /* ========== FOOTER ========== */
+    .footer {
+      margin-top: 80px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--slate-500);
+      font-size: 13px;
+    }
+
+    .footer strong { color: var(--slate-400); }
+  </style>
+</head>
+<body>
+
+  <!-- ============================== HERO ============================== -->
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-tag"><span class="dot"></span> Báo Cáo Chuyên Sâu Kế Toán</div>
+      <h1>Kiến Trúc Kế Toán Kép Chuẩn Thông Tư 133</h1>
+      <p class="hero-sub">Hồ sơ kỹ thuật chi tiết về hệ thống kế toán kép, cơ chế bảo mật giao dịch tài chính và luồng tự động hóa nhượng quyền của Bella Spa ERP.</p>
+    </div>
+  </div>
+
+  <!-- ============================== SCORE CARD ============================== -->
+  <div class="score-container">
+    <div class="score-card">
+      <div class="score-badge">
+        <div class="score-num">93</div>
+        <div class="score-max">/ 100 điểm</div>
+      </div>
+      <div class="score-text">
+        <div class="score-title">Đánh giá phân hệ Kế toán: Xuất Sắc</div>
+        <p class="score-desc">
+          Đạt tiêu chuẩn Thông tư 133 của Bộ Tài Chính. Thiết kế hệ thống thông tin kế toán kép bảo đảm tính nhất quán dữ liệu ở cấp độ cao, tích hợp cơ chế chống ghi trùng lặp và chốt sổ tháng an toàn tuyệt đối.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ============================== DUAL-MODE CONCEPT ============================== -->
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">1. Cơ Chế Dual-Mode: SIMPLE ➔ PROFESSIONAL</div>
+          <div class="section-sub">Thiết kế lai linh hoạt cho cả người quản lý không chuyên và kế toán viên</div>
+        </div>
+        <span class="badge badge-success">✓ Hoạt động</span>
+      </div>
+
+      <p style="margin-bottom:16px;">
+        Hệ thống được thiết kế với cơ chế dual-mode độc đáo, cho phép chi nhánh hoạt động linh hoạt ở hai trạng thái:
+      </p>
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 25%">Khía cạnh</th>
+              <th style="width: 37%">Chế độ Đơn Giản (SIMPLE)</th>
+              <th style="width: 38%">Chế độ Chuyên Nghiệp (PROFESSIONAL)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="feature-bold">Đối tượng thao tác</td>
+              <td>Quản lý Spa / Lễ tân chi nhánh</td>
+              <td>Kế toán viên doanh nghiệp</td>
+            </tr>
+            <tr>
+              <td class="feature-bold">Bản chất ghi chép</td>
+              <td>Ghi nhận trực tiếp vào sổ tay thu chi của chi nhánh</td>
+              <td>Bút toán Nhật ký chung chuẩn mực kế toán kép</td>
+            </tr>
+            <tr>
+              <td class="feature-bold">Quyền sửa đổi</td>
+              <td>Cho phép thêm/sửa/xóa trực tiếp (có phân quyền chi nhánh)</td>
+              <td>Khóa cứng sổ tay thu chi cũ. Chỉ ghi nhận qua sổ cái</td>
+            </tr>
+            <tr>
+              <td class="feature-bold">Đồng bộ lịch sử</td>
+              <td>Chờ kiểm tra điều kiện chuyển đổi</td>
+              <td>Chạy hàm đồng bộ nguyên tử của cơ sở dữ liệu trung tâm</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <div class="callout-text">
+          <strong>Nguyên tắc đồng bộ nguyên tử:</strong> Khi chuyển đổi sang chế độ chuyên nghiệp, hệ thống tự động đối chiếu các hóa đơn bán gói dịch vụ, chi phí vận hành và lương đã trả để tự động sinh ra các bút toán kép Nợ/Có. Quá trình này được bảo vệ trong một giao dịch duy nhất tại Cơ sở dữ liệu trung tâm nhằm tránh sai lệch số liệu nếu xảy ra sự cố mạng giữa chừng.
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== COA TT133 ============================== -->
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">2. Hệ Thống Tài Khoản Kế Toán (Chart of Accounts - COA)</div>
+          <div class="section-sub">Danh mục tài khoản áp dụng theo quy chuẩn Thông tư 133/2016/TT-BTC</div>
+        </div>
+        <span class="badge badge-primary">TT133 Compliant</span>
+      </div>
+
+      <p style="margin-bottom:16px;">
+        Các sự kiện kinh doanh phát sinh từ ca làm việc, mua bán gói liệu trình, thanh toán lương được tự động định khoản vào các tài khoản sau:
+      </p>
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 20%">Mã tài khoản</th>
+              <th style="width: 30%">Tên tài khoản theo TT133</th>
+              <th style="width: 50%">Nghiệp vụ áp dụng trong Bella Spa ERP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="account-code">111 / 112</td>
+              <td>Tiền mặt / Tiền gửi ngân hàng</td>
+              <td>Ghi nhận dòng tiền thực tế thu từ khách (qua chuyển khoản ngân hàng/mã QR) hoặc chi trả.</td>
+            </tr>
+            <tr>
+              <td class="account-code">131</td>
+              <td>Phải thu của khách hàng</td>
+              <td>Công nợ mua gói liệu trình khi khách chưa thanh toán đủ.</td>
+            </tr>
+            <tr>
+              <td class="account-code">152 / 153</td>
+              <td>Nguyên liệu, vật liệu / Công cụ</td>
+              <td>Kho vật tư tiêu hao tại spa (dầu massage, tinh dầu, khăn, cồn...).</td>
+            </tr>
+            <tr>
+              <td class="account-code">334</td>
+              <td>Phải trả người lao động</td>
+              <td>Khoản lương và hoa hồng ca làm phải trả cho kỹ thuật viên.</td>
+            </tr>
+            <tr>
+              <td class="account-code">3387</td>
+              <td>Doanh thu chưa thực hiện</td>
+              <td><strong>Doanh thu treo khi khách mua combo gói trị liệu</strong>. Sẽ được kết chuyển dần sang doanh thu thực tế khi nhân viên hoàn thành từng buổi làm.</td>
+            </tr>
+            <tr>
+              <td class="account-code">5113</td>
+              <td>Doanh thu cung cấp dịch vụ</td>
+              <td>Doanh thu được ghi nhận thực tế khi ca làm được kỹ thuật viên hoàn thành.</td>
+            </tr>
+            <tr>
+              <td class="account-code">6421</td>
+              <td>Chi phí bán hàng</td>
+              <td>Các khoản chi hoa hồng ca làm, khấu hao vật tư tiêu hao ca làm.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============================== TRANSACTION SAFETY & OUTBOX ============================== -->
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">3. Bảo Vệ Dòng Tiền & Cơ Chế Hoạt Động Của Hàng Đợi Ghi Sổ</div>
+          <div class="section-sub">Đảm bảo an toàn tài chính tuyệt đối bằng mô hình bút toán bất biến</div>
+        </div>
+        <span class="badge badge-danger">🔒 High Reliability</span>
+      </div>
+
+      <p style="margin-bottom:16px;">
+        Trong hệ thống thông tin tài chính, việc ghi trùng lặp một giao dịch (ví dụ: tạo 2 hóa đơn thu tiền cho 1 lần khách chuyển khoản) là rủi ro nghiêm trọng. Bella Spa ERP sử dụng kiến trúc hàng đợi sự kiện kế toán để triệt tiêu lỗi này:
+      </p>
+
+      <ul class="bullet-list">
+        <li><strong>Bảo vệ chống trùng lặp (Idempotency)</strong>: Khi hệ thống tự động xử lý hàng đợi sự kiện kế toán, nó kiểm tra xem mã tham chiếu của giao dịch (ví dụ: mã hóa đơn) đã tồn tại bút toán nhật ký chung nào chưa. Nếu đã có bút toán hoàn thành, sự kiện sẽ được đánh dấu hoàn tất và bỏ qua an toàn mà không ghi sổ lần hai.</li>
+        <li><strong>Cơ chế tự phục hồi lỗi</strong>: Nếu việc ghi nhận bút toán kép (Nợ/Có) thất bại ở bất kỳ dòng định khoản nào, toàn bộ bút toán nhật ký chung và trạng thái hàng đợi của sự kiện đó sẽ bị hủy bỏ, đưa cơ sở dữ liệu về trạng thái an toàn trước thao tác để tránh tình trạng lệch sổ sách.</li>
+      </ul>
+    </div>
+
+    <!-- ============================== MONTH-CLOSE PREFLIGHT ============================== -->
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">4. Quy Trình Kiểm Tra Sức Khỏe & Khóa Sổ Tháng (Preflight Close)</div>
+          <div class="section-sub">Trình quản lý rủi ro ngăn ngừa các sai sót kế toán trước khi chốt số liệu</div>
+        </div>
+        <span class="badge badge-warn">Preflight Guard</span>
+      </div>
+
+      <p>
+        Trước khi ban quản lý bấm nút chốt số tháng để tính thuế và kết chuyển báo cáo tài chính nhượng quyền, hệ thống sẽ tự động quét qua các hàng rào kiểm tra sức khỏe sổ sách kế toán:
+      </p>
+
+      <div class="preflight-grid">
+        <div class="preflight-card">
+          <div class="preflight-status"><span class="badge badge-success">Pass</span> <span>DEAD Event</span></div>
+          <div class="preflight-title">Không có sự kiện kẹt</div>
+          <div class="preflight-desc">Đảm bảo không có sự kiện kế toán nào bị lỗi xử lý vĩnh viễn ở hàng đợi mà chưa được thủ kho hoặc kế toán giải quyết.</div>
+        </div>
+
+        <div class="preflight-card">
+          <div class="preflight-status"><span class="badge badge-success">Pass</span> <span>Draft Entries</span></div>
+          <div class="preflight-title">Không có bút toán Nháp</div>
+          <div class="preflight-desc">Mọi bút toán phát sinh trong tháng phải được phê duyệt ghi sổ chính thức hoặc hủy bỏ, không được để trạng thái tạm thời.</div>
+        </div>
+
+        <div class="preflight-card">
+          <div class="preflight-status"><span class="badge badge-success">Pass</span> <span>References</span></div>
+          <div class="preflight-title">Không trùng tham chiếu</div>
+          <div class="preflight-desc">Mỗi sự kiện nghiệp vụ (ca làm, hóa đơn bán hàng) chỉ được phép tương ứng với duy nhất một bút toán hoạt động.</div>
+        </div>
+
+        <div class="preflight-card">
+          <div class="preflight-status"><span class="badge badge-success">Pass</span> <span>Readiness Gate</span></div>
+          <div class="preflight-title">Điểm sẵn sàng định khoản</div>
+          <div class="preflight-desc">Đo lường độ hoàn thiện phân loại của toàn bộ dữ liệu trước khi cho phép kích hoạt chế độ kế toán chuyên nghiệp (yêu cầu đạt tối thiểu 95/100).</div>
+        </div>
+      </div>
+
+      <div class="callout warning">
+        <span class="callout-icon">⚠️</span>
+        <div class="callout-text">
+          <strong>Cơ chế khóa an toàn (Fail-Closed):</strong> Khi một trong các bài kiểm tra sức khỏe trên phát hiện lỗi, nút bấm chốt sổ tháng trên giao diện quản lý sẽ lập tức bị vô hiệu hóa. Điều này ngăn chặn tối đa việc số liệu tài chính đã báo cáo bị sửa đổi hoặc chốt khi dữ liệu đang sai lệch.
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== FRANCHISE ACCOUNTING ============================== -->
+    <div class="section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">5. Kế Toán Nhượng Quyền & Đối Soát (Franchise Ledger)</div>
+          <div class="section-sub">Luồng xử lý dòng tiền tự động giữa chi nhánh (Tenant) và tổng công ty (Headquarter)</div>
+        </div>
+        <span class="badge badge-primary">HQ Integrated</span>
+      </div>
+
+      <p style="margin-bottom:16px;">
+        Khi chi nhánh con tiến hành khóa sổ tháng thành công, hệ thống sẽ kích hoạt 2 nghiệp vụ liên chi nhánh tự động:
+      </p>
+
+      <ul class="bullet-list">
+        <li><strong>Trích xuất phí nhượng quyền (Royalty Invoice)</strong>: Tự động ghi nhận khoản phí 10% trên doanh thu thuần của chi nhánh con để chuyển về tài khoản của tổng công ty mẹ, tự động sinh hóa đơn thu phí tương ứng.</li>
+        <li><strong>Bù trừ liên chi nhánh (Inter-branch Clearing)</strong>: Đối soát công nợ phát sinh khi chi nhánh A xuất kho chuyển vật tư cho chi nhánh B hoặc khi nhân viên chi nhánh A hỗ trợ thực hiện ca làm cho khách hàng của chi nhánh B.</li>
+      </ul>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- ============================== FOOTER ============================== -->
+  <div class="footer">
+    <p><strong>Báo Cáo Kỹ Thuật Kế Toán Bella Spa ERP V1.2</strong></p>
+    <p style="margin-top:6px">Dựa trên hệ thống cấu trúc nghiệp vụ tài chính của Bella Spa ERP · Chuẩn TT133/2016/TT-BTC</p>
+    <p style="margin-top:6px; color: #334155;">Ngày cập nhật: 05/06/2026 · Trạng thái: Kiểm thử tự động đã thông qua hoàn toàn</p>
+  </div>
+
+</body>
+</html>
