@@ -28,6 +28,7 @@ jest.mock('@supabase/supabase-js', () => ({
 
 // ── Mock Bookkeeping Handlers ──
 import { RevenueRecognitionService } from '@/services/revenue-recognition';
+import { AccountingEngineService } from '@/services/accounting-engine';
 
 jest.mock('@/services/revenue-recognition', () => ({
   RevenueRecognitionService: {
@@ -400,6 +401,64 @@ describe('Accounting Outbox Worker API', () => {
         paymentMethod: 'cash',
       }));
     });
+
+    it('posts manual journal entries and marks the outbox completed with the journal id', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-manual-1',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'MANUAL_ENTRY',
+          reference_id: 'manual-ref-1',
+          payload: {
+            description: 'Manual adjustment',
+            lines: [
+              { account_id: 'acc-debit', debit_amount: 100000, credit_amount: 0, branch_id: 'branch-1' },
+              { account_id: 'acc-credit', debit_amount: 0, credit_amount: 100000, branch_id: 'branch-1' },
+            ],
+          },
+          retry_count: 0,
+        },
+      ];
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      (AccountingEngineService.postJournalEntry as jest.Mock).mockResolvedValueOnce('journal-manual-1');
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.successCount).toBe(1);
+      expect(AccountingEngineService.postJournalEntry).toHaveBeenCalledWith({
+        tenant_id: 'tenant-uuid-1',
+        description: 'Manual adjustment',
+        reference_type: 'MANUAL',
+        reference_id: 'manual-ref-1',
+        lines: [
+          { account_id: 'acc-debit', debit_amount: 100000, credit_amount: 0, branch_id: 'branch-1' },
+          { account_id: 'acc-credit', debit_amount: 0, credit_amount: 100000, branch_id: 'branch-1' },
+        ],
+      });
+      expect(mockRpc).toHaveBeenCalledWith('mark_outbox_completed', {
+        p_outbox_id: 'outbox-manual-1',
+        p_journal_entry_id: 'journal-manual-1',
+      });
+      expect(json.details).toEqual([
+        expect.objectContaining({
+          eventId: 'outbox-manual-1',
+          status: 'completed',
+          journalEntryId: 'journal-manual-1',
+        }),
+      ]);
+    });
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -539,6 +598,57 @@ describe('Accounting Outbox Worker API', () => {
         p_outbox_id: 'outbox-critical-1',
         p_error: 'COA unavailable',
       });
+    });
+
+    it('marks manual journal entry failures as failed without completing the outbox item', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-manual-fail-1',
+          tenant_id: 'tenant-uuid-1',
+          event_type: 'MANUAL_ENTRY',
+          reference_id: 'manual-ref-fail-1',
+          payload: {
+            description: 'Manual adjustment failure',
+            lines: [
+              { account_id: 'acc-debit', debit_amount: 100000, credit_amount: 0 },
+              { account_id: 'acc-credit', debit_amount: 0, credit_amount: 100000 },
+            ],
+          },
+          retry_count: 0,
+        },
+      ];
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      (AccountingEngineService.postJournalEntry as jest.Mock).mockRejectedValueOnce(new Error('journal insert failed'));
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(false);
+      expect(json.status).toBe('partial_failure');
+      expect(json.successCount).toBe(0);
+      expect(json.failureCount).toBe(1);
+      expect(mockRpc).not.toHaveBeenCalledWith('mark_outbox_completed', expect.anything());
+      expect(mockRpc).toHaveBeenCalledWith('mark_outbox_failed', {
+        p_outbox_id: 'outbox-manual-fail-1',
+        p_error: 'journal insert failed',
+      });
+      expect(json.details).toEqual([
+        expect.objectContaining({
+          eventId: 'outbox-manual-fail-1',
+          status: 'failed',
+          error: 'journal insert failed',
+        }),
+      ]);
     });
 
     it('marks the event failed when mark_outbox_completed fails after handler success', async () => {
