@@ -29,8 +29,8 @@ export function CrmRemindersTab({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
+        <table className="bella-data-table min-w-[72rem] text-left">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
               <th className="py-4 px-6">Mã booking</th>

@@ -33,8 +33,8 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
           <SkeletonLoader variant="text" width={220} height={28} className="rounded-md" />
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
+          <table className="bella-data-table min-w-[600px]">
             <thead>
               <tr className="text-left border-b border-pink-100">
                 <th className="pb-4"><SkeletonLoader variant="text" width={100} height={14} /></th>
@@ -84,8 +84,8 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
         <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Top KTV Xuất Sắc</h2>
       </div>
       
-      <div className="overflow-x-auto custom-scrollbar">
-        <table className="w-full min-w-[600px]">
+      <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
+        <table className="bella-data-table min-w-[600px]">
           <thead>
             <tr className="text-left border-b border-pink-100">
               <th className="pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2 whitespace-nowrap">

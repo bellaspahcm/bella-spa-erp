@@ -37,7 +37,7 @@ export function InventoryStockPanel({
   return (
     <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-xl sm:rounded-[3rem]">
       <div className="flex flex-col gap-3 border-b border-slate-50 p-4 sm:p-8">
-        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+        <div className="bella-toolbar flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
           <div className="relative w-full min-w-0 flex-grow lg:max-w-sm">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -48,7 +48,7 @@ export function InventoryStockPanel({
               className="w-full bg-slate-50 rounded-2xl py-3 pl-11 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <PremiumSelect
               value={stockFilter}
               onChange={(val) => setStockFilter(val === 'low' || val === 'ok' ? val : 'all')}
@@ -69,8 +69,8 @@ export function InventoryStockPanel({
         </div>
       </div>
 
-      <div className="overflow-x-auto custom-scrollbar w-full">
-        <table className="w-full min-w-[760px] text-left sm:min-w-[850px]">
+      <div className="w-full overflow-x-auto overscroll-x-contain custom-scrollbar">
+        <table className="bella-data-table min-w-[850px] text-left">
           <thead>
             <tr className="bg-slate-50/50">
               {['Vật tư', 'SKU', 'Tồn kho', 'Đơn giá', 'Hành động'].map(h => (

@@ -31,7 +31,7 @@ export function InventoryReconciliationPanel({
 }: InventoryReconciliationPanelProps) {
   return (
     <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
-      <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bella-toolbar flex flex-col justify-between gap-4 border-b border-slate-50 p-6 sm:p-8 md:flex-row md:items-center">
         <div>
           <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
             <ClipboardCheck className="text-primary w-5 h-5" /> Kiểm kê Tồn Kho Cuối Tháng
@@ -40,8 +40,8 @@ export function InventoryReconciliationPanel({
             Nhập tồn thực tế đếm được vào cột bên phải. Hệ thống tự so với <span className="text-slate-700 font-bold">&quot;Tồn dự kiến&quot;</span> và ghi chênh lệch để đối soát hao hụt.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="grid grid-cols-2 gap-2 w-64">
+        <div className="flex w-full items-center gap-2 md:w-auto">
+          <div className="grid w-full grid-cols-2 gap-2 md:w-64">
             <PremiumSelect
               value={String(reconMonth)}
               onChange={(val) => setReconMonth(Number(val))}
@@ -67,8 +67,8 @@ export function InventoryReconciliationPanel({
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto custom-scrollbar w-full">
-            <table className="w-full min-w-[900px] text-left">
+          <div className="w-full overflow-x-auto overscroll-x-contain custom-scrollbar">
+            <table className="bella-data-table min-w-[900px] text-left">
               <thead>
                 <tr className="bg-slate-50/50">
                   {['Vật tư', 'Nhập trong tháng', 'Tiêu hao trong tháng', 'Tồn dự kiến', 'Tồn thực tế', 'Chênh lệch', 'Ghi chú'].map(h => (

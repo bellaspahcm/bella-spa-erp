@@ -555,8 +555,8 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
             Phân tích ROI & Margin
           </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
+          <table className="bella-data-table min-w-[72rem] text-left">
             <thead>
               <tr className="bg-slate-50/50">
                 <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Gói dịch vụ</th>

@@ -28,7 +28,7 @@ export function InventoryTransferOrdersPanel({
 }: InventoryTransferOrdersPanelProps) {
   return (
     <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
-      <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+      <div className="bella-toolbar flex flex-col gap-4 border-b border-slate-50 p-6 sm:p-8 md:flex-row md:items-center md:justify-between">
         <div>
           <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
             <ClipboardList className="text-primary w-5 h-5" /> Danh sách Lệnh chuyển kho
@@ -43,8 +43,8 @@ export function InventoryTransferOrdersPanel({
         </button>
       </div>
 
-      <div className="overflow-x-auto custom-scrollbar w-full">
-        <table className="w-full min-w-[850px] text-left">
+      <div className="w-full overflow-x-auto overscroll-x-contain custom-scrollbar">
+        <table className="bella-data-table min-w-[850px] text-left">
           <thead>
             <tr className="bg-slate-50/50">
               {['Mã yêu cầu', 'Ngày tạo', 'Chi tiết vật tư', 'Trạng thái', 'Vận chuyển', 'Hành động'].map(h => (

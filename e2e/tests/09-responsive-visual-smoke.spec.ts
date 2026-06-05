@@ -48,6 +48,11 @@ const visualRoutes: VisualRoute[] = [
     content: /khach hang|ho so|customer/i,
   },
   {
+    name: "crm",
+    path: "/dashboard/crm",
+    content: /crm|zalo|marketing|chien dich|khach hang/i,
+  },
+  {
     name: "bookings",
     path: "/dashboard/bookings",
     content: /lich hen|timeline|booking/i,
@@ -66,6 +71,11 @@ const visualRoutes: VisualRoute[] = [
     name: "services",
     path: "/dashboard/services",
     content: /quan ly dich vu|dich vu|services/i,
+  },
+  {
+    name: "settings",
+    path: "/dashboard/settings",
+    content: /cai dat|settings|goi dich vu|nhan su|phan quyen/i,
   },
   {
     name: "salary",

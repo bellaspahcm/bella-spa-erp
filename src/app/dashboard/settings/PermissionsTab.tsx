@@ -251,7 +251,7 @@ export default function PermissionsTab() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+      <div className="bella-toolbar mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-center">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-500">
             <ShieldAlert className="w-6 h-6" />
@@ -277,8 +277,8 @@ export default function PermissionsTab() {
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-white bg-white/40 shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
+          <table className="bella-data-table min-w-[64rem] text-left">
             <thead>
               <tr className="border-b border-white/50">
                 <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50 w-1/3">

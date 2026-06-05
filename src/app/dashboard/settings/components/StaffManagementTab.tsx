@@ -179,7 +179,7 @@ export default function StaffManagementTab() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+      <div className="bella-toolbar mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-center">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
             <Shield className="w-6 h-6" />
@@ -202,8 +202,8 @@ export default function StaffManagementTab() {
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-white bg-white/40 shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left whitespace-nowrap">
+        <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
+          <table className="bella-data-table min-w-[76rem] text-left whitespace-nowrap">
             <thead>
               <tr className="border-b border-white/50">
                 <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">

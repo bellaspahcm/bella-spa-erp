@@ -778,8 +778,8 @@ export default function AuditPage() {
         animate={{ opacity: 1 }}
         className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm"
       >
-        <div className="overflow-x-auto custom-scrollbar w-full">
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+        <div className="w-full overflow-x-auto overscroll-x-contain custom-scrollbar">
+          <table className="bella-data-table min-w-[1000px] text-left">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600 w-[180px] whitespace-nowrap">Thời gian</th>
