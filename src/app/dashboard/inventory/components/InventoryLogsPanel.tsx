@@ -32,16 +32,16 @@ export function InventoryLogsPanel({
 }: InventoryLogsPanelProps) {
   return (
     <div className="xl:col-span-1">
-      <div className="bg-white rounded-[3rem] p-8 shadow-xl border border-slate-100 h-full flex flex-col">
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex h-full flex-col rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl sm:rounded-[3rem] sm:p-8">
+        <div className="mb-5 flex items-center justify-between sm:mb-6">
           <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
             <History className="text-primary w-5 h-5" /> Lịch sử Kho
           </h3>
         </div>
 
-        <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-3">
+        <div className="mb-5 space-y-3 rounded-2xl bg-slate-50 p-4 sm:mb-6">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lọc theo tháng</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <PremiumSelect
               value={String(logMonth)}
               onChange={(val) => setLogMonth(Number(val))}
@@ -74,7 +74,7 @@ export function InventoryLogsPanel({
               </div>
               <div className="flex-grow min-w-0">
                 <div className="flex justify-between items-start">
-                  <p className="text-sm font-black text-slate-900 truncate pr-2">{lg.inventory_items?.name}</p>
+                  <p className="pr-2 text-sm font-black text-slate-900 break-words">{lg.inventory_items?.name}</p>
                   <span
                     className={cn(
                       'text-xs font-black whitespace-nowrap',
@@ -87,7 +87,7 @@ export function InventoryLogsPanel({
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                   {REASON_LABELS[lg.reason] || lg.reason}
                 </p>
-                <p className="text-[10px] text-slate-400 font-medium truncate max-w-[190px]">{lg.notes || ''}</p>
+                <p className="max-w-full break-words text-[10px] font-medium text-slate-400">{lg.notes || ''}</p>
                 <p className="text-[10px] text-slate-400">
                   {lg.created_at ? new Date(lg.created_at).toLocaleDateString('vi-VN') : ''}
                 </p>

@@ -35,10 +35,10 @@ export function InventoryStockPanel({
   setShowCreateRequest,
 }: InventoryStockPanelProps) {
   return (
-    <div className="bg-white rounded-[3rem] shadow-xl border border-slate-100 overflow-hidden">
-      <div className="p-8 border-b border-slate-50 flex flex-col gap-3">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="relative flex-grow max-w-sm">
+    <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-xl sm:rounded-[3rem]">
+      <div className="flex flex-col gap-3 border-b border-slate-50 p-4 sm:p-8">
+        <div className="flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
+          <div className="relative w-full min-w-0 flex-grow lg:max-w-sm">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
@@ -48,7 +48,7 @@ export function InventoryStockPanel({
               className="w-full bg-slate-50 rounded-2xl py-3 pl-11 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <PremiumSelect
               value={stockFilter}
               onChange={(val) => setStockFilter(val === 'low' || val === 'ok' ? val : 'all')}
@@ -57,11 +57,11 @@ export function InventoryStockPanel({
                 { value: 'low', label: `Sắp hết (${lowCount})` },
                 { value: 'ok', label: `Còn hàng (${items.length - lowCount})` },
               ]}
-              className="w-52"
+              className="w-full sm:w-52"
             />
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 active:scale-95 transition-all shadow-lg whitespace-nowrap"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-lg transition-all hover:bg-slate-800 active:scale-95 sm:whitespace-nowrap"
             >
               <PlusCircle className="w-4 h-4" /> Thêm Vật Tư
             </button>
@@ -70,7 +70,7 @@ export function InventoryStockPanel({
       </div>
 
       <div className="overflow-x-auto custom-scrollbar w-full">
-        <table className="w-full min-w-[850px] text-left">
+        <table className="w-full min-w-[760px] text-left sm:min-w-[850px]">
           <thead>
             <tr className="bg-slate-50/50">
               {['Vật tư', 'SKU', 'Tồn kho', 'Đơn giá', 'Hành động'].map(h => (
@@ -117,7 +117,7 @@ export function InventoryStockPanel({
                     <p className="text-sm font-black text-slate-700 whitespace-nowrap">{formatNumberWithSeparator(item.price_per_unit)}đ</p>
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
-                    <div className="flex gap-4 whitespace-nowrap">
+                    <div className="flex gap-3 whitespace-nowrap sm:gap-4">
                       <button
                         onClick={() => {
                           setRestockTarget(item);
