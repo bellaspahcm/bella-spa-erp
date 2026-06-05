@@ -5,6 +5,23 @@
 
 ---
 
+### 05/06/2026: Landing Packages Refactor And Production Smoke
+* **Muc tieu UI/van hanh**:
+  * Giam do phuc tap cua landing page public, tach section bang gia/dich vu thanh cac component va hook data rieng.
+  * Dam bao public landing van hien fallback ro rang khi Supabase package/promotion query loi hoac khong co data active.
+  * Khoa regression cho tab goi dich vu, CTA prefill booking form, validation form rong va mobile layout.
+* **Thay doi chinh**:
+  * Tach `LandingPackagesSection`, `LandingPackageCards`, `LandingPackageTabs`, `landing-data` va `useLandingData`.
+  * Chuan hoa category key `bau`, them helper `getLandingCategoryForPackage` co normalize/token matching de tranh match nham `Bella` thanh keyword baby.
+  * Them docs HTML ve accounting/business/dual-mode guide va lien ket trong `docs/index.md`.
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/landing-data.test.ts src/__tests__/landing-data-hooks.test.tsx` pass, 2 suites / 9 tests.
+  * `npx.cmd playwright test e2e/tests/09-landing-packages-smoke.spec.ts` pass tren local, 4 tests gom desktop/mobile/CTA prefill/required-field validation.
+  * `npm.cmd run lint` pass.
+  * `npm.cmd run build` pass.
+  * Production Vercel deployment `2622a59849fcc1eaaa132c7a8b25d87fe26847a4` READY.
+  * Production smoke tren `https://bella-spa-pnmf9vqg6-bella-spa-s-projects.vercel.app` pass, 3 tests.
+
 ### 05/06/2026: Harden Export Actions Coverage
 * **Muc tieu kiem thu**:
   * Dong diem mu test coverage cua `src/services/export-actions.ts`, noi tao file Excel cho bao cao ke toan va luong.

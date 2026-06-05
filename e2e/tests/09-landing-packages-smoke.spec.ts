@@ -56,6 +56,17 @@ test.describe("Landing packages public smoke", () => {
     await expectNoAppLevelErrors(page);
   });
 
+  test("booking form blocks empty submissions with required field validation", async ({ page }) => {
+    await page.goto("/#booking", { waitUntil: "domcontentloaded" });
+
+    const booking = page.locator("#booking");
+    await expect(booking).toBeVisible();
+    await booking.getByRole("button", { name: /Gửi thông tin giữ ưu đãi ngay/i }).click();
+
+    await expect.poll(async () => await booking.locator("input:invalid").count()).toBeGreaterThan(0);
+    await expectNoAppLevelErrors(page);
+  });
+
   test("package tabs remain usable on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.goto("/#services", { waitUntil: "domcontentloaded" });
