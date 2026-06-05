@@ -70,9 +70,9 @@ const tableWrapperClassName =
 const tableClassName = 'w-max min-w-[56rem] border-collapse whitespace-nowrap text-xs';
 const reviewTableClassName = 'w-max min-w-[68rem] border-collapse whitespace-nowrap text-xs';
 const stickyHeaderCellClassName =
-  'sticky left-0 z-30 bg-white shadow-[10px_0_16px_-14px_rgba(15,23,42,0.65)] dark:bg-[#1C1B19]';
+  'bg-white dark:bg-[#1C1B19]';
 const stickyBodyCellClassName =
-  'sticky left-0 z-20 bg-inherit shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
+  'bg-inherit';
 
 function formatPercent(value: number) {
   return `${Math.round(value)}%`;

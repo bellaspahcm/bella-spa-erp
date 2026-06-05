@@ -63,7 +63,7 @@ export default function SessionMatrixTable({
         <table className="w-max min-w-[72rem] text-left whitespace-nowrap">
           <thead>
             <tr className="bg-slate-50/80 backdrop-blur-md">
-              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px] sticky left-0 z-20 bg-slate-50">
+              <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px] bg-slate-50">
                 Kỹ thuật viên
               </th>
               {matrixData.packageNames.map((pkg: string) => (
@@ -97,7 +97,7 @@ export default function SessionMatrixTable({
                   ktv.isConfirmed && 'bg-emerald-50/30 opacity-90'
                 )}
               >
-                <td className="px-8 py-6 whitespace-nowrap sticky left-0 z-10 bg-white group-hover:bg-slate-50/50 transition-colors">
+                <td className="px-8 py-6 whitespace-nowrap bg-white group-hover:bg-slate-50/50 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 font-black text-xs">
                       {ktv.name.charAt(0)}

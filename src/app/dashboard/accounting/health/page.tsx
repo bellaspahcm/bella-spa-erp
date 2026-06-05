@@ -62,7 +62,7 @@ const CHECK_TONE: Record<AccountingHealthCheck['status'], string> = {
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
 const stickyBodyCellClassName =
-  'sticky left-0 z-20 bg-white shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:bg-[#1C1B19] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
+  'bg-white dark:bg-[#1C1B19]';
 
 function currentMonthValue() {
   return new Date().toISOString().slice(0, 7);
