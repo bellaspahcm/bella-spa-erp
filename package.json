@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "lint:strict": "eslint --config eslint.strict.config.mjs \"src/**/*.{ts,tsx}\"",
+    "docs:api:check": "node scripts/check-api-docs.mjs",
     "security:audit": "node scripts/audit-production.mjs",
     "test": "jest",
     "test:coverage": "jest --coverage",
