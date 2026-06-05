@@ -20,6 +20,16 @@ export type JournalEntryInput = {
 };
 
 type AdminClient = SupabaseClient<Database>;
+type DbErrorLike = { message?: string } | null | undefined;
+
+function withRollbackFailure(reason: string, rollbackFailures: string[]) {
+  if (rollbackFailures.length === 0) return reason;
+  return `${reason}; rollback failed: ${rollbackFailures.join('; ')}`;
+}
+
+function errorMessage(error: DbErrorLike, fallback: string) {
+  return error?.message || fallback;
+}
 
 /**
  * Service-role typed Supabase client — bypasses RLS.
@@ -76,8 +86,12 @@ export class AccountingEngineService {
     const { error: linesError } = await supabase.from('journal_lines').insert(linesToInsert);
 
     if (linesError) {
-      await supabase.from('journal_entries').delete().eq('id', header.id);
-      throw new Error(linesError.message);
+      const rollbackFailures: string[] = [];
+      const { error: headerRollbackError } = await supabase.from('journal_entries').delete().eq('id', header.id);
+      if (headerRollbackError) {
+        rollbackFailures.push(`journal entry ${header.id}: ${errorMessage(headerRollbackError, 'delete failed')}`);
+      }
+      throw new Error(withRollbackFailure(linesError.message, rollbackFailures));
     }
 
     const { error: postError } = await supabase
@@ -86,9 +100,18 @@ export class AccountingEngineService {
       .eq('id', header.id);
 
     if (postError) {
-      await supabase.from('journal_lines').delete().eq('entry_id', header.id);
-      await supabase.from('journal_entries').delete().eq('id', header.id);
-      throw new Error(`Failed to post journal entry: ${postError.message}`);
+      const rollbackFailures: string[] = [];
+      const { error: linesRollbackError } = await supabase.from('journal_lines').delete().eq('entry_id', header.id);
+      if (linesRollbackError) {
+        rollbackFailures.push(`journal lines for ${header.id}: ${errorMessage(linesRollbackError, 'delete failed')}`);
+      }
+
+      const { error: headerRollbackError } = await supabase.from('journal_entries').delete().eq('id', header.id);
+      if (headerRollbackError) {
+        rollbackFailures.push(`journal entry ${header.id}: ${errorMessage(headerRollbackError, 'delete failed')}`);
+      }
+
+      throw new Error(withRollbackFailure(`Failed to post journal entry: ${postError.message}`, rollbackFailures));
     }
 
     return header.id;

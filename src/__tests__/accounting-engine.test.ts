@@ -191,6 +191,25 @@ describe('AccountingEngineService.postJournalEntry', () => {
     expect(mockDeleteEq).toHaveBeenCalledWith('id', 'entry-uuid-1');
   });
 
+  it('reports rollback failure when header delete fails after lines insert fails', async () => {
+    mockInsertLines.mockResolvedValueOnce({ error: { message: 'Lines failed' } });
+    mockDeleteEq.mockResolvedValueOnce({ error: { message: 'Header rollback failed' } });
+
+    await expect(
+      AccountingEngineService.postJournalEntry({
+        tenant_id: TENANT_ID,
+        description: 'Test',
+        lines: [
+          { account_id: CASH_ID, debit_amount: 100, credit_amount: 0 },
+          { account_id: REV_ID, debit_amount: 0, credit_amount: 100 },
+        ],
+      })
+    ).rejects.toThrow(/Lines failed; rollback failed: journal entry entry-uuid-1: Header rollback failed/);
+
+    expect(mockDelete).toHaveBeenCalled();
+    expect(mockDeleteEq).toHaveBeenCalledWith('id', 'entry-uuid-1');
+  });
+
   it('rolls back header and lines when POST update fails', async () => {
     mockUpdateEq.mockResolvedValueOnce({ error: { message: 'Post failed' } });
 
@@ -204,6 +223,30 @@ describe('AccountingEngineService.postJournalEntry', () => {
         ],
       })
     ).rejects.toThrow(/Failed to post journal entry.*Post failed/);
+
+    expect(mockDeleteLines).toHaveBeenCalled();
+    expect(mockDeleteLinesEq).toHaveBeenCalledWith('entry_id', 'entry-uuid-1');
+    expect(mockDelete).toHaveBeenCalled();
+    expect(mockDeleteEq).toHaveBeenCalledWith('id', 'entry-uuid-1');
+  });
+
+  it('reports line and header rollback failures when POST update fails', async () => {
+    mockUpdateEq.mockResolvedValueOnce({ error: { message: 'Post failed' } });
+    mockDeleteLinesEq.mockResolvedValueOnce({ error: { message: 'Line rollback failed' } });
+    mockDeleteEq.mockResolvedValueOnce({ error: { message: 'Header rollback failed' } });
+
+    await expect(
+      AccountingEngineService.postJournalEntry({
+        tenant_id: TENANT_ID,
+        description: 'Test',
+        lines: [
+          { account_id: CASH_ID, debit_amount: 100, credit_amount: 0 },
+          { account_id: REV_ID, debit_amount: 0, credit_amount: 100 },
+        ],
+      })
+    ).rejects.toThrow(
+      /Failed to post journal entry: Post failed; rollback failed: journal lines for entry-uuid-1: Line rollback failed; journal entry entry-uuid-1: Header rollback failed/
+    );
 
     expect(mockDeleteLines).toHaveBeenCalled();
     expect(mockDeleteLinesEq).toHaveBeenCalledWith('entry_id', 'entry-uuid-1');
