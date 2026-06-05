@@ -59,6 +59,11 @@ const CHECK_TONE: Record<AccountingHealthCheck['status'], string> = {
   fail: 'bg-rose-50 text-rose-700 border-rose-200',
 };
 
+const tableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-white shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:bg-[#1C1B19] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
+
 function currentMonthValue() {
   return new Date().toISOString().slice(0, 7);
 }
@@ -104,7 +109,7 @@ export default function AccountingHealthPage() {
 
   return (
     <div className="space-y-6">
-      <section className={cn('rounded-[2rem] border p-6 md:p-8 shadow-sm', tone.bg, tone.border)}>
+      <section className={cn('rounded-3xl md:rounded-[2rem] border p-5 md:p-8 shadow-sm', tone.bg, tone.border)}>
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-white/75 dark:bg-[#11100F]/60 flex items-center justify-center shrink-0">
@@ -124,20 +129,20 @@ export default function AccountingHealthPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-            <label className="block">
+            <label className="block min-w-0 sm:min-w-[11.5rem]">
               <span className="mb-2 block text-3xs font-black uppercase tracking-widest text-slate-400">Tháng preflight</span>
               <input
                 type="month"
                 value={month}
                 onChange={(event) => setMonth(event.target.value)}
-                className="h-11 rounded-xl border border-white/80 dark:border-[#3E3A35] bg-white/90 dark:bg-[#11100F] px-4 text-xs font-black text-slate-800 dark:text-[#EFE9E1] outline-none"
+                className="h-11 w-full min-w-[11.5rem] rounded-xl border border-white/80 dark:border-[#3E3A35] bg-white/90 dark:bg-[#11100F] pl-4 pr-11 text-xs font-black text-slate-800 dark:text-[#EFE9E1] outline-none"
               />
             </label>
             <button
               type="button"
               onClick={() => loadData(month)}
               disabled={refreshing}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 dark:bg-[#EFE9E1] px-4 text-3xs font-black uppercase tracking-widest text-white dark:text-[#11100F] hover:opacity-90 disabled:opacity-60"
+              className="inline-flex h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-slate-950 dark:bg-[#EFE9E1] px-4 text-3xs font-black uppercase tracking-widest text-white dark:text-[#11100F] hover:opacity-90 disabled:opacity-60"
             >
               <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
               Kiểm tra
@@ -180,7 +185,7 @@ export default function AccountingHealthPage() {
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
+        <div className="xl:col-span-2 rounded-3xl md:rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 md:p-8 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
             <div>
               <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">
@@ -207,8 +212,14 @@ export default function AccountingHealthPage() {
               <p className="mt-1 text-2xs font-medium text-slate-400">Có thể tiếp tục khóa tháng sau khi kiểm tra số liệu vận hành.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-xs">
+            <div className={tableWrapperClassName}>
+              <table className="w-[58rem] table-fixed border-collapse text-xs whitespace-nowrap">
+                <colgroup>
+                  <col className="w-[24rem]" />
+                  <col className="w-[8rem]" />
+                  <col className="w-[12rem]" />
+                  <col className="w-[8rem]" />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-[#3E3A35]/50 text-left">
                     <th className="py-3 pr-4 text-3xs font-black uppercase tracking-widest text-slate-400">Kiểm tra</th>
@@ -227,7 +238,7 @@ export default function AccountingHealthPage() {
           )}
         </div>
 
-        <div className="rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
+        <div className="rounded-3xl md:rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 md:p-8 shadow-sm">
           <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">
             Tóm tắt vận hành
           </h3>
@@ -250,7 +261,7 @@ export default function AccountingHealthPage() {
         </div>
       </section>
 
-      <section className="rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
+      <section className="rounded-3xl md:rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 md:p-8 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
           <div>
             <h3 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">
@@ -262,7 +273,7 @@ export default function AccountingHealthPage() {
           </div>
           <Link
             href="/dashboard/accounting/journals"
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-[#3E3A35] px-4 py-2.5 text-3xs font-black uppercase tracking-widest text-slate-600 dark:text-[#CDBCAB] hover:bg-slate-50 dark:hover:bg-[#11100F]"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-slate-200 dark:border-[#3E3A35] px-4 py-2.5 text-3xs font-black uppercase tracking-widest text-slate-600 dark:text-[#CDBCAB] hover:bg-slate-50 dark:hover:bg-[#11100F]"
           >
             Nhật ký chung
             <ArrowRight className="h-3.5 w-3.5" />
@@ -279,8 +290,14 @@ export default function AccountingHealthPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-xs">
+          <div className={tableWrapperClassName}>
+            <table className="w-[64rem] table-fixed border-collapse text-xs whitespace-nowrap">
+              <colgroup>
+                <col className="w-[14rem]" />
+                <col className="w-[20rem]" />
+                <col className="w-[8rem]" />
+                <col className="w-[22rem]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-slate-100 dark:border-[#3E3A35]/50 text-left">
                   <th className="py-3 pr-4 text-3xs font-black uppercase tracking-widest text-slate-400">Reference type</th>
@@ -292,7 +309,7 @@ export default function AccountingHealthPage() {
               <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/30">
                 {(summary?.duplicate_journal_references ?? []).map((reference) => (
                   <tr key={`${reference.reference_type}:${reference.reference_id}`}>
-                    <td className="py-4 pr-4 font-mono text-2xs font-black text-slate-800 dark:text-[#EFE9E1]">{reference.reference_type}</td>
+                    <td className={`${stickyBodyCellClassName} py-4 pr-4 font-mono text-2xs font-black text-slate-800 dark:text-[#EFE9E1]`}>{reference.reference_type}</td>
                     <td className="py-4 px-4 font-mono text-3xs font-bold text-slate-500">{reference.reference_id}</td>
                     <td className="py-4 px-4 text-right font-mono font-black text-rose-700">{reference.active_count}</td>
                     <td className="py-4 pl-4 font-mono text-3xs text-slate-500">{reference.entry_ids.join(', ')}</td>
@@ -332,7 +349,7 @@ function MetricCard({
 function CheckRow({ check }: { check: AccountingHealthCheck }) {
   return (
     <tr>
-      <td className="py-4 pr-4 min-w-[260px]">
+      <td className={`${stickyBodyCellClassName} py-4 pr-4 min-w-[260px]`}>
         <div className="font-black text-slate-900 dark:text-[#EFE9E1]">{check.label}</div>
         <div className="mt-1 text-3xs font-medium leading-relaxed text-slate-500 dark:text-[#CDBCAB]/60">{check.message}</div>
       </td>
