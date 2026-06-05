@@ -344,7 +344,7 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Khách hàng</h1>
           <p className="text-slate-500 font-medium mt-1">Quản lý hồ sơ mẹ và bé</p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="bella-toolbar flex flex-col gap-3 sm:flex-row sm:items-center">
           <PremiumExportButton />
           <button 
             onClick={handleAddNew}
@@ -357,7 +357,7 @@ export default function CustomersPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4 md:mb-8 lg:flex-row lg:items-center lg:flex-wrap">
+      <div className="bella-toolbar mb-6 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4 md:mb-8 lg:flex-row lg:items-center lg:flex-wrap">
         {/* Search — all fields */}
         <div className="relative w-full min-w-0 flex-1 group lg:min-w-[260px]">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-500 transition-colors w-5 h-5" />
@@ -583,7 +583,7 @@ export default function CustomersPage() {
             Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{filteredCustomers.length}</span> khách hàng
           </p>
           
-          <div className="flex max-w-full items-center gap-2 overflow-x-auto pb-1">
+          <div className="bella-pagination">
             <button 
               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}

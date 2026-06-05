@@ -390,7 +390,7 @@ export default function FinancialReconciliationPage() {
           ))}
         </div>
         
-        <div className="w-full lg:w-auto px-4">
+        <div className="bella-toolbar w-full px-4 lg:w-auto">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input

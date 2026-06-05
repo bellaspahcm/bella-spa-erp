@@ -40,7 +40,7 @@ export default function SalaryTable({
           <ShieldCheck className="h-6 w-6 shrink-0 text-primary sm:h-8 sm:w-8" />
           Bảng tính lương chi tiết
         </h2>
-        <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto md:items-center">
+        <div className="bella-toolbar flex w-full flex-col gap-3 sm:flex-row md:w-auto md:items-center">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input 

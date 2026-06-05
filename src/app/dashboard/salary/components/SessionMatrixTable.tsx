@@ -39,7 +39,7 @@ export default function SessionMatrixTable({
 
   return (
     <div className="mb-6 overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm md:mb-10 md:rounded-[40px]">
-      <div className="flex flex-col gap-4 border-b border-slate-50 p-4 sm:p-6 md:flex-row md:items-center md:justify-between md:p-8">
+      <div className="bella-toolbar flex flex-col gap-4 border-b border-slate-50 p-4 sm:p-6 md:flex-row md:items-center md:justify-between md:p-8">
         <div>
           <h2 className="flex items-center gap-3 text-lg font-black tracking-tight text-slate-900 sm:text-2xl">
             <CalendarIcon className="h-6 w-6 shrink-0 text-primary sm:h-8 sm:w-8" />

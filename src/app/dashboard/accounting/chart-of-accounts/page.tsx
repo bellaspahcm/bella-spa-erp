@@ -224,7 +224,7 @@ export default function ChartOfAccountsPage() {
   return (
     <div className="space-y-8">
       {/* ── HEADER SEARCH & FILTERS ── */}
-      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 sm:p-6 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+      <div className="bella-toolbar flex flex-col justify-between gap-4 rounded-[2.5rem] border border-[#FFE4E6] bg-white p-5 shadow-sm dark:border-[#3E3A35]/50 dark:bg-[#1C1B19] sm:p-6 xl:flex-row xl:items-center">
         <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(14rem,1fr)_minmax(13rem,16rem)] xl:max-w-3xl">
           {/* Search bar */}
           <div className="relative flex-1">

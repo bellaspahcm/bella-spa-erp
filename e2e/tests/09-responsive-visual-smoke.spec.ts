@@ -171,6 +171,37 @@ async function expectFinanceTransactionCellsDoNotBleed(page: Page) {
   }
 }
 
+async function expectMobileToolbarsFitViewport(page: Page, routeName: string) {
+  const boxes = await page.locator(".bella-toolbar, .bella-pagination").evaluateAll((elements) =>
+    elements
+      .filter((element) => {
+        const rect = element.getBoundingClientRect();
+        const styles = window.getComputedStyle(element);
+        return rect.width > 0 && rect.height > 0 && styles.display !== "none" && styles.visibility !== "hidden";
+      })
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          className: element.className.toString(),
+          left: rect.left,
+          right: rect.right,
+          width: rect.width,
+          viewportWidth: window.innerWidth,
+        };
+      }),
+  );
+
+  for (const box of boxes) {
+    expect(box.left, `${routeName} toolbar should start inside viewport: ${box.className}`).toBeGreaterThanOrEqual(0);
+    expect(box.right, `${routeName} toolbar should end inside viewport: ${box.className}`).toBeLessThanOrEqual(
+      box.viewportWidth + 1,
+    );
+    expect(box.width, `${routeName} toolbar should not exceed viewport: ${box.className}`).toBeLessThanOrEqual(
+      box.viewportWidth + 1,
+    );
+  }
+}
+
 test.describe("Responsive visual smoke", () => {
   test.setTimeout(180_000);
 
@@ -235,6 +266,10 @@ test.describe("Responsive visual smoke", () => {
 
         if (viewport.name === "mobile" && route.name === "finance") {
           await expectFinanceTransactionCellsDoNotBleed(adminPage);
+        }
+
+        if (viewport.name === "mobile") {
+          await expectMobileToolbarsFitViewport(adminPage, route.name);
         }
 
         await testInfo.attach(`${viewport.name}-${route.name}.png`, {

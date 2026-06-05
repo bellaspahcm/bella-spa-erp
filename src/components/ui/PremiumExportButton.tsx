@@ -36,10 +36,10 @@ export default function PremiumExportButton({ onExport, className }: PremiumExpo
   };
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative w-full min-w-0 sm:w-auto ${className ?? ''}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group flex items-center justify-center gap-2 bg-white border border-slate-200 hover:border-rose-200 text-slate-700 px-6 py-3 rounded-2xl font-bold transition-all shadow-sm hover:shadow-md active:scale-95"
+        className="group flex w-full min-w-0 items-center justify-center gap-2 overflow-hidden rounded-2xl border border-slate-200 bg-white px-6 py-3 font-bold text-slate-700 shadow-sm transition-all hover:border-rose-200 hover:shadow-md active:scale-95 sm:w-auto"
       >
         <Download className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
         <span className="text-sm font-black tracking-widest hidden md:inline">Xuất dữ liệu</span>
@@ -60,7 +60,7 @@ export default function PremiumExportButton({ onExport, className }: PremiumExpo
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute right-0 mt-3 w-72 bg-white/80 backdrop-blur-xl border border-white/40 rounded-[32px] shadow-2xl shadow-slate-200/50 z-50 overflow-hidden p-3 origin-top-right"
+              className="absolute right-0 z-50 mt-3 w-72 max-w-[calc(100vw-2rem)] origin-top-right overflow-hidden rounded-[32px] border border-white/40 bg-white/80 p-3 shadow-2xl shadow-slate-200/50 backdrop-blur-xl"
             >
               <div className="px-4 py-3 mb-2 border-b border-slate-100">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Định dạng file</p>

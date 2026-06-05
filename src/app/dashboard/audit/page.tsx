@@ -705,7 +705,7 @@ export default function AuditPage() {
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-3"
+          className="bella-toolbar flex items-center gap-3"
         >
           <button 
             onClick={fetchLogs}
@@ -722,7 +722,7 @@ export default function AuditPage() {
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 p-5 bg-white border border-slate-100 rounded-2xl shadow-sm"
+        className="bella-toolbar grid grid-cols-1 gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm md:grid-cols-4"
       >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -860,11 +860,11 @@ export default function AuditPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+          <div className="flex flex-col gap-3 border-t border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-slate-500">
               Trang {currentPage} / {totalPages}
             </p>
-            <div className="flex gap-2">
+            <div className="bella-pagination sm:w-auto">
               <button 
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}

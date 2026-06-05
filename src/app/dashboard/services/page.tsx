@@ -75,7 +75,7 @@ export default function ServicesPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Quản lý dịch vụ</h1>
           <p className="text-slate-500 font-medium mt-1">Thiết lập bảng giá và các chương trình ưu đãi</p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="bella-toolbar flex flex-col gap-3 sm:flex-row">
           <button 
             onClick={syncDefaultPackages}
             title="Đồng bộ các gói dịch vụ mặc định của Bella Spa từ Landing Page thành các bản nháp trong ERP"
@@ -94,7 +94,7 @@ export default function ServicesPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4 md:mb-8 lg:flex-row lg:items-center">
+      <div className="bella-toolbar mb-6 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4 md:mb-8 lg:flex-row lg:items-center">
         <div className="relative flex-1 w-full group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
           <input 
@@ -233,7 +233,7 @@ export default function ServicesPage() {
             Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{filteredServices.length}</span> gói dịch vụ
           </p>
           
-          <div className="flex max-w-full items-center gap-2 overflow-x-auto pb-1">
+          <div className="bella-pagination">
             <button 
               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
