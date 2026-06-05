@@ -660,7 +660,7 @@ export default function LandingPage() {
                   Thông tin đăng ký tư vấn
                 </h3>
 
-                <form onSubmit={handleBooking} className="space-y-5">
+                <form onSubmit={handleBooking} noValidate className="space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     
                     {/* Name */}
