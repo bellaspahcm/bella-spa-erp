@@ -29,6 +29,11 @@ const accountTypes: { value: AccountType; label: string }[] = [
   { value: 'EXPENSE', label: '6xx, 8xx - CHI PHÍ (EXPENSE)' },
 ];
 
+const treeScrollClassName =
+  'overflow-x-auto overscroll-x-contain -mx-6 px-6 pb-2 shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)] md:-mx-8 md:px-8';
+const stickyAccountCellClassName =
+  'sticky left-0 z-20 bg-inherit pr-4 shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
+
 export default function ChartOfAccountsPage() {
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
@@ -165,13 +170,13 @@ export default function ChartOfAccountsPage() {
 
     return (
       <div key={node.id} className="w-full">
-        <div 
-          className={`flex items-center justify-between py-3 px-4 rounded-xl border border-slate-50 dark:border-[#3E3A35]/30 hover:bg-slate-50/50 dark:hover:bg-[#1C1B19]/50 transition-colors ${
+        <div
+          className={`flex min-w-[52rem] items-center justify-between rounded-xl border border-slate-50 px-4 py-3 transition-colors hover:bg-slate-50/50 dark:border-[#3E3A35]/30 dark:hover:bg-[#1C1B19]/50 ${
             depth === 0 ? 'bg-white dark:bg-[#1C1B19] font-black' : 'bg-transparent font-medium'
           }`}
           style={{ paddingLeft: `${Math.max(16, depth * 28)}px` }}
         >
-          <div className="flex items-center gap-3 min-w-0">
+          <div className={`${stickyAccountCellClassName} flex min-w-[22rem] items-center gap-3`}>
             {hasChildren ? (
               <button 
                 onClick={() => toggleNode(node.id)}
@@ -188,10 +193,10 @@ export default function ChartOfAccountsPage() {
             <span className="font-mono text-xs px-2.5 py-0.5 bg-slate-100 dark:bg-[#3E3A35] text-slate-700 dark:text-[#EFE9E1] rounded-md border border-slate-200/50 dark:border-none">
               {node.account_code}
             </span>
-            <span className="text-slate-800 dark:text-[#EFE9E1] whitespace-nowrap text-sm">{node.account_name}</span>
+            <span className="text-sm whitespace-nowrap text-slate-800 dark:text-[#EFE9E1]">{node.account_name}</span>
           </div>
 
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex shrink-0 items-center gap-4">
             <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wider border uppercase ${typeBadges[node.account_type]}`}>
               {node.account_type}
             </span>
@@ -219,8 +224,8 @@ export default function ChartOfAccountsPage() {
   return (
     <div className="space-y-8">
       {/* ── HEADER SEARCH & FILTERS ── */}
-      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 max-w-2xl">
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 sm:p-6 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+        <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-[minmax(14rem,1fr)_minmax(13rem,16rem)] xl:max-w-3xl">
           {/* Search bar */}
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -245,13 +250,13 @@ export default function ChartOfAccountsPage() {
               { value: 'REVENUE', label: 'Doanh thu (Revenue)' },
               { value: 'EXPENSE', label: 'Chi phí (Expense)' },
             ]}
-            className="w-52 text-xs"
+            className="w-full text-xs"
           />
         </div>
 
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none uppercase tracking-widest text-xs shrink-0 active:scale-95 cursor-pointer"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-pink-100 transition-all hover:bg-primary-hover active:scale-95 dark:shadow-none sm:w-auto xl:shrink-0"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Thêm tài khoản</span>
@@ -275,8 +280,8 @@ export default function ChartOfAccountsPage() {
             <p className="font-extrabold uppercase text-xs tracking-wider">Không tìm thấy tài khoản phù hợp</p>
           </div>
         ) : (
-          <div className="overflow-x-auto -mx-6 md:-mx-8 px-6 md:px-8 pb-2">
-            <div className="space-y-2 min-w-[600px] md:min-w-full">
+          <div className={treeScrollClassName}>
+            <div className="min-w-[52rem] space-y-2">
               {treeData.map((node) => renderTreeNode(node, 0))}
             </div>
           </div>
@@ -370,7 +375,7 @@ export default function ChartOfAccountsPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-50 dark:border-[#3E3A35]/30">
+                <div className="flex flex-col gap-3 border-t border-slate-50 pt-4 dark:border-[#3E3A35]/30 sm:flex-row sm:items-center">
                   <button 
                     type="button" 
                     onClick={() => setIsModalOpen(false)}

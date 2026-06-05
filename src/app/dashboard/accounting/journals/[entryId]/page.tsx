@@ -23,6 +23,14 @@ import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-e
 type JournalEntryDetails = Awaited<ReturnType<typeof getJournalEntryDetails>>;
 type JournalLineRow = NonNullable<JournalEntryDetails['journal_lines']>[number];
 
+const tableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
+const tableClassName = 'w-max min-w-[48rem] border-collapse whitespace-nowrap';
+const stickyHeaderCellClassName =
+  'sticky left-0 z-30 bg-slate-50 shadow-[10px_0_16px_-14px_rgba(15,23,42,0.65)] dark:bg-[#11100F]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-inherit shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
+
 interface PageProps {
   params: Promise<{ entryId: string }>;
 }
@@ -130,7 +138,7 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
         {entry.status === 'POSTED' && (
           <button 
             onClick={() => setIsReversing(true)}
-            className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white px-6 py-3.5 rounded-2xl font-black transition-all shadow-lg shadow-red-100 uppercase tracking-widest text-3xs shrink-0 active:scale-95 cursor-pointer border-none"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-none bg-red-600 px-6 py-3.5 text-3xs font-black uppercase tracking-widest text-white shadow-lg shadow-red-100 transition-all hover:bg-red-500 active:scale-95 md:w-auto md:shrink-0"
           >
             <Trash2 className="w-4 h-4" />
             <span>Đảo bút toán (Reversal)</span>
@@ -181,11 +189,11 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
           Chi tiết định khoản Nợ / Có
         </h4>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <div className={tableWrapperClassName}>
+          <table className={tableClassName}>
             <thead>
               <tr className="text-left bg-slate-50/50 dark:bg-[#11100F]/40 border-b border-slate-100 dark:border-[#3E3A35]/30">
-                <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Tài khoản</th>
+                <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Tài khoản</th>
                 <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Tên tài khoản</th>
                 <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Số phát sinh Nợ</th>
                 <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right">Số phát sinh Có</th>
@@ -194,7 +202,7 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
             <tbody className="divide-y divide-slate-50 dark:divide-[#3E3A35]/20">
               {entry.journal_lines?.map((line: JournalLineRow) => (
                 <tr key={line.id} className="hover:bg-slate-50/10 dark:hover:bg-[#11100F]/10 transition-colors">
-                  <td className="px-6 py-4">
+                  <td className={`${stickyBodyCellClassName} px-6 py-4`}>
                     <span className="font-mono font-black text-slate-800 dark:text-[#EFE9E1] px-2.5 py-1 bg-slate-100 dark:bg-[#3E3A35] rounded-lg">
                       {line.accounting_accounts?.account_code}
                     </span>
@@ -217,7 +225,7 @@ export default function JournalEntryDetailsPage({ params }: PageProps) {
 
               {/* Aggregation Totals row */}
               <tr className="bg-slate-50/50 dark:bg-[#11100F]/50 font-black border-t border-slate-200 dark:border-[#3E3A35]">
-                <td colSpan={2} className="px-6 py-5 text-xs text-slate-800 dark:text-[#EFE9E1] uppercase tracking-wider flex items-center gap-2">
+                <td colSpan={2} className={`${stickyBodyCellClassName} px-6 py-5 text-xs text-slate-800 dark:text-[#EFE9E1] uppercase tracking-wider`}>
                   <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                   Tổng phát sinh cân đối
                 </td>

@@ -168,7 +168,7 @@ export default function ManualEntryPage() {
           Phiếu kế toán điều chỉnh thủ công (Manual Journal Voucher)
         </h4>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* Entry Date */}
           <div className="space-y-1.5">
             <label className="text-2xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest block flex items-center gap-1">
@@ -179,7 +179,7 @@ export default function ManualEntryPage() {
               type="date" 
               value={entryDate}
               onChange={(e) => setEntryDate(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 dark:bg-[#11100F] border border-slate-100 dark:border-[#3E3A35]/50 rounded-xl text-xs font-bold outline-none text-slate-800 dark:text-[#EFE9E1]" 
+              className="h-11 w-full min-w-[10.75rem] rounded-xl border border-slate-100 bg-slate-50 px-4 pr-10 text-xs font-bold text-slate-800 outline-none [color-scheme:light] dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1] dark:[color-scheme:dark]"
             />
           </div>
 
@@ -210,15 +210,15 @@ export default function ManualEntryPage() {
           {lines.map((line, idx) => (
             <div 
               key={idx} 
-              className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end p-4 bg-slate-50/50 dark:bg-[#11100F]/30 rounded-2xl border border-slate-100 dark:border-[#3E3A35]/20"
+              className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-[#3E3A35]/20 dark:bg-[#11100F]/30 sm:grid-cols-2 xl:grid-cols-12 xl:items-end"
             >
               {/* STT indicator */}
-              <div className="md:col-span-1 flex items-center justify-center h-10 text-2xs font-black text-slate-400 dark:text-[#CDBCAB]/40">
+              <div className="flex h-10 items-center justify-start text-2xs font-black text-slate-400 dark:text-[#CDBCAB]/40 sm:col-span-2 xl:col-span-1 xl:justify-center">
                 #{idx + 1}
               </div>
 
               {/* Account select */}
-              <div className="md:col-span-4 space-y-1">
+              <div className="space-y-1 sm:col-span-2 xl:col-span-4">
                 <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Tài khoản</span>
                 <PremiumSelect
                   value={line.account_id}
@@ -238,7 +238,7 @@ export default function ManualEntryPage() {
               </div>
 
               {/* Debit Amount */}
-              <div className="md:col-span-2 space-y-1">
+              <div className="space-y-1 xl:col-span-2">
                 <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Phát sinh Nợ</span>
                 <input 
                   type="number" 
@@ -250,7 +250,7 @@ export default function ManualEntryPage() {
               </div>
 
               {/* Credit Amount */}
-              <div className="md:col-span-2 space-y-1">
+              <div className="space-y-1 xl:col-span-2">
                 <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Phát sinh Có</span>
                 <input 
                   type="number" 
@@ -262,7 +262,7 @@ export default function ManualEntryPage() {
               </div>
 
               {/* Dimension: KTV */}
-              <div className="md:col-span-2 space-y-1">
+              <div className="space-y-1 sm:col-span-2 xl:col-span-2">
                 <span className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">KTV (Nếu có)</span>
                 <PremiumSelect
                   value={line.ktv_id}
@@ -277,11 +277,11 @@ export default function ManualEntryPage() {
               </div>
 
               {/* Delete line */}
-              <div className="md:col-span-1 flex justify-center pb-0.5">
+              <div className="flex justify-stretch pb-0.5 sm:col-span-2 xl:col-span-1 xl:justify-center">
                 <button 
                   type="button"
                   onClick={() => handleRemoveLine(idx)}
-                  className="p-2.5 bg-white dark:bg-[#1C1B19] hover:bg-rose-50 dark:hover:bg-red-950/20 text-rose-600 border border-slate-100 dark:border-[#3E3A35]/60 hover:border-rose-200 rounded-xl transition-all active:scale-95 cursor-pointer"
+                  className="flex w-full items-center justify-center p-2.5 rounded-xl border border-slate-100 bg-white text-rose-600 transition-all hover:border-rose-200 hover:bg-rose-50 active:scale-95 dark:border-[#3E3A35]/60 dark:bg-[#1C1B19] dark:hover:bg-red-950/20 xl:w-auto"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -294,7 +294,7 @@ export default function ManualEntryPage() {
         <button 
           type="button"
           onClick={handleAddLine}
-          className="flex items-center gap-1.5 px-5 py-3 border border-[#FFE4E6] dark:border-[#3E3A35] hover:border-primary dark:hover:border-[#A67D44] bg-slate-50/20 dark:bg-transparent text-[#4C243B] dark:text-[#CDBCAB] hover:text-primary rounded-xl text-2xs font-black uppercase tracking-widest transition-all active:scale-95 cursor-pointer"
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[#FFE4E6] bg-slate-50/20 px-5 py-3 text-2xs font-black uppercase tracking-widest text-[#4C243B] transition-all hover:border-primary hover:text-primary active:scale-95 dark:border-[#3E3A35] dark:bg-transparent dark:text-[#CDBCAB] dark:hover:border-[#A67D44] sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Thêm dòng định khoản</span>
@@ -302,9 +302,9 @@ export default function ManualEntryPage() {
       </div>
 
       {/* ── REALTIME VOUCHER BALANCE STATUS CARD ── */}
-      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         {/* Balanced indicators */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
             isBalanced 
               ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400' 
@@ -316,10 +316,9 @@ export default function ManualEntryPage() {
             <h5 className="font-extrabold uppercase text-xs tracking-wider text-slate-800 dark:text-[#EFE9E1]">
               {isBalanced ? 'Định khoản cân đối Nợ/Có' : 'Bút toán chưa cân đối'}
             </h5>
-            <div className="flex items-center gap-3 text-2xs font-mono font-bold text-slate-500 mt-0.5">
+            <div className="mt-1 grid grid-cols-1 gap-1 text-2xs font-mono font-bold text-slate-500 sm:grid-cols-[auto_auto] sm:gap-3">
               <span>Nợ: <span className="text-emerald-600 font-extrabold">{totalDebit.toLocaleString()}đ</span></span>
-              <span>•</span>
-              <span>Có: <span className="text-rose-600 font-extrabold">{totalCredit.toLocaleString()}đ</span></span>
+<span>Có: <span className="text-rose-600 font-extrabold">{totalCredit.toLocaleString()}đ</span></span>
             </div>
           </div>
         </div>
@@ -328,7 +327,7 @@ export default function ManualEntryPage() {
         <button 
           type="submit" 
           disabled={saving || !isBalanced || !hasAccountsSelected}
-          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-[#11100F] dark:disabled:text-slate-600 text-white px-8 py-4 rounded-2xl font-black transition-all shadow-lg shadow-pink-100 dark:shadow-none disabled:shadow-none uppercase tracking-widest text-xs shrink-0 active:scale-95 cursor-pointer border-none"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border-none bg-primary px-8 py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-pink-100 transition-all hover:bg-primary-hover active:scale-95 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none dark:shadow-none dark:disabled:bg-[#11100F] dark:disabled:text-slate-600 lg:w-auto lg:shrink-0"
         >
           <span>Ghi sổ bút toán</span>
           <ArrowRight className="w-4 h-4" />

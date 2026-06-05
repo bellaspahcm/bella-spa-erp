@@ -28,6 +28,14 @@ const statuses: { value: OutboxStatusFilter; label: string }[] = [
   { value: 'DEAD', label: 'DEAD (KẸT NGHIÊM TRỌNG)' },
 ];
 
+const tableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
+const tableClassName = 'w-max min-w-[76rem] border-collapse whitespace-nowrap';
+const stickyHeaderCellClassName =
+  'sticky left-0 z-30 bg-slate-50 shadow-[10px_0_16px_-14px_rgba(15,23,42,0.65)] dark:bg-[#11100F]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-inherit shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)] dark:shadow-[10px_0_16px_-14px_rgba(239,233,225,0.35)]';
+
 export default function OutboxMonitorPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,7 +98,7 @@ export default function OutboxMonitorPage() {
       )}
 
       {/* ── FILTER TABS ── */}
-      <div className="flex items-center gap-1 bg-white dark:bg-[#1C1B19] p-1.5 rounded-2xl border border-slate-100 dark:border-[#3E3A35]/30 shadow-sm w-fit overflow-x-auto max-w-full">
+      <div className="flex w-full max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-slate-100 bg-white p-1.5 shadow-sm dark:border-[#3E3A35]/30 dark:bg-[#1C1B19] sm:w-fit">
         {statuses.map((s) => (
           <button 
             key={s.value}
@@ -126,11 +134,11 @@ export default function OutboxMonitorPage() {
             <p className="font-extrabold uppercase text-xs tracking-wider">Hàng đợi trống. Toàn bộ sự kiện đã hạch toán!</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
+          <div className={tableWrapperClassName}>
+            <table className={tableClassName}>
               <thead>
                 <tr className="text-left bg-slate-50/50 dark:bg-[#11100F]/40 border-b border-slate-100 dark:border-[#3E3A35]/30">
-                  <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Loại Sự kiện (Event)</th>
+                  <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Loại Sự kiện (Event)</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Chứng từ Gốc (Ref)</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Lần thử lại</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Lỗi chi tiết (Last Error)</th>
@@ -158,8 +166,8 @@ export default function OutboxMonitorPage() {
                       whileHover={{ backgroundColor: 'rgba(244,63,94,0.01)' }}
                       className="hover:bg-slate-50/20 dark:hover:bg-[#11100F]/10 transition-colors"
                     >
-                      <td className="px-6 py-4">
-                        <div>
+                      <td className={`${stickyBodyCellClassName} px-6 py-4`}>
+                        <div className="max-w-[18rem]">
                           <p className="text-xs font-black text-slate-800 dark:text-[#EFE9E1] leading-snug">{ev.event_type}</p>
                           <span className="text-4xs font-mono text-slate-400 dark:text-[#CDBCAB]/40 mt-1 block">ID: {ev.id}</span>
                         </div>
@@ -177,16 +185,16 @@ export default function OutboxMonitorPage() {
                       <td className="px-6 py-4 text-center text-xs font-black text-slate-700 dark:text-[#CDBCAB]/90 font-mono">
                         {ev.retry_count} / {ev.max_retries}
                       </td>
-                      <td className="px-6 py-4 max-w-xs">
+                      <td className="px-6 py-4">
                         {ev.last_error ? (
-                          <p className="text-3xs font-extrabold text-red-500 bg-red-50/30 dark:bg-red-950/10 p-2.5 rounded-lg border border-red-100/30 dark:border-none leading-snug overflow-hidden text-ellipsis">
+                          <p className="line-clamp-3 w-[22rem] whitespace-normal break-words rounded-lg border border-red-100/30 bg-red-50/30 p-2.5 text-3xs font-extrabold leading-snug text-red-500 dark:border-none dark:bg-red-950/10">
                             {ev.last_error}
                           </p>
                         ) : (
                           <span className="text-3xs font-bold text-slate-300">—</span>
                         )}
                         {ev.next_retry_at && (isFailed || ev.status === 'PENDING') && (
-                          <span className="text-4xs font-bold text-slate-400 dark:text-[#CDBCAB]/45 mt-1 block flex items-center gap-1">
+                          <span className="mt-1 flex items-center gap-1 text-4xs font-bold text-slate-400 dark:text-[#CDBCAB]/45">
                             <Clock className="w-3 h-3 text-slate-300" />
                             Đến hạn: {new Date(ev.next_retry_at).toLocaleTimeString('vi-VN')}
                           </span>
@@ -247,7 +255,7 @@ export default function OutboxMonitorPage() {
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35] shadow-2xl p-8 max-w-lg w-full relative z-10 space-y-6"
+              className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35] shadow-2xl p-5 sm:p-8 max-w-3xl w-full max-h-[90vh] overflow-hidden relative z-10 space-y-6"
             >
               <div className="flex items-center justify-between border-b border-slate-50 dark:border-[#3E3A35]/30 pb-4">
                 <h4 className="text-lg font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wide">Chi tiết Event Payload</h4>
@@ -260,8 +268,8 @@ export default function OutboxMonitorPage() {
               </div>
 
               {/* Pretty JSON codebox */}
-              <div className="bg-slate-900 dark:bg-[#11100F] p-5 rounded-2xl border border-slate-950 dark:border-none overflow-auto max-h-96">
-                <pre className="font-mono text-2xs text-emerald-400 leading-normal scrollbar-none">
+              <div className="bg-slate-900 dark:bg-[#11100F] p-4 sm:p-5 rounded-2xl border border-slate-950 dark:border-none overflow-auto max-h-[58vh]">
+                <pre className="min-w-max font-mono text-2xs text-emerald-400 leading-normal">
                   {JSON.stringify(viewingPayload, null, 2)}
                 </pre>
               </div>
@@ -269,7 +277,7 @@ export default function OutboxMonitorPage() {
               <div className="flex justify-end">
                 <button 
                   onClick={() => setViewingPayload(null)}
-                  className="bg-slate-900 hover:bg-slate-800 dark:bg-[#5D1C34] text-white dark:text-[#EFE9E1] px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all cursor-pointer border-none"
+                  className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-[#5D1C34] text-white dark:text-[#EFE9E1] px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest active:scale-95 transition-all cursor-pointer border-none sm:w-auto"
                 >
                   Đóng cửa sổ
                 </button>

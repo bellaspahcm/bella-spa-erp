@@ -150,7 +150,7 @@ export default function AICopilotClient() {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative bg-background text-foreground">
+    <div className="flex-1 min-h-[calc(100vh-4rem)] lg:min-h-screen flex flex-col overflow-y-auto lg:overflow-hidden relative bg-background text-foreground">
       {/* Dynamic Background Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
@@ -177,16 +177,16 @@ export default function AICopilotClient() {
       </header>
 
       {/* Main Board */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative z-10 p-6 gap-6 min-h-0">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-visible lg:overflow-hidden relative z-10 p-4 sm:p-6 gap-4 sm:gap-6 min-h-0">
         
         {/* Chat Area (Left 3/5) */}
-        <div className="flex-1 flex flex-col bg-card/40 border border-border rounded-[2rem] overflow-hidden backdrop-blur-md shadow-lg">
+        <div className="flex min-h-[32rem] flex-col bg-card/40 border border-border rounded-3xl lg:rounded-[2rem] overflow-hidden backdrop-blur-md shadow-lg lg:flex-1 lg:min-h-0">
           {/* Scrollable messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6 custom-scrollbar">
             {messages.map((msg, index) => (
               <div 
                 key={index}
-                className={`flex gap-4 max-w-[85%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                className={`flex gap-3 sm:gap-4 max-w-[92%] sm:max-w-[85%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
               >
                 <div className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center shadow-md ${
                   msg.role === "user" 
@@ -196,8 +196,8 @@ export default function AICopilotClient() {
                   {msg.role === "user" ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
                 </div>
 
-                <div className="space-y-4">
-                  <div className={`rounded-3xl p-5 border text-sm leading-relaxed shadow-sm ${
+                <div className="min-w-0 space-y-4">
+                  <div className={`rounded-2xl sm:rounded-3xl p-4 sm:p-5 border text-sm leading-relaxed shadow-sm ${
                     msg.role === "user" 
                       ? "bg-primary text-primary-foreground border-primary/20 shadow-md" 
                       : "bg-card border-border text-foreground shadow-sm"
@@ -246,7 +246,7 @@ export default function AICopilotClient() {
           {/* Form Input */}
           <form 
             onSubmit={handleSend}
-            className="shrink-0 p-4 border-t border-border bg-card/60 flex items-center gap-3 relative z-10"
+            className="shrink-0 p-3 sm:p-4 border-t border-border bg-card/60 flex items-center gap-2 sm:gap-3 relative z-10"
           >
             <input 
               type="text"
@@ -254,12 +254,12 @@ export default function AICopilotClient() {
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
               placeholder="Nhập yêu cầu (ví dụ: 'Đối soát quỹ', 'Tính lương KTV Hoa'...)"
-              className="flex-1 bg-muted border border-border rounded-2xl px-5 py-4 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all disabled:opacity-50"
+              className="min-w-0 flex-1 bg-muted border border-border rounded-2xl px-4 sm:px-5 py-3.5 sm:py-4 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all disabled:opacity-50"
             />
             <button 
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="bg-primary hover:bg-primary-hover text-white font-bold px-6 py-4 rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
+              className="shrink-0 bg-primary hover:bg-primary-hover text-white font-bold px-4 sm:px-6 py-3.5 sm:py-4 rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 cursor-pointer"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -267,7 +267,7 @@ export default function AICopilotClient() {
         </div>
 
         {/* Action Board (Right 2/5) */}
-        <div className="w-full lg:w-96 flex flex-col bg-card/40 border border-border rounded-[2rem] overflow-hidden backdrop-blur-md shadow-lg p-6 space-y-6">
+        <div className="w-full lg:w-96 flex min-h-[24rem] lg:min-h-0 flex-col bg-card/40 border border-border rounded-3xl lg:rounded-[2rem] overflow-hidden backdrop-blur-md shadow-lg p-4 sm:p-6 space-y-5 sm:space-y-6">
           <div className="shrink-0">
             <h3 className="text-sm font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase tracking-widest flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" /> Bảng Duyệt Hành Động (Mức A)
