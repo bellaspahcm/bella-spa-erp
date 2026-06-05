@@ -40,6 +40,11 @@ import {
 } from '@/services/clearing-actions';
 import { allocateOrphanedRevenue, collectDebtPayment } from '@/services/reconciliation-actions';
 
+const tableWrapperClassName =
+  'w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.42)]';
+const stickyBodyCellClassName =
+  'sticky left-0 z-20 bg-white shadow-[10px_0_16px_-14px_rgba(15,23,42,0.55)]';
+
 export default function FinancialReconciliationPage() {
   const [data, setData] = useState<FinancialAnomaliesData>({
     debt_alerts: [],
@@ -423,7 +428,7 @@ export default function FinancialReconciliationPage() {
       </div>
 
       {/* DATA TABLES */}
-      <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden w-full max-w-full">
+      <div className="bg-white rounded-3xl sm:rounded-[40px] shadow-sm border border-slate-100 overflow-hidden w-full max-w-full">
         {isLoading ? (
           <div className="p-20 text-center">
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
@@ -439,8 +444,18 @@ export default function FinancialReconciliationPage() {
               </div>
               
               <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto custom-scrollbar w-full">
-                  <table className="w-full min-w-[1000px]">
+                <div className={tableWrapperClassName}>
+                  <table className="w-[80rem] table-fixed border-collapse">
+                    <colgroup>
+                      <col className="w-[14rem]" />
+                      <col className="w-[18rem]" />
+                      <col className="w-[9rem]" />
+                      <col className="w-[9rem]" />
+                      <col className="w-[12rem]" />
+                      <col className="w-[14rem]" />
+                      <col className="w-[12rem]" />
+                      <col className="w-[12rem]" />
+                    </colgroup>
                     <thead>
                       <tr className="bg-slate-50/50">
                         <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Mã đối soát</th>
@@ -463,7 +478,7 @@ export default function FinancialReconciliationPage() {
                       ) : (
                         payables.map((rec) => (
                           <tr key={rec.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600 whitespace-nowrap">
+                            <td className={`${stickyBodyCellClassName} px-6 py-4 font-mono text-xs font-bold text-slate-600 whitespace-nowrap`}>
                               {rec.clearing_number}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -531,8 +546,18 @@ export default function FinancialReconciliationPage() {
               </div>
               
               <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto custom-scrollbar w-full">
-                  <table className="w-full min-w-[1000px]">
+                <div className={tableWrapperClassName}>
+                  <table className="w-[80rem] table-fixed border-collapse">
+                    <colgroup>
+                      <col className="w-[14rem]" />
+                      <col className="w-[18rem]" />
+                      <col className="w-[9rem]" />
+                      <col className="w-[9rem]" />
+                      <col className="w-[12rem]" />
+                      <col className="w-[14rem]" />
+                      <col className="w-[12rem]" />
+                      <col className="w-[14rem]" />
+                    </colgroup>
                     <thead>
                       <tr className="bg-slate-50/50">
                         <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">Mã đối soát</th>
@@ -555,7 +580,7 @@ export default function FinancialReconciliationPage() {
                       ) : (
                         receivables.map((rec) => (
                           <tr key={rec.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-6 py-4 font-mono text-xs font-bold text-slate-600 whitespace-nowrap">
+                            <td className={`${stickyBodyCellClassName} px-6 py-4 font-mono text-xs font-bold text-slate-600 whitespace-nowrap`}>
                               {rec.clearing_number}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -596,8 +621,15 @@ export default function FinancialReconciliationPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto custom-scrollbar w-full">
-            <table className="w-full min-w-[900px]">
+          <div className={tableWrapperClassName}>
+            <table className="w-[76rem] table-fixed border-collapse">
+              <colgroup>
+                <col className="w-[24rem]" />
+                <col className="w-[14rem]" />
+                <col className="w-[14rem]" />
+                <col className="w-[14rem]" />
+                <col className="w-[12rem]" />
+              </colgroup>
               <thead>
                 <tr className="bg-slate-50/50">
                   {activeTab === 'debt' && (
@@ -640,7 +672,7 @@ export default function FinancialReconciliationPage() {
                 {/* DEBT TAB */}
                 {activeTab === 'debt' && filteredDebt.map((item, i) => (
                   <tr key={item.booking_id || i} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6 whitespace-nowrap">
+                    <td className={`${stickyBodyCellClassName} px-8 py-6 whitespace-nowrap`}>
                       <div className="font-black text-sm text-slate-900">{item.customer_name}</div>
                       <div className="text-xs text-slate-500 font-medium mt-1">{item.package_name || 'Gói Dịch Vụ'}</div>
                       <div className="text-[10px] text-slate-300 font-mono mt-1">ID: {item.booking_id?.split('-')[0]}...</div>
@@ -671,7 +703,7 @@ export default function FinancialReconciliationPage() {
                 {/* ORPHAN TAB */}
                 {activeTab === 'orphan' && filteredOrphan.map((item, i) => (
                   <tr key={item.revenue_id || i} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6 whitespace-nowrap">
+                    <td className={`${stickyBodyCellClassName} px-8 py-6 whitespace-nowrap`}>
                       <div className="font-mono text-xs text-slate-900 bg-slate-100 inline-block px-2 py-1 rounded-lg">
                         {item.revenue_id?.split('-')[0]}...
                       </div>
@@ -679,7 +711,7 @@ export default function FinancialReconciliationPage() {
                         {item.revenue_type || 'UNKNOWN TYPE'} • {item.received_date}
                       </div>
                     </td>
-                    <td className="px-8 py-6 whitespace-nowrap">
+                    <td className={`${stickyBodyCellClassName} px-8 py-6 whitespace-nowrap`}>
                       <p className="text-sm text-slate-600 font-medium max-w-xs truncate">{item.notes || <span className="italic text-slate-300">Không có ghi chú</span>}</p>
                     </td>
                     <td className="px-8 py-6 text-right font-black text-amber-600 text-lg whitespace-nowrap">
@@ -723,7 +755,7 @@ export default function FinancialReconciliationPage() {
                 {/* HISTORY TAB */}
                 {activeTab === 'history' && filteredHistory.map((item, i) => (
                   <tr key={item.revenue_id || i} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-8 py-6 align-top whitespace-nowrap">
+                    <td className={`${stickyBodyCellClassName} px-8 py-6 align-top whitespace-nowrap`}>
                       <div className="font-black text-sm text-slate-900">{item.received_date}</div>
                       <div className="text-[10px] font-mono text-slate-400 mt-1">ID: {item.revenue_id?.split('-')[0]}</div>
                     </td>
