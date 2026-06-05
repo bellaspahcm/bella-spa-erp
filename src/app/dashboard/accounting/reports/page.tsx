@@ -594,7 +594,7 @@ export default function AccountingReportsPage() {
           <div className="space-y-6">
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">SỔ CHI TIẾT TÀI KHOẢN KẾ TOÁN</h4>
             <div className={reportTableWrapperClassName}>
-              <table className="w-[82rem] table-fixed border-collapse whitespace-nowrap">
+              <table className="bella-data-table min-w-[82rem] whitespace-nowrap">
                 <colgroup>
                   <col className="w-[10rem]" />
                   <col className="w-[32rem]" />

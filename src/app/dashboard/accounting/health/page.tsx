@@ -213,7 +213,7 @@ export default function AccountingHealthPage() {
             </div>
           ) : (
             <div className={tableWrapperClassName}>
-              <table className="w-[58rem] table-fixed border-collapse text-xs whitespace-nowrap">
+              <table className="bella-data-table min-w-[58rem] text-xs whitespace-nowrap">
                 <colgroup>
                   <col className="w-[24rem]" />
                   <col className="w-[8rem]" />
@@ -291,7 +291,7 @@ export default function AccountingHealthPage() {
           </div>
         ) : (
           <div className={tableWrapperClassName}>
-            <table className="w-[64rem] table-fixed border-collapse text-xs whitespace-nowrap">
+            <table className="bella-data-table min-w-[64rem] text-xs whitespace-nowrap">
               <colgroup>
                 <col className="w-[14rem]" />
                 <col className="w-[20rem]" />

@@ -137,27 +137,28 @@ async function expectFinanceTransactionCellsDoNotBleed(page: Page) {
   const result = await page.evaluate(() => {
     const table = Array.from(document.querySelectorAll("table")).find((candidate) =>
       candidate.textContent?.includes("Chi tiết nghiệp vụ"),
-    );
+    ) as HTMLTableElement | undefined;
     const row = table?.querySelector("tbody tr");
     const cells = row ? (Array.from(row.children).slice(0, 2) as HTMLElement[]) : [];
 
     return {
       foundTable: Boolean(table),
+      isResponsiveDataTable: Boolean(table?.classList.contains("bella-data-table")),
+      usesFixedLayout: Boolean(table?.classList.contains("table-fixed")),
       foundRow: Boolean(row),
       cells: cells.map((cell) => {
         const rect = cell.getBoundingClientRect();
-        const styles = window.getComputedStyle(cell);
         return {
           left: rect.left,
           right: rect.right,
-          overflowX: styles.overflowX,
-          textOverflow: styles.textOverflow,
         };
       }),
     };
   });
 
   expect(result.foundTable, "finance transaction table should render").toBe(true);
+  expect(result.isResponsiveDataTable, "finance transaction table should use horizontal data-table layout").toBe(true);
+  expect(result.usesFixedLayout, "finance transaction table should not lock columns with table-fixed").toBe(false);
   if (!result.foundRow) {
     return;
   }
@@ -165,10 +166,11 @@ async function expectFinanceTransactionCellsDoNotBleed(page: Page) {
   expect(result.cells[0].right, "finance category cell should not overlap detail cell").toBeLessThanOrEqual(
     result.cells[1].left + 1,
   );
-  for (const cell of result.cells) {
-    expect(cell.overflowX, "long finance text cells should clip overflowing text").not.toBe("visible");
-    expect(cell.textOverflow, "long finance text cells should ellipsize overflowing text").toBe("ellipsis");
-  }
+}
+
+async function expectNoFixedTables(page: Page, routeName: string) {
+  const fixedTableCount = await page.locator("table.table-fixed").count();
+  expect(fixedTableCount, `${routeName} should not use fixed table layout on responsive data tables`).toBe(0);
 }
 
 async function expectMobileToolbarsFitViewport(page: Page, routeName: string) {
@@ -270,6 +272,7 @@ test.describe("Responsive visual smoke", () => {
 
         if (viewport.name === "mobile") {
           await expectMobileToolbarsFitViewport(adminPage, route.name);
+          await expectNoFixedTables(adminPage, route.name);
         }
 
         await testInfo.attach(`${viewport.name}-${route.name}.png`, {

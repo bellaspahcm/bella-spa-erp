@@ -246,6 +246,23 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 100%;
 }
 
+.bella-data-table {
+  border-collapse: collapse;
+  table-layout: auto;
+  width: max-content;
+}
+
+.bella-data-table th,
+.bella-data-table td {
+  max-width: none;
+  white-space: nowrap;
+}
+
+.bella-data-table th > *,
+.bella-data-table td > * {
+  max-width: none;
+}
+
 
 
 /* Fix date/time inputs clipping */
@@ -308,16 +325,8 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
     padding-inline-end: 0.75rem;
   }
 
-  table.table-fixed th,
-  table.table-fixed td {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  table.table-fixed th > *,
-  table.table-fixed td > * {
-    max-width: 100%;
-    min-width: 0;
+  .bella-data-table {
+    min-width: max-content;
   }
 }
 

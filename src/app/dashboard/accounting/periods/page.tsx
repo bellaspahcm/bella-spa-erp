@@ -182,7 +182,7 @@ export default function PeriodsPage() {
           </div>
         ) : (
           <div className={tableWrapperClassName}>
-            <table className="w-[72rem] table-fixed border-collapse whitespace-nowrap">
+            <table className="bella-data-table min-w-[72rem] whitespace-nowrap">
               <colgroup>
                 <col className="w-[18rem]" />
                 <col className="w-[13rem]" />

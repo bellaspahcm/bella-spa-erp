@@ -25,7 +25,7 @@ const fieldLabelClassName =
   'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/50 uppercase tracking-wider block whitespace-nowrap';
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
-const tableClassName = 'w-[82rem] table-fixed border-collapse whitespace-nowrap';
+const tableClassName = 'bella-data-table min-w-[82rem] whitespace-nowrap';
 const stickyHeaderCellClassName =
   'bg-slate-50 dark:bg-[#11100F]';
 const stickyBodyCellClassName =
