@@ -82,6 +82,17 @@ function auditInsertQuery(error: { message: string } | null = null) {
   };
 }
 
+function deleteQuery(error: { message: string } | null = null) {
+  const chain = {
+    delete: jest.fn(() => chain),
+    eq: jest.fn(() => chain),
+    then: jest.fn((onfulfilled: (value: { error: { message: string } | null }) => unknown) => (
+      Promise.resolve({ error }).then(onfulfilled)
+    )),
+  };
+  return chain;
+}
+
 function setupFromQueues(queues: Partial<Record<TableName, unknown[]>>) {
   const mutableQueues: Partial<Record<TableName, unknown[]>> = {
     bookings: [...(queues.bookings ?? [])],
@@ -308,6 +319,116 @@ describe('Payment webhook idempotency', () => {
     expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
       mockSupabase,
       expect.objectContaining({ referenceId: 'revenue-raced' }),
+      '[Payment Webhook]'
+    );
+  });
+
+  it('rolls back inserted deposit revenue and booking status when audit insert fails', async () => {
+    const bookingUpdate = updateQuery();
+    const bookingRollback = updateQuery();
+    const revenueInsert = insertQuery({
+      data: {
+        id: 'revenue-1',
+        booking_id: 'booking-1',
+        tenant_id: 'tenant-1',
+        amount: 1000000,
+        revenue_type: 'deposit',
+        payment_method: 'VietQR',
+        received_date: '2026-06-03',
+        status: 'confirmed',
+        notes: 'Webhook payment',
+        accounting_metadata: { webhook_transaction_id: 'TX123' },
+      },
+      error: null,
+    });
+    const revenueDelete = deleteQuery();
+    const auditInsert = auditInsertQuery({ message: 'audit insert failed' });
+
+    setupFromQueues({
+      bookings: [selectMaybeSingle({ ...booking }), bookingUpdate, bookingRollback],
+      revenue: [selectMaybeSingle(null), selectMaybeSingle(null), revenueInsert, revenueDelete],
+      audit_logs: [selectMaybeSingle(null), auditInsert],
+    });
+
+    const response = await POST(requestFor({
+      transferAmount: 1000000,
+      content: 'BELLA BK-100',
+      code: 'TX123',
+      transactionDate: '2026-06-03T09:00:00.000Z',
+    }));
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.processedCount).toBe(0);
+    expect(json.details).toEqual([
+      expect.objectContaining({
+        status: 'failed',
+        reason: 'Failed to insert audit log: audit insert failed',
+      }),
+    ]);
+    expect(revenueInsert.insert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        booking_id: 'booking-1',
+        revenue_type: 'deposit',
+        status: 'confirmed',
+      }),
+    ]);
+    expect(revenueDelete.delete).toHaveBeenCalled();
+    expect(revenueDelete.eq).toHaveBeenCalledWith('id', 'revenue-1');
+    expect(bookingUpdate.update).toHaveBeenCalledWith({ status: 'booked' });
+    expect(bookingRollback.update).toHaveBeenCalledWith({ status: 'deposit_pending' });
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('rolls back inserted deposit revenue and booking status when accounting outbox enqueue fails', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValue(false);
+    const bookingUpdate = updateQuery();
+    const bookingRollback = updateQuery();
+    const revenueInsert = insertQuery({
+      data: {
+        id: 'revenue-1',
+        booking_id: 'booking-1',
+        tenant_id: 'tenant-1',
+        amount: 1000000,
+        revenue_type: 'deposit',
+        payment_method: 'VietQR',
+        received_date: '2026-06-03',
+        status: 'confirmed',
+        notes: 'Webhook payment',
+        accounting_metadata: { webhook_transaction_id: 'TX123' },
+      },
+      error: null,
+    });
+    const revenueDelete = deleteQuery();
+
+    setupFromQueues({
+      bookings: [selectMaybeSingle({ ...booking }), bookingUpdate, bookingRollback],
+      revenue: [selectMaybeSingle(null), selectMaybeSingle(null), revenueInsert, revenueDelete],
+      audit_logs: [selectMaybeSingle({ id: 'audit-1' })],
+    });
+
+    const response = await POST(requestFor({
+      transferAmount: 1000000,
+      content: 'BELLA BK-100',
+      code: 'TX123',
+      transactionDate: '2026-06-03T09:00:00.000Z',
+    }));
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.processedCount).toBe(0);
+    expect(json.details).toEqual([
+      expect.objectContaining({
+        status: 'failed',
+        reason: 'Failed to enqueue accounting outbox',
+      }),
+    ]);
+    expect(revenueDelete.delete).toHaveBeenCalled();
+    expect(revenueDelete.eq).toHaveBeenCalledWith('id', 'revenue-1');
+    expect(bookingRollback.update).toHaveBeenCalledWith({ status: 'deposit_pending' });
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      mockSupabase,
+      expect.objectContaining({ referenceId: 'revenue-1' }),
       '[Payment Webhook]'
     );
   });
