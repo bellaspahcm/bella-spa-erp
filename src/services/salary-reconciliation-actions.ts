@@ -56,7 +56,9 @@ export async function getSalaryReconciliation(
     minorCount:    typedRows.filter(r => r.status === 'MINOR_DIFF').length,
     majorCount:    typedRows.filter(r => r.status === 'MAJOR_DIFF').length,
     noLegacyCount: typedRows.filter(r => r.status === 'NO_LEGACY').length,
-    totalDiffAbs:  typedRows.reduce((sum, r) => sum + Math.abs(r.diff_amount ?? 0), 0),
+    totalDiffAbs: typedRows
+      .filter((r) => r.has_legacy_record && r.status !== 'NO_LEGACY')
+      .reduce((sum, r) => sum + Math.abs(r.diff_amount ?? 0), 0),
     thresholds: AI_SALARY_RECON_THRESHOLDS,
   };
 
