@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cẩm Nang Vận Hành Kế Toán Song Song – Bella Spa ERP</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Outfit:wght@400;700;800;900&display=swap" rel="stylesheet" />
+  
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    :root {
+      /* Bảng màu REGAL Thượng Lưu & Pink Pastel của Bella Spa */
+      --bg-dark: #1C1B19; /* Nền tối hoàng gia */
+      --bg-darker: #11100F; /* Nền tối sâu */
+      --primary: #FF85A2; /* Hồng cánh sen / Pastel Pink */
+      --primary-hover: #BE185D; /* Hồng sen sẫm / Burgundy */
+      --purple-accent: #5D1C34; /* Deep Burgundy */
+      --gold-accent: #A67D44; /* Vàng kim quý tộc */
+      --gold-glow: rgba(166, 125, 68, 0.15);
+      
+      --glass-bg: rgba(26, 24, 22, 0.7);
+      --glass-border: rgba(166, 125, 68, 0.15);
+      --glass-border-hover: rgba(255, 133, 162, 0.4);
+      
+      --text-main: #EFE9E1; /* Chữ kem hoàng gia */
+      --text-muted: #CDBCAB; /* Vàng cát mờ */
+      --text-muted-dark: #8A8277; /* Vàng tro cát tối */
+      
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.15);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.15);
+      --rose: #f43f5e;
+      --rose-glow: rgba(244, 63, 94, 0.15);
+      --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(93, 28, 52, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(166, 125, 68, 0.08) 0%, transparent 45%),
+        linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
+      color: var(--text-main);
+      line-height: 1.6;
+      font-size: 15px;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* ========== SCROLLBAR ========== */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-darker);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(166, 125, 68, 0.2);
+      border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+    }
+
+    /* ========== CONTAINER ========== */
+    .app-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ========== HEADER ========== */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(28, 27, 25, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 16px 0;
+      transition: var(--transition-smooth);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-logo i {
+      font-size: 26px;
+      background: linear-gradient(135deg, var(--primary), var(--gold-accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-name {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 50%, var(--primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .badge-status {
+      background: rgba(93, 28, 52, 0.25);
+      border: 1px solid rgba(255, 133, 162, 0.3);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-status .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 133, 162, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(255, 133, 162, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 133, 162, 0); }
+    }
+
+    /* ========== HERO ========== */
+    .hero-section {
+      text-align: center;
+      padding: 80px 0 50px;
+      position: relative;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(93, 28, 52, 0.2);
+      border: 1px solid rgba(255, 133, 162, 0.25);
+      color: var(--primary);
+      padding: 6px 18px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 24px;
+    }
+
+    .hero-section h1 {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 900;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fff 30%, var(--primary) 70%, var(--gold-accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-section p {
+      font-size: 17px;
+      color: var(--text-muted);
+      max-width: 780px;
+      margin: 0 auto 36px;
+      font-weight: 500;
+    }
+
+    /* ========== NAVIGATION TABS ========== */
+    .tabs-wrapper {
+      background: rgba(28, 27, 25, 0.5);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 8px;
+      margin-bottom: 48px;
+      backdrop-filter: blur(8px);
+    }
+
+    .tabs-nav {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 6px;
+      list-style: none;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 14px 20px;
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: var(--transition-smooth);
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      background: linear-gradient(135deg, var(--purple-accent), var(--primary-hover));
+      box-shadow: 0 8px 20px rgba(93, 28, 52, 0.4);
+      border: 1px solid rgba(255, 133, 162, 0.2);
+    }
+
+    /* ========== TAB PANELS ========== */
+    .tab-panel {
+      display: none;
+      animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== CARD LAYOUTS ========== */
+    .glass-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 36px;
+      margin-bottom: 30px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition-smooth);
+    }
+
+    .glass-card:hover {
+      border-color: var(--glass-border-hover);
+      box-shadow: 0 12px 30px rgba(93, 28, 52, 0.2);
+    }
+
+    .card-glow {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 133, 162, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .panel-header-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(93, 28, 52, 0.3);
+      border: 1px solid rgba(255, 133, 162, 0.3);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+      font-size: 20px;
+    }
+
+    .panel-header-info h2 {
+      font-size: 24px;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .panel-header-info p {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* ========== FLOW DIAGRAMS ========== */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    @media (max-width: 768px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .comp-box {
+      border-radius: 18px;
+      padding: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      position: relative;
+    }
+
+    .comp-box.simple {
+      background: rgba(245, 158, 11, 0.02);
+      border-left: 4px solid var(--amber);
+      border-color: rgba(245, 158, 11, 0.15);
+    }
+
+    .comp-box.professional {
+      background: rgba(16, 185, 129, 0.02);
+      border-left: 4px solid var(--emerald);
+      border-color: rgba(16, 185, 129, 0.15);
+    }
+
+    .comp-box h3 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .comp-box.simple h3 { color: var(--amber); }
+    .comp-box.professional h3 { color: var(--emerald); }
+
+    /* ========== TABLES ========== */
+    .table-responsive {
+      overflow-x: auto;
+      border-radius: 16px;
+      border: 1px solid var(--glass-border);
+      margin: 20px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(28, 27, 25, 0.6);
+      color: #fff;
+      font-weight: 700;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--glass-border);
+      font-family: 'Be Vietnam Pro', sans-serif;
+    }
+
+    td {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+      color: #fff;
+    }
+
+    .account-code {
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 700;
+      color: var(--primary);
+      background: rgba(93, 28, 52, 0.25);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 133, 162, 0.25);
+    }
+
+    /* ========== CALLOUT BOXES ========== */
+    .callout-box {
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+      display: flex;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid transparent;
+    }
+
+    .callout-box::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+    }
+
+    .callout-box.danger {
+      background: rgba(244, 63, 94, 0.04);
+      border-color: rgba(244, 63, 94, 0.15);
+    }
+    .callout-box.danger::after { background-color: var(--rose); }
+    .callout-box.danger .c-icon { color: var(--rose); }
+
+    .callout-box.warning {
+      background: rgba(245, 158, 11, 0.04);
+      border-color: rgba(245, 158, 11, 0.15);
+    }
+    .callout-box.warning::after { background-color: var(--amber); }
+    .callout-box.warning .c-icon { color: var(--amber); }
+
+    .callout-box.info {
+      background: rgba(166, 125, 68, 0.04);
+      border-color: rgba(166, 125, 68, 0.2);
+    }
+    .callout-box.info::after { background-color: var(--gold-accent); }
+    .callout-box.info .c-icon { color: var(--gold-accent); }
+
+    .callout-box.success {
+      background: rgba(16, 185, 129, 0.04);
+      border-color: rgba(16, 185, 129, 0.15);
+    }
+    .callout-box.success::after { background-color: var(--emerald); }
+    .callout-box.success .c-icon { color: var(--emerald); }
+
+    .c-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .c-content h4 {
+      font-size: 16px;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .c-content p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== DYNAMIC GAUGE & METRICS ========== */
+    .gauge-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 30px;
+      margin: 30px 0;
+    }
+
+    @media (max-width: 768px) {
+      .gauge-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .score-circle-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(28, 27, 25, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 30px;
+    }
+
+    .circular-progress {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: conic-gradient(var(--emerald) 95%, rgba(255,255,255,0.05) 0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+    }
+
+    .circular-progress::before {
+      content: "";
+      position: absolute;
+      width: 116px;
+      height: 116px;
+      border-radius: 50%;
+      background: var(--bg-darker);
+    }
+
+    .progress-value {
+      position: relative;
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .progress-value span {
+      font-size: 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .gauge-status-label {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--emerald);
+    }
+
+    .score-details-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .score-detail-card {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sd-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sd-header i {
+      font-size: 16px;
+    }
+
+    .sd-header.success i { color: var(--emerald); }
+    .sd-header.warning i { color: var(--amber); }
+    .sd-header.danger i { color: var(--rose); }
+
+    .sd-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .sd-desc {
+      font-size: 12px;
+      color: var(--text-muted-dark);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    /* ========== INTERACTIVE CHECKLIST ========== */
+    .checklist-container {
+      background: rgba(28, 27, 25, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 30px;
+      margin-top: 24px;
+    }
+
+    .checklist-progress-bar-wrapper {
+      margin-bottom: 24px;
+    }
+
+    .c-pb-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-muted);
+    }
+
+    .c-pb-info span:last-child {
+      color: var(--primary);
+    }
+
+    .c-pb-track {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .c-pb-thumb {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--purple-accent), var(--primary));
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    .checklist-items {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      user-select: none;
+      transition: var(--transition-smooth);
+    }
+
+    .checklist-item:hover {
+      background: rgba(255, 255, 255, 0.02);
+      border-color: var(--glass-border-hover);
+    }
+
+    .checklist-item input {
+      display: none;
+    }
+
+    .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid var(--text-muted-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: transparent;
+      font-size: 11px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      transition: var(--transition-smooth);
+    }
+
+    .checklist-item input:checked + .custom-checkbox {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .checklist-item-text {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: var(--transition-smooth);
+    }
+
+    .checklist-item input:checked ~ .checklist-item-text {
+      color: #fff;
+      text-decoration: line-through;
+      opacity: 0.65;
+    }
+
+    /* ========== 8 RULES GRID ========== */
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin: 24px 0;
+    }
+
+    .rule-card {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 18px;
+      padding: 24px;
+      transition: var(--transition-smooth);
+      position: relative;
+    }
+
+    .rule-card:hover {
+      background: rgba(255, 255, 255, 0.02);
+      border-color: var(--glass-border-hover);
+      transform: translateY(-4px);
+    }
+
+    .rule-num {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.02);
+      line-height: 1;
+      transition: var(--transition-smooth);
+    }
+
+    .rule-card:hover .rule-num {
+      color: rgba(255, 133, 162, 0.05);
+    }
+
+    .rule-icon {
+      font-size: 24px;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+
+    .rule-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .rule-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ========== INTERACTIVE MINDMAP STYLING ========== */
+    .mindmap-section {
+      margin-top: 16px;
+    }
+
+    .mindmap-wrapper {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    @media (max-width: 1024px) {
+      .mindmap-wrapper {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+    }
+
+    .mindmap-col {
+      background: rgba(28, 27, 25, 0.4);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .mindmap-col.col-simple { border-top: 4px solid var(--amber); }
+    .mindmap-col.col-transition { border-top: 4px solid var(--primary); }
+    .mindmap-col.col-professional { border-top: 4px solid var(--emerald); }
+
+    .col-title {
+      font-size: 16px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .col-simple .col-title { color: var(--amber); }
+    .col-transition .col-title { color: var(--primary); }
+    .col-professional .col-title { color: var(--emerald); }
+
+    .mindmap-node {
+      background: rgba(28, 27, 25, 0.6);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: var(--transition-smooth);
+    }
+
+    .mindmap-node:hover {
+      background: rgba(255, 255, 255, 0.02);
+      transform: translateX(6px);
+    }
+
+    .col-simple .mindmap-node:hover { border-color: var(--amber); box-shadow: 0 0 15px rgba(245, 158, 11, 0.15); }
+    .col-transition .mindmap-node:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(255, 133, 162, 0.15); }
+    .col-professional .mindmap-node:hover { border-color: var(--emerald); box-shadow: 0 0 15px rgba(16, 185, 129, 0.15); }
+
+    .mindmap-node.active-node {
+      background: rgba(255, 133, 162, 0.05);
+    }
+    .col-simple .mindmap-node.active-node { border-color: var(--amber); }
+    .col-transition .mindmap-node.active-node { border-color: var(--primary); }
+    .col-professional .mindmap-node.active-node { border-color: var(--emerald); }
+
+    .node-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .col-simple .node-icon { background: rgba(245, 158, 11, 0.1); color: var(--amber); }
+    .col-transition .node-icon { background: rgba(255, 133, 162, 0.1); color: var(--primary); }
+    .col-professional .node-icon { background: rgba(16, 185, 129, 0.1); color: var(--emerald); }
+
+    .node-text {
+      flex: 1;
+    }
+
+    .node-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .node-desc-short {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Column connecting arrows (Desktop) */
+    @media (min-width: 1025px) {
+      .col-simple::after, .col-transition::after {
+        content: '\f105';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        right: -22px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 24px;
+        color: var(--text-muted-dark);
+        z-index: 2;
+        pointer-events: none;
+      }
+    }
+
+    /* Details panel */
+    .node-details-panel {
+      background: rgba(28, 27, 25, 0.5);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 30px;
+      margin-top: 30px;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .ndp-placeholder {
+      text-align: center;
+      color: var(--text-muted-dark);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .ndp-placeholder i {
+      font-size: 20px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .ndp-content {
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .ndp-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 8px;
+    }
+
+    .ndp-body {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .ndp-body strong {
+      color: #fff;
+    }
+
+    .ndp-flow-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .ndp-step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.02);
+      padding: 12px 16px;
+      border-radius: 12px;
+    }
+
+    .ndp-step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--purple-accent);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 133, 162, 0.2);
+    }
+
+    .ndp-step-text {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      border-top: 1px solid var(--glass-border);
+      padding: 48px 0;
+      text-align: center;
+      color: var(--text-muted-dark);
+      font-size: 13px;
+      margin-top: 80px;
+    }
+
+    footer strong {
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================== HEADER ============================== -->
+  <header>
+    <div class="app-container header-content">
+      <a href="#" class="brand-logo">
+        <i class="fa-solid fa-scale-balanced"></i>
+        <span class="brand-name">BELLA SPA ERP</span>
+      </a>
+      <div class="badge-status">
+        <div class="pulse-dot"></div>
+        KẾ TOÁN SONG SONG: LIVE
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================== HERO ============================== -->
+  <section class="app-container hero-section">
+    <div class="hero-tag">
+      <i class="fa-solid fa-graduation-cap"></i> CẨM NANG NGHIỆP VỤ & VẬN HÀNH
+    </div>
+    <h1>Phân Phối Kế Toán Song Song</h1>
+    <p>Hướng dẫn cách thức hoạt động, cảnh báo nghiệp vụ và cẩm nang kiểm soát dòng tiền, tiền lương tại chi nhánh Bella Spa. Thiết lập dựa trên chuẩn mực Thông tư 133/2016/TT-BTC.</p>
+  </section>
+
+  <!-- ============================== TABS NAVIGATION ============================== -->
+  <div class="app-container">
+    <div class="tabs-wrapper">
+      <ul class="tabs-nav">
+        <li>
+          <button class="tab-btn active" onclick="switchTab(event, 'p-overview')">
+            <i class="fa-solid fa-chart-pie"></i> Tổng Quan
+          </button>
+        </li>
+        <li>
+          <button class="tab-btn" onclick="switchTab(event, 'p-mindmap')">
+            <i class="fa-solid fa-sitemap"></i> Bản Đồ Vận Hành
+          </button>
+        </li>
+        <li>
+          <button class="tab-btn" onclick="switchTab(event, 'p-simple')">
+            <i class="fa-solid fa-feather-pointed"></i> Simple Finance
+          </button>
+        </li>
+        <li>
+          <button class="tab-btn" onclick="switchTab(event, 'p-professional')">
+            <i class="fa-solid fa-building-columns"></i> Professional Core
+          </button>
+        </li>
+        <li>
+          <button class="tab-btn" onclick="switchTab(event, 'p-transition')">
+            <i class="fa-solid fa-shuffle"></i> Chuyển Đổi
+          </button>
+        </li>
+        <li>
+          <button class="tab-btn" onclick="switchTab(event, 'p-rules')">
+            <i class="fa-solid fa-triangle-exclamation"></i> Nguyên Tắc Lương
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================== TAB PANELS ============================== -->
+  <main class="app-container">
+    
+    <!-- 📋 TAB 1: TỔNG QUAN -->
+    <div id="p-overview" class="tab-panel active">
+      <div class="glass-card">
+        <div class="card-glow"></div>
+        <div class="panel-header">
+          <div class="panel-header-icon">
+            <i class="fa-solid fa-circle-nodes"></i>
+          </div>
+          <div class="panel-header-info">
+            <h2>Kiến trúc Hybrid Kế toán kép</h2>
+            <p>Sự kết hợp giữa tốc độ hoạt động tại chi nhánh và tính kỷ luật tài chính tại tổng công ty.</p>
+          </div>
+        </div>
+
+        <p style="margin-bottom: 24px; color: var(--text-muted);">
+          Bella Spa ERP vận hành một hệ thống kế toán lai đặc biệt (Dual-Mode). Nhập liệu hằng ngày được tối giản tối đa để nhân viên phục vụ, quản lý cơ sở không bị quá tải bởi các nghiệp vụ định khoản phức tạp. Tuy nhiên, ở tầng sâu, mọi giao dịch tài chính đều được rà soát và cấu trúc chặt chẽ để có thể dịch chuyển sang sổ cái bút toán kép bất cứ lúc nào.
+        </p>
+
+        <div class="comparison-grid">
+          <div class="comp-box simple">
+            <h3><i class="fa-solid fa-bolt"></i> Simple Finance (Mặc định)</h3>
+            <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 12px;"> Giao diện nhập thu chi trực tiếp, giống như một cuốn sổ quỹ tiền mặt.</p>
+            <ul style="list-style: none; font-size: 12.5px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
+              <li><i class="fa-solid fa-check text-emerald" style="margin-right: 6px;"></i> Cho phép Admin sửa/xóa trực tiếp dòng tiền.</li>
+              <li><i class="fa-solid fa-check text-emerald" style="margin-right: 6px;"></i> Tự do thay đổi số liệu doanh thu/chi phí.</li>
+              <li><i class="fa-solid fa-check text-emerald" style="margin-right: 6px;"></i> Phù hợp chi nhánh mới chưa có kế toán chuyên nghiệp.</li>
+            </ul>
+          </div>
+          
+          <div class="comp-box professional">
+            <h3><i class="fa-solid fa-shield-halved"></i> Professional Core (TT133)</h3>
+            <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 12px;">Sổ cái bút toán kép bất biến, tuân thủ Thông tư 133 của Bộ Tài Chính.</p>
+            <ul style="list-style: none; font-size: 12.5px; color: var(--text-muted); display: flex; flex-direction: column; gap: 8px;">
+              <li><i class="fa-solid fa-check text-emerald" style="margin-right: 6px;"></i> Khóa cứng toàn bộ lệnh ghi trực tiếp vào doanh thu, chi phí.</li>
+              <li><i class="fa-solid fa-check text-emerald" style="margin-right: 6px;"></i> Sửa đổi dòng tiền thông qua Bút toán đảo (Reversal).</li>
+              <li><i class="fa-solid fa-check text-emerald" style="margin-right: 6px;"></i> Phù hợp doanh nghiệp đã ổn định, cần báo cáo thuế và kiểm toán.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout-box info">
+          <i class="fa-solid fa-circle-info c-icon"></i>
+          <div class="c-content">
+            <h4>Triết lý thiết kế Dual-Mode</h4>
+            <p>Quy trình này cho phép hệ thống mở rộng linh hoạt. Khi chi nhánh mới khai trương, họ bắt đầu với <strong>Simple Finance</strong> để đẩy nhanh tiến độ kinh doanh. Cuối tháng hoặc khi quy mô đủ lớn, Kế toán trưởng tổng công ty sẽ thẩm định dữ liệu qua Readiness Gate để nâng cấp lên <strong>Professional Core</strong> hạch toán tự động.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🌿 TAB 2: INTERACTIVE MINDMAP (BẢN ĐỒ VẬN HÀNH) -->
+    <div id="p-mindmap" class="tab-panel">
+      <div class="glass-card mindmap-section">
+        <div class="panel-header">
+          <div class="panel-header-icon">
+            <i class="fa-solid fa-sitemap"></i>
+          </div>
+          <div class="panel-header-info">
+            <h2>Bản Đồ Vận Hành Kế Toán Tài Chính</h2>
+            <p>Mô hình tương tác trực quan luồng dữ liệu từ Simple Finance sang Sổ cái Professional Core.</p>
+          </div>
+        </div>
+        
+        <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 24px;">
+          Bản đồ thể hiện ba giai đoạn cốt lõi của dòng tiền tại Bella Spa. <strong>Hãy click vào bất kỳ nút nghiệp vụ nào bên dưới</strong> để xem luồng định khoản, phân bổ công việc và quy trình phê duyệt chi tiết ở bảng mô tả phía dưới.
+        </p>
+
+        <div class="mindmap-wrapper">
+          
+          <!-- Column 1: Simple Mode -->
+          <div class="mindmap-col col-simple">
+            <div class="col-title">
+              <i class="fa-solid fa-feather-pointed"></i> 1. Simple Finance
+            </div>
+            
+            <div class="mindmap-node" id="node-s-revenue" onclick="selectNode('s-revenue')">
+              <div class="node-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+              <div class="node-text">
+                <div class="node-name">Ghi nhận Doanh thu</div>
+                <div class="node-desc-short">Lễ tân nhập tiền cọc, giá gói</div>
+              </div>
+            </div>
+
+            <div class="mindmap-node" id="node-s-checkout" onclick="selectNode('s-checkout')">
+              <div class="node-icon"><i class="fa-solid fa-circle-check"></i></div>
+              <div class="node-text">
+                <div class="node-name">KTV Hoàn thành ca</div>
+                <div class="node-desc-short">Check-out GPS, trừ kho vật tư</div>
+              </div>
+            </div>
+
+            <div class="mindmap-node" id="node-s-payroll" onclick="selectNode('s-payroll')">
+              <div class="node-icon"><i class="fa-solid fa-wallet"></i></div>
+              <div class="node-text">
+                <div class="node-name">Bảng lương nháp</div>
+                <div class="node-desc-short">Tính lương cứng pro-rata, KPI</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Transition -->
+          <div class="mindmap-col col-transition">
+            <div class="col-title">
+              <i class="fa-solid fa-shuffle"></i> 2. Cổng Chuyển Đổi
+            </div>
+
+            <div class="mindmap-node" id="node-t-backfill" onclick="selectNode('t-backfill')">
+              <div class="node-icon"><i class="fa-solid fa-database"></i></div>
+              <div class="node-text">
+                <div class="node-name">Backfill dữ liệu</div>
+                <div class="node-desc-short">Quét lịch sử, gán Business Event</div>
+              </div>
+            </div>
+
+            <div class="mindmap-node" id="node-t-gate" onclick="selectNode('t-gate')">
+              <div class="node-icon"><i class="fa-solid fa-key"></i></div>
+              <div class="node-text">
+                <div class="node-name">Readiness Gate >= 95%</div>
+                <div class="node-desc-short">Kiểm duyệt rác và lỗi định khoản</div>
+              </div>
+            </div>
+
+            <div class="mindmap-node" id="node-t-sync" onclick="selectNode('t-sync')">
+              <div class="node-icon"><i class="fa-solid fa-arrows-spin"></i></div>
+              <div class="node-text">
+                <div class="node-name">Atomic DB RPC Sync</div>
+                <div class="node-desc-short">Giao dịch đồng bộ nguyên tử</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 3: Professional Mode -->
+          <div class="mindmap-col col-professional">
+            <div class="col-title">
+              <i class="fa-solid fa-building-columns"></i> 3. Professional Core
+            </div>
+
+            <div class="mindmap-node" id="node-p-ledger" onclick="selectNode('p-ledger')">
+              <div class="node-icon"><i class="fa-solid fa-receipt"></i></div>
+              <div class="node-text">
+                <div class="node-name">Sổ cái tự động (Outbox)</div>
+                <div class="node-desc-short">Định khoản kép Nợ/Có (TT133)</div>
+              </div>
+            </div>
+
+            <div class="mindmap-node" id="node-p-reversal" onclick="selectNode('p-reversal')">
+              <div class="node-icon"><i class="fa-solid fa-rotate-left"></i></div>
+              <div class="node-text">
+                <div class="node-name">Bút toán đảo (Reversal)</div>
+                <div class="node-desc-short">Sửa lỗi sai bằng đối xứng Nợ/Có</div>
+              </div>
+            </div>
+
+            <div class="mindmap-node" id="node-p-closing" onclick="selectNode('p-closing')">
+              <div class="node-icon"><i class="fa-solid fa-lock"></i></div>
+              <div class="node-text">
+                <div class="node-name">Khóa sổ & Đối soát HQ</div>
+                <div class="node-desc-short">Royalty 10%, bù trừ nội bộ</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Details Panel -->
+        <div class="node-details-panel" id="node-details-panel">
+          <div class="ndp-placeholder">
+            <i class="fa-solid fa-hand-pointer"></i> Bấm vào bất kỳ nút nào trên bản đồ để xem diễn giải chi tiết quy trình nghiệp vụ.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ⚙️ TAB 3: SIMPLE FINANCE -->
+    <div id="p-simple" class="tab-panel">
+      <div class="glass-card">
+        <div class="panel-header">
+          <div class="panel-header-icon">
+            <i class="fa-solid fa-feather-pointed"></i>
+          </div>
+          <div class="panel-header-info">
+            <h2>Vận hành ở chế độ Simple Finance</h2>
+            <p>Hướng dẫn dành cho Lễ tân, Quản lý chi nhánh và Admin.</p>
+          </div>
+        </div>
+
+        <div class="callout-box warning">
+          <i class="fa-solid fa-triangle-exclamation c-icon"></i>
+          <div class="c-content">
+            <h4>Cảnh báo vận hành ở chế độ Simple Finance</h4>
+            <p>Do chế độ này cho phép thay đổi dữ liệu trực tiếp mà không lưu bút toán đối ứng, <strong>hãy cực kỳ cẩn thận khi Sửa/Xóa hóa đơn</strong>. Mọi sai lệch hạch toán ở chế độ này sẽ kéo lùi Điểm Sẵn Sàng (Readiness Score) của chi nhánh, ngăn chặn việc nâng cấp lên Professional Core cuối kỳ.</p>
+          </div>
+        </div>
+
+        <h3 style="font-size: 18px; margin: 30px 0 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 8px;">Các quy trình thao tác chính</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <div>
+            <h4 style="font-size: 15px; color: var(--primary); margin-bottom: 10px;"><i class="fa-solid fa-plus-minus" style="margin-right: 8px;"></i> Nhập thu chi thủ công</h4>
+            <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 12px;">Admin chi nhánh sử dụng các form "Ghi nhận thanh toán" và "Ghi nhận chi phí" để tạo giao dịch. Bắt buộc phải nhập đầy đủ: Phương thức thanh toán (Cash/Bank transfer) và Ngày nhận.</p>
+          </div>
+          <div>
+            <h4 style="font-size: 15px; color: var(--primary); margin-bottom: 10px;"><i class="fa-solid fa-user-check" style="margin-right: 8px;"></i> Duyệt lương và KPI KTV</h4>
+            <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 12px;">Cuối tháng, hệ thống tự động sinh bảng lương nháp. Admin rà soát số ca, thưởng đánh giá sao, trừ vi phạm, tạm ứng để chuyển trạng thái bảng lương. Khi bảng lương ở trạng thái Nháp, số liệu sẽ cập nhật động theo chấm công.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🛡️ TAB 4: PROFESSIONAL CORE -->
+    <div id="p-professional" class="tab-panel">
+      <div class="glass-card">
+        <div class="panel-header">
+          <div class="panel-header-icon">
+            <i class="fa-solid fa-building-columns"></i>
+          </div>
+          <div class="panel-header-info">
+            <h2>Kỷ luật Kế toán kép: Professional Core (TT133)</h2>
+            <p>Hạch toán tự động và cơ chế bảo vệ sổ cái bất biến.</p>
+          </div>
+        </div>
+
+        <div class="callout-box danger">
+          <i class="fa-solid fa-lock c-icon"></i>
+          <div class="c-content">
+            <h4>Bảo vệ cứng dòng tiền - Khóa toàn bộ lệnh Write trực tiếp</h4>
+            <p>Khi chế độ Professional Core được bật, <strong>mọi API sửa đổi trực tiếp vào bảng Doanh thu/Chi phí cũ đều bị chặn cứng</strong>. Hệ thống sẽ báo lỗi. Mọi điều chỉnh dòng tiền chỉ được thực hiện bằng cách tạo <strong>Bút toán đảo (Reversal Entry)</strong>, giúp bảo toàn vết lịch sử dòng tiền.</p>
+          </div>
+        </div>
+
+        <h3 style="font-size: 18px; margin: 30px 0 16px;">Sơ đồ Định khoản Nghiệp vụ chuẩn TT133</h3>
+        <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 16px;"> Bella Spa ERP tự động dịch chuyển các sự kiện vận hành thành bút toán kép thông qua các mẫu cấu hình sau:</p>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Nghiệp vụ</th>
+                <th>Sự kiện nguồn</th>
+                <th>Tài khoản Nợ</th>
+                <th>Tài khoản Có</th>
+                <th>Mô tả nghiệp vụ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight: 700; color: #fff;">Thu cọc / Tiền gói</td>
+                <td>Giao dịch Revenue</td>
+                <td><span class="account-code">111</span> hoặc <span class="account-code">112</span></td>
+                <td><span class="account-code">3387</span></td>
+                <td>Thu tiền cọc hoặc thanh toán trọn gói, treo Doanh thu chưa thực hiện.</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 700; color: #fff;">Ghi nhận ca hoàn thành</td>
+                <td>Check-out ca làm</td>
+                <td><span class="account-code">3387</span></td>
+                <td><span class="account-code">5113</span></td>
+                <td>Kết chuyển doanh thu tương ứng của buổi trị liệu đã làm xong.</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 700; color: #fff;">Hoàn tiền khách hàng</td>
+                <td>Giao dịch Refund (-)</td>
+                <td><span class="account-code">5113</span> hoặc <span class="account-code">3387</span></td>
+                <td><span class="account-code">111</span> hoặc <span class="account-code">112</span></td>
+                <td>Giảm trừ doanh thu hoặc trả lại tiền cọc chưa thực hiện.</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 700; color: #fff;">Tiêu hao vật tư ca làm</td>
+                <td>Hoàn thành ca</td>
+                <td><span class="account-code">632</span></td>
+                <td><span class="account-code">152</span></td>
+                <td>Tự động xuất kho và tính giá vốn vật tư dùng cho trị liệu.</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 700; color: #fff;">Ghi nhận chi phí lương</td>
+                <td>Chốt lương KTV</td>
+                <td><span class="account-code">6421</span></td>
+                <td><span class="account-code">334</span></td>
+                <td>Ghi nhận chi phí lương phải trả trong kỳ kế toán.</td>
+              </tr>
+              <tr>
+                <td style="font-weight: 700; color: #fff;">Chi trả lương thực tế</td>
+                <td>Thanh toán lương</td>
+                <td><span class="account-code">334</span></td>
+                <td><span class="account-code">111</span> hoặc <span class="account-code">112</span></td>
+                <td>Chi tiền mặt hoặc chuyển khoản trả lương cho KTV.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔄 TAB 5: CHUYỂN ĐỔI CHẾ ĐỘ -->
+    <div id="p-transition" class="tab-panel">
+      <div class="glass-card">
+        <div class="panel-header">
+          <div class="panel-header-icon">
+            <i class="fa-solid fa-shuffle"></i>
+          </div>
+          <div class="panel-header-info">
+            <h2>Quy trình Chuyển Đổi Chế Độ & Sẵn Sàng Dữ Liệu</h2>
+            <p>Vận hành Readiness Gate và chạy đồng bộ nguyên tử Sổ cái trung tâm.</p>
+          </div>
+        </div>
+
+        <div class="gauge-grid">
+          <div class="score-circle-wrapper">
+            <div class="circular-progress">
+              <div class="progress-value">95<span>/100</span></div>
+            </div>
+            <div class="gauge-status-label">Đủ điều kiện</div>
+          </div>
+          
+          <div class="score-details-list">
+            <div class="score-detail-card">
+              <div class="sd-header success">
+                <span>Điểm sẵn sàng</span>
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="sd-val">95+</div>
+              <div class="sd-desc">Yêu cầu tối thiểu đạt 95/100 điểm để được chuyển đổi.</div>
+            </div>
+            
+            <div class="score-detail-card">
+              <div class="sd-header success">
+                <span>Thiếu nghiệp vụ</span>
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="sd-val">0</div>
+              <div class="sd-desc">Toàn bộ các dòng tiền Confirmed phải được gán loại nghiệp vụ.</div>
+            </div>
+
+            <div class="score-detail-card">
+              <div class="sd-header success">
+                <span>Đang chờ duyệt</span>
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="sd-val">0</div>
+              <div class="sd-desc">Không còn hóa đơn hay bảng lương nào kẹt ở hàng chờ review.</div>
+            </div>
+
+            <div class="score-detail-card">
+              <div class="sd-header success">
+                <span>Hạch toán lỗi</span>
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div class="sd-val">0</div>
+              <div class="sd-desc">Không còn giao dịch nào bị báo lỗi ghi sổ (Posting Failed).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout-box info">
+          <i class="fa-solid fa-circle-check c-icon text-emerald"></i>
+          <div class="c-content">
+            <h4>Bảo vệ nguyên tử trong RPC Database</h4>
+            <p>Hệ thống sử dụng function <code>sync_legacy_to_ledger_atomic</code>. Khi bấm nút, tiến trình đồng bộ toàn bộ doanh thu, chi phí, lương cũ và cập nhật thuộc tính chi nhánh sẽ được chạy như một giao dịch khép kín. Nếu xảy ra bất kỳ lỗi định khoản nào, hệ thống tự động Rollback 100% về trạng thái cũ để tránh mất mát dữ liệu.</p>
+          </div>
+        </div>
+
+        <!-- CHECKLIST TƯƠNG TÁC -->
+        <div class="checklist-container">
+          <h3 style="font-size: 16px; margin-bottom: 12px;"><i class="fa-solid fa-list-check" style="margin-right: 8px; color: var(--primary);"></i> Checklist Quy trình Chuyển đổi (Bấm chọn để kiểm tra tiến độ)</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Kế toán trưởng và Admin chi nhánh rà soát danh sách kiểm tra sau trước khi chạy đồng bộ chính thức:</p>
+          
+          <div class="checklist-progress-bar-wrapper">
+            <div class="c-pb-info">
+              <span>Tiến độ rà soát</span>
+              <span id="checklist-pct">0%</span>
+            </div>
+            <div class="c-pb-track">
+              <div class="c-pb-thumb" id="checklist-progress"></div>
+            </div>
+          </div>
+
+          <div class="checklist-items">
+            <label class="checklist-item">
+              <input type="checkbox" onchange="updateChecklist()" />
+              <div class="custom-checkbox"><i class="fa-solid fa-check"></i></div>
+              <span class="checklist-item-text">Đã kiểm tra tài khoản hệ thống (COA): Đảm bảo các tài khoản 111, 112, 3387, 5113, 334, 6421 đang hoạt động.</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" onchange="updateChecklist()" />
+              <div class="custom-checkbox"><i class="fa-solid fa-check"></i></div>
+              <span class="checklist-item-text">Đã chạy Backfill dữ liệu: Quét toàn bộ dòng tiền cũ để tự động điền metadata hạch toán kế toán.</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" onchange="updateChecklist()" />
+              <div class="custom-checkbox"><i class="fa-solid fa-check"></i></div>
+              <span class="checklist-item-text">Đã phê duyệt hàng chờ Review: Không còn bản ghi nào cần kế toán duyệt (Needs Review = 0).</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" onchange="updateChecklist()" />
+              <div class="custom-checkbox"><i class="fa-solid fa-check"></i></div>
+              <span class="checklist-item-text">Đã xử lý toàn bộ lỗi hạch toán: Đảm bảo không còn dòng giao dịch nào bị lỗi Posting Failed.</span>
+            </label>
+            <label class="checklist-item">
+              <input type="checkbox" onchange="updateChecklist()" />
+              <div class="custom-checkbox"><i class="fa-solid fa-check"></i></div>
+              <span class="checklist-item-text">Đối soát số liệu tiền mặt và chuyển khoản ngân hàng: Trùng khớp số dư thủ quỹ với số liệu sao kê ngân hàng.</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⚠️ TAB 6: NGUYÊN TẮC TÀI CHÍNH & TIỀN LƯƠNG -->
+    <div id="p-rules" class="tab-panel">
+      <div class="glass-card">
+        <div class="panel-header">
+          <div class="panel-header-icon">
+            <i class="fa-solid fa-shield-heart"></i>
+          </div>
+          <div class="panel-header-info">
+            <h2>8 Nguyên Tắc Vàng Nghiệp Vụ Tài Chính & Tiền Lương</h2>
+            <p>Ràng buộc nghiệp vụ bắt buộc tuân thủ để tránh phát sinh lỗi ngầm trên toàn chi nhánh.</p>
+          </div>
+        </div>
+
+        <div class="rules-grid">
+          
+          <div class="rule-card">
+            <div class="rule-num">01</div>
+            <div class="rule-icon"><i class="fa-solid fa-heart-crack"></i></div>
+            <h4 class="rule-title">Không nuốt lỗi CSDL</h4>
+            <p class="rule-desc">Cấm nuốt lỗi bằng khối try/catch ảo. Mọi lỗi truy vấn hoặc ghi sổ phải được ném lại (throw) để hệ thống tự động thực hiện rollback và hiển thị thông báo tường minh.</p>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-num">02</div>
+            <div class="rule-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+            <h4 class="rule-title">Doanh thu chuẩn TT133</h4>
+            <p class="rule-desc">Mọi khoản tiền thu trước hoặc mua gói cọc của khách hàng bầu bắt buộc phải treo vào tài khoản Doanh thu chưa thực hiện (3387) trước khi kết chuyển dần sang 5113.</p>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-num">03</div>
+            <div class="rule-icon"><i class="fa-solid fa-calculator"></i></div>
+            <h4 class="rule-title">Tính lương qua Engine chính</h4>
+            <p class="rule-desc">Mọi hoạt động điều chỉnh công, ca hoặc lương cứng của KTV bắt buộc phải chạy qua engine tính toán trung tâm (recalculateAndSaveSalaryRecord) để cập nhật đồng bộ.</p>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-num">04</div>
+            <div class="rule-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <h4 class="rule-title">Bảo toàn số liệu khi đã Chốt</h4>
+            <p class="rule-desc">Khi bảng lương đã chuyển sang trạng thái chờ duyệt hoặc đã thanh toán (không còn là 'draft'), hệ thống cấm tự động tính toán đè hoặc thay đổi số liệu cũ.</p>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-num">05</div>
+            <div class="rule-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+            <h4 class="rule-title">Lương tính động cho Draft</h4>
+            <p class="rule-desc">Với các bảng lương đang ở trạng thái nháp (draft), hệ thống tự động tính lương cứng trên cơ sở pro-rata công thực tế: (Lương cứng / 26) * số ngày chấm công thực tế.</p>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-num">06</div>
+            <div class="rule-icon"><i class="fa-solid fa-chart-line"></i></div>
+            <h4 class="rule-title">Công nhận Chi phí & Doanh thu P&L</h4>
+            <p class="rule-desc">Báo cáo P&L chỉ ghi nhận chi phí khi đã được duyệt hoặc đã chi trả (approved/paid), doanh thu khi giao dịch đã được xác nhận (confirmed). Loại bỏ hoàn toàn dòng nháp.</p>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-num">07</div>
+            <div class="rule-icon"><i class="fa-solid fa-user-gear"></i></div>
+            <h4 class="rule-title">Lương KTV tạm tính trong P&L</h4>
+            <p class="rule-desc">Quỹ lương KTV trong báo cáo P&L nếu chưa chốt tháng sẽ được tính động từ số ngày đi làm thực tế và các buổi làm quy đổi. Nếu đã chốt, lấy trực tiếp số liệu đã chốt.</p>
+          </div>
+
+          <div class="rule-card">
+            <div class="rule-num">08</div>
+            <div class="rule-icon"><i class="fa-solid fa-compress"></i></div>
+            <h4 class="rule-title">Quy đổi hệ số ca theo gói</h4>
+            <p class="rule-desc">Ca làm việc tính lương của KTV được quy đổi động dựa trên độ phức tạp của gói (VIP nhân hệ số 2.0, Hạnh Phúc nhân hệ số 1.5, Tiết Kiệm nhân hệ số 1.0). Hệ số được lưu số thập phân.</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============================== FOOTER ============================== -->
+  <footer>
+    <div class="app-container">
+      <p><strong>Cẩm Nang Kế Toán Bella Spa ERP V2.1</strong> · Bảo lưu mọi quyền</p>
+      <p style="margin-top: 8px;">Được biên soạn bởi Antigravity AI Partner · Chuẩn mực Thông tư 133/2016/TT-BTC</p>
+    </div>
+  </footer>
+
+  <!-- ========== JAVASCRIPT FOR TABS, CHECKLIST & MINDMAP ========== -->
+  <script>
+    function switchTab(evt, tabId) {
+      // Hide all panels
+      const panels = document.querySelectorAll('.tab-panel');
+      panels.forEach(panel => {
+        panel.classList.remove('active');
+      });
+
+      // Remove active class from buttons
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      tabBtns.forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show current panel and activate button
+      document.getElementById(tabId).classList.add('active');
+      evt.currentTarget.classList.add('active');
+    }
+
+    function updateChecklist() {
+      const checkboxes = document.querySelectorAll('.checklist-item input[type="checkbox"]');
+      const checked = document.querySelectorAll('.checklist-item input[type="checkbox"]:checked');
+      
+      const pct = Math.round((checked.length / checkboxes.length) * 100);
+      
+      // Update progress bar
+      document.getElementById('checklist-progress').style.width = pct + '%';
+      document.getElementById('checklist-pct').innerText = pct + '%';
+    }
+
+    // Mindmap node data
+    const nodeDetails = {
+      's-revenue': {
+        title: '<i class="fa-solid fa-hand-holding-dollar" style="color: var(--amber);"></i> Ghi nhận doanh thu (Simple Mode)',
+        body: `
+          <p style="margin-bottom:12px;"><strong>Mô tả:</strong> Khi khách hàng mua gói trị liệu, lễ tân chi nhánh ghi nhận số tiền cọc hoặc giá trị hợp đồng thông qua giao diện đơn giản.</p>
+          <div class="ndp-flow-steps">
+            <div class="ndp-step">
+              <div class="ndp-step-num">1</div>
+              <div class="ndp-step-text">Admin nhập số tiền thu vào hệ thống, chọn hình thức thanh toán (Tiền mặt / Chuyển khoản).</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">2</div>
+              <div class="ndp-step-text">Bản ghi lưu vào bảng <code>revenue</code> với trạng thái <code>confirmed</code>.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">3</div>
+              <div class="ndp-step-text">Tích lũy số tiền đã thu vào <code>bookings.deposit_amount</code> để làm cơ sở đối soát công nợ.</div>
+            </div>
+          </div>
+        `
+      },
+      's-checkout': {
+        title: '<i class="fa-solid fa-circle-check" style="color: var(--amber);"></i> KTV Hoàn thành ca (Simple Mode)',
+        body: `
+          <p style="margin-bottom:12px;"><strong>Mô tả:</strong> Kỹ thuật viên (KTV) kết thúc buổi trị liệu chăm sóc mẹ và bé tại nhà khách hàng.</p>
+          <div class="ndp-flow-steps">
+            <div class="ndp-step">
+              <div class="ndp-step-num">1</div>
+              <div class="ndp-step-text">KTV bấm check-out GPS trên ứng dụng điện thoại. CSDL lưu thời gian và định vị <code>lat/lon</code> thực tế.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">2</div>
+              <div class="ndp-step-text">Hệ thống cộng dồn buổi hoàn thành: <code>bookings.completed_sessions = completed_sessions + 1</code>.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">3</div>
+              <div class="ndp-step-text">Kích hoạt trigger tự động trừ kho nguyên liệu (dầu massage, khăn lau) theo định mức quy định và tự động cộng hoa hồng ca làm cho KTV.</div>
+            </div>
+          </div>
+        `
+      },
+      's-payroll': {
+        title: '<i class="fa-solid fa-wallet" style="color: var(--amber);"></i> Chấm Lương Nháp (Simple Mode)',
+        body: `
+          <p style="margin-bottom:12px;"><strong>Mô tả:</strong> Bảng lương được tính toán động dựa trên các sự kiện chấm công thực tế hàng ngày.</p>
+          <div class="ndp-flow-steps">
+            <div class="ndp-step">
+              <div class="ndp-step-num">1</div>
+              <div class="ndp-step-text">Truy vấn bảng <code>attendance</code> để đếm số ngày công thực tế (loại bỏ ngày nghỉ <code>absent</code>).</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">2</div>
+              <div class="ndp-step-text">Tính toán lương cứng nháp pro-rata theo ngày công thực tế: <code>(Lương cơ bản / 26) * số ngày công</code>.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">3</div>
+              <div class="ndp-step-text">Cộng hoa hồng ca làm (đã nhân hệ số gói dịch vụ), cộng thưởng KPI từ <code>kpi_records</code>, trừ phạt đi trễ/vắng mặt.</div>
+            </div>
+          </div>
+        `
+      },
+      't-backfill': {
+        title: '<i class="fa-solid fa-database" style="color: var(--primary);"></i> Quy trình Backfill dữ liệu (Cổng Chuyển Đổi)',
+        body: `
+          <p style="margin-bottom:12px;"><strong>Mô tả:</strong> Chuẩn bị dữ liệu lịch sử để sẵn sàng định khoản theo Thông tư 133.</p>
+          <div class="ndp-flow-steps">
+            <div class="ndp-step">
+              <div class="ndp-step-num">1</div>
+              <div class="ndp-step-text">Kế toán chạy tiện ích <strong>Backfill</strong> trên giao diện ERP để rà soát toàn bộ các hóa đơn, chi phí và bảng lương cũ.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">2</div>
+              <div class="ndp-step-text">Hệ thống phân tích nguồn dữ liệu và tự động gán loại nghiệp vụ <code>business_event_type</code> (Ví dụ: <code>CUSTOMER_DEPOSIT</code>).</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">3</div>
+              <div class="ndp-step-text">Các dòng thiếu dữ liệu bắt buộc (như thiếu phương thức thanh toán) được đẩy vào Hàng chờ rà soát.</div>
+            </div>
+          </div>
+        `
+      },
+      't-gate': {
+        title: '<i class="fa-solid fa-key" style="color: var(--primary);"></i> Readiness Gate (Cổng Chuyển Đổi)',
+        body: `
+          <p style="margin-bottom:12px;"><strong>Mô tả:</strong> Trình duyệt tự động kiểm tra xem dữ liệu chi nhánh đã sẵn sàng nâng cấp lên Professional Core hay chưa.</p>
+          <div class="ndp-flow-steps">
+            <div class="ndp-step">
+              <div class="ndp-step-num">1</div>
+              <div class="ndp-step-text">Quét và tính toán Điểm Sẵn Sàng (Readiness Score) của chi nhánh. Bắt buộc phải đạt từ <strong>95/100 điểm trở lên</strong>.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">2</div>
+              <div class="ndp-step-text">Yêu cầu tuyệt đối: 0 dòng thiếu nghiệp vụ kế toán, 0 dòng đang chờ review, và 0 lỗi hạch toán cũ.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">3</div>
+              <div class="ndp-step-text">Chỉ rà soát các dòng tiền thực tế tác động đến sổ cái (doanh thu confirmed, chi phí approved, lương paid).</div>
+            </div>
+          </div>
+        `
+      },
+      't-sync': {
+        title: '<i class="fa-solid fa-arrows-spin" style="color: var(--primary);"></i> Atomic DB Sync (Cổng Chuyển Đổi)',
+        body: `
+          <p style="margin-bottom:12px;"><strong>Mô tả:</strong> Chạy giao dịch nguyên tử nâng cấp chi nhánh và đồng bộ toàn bộ lịch sử tiền nong sang Sổ cái.</p>
+          <div class="ndp-flow-steps">
+            <div class="ndp-step">
+              <div class="ndp-step-num">1</div>
+              <div class="ndp-step-text">Kế toán nhấn "Chạy đồng bộ Sổ cái ngay". Database gọi RPC <code>sync_legacy_to_ledger_atomic</code>.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">2</div>
+              <div class="ndp-step-text">Tự động tạo các bút toán kép Nợ/Có cho toàn bộ doanh thu, chi phí, bảng lương lịch sử. Doanh thu cọc được treo vào TK 3387.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">3</div>
+              <div class="ndp-step-text">Đổi giá trị <code>tenants.accounting_mode = 'PROFESSIONAL'</code>. Bất kỳ lỗi phát sinh nào đều làm Rollback toàn bộ tiến trình.</div>
+            </div>
+          </div>
+        `
+      },
+      'p-ledger': {
+        title: '<i class="fa-solid fa-receipt" style="color: var(--emerald);"></i> Sổ cái tự động qua Outbox (Professional Mode)',
+        body: `
+          <p style="margin-bottom:12px;"><strong>Mô tả:</strong> Quy trình tự động định khoản bút toán kép đối ứng từ các hoạt động thực tế hàng ngày.</p>
+          <div class="ndp-flow-steps">
+            <div class="ndp-step">
+              <div class="ndp-step-num">1</div>
+              <div class="ndp-step-text">Khi xảy ra giao dịch (như Check-out ca làm), hệ thống chèn một sự kiện kế toán vào bảng <code>accounting_outbox</code>.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">2</div>
+              <div class="ndp-step-text">Worker trung tâm xử lý hàng đợi, đối chiếu sự kiện với Mẫu định khoản TT133 trong <code>accounting_event_templates</code>.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">3</div>
+              <div class="ndp-step-text">Tự động tạo bản ghi trong <code>journal_entries</code> và <code>journal_lines</code> (Nợ 3387 / Có 5113) mà không cần nhập thủ công.</div>
+            </div>
+          </div>
+        `
+      },
+      'p-reversal': {
+        title: '<i class="fa-solid fa-rotate-left" style="color: var(--emerald);"></i> Bút toán đảo - Reversal Entry (Professional Mode)',
+        body: `
+          <p style="margin-bottom:12px;"><strong>Mô tả:</strong> Phương pháp sửa đổi số liệu sai chuẩn mực kế toán thay thế cho việc Sửa/Xóa trực tiếp.</p>
+          <div class="ndp-flow-steps">
+            <div class="ndp-step">
+              <div class="ndp-step-num">1</div>
+              <div class="ndp-step-text">Kế toán phát hiện bút toán bị sai số tiền hoặc sai tài khoản, chọn bút toán và nhấn "Ghi đảo bút toán".</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">2</div>
+              <div class="ndp-step-text">Hệ thống sinh bút toán mới có số tiền Nợ/Có đối xứng để triệt tiêu hoàn toàn số liệu cũ, yêu cầu nhập lý do giải trình.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">3</div>
+              <div class="ndp-step-text">Tạo bút toán mới chính xác thay thế. Cả 3 bút toán đều được lưu vết vĩnh viễn trên Sổ cái để kiểm toán.</div>
+            </div>
+          </div>
+        `
+      },
+      'p-closing': {
+        title: '<i class="fa-solid fa-lock" style="color: var(--emerald);"></i> Khóa sổ tháng & Đối soát HQ (Professional Mode)',
+        body: `
+          <p style="margin-bottom:12px;"><strong>Mô tả:</strong> Đóng kỳ kế toán tháng để cố định dữ liệu và tự động hạch toán nghĩa vụ nhượng quyền.</p>
+          <div class="ndp-flow-steps">
+            <div class="ndp-step">
+              <div class="ndp-step-num">1</div>
+              <div class="ndp-step-text">Hệ thống chạy Preflight Close kiểm tra lỗi kẹt outbox hoặc chênh lệch tài khoản. Bấm "Khóa sổ" để đóng kỳ.</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">2</div>
+              <div class="ndp-step-text">Tự động tạo hóa đơn trích xuất 10% phí nhượng quyền (Royalty Fee) chuyển về tài khoản của Tổng công ty (HQ).</div>
+            </div>
+            <div class="ndp-step">
+              <div class="ndp-step-num">3</div>
+              <div class="ndp-step-text">Kích hoạt quy trình đối soát bù trừ công nợ liên chi nhánh (Inter-branch clearing) đối với vật tư và điều phối KTV chung.</div>
+            </div>
+          </div>
+        `
+      }
+    };
+
+    function selectNode(nodeId) {
+      // Remove active class from all nodes
+      const nodes = document.querySelectorAll('.mindmap-node');
+      nodes.forEach(node => {
+        node.classList.remove('active-node');
+      });
+
+      // Add active class to selected node
+      const activeNode = document.getElementById('node-' + nodeId);
+      if (activeNode) {
+        activeNode.classList.add('active-node');
+      }
+
+      // Render details
+      const details = nodeDetails[nodeId];
+      const panel = document.getElementById('node-details-panel');
+      if (details && panel) {
+        panel.innerHTML = `
+          <div class="ndp-content">
+            <div class="ndp-title">${details.title}</div>
+            <div class="ndp-body">${details.body}</div>
+          </div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
