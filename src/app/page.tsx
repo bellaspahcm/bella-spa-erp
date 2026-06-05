@@ -18,8 +18,6 @@ import {
   Mail, 
   ArrowRight, 
   ChevronRight, 
-  Star, 
-  CheckCircle2, 
   LogIn, 
   Menu, 
   X, 
@@ -32,54 +30,20 @@ import { toast } from 'sonner';
 import { HeroSection } from '@/components/features/landing/HeroSection';
 import { ServiceWizard } from '@/components/features/landing/ServiceWizard';
 import { FeedbackCarousel } from '@/components/features/landing/FeedbackCarousel';
+import { LandingPackagesSection } from '@/components/features/landing/LandingPackagesSection';
+import {
+  DEFAULT_SERVICE_CATEGORIES,
+  cloneLandingCategories,
+  createEmptyLandingCategories,
+  type LandingCategories,
+  type LandingCategory,
+  type LandingCategoryKey,
+  type PackageRow,
+} from '@/components/features/landing/landing-data';
 import { submitOnlineBooking } from '@/modules/booking/actions/lifecycle-actions';
 import { filterActivePromotions, type Promotion } from '@/lib/promotions';
-import type { Database } from '@/types/database.types';
 
-
-// Types for packages
-interface ServicePackage {
-  id: string;
-  name: string;
-  price: string;
-  duration: string;
-  description: string;
-  benefits: string[];
-  tag?: string;
-  total_sessions?: number;
-}
-
-type PackageRow = Database['public']['Tables']['packages']['Row'];
-type LandingCategoryKey = ' bầu' | 'sau-sinh' | 'baby' | 'combo';
-
-interface LandingCategory {
-  title: string;
-  description: string;
-  packages: ServicePackage[];
-}
-
-type LandingCategories = Record<LandingCategoryKey, LandingCategory>;
-
-function cloneLandingCategories(categories: LandingCategories): LandingCategories {
-  return {
-    ' bầu': {
-      ...categories[' bầu'],
-      packages: [...categories[' bầu'].packages],
-    },
-    'sau-sinh': {
-      ...categories['sau-sinh'],
-      packages: [...categories['sau-sinh'].packages],
-    },
-    baby: {
-      ...categories.baby,
-      packages: [...categories.baby.packages],
-    },
-    combo: {
-      ...categories.combo,
-      packages: [...categories.combo.packages],
-    },
-  };
-}
+type LandingDataLoadStatus = 'loaded' | 'fallback';
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<LandingCategoryKey>('combo');
@@ -107,147 +71,11 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const serviceCategories = useMemo<LandingCategories>(() => ({
-    ' bầu': {
-      title: 'Chăm Sóc Mẹ Bầu',
-      description: 'Liệu trình massage bầu chuyên sâu giúp giải tỏa stress, giảm đau nhức lưng hông, cải thiện giấc ngủ và chống rạn nứt da hiệu quả.',
-      packages: [
-        {
-          id: 'bau-1',
-          name: 'Gói Bầu Thư Giãn Bella',
-          price: '450.000đ',
-          duration: '75 phút',
-          description: 'Phù hợp cho các mẹ bầu từ tháng thứ 4 mong muốn thư giãn nhẹ nhàng, phục hồi năng lượng.',
-          benefits: [
-            'Ngâm chân thảo dược thải độc',
-            'Massage body thảo dược nhẹ nhàng',
-            'Chăm sóc da mặt cơ bản organic',
-            'Thư giãn vùng đầu, cổ, vai gáy',
-          ],
-          tag: 'Phổ biến nhất'
-        },
-        {
-          id: 'bau-2',
-          name: 'Gói Bầu VIP Toàn Diện',
-          price: '690.000đ',
-          duration: '100 phút',
-          description: 'Liệu pháp tối ưu giúp chăm sóc các cơn đau mỏi nặng, kết hợp massage mặt chuyên sâu đá nóng.',
-          benefits: [
-            'Rửa chân và xông chân đá muối Himalaya',
-            'Massage chuyên sâu thắt lưng, hông',
-            'Massage Thụy Điển kết hợp đá nóng bazan',
-            'Chăm sóc da mặt chuyên sâu sữa ong chúa',
-            'Gội đầu dưỡng sinh thảo dược tự nhiên',
-          ],
-          tag: 'Khuyên dùng'
-        }
-      ]
-    },
-    'sau-sinh': {
-      title: 'Phục Hồi Sau Sinh',
-      description: 'Liệu trình toàn diện giúp đẩy nhanh sản dịch, gọi sữa về dồi dào, thu gọn vòng eo và tái tạo vóc dáng săn chắc cho mẹ bỉm sữa.',
-      packages: [
-        {
-          id: 'post-1',
-          name: 'Gói Phục Hồi Cơ Bản',
-          price: '650.000đ',
-          duration: '90 phút',
-          description: 'Hỗ trợ mẹ phục hồi sức khỏe nhanh chóng ngay những tuần đầu tiên sau khi sinh.',
-          benefits: [
-            'Xông tắm thảo dược Dao Đỏ tái tạo sinh lực',
-            'Massage thông tắc tia sữa, gọi sữa về',
-            'Massage bụng tống sản dịch bằng tinh dầu gừng',
-            'Quấn muối thảo dược giúp săn cơ bụng',
-          ]
-        },
-        {
-          id: 'post-2',
-          name: 'Gói Eo Thon Dáng Ngọc VIP',
-          price: '950.000đ',
-          duration: '120 phút',
-          description: 'Liệu trình điêu khắc vòng eo chuẩn hoàng gia kết hợp chăm sóc da sáng hồng, giảm thâm sạm.',
-          benefits: [
-            'Chăm sóc đầy đủ gói Phục Hồi Cơ Bản',
-            'Đắp men rượu thuốc Bắc kết hợp chạy máy RF săn cơ',
-            'Đắp mặt nạ nghệ hạ thổ sáng hồng da',
-            'Massage body toàn thân giải tỏa trầm cảm sau sinh',
-            'Chăm sóc và tẩy tế bào chết body thảo mộc',
-          ],
-          tag: 'Đặc sắc nhất'
-        }
-      ]
-    },
-    'baby': {
-      title: 'Tắm & Massage Bé Yêu',
-      description: 'Quy trình tắm chuẩn y khoa, hơ lá trầu truyền thống và massage kích thích giác quan giúp bé ngủ ngon, mau lớn và phát triển trí não vượt trội.',
-      packages: [
-        {
-          id: 'baby-1',
-          name: 'Tắm Bé Chuẩn Y Khoa',
-          price: '200.000đ',
-          duration: '45 phút',
-          description: 'Quy trình vệ sinh và massage an toàn tuyệt đối bởi đội ngũ điều dưỡng giàu kinh nghiệm.',
-          benefits: [
-            'Massage kích hoạt giác quan cơ/xương trước khi tắm',
-            'Tắm chuẩn y khoa, vệ sinh rốn, mắt, mũi, tai kỹ lưỡng',
-            'Hơ lá trầu giữ ấm ngực, thóp đầu và các khớp',
-            'Bôi tinh dầu tràm bảo vệ hô hấp',
-          ]
-        },
-        {
-          id: 'baby-2',
-          name: 'Gói Bé Yêu Thông Minh VIP',
-          price: '350.000đ',
-          duration: '60 phút',
-          description: 'Tích hợp liệu trình bơi thủy liệu mini và tập vận động sớm cho bé từ 2 tháng tuổi.',
-          benefits: [
-            'Massage nâng cao kích thích hệ tiêu hóa, chống đầy hơi',
-            'Tắm rửa sát khuẩn nước thảo dược tự nhiên',
-            'Hơ lá trầu ấm áp theo phương pháp cung đình',
-            'Bơi thủy liệu (Hydrotherapy) phát triển thể chất',
-            'Tập vận động phản xạ sớm nâng cao chỉ số EQ/IQ',
-          ],
-          tag: 'Khuyên dùng'
-        }
-      ]
-    },
-    'combo': {
-      title: 'Gói Combo Trọn Gói Mẹ & Bé',
-      description: 'Sự kết hợp hoàn hảo từ lúc mang bầu cho đến khi sinh nở và chăm sóc bé yêu. Tiết kiệm tối đa và nhận ngập tràn quà tặng hấp dẫn.',
-      packages: [
-        {
-          id: 'combo-1',
-          name: 'Gói Bella Home-Care Tiêu Chuẩn',
-          price: '7.900.000đ',
-          duration: '10 buổi',
-          description: 'Combo trọn gói phục hồi cho mẹ sau sinh và tắm bé tại nhà cực kỳ tiện lợi.',
-          benefits: [
-            '5 buổi Chăm Sóc Phục Hồi cho mẹ sau sinh tại nhà',
-            '5 buổi Tắm Bé & Massage chuẩn y khoa tại nhà',
-            'Tặng thêm 01 hũ muối thảo dược quấn bụng trị giá 350k',
-            'KTV là điều dưỡng có chứng chỉ hành nghề y tế',
-          ]
-        },
-        {
-          id: 'combo-2',
-          name: 'Gói Hoàng Gia Bella Signature',
-          price: '18.500.000đ',
-          duration: '25 buổi',
-          description: 'Giải pháp chăm sóc tối cao trọn vẹn dành cho gia đình thượng lưu, cam kết hoàn tiền nếu không hài lòng.',
-          benefits: [
-            '10 buổi Chăm sóc Bầu VIP thư giãn giảm đau nhức',
-            '15 buổi Liệu trình Phục Hồi Eo Thon Dáng Ngọc sau sinh',
-            '15 buổi Tắm Bé & Bơi Thủy Liệu VIP kích thích phát triển',
-            'Miễn phí tư vấn dinh dưỡng cùng Bác sĩ Sản Nhi trong suốt thai kỳ',
-            'Tặng hộp quà Premium gồm 05 tinh dầu cao cấp và 01 túi thảo dược chườm mắt',
-          ],
-          tag: 'Siêu giá trị'
-        }
-      ]
-    }
-  }), []);
+  const serviceCategories = DEFAULT_SERVICE_CATEGORIES;
 
   const [categories, setCategories] = useState<LandingCategories | null>(null);
+  const [packageDataStatus, setPackageDataStatus] = useState<LandingDataLoadStatus>('loaded');
+  const [packageDataError, setPackageDataError] = useState<string | null>(null);
 
   const serviceOptions = useMemo(() => {
     const activeCategories = categories || serviceCategories;
@@ -272,36 +100,17 @@ export default function LandingPage() {
 
         if (error) {
           console.error('Error fetching active packages:', error);
+          setPackageDataStatus('fallback');
+          setPackageDataError(error.message);
           return;
         }
 
         if (data && data.length > 0) {
-          const newCategories: LandingCategories = {
-            ' bầu': {
-              title: 'Chăm Sóc Mẹ Bầu',
-              description: 'Liệu trình massage bầu chuyên sâu giúp giải tỏa stress, giảm đau nhức lưng hông, cải thiện giấc ngủ và chống rạn nứt da hiệu quả.',
-              packages: []
-            },
-            'sau-sinh': {
-              title: 'Phục Hồi Sau Sinh',
-              description: 'Liệu trình toàn diện giúp đẩy nhanh sản dịch, gọi sữa về dồi dào, thu gọn vòng eo và tái tạo vóc dáng săn chắc cho mẹ bỉm sữa.',
-              packages: []
-            },
-            'baby': {
-              title: 'Tắm & Massage Bé Yêu',
-              description: 'Quy trình tắm chuẩn y khoa, hơ lá trầu truyền thống và massage kích thích giác quan giúp bé ngủ ngon, mau lớn và phát triển trí não vượt trội.',
-              packages: []
-            },
-            'combo': {
-              title: 'Gói Combo Trọn Gói Mẹ & Bé',
-              description: 'Sự kết hợp hoàn hảo từ lúc mang bầu cho đến khi sinh nở và chăm sóc bé yêu. Tiết kiệm tối đa và nhận ngập tràn quà tặng hấp dẫn.',
-              packages: []
-            }
-          };
+          const newCategories = createEmptyLandingCategories();
 
           data.forEach((pkg: PackageRow) => {
             const nameLower = pkg.name.toLowerCase();
-            let catKey: LandingCategoryKey = ' bầu';
+            let catKey: LandingCategoryKey = 'bau';
 
             if (nameLower.includes('combo') || nameLower.includes('home-care') || nameLower.includes('signature')) {
               catKey = 'combo';
@@ -310,12 +119,12 @@ export default function LandingPage() {
             } else if (nameLower.includes('bé') || nameLower.includes('tắm') || nameLower.includes('hydrotherapy') || nameLower.includes('con yêu')) {
               catKey = 'baby';
             } else if (nameLower.includes('bầu') || nameLower.includes('thai')) {
-              catKey = ' bầu';
+              catKey = 'bau';
             } else {
               if (pkg.total_sessions >= 10) {
                 catKey = 'combo';
               } else {
-                catKey = ' bầu';
+                catKey = 'bau';
               }
             }
 
@@ -340,9 +149,17 @@ export default function LandingPage() {
           });
           
           setCategories(finalCategories);
+          setPackageDataStatus('loaded');
+          setPackageDataError(null);
+          return;
         }
+
+        setPackageDataStatus('fallback');
+        setPackageDataError('No active packages returned from database.');
       } catch (err) {
         console.error('Fetch active packages error:', err);
+        setPackageDataStatus('fallback');
+        setPackageDataError(err instanceof Error ? err.message : 'Unknown package fetch error.');
       }
     };
 
@@ -350,6 +167,8 @@ export default function LandingPage() {
   }, [serviceCategories]);
 
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [promotionDataStatus, setPromotionDataStatus] = useState<LandingDataLoadStatus>('loaded');
+  const [promotionDataError, setPromotionDataError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPromotions = async () => {
@@ -362,11 +181,20 @@ export default function LandingPage() {
           .eq('is_active', true)
           .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          setPromotions(filterActivePromotions(data as Promotion[], todayStr));
+        if (error) {
+          console.error('Error fetching active promotions:', error);
+          setPromotionDataStatus('fallback');
+          setPromotionDataError(error.message);
+          return;
         }
+
+        setPromotions(data ? filterActivePromotions(data as Promotion[], todayStr) : []);
+        setPromotionDataStatus('loaded');
+        setPromotionDataError(null);
       } catch (err) {
         console.error('Fetch promotions error:', err);
+        setPromotionDataStatus('fallback');
+        setPromotionDataError(err instanceof Error ? err.message : 'Unknown promotions fetch error.');
       }
     };
 
@@ -376,6 +204,30 @@ export default function LandingPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success('Đã sao chép mã ưu đãi vào bộ nhớ tạm 🌸');
+  };
+
+  const scrollToBooking = () => {
+    const el = document.getElementById('booking');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const selectPackageForBooking = (packageName: string) => {
+    setBookingService(packageName);
+    scrollToBooking();
+    toast.info(`Mẹ đã chọn gói: ${packageName}. Mời điền thông tin đăng ký bên dưới! 🌸`);
+  };
+
+  const claimPackageOffer = (packageName: string) => {
+    setBookingService(packageName);
+    scrollToBooking();
+    setBookingNotes(`Đăng ký nhận Ưu đãi đặc quyền cho gói: ${packageName} (Voucher giảm 1.000.000đ / Quà tặng đặc biệt).`);
+    toast.success(`🎁 Đã kích hoạt Ưu đãi độc quyền cho gói ${packageName}! Mời mẹ điền thông tin đăng ký để nhận mã ưu đãi.`);
+  };
+
+  const requestMorePackageDetails = (packageName: string, remainingCount: number) => {
+    setBookingService(packageName);
+    scrollToBooking();
+    toast.info(`Gói ${packageName} còn ${remainingCount}+ quy trình nữa! Để lại SĐT, Bella Spa sẽ tư vấn chi tiết ngay 🌸`);
   };
 
   const handleBooking = async (e: React.FormEvent) => {
@@ -741,6 +593,16 @@ export default function LandingPage() {
       </section>
 
       {/* ── DYNAMIC PROMOTIONS SECTION ── */}
+      {promotionDataStatus === 'fallback' && (
+        <section className="py-8 bg-amber-50/70 border-y border-amber-100">
+          <div className="max-w-3xl mx-auto px-4 text-center">
+            <p role="status" className="text-xs sm:text-sm font-semibold text-amber-800">
+              Bella Spa chưa tải được ưu đãi mới nhất. {promotionDataError ? 'Vui lòng thử lại sau hoặc đặt lịch để được tư vấn trực tiếp.' : ''}
+            </p>
+          </div>
+        </section>
+      )}
+
       {promotions && promotions.length > 0 && (
         <section className="py-16 sm:py-20 bg-gradient-to-b from-[#FFF5F6] via-white to-white relative overflow-hidden">
           {/* Decorative blobs */}
@@ -818,289 +680,17 @@ export default function LandingPage() {
         </section>
       )}
 
-      {/* ── PREMIUM PACKAGES SECTION ── */}
-      <section id="services" className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          
-          <span className="text-xs font-black tracking-widest text-primary uppercase block mb-3">Các Gói Liệu Trình</span>
-          <h2 className="text-3xl sm:text-4xl font-serif font-black text-slate-800 tracking-tight mb-4">
-            Bảng Giá Dịch Vụ Chăm Sóc Cao Cấp
-          </h2>
-          <p className="text-slate-500 text-sm font-semibold max-w-xl mx-auto mb-12">
-            Rõ ràng, minh bạch, trọn gói không phát sinh thêm chi phí. Lựa chọn gói chăm sóc phù hợp để trao tặng món quà sức khỏe tốt nhất.
-          </p>
-
-          {/* Navigation Tabs */}
-          <div className="inline-flex p-1.5 bg-rose-50/50 backdrop-blur rounded-3xl sm:rounded-full border border-rose-100/50 mb-16 flex-wrap justify-center">
-            <button
-              onClick={() => setActiveTab('combo')}
-              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'combo' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
-            >
-              Combo Mẹ & Bé
-            </button>
-            <button
-              onClick={() => setActiveTab('baby')}
-              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'baby' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
-            >
-              Tắm & Massage Bé
-            </button>
-            <button
-              onClick={() => setActiveTab('sau-sinh')}
-              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'sau-sinh' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
-            >
-              Phục hồi Sau Sinh
-            </button>
-            <button
-              onClick={() => setActiveTab(' bầu')}
-              className={`px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all ${activeTab === ' bầu' ? 'bg-primary text-white shadow-md' : 'text-slate-600 hover:text-primary'}`}
-            >
-              Chăm sóc Mẹ Bầu
-            </button>
-          </div>
-
-          {/* Packages Display with smooth animation */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left max-w-5xl mx-auto">
-            <AnimatePresence>
-              {(categories || serviceCategories)[activeTab].packages.map((pkg) => {
-                const isFeatured = pkg.name.includes('Hạnh Phúc');
-                const maxVisible = 7;
-                const totalBenefits = pkg.benefits.length;
-                const visibleBenefits = pkg.benefits.slice(0, maxVisible);
-                const remainingCount = totalBenefits - maxVisible;
-
-                /* ────── FEATURED CARD (Full-width, premium layout) ────── */
-                if (isFeatured) {
-                  return (
-                    <motion.div
-                      key={pkg.id}
-                      initial={{ opacity: 0, scale: 0.96, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.96, y: -20 }}
-                      transition={{ duration: 0.5, ease: 'easeOut' }}
-                      className="lg:col-span-2 rounded-[2.5rem] overflow-hidden relative group"
-                    >
-                      {/* Animated gradient border */}
-                      <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-amber-400 via-rose-500 to-primary p-[3px] z-0">
-                        <div className="absolute inset-[3px] bg-white dark:bg-[#1C1B19] rounded-[calc(2.5rem-3px)]" />
-                      </div>
-
-                      {/* Sheen effect on hover */}
-                      <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden rounded-[2.5rem]">
-                        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                      </div>
-
-                      <div className="relative z-[2] flex flex-col">
-                        {/* Top decorative bar */}
-                        <div className="h-2 bg-gradient-to-r from-amber-400 via-rose-500 to-primary" />
-
-                        {/* Badge row */}
-                        <div className="px-8 sm:px-12 pt-8 sm:pt-10">
-                          <span className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-black uppercase tracking-widest px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-rose-500 to-primary text-white shadow-lg shadow-rose-200/50 dark:shadow-none">
-                            <Star className="w-4 h-4 fill-amber-300 text-amber-300" />
-                            GÓI BÁN CHẠY / ĐƯỢC YÊU THÍCH NHẤT
-                            <Star className="w-4 h-4 fill-amber-300 text-amber-300" />
-                          </span>
-                        </div>
-
-                        {/* Main content: 2-column on desktop */}
-                        <div className="flex flex-col lg:flex-row">
-                          {/* Left column: Info + CTA */}
-                          <div className="lg:w-[45%] p-8 sm:p-12 flex flex-col justify-between">
-                            <div>
-                              <h4 className="text-2xl sm:text-3xl font-serif font-black text-primary dark:text-rose-400 tracking-tight leading-tight mb-2">
-                                {pkg.name}
-                              </h4>
-                              <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                                <Clock className="w-3.5 h-3.5" /> {pkg.duration}
-                              </span>
-
-                              <div className="mt-6 mb-6">
-                                <span className="text-3xl sm:text-4xl font-serif font-black text-primary dark:text-rose-400">{pkg.price}</span>
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider ml-2">Trọn gói</span>
-                              </div>
-
-                              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-semibold leading-relaxed mb-6">
-                                {pkg.description || `Liệu trình ${pkg.total_sessions || 20} buổi chăm sóc chuyên sâu chuẩn y khoa của Bella Spa.`}
-                              </p>
-
-                              {/* Exclusive offer button */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setBookingService(pkg.name);
-                                  const el = document.getElementById('booking');
-                                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                                  setBookingNotes(`Đăng ký nhận Ưu đãi đặc quyền cho gói: ${pkg.name} (Voucher giảm 1.000.000đ / Quà tặng đặc biệt).`);
-                                  toast.success(`🎁 Đã kích hoạt Ưu đãi độc quyền cho gói ${pkg.name}! Mời mẹ điền thông tin đăng ký để nhận mã ưu đãi.`);
-                                }}
-                                className="inline-flex items-center gap-2 text-[10px] sm:text-xs font-extrabold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 px-4 py-2.5 rounded-xl border-2 border-amber-300/60 dark:border-amber-700/50 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-all cursor-pointer animate-pulse shadow-sm"
-                              >
-                                <Gift className="w-4 h-4 text-amber-500" />
-                                Nhận Ưu đãi độc quyền
-                              </button>
-                            </div>
-
-                            <button
-                              onClick={() => {
-                                setBookingService(pkg.name);
-                                const el = document.getElementById('booking');
-                                if (el) el.scrollIntoView({ behavior: 'smooth' });
-                                toast.info(`Mẹ đã chọn gói: ${pkg.name}. Mời điền thông tin đăng ký bên dưới! 🌸`);
-                              }}
-                              className="w-full mt-8 bg-primary hover:bg-primary-hover text-white dark:bg-rose-900/60 dark:hover:bg-rose-800 text-xs font-black uppercase tracking-widest py-4.5 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-lg shadow-pink-200/50 dark:shadow-none hover:shadow-pink-300/40 dark:hover:shadow-none"
-                            >
-                              Đặt lịch gói này ngay <ChevronRight className="w-4 h-4" />
-                            </button>
-                          </div>
-
-                          {/* Vertical divider */}
-                          <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-rose-200 dark:via-rose-900/50 to-transparent my-8" />
-
-                          {/* Right column: Benefits */}
-                          <div className="lg:w-[55%] p-8 sm:p-12 lg:pl-10">
-                            <h5 className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                              Quy trình liệu trình gồm:
-                            </h5>
-                            <ul className="space-y-3.5">
-                              {visibleBenefits.map((benefit, i) => (
-                                <li key={i} className="flex gap-3 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-medium">
-                                  <div className="w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mt-0.5 shrink-0">
-                                    <Check className="w-3 h-3" />
-                                  </div>
-                                  <span>{benefit}</span>
-                                </li>
-                              ))}
-                            </ul>
-
-                            {/* "And more..." indicator */}
-                            {remainingCount > 0 && (
-                              <div className="mt-5 pt-5 border-t border-dashed border-rose-200 dark:border-rose-900/50">
-                                <button
-                                  onClick={() => {
-                                    setBookingService(pkg.name);
-                                    const el = document.getElementById('booking');
-                                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                                    toast.info(`Gói ${pkg.name} còn ${remainingCount}+ quy trình nữa! Để lại SĐT, Bella Spa sẽ tư vấn chi tiết ngay 🌸`);
-                                  }}
-                                  className="flex items-center gap-3 text-primary dark:text-rose-300 font-extrabold text-xs sm:text-sm cursor-pointer hover:underline underline-offset-4 transition-all group/more"
-                                >
-                                  <div className="w-5 h-5 rounded-full bg-pink-100 dark:bg-pink-950 text-primary dark:text-rose-400 flex items-center justify-center shrink-0">
-                                    <Sparkles className="w-3 h-3" />
-                                  </div>
-                                  <span>...và {remainingCount}+ quy trình khác → <span className="underline group-hover/more:text-primary-hover">Liên hệ để xem chi tiết gói</span></span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                }
-
-                /* ────── STANDARD CARD (Compact, 8-line limit) ────── */
-                return (
-                  <motion.div
-                    key={pkg.id}
-                    initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.98, y: -10 }}
-                    transition={{ duration: 0.4 }}
-                    className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] shadow-xl border border-rose-50 dark:border-[#2E2B27] overflow-hidden flex flex-col justify-between hover:border-primary/20 transition-all group hover:shadow-2xl relative"
-                  >
-                    <div className="p-6 sm:p-10">
-                      {pkg.tag && (
-                        <span className="inline-block bg-pink-100 dark:bg-pink-950/30 text-primary dark:text-rose-300 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-rose-200/50 dark:border-rose-900/50 mb-3 w-fit">
-                          {pkg.tag}
-                        </span>
-                      )}
-                      
-                      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
-                        <div>
-                          <h4 className="text-xl font-serif font-black text-slate-800 dark:text-slate-200 tracking-tight group-hover:text-primary transition-colors">{pkg.name}</h4>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mt-1">
-                            <Clock className="w-3 h-3" /> {pkg.duration}
-                          </span>
-                        </div>
-                        <div className="text-left sm:text-right shrink-0 mt-2 sm:mt-0 flex flex-col items-start sm:items-end">
-                          <span className="text-2xl font-serif font-black text-primary dark:text-rose-400 block">{pkg.price}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block mb-2">Trọn gói</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setBookingService(pkg.name);
-                              const el = document.getElementById('booking');
-                              if (el) el.scrollIntoView({ behavior: 'smooth' });
-                              setBookingNotes(`Đăng ký nhận Ưu đãi đặc quyền cho gói: ${pkg.name} (Voucher giảm 1.000.000đ / Quà tặng đặc biệt).`);
-                              toast.success(`🎁 Đã kích hoạt Ưu đãi độc quyền cho gói ${pkg.name}! Mời mẹ điền thông tin đăng ký để nhận mã ưu đãi.`);
-                            }}
-                            className="inline-flex items-center gap-1.5 text-[9px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-2.5 py-1 rounded-lg border border-amber-200/50 dark:border-amber-900/30 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition-all cursor-pointer animate-pulse shadow-xs"
-                          >
-                            <Gift className="w-3 h-3 text-amber-500" />
-                            Nhận Ưu đãi độc quyền
-                          </button>
-                        </div>
-                      </div>
-
-                      <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold leading-relaxed mb-6 pb-6 border-b border-rose-50 dark:border-rose-950/20">
-                        {pkg.description || `Liệu trình ${pkg.total_sessions || 20} buổi chăm sóc chuyên sâu chuẩn y khoa của Bella Spa.`}
-                      </p>
-
-                      <h5 className="text-xs font-bold text-slate-700 dark:text-slate-400 uppercase tracking-widest mb-4">Quy trình liệu trình gồm:</h5>
-                      <ul className="space-y-3">
-                        {visibleBenefits.map((benefit, i) => (
-                          <li key={i} className="flex gap-3 text-slate-600 dark:text-slate-300 text-xs font-medium">
-                            <div className="w-4 h-4 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mt-0.5 shrink-0">
-                              <Check className="w-2.5 h-2.5" />
-                            </div>
-                            <span>{benefit}</span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      {/* "And more..." indicator */}
-                      {remainingCount > 0 && (
-                        <div className="mt-4 pt-4 border-t border-dashed border-rose-200 dark:border-rose-900/50">
-                          <button
-                            onClick={() => {
-                              setBookingService(pkg.name);
-                              const el = document.getElementById('booking');
-                              if (el) el.scrollIntoView({ behavior: 'smooth' });
-                              toast.info(`Gói ${pkg.name} còn ${remainingCount}+ quy trình nữa! Để lại SĐT, Bella Spa sẽ tư vấn chi tiết ngay 🌸`);
-                            }}
-                            className="flex items-center gap-3 text-primary dark:text-rose-300 font-extrabold text-xs cursor-pointer hover:underline underline-offset-4 transition-all"
-                          >
-                            <div className="w-4 h-4 rounded-full bg-pink-100 dark:bg-pink-950 text-primary dark:text-rose-400 flex items-center justify-center shrink-0">
-                              <Sparkles className="w-2.5 h-2.5" />
-                            </div>
-                            <span>...và {remainingCount}+ quy trình khác → Liên hệ để xem chi tiết</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="p-6 sm:p-10 pt-0">
-                      <button
-                        onClick={() => {
-                          setBookingService(pkg.name);
-                          const el = document.getElementById('booking');
-                          if (el) el.scrollIntoView({ behavior: 'smooth' });
-                          toast.info(`Mẹ đã chọn gói: ${pkg.name}. Mời điền thông tin đăng ký bên dưới! 🌸`);
-                        }}
-                        className="w-full bg-slate-50 dark:bg-slate-800 hover:bg-primary hover:text-white text-slate-700 dark:text-slate-300 dark:hover:bg-primary text-xs font-black uppercase tracking-widest py-4 rounded-2xl transition-all flex items-center justify-center gap-1.5 active:scale-95 shadow-sm group-hover:shadow-md"
-                      >
-                        Đặt lịch gói này ngay <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-
-        </div>
-      </section>
+      <LandingPackagesSection
+        activeTab={activeTab}
+        categories={categories}
+        serviceCategories={serviceCategories}
+        dataStatus={packageDataStatus}
+        dataError={packageDataError}
+        onActiveTabChange={setActiveTab}
+        onClaimOffer={claimPackageOffer}
+        onRequestMoreDetails={requestMorePackageDetails}
+        onSelectPackage={selectPackageForBooking}
+      />
 
       {/* ── INTERACTIVE RECOMMENDATION TOOL (WIZARD) ── */}
       <ServiceWizard
