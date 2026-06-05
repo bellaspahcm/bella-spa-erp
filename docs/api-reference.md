@@ -20,7 +20,7 @@ Tai lieu nay mo ta cac API HTTP dang ton tai trong `src/app/api`. Muc tieu la gi
 | `GET /api/cron/accounting-worker` | Lay hang doi accounting outbox va tao but toan tu dong | `CRON_SECRET` qua `Authorization: Bearer ...` | Xu ly batch toi da 50 event, co ket qua chi tiet tung event |
 | `GET /api/cron/ai-autopilot` | Chay AI autopilot dinh ky, quet canh bao va gui Telegram | `CRON_SECRET` qua `Authorization: Bearer ...` | Quet cac tenant dang active va bao cao partial failure neu co tenant loi |
 | `GET /api/cron/zalo-reminders` | Gui nhac lich hen Zalo dinh ky | `CRON_SECRET` qua `Authorization: Bearer ...` hoac query `?secret=...` | Dung cho job scheduler noi bo |
-| `GET /api/test-upcoming` | Kiem tra nhanh lich sap toi cua KTV trong moi truong dev/test | Khong co auth rieng, nhung bi tat trong production | Production tra 404 |
+| `GET /api/test-upcoming` | Kiem tra nhanh lich sap toi cua KTV trong moi truong dev/test | Local-only neu khong co secret; remote can `TEST_UPCOMING_SECRET` hoac `CRON_SECRET` | Production tra 404 |
 
 ## Chi Tiet Endpoint
 
@@ -204,8 +204,11 @@ Pham vi:
 
 - Chi dung cho dev/test.
 - Trong production luon tra `404` voi `{ "error": "Not found." }`.
+- Ngoai production, request local tu `localhost`, `127.0.0.1` hoac `::1` duoc phep chay khong can secret.
+- Request khong phai local phai gui `TEST_UPCOMING_SECRET` hoac fallback `CRON_SECRET` qua `Authorization: Bearer ...` hoac query `?secret=...`.
 
 Tra loi ngoai production:
 
 - Thanh cong: `{ "success": true, "count": number, "sessions": [...] }`.
+- `403` neu khong phai local va token sai/thieu.
 - `500` neu service lay lich loi.
