@@ -9,6 +9,7 @@ jest.mock('@/lib/accounting-outbox', () => ({
 import {
   enqueueSessionDoneAccountingOutbox,
   ensureSessionReviewPlaceholder,
+  recordSingleSessionRevenueIfNeeded,
 } from '../modules/booking/actions/session-completion-helpers';
 
 type DbCall = {
@@ -56,6 +57,10 @@ function createSupabaseMock(results: Array<{ data?: unknown; error?: { message: 
     }
 
     maybeSingle() {
+      return this.resolve();
+    }
+
+    single() {
       return this.resolve();
     }
 
@@ -169,5 +174,112 @@ describe('session completion accounting side effects', () => {
         payload: [expect.objectContaining({ session_log_id: 'session-1', status: 'pending_review' })],
       }),
     ]);
+  });
+
+  it('creates confirmed revenue and PACKAGE_SALE outbox for single-session packages', async () => {
+    const { calls, supabase } = createSupabaseMock([
+      { data: { id: 'revenue-1' } },
+    ]);
+
+    const result = await recordSingleSessionRevenueIfNeeded({
+      supabase: supabase as never,
+      bookingId: 'booking-1',
+      tenantId: 'tenant-1',
+      today: '2026-06-03',
+      sessionId: 'session-1',
+      isInventoryConsumed: false,
+      currentBooking: {
+        package_name: 'G\u00f3i d\u1ecbch v\u1ee5 l\u1ebb',
+        completed_sessions: 1,
+        status: 'booked',
+        total_sessions: 5,
+        ktv_commission: 30000,
+        assigned_ktv_id: 'ktv-1',
+        tenant_id: 'tenant-1',
+        full_price: 500000,
+        deposit_amount: 200000,
+        discount_percent: 0,
+      },
+    });
+
+    expect(result).toEqual({ isRevenueCreated: true, createdRevenueId: 'revenue-1' });
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'revenue',
+        op: 'insert',
+        payload: [expect.objectContaining({
+          booking_id: 'booking-1',
+          amount: 350000,
+          revenue_type: 'package_payment',
+          payment_method: 'bank_transfer',
+          received_date: '2026-06-03',
+          status: 'confirmed',
+          tenant_id: 'tenant-1',
+          accounting_metadata: expect.objectContaining({
+            amount: 350000,
+            booking_id: 'booking-1',
+          }),
+        })],
+      }),
+    ]));
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      supabase,
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        eventType: 'PACKAGE_SALE',
+        referenceType: 'REVENUE',
+        referenceId: 'revenue-1',
+        payload: expect.objectContaining({
+          totalAmount: 350000,
+          branchId: 'tenant-1',
+        }),
+      }),
+      '[processSessionCompletion:single-session-revenue]'
+    );
+  });
+
+  it('rolls back single-session revenue and booking progress when PACKAGE_SALE enqueue fails', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
+    const { calls, supabase } = createSupabaseMock([
+      { data: { id: 'revenue-1' } },
+      {},
+      {},
+    ]);
+
+    const result = await recordSingleSessionRevenueIfNeeded({
+      supabase: supabase as never,
+      bookingId: 'booking-1',
+      tenantId: 'tenant-1',
+      today: '2026-06-03',
+      sessionId: 'session-1',
+      isInventoryConsumed: false,
+      currentBooking: {
+        package_name: 'G\u00f3i d\u1ecbch v\u1ee5 l\u1ebb',
+        completed_sessions: 1,
+        status: 'booked',
+        total_sessions: 5,
+        ktv_commission: 30000,
+        assigned_ktv_id: 'ktv-1',
+        tenant_id: 'tenant-1',
+        full_price: 500000,
+        deposit_amount: 200000,
+        discount_percent: 0,
+      },
+    });
+
+    expect(result).toEqual({ error: expect.any(String) });
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'revenue',
+        op: 'delete',
+        filters: [['id', 'revenue-1']],
+      }),
+      expect.objectContaining({
+        table: 'bookings',
+        op: 'update',
+        payload: { completed_sessions: 1, status: 'booked' },
+        filters: [['id', 'booking-1']],
+      }),
+    ]));
   });
 });
