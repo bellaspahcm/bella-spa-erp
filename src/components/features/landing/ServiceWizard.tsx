@@ -5,22 +5,11 @@ import { ArrowRight,Baby,CheckCircle2,Heart,MapPin,Phone,UserCheck } from 'lucid
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-interface ServicePackage {
-  id: string;
-  name: string;
-  price: string;
-  duration: string;
-  description: string;
-  benefits: string[];
-  tag?: string;
-}
-
-type ServiceCategoryKey = ' bầu' | 'sau-sinh' | 'baby' | 'combo';
-type ServiceCategories = Record<ServiceCategoryKey, { packages: ServicePackage[] }>;
+import type { LandingCategories, ServicePackage } from './landing-data';
 
 interface ServiceWizardProps {
-  categories: ServiceCategories | null;
-  serviceCategories: ServiceCategories;
+  categories: LandingCategories | null;
+  serviceCategories: LandingCategories;
   onSelectPackage: (packageName: string) => void;
 }
 
@@ -47,9 +36,9 @@ export function ServiceWizard({ categories, serviceCategories, onSelectPackage }
     
     if (wizardUserType === 'bau') {
       if (wizardConcern === 'dau-nhuc') {
-        pkg = activeCats[' bầu'].packages[1] || activeCats[' bầu'].packages[0];
+        pkg = activeCats.bau.packages[1] || activeCats.bau.packages[0];
       } else {
-        pkg = activeCats[' bầu'].packages[0];
+        pkg = activeCats.bau.packages[0];
       }
     } else if (wizardUserType === 'sau-sinh') {
       if (wizardConcern === 'giam-eo' || wizardConcern === 'toan-dien') {
