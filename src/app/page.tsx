@@ -35,6 +35,7 @@ import {
   DEFAULT_SERVICE_CATEGORIES,
   cloneLandingCategories,
   createEmptyLandingCategories,
+  getLandingCategoryForPackage,
   type LandingCategories,
   type LandingCategory,
   type LandingCategoryKey,
@@ -109,24 +110,7 @@ export default function LandingPage() {
           const newCategories = createEmptyLandingCategories();
 
           data.forEach((pkg: PackageRow) => {
-            const nameLower = pkg.name.toLowerCase();
-            let catKey: LandingCategoryKey = 'bau';
-
-            if (nameLower.includes('combo') || nameLower.includes('home-care') || nameLower.includes('signature')) {
-              catKey = 'combo';
-            } else if (nameLower.includes('sau sinh') || nameLower.includes('phục hồi') || nameLower.includes('eo thon') || nameLower.includes('dáng ngọc') || nameLower.includes('tia sữa')) {
-              catKey = 'sau-sinh';
-            } else if (nameLower.includes('bé') || nameLower.includes('tắm') || nameLower.includes('hydrotherapy') || nameLower.includes('con yêu')) {
-              catKey = 'baby';
-            } else if (nameLower.includes('bầu') || nameLower.includes('thai')) {
-              catKey = 'bau';
-            } else {
-              if (pkg.total_sessions >= 10) {
-                catKey = 'combo';
-              } else {
-                catKey = 'bau';
-              }
-            }
+            const catKey = getLandingCategoryForPackage(pkg);
 
             const formattedPrice = new Intl.NumberFormat('vi-VN').format(pkg.price || pkg.full_price || 0) + 'đ';
 
