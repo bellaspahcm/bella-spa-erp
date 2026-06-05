@@ -358,7 +358,7 @@ export default function FinancePage() {
               <SkeletonTable />
             </div>
           ) : (
-            <table className="w-[72rem] table-fixed border-collapse">
+            <table className="w-[86rem] table-fixed border-collapse">
               <colgroup>
                 <col className="w-[15rem]" />
                 <col className="w-[24rem]" />
@@ -412,18 +412,18 @@ export default function FinancePage() {
               <tbody className="divide-y divide-slate-50">
                 {currentTransactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
-                     <td className={`${stickyBodyCellClassName} px-8 py-5 whitespace-nowrap`}>
-                      <div className="flex items-center gap-3">
+                    <td className={`${stickyBodyCellClassName} px-8 py-5 overflow-hidden whitespace-nowrap`}>
+                      <div className="flex min-w-0 items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                           tx.type === 'revenue' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-                        }`}>
+                        } shrink-0`}>
                           {tx.type === 'revenue' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                         </div>
-                        <span className="font-bold text-slate-900 whitespace-nowrap">{tx.category}</span>
+                        <span className="block min-w-0 truncate font-bold text-slate-900" title={tx.category}>{tx.category}</span>
                       </div>
                     </td>
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <p className="truncate text-sm font-bold text-slate-700" title={tx.details || 'N/A'}>{tx.details || 'N/A'}</p>
+                    <td className="px-8 py-5 overflow-hidden whitespace-nowrap">
+                      <p className="block min-w-0 truncate text-sm font-bold text-slate-700" title={tx.details || 'N/A'}>{tx.details || 'N/A'}</p>
                     </td>
                     <td className="px-8 py-5 text-sm font-medium text-slate-500 whitespace-nowrap">{tx.date}</td>
                     <td className="px-8 py-5 text-sm font-medium text-slate-500 whitespace-nowrap">{tx.method}</td>
