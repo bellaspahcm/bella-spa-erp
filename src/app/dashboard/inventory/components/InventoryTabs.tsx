@@ -11,11 +11,11 @@ type InventoryTabsProps = {
 
 export function InventoryTabs({ activeTab, onChange }: InventoryTabsProps) {
   return (
-    <div className="flex border-b border-slate-200 gap-6">
+    <div className="flex gap-4 overflow-x-auto border-b border-slate-200 pb-px sm:gap-6">
       <button
         onClick={() => onChange('stock')}
         className={cn(
-          'pb-4 font-black text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2',
+          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all',
           activeTab === 'stock' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600',
         )}
       >
@@ -24,7 +24,7 @@ export function InventoryTabs({ activeTab, onChange }: InventoryTabsProps) {
       <button
         onClick={() => onChange('requests')}
         className={cn(
-          'pb-4 font-black text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2',
+          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all',
           activeTab === 'requests' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600',
         )}
       >
@@ -33,7 +33,7 @@ export function InventoryTabs({ activeTab, onChange }: InventoryTabsProps) {
       <button
         onClick={() => onChange('reconciliation')}
         className={cn(
-          'pb-4 font-black text-xs uppercase tracking-widest border-b-2 transition-all flex items-center gap-2',
+          'flex shrink-0 items-center gap-2 border-b-2 pb-4 text-xs font-black uppercase tracking-widest transition-all',
           activeTab === 'reconciliation' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600',
         )}
       >

@@ -23,7 +23,7 @@ export function InventoryRestockModal({
   return (
     <AnimatePresence>
       {target && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -35,9 +35,9 @@ export function InventoryRestockModal({
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white w-full max-w-sm rounded-[3rem] p-10 relative z-10 shadow-2xl"
+            className="relative z-10 max-h-[92vh] w-full max-w-sm overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl sm:rounded-[3rem] sm:p-10"
           >
-            <div className="text-center mb-8">
+            <div className="mb-6 text-center sm:mb-8">
               <div className="w-16 h-16 bg-slate-100 rounded-[2rem] flex items-center justify-center mx-auto mb-4 text-slate-600">
                 <ArrowRightLeft className="w-8 h-8" />
               </div>
@@ -47,7 +47,7 @@ export function InventoryRestockModal({
                 Chỉ dùng để hiệu chỉnh hao hụt thực tế cục bộ.
               </div>
             </div>
-            <div className="space-y-4 mb-8">
+            <div className="mb-6 space-y-4 sm:mb-8">
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">
                   Số lượng điều chỉnh tăng ({target.unit})
@@ -63,14 +63,14 @@ export function InventoryRestockModal({
                   autoFocus
                 />
               </div>
-              <div className="bg-slate-50 p-4 rounded-2xl flex justify-between items-center">
+              <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-[10px] font-black text-slate-400 uppercase">Tồn kho mới</span>
                 <span className="font-black text-emerald-500 text-lg">
                   {Number(target.stock_level) + restockAmt} {target.unit}
                 </span>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button onClick={onClose} className="flex-1 py-3 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-600">Hủy</button>
               <button
                 onClick={onSubmit}

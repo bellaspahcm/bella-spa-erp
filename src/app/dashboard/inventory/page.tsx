@@ -75,13 +75,13 @@ export default function InventoryPage() {
   );
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto space-y-10">
+    <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 space-y-6 md:space-y-10">
 
       <InventoryPageHeader totalItems={items.length} lowCount={lowCount} />
 
       <InventoryTabs activeTab={activeTab} onChange={setActiveTab} />
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:gap-10">
 
         <div className="xl:col-span-2">
           {activeTab === 'stock' ? (

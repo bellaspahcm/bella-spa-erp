@@ -68,24 +68,24 @@ export default function ServicesPage() {
   } = useServicesPageState();
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto">
+    <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Quản lý dịch vụ</h1>
+      <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Quản lý dịch vụ</h1>
           <p className="text-slate-500 font-medium mt-1">Thiết lập bảng giá và các chương trình ưu đãi</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button 
             onClick={syncDefaultPackages}
             title="Đồng bộ các gói dịch vụ mặc định của Bella Spa từ Landing Page thành các bản nháp trong ERP"
-            className="flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-6 py-3 rounded-2xl font-bold transition-all active:scale-95"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:px-6"
           >
             <span>Đồng bộ gói mặc định</span>
           </button>
           <button 
             onClick={openAddModal}
-            className="flex items-center justify-center gap-2 bg-primary hover:bg-rose-600 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-xl shadow-rose-200 dark:shadow-none active:scale-95"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 font-bold text-white shadow-xl shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 dark:shadow-none sm:px-6"
           >
             <Plus className="w-5 h-5" />
             <span>Thêm dịch vụ mới</span>
@@ -94,7 +94,7 @@ export default function ServicesPage() {
       </div>
 
       {/* Filters & Search */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-8 flex flex-col md:flex-row gap-4 items-center">
+      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4 md:mb-8 lg:flex-row lg:items-center">
         <div className="relative flex-1 w-full group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
           <input 
@@ -105,7 +105,7 @@ export default function ServicesPage() {
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all font-medium text-slate-700"
           />
         </div>
-        <div className="w-full md:w-64 flex-shrink-0">
+        <div className="w-full flex-shrink-0 lg:w-64">
           <PremiumSelect
             value={statusFilter}
             options={[
@@ -120,17 +120,17 @@ export default function ServicesPage() {
       </div>
 
       {/* Services Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
         {paginatedServices.map((service, idx) => (
           <motion.div 
             key={service.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="group luxury-card-white rounded-[2.5rem] transition-all overflow-hidden flex flex-col sm:flex-row h-full relative"
+            className="group luxury-card-white relative flex h-full flex-col overflow-hidden rounded-[2rem] transition-all lg:flex-row lg:rounded-[2.5rem]"
           >
             {/* Visual Section */}
-            <div className="sm:w-48 bg-gradient-to-br from-rose-200 to-pink-300 dark:from-[#2D1620] dark:to-[#1A0A10] dark:border-r dark:border-[#3E3A35]/30 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+            <div className="relative flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-rose-200 to-pink-300 p-5 dark:from-[#2D1620] dark:to-[#1A0A10] dark:border-r dark:border-[#3E3A35]/30 sm:p-8 lg:w-48">
               <div className="absolute inset-0 opacity-20 pointer-events-none">
                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)]" />
               </div>
@@ -143,11 +143,11 @@ export default function ServicesPage() {
             </div>
 
             {/* Content Section */}
-            <div className="flex-1 p-8 flex flex-col">
-              <div className="flex items-start justify-between mb-4">
-                <div>
+            <div className="flex flex-1 flex-col p-5 sm:p-8">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h3 className="text-xl font-black text-slate-900">{service.name}</h3>
+                    <h3 className="break-words text-lg font-black text-slate-900 sm:text-xl">{service.name}</h3>
                     <span className={cn(
                       "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border",
                       service.status === 'active' 
@@ -157,12 +157,12 @@ export default function ServicesPage() {
                       {service.status === 'active' ? 'Đang hoạt động' : 'Tạm ngưng / Nháp'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-primary font-black text-lg">
+                  <div className="flex min-w-0 items-center gap-2 text-lg font-black text-primary">
                     <DollarSign className="w-4 h-4" />
-                    {formatNumberWithSeparator(service.price ?? 0)}đ
+                    <span className="break-words">{formatNumberWithSeparator(service.price ?? 0)}đ</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                   {/* Status Toggle Switch */}
                   <button
                     onClick={() => toggleServiceStatus(service)}
@@ -195,15 +195,15 @@ export default function ServicesPage() {
               </div>
 
               <div className="space-y-4 mb-6 flex-1">
-                <div className="flex items-center gap-3 text-slate-500 text-sm font-bold bg-slate-50 p-3 rounded-2xl">
-                  <Clock className="w-4 h-4 text-primary" />
-                  Thời lượng: {service.duration}
+                <div className="flex min-w-0 items-center gap-3 rounded-2xl bg-slate-50 p-3 text-sm font-bold text-slate-500">
+                  <Clock className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="break-words">Thời lượng: {service.duration}</span>
                 </div>
                 <div className="space-y-2">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Chi tiết dịch vụ</p>
                   <div className="flex flex-wrap gap-2">
                     {Array.isArray(service.details) ? service.details.map((detail: string, i: number) => (
-                      <span key={i} className="px-3 py-1.5 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold border border-slate-100">
+                      <span key={i} className="break-words rounded-xl border border-slate-100 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600">
                         {detail}
                       </span>
                     )) : null}
@@ -216,7 +216,7 @@ export default function ServicesPage() {
                 <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm shadow-rose-100 dark:shadow-none">
                   <Tag className="w-4 h-4 text-primary" />
                 </div>
-                <div className="text-xs font-bold text-rose-600 leading-relaxed">
+                <div className="min-w-0 break-words text-xs font-bold leading-relaxed text-rose-600">
                   <span className="uppercase text-[10px] block opacity-60 mb-0.5">Ưu đãi hiện có</span>
                   {service.offer}
                 </div>
@@ -228,12 +228,12 @@ export default function ServicesPage() {
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mt-10 flex flex-col items-center justify-between gap-6 md:flex-row">
           <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
             Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{filteredServices.length}</span> gói dịch vụ
           </p>
           
-          <div className="flex items-center gap-2">
+          <div className="flex max-w-full items-center gap-2 overflow-x-auto pb-1">
             <button 
               onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               disabled={currentPage === 1}
@@ -283,7 +283,7 @@ export default function ServicesPage() {
       {/* Add/Edit Service Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -295,17 +295,17 @@ export default function ServicesPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] bg-white shadow-2xl sm:rounded-[3rem]"
             >
               <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
                 {/* Header */}
-                <div className="p-10 pb-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
-                  <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-primary rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl shadow-rose-200 dark:shadow-none">
+                <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 bg-white p-5 pb-4 sm:p-10 sm:pb-6">
+                  <div className="flex min-w-0 items-center gap-3 sm:gap-5">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.25rem] bg-primary text-white shadow-2xl shadow-rose-200 dark:shadow-none sm:h-14 sm:w-14 sm:rounded-[1.5rem]">
                       <Zap className="w-7 h-7" />
                     </div>
-                    <div>
-                      <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                    <div className="min-w-0">
+                      <h2 className="break-words text-xl font-black tracking-tight text-slate-900 sm:text-3xl">
                         {modalMode === 'add' ? 'Thêm dịch vụ' : 'Chỉnh sửa dịch vụ'}
                       </h2>
                       <p className="text-slate-500 font-bold">
@@ -323,8 +323,8 @@ export default function ServicesPage() {
                 </div>
 
                 {/* Content */}
-                <div className="p-10 py-6 overflow-y-auto flex-1 space-y-6 scrollbar-thin">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex-1 space-y-5 overflow-y-auto p-5 scrollbar-thin sm:space-y-6 sm:p-10 sm:py-6">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                     <div className="space-y-2">
                       <label className="text-sm font-black text-slate-700 ml-1">Tên dịch vụ / Gói</label>
                       <input 
@@ -396,8 +396,8 @@ export default function ServicesPage() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                    <div>
+                  <div className="flex flex-col gap-3 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                       <span className="text-sm font-black text-slate-700 block">Kích hoạt gói dịch vụ</span>
                       <span className="text-xs text-slate-400 font-bold">Kích hoạt để gói hiển thị trực tiếp trên trang chủ Landing Page</span>
                     </div>
@@ -429,13 +429,13 @@ export default function ServicesPage() {
                   </div>
 
                   {/* ── Định mức tiêu hao vật tư mỗi buổi ───────────────────── */}
-                  <div className="bg-gradient-to-br from-rose-50/40 to-pink-50/40 border border-rose-100 rounded-2xl p-6 space-y-4">
+                  <div className="space-y-4 rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50/40 to-pink-50/40 p-4 sm:p-6">
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex min-w-0 items-start gap-3">
                         <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm">
                           <Database className="w-5 h-5" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <h4 className="text-sm font-black text-slate-900">Định mức tiêu hao vật tư mỗi buổi</h4>
                           <p className="text-[11px] text-slate-500 font-semibold leading-relaxed mt-0.5">
                             Hệ thống sẽ tự trừ kho theo định mức này khi KTV hoàn thành ca <span className="text-rose-500">(nếu bật ở Cài đặt → Quản lý Tiêu hao Kho vận)</span>.
@@ -468,7 +468,7 @@ export default function ServicesPage() {
                               ) : (
                                 <div className="space-y-2">
                                   {/* Header */}
-                                  <div className="hidden md:grid grid-cols-[1fr_140px_60px_40px] gap-3 px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                  <div className="hidden lg:grid grid-cols-[1fr_140px_60px_40px] gap-3 px-3 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                     <span>Vật tư</span>
                                     <span>SL / buổi</span>
                                     <span>Đơn vị</span>
@@ -477,7 +477,7 @@ export default function ServicesPage() {
                                   {materialRows.map((row, idx) => {
                                     const item = inventoryItems.find(it => it.id === row.item_id);
                                     return (
-                                      <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_140px_60px_40px] gap-3 items-center bg-white rounded-xl p-3 border border-rose-100">
+                                      <div key={idx} className="grid grid-cols-1 items-center gap-3 rounded-xl border border-rose-100 bg-white p-3 lg:grid-cols-[1fr_140px_60px_40px]">
                                         <PremiumSelect
                                           value={row.item_id}
                                           onChange={(val) => {
@@ -542,7 +542,7 @@ export default function ServicesPage() {
                 </div>
 
                 {/* Footer */}
-                <div className="p-10 pt-6 border-t border-slate-100 bg-slate-50/50 flex gap-4 shrink-0">
+                <div className="flex shrink-0 flex-col gap-3 border-t border-slate-100 bg-slate-50/50 p-5 sm:flex-row sm:gap-4 sm:p-10 sm:pt-6">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-[2rem] transition-all uppercase tracking-widest text-xs">
                     Hủy bỏ
                   </button>

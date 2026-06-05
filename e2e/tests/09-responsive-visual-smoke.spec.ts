@@ -57,6 +57,16 @@ const visualRoutes: VisualRoute[] = [
     content: /the lieu trinh|lo trinh|sessions/i,
   },
   {
+    name: "inventory",
+    path: "/dashboard/inventory",
+    content: /kho vat tu|ton kho|inventory/i,
+  },
+  {
+    name: "services",
+    path: "/dashboard/services",
+    content: /quan ly dich vu|dich vu|services/i,
+  },
+  {
     name: "ai-copilot",
     path: "/dashboard/ai-copilot",
     content: /ai coo|copilot|tong giam doc/i,
