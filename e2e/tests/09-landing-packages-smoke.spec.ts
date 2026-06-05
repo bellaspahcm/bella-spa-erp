@@ -56,14 +56,14 @@ test.describe("Landing packages public smoke", () => {
     await expectNoAppLevelErrors(page);
   });
 
-  test("booking form blocks empty submissions with required field validation", async ({ page }) => {
+  test("booking form blocks empty submissions with a validation toast", async ({ page }) => {
     await page.goto("/#booking", { waitUntil: "domcontentloaded" });
 
     const booking = page.locator("#booking");
     await expect(booking).toBeVisible();
     await booking.getByRole("button", { name: /Gửi thông tin giữ ưu đãi ngay/i }).click();
 
-    await expect.poll(async () => await booking.locator("input:invalid").count()).toBeGreaterThan(0);
+    await expect(page.getByText(/Vui lòng điền đầy đủ các thông tin bắt buộc/i)).toBeVisible();
     await expectNoAppLevelErrors(page);
   });
 
