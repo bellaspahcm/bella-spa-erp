@@ -41,7 +41,7 @@ export function BookingsDayTimelineList({
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="relative pl-8 group"
+            className="relative pl-6 group sm:pl-8"
           >
             <div className="absolute left-[11px] top-0 bottom-0 w-[2px] bg-slate-100 group-last:bottom-1/2" />
             <div
@@ -58,10 +58,10 @@ export function BookingsDayTimelineList({
 
             <div
               onClick={() => onSessionSelect(session)}
-              className="luxury-card-white p-6 rounded-3xl transition-all flex flex-col md:flex-row md:items-center gap-6 cursor-pointer hover:shadow-xl hover:border-primary/20"
+              className="luxury-card-white flex cursor-pointer flex-col gap-4 rounded-3xl p-4 transition-all hover:border-primary/20 hover:shadow-xl sm:p-6 lg:flex-row lg:items-center lg:gap-6"
             >
-              <div className="flex-1">
-                <div className="flex items-center gap-4 mb-3">
+              <div className="min-w-0 flex-1">
+                <div className="mb-3 flex flex-wrap items-center gap-3 sm:gap-4">
                   <div className="flex items-center gap-1.5 text-slate-900 font-black">
                     <Clock className="w-4 h-4 text-rose-500" />
                     {session.assigned_time || '09:00 - 11:00'}
@@ -83,26 +83,26 @@ export function BookingsDayTimelineList({
                   </span>
                 </div>
 
-                <h3 className="text-xl font-extrabold text-slate-900 mb-2">
+                <h3 className="mb-2 break-words text-lg font-extrabold text-slate-900 sm:text-xl">
                   Mẹ: {session.bookings?.customers?.name_mother}
                   {session.bookings?.customers?.name_baby && (
-                    <span className="text-rose-400 ml-2 font-medium">
+                    <span className="ml-0 block font-medium text-rose-400 sm:ml-2 sm:inline">
                       {' '}
                       - Bé: {session.bookings.customers.name_baby}
                     </span>
                   )}
                 </h3>
-                <p className="text-slate-500 font-bold text-sm flex items-center gap-2">
-                  <LayoutGrid className="w-4 h-4 text-slate-300" />
-                  {session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình'}
+                <p className="flex min-w-0 items-start gap-2 text-sm font-bold text-slate-500">
+                  <LayoutGrid className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" />
+                  <span className="break-words">{session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình'}</span>
                 </p>
               </div>
 
-              <div className="flex flex-col md:items-end gap-3 md:border-l md:pl-8 border-slate-100">
+              <div className="flex min-w-0 flex-col gap-3 border-slate-100 lg:items-end lg:border-l lg:pl-8">
                 <div className="flex items-center gap-3">
-                  <div className="text-right">
+                  <div className="min-w-0 text-left lg:text-right">
                     <p className="text-[10px] font-black text-slate-400 uppercase">Kỹ thuật viên</p>
-                    <p className="font-bold text-slate-900">
+                    <p className="break-words font-bold text-slate-900">
                       {session.bookings?.assigned_ktv?.full_name || 'Chưa phân công'}
                     </p>
                   </div>
@@ -110,7 +110,7 @@ export function BookingsDayTimelineList({
                     {session.bookings?.assigned_ktv?.full_name?.[0] || 'K'}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={(event) => {
@@ -148,7 +148,7 @@ export function BookingsDayTimelineList({
           </motion.div>
         ))
       ) : (
-        <div className="bg-white/50 border border-dashed border-slate-200 rounded-[32px] p-12 text-center">
+        <div className="rounded-[28px] border border-dashed border-slate-200 bg-white/50 p-8 text-center sm:rounded-[32px] sm:p-12">
           <CalendarIcon className="w-12 h-12 text-slate-200 mx-auto mb-4" />
           <p className="text-slate-400 font-bold">Không có lịch hẹn nào cho ngày này</p>
         </div>

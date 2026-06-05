@@ -51,7 +51,7 @@ export function BookingCreateScheduleModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -63,16 +63,16 @@ export function BookingCreateScheduleModal({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-xl bg-white rounded-[40px] shadow-2xl overflow-hidden p-8"
+            className="relative max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[28px] bg-white p-5 shadow-2xl sm:rounded-[40px] sm:p-8"
           >
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-2xl font-black text-slate-900">Tạo lịch chăm sóc mới</h3>
+            <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
+              <h3 className="min-w-0 break-words text-xl font-black text-slate-900 sm:text-2xl">Tạo lịch chăm sóc mới</h3>
               <button onClick={onClose} className="p-3 hover:bg-slate-100 rounded-2xl transition-colors">
                 <X className="w-6 h-6 text-slate-400" />
               </button>
             </div>
 
-            <form className="space-y-6" onSubmit={onSubmit}>
+            <form className="space-y-5 sm:space-y-6" onSubmit={onSubmit}>
               <div className="space-y-4">
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
@@ -93,7 +93,7 @@ export function BookingCreateScheduleModal({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
                       Ngày thực hiện
@@ -102,7 +102,7 @@ export function BookingCreateScheduleModal({
                       name="date"
                       type="date"
                       defaultValue={defaultDate || getLocalDateString()}
-                      className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1"
+                      className="mt-1 w-full rounded-2xl border-none bg-slate-50 px-4 py-4 font-bold text-slate-900 outline-none transition-all focus:ring-2 focus:ring-primary/20 sm:px-6"
                     />
                   </div>
                   <div>
@@ -113,7 +113,7 @@ export function BookingCreateScheduleModal({
                       type="time"
                       value={createTimeRange.start}
                       onChange={(event) => onCreateTimeRangeChange({ ...createTimeRange, start: event.target.value })}
-                      className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1"
+                      className="mt-1 w-full rounded-2xl border-none bg-slate-50 px-4 py-4 font-bold text-slate-900 outline-none transition-all focus:ring-2 focus:ring-primary/20 sm:px-6"
                     />
                   </div>
                   <div>
@@ -124,7 +124,7 @@ export function BookingCreateScheduleModal({
                       type="time"
                       value={createTimeRange.end}
                       onChange={(event) => onCreateTimeRangeChange({ ...createTimeRange, end: event.target.value })}
-                      className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1"
+                      className="mt-1 w-full rounded-2xl border-none bg-slate-50 px-4 py-4 font-bold text-slate-900 outline-none transition-all focus:ring-2 focus:ring-primary/20 sm:px-6"
                     />
                   </div>
                 </div>
@@ -134,12 +134,12 @@ export function BookingCreateScheduleModal({
                   <textarea
                     name="notes"
                     placeholder="Nhập yêu cầu đặc biệt..."
-                    className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 transition-all outline-none mt-1 h-24 resize-none"
+                    className="mt-1 h-24 w-full resize-none rounded-2xl border-none bg-slate-50 px-4 py-4 font-bold text-slate-900 outline-none transition-all focus:ring-2 focus:ring-primary/20 sm:px-6"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex flex-col gap-3 pt-3 sm:flex-row sm:pt-4">
                 <button
                   type="submit"
                   disabled={isUpdating}

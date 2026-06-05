@@ -89,24 +89,24 @@ export function SessionCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.05 }}
       onClick={onSelect}
-      className="group luxury-card-white p-6 rounded-[2.5rem] transition-all flex flex-col md:flex-row md:items-center gap-8 relative cursor-pointer border border-slate-100 hover:shadow-lg"
+      className="group luxury-card-white relative flex cursor-pointer flex-col gap-5 rounded-[2rem] border border-slate-100 p-4 transition-all hover:shadow-lg sm:p-6 lg:flex-row lg:items-center lg:gap-8 lg:rounded-[2.5rem]"
     >
       {/* Background blur container with overflow-hidden */}
-      <div className="absolute inset-0 rounded-[2.5rem] overflow-hidden pointer-events-none">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[2rem] lg:rounded-[2.5rem]">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
-      <div className="w-16 h-16 bg-gradient-to-br from-pink-50 to-white rounded-2xl flex items-center justify-center flex-shrink-0 border border-pink-100 shadow-inner group-hover:scale-110 transition-transform relative z-10">
+      <div className="relative z-10 flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl border border-pink-100 bg-gradient-to-br from-pink-50 to-white shadow-inner transition-transform group-hover:scale-110 sm:h-16 sm:w-16">
         <Flower2 className="text-primary w-8 h-8" />
       </div>
       
       <div className="flex-1 min-w-0 relative z-10">
         <div className="flex flex-wrap items-center gap-3 mb-2">
-          <h3 className="text-xl font-black text-slate-900 truncate tracking-tight uppercase">
+          <h3 className="max-w-full break-words text-lg font-black tracking-tight text-slate-900 uppercase sm:text-xl">
             Mẹ {booking.customers?.name_mother} {booking.customers?.name_baby ? `& Bé ${booking.customers.name_baby}` : ''}
           </h3>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-1 bg-rose-50 text-primary rounded-lg text-[9px] font-black uppercase tracking-[0.05em] border border-primary/10">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <span className="max-w-full break-words rounded-lg border border-primary/10 bg-rose-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-primary">
               {resolvePackageName(booking)}
             </span>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg">
@@ -128,17 +128,17 @@ export function SessionCard({
           )}
         </div>
         
-        <div className="flex flex-wrap gap-y-3 gap-x-8 text-sm font-bold text-slate-500 mb-5">
-          <div className="flex items-center gap-2.5">
-            <Clock className="w-4 h-4 text-primary/60" />
+        <div className="mb-5 flex flex-wrap gap-x-8 gap-y-3 text-sm font-bold text-slate-500">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Clock className="h-4 w-4 shrink-0 text-primary/60" />
             Tiến độ: <span className="text-slate-900 font-black">{completedCount}/{totalCount} buổi</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <Calendar className="w-4 h-4 text-primary/60" />
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Calendar className="h-4 w-4 shrink-0 text-primary/60" />
             Bắt đầu: <span className="text-slate-900 font-black tracking-tighter">{booking.start_date || '---'}</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <UserCircle className="w-4 h-4 text-primary/60" />
+          <div className="flex min-w-0 items-center gap-2.5">
+            <UserCircle className="h-4 w-4 shrink-0 text-primary/60" />
             KTV: <span className={cn("font-black", hasKtv ? "text-slate-900" : "text-amber-500")}>
               {booking.assigned_ktv_name || 'Chưa phân công'}
             </span>
@@ -157,7 +157,7 @@ export function SessionCard({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 md:items-end md:border-l md:pl-8 border-slate-100 min-w-[280px] justify-center relative z-10">
+      <div className="relative z-10 flex min-w-0 flex-col justify-center gap-3 border-slate-100 lg:min-w-[280px] lg:items-end lg:border-l lg:pl-8">
         {/* Continuity Context: Show last session's note before the new update */}
         {(() => {
           const completedLogs = (booking.session_logs || [])
@@ -196,7 +196,7 @@ export function SessionCard({
           !hasKtv ? (
             // Hard Lock UI: Chưa phân KTV
             <div className="w-full flex flex-col gap-2">
-              <div className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 font-black text-[10px] uppercase tracking-widest justify-center">
+              <div className="flex w-full items-center justify-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-[10px] font-black uppercase tracking-widest text-amber-700 sm:px-5">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>Chưa phân công KTV</span>
               </div>
@@ -209,7 +209,7 @@ export function SessionCard({
               onClick={handleUpdateClick}
               disabled={isUpdating}
               className={cn(
-                "w-full flex items-center gap-3 px-8 py-4 rounded-2xl font-black transition-all text-[10px] uppercase tracking-widest justify-center shadow-lg active:scale-95",
+                "flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-4 text-[10px] font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 sm:px-8",
                 (alreadyDoneToday || (!isScheduledForToday && userRole !== 'admin')) 
                   ? "bg-slate-100 text-slate-400 shadow-none cursor-not-allowed" 
                   : "bg-primary text-white shadow-pink-100 dark:shadow-none hover:bg-primary-hover"
@@ -234,7 +234,7 @@ export function SessionCard({
             <button 
               onClick={handleReuseClick}
               disabled={isReusingId === booking.id}
-              className="w-full flex items-center gap-3 px-6 py-3 rounded-2xl bg-slate-900 text-white font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all shadow-md active:scale-95 justify-center"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-4 py-3 text-[9px] font-black uppercase tracking-widest text-white shadow-md transition-all hover:bg-slate-800 active:scale-95 sm:px-6"
             >
               {isReusingId === booking.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <TrendingUp className="w-3 h-3" />}
               Tái sử dụng gói nhanh

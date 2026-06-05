@@ -89,7 +89,7 @@ export function BookingDayDetailModal({
   return (
     <AnimatePresence>
       {isOpen && modalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -101,12 +101,12 @@ export function BookingDayDetailModal({
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden"
+            className="relative max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-[28px] bg-white shadow-2xl sm:rounded-[40px]"
           >
-            <div className="p-8 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-2xl font-black text-slate-900">Chi tiết lịch hẹn</h3>
+            <div className="max-h-[92vh] overflow-y-auto p-5 sm:p-8">
+              <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8">
+                <div className="min-w-0">
+                  <h3 className="text-xl font-black text-slate-900 sm:text-2xl">Chi tiết lịch hẹn</h3>
                   <p className="text-rose-500 font-bold mt-1">
                     {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full' }).format(modalData.date)}
                   </p>
@@ -116,8 +116,8 @@ export function BookingDayDetailModal({
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 md:col-span-1 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:rounded-[32px] sm:p-6">
                   <div className="flex items-center gap-3 mb-4 text-slate-400">
                     <Users className="w-5 h-5" />
                     <span className="text-xs font-black uppercase tracking-widest">Nhân sự & Khách hàng</span>
@@ -125,7 +125,7 @@ export function BookingDayDetailModal({
                   <div className="space-y-4">
                     <div>
                       <p className="text-xs text-slate-400 font-bold mb-1">Khách hàng</p>
-                      <p className="font-bold text-slate-900">{modalData.customer}</p>
+                      <p className="break-words font-bold text-slate-900">{modalData.customer}</p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 font-bold mb-2 ml-1">Kỹ thuật viên</p>
@@ -145,20 +145,20 @@ export function BookingDayDetailModal({
                   </div>
                 </div>
 
-                <div className="col-span-2 md:col-span-1 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:rounded-[32px] sm:p-6">
                   <div className="flex items-center gap-3 mb-4 text-slate-400">
                     <Clock className="w-5 h-5" />
                     <span className="text-xs font-black uppercase tracking-widest">Thời gian & Địa điểm</span>
                   </div>
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       <div>
                         <p className="text-xs text-slate-400 font-bold mb-1">Ngày (Dời lịch)</p>
                         <input
                           type="date"
                           value={modalData.dateString || ''}
                           onChange={(event) => updateModalData({ dateString: event.target.value })}
-                          className="w-full bg-white border-none rounded-xl px-2 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none text-xs"
+                          className="w-full rounded-xl border-none bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-sm outline-none transition-all focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
                       <div>
@@ -167,18 +167,18 @@ export function BookingDayDetailModal({
                           type="time"
                           value={modalData.time || ''}
                           onChange={(event) => updateModalData({ time: event.target.value })}
-                          className="w-full bg-white border-none rounded-xl px-2 py-2 font-bold text-slate-900 shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none text-xs"
+                          className="w-full rounded-xl border-none bg-white px-3 py-2 text-xs font-bold text-slate-900 shadow-sm outline-none transition-all focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 font-bold mb-1">Địa chỉ</p>
-                      <p className="font-bold text-slate-900 text-sm leading-relaxed">{modalData.location}</p>
+                      <p className="break-words text-sm font-bold leading-relaxed text-slate-900">{modalData.location}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="col-span-2 md:col-span-1 bg-rose-50/50 p-6 rounded-[32px] border border-rose-100">
+                <div className="rounded-[24px] border border-rose-100 bg-rose-50/50 p-4 sm:rounded-[32px] sm:p-6">
                   <div className="flex items-center gap-3 mb-4 text-rose-400">
                     <Package className="w-5 h-5" />
                     <span className="text-xs font-black uppercase tracking-widest">Gói dịch vụ</span>
@@ -186,13 +186,13 @@ export function BookingDayDetailModal({
                   <div className="space-y-4">
                     <div>
                       <p className="text-xs text-rose-400 font-bold mb-1">Liệu trình</p>
-                      <p className="font-bold text-slate-900">
+                      <p className="break-words font-bold text-slate-900">
                         {modalData.package} (Buổi {modalData.sessionNumber})
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-rose-400 font-bold mb-1">Số lượng buổi</p>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                         <p className="font-bold text-slate-900">
                           {modalData.completedSessions}/{modalData.totalSessions} buổi
                         </p>
@@ -212,7 +212,7 @@ export function BookingDayDetailModal({
                   </div>
                 </div>
 
-                <div className="col-span-2 md:col-span-1 bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:rounded-[32px] sm:p-6">
                   <div className="flex items-center gap-3 mb-4 text-slate-500">
                     <FileText className="w-5 h-5" />
                     <span className="text-xs font-black uppercase tracking-widest text-slate-400">
@@ -236,8 +236,8 @@ export function BookingDayDetailModal({
                   </div>
                 </div>
 
-                <div className="col-span-2 space-y-6">
-                  <div className="bg-slate-50 p-6 rounded-[32px] border border-slate-100">
+                <div className="space-y-4 md:col-span-2 sm:space-y-6">
+                  <div className="rounded-[24px] border border-slate-100 bg-slate-50 p-4 sm:rounded-[32px] sm:p-6">
                     <div className="flex items-center gap-3 mb-4 text-slate-400">
                       <History className="w-5 h-5" />
                       <span className="text-xs font-black uppercase tracking-widest">Lịch sử buổi tập trước</span>
@@ -269,8 +269,8 @@ export function BookingDayDetailModal({
                     </div>
                   </div>
 
-                  <div className="bg-white p-8 rounded-[40px] border-2 border-primary/10 shadow-2xl shadow-primary/5">
-                    <div className="flex items-center justify-between mb-4">
+                  <div className="rounded-[28px] border-2 border-primary/10 bg-white p-4 shadow-2xl shadow-primary/5 sm:rounded-[40px] sm:p-8">
+                    <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3 text-primary">
                         <MessageSquare className="w-5 h-5" />
                         <span className="text-xs font-black uppercase tracking-widest">Nội dung chăm sóc hôm nay</span>
@@ -291,7 +291,7 @@ export function BookingDayDetailModal({
                 </div>
               </div>
 
-              <div className="mt-8 flex gap-3">
+              <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
                 <button
                   onClick={() => {
                     onClose();

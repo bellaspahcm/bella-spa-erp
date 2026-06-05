@@ -46,8 +46,8 @@ export function BookingsTimelineDateRibbon({
   };
 
   return (
-    <div className="luxury-card-white p-6 rounded-[32px] mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 select-none">
-      <div className="flex items-center gap-4">
+    <div className="luxury-card-white mb-6 flex flex-col gap-4 rounded-[28px] p-4 select-none md:flex-row md:items-center md:justify-between md:rounded-[32px] md:p-6">
+      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         <div className="flex items-center bg-slate-50 rounded-2xl p-1 border border-slate-100">
           <button
             type="button"
@@ -64,8 +64,8 @@ export function BookingsTimelineDateRibbon({
             <ChevronRight className="w-5 h-5 text-slate-600" />
           </button>
         </div>
-        <div>
-          <h2 className="text-xl font-black text-slate-900 capitalize tracking-tight">
+        <div className="min-w-0">
+          <h2 className="break-words text-base font-black capitalize tracking-tight text-slate-900 sm:text-xl">
             {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full' }).format(selectedDate)}
           </h2>
           <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">
@@ -74,7 +74,7 @@ export function BookingsTimelineDateRibbon({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+      <div className="flex max-w-full items-center gap-2 overflow-x-auto no-scrollbar py-1">
         {weekDays.map((date, idx) => {
           const selected = isSameDay(date, selectedDate);
           const dateIsToday = isSameDay(date, today);
