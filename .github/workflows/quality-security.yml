@@ -33,6 +33,9 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: Critical regression tests
+        run: npm run test:critical
+
       - name: Export actions regression tests
         run: npm test -- src/__tests__/export-actions.test.ts --runInBand
 
