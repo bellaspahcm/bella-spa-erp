@@ -20,7 +20,7 @@ type JournalLineRow = NonNullable<JournalEntryRow['journal_lines']>[number];
 type JournalFilters = NonNullable<Parameters<typeof getJournalEntries>[0]>;
 
 const dateInputClassName =
-  'h-11 w-full min-w-[10.75rem] rounded-xl border border-slate-100 bg-slate-50 px-4 pr-10 text-xs font-bold text-slate-800 outline-none [color-scheme:light] dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1] dark:[color-scheme:dark]';
+  'h-11 w-full min-w-0 max-w-full appearance-none truncate rounded-xl border border-slate-100 bg-slate-50 px-4 pr-3 text-xs font-bold text-slate-800 outline-none [color-scheme:light] dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1] dark:[color-scheme:dark]';
 const fieldLabelClassName =
   'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/50 uppercase tracking-wider block whitespace-nowrap';
 const tableWrapperClassName =
@@ -105,7 +105,7 @@ export default function JournalsPage() {
       <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 sm:p-6 shadow-sm">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-[repeat(2,minmax(10.75rem,12rem))_minmax(12rem,1fr)_minmax(14rem,1.35fr)_minmax(16rem,1.35fr)]">
           {/* Start Date */}
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             <span className={fieldLabelClassName}>Từ ngày</span>
             <div className="relative">
               <input 
@@ -118,7 +118,7 @@ export default function JournalsPage() {
           </div>
 
           {/* End Date */}
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             <span className={fieldLabelClassName}>Đến ngày</span>
             <div className="relative">
               <input 
