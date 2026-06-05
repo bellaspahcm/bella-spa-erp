@@ -86,20 +86,20 @@ export default function AttendanceCalendar({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 backdrop-blur-sm sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-[32px] w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[600px]"
+        className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl md:h-[min(600px,92vh)] md:flex-row md:rounded-[32px]"
       >
         {/* Left Panel: Calendar Grid */}
-        <div className="flex-1 p-8 overflow-y-auto border-r border-slate-100">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-black text-slate-900">Chấm công: {selectedKtv.name}</h3>
-            <span className="text-xs font-black bg-primary/10 text-primary px-3 py-1 rounded-full uppercase tracking-widest">{currentMonthYear}</span>
+        <div className="flex-1 overflow-y-auto border-b border-slate-100 p-4 sm:p-6 md:border-b-0 md:border-r md:p-8">
+          <div className="mb-5 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-xl font-black text-slate-900 sm:text-2xl">Chấm công: {selectedKtv.name}</h3>
+            <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary">{currentMonthYear}</span>
           </div>
 
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-7 gap-2 sm:gap-3">
             {/* Headers */}
             {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(h => (
               <div key={h} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest py-2">{h}</div>
@@ -134,7 +134,7 @@ export default function AttendanceCalendar({
                     key={day}
                     onClick={() => handleDayClick(dateStr, log)}
                     className={cn(
-                      "aspect-square rounded-2xl flex flex-col justify-between p-3 transition-all relative font-black",
+                      "relative flex aspect-square flex-col justify-between rounded-xl p-2 font-black transition-all sm:rounded-2xl sm:p-3",
                       bgClass,
                       isToday && "ring-2 ring-primary"
                     )}
@@ -157,7 +157,7 @@ export default function AttendanceCalendar({
         </div>
 
         {/* Right Panel: Detail & Override Form */}
-        <div className="w-full md:w-80 bg-slate-50 p-8 flex flex-col justify-between">
+        <div className="flex max-h-[42vh] w-full flex-col justify-between overflow-y-auto bg-slate-50 p-4 sm:p-6 md:max-h-none md:w-80 md:p-8">
           <div>
             <h4 className="text-lg font-black text-slate-900 mb-6 uppercase tracking-wider text-xs text-slate-400">Chi tiết ngày chọn</h4>
             
@@ -223,7 +223,7 @@ export default function AttendanceCalendar({
             )}
           </div>
 
-          <div className="flex gap-3 mt-8">
+          <div className="mt-6 flex gap-3 md:mt-8">
             <button
               onClick={onClose}
               disabled={isSaving}

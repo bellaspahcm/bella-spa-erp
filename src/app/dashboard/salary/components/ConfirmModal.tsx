@@ -30,14 +30,14 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-3 backdrop-blur-sm sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl border border-slate-100"
+        className="max-h-[92vh] w-full max-w-md overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-2xl sm:rounded-[32px]"
       >
-        <div className="p-8">
-          <div className="flex items-center gap-4 mb-6">
+        <div className="max-h-[calc(92vh-6.5rem)] overflow-y-auto p-5 sm:p-8">
+          <div className="mb-5 flex items-center gap-4 sm:mb-6">
             <div className={cn(
               "w-12 h-12 rounded-2xl flex items-center justify-center",
               isDanger ? "bg-rose-50 text-rose-600" : "bg-primary/10 text-primary"
@@ -57,7 +57,7 @@ export default function ConfirmModal({
           </div>
           <p className="text-slate-600 text-sm font-bold leading-relaxed">{message}</p>
         </div>
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
+        <div className="flex gap-3 border-t border-slate-100 bg-slate-50 p-4 sm:p-6">
           <button
             onClick={onClose}
             disabled={isLoading}

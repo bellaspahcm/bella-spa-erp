@@ -67,6 +67,16 @@ const visualRoutes: VisualRoute[] = [
     content: /quan ly dich vu|dich vu|services/i,
   },
   {
+    name: "salary",
+    path: "/dashboard/salary",
+    content: /luong ktv|bang tinh luong|salary/i,
+  },
+  {
+    name: "salary-reconciliation",
+    path: "/dashboard/accounting/salary-reconciliation",
+    content: /doi soat luong|luong ktv|salary/i,
+  },
+  {
     name: "ai-copilot",
     path: "/dashboard/ai-copilot",
     content: /ai coo|copilot|tong giam doc/i,

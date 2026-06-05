@@ -38,11 +38,11 @@ export default function SessionMatrixTable({
   );
 
   return (
-    <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden mb-10">
-      <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="mb-6 overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm md:mb-10 md:rounded-[40px]">
+      <div className="flex flex-col gap-4 border-b border-slate-50 p-4 sm:p-6 md:flex-row md:items-center md:justify-between md:p-8">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
-            <CalendarIcon className="w-8 h-8 text-primary" />
+          <h2 className="flex items-center gap-3 text-lg font-black tracking-tight text-slate-900 sm:text-2xl">
+            <CalendarIcon className="h-6 w-6 shrink-0 text-primary sm:h-8 sm:w-8" />
             Đối soát số buổi làm chi tiết
           </h2>
           <p className="text-slate-500 font-medium text-sm mt-1">
@@ -52,15 +52,15 @@ export default function SessionMatrixTable({
         <button
           onClick={handleExportMatrix}
           disabled={isExportingMatrix || !matrixData}
-          className="flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white px-6 py-3 rounded-2xl font-black transition-all text-xs uppercase tracking-widest disabled:opacity-50"
+          className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-5 py-3 text-xs font-black uppercase tracking-widest text-emerald-600 transition-all hover:bg-emerald-600 hover:text-white disabled:opacity-50 sm:px-6"
         >
           <FileSpreadsheet className="w-5 h-5" />
           <span>Xuất file đối soát</span>
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-max text-left">
+      <div className="overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.32)]">
+        <table className="w-max min-w-[72rem] text-left whitespace-nowrap">
           <thead>
             <tr className="bg-slate-50/80 backdrop-blur-md">
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px] sticky left-0 z-20 bg-slate-50">

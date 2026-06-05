@@ -34,31 +34,31 @@ export default function SalaryTable({
   const isNotKtv = currentUser?.role?.toLowerCase() !== 'ktv';
 
   return (
-    <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden mb-10">
-      <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3 tracking-tight">
-          <ShieldCheck className="w-8 h-8 text-primary" />
+    <div className="mb-6 overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm md:mb-10 md:rounded-[40px]">
+      <div className="flex flex-col gap-4 border-b border-slate-50 p-4 sm:p-6 md:flex-row md:items-center md:justify-between md:p-8">
+        <h2 className="flex items-center gap-3 text-lg font-black tracking-tight text-slate-900 sm:text-2xl">
+          <ShieldCheck className="h-6 w-6 shrink-0 text-primary sm:h-8 sm:w-8" />
           Bảng tính lương chi tiết
         </h2>
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto md:items-center">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input 
               type="text" 
               placeholder="Tìm tên KTV..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-6 py-4 bg-slate-50 border-none rounded-2xl text-sm outline-none focus:ring-2 focus:ring-primary/20 w-64 font-bold" 
+              className="w-full rounded-2xl border-none bg-slate-50 py-4 pl-12 pr-6 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <button className="p-4 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-500 transition-all">
+          <button className="flex min-h-12 items-center justify-center rounded-2xl bg-slate-50 p-4 text-slate-500 transition-all hover:bg-slate-100">
             <Filter className="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.32)]">
+        <table className="w-max min-w-[90rem] text-left whitespace-nowrap">
           <thead className="sticky top-0 z-10">
             <tr className="bg-slate-50/80 backdrop-blur-md">
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[220px]">Kỹ thuật viên</th>
