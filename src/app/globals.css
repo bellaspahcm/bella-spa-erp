@@ -212,6 +212,40 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(157, 23, 77, 0.2);
 }
 
+.bella-toolbar,
+.bella-pagination {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.bella-toolbar > *,
+.bella-pagination > * {
+  min-width: 0;
+}
+
+.bella-pagination {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 0.25rem;
+}
+
+.bella-pagination > *,
+.bella-pagination button,
+.bella-pagination a {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.bella-toolbar input,
+.bella-toolbar select,
+.bella-toolbar button {
+  max-width: 100%;
+}
+
 
 
 /* Fix date/time inputs clipping */
@@ -251,6 +285,23 @@ input[type="time"]::-webkit-datetime-edit-ampm-field {
 }
 
 @media (max-width: 640px) {
+  .bella-toolbar {
+    width: 100%;
+  }
+
+  .bella-toolbar > * {
+    width: 100%;
+  }
+
+  .bella-toolbar button {
+    justify-content: center;
+  }
+
+  .bella-pagination {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
   input[type="date"],
   input[type="time"],
   input[type="datetime-local"] {

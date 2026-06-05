@@ -210,7 +210,7 @@ export default function FinancePage() {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Tài chính</h1>
           <p className="text-slate-500 font-medium mt-1">Theo dõi dòng tiền và hiệu quả kinh doanh</p>
         </div>
-        <div className="flex w-full flex-col sm:w-auto sm:flex-row sm:items-center gap-3">
+        <div className="bella-toolbar flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
           <PremiumExportButton />
           <button 
             onClick={() => setIsModalOpen(true)}
@@ -328,7 +328,7 @@ export default function FinancePage() {
             <CreditCard className="w-6 h-6 text-rose-500" />
             Giao dịch gần đây
           </h2>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div className="bella-toolbar flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center md:w-auto">
             <div className="relative flex-1 sm:flex-initial">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
@@ -466,7 +466,7 @@ export default function FinancePage() {
             Hiển thị <span className="text-slate-900">{currentTransactions.length}</span> trên <span className="text-slate-900">{filteredTransactions.length}</span> giao dịch
           </p>
           
-          <div className="flex w-full sm:w-auto items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+          <div className="bella-pagination sm:w-auto">
             <button 
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}

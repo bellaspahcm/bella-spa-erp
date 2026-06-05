@@ -41,7 +41,7 @@ export function InventoryLogsPanel({
 
         <div className="mb-5 space-y-3 rounded-2xl bg-slate-50 p-4 sm:mb-6">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lọc theo tháng</p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="bella-toolbar grid grid-cols-1 gap-2 sm:grid-cols-2">
             <PremiumSelect
               value={String(logMonth)}
               onChange={(val) => setLogMonth(Number(val))}

@@ -403,7 +403,7 @@ export default function SalaryPage() {
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter sm:text-4xl">Lương KTV</h1>
           <p className="text-slate-500 font-medium mt-1">Quản lý thu nhập và hiệu suất làm việc của kỹ thuật viên</p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="bella-toolbar flex flex-col gap-3 sm:flex-row sm:items-center">
           <PremiumExportButton />
           {currentUser?.role?.toLowerCase() !== 'ktv' && (
             <>
