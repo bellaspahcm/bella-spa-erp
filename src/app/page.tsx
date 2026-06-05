@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -31,20 +30,9 @@ import { HeroSection } from '@/components/features/landing/HeroSection';
 import { ServiceWizard } from '@/components/features/landing/ServiceWizard';
 import { FeedbackCarousel } from '@/components/features/landing/FeedbackCarousel';
 import { LandingPackagesSection } from '@/components/features/landing/LandingPackagesSection';
-import {
-  DEFAULT_SERVICE_CATEGORIES,
-  cloneLandingCategories,
-  createEmptyLandingCategories,
-  getLandingCategoryForPackage,
-  type LandingCategories,
-  type LandingCategory,
-  type LandingCategoryKey,
-  type PackageRow,
-} from '@/components/features/landing/landing-data';
+import { useLandingPackages, useLandingPromotions } from '@/components/features/landing/useLandingData';
+import type { LandingCategoryKey } from '@/components/features/landing/landing-data';
 import { submitOnlineBooking } from '@/modules/booking/actions/lifecycle-actions';
-import { filterActivePromotions, type Promotion } from '@/lib/promotions';
-
-type LandingDataLoadStatus = 'loaded' | 'fallback';
 
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState<LandingCategoryKey>('combo');
@@ -72,118 +60,18 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const serviceCategories = DEFAULT_SERVICE_CATEGORIES;
-
-  const [categories, setCategories] = useState<LandingCategories | null>(null);
-  const [packageDataStatus, setPackageDataStatus] = useState<LandingDataLoadStatus>('loaded');
-  const [packageDataError, setPackageDataError] = useState<string | null>(null);
-
-  const serviceOptions = useMemo(() => {
-    const activeCategories = categories || serviceCategories;
-    return Object.values(activeCategories).flatMap((cat) => {
-      return cat.packages.map((pkg) => ({
-        value: pkg.name,
-        label: `${pkg.name} (${pkg.price})`,
-        group: cat.title
-      }));
-    });
-  }, [categories, serviceCategories]);
-
-  useEffect(() => {
-    const fetchActivePackages = async () => {
-      try {
-        const supabase = createBrowserClient();
-        const { data, error } = await supabase
-          .from('packages')
-          .select('*')
-          .eq('status', 'active')
-          .order('name', { ascending: true });
-
-        if (error) {
-          console.error('Error fetching active packages:', error);
-          setPackageDataStatus('fallback');
-          setPackageDataError(error.message);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          const newCategories = createEmptyLandingCategories();
-
-          data.forEach((pkg: PackageRow) => {
-            const catKey = getLandingCategoryForPackage(pkg);
-
-            const formattedPrice = new Intl.NumberFormat('vi-VN').format(pkg.price || pkg.full_price || 0) + 'đ';
-
-            newCategories[catKey].packages.push({
-              id: pkg.id,
-              name: pkg.name,
-              price: formattedPrice,
-              duration: pkg.duration || '90 phút',
-              description: pkg.description || `Liệu trình ${pkg.total_sessions} buổi chăm sóc chuyên sâu chuẩn y khoa của Bella Spa.`,
-              benefits: Array.isArray(pkg.details) && pkg.details.length > 0 ? pkg.details : ['Liệu trình chuẩn y khoa', 'Kỹ thuật viên tay nghề cao', 'Nguyên liệu thảo dược hữu cơ'],
-              tag: pkg.offer || undefined
-            });
-          });
-
-          const finalCategories = cloneLandingCategories(serviceCategories);
-          (Object.entries(newCategories) as Array<[LandingCategoryKey, LandingCategory]>).forEach(([key, category]) => {
-            if (category.packages.length > 0) {
-              finalCategories[key].packages = category.packages;
-            }
-          });
-          
-          setCategories(finalCategories);
-          setPackageDataStatus('loaded');
-          setPackageDataError(null);
-          return;
-        }
-
-        setPackageDataStatus('fallback');
-        setPackageDataError('No active packages returned from database.');
-      } catch (err) {
-        console.error('Fetch active packages error:', err);
-        setPackageDataStatus('fallback');
-        setPackageDataError(err instanceof Error ? err.message : 'Unknown package fetch error.');
-      }
-    };
-
-    fetchActivePackages();
-  }, [serviceCategories]);
-
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [promotionDataStatus, setPromotionDataStatus] = useState<LandingDataLoadStatus>('loaded');
-  const [promotionDataError, setPromotionDataError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchPromotions = async () => {
-      try {
-        const supabase = createBrowserClient();
-        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
-        const { data, error } = await supabase
-          .from('promotions')
-          .select('*')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching active promotions:', error);
-          setPromotionDataStatus('fallback');
-          setPromotionDataError(error.message);
-          return;
-        }
-
-        setPromotions(data ? filterActivePromotions(data as Promotion[], todayStr) : []);
-        setPromotionDataStatus('loaded');
-        setPromotionDataError(null);
-      } catch (err) {
-        console.error('Fetch promotions error:', err);
-        setPromotionDataStatus('fallback');
-        setPromotionDataError(err instanceof Error ? err.message : 'Unknown promotions fetch error.');
-      }
-    };
-
-    fetchPromotions();
-  }, []);
+  const {
+    categories,
+    dataError: packageDataError,
+    dataStatus: packageDataStatus,
+    serviceCategories,
+    serviceOptions,
+  } = useLandingPackages();
+  const {
+    dataError: promotionDataError,
+    dataStatus: promotionDataStatus,
+    promotions,
+  } = useLandingPromotions();
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
