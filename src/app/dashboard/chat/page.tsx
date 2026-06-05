@@ -377,22 +377,22 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col gap-4 p-4 lg:p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-3 text-3xl font-black text-foreground uppercase">
-            <MessageSquare className="h-8 w-8 text-primary" />
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col gap-4 overflow-y-auto p-3 sm:p-4 lg:h-[calc(100vh-4rem)] lg:overflow-hidden lg:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-3 text-2xl font-black text-foreground uppercase sm:text-3xl">
+            <MessageSquare className="h-7 w-7 shrink-0 text-primary sm:h-8 sm:w-8" />
             Trung tâm tin nhắn
           </h1>
-          <p className="mt-1 text-sm font-medium text-muted-foreground">
+          <p className="mt-1 text-xs font-medium text-muted-foreground sm:text-sm">
             Quản lý hội thoại khách hàng theo thời gian thực
           </p>
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)_320px]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-visible lg:grid-cols-[320px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)_320px]">
         <section
-          className={`min-h-0 flex-col overflow-hidden rounded-lg border border-pink-100 bg-white shadow-sm ${
+          className={`min-h-[34rem] flex-col overflow-hidden rounded-2xl border border-pink-100 bg-white shadow-sm lg:min-h-0 lg:rounded-lg ${
             showChatMobile ? 'hidden lg:flex' : 'flex'
           }`}
         >
@@ -496,7 +496,7 @@ export default function ChatPage() {
         </section>
 
         <section
-          className={`min-h-0 flex-col overflow-hidden rounded-lg border border-pink-100 bg-white shadow-sm ${
+          className={`min-h-[34rem] flex-col overflow-hidden rounded-2xl border border-pink-100 bg-white shadow-sm lg:min-h-0 lg:rounded-lg ${
             showChatMobile ? 'flex' : 'hidden lg:flex'
           }`}
         >
@@ -507,12 +507,12 @@ export default function ChatPage() {
                   <button
                     type="button"
                     onClick={() => setShowChatMobile(false)}
-                    className="rounded-full p-2 text-primary transition hover:bg-pink-50 lg:hidden"
+                    className="shrink-0 rounded-full p-2 text-primary transition hover:bg-pink-50 lg:hidden"
                     title="Quay lại danh sách"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-pink-100 text-sm font-black text-primary">
                       {selectedChat.avatar}
                     </div>
@@ -521,7 +521,7 @@ export default function ChatPage() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <h2 className="truncate text-lg font-black text-foreground">{selectedChat.name}</h2>
+                    <h2 className="truncate text-base font-black text-foreground sm:text-lg">{selectedChat.name}</h2>
                     <p className="text-xs font-bold text-muted-foreground">
                       {selectedChat.online ? 'Đang hoạt động' : 'Ngoại tuyến'}
                     </p>
@@ -530,7 +530,7 @@ export default function ChatPage() {
 
                 <a
                   href={`tel:${selectedChat.phone}`}
-                  className="rounded-full p-3 text-primary transition hover:bg-pink-50"
+                  className="shrink-0 rounded-full p-3 text-primary transition hover:bg-pink-50"
                   title="Gọi khách hàng"
                 >
                   <Phone className="h-5 w-5" />
@@ -538,10 +538,46 @@ export default function ChatPage() {
               </header>
 
               {messageError && (
-                <div className="mx-4 mt-4 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
+                <div className="mx-3 mt-3 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 sm:mx-4 sm:mt-4">
                   {messageError}
                 </div>
               )}
+
+              <div className="border-b border-pink-100 bg-pink-50/30 p-3 xl:hidden">
+                <div className="mb-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="min-w-0 rounded-lg border border-pink-100 bg-white px-3 py-2">
+                    <p className="font-bold text-muted-foreground">SĐT</p>
+                    <p className="mt-1 break-all font-black text-foreground">{selectedChat.phone}</p>
+                  </div>
+                  <div className="min-w-0 rounded-lg border border-pink-100 bg-white px-3 py-2">
+                    <p className="font-bold text-muted-foreground">Chi tiêu</p>
+                    <p className="mt-1 break-words font-black text-foreground">{selectedChat.totalSpent}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Link
+                    href={`/dashboard/bookings?name=${encodeURIComponent(selectedChat.name)}`}
+                    className="flex min-w-0 flex-col items-center gap-1 rounded-lg bg-white p-2 text-center text-[11px] font-black text-foreground transition hover:bg-primary hover:text-white"
+                  >
+                    <Calendar className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Đặt lịch</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/finance"
+                    className="flex min-w-0 flex-col items-center gap-1 rounded-lg bg-white p-2 text-center text-[11px] font-black text-foreground transition hover:bg-primary hover:text-white"
+                  >
+                    <CreditCard className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Thu tiền</span>
+                  </Link>
+                  <Link
+                    href={`/dashboard/customers/${selectedChat.id}`}
+                    className="flex min-w-0 flex-col items-center gap-1 rounded-lg bg-white p-2 text-center text-[11px] font-black text-foreground transition hover:bg-primary hover:text-white"
+                  >
+                    <User className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Hồ sơ</span>
+                  </Link>
+                </div>
+              </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto bg-pink-50/20 p-4 lg:p-6">
                 {messages.length > 0 ? (
@@ -554,12 +590,12 @@ export default function ChatPage() {
                         className={`flex ${message.sender === 'spa' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`flex max-w-[78%] flex-col gap-1 ${
+                          className={`flex min-w-0 max-w-[90%] flex-col gap-1 sm:max-w-[78%] ${
                             message.sender === 'spa' ? 'items-end' : 'items-start'
                           }`}
                         >
                           <div
-                            className={`rounded-lg px-4 py-3 text-sm font-semibold leading-relaxed shadow-sm ${
+                            className={`whitespace-pre-wrap break-words rounded-lg px-4 py-3 text-sm font-semibold leading-relaxed shadow-sm ${
                               message.sender === 'spa'
                                 ? 'bg-primary text-white'
                                 : 'border border-pink-100 bg-white text-foreground'
@@ -592,9 +628,9 @@ export default function ChatPage() {
                   event.preventDefault();
                   void sendCurrentMessage();
                 }}
-                className="border-t border-pink-100 bg-white p-4"
+                className="border-t border-pink-100 bg-white p-3 sm:p-4"
               >
-                <div className="flex items-end gap-3 rounded-lg border border-pink-100 bg-pink-50/40 p-2 transition focus-within:border-primary focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20">
+                <div className="flex items-end gap-2 rounded-lg border border-pink-100 bg-pink-50/40 p-2 transition focus-within:border-primary focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20 sm:gap-3">
                   <textarea
                     rows={1}
                     value={inputValue}
@@ -607,7 +643,7 @@ export default function ChatPage() {
                     }}
                     disabled={isSending}
                     placeholder="Nhập tin nhắn..."
-                    className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-2 py-3 text-sm font-semibold outline-none placeholder:text-muted-foreground/60 disabled:opacity-60"
+                    className="max-h-32 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-2 py-3 text-sm font-semibold outline-none placeholder:text-muted-foreground/60 disabled:opacity-60"
                   />
                   <button
                     type="submit"
@@ -647,15 +683,15 @@ export default function ChatPage() {
                 <div className="mt-5 space-y-3 text-left">
                   <div className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
                     <p className="text-xs font-bold text-muted-foreground">Số điện thoại</p>
-                    <p className="mt-1 text-sm font-black text-foreground">{selectedChat.phone}</p>
+                    <p className="mt-1 break-all text-sm font-black text-foreground">{selectedChat.phone}</p>
                   </div>
                   <div className="rounded-lg border border-pink-100 bg-pink-50/40 p-3">
                     <p className="text-xs font-bold text-muted-foreground">Dịch vụ gần nhất</p>
-                    <p className="mt-1 text-sm font-black text-foreground">{selectedChat.lastBooking}</p>
+                    <p className="mt-1 break-words text-sm font-black text-foreground">{selectedChat.lastBooking}</p>
                   </div>
                   <div className="rounded-lg bg-primary p-3 text-white">
                     <p className="text-xs font-bold text-white/75">Tổng chi tiêu</p>
-                    <p className="mt-1 text-lg font-black">{selectedChat.totalSpent}</p>
+                    <p className="mt-1 break-words text-lg font-black">{selectedChat.totalSpent}</p>
                   </div>
                 </div>
               </section>
