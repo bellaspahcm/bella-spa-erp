@@ -24,6 +24,11 @@ type PackageGroup = {
   customerNames: Set<string>;
 };
 
+function toFiniteNumber(value: unknown): number {
+  const numericValue = Number(value || 0);
+  return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
 export interface SessionMatrixRow {
   name: string;
   [packageName: string]: string | number | boolean | null | undefined;
@@ -179,7 +184,7 @@ export async function exportSessionMatrixToExcel(data: SessionMatrixRow[], packa
       const rowData: SheetRow = [row.name];
       let total = 0;
       packageNames.forEach((pkg: string) => {
-        const count = Number(row[pkg] || 0);
+        const count = toFiniteNumber(row[pkg]);
         rowData.push(count);
         total += count;
       });

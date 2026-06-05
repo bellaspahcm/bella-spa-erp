@@ -76,6 +76,20 @@ describe("exportSessionMatrixToExcel", () => {
     expect(rows.find((row) => row[0] === "KTV A")).toEqual(["KTV A", 2, 1.5, 3.5]);
     expect(rows.find((row) => row[0] === "KTV B")).toEqual(["KTV B", 0, 3, 3]);
   });
+
+  it("treats missing and non-numeric package cells as zero in totals", async () => {
+    const base64 = await exportSessionMatrixToExcel(
+      [
+        { name: "KTV A", "Basic Care": "2", "VIP Care": null },
+        { name: "KTV B", "Basic Care": "not-a-number", "VIP Care": 1 },
+      ],
+      ["Basic Care", "VIP Care"],
+    );
+
+    const rows = rowsFromSheet(workbookFromBase64(base64), "Doi Soat Buoi Lam");
+    expect(rows.find((row) => row[0] === "KTV A")).toEqual(["KTV A", 2, 0, 2]);
+    expect(rows.find((row) => row[0] === "KTV B")).toEqual(["KTV B", 0, 1, 1]);
+  });
 });
 
 describe("exportAccountingReportToExcel", () => {
@@ -120,6 +134,34 @@ describe("exportAccountingReportToExcel", () => {
       3_500,
     ]);
     expect(workbook.Sheets["Trial Balance"]["!merges"]).toHaveLength(3);
+  });
+
+  it("sums numeric string amounts in trial balance totals", async () => {
+    const rows: TrialBalanceExportRow[] = [
+      {
+        account_code: "111",
+        account_name: "Cash",
+        opening_debit: "1000",
+        opening_credit: "0",
+        period_debit: "2500",
+        period_credit: "500",
+        closing_debit: "3000",
+        closing_credit: "0",
+      },
+    ];
+
+    const workbook = workbookFromBase64(
+      await exportAccountingReportToExcel("trial_balance", rows, "2026-05-31"),
+    );
+
+    expect(rowsFromSheet(workbook, "Trial Balance").at(-1)?.slice(2)).toEqual([
+      1_000,
+      0,
+      2_500,
+      500,
+      3_000,
+      0,
+    ]);
   });
 
   it("maps income statement line items into TT133 report codes", async () => {
@@ -187,6 +229,41 @@ describe("exportAccountingReportToExcel", () => {
 
     expect(rows.some((row) => row[2] === 999_999)).toBe(true);
   });
+
+  it("maps cash-flow operating, investing, financing, and closing cash rows", async () => {
+    const cashFlow: AccountingReportRecord = {
+      profit_before_tax: 6_000_000,
+      depreciation: 500_000,
+      change_in_receivables: -200_000,
+      change_in_inventory: 100_000,
+      change_in_payables: 800_000,
+      change_in_unearned_revenue: 1_500_000,
+      tax_paid: 0,
+      net_cash_operating: 8_900_000,
+      fixed_assets_purchased: -4_000_000,
+      fixed_assets_sold: 0,
+      net_cash_investing: -4_000_000,
+      owner_contributions: 2_000_000,
+      loans_received: 1_000_000,
+      loans_repaid: -500_000,
+      net_cash_financing: 2_500_000,
+      net_change_in_cash: 7_400_000,
+      opening_cash: 10_000_000,
+      closing_cash: 17_400_000,
+      verification_diff: 0,
+    };
+
+    const workbook = workbookFromBase64(
+      await exportAccountingReportToExcel("cash_flow", cashFlow, "2026-05"),
+    );
+    const rows = rowsFromSheet(workbook, "Cash Flow Statement");
+
+    expect(rows.find((row) => row[1] === "01")?.[2]).toBe(6_000_000);
+    expect(rows.filter((row) => row[1] === "20").at(-1)?.[2]).toBe(8_900_000);
+    expect(rows.filter((row) => row[1] === "30").at(-1)?.[2]).toBe(-4_000_000);
+    expect(rows.filter((row) => row[1] === "40").at(-1)?.[2]).toBe(2_500_000);
+    expect(rows.find((row) => row[1] === "70")?.[2]).toBe(17_400_000);
+  });
 });
 
 describe("exportSalaryToExcel", () => {
@@ -233,6 +310,7 @@ describe("exportSalaryToExcel", () => {
     expect(String(vipRow?.[4])).toContain("400");
     expect(String(vipRow?.[5])).toContain("Customer A");
     expect(String(vipRow?.[5])).toContain("Customer B");
+    expect(rows.some((row) => String(row[4]).includes("6.750.000"))).toBe(true);
     expect(from).toHaveBeenCalledWith("session_logs");
     expect(from).toHaveBeenCalledWith("salary_records");
   });
