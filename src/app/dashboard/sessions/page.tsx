@@ -338,7 +338,7 @@ function SessionsContent() {
   };
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative">
+    <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (
@@ -352,13 +352,13 @@ function SessionsContent() {
         )}
       </AnimatePresence>
       {/* Header & Role Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Thẻ liệu trình</h1>
+      <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 uppercase sm:text-3xl">Thẻ liệu trình</h1>
           <p className="text-slate-500 font-bold mt-1 uppercase text-xs tracking-widest">Quản lý lộ trình & ghi chú chăm sóc</p>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
           <div className="hidden bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
             <button 
               onClick={() => setUserRole('KTV')}
@@ -386,7 +386,7 @@ function SessionsContent() {
                 e.stopPropagation();
                 setIsLeavesOpen(true);
               }}
-              className="relative px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm"
+              className="relative flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-700 shadow-sm transition-all hover:bg-slate-50"
             >
               <Calendar className="w-4 h-4 text-rose-500" />
               Nghỉ phép KTV
@@ -399,7 +399,7 @@ function SessionsContent() {
           )}
 
           <div className={cn(
-            "flex items-center gap-3 px-5 py-3 rounded-2xl border transition-all",
+            "flex min-h-12 items-center justify-center gap-3 rounded-2xl border px-5 py-3 transition-all",
             sessions.reduce((acc, s) => acc + (s.completed_sessions || 0), 0) / 
             Math.max(1, sessions.reduce((acc, s) => acc + (s.total_sessions || 15), 0)) > 0.5 
               ? "bg-emerald-50 border-emerald-100" 
@@ -427,8 +427,8 @@ function SessionsContent() {
       </div>
 
       {/* Filters & Search */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-8 flex flex-col md:flex-row gap-3 items-center flex-wrap">
-        <div className="relative flex-1 min-w-[220px] group">
+      <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:p-4 md:mb-8 lg:flex-row lg:items-center lg:flex-wrap">
+        <div className="relative w-full min-w-0 flex-1 group lg:min-w-[260px]">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
           <input
             type="text"
@@ -438,7 +438,7 @@ function SessionsContent() {
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-sm"
           />
         </div>
-        <div className="w-full md:w-52">
+        <div className="w-full sm:min-w-52 sm:flex-1 lg:w-52 lg:flex-none">
           <PremiumSelect
             value={statusFilter}
             options={statusOptions.map(opt => ({
@@ -450,7 +450,7 @@ function SessionsContent() {
             placeholder="Lọc trạng thái..."
           />
         </div>
-        <div className="w-full md:w-48">
+        <div className="w-full sm:min-w-48 sm:flex-1 lg:w-48 lg:flex-none">
           <PremiumSelect
             value={sortFilter}
             options={['Ngày tạo mới nhất', 'Ngày tạo cũ nhất', 'Tên A-Z', 'Tên Z-A'].map(opt => ({ value: opt, label: opt }))}
@@ -459,7 +459,7 @@ function SessionsContent() {
           />
         </div>
         {/* Month dropdown */}
-        <div className="w-full md:w-36">
+        <div className="w-full sm:min-w-36 sm:flex-1 lg:w-36 lg:flex-none">
           <PremiumSelect
             value={monthFilter}
             options={monthOptions}
@@ -468,7 +468,7 @@ function SessionsContent() {
           />
         </div>
         {/* Year dropdown */}
-        <div className="w-full md:w-32">
+        <div className="w-full sm:min-w-32 sm:flex-1 lg:w-32 lg:flex-none">
           <PremiumSelect
             value={yearFilter}
             options={yearOptions.map(y => ({ value: y, label: y }))}
@@ -479,7 +479,7 @@ function SessionsContent() {
       </div>
 
       {displaySessions.length === 0 ? (
-        <div className="bg-white rounded-[3rem] p-20 text-center border border-dashed border-slate-200">
+        <div className="rounded-[2rem] border border-dashed border-slate-200 bg-white p-10 text-center sm:rounded-[3rem] sm:p-20">
           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <Search className="w-10 h-10 text-slate-300" />
           </div>
@@ -488,7 +488,7 @@ function SessionsContent() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6">
             {paginatedSessions.map((booking, idx) => (
               <SessionCard
                 key={booking.id}
@@ -506,12 +506,12 @@ function SessionsContent() {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="mt-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="mt-10 flex flex-col items-center justify-between gap-6 md:flex-row">
               <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">
                 Hiển thị <span className="text-slate-900">{startIndex}-{endIndex}</span> trên tổng số <span className="text-slate-900">{displaySessions.length}</span> thẻ liệu trình
               </p>
               
-              <div className="flex items-center gap-2">
+              <div className="flex max-w-full items-center gap-2 overflow-x-auto pb-1">
                 <button 
                   onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
@@ -586,7 +586,7 @@ function SessionsContent() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] bg-[#1A0A0E] text-white px-8 py-4 rounded-2xl font-black shadow-2xl flex items-center gap-3 border border-white/10 text-center min-w-[300px]"
+            className="fixed bottom-6 left-1/2 z-[150] flex w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-2xl border border-white/10 bg-[#1A0A0E] px-4 py-4 text-center font-black text-white shadow-2xl sm:bottom-10 sm:w-auto sm:min-w-[300px] sm:px-8"
           >
             <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0">
               <CheckCircle2 className="w-5 h-5 text-white" />

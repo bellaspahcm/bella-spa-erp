@@ -73,7 +73,7 @@ function BookingsContent() {
   const today = new Date();
 
   return (
-    <div className="flex-1 p-6 md:p-10 bg-background/30 overflow-auto relative">
+    <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">
       {/* Non-intrusive loading bar */}
       <AnimatePresence>
         {isSyncing && (
@@ -104,7 +104,7 @@ function BookingsContent() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.25 }}
-            className="space-y-8"
+            className="space-y-6 md:space-y-8"
           >
             <BookingsMonthCalendar
               currentMonth={currentMonth}
