@@ -26,10 +26,8 @@ import type {
   FinancialAnomaliesData,
   FinancialAnomaliesRpcData,
   FinancialReconciliationTab,
-  LegacyProfilesClient,
   OrphanedRevenue,
   PaymentMethod,
-  ProfileRow,
   RevenueHistoryRow,
 } from './types';
 import { formatNumberishCurrency, getErrorMessage } from './utils';
@@ -39,6 +37,7 @@ import {
   type InterBranchClearingRecord,
 } from '@/services/clearing-actions';
 import { allocateOrphanedRevenue, collectDebtPayment } from '@/services/reconciliation-actions';
+import { getCurrentUser } from '@/services/user-actions';
 
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.42)]';
@@ -81,37 +80,15 @@ export default function FinancialReconciliationPage() {
     try {
       const supabase = createClient();
       
-      // Get current user and tenant from Supabase Auth server validation.
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError) throw new Error(authError.message);
-      if (!user) throw new Error('Không tìm thấy phiên đăng nhập');
-      
-      // First try users table
-      const { data: userData, error: profileErr } = await supabase
-        .from('users')
-        .select('tenant_id, role')
-        .eq('id', user.id)
-        .single();
-      let profile: ProfileRow | null = userData;
-        
-      if (profileErr || !profile?.tenant_id) {
-         // Fallback to legacy `profiles` table (not in current Database schema).
-         const legacyProfilesClient = supabase as unknown as LegacyProfilesClient;
-         const { data: fallbackProfile } = await legacyProfilesClient
-           .from('profiles')
-           .select('tenant_id, role')
-           .eq('id', user.id)
-           .single();
-         profile = fallbackProfile;
-      }
-        
-      if (!profile?.tenant_id) throw new Error('Không tìm thấy thông tin cơ sở');
+      const currentUser = await getCurrentUser();
+      const tenantId = currentUser?.tenant_id;
+      if (!tenantId) throw new Error('Không tìm thấy thông tin cơ sở');
 
-      setCurrentTenantId(profile.tenant_id);
+      setCurrentTenantId(tenantId);
 
       // Fetch anomalies via RPC
       const { data: rpcData, error: rpcError } = await supabase.rpc('get_financial_anomalies', {
-        p_tenant_id: profile.tenant_id
+        p_tenant_id: tenantId
       });
 
       if (rpcError) throw rpcError;
@@ -127,7 +104,7 @@ export default function FinancialReconciliationPage() {
             )
           )
         `)
-        .eq('tenant_id', profile.tenant_id)
+        .eq('tenant_id', tenantId)
         .eq('revenue_type', 'additional')
         .order('received_date', { ascending: false });
 
@@ -155,7 +132,7 @@ export default function FinancialReconciliationPage() {
       }
 
       // Fetch clearing records
-      const clearingData = await getInterBranchClearingRecords(profile.tenant_id);
+      const clearingData = await getInterBranchClearingRecords(tenantId);
       setClearingRecords(clearingData || []);
     } catch (error: unknown) {
       console.error(error);

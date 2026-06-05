@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { getCurrentUser } from '@/services/user-actions';
 import { Database } from '@/types/database.types';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
@@ -18,39 +19,20 @@ export type ChatCustomerSummary = ChatCustomerRpcRow & {
 
 export type ChatMessageRow = Database['public']['Tables']['chat_messages']['Row'];
 
-async function getChatAuthContext(supabase: SupabaseServerClient): Promise<ChatAuthContext> {
-  const {
-    data: { user },
-    error: authError
-  } = await supabase.auth.getUser();
+async function getChatAuthContext(): Promise<ChatAuthContext> {
+  const currentUser = await getCurrentUser();
 
-  if (authError) {
-    console.error('Error loading dashboard chat auth user:', authError);
-    throw authError;
-  }
-
-  if (!user?.id) {
+  if (!currentUser?.id) {
     throw new Error('Can dang nhap de su dung trung tam tin nhan.');
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('users')
-    .select('tenant_id')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError) {
-    console.error('Error loading dashboard chat user tenant:', profileError);
-    throw profileError;
-  }
-
-  if (!profile?.tenant_id) {
+  if (!currentUser.tenant_id) {
     throw new Error('Tai khoan hien tai chua gan voi chi nhanh hop le.');
   }
 
   return {
-    tenantId: profile.tenant_id,
-    userId: user.id
+    tenantId: currentUser.tenant_id,
+    userId: currentUser.id
   };
 }
 
@@ -117,7 +99,7 @@ async function getLatestMessagesByCustomer(
 
 export async function getChatCustomers(): Promise<ChatCustomerSummary[]> {
   const supabase = await createClient();
-  const context = await getChatAuthContext(supabase);
+  const context = await getChatAuthContext();
 
   // The parameterless RPC uses auth.uid() internally on Postgres.
   const { data, error } = await supabase.rpc('get_chat_customers');
@@ -147,7 +129,7 @@ export async function getChatCustomers(): Promise<ChatCustomerSummary[]> {
 
 export async function getChatMessages(customerId: string): Promise<ChatMessageRow[]> {
   const supabase = await createClient();
-  const context = await getChatAuthContext(supabase);
+  const context = await getChatAuthContext();
   const tenantId = await getVerifiedCustomerTenantId(supabase, customerId, context);
 
   const { data, error } = await supabase
@@ -171,7 +153,7 @@ export async function sendChatMessage(
 ): Promise<ChatMessageRow> {
   const normalizedMessage = normalizeMessageText(message);
   const supabase = await createClient();
-  const context = await getChatAuthContext(supabase);
+  const context = await getChatAuthContext();
   const tenantId = await getVerifiedCustomerTenantId(supabase, customerId, context);
 
   const insertPayload: Database['public']['Tables']['chat_messages']['Insert'] = {
@@ -199,7 +181,7 @@ export async function sendChatMessage(
 
 export async function markMessagesAsRead(customerId: string): Promise<void> {
   const supabase = await createClient();
-  const context = await getChatAuthContext(supabase);
+  const context = await getChatAuthContext();
   const tenantId = await getVerifiedCustomerTenantId(supabase, customerId, context);
 
   const updatePayload: Database['public']['Tables']['chat_messages']['Update'] = {

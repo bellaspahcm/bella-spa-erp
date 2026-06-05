@@ -1,10 +1,15 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { getCurrentUser } from './user-actions';
 import { checkHqAuth } from './hq-actions';
 import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
+
+type ClearingQueryClient = SupabaseClient<Database>;
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   if (error instanceof Error) return error.message || fallback;
@@ -14,6 +19,28 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
     return typeof message === 'string' && message.trim() ? message : fallback;
   }
   return fallback;
+}
+
+async function createClearingQueryClient(): Promise<ClearingQueryClient> {
+  const supabase = await createClient();
+
+  if (process.env.NODE_ENV !== 'development') {
+    return supabase as ClearingQueryClient;
+  }
+
+  const { headers } = await import('next/headers');
+  const mockEmail = (await headers()).get('x-mock-user-email');
+  const adminUrl = getSupabaseAdminUrl();
+  const adminKey = getSupabaseAdminKey();
+
+  if (!mockEmail || !adminUrl || !adminKey) {
+    return supabase as ClearingQueryClient;
+  }
+
+  const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+  return createAdminClient<Database>(adminUrl, adminKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
 
 export interface InterBranchClearingRecord {
@@ -47,7 +74,7 @@ export interface InterBranchClearingRecord {
  */
 export async function getInterBranchClearingRecords(tenantId?: string): Promise<InterBranchClearingRecord[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createClearingQueryClient();
     const user = await getCurrentUser();
     if (!user) return [];
 
