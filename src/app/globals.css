@@ -215,15 +215,32 @@ h1, h2, h3, h4, h5, h6 {
 
 
 /* Fix date/time inputs clipping */
-input[type="date"], input[type="time"] {
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
   min-height: 44px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator {
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   padding: 2px;
   margin-right: -4px;
+}
+
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit,
+input[type="datetime-local"]::-webkit-datetime-edit {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 input[type="date"]::-webkit-datetime-edit-year-field,
@@ -231,6 +248,26 @@ input[type="date"]::-webkit-datetime-edit-month-field,
 input[type="date"]::-webkit-datetime-edit-day-field,
 input[type="time"]::-webkit-datetime-edit-ampm-field {
   padding: 0 1px;
+}
+
+@media (max-width: 640px) {
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    padding-inline-end: 0.75rem;
+  }
+
+  table.table-fixed th,
+  table.table-fixed td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  table.table-fixed th > *,
+  table.table-fixed td > * {
+    max-width: 100%;
+    min-width: 0;
+  }
 }
 
 /* Dark Mode Overrides */

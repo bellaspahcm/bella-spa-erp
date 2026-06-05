@@ -56,7 +56,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
   }, []);
 
   return (
-    <div className={cn("relative w-full space-y-1.5", className)} ref={containerRef}>
+    <div className={cn("relative w-full min-w-0 max-w-full space-y-1.5", className)} ref={containerRef}>
       {label && (
         <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
           {label}
@@ -68,7 +68,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={buttonClassName || cn(
-          "w-full flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300",
+          "w-full min-w-0 max-w-full overflow-hidden flex items-center justify-between px-5 py-3.5 rounded-2xl border transition-all duration-300",
           "bg-white shadow-sm hover:shadow-md active:scale-[0.98]",
           isOpen 
             ? "border-rose-300 ring-4 ring-rose-50 ring-offset-0 shadow-rose-100/50 dark:shadow-none" 
@@ -102,7 +102,7 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 overflow-hidden py-2"
+            className="absolute z-50 mt-2 w-full min-w-0 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-100 bg-white py-2 shadow-2xl shadow-slate-200/50"
           >
             <div className="max-h-[240px] overflow-auto scrollbar-hide">
               {options.length === 0 ? (
