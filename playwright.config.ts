@@ -51,7 +51,7 @@ if (envPath) {
 }
 
 const PORT = Number(process.env.E2E_PORT ?? 3000);
-const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`;
+const BASE_URL = process.env.E2E_BASE_URL?.trim() || `http://localhost:${PORT}`;
 const IS_CI = !!process.env.CI;
 const REUSE_EXISTING_SERVER = process.env.E2E_REUSE_SERVER
   ? process.env.E2E_REUSE_SERVER !== "0"
