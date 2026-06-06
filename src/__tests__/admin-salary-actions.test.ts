@@ -47,6 +47,7 @@ jest.mock('@/services/accounting/period-guards', () => ({
 jest.mock('@/services/accounting/template-rules', () => ({
   findMissingRequiredFields: jest.fn(() => []),
   inferBusinessEventType: jest.fn(() => 'salary_payment'),
+  resolveAccountingReviewStatus: jest.fn(() => 'READY'),
 }));
 
 jest.mock('../modules/hr-salary/actions/salary-recalculation-engine', () => ({
