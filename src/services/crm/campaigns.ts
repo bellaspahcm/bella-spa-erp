@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '../user-actions';
 import { recordAuditLog } from '../audit-actions';
+import { pickFirstTenantRow } from './tenant-row';
 import { sendZaloZNS } from './zalo-messaging';
 
 export async function getBirthdayCustomers() {
@@ -109,16 +110,17 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
     const message = `Bella Spa chúc mừng sinh nhật tròn tuổi mới của bé ${babyName}! Mẹ ${motherName} ơi, nhân dịp đặc biệt này, Bella Spa thân gửi tặng gia đình Voucher giảm giá 10% gói liệu trình chăm sóc tiếp theo: [${voucherCode}]. Chúc bé luôn hay ăn chóng lớn, khỏe mạnh bình an! Hotline liên hệ đặt lịch: 0865 701 493.`;
 
     // Fetch tenant Zalo Template config
-    const { data: tenant, error: tenantErr } = await supabase
+    const { data: tenantRows, error: tenantErr } = await supabase
       .from('tenants')
       .select('zalo_template_birthday_id')
       .eq('id', tenantId)
-      .single();
+      .limit(1);
 
     if (tenantErr) {
       return { error: 'Không thể tải cấu hình Zalo sinh nhật: ' + tenantErr.message };
     }
 
+    const tenant = pickFirstTenantRow(tenantRows);
     const templateId = tenant?.zalo_template_birthday_id || 'ZNS_BIRTHDAY_GIFT_V1';
 
     await incrementSmsCount(tenantId);

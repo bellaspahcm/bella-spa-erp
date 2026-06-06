@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '../user-actions';
 import { getLocalDateString } from '@/lib/utils';
 import { recordAuditLog } from '../audit-actions';
+import { pickFirstTenantRow } from './tenant-row';
 import { getOrRefreshZaloToken } from './zalo-config';
 
 export async function sendZaloZNS(
@@ -126,16 +127,17 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
     const ktvName = session.bookings?.assigned_ktv?.full_name || 'KTV Bella Spa';
 
     // Fetch tenant Zalo Template config
-    const { data: tenant, error: tenantErr } = await supabase
+    const { data: tenantRows, error: tenantErr } = await supabase
       .from('tenants')
       .select('zalo_template_reminder_id')
       .eq('id', tenantId)
-      .single();
+      .limit(1);
 
     if (tenantErr) {
       return { error: 'Không thể tải cấu hình Zalo nhắc lịch: ' + tenantErr.message };
     }
 
+    const tenant = pickFirstTenantRow(tenantRows);
     const templateId = tenant?.zalo_template_reminder_id || 'ZNS_REMINDER_V2';
 
     // Business standard message text for logs / simulated fallback
