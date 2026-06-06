@@ -93,6 +93,7 @@ let clearingQueryMock = new MockQueryBuilder();
 
 import { 
   getInterBranchClearingRecords,
+  getInterBranchClearingRecordsResult,
   clearInterBranchRecord,
   updateTenantClearingRate,
   simulateInterBranchClearing
@@ -157,6 +158,18 @@ describe('Inter-Branch Clearing System', () => {
       mockGetCurrentUser.mockResolvedValue(null);
       const result = await getInterBranchClearingRecords();
       expect(result).toEqual([]);
+    });
+
+    it('should return explicit failure result when clearing query fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(adminUser);
+      mockCheckHqAuth.mockResolvedValue({ authorized: false });
+      clearingQueryMock = new MockQueryBuilder(null, { message: 'clearing query failed' });
+
+      const result = await getInterBranchClearingRecordsResult();
+
+      expect(result.success).toBe(false);
+      expect(result.data).toEqual([]);
+      expect(result.error).toContain('clearing query failed');
     });
   });
 

@@ -11,11 +11,47 @@ import { assertOpenAccountingPeriod } from './accounting/period-guards';
 import { assertLegacyFinanceWriteAllowed } from './accounting/mode';
 import { getCurrentUser } from './user-actions';
 import type { Database } from '@/types/database.types';
+import {
+  getInterBranchClearingRecordsResult,
+  type InterBranchClearingRecord,
+} from './clearing-actions';
 
 type FinancialAnomaliesData = {
   debt_alerts: unknown[];
   orphaned_revenue: unknown[];
   mismatch_alerts: unknown[];
+};
+
+type FinancialReconciliationCollectionHistory = {
+  revenue_id: string;
+  amount: number | string | null;
+  received_date: string | null;
+  notes: string | null;
+  payment_method: string | null;
+  booking_id: string | null;
+  customer_name: string;
+};
+
+type RevenueHistoryRow = {
+  id: string;
+  amount: number | string | null;
+  received_date: string | null;
+  notes: string | null;
+  payment_method: string | null;
+  booking_id: string | null;
+  bookings?: {
+    customers?: {
+      name_mother?: string | null;
+      name_baby?: string | null;
+    } | null;
+  } | null;
+};
+
+type FinancialReconciliationSnapshot = FinancialAnomaliesData & {
+  tenant_id: string;
+  collection_history: FinancialReconciliationCollectionHistory[];
+  clearing_records: InterBranchClearingRecord[];
+  clearing_error: string | null;
 };
 
 type ReconciliationRole = string | null | undefined;
@@ -48,6 +84,87 @@ export async function getFinancialAnomalies() {
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Failed to load financial anomalies',
+      data: null,
+    };
+  }
+}
+
+export async function getFinancialReconciliationSnapshot(): Promise<{
+  success: boolean;
+  error?: string;
+  data: FinancialReconciliationSnapshot | null;
+}> {
+  try {
+    const user = await getCurrentUser();
+    if (!user?.tenant_id) {
+      return { success: false, error: 'Không tìm thấy thông tin chi nhánh', data: null };
+    }
+
+    const supabase = await createClient();
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_financial_anomalies', {
+      p_tenant_id: user.tenant_id,
+    });
+
+    if (rpcError) {
+      return {
+        success: false,
+        error: `Lỗi tải bản đối soát tài chính: ${rpcError.message}`,
+        data: null,
+      };
+    }
+
+    const { data: historyData, error: historyError } = await supabase
+      .from('revenue')
+      .select(`
+        id, amount, received_date, notes, payment_method, booking_id,
+        bookings (
+          customers (
+            name_mother, name_baby
+          )
+        )
+      `)
+      .eq('tenant_id', user.tenant_id)
+      .eq('revenue_type', 'additional')
+      .order('received_date', { ascending: false });
+
+    if (historyError) {
+      return {
+        success: false,
+        error: `Lỗi tải lịch sử thu nợ: ${historyError.message}`,
+        data: null,
+      };
+    }
+
+    const historyRows = (historyData || []) as unknown as RevenueHistoryRow[];
+    const collectionHistory: FinancialReconciliationCollectionHistory[] = historyRows.map((item) => ({
+      revenue_id: item.id,
+      amount: item.amount,
+      received_date: item.received_date,
+      notes: item.notes,
+      payment_method: item.payment_method,
+      booking_id: item.booking_id,
+      customer_name: item.bookings?.customers?.name_mother || item.bookings?.customers?.name_baby || 'Khách hàng',
+    }));
+
+    const anomalies = (rpcData || {}) as Partial<FinancialAnomaliesData>;
+    const clearingResult = await getInterBranchClearingRecordsResult(user.tenant_id);
+
+    return {
+      success: true,
+      data: {
+        tenant_id: user.tenant_id,
+        debt_alerts: Array.isArray(anomalies.debt_alerts) ? anomalies.debt_alerts : [],
+        orphaned_revenue: Array.isArray(anomalies.orphaned_revenue) ? anomalies.orphaned_revenue : [],
+        mismatch_alerts: Array.isArray(anomalies.mismatch_alerts) ? anomalies.mismatch_alerts : [],
+        collection_history: collectionHistory,
+        clearing_records: clearingResult.data,
+        clearing_error: clearingResult.success ? null : clearingResult.error,
+      },
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Không thể tải dữ liệu đối soát',
       data: null,
     };
   }

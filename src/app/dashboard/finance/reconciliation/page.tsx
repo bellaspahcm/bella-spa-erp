@@ -14,7 +14,6 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
-import { createClient } from '@/lib/supabase-client';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { AllocateRevenueModal } from './components/AllocateRevenueModal';
@@ -25,20 +24,20 @@ import type {
   CollectionHistory,
   DebtAlert,
   FinancialAnomaliesData,
-  FinancialAnomaliesRpcData,
   FinancialReconciliationTab,
   OrphanedRevenue,
   PaymentMethod,
-  RevenueHistoryRow,
 } from './types';
 import { formatNumberishCurrency, getErrorMessage } from './utils';
 import {
-  getInterBranchClearingRecords,
   simulateInterBranchClearing,
   type InterBranchClearingRecord,
 } from '@/services/clearing-actions';
-import { allocateOrphanedRevenue, collectDebtPayment } from '@/services/reconciliation-actions';
-import { getCurrentUser } from '@/services/user-actions';
+import {
+  allocateOrphanedRevenue,
+  collectDebtPayment,
+  getFinancialReconciliationSnapshot,
+} from '@/services/reconciliation-actions';
 
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.42)]';
@@ -79,67 +78,38 @@ export default function FinancialReconciliationPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      
-      const currentUser = await getCurrentUser();
-      const tenantId = currentUser?.tenant_id;
-      if (!tenantId) throw new Error('Không tìm thấy thông tin cơ sở');
-
-      setCurrentTenantId(tenantId);
-
-      // Fetch anomalies via RPC
-      const { data: rpcData, error: rpcError } = await supabase.rpc('get_financial_anomalies', {
-        p_tenant_id: tenantId
-      });
-
-      if (rpcError) throw rpcError;
-
-      // Fetch debt collection history
-      const { data: historyData, error: historyError } = await supabase
-        .from('revenue')
-        .select(`
-          id, amount, received_date, notes, payment_method, booking_id,
-          bookings (
-            customers (
-              name_mother, name_baby
-            )
-          )
-        `)
-        .eq('tenant_id', tenantId)
-        .eq('revenue_type', 'additional')
-        .order('received_date', { ascending: false });
-
-      if (historyError) throw historyError;
-
-      const historyRows = (historyData || []) as unknown as RevenueHistoryRow[];
-      const historyFormatted: CollectionHistory[] = historyRows.map((item) => ({
-        revenue_id: item.id,
-        amount: item.amount,
-        received_date: item.received_date,
-        notes: item.notes,
-        payment_method: item.payment_method,
-        booking_id: item.booking_id,
-        customer_name: item.bookings?.customers?.name_mother || item.bookings?.customers?.name_baby || 'Khách hàng'
-      })) || [];
-
-      if (rpcData) {
-        const anomalies = rpcData as FinancialAnomaliesRpcData;
+      const result = await getFinancialReconciliationSnapshot();
+      if (!result.success || !result.data) {
+        toast.error(result.error || 'Lỗi khi tải dữ liệu đối soát');
         setData({
-          debt_alerts: anomalies.debt_alerts ?? [],
-          orphaned_revenue: anomalies.orphaned_revenue ?? [],
-          mismatch_alerts: anomalies.mismatch_alerts ?? [],
-          collection_history: historyFormatted
+          debt_alerts: [],
+          orphaned_revenue: [],
+          mismatch_alerts: [],
+          collection_history: [],
         });
+        setClearingRecords([]);
+        setCurrentTenantId('');
+        return;
       }
 
-      // Fetch clearing records
-      const clearingData = await getInterBranchClearingRecords(tenantId);
-      setClearingRecords(clearingData || []);
+      setCurrentTenantId(result.data.tenant_id);
+      setData({
+        debt_alerts: result.data.debt_alerts as FinancialAnomaliesData['debt_alerts'],
+        orphaned_revenue: result.data.orphaned_revenue as FinancialAnomaliesData['orphaned_revenue'],
+        mismatch_alerts: result.data.mismatch_alerts as FinancialAnomaliesData['mismatch_alerts'],
+        collection_history: result.data.collection_history as CollectionHistory[],
+      });
+      setClearingRecords(result.data.clearing_records || []);
+
+      if (result.data.clearing_error) {
+        toast.error(result.data.clearing_error);
+      }
     } catch (error: unknown) {
       console.error(error);
       toast.error(getErrorMessage(error, 'Lỗi khi tải dữ liệu đối soát'));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
