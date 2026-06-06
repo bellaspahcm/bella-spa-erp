@@ -183,6 +183,84 @@ describe('getSalaryData query errors', () => {
     expect(calls[4].filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
   });
 
+  it('does not default draft salary rows to full-month attendance when no attendance logs exist', async () => {
+    setupDb([
+      { table: 'tenants', op: 'select', data: { salary_config: null } },
+      {
+        table: 'users',
+        op: 'select',
+        data: [{
+          id: 'ktv-1',
+          full_name: 'KTV One',
+          role: 'ktv',
+          base_salary: 2600000,
+          hire_date: '2026-01-01',
+          resignation_date: null,
+          status: 'active',
+        }],
+      },
+      { table: 'salary_records', op: 'select', data: [] },
+      { table: 'session_logs', op: 'select', data: [] },
+      { table: 'attendance', op: 'select', data: [] },
+      { table: 'packages', op: 'select', data: [] },
+    ]);
+
+    const result = await getSalaryData();
+
+    expect(result).toEqual([expect.objectContaining({
+      id: 'ktv-1',
+      baseSalary: 0,
+      totalSalary: 0,
+      actualDays: 0,
+      status: 'draft',
+    })]);
+  });
+
+  it('preserves saved non-draft salary amounts while showing live attendance days', async () => {
+    setupDb([
+      { table: 'tenants', op: 'select', data: { salary_config: null } },
+      {
+        table: 'users',
+        op: 'select',
+        data: [{
+          id: 'ktv-1',
+          full_name: 'KTV One',
+          role: 'ktv',
+          base_salary: 2600000,
+          hire_date: '2026-01-01',
+          resignation_date: null,
+          status: 'active',
+        }],
+      },
+      {
+        table: 'salary_records',
+        op: 'select',
+        data: [{
+          ktv_id: 'ktv-1',
+          total_sessions: 0,
+          base_salary: 2600000,
+          kpi_bonus: 0,
+          violations_deduction: 0,
+          service_percentage_bonus: 0,
+          status: 'published',
+        }],
+      },
+      { table: 'session_logs', op: 'select', data: [] },
+      { table: 'attendance', op: 'select', data: [] },
+      { table: 'packages', op: 'select', data: [] },
+    ]);
+
+    const result = await getSalaryData();
+
+    expect(result).toEqual([expect.objectContaining({
+      id: 'ktv-1',
+      baseSalary: 2600000,
+      totalSalary: 2600000,
+      actualDays: 0,
+      status: 'published',
+    })]);
+  });
+
   it('throws instead of returning an empty salary list when a required query fails', async () => {
     setupDb([
       { table: 'tenants', op: 'select', data: { salary_config: null } },

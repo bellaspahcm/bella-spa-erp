@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/services/user-actions';
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import { calcProRataBaseSalary } from './base-salary-actions';
+import { calculateAttendanceWorkDays, calculateProRataBaseSalaryFromActualDays } from './salary-attendance-calculation';
 import { KtvSalaryRecord, KtvSessionMatrix, KtvSessionMatrixRecord, TenantSalaryConfig } from '@/types/domain';
 
 // Interfaces for Database Records
@@ -249,14 +250,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
         // Attendance tracking
         const ktvAttendance = attendanceLogsTyped.filter((a) => a.ktv_id === ktv.id);
-        let actualDays = 0;
-        ktvAttendance.forEach((att) => {
-          if (att.status === 'present' || att.status === 'late') {
-            actualDays += 1.0;
-          } else if (att.status === 'half_day') {
-            actualDays += 0.5;
-          }
-        });
+        const actualDays = calculateAttendanceWorkDays(ktvAttendance);
 
         const isDraft = !record || record.status === 'draft';
 
@@ -266,10 +260,8 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         // Base salary display: Use record value if not draft, or recalculate if draft
         if (record?.base_salary !== undefined && record.base_salary !== null && !isDraft) {
           baseSalary = Number(record.base_salary);
-        } else if (ktvAttendance.length > 0) {
-          baseSalary = Math.round((rawBaseSalary / 26) * actualDays);
         } else {
-          baseSalary = rawBaseSalary;
+          baseSalary = calculateProRataBaseSalaryFromActualDays(rawBaseSalary, actualDays);
         }
 
         // Cap by resignation date if active
@@ -321,7 +313,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           hireDate: ktv.hire_date,
           resignationDate: ktv.resignation_date,
           ktvStatus: ktv.status || 'active',
-          actualDays: ktvAttendance.length > 0 ? actualDays : 26,
+          actualDays,
         };
     }));
 
