@@ -24,7 +24,8 @@ import {
   X,
   Scale,
   Wallet,
-  HelpCircle
+  HelpCircle,
+  RefreshCw
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -94,6 +95,7 @@ export function Sidebar() {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isMobileRefreshing, setIsMobileRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,6 +119,11 @@ export function Sidebar() {
 
   const handleNavigation = () => {
     setIsOpen(false);
+  };
+
+  const handleMobileRefresh = () => {
+    setIsMobileRefreshing(true);
+    window.location.reload();
   };
 
   const baseMenuItems: SidebarMenuItem[] = user?.role?.toLowerCase() === 'customer'
@@ -229,12 +236,14 @@ export function Sidebar() {
     <>
       {/* ── Mobile Top Header Bar (lg:hidden) ── */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-[#11100F]/95 border-b border-[#FFE4E6] dark:border-[#3E3A35] backdrop-blur-md z-30 px-6 flex items-center justify-between shadow-[0_2px_15px_rgba(0,0,0,0.02)] transition-colors duration-300">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="p-2.5 rounded-xl text-[#BE185D] dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all"
-        >
-          <Menu className="w-5.5 h-5.5" />
-        </button>
+        <div className="flex w-[4.5rem] items-center justify-start">
+          <button
+            onClick={() => setIsOpen(true)}
+            className="p-2.5 rounded-xl text-[#BE185D] dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all"
+          >
+            <Menu className="w-5.5 h-5.5" />
+          </button>
+        </div>
         
         <div className="flex items-center gap-2">
           <Image
@@ -247,8 +256,21 @@ export function Sidebar() {
           <span className="font-handwriting text-2xl text-[#BE185D] dark:text-[#A67D44] leading-none mt-1">Bella Spa</span>
         </div>
 
-        <div className="w-8 h-8 rounded-full bg-[#FFE4E6] dark:bg-[#5D1C34]/40 flex items-center justify-center text-[#BE185D] dark:text-[#A67D44] font-black text-xs border border-pink-100 dark:border-[#3E3A35]">
-          {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
+        <div className="flex w-[4.5rem] items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={handleMobileRefresh}
+            disabled={isMobileRefreshing}
+            aria-label="Làm mới dữ liệu"
+            title="Làm mới dữ liệu"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-pink-100 bg-white/80 text-[#BE185D] shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-70 dark:border-[#3E3A35] dark:bg-[#1C1B19] dark:text-[#A67D44] dark:hover:bg-[#5D1C34]/30"
+          >
+            <RefreshCw className={cn('h-4 w-4', isMobileRefreshing && 'animate-spin')} />
+          </button>
+
+          <div className="w-8 h-8 rounded-full bg-[#FFE4E6] dark:bg-[#5D1C34]/40 flex items-center justify-center text-[#BE185D] dark:text-[#A67D44] font-black text-xs border border-pink-100 dark:border-[#3E3A35]">
+            {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
+          </div>
         </div>
       </div>
 
