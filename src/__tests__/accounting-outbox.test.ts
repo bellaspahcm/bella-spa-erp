@@ -38,6 +38,7 @@ jest.mock('@/services/revenue-recognition', () => ({
     handleSalaryPaid: jest.fn(),
     handleInventoryConsumed: jest.fn(),
     handleRefundIssued: jest.fn(),
+    handleInterBranchClearing: jest.fn(),
   },
 }));
 
@@ -60,6 +61,23 @@ describe('Accounting Outbox Worker API', () => {
           eq: jest.fn().mockReturnThis(),
           maybeSingle: jest.fn().mockResolvedValue({
             data: { id: 'session-id', status: 'completed' },
+            error: null,
+          }),
+        };
+      }
+
+      if (table === 'inter_branch_clearing_records') {
+        return {
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: {
+              id: 'clearing-id',
+              status: 'cleared',
+              debtor_tenant_id: 'branch-a-id',
+              creditor_tenant_id: 'branch-b-id',
+              calculated_amount: 180000,
+            },
             error: null,
           }),
         };
@@ -327,6 +345,59 @@ describe('Accounting Outbox Worker API', () => {
       expect(outboxEq).toHaveBeenCalledWith('id', 'outbox-stale-session');
       expect(mockRpc).not.toHaveBeenCalledWith('mark_outbox_completed', expect.anything());
       expect(mockRpc).not.toHaveBeenCalledWith('mark_outbox_failed', expect.anything());
+    });
+
+    it('routes INTER_BRANCH_CLEARING events to the clearing journal handler', async () => {
+      const mockBatch = [
+        {
+          id: 'outbox-clearing-1',
+          tenant_id: 'branch-a-id',
+          event_type: 'INTER_BRANCH_CLEARING',
+          reference_id: 'clearing-id',
+          payload: {
+            amount: 180000,
+            paymentMethod: 'VietQR',
+            role: 'debtor',
+            debtorTenantId: 'branch-a-id',
+            creditorTenantId: 'branch-b-id',
+            description: 'Bù trừ liên chi nhánh CLR-2026-06',
+          },
+          retry_count: 0,
+        },
+      ];
+
+      mockRpc.mockResolvedValueOnce({ data: mockBatch, error: null });
+      (RevenueRecognitionService.handleInterBranchClearing as jest.Mock).mockResolvedValueOnce('journal-clearing-1');
+      mockRpc.mockResolvedValueOnce({ error: null });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(json.success).toBe(true);
+      expect(json.successCount).toBe(1);
+      expect(RevenueRecognitionService.handleInterBranchClearing).toHaveBeenCalledWith({
+        tenantId: 'branch-a-id',
+        clearingRecordId: 'clearing-id',
+        amount: 180000,
+        role: 'debtor',
+        paymentMethod: 'VietQR',
+        debtorTenantId: 'branch-a-id',
+        creditorTenantId: 'branch-b-id',
+        description: 'Bù trừ liên chi nhánh CLR-2026-06',
+        branchId: 'branch-a-id',
+      });
+      expect(mockRpc).toHaveBeenCalledWith('mark_outbox_completed', {
+        p_outbox_id: 'outbox-clearing-1',
+        p_journal_entry_id: 'journal-clearing-1',
+      });
     });
 
     it('handles other event types: EXPENSE_RECORDED, SALARY_PAID, INVENTORY_CONSUMED, REFUND_ISSUED', async () => {

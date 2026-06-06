@@ -28,6 +28,7 @@ type ExistingJournalReference = {
   id: string;
   status: string;
 };
+type InterBranchClearingRole = 'debtor' | 'creditor';
 
 function getAdminClient() {
   const { url, adminKey } = requireSupabaseAdminEnv();
@@ -70,6 +71,12 @@ function readRequiredString(payload: OutboxPayload, key: string) {
   const value = payload[key];
   if (typeof value === 'string') return value;
   throw new Error(`Invalid outbox payload: ${key} must be a string.`);
+}
+
+function readClearingRole(payload: OutboxPayload): InterBranchClearingRole {
+  const role = readRequiredString(payload, 'role');
+  if (role === 'debtor' || role === 'creditor') return role;
+  throw new Error('Invalid outbox payload: role must be debtor or creditor.');
 }
 
 function readOptionalString(payload: OutboxPayload, key: string) {
@@ -136,6 +143,8 @@ function getJournalReferenceType(eventType: string): WorkerJournalReferenceType 
       return 'INVENTORY_CONSUMPTION';
     case 'REFUND_ISSUED':
       return 'REFUND';
+    case 'INTER_BRANCH_CLEARING':
+      return 'INTER_BRANCH_CLEARING';
     case 'MANUAL_ENTRY':
       return 'MANUAL';
     default:
@@ -183,6 +192,51 @@ async function assertSessionDoneStillValid(supabase: AdminClient, tenantId: stri
 
   if (data.status !== 'completed') {
     return `Stale SESSION_DONE outbox: session ${sessionLogId} is ${data.status}, not completed.`;
+  }
+
+  return null;
+}
+
+async function assertInterBranchClearingStillValid(
+  supabase: AdminClient,
+  tenantId: string,
+  clearingRecordId: string,
+  payload: OutboxPayload,
+) {
+  const role = readClearingRole(payload);
+  const debtorTenantId = readRequiredString(payload, 'debtorTenantId');
+  const creditorTenantId = readRequiredString(payload, 'creditorTenantId');
+  const amount = readRequiredNumber(payload, 'amount');
+
+  const { data, error } = await supabase
+    .from('inter_branch_clearing_records')
+    .select('id,status,debtor_tenant_id,creditor_tenant_id,calculated_amount')
+    .eq('id', clearingRecordId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to validate INTER_BRANCH_CLEARING source: ${error.message}`);
+  }
+
+  if (!data) {
+    return `Stale INTER_BRANCH_CLEARING outbox: clearing record ${clearingRecordId} no longer exists.`;
+  }
+
+  if (data.status !== 'cleared') {
+    return `Stale INTER_BRANCH_CLEARING outbox: clearing record ${clearingRecordId} is ${data.status}, not cleared.`;
+  }
+
+  if (data.debtor_tenant_id !== debtorTenantId || data.creditor_tenant_id !== creditorTenantId) {
+    return `Stale INTER_BRANCH_CLEARING outbox: tenant pair changed for ${clearingRecordId}.`;
+  }
+
+  const expectedTenantId = role === 'debtor' ? data.debtor_tenant_id : data.creditor_tenant_id;
+  if (tenantId !== expectedTenantId) {
+    return `Stale INTER_BRANCH_CLEARING outbox: tenant ${tenantId} does not match ${role} side.`;
+  }
+
+  if (Math.abs(Number(data.calculated_amount) - amount) > 0.01) {
+    return `Stale INTER_BRANCH_CLEARING outbox: amount changed for ${clearingRecordId}.`;
   }
 
   return null;
@@ -260,6 +314,28 @@ export async function GET(req: NextRequest) {
             const { error: deadErr } = await markOutboxDead(supabase, event.id, staleReason);
             if (deadErr) {
               throw new Error(`Failed to dead-letter stale SESSION_DONE outbox: ${deadErr.message}`);
+            }
+
+            console.warn(`[Accounting Worker] ${staleReason}`);
+            deadLetterCount++;
+            details.push({
+              eventId: event.id,
+              eventType,
+              referenceId: refId,
+              status: 'dead_lettered',
+              journalEntryId: null,
+              error: staleReason,
+            });
+            continue;
+          }
+        }
+
+        if (eventType === 'INTER_BRANCH_CLEARING') {
+          const staleReason = await assertInterBranchClearingStillValid(supabase, tenantId, refId, payload);
+          if (staleReason) {
+            const { error: deadErr } = await markOutboxDead(supabase, event.id, staleReason);
+            if (deadErr) {
+              throw new Error(`Failed to dead-letter stale INTER_BRANCH_CLEARING outbox: ${deadErr.message}`);
             }
 
             console.warn(`[Accounting Worker] ${staleReason}`);
@@ -372,6 +448,20 @@ export async function GET(req: NextRequest) {
               paymentMethod: readOptionalString(payload, 'paymentMethod'),
               description: readRequiredString(payload, 'description'),
               branchId: readOptionalString(payload, 'branchId'),
+            });
+            break;
+
+          case 'INTER_BRANCH_CLEARING':
+            journalEntryId = await RevenueRecognitionService.handleInterBranchClearing({
+              tenantId,
+              clearingRecordId: refId,
+              amount: readRequiredNumber(payload, 'amount'),
+              role: readClearingRole(payload),
+              paymentMethod: readRequiredString(payload, 'paymentMethod'),
+              debtorTenantId: readRequiredString(payload, 'debtorTenantId'),
+              creditorTenantId: readRequiredString(payload, 'creditorTenantId'),
+              description: readRequiredString(payload, 'description'),
+              branchId: readOptionalString(payload, 'branchId') ?? tenantId,
             });
             break;
 

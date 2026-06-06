@@ -57,6 +57,7 @@ const RECEIVABLE_ID = 'acct-131';
 const VAT_ID = 'acct-3331';
 const REV_ID = 'acct-5113';
 const EXPENSE_ID = 'acct-6421';
+const COGS_ID = 'acct-632';
 const PAYABLE_ID = 'acct-334';
 
 beforeEach(() => {
@@ -437,6 +438,71 @@ describe('RevenueRecognitionService.handleExpenseRecorded', () => {
       expect.objectContaining({ account_id: EXPENSE_ID, debit_amount: 7000000, credit_amount: 0 }),
       expect.objectContaining({ account_id: BANK_ID, debit_amount: 0, credit_amount: 7000000 }),
     ]));
+  });
+});
+
+describe('RevenueRecognitionService.handleInterBranchClearing', () => {
+  it('posts debtor-side clearing as service cost paid by bank', async () => {
+    mockSingle
+      .mockResolvedValueOnce({ data: { id: COGS_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: BANK_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: 'entry-uuid-clearing-debtor' }, error: null });
+
+    const id = await RevenueRecognitionService.handleInterBranchClearing({
+      tenantId: 'branch-a-id',
+      clearingRecordId: 'clearing-id',
+      amount: 180000,
+      role: 'debtor',
+      paymentMethod: 'bank_transfer',
+      debtorTenantId: 'branch-a-id',
+      creditorTenantId: 'branch-b-id',
+      description: 'CLR-2026-06',
+    });
+
+    expect(id).toBe('entry-uuid-clearing-debtor');
+    expect(mockInsertLines).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ account_id: COGS_ID, debit_amount: 180000, credit_amount: 0 }),
+      expect.objectContaining({ account_id: BANK_ID, debit_amount: 0, credit_amount: 180000 }),
+    ]));
+  });
+
+  it('posts creditor-side clearing as bank receipt and service revenue', async () => {
+    mockSingle
+      .mockResolvedValueOnce({ data: { id: BANK_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: REV_ID }, error: null })
+      .mockResolvedValueOnce({ data: { id: 'entry-uuid-clearing-creditor' }, error: null });
+
+    const id = await RevenueRecognitionService.handleInterBranchClearing({
+      tenantId: 'branch-b-id',
+      clearingRecordId: 'clearing-id',
+      amount: 180000,
+      role: 'creditor',
+      paymentMethod: 'bank_transfer',
+      debtorTenantId: 'branch-a-id',
+      creditorTenantId: 'branch-b-id',
+      description: 'CLR-2026-06',
+    });
+
+    expect(id).toBe('entry-uuid-clearing-creditor');
+    expect(mockInsertLines).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ account_id: BANK_ID, debit_amount: 180000, credit_amount: 0 }),
+      expect.objectContaining({ account_id: REV_ID, debit_amount: 0, credit_amount: 180000 }),
+    ]));
+  });
+
+  it('rejects debtor events routed to the wrong tenant', async () => {
+    await expect(
+      RevenueRecognitionService.handleInterBranchClearing({
+        tenantId: 'branch-b-id',
+        clearingRecordId: 'clearing-id',
+        amount: 180000,
+        role: 'debtor',
+        paymentMethod: 'bank_transfer',
+        debtorTenantId: 'branch-a-id',
+        creditorTenantId: 'branch-b-id',
+        description: 'CLR-2026-06',
+      })
+    ).rejects.toThrow(/debtor tenant mismatch/i);
   });
 });
 

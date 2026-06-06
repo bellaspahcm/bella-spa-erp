@@ -7,6 +7,7 @@
  *   - confirmTransaction, createExpense      → EXPENSE_RECORDED / SALARY_PAID / PACKAGE_SALE
  *   - autoConsumeForSession                  → INVENTORY_CONSUMED
  *   - confirmSalary                          → SALARY_PAID
+ *   - clearInterBranchRecord                 → INTER_BRANCH_CLEARING
  *   - reverseJournalEntry, manual entry      → REVERSAL / MANUAL_ENTRY
  *
  * Replaces inline `require('@supabase/supabase-js')` with cached dynamic import
@@ -29,6 +30,7 @@ export type AccountingEventType =
   | 'SALARY_PAID'
   | 'INVENTORY_CONSUMED'
   | 'REFUND_ISSUED'
+  | 'INTER_BRANCH_CLEARING'
   | 'MANUAL_ENTRY';
 
 /**
@@ -54,12 +56,14 @@ export type AccountingReferenceType =
   | 'SESSION_LOG'
   | 'SALARY_RECORD'
   | 'INVENTORY_LOG'
+  | 'INTER_BRANCH_CLEARING_RECORD'
   // ── Event-flavor types ─────────────────────────────────────────────
   | 'PACKAGE_SALE'
   | 'SESSION_DONE'
   | 'SALARY_PAYMENT'
   | 'INVENTORY_CONSUMPTION'
   | 'REFUND'
+  | 'INTER_BRANCH_CLEARING'
   | 'REVERSAL'
   | 'MANUAL';
 

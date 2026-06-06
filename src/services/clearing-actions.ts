@@ -8,7 +8,11 @@ import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+type ClearingRecordRow = Database['public']['Tables']['inter_branch_clearing_records']['Row'];
 type ClearingRecordUpdate = Database['public']['Tables']['inter_branch_clearing_records']['Update'];
+type InterBranchClearingRole = 'debtor' | 'creditor';
+type EnqueuedClearingEvent = { tenantId: string; referenceId: string };
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   if (error instanceof Error) return error.message || fallback;
@@ -52,6 +56,85 @@ function getInvalidClearingStatusMessage(status: string | null | undefined) {
   if (status === 'cleared') return 'Bản ghi đối soát đã được gạch nợ.';
   if (status === 'cancelled') return 'Bản ghi đối soát đã bị hủy, không thể gạch nợ.';
   return 'Bản ghi đối soát không còn ở trạng thái chờ gạch nợ.';
+}
+
+function getClearingAmount(record: Pick<ClearingRecordRow, 'calculated_amount'>) {
+  const amount = Number(record.calculated_amount);
+  return Number.isFinite(amount) ? amount : 0;
+}
+
+function buildClearingAccountingPayload(input: {
+  record: Pick<
+    ClearingRecordRow,
+    | 'id'
+    | 'clearing_number'
+    | 'month_year'
+    | 'session_count'
+    | 'clearing_rate'
+    | 'calculated_amount'
+  >;
+  debtorTenantId: string;
+  creditorTenantId: string;
+  paymentMethod: string;
+  role: InterBranchClearingRole;
+}) {
+  const amount = getClearingAmount(input.record);
+  return {
+    amount,
+    paymentMethod: input.paymentMethod,
+    role: input.role,
+    debtorTenantId: input.debtorTenantId,
+    creditorTenantId: input.creditorTenantId,
+    debtor_tenant_id: input.debtorTenantId,
+    creditor_tenant_id: input.creditorTenantId,
+    clearingNumber: input.record.clearing_number,
+    monthYear: input.record.month_year,
+    sessionCount: Number(input.record.session_count) || 0,
+    clearingRate: Number(input.record.clearing_rate) || 0,
+    description: `Bù trừ liên chi nhánh ${input.record.clearing_number} (${input.record.month_year})`,
+  };
+}
+
+async function rollbackClearingAfterOutboxFailure(
+  supabase: SupabaseServerClient,
+  record: Pick<ClearingRecordRow, 'id' | 'status' | 'cleared_at' | 'payment_method' | 'notes'>,
+) {
+  const rollbackPayload: ClearingRecordUpdate = {
+    status: record.status,
+    cleared_at: record.cleared_at,
+    payment_method: record.payment_method,
+    notes: record.notes,
+  };
+
+  const { error } = await supabase
+    .from('inter_branch_clearing_records')
+    .update(rollbackPayload)
+    .eq('id', record.id)
+    .eq('status', 'cleared');
+
+  return error;
+}
+
+async function cleanupEnqueuedClearingOutbox(
+  outboxClient: SupabaseServerClient,
+  enqueuedEvents: EnqueuedClearingEvent[],
+) {
+  const failures: string[] = [];
+
+  for (const event of enqueuedEvents) {
+    const { error } = await outboxClient
+      .from('accounting_outbox')
+      .delete()
+      .eq('tenant_id', event.tenantId)
+      .eq('event_type', 'INTER_BRANCH_CLEARING')
+      .eq('reference_id', event.referenceId);
+
+    if (error) {
+      failures.push(`${event.tenantId}: ${error.message}`);
+    }
+  }
+
+  return failures;
 }
 
 /**
@@ -142,10 +225,25 @@ export async function clearInterBranchRecord(recordId: string, paymentMethod: st
       return { success: false, error: getInvalidClearingStatusMessage(record.status) };
     }
 
+    const debtorTenantId = record.debtor_tenant_id;
+    const creditorTenantId = record.creditor_tenant_id;
+    if (!debtorTenantId || !creditorTenantId) {
+      return { success: false, error: 'Bản ghi bù trừ thiếu chi nhánh trả hoặc chi nhánh nhận.' };
+    }
+
+    if (debtorTenantId === creditorTenantId) {
+      return { success: false, error: 'Bản ghi bù trừ phải thuộc hai chi nhánh khác nhau.' };
+    }
+
     // Kiểm tra quyền hạn: HQ Admin hoặc Branch Admin của debtor hoặc creditor
     const authResult = await checkHqAuth();
-    if (!authResult.authorized && record.debtor_tenant_id !== user.tenant_id && record.creditor_tenant_id !== user.tenant_id) {
+    if (!authResult.authorized && debtorTenantId !== user.tenant_id && creditorTenantId !== user.tenant_id) {
       return { success: false, error: 'Quyền truy cập bị từ chối.' };
+    }
+
+    const clearingAmount = getClearingAmount(record);
+    if (clearingAmount <= 0) {
+      return { success: false, error: 'Số tiền bù trừ không hợp lệ, không thể tạo bút toán kế toán.' };
     }
 
     const clearedAt = new Date().toISOString();
@@ -172,6 +270,57 @@ export async function clearInterBranchRecord(recordId: string, paymentMethod: st
 
     if (!clearedRecord) {
       return { success: false, error: 'Bản ghi đối soát vừa được xử lý bởi thao tác khác. Vui lòng quét lại dữ liệu.' };
+    }
+
+    const { enqueueAccountingEvent, getOutboxClient } = await import('@/lib/accounting-outbox');
+    const outboxClient = await getOutboxClient(supabase);
+    const enqueuedEvents: EnqueuedClearingEvent[] = [];
+    const enqueueClearingEvent = async (tenantId: string, role: InterBranchClearingRole) => {
+      const enqueued = await enqueueAccountingEvent(
+        outboxClient,
+        {
+          tenantId,
+          eventType: 'INTER_BRANCH_CLEARING',
+          referenceType: 'INTER_BRANCH_CLEARING_RECORD',
+          referenceId: record.id,
+          payload: buildClearingAccountingPayload({
+            record,
+            debtorTenantId,
+            creditorTenantId,
+            paymentMethod: paymentLabel,
+            role,
+          }),
+        },
+        '[clearInterBranchRecord]'
+      );
+
+      if (enqueued) {
+        enqueuedEvents.push({ tenantId, referenceId: record.id });
+      }
+
+      return enqueued;
+    };
+
+    const debtorEnqueued = await enqueueClearingEvent(debtorTenantId, 'debtor');
+    const creditorEnqueued = debtorEnqueued
+      ? await enqueueClearingEvent(creditorTenantId, 'creditor')
+      : false;
+
+    if (!debtorEnqueued || !creditorEnqueued) {
+      const cleanupFailures = await cleanupEnqueuedClearingOutbox(outboxClient, enqueuedEvents);
+      const rollbackError = await rollbackClearingAfterOutboxFailure(supabase, record);
+      const failureDetails = [
+        !debtorEnqueued ? 'không tạo được sự kiện kế toán cho chi nhánh trả' : null,
+        debtorEnqueued && !creditorEnqueued ? 'không tạo được sự kiện kế toán cho chi nhánh nhận' : null,
+        rollbackError ? `rollback trạng thái thất bại: ${rollbackError.message}` : null,
+        cleanupFailures.length > 0 ? `dọn outbox thất bại: ${cleanupFailures.join('; ')}` : null,
+      ].filter(Boolean);
+
+      console.error('[clearInterBranchRecord] accounting outbox failure:', failureDetails.join(' | '));
+      return {
+        success: false,
+        error: `Không thể tạo đủ bút toán kế toán bù trừ. ${failureDetails.join(' | ')}`,
+      };
     }
 
     // Revalidate các view liên quan

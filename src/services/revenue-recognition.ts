@@ -5,6 +5,7 @@ import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
 import { resolvePaymentAccountCode } from './accounting/ledger-rules';
 
 type AdminClient = SupabaseClient<Database>;
+type InterBranchClearingRole = 'debtor' | 'creditor';
 
 function asFiniteAmount(value: number | undefined, fallback = 0) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, value) : fallback;
@@ -285,6 +286,87 @@ export class RevenueRecognitionService {
       reference_id: sessionLogId,
       lines,
     });
+  }
+
+  /**
+   * Bù trừ liên chi nhánh đã thanh toán:
+   * - Chi nhánh trả: Nợ 632 / Có 111 hoặc 112
+   * - Chi nhánh nhận: Nợ 111 hoặc 112 / Có 5113
+   */
+  static async handleInterBranchClearing(params: {
+    tenantId: string;
+    clearingRecordId: string;
+    amount: number;
+    role: InterBranchClearingRole;
+    paymentMethod?: string;
+    debtorTenantId: string;
+    creditorTenantId: string;
+    description: string;
+    branchId?: string;
+  }) {
+    const {
+      tenantId,
+      clearingRecordId,
+      amount,
+      role,
+      paymentMethod = 'bank_transfer',
+      debtorTenantId,
+      creditorTenantId,
+      description,
+      branchId,
+    } = params;
+
+    const clearingAmount = asFiniteAmount(amount);
+    if (clearingAmount <= 0) return null;
+
+    const payAccountCode = resolvePaymentAccountCode(paymentMethod);
+    const resolvedBranchId = branchId ?? tenantId;
+
+    if (role === 'debtor') {
+      if (tenantId !== debtorTenantId) {
+        throw new Error(`Inter-branch debtor tenant mismatch for clearing ${clearingRecordId}.`);
+      }
+
+      const [cogsAccountId, payAccountId] = await Promise.all([
+        this.getAccountByCode(tenantId, '632'),
+        this.getAccountByCode(tenantId, payAccountCode),
+      ]);
+
+      return await AccountingEngineService.postJournalEntry({
+        tenant_id: tenantId,
+        description: `Chi bù trừ liên chi nhánh: ${description}`,
+        reference_type: 'INTER_BRANCH_CLEARING',
+        reference_id: clearingRecordId,
+        lines: [
+          { account_id: cogsAccountId, debit_amount: clearingAmount, credit_amount: 0, branch_id: resolvedBranchId },
+          { account_id: payAccountId, debit_amount: 0, credit_amount: clearingAmount, branch_id: resolvedBranchId },
+        ],
+      });
+    }
+
+    if (role === 'creditor') {
+      if (tenantId !== creditorTenantId) {
+        throw new Error(`Inter-branch creditor tenant mismatch for clearing ${clearingRecordId}.`);
+      }
+
+      const [payAccountId, revenueAccountId] = await Promise.all([
+        this.getAccountByCode(tenantId, payAccountCode),
+        this.getAccountByCodeFallback(tenantId, ['5113', '5111']),
+      ]);
+
+      return await AccountingEngineService.postJournalEntry({
+        tenant_id: tenantId,
+        description: `Thu bù trừ liên chi nhánh: ${description}`,
+        reference_type: 'INTER_BRANCH_CLEARING',
+        reference_id: clearingRecordId,
+        lines: [
+          { account_id: payAccountId, debit_amount: clearingAmount, credit_amount: 0, branch_id: resolvedBranchId },
+          { account_id: revenueAccountId, debit_amount: 0, credit_amount: clearingAmount, branch_id: resolvedBranchId },
+        ],
+      });
+    }
+
+    throw new Error(`Unsupported inter-branch clearing role: ${role}`);
   }
 
   /**
