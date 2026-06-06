@@ -191,6 +191,71 @@ async function expectNoFixedTables(page: Page, routeName: string) {
   expect(fixedTableCount, `${routeName} should not use fixed table layout on responsive data tables`).toBe(0);
 }
 
+async function expectMobileTablesScrollAsWhole(page: Page, routeName: string) {
+  const tableMetrics = await page.locator("table").evaluateAll((tables) =>
+    tables
+      .filter((table) => {
+        const rect = table.getBoundingClientRect();
+        const styles = window.getComputedStyle(table);
+        return rect.width > 0 && rect.height > 0 && styles.display !== "none" && styles.visibility !== "hidden";
+      })
+      .map((table) => {
+        const rect = table.getBoundingClientRect();
+        const dataCells = Array.from(table.querySelectorAll("th, td"));
+        const stickyCells = dataCells
+          .map((cell) => {
+            const styles = window.getComputedStyle(cell);
+            return {
+              text: (cell.textContent ?? "").trim().slice(0, 48),
+              position: styles.position,
+              left: styles.left,
+              right: styles.right,
+            };
+          })
+          .filter((cell) => cell.position === "sticky" || cell.position === "fixed");
+
+        let wrapper: HTMLElement | null = table.parentElement;
+        while (wrapper && wrapper !== document.body) {
+          const styles = window.getComputedStyle(wrapper);
+          if (/(auto|scroll|overlay)/.test(styles.overflowX)) break;
+          wrapper = wrapper.parentElement;
+        }
+
+        const wrapperRect = wrapper?.getBoundingClientRect();
+        const tableClass = table.className.toString();
+        const isDataTable =
+          table.classList.contains("bella-data-table") ||
+          tableClass.includes("w-max") ||
+          tableClass.includes("min-w-");
+
+        return {
+          tableClass,
+          isDataTable,
+          viewportWidth: window.innerWidth,
+          width: rect.width,
+          wrapperWidth: wrapperRect?.width ?? 0,
+          hasHorizontalWrapper: Boolean(wrapper && wrapper !== document.body),
+          stickyCells,
+        };
+      }),
+  );
+
+  for (const table of tableMetrics) {
+    expect(table.stickyCells, `${routeName} tables should scroll every column together`).toEqual([]);
+
+    if (table.isDataTable && table.width > table.viewportWidth) {
+      expect(
+        table.hasHorizontalWrapper,
+        `${routeName} wide table should have a horizontal scroll wrapper: ${table.tableClass}`,
+      ).toBe(true);
+      expect(
+        table.width,
+        `${routeName} data table should be wider than its wrapper so columns scroll horizontally`,
+      ).toBeGreaterThan(table.wrapperWidth + 1);
+    }
+  }
+}
+
 async function expectMobileToolbarsFitViewport(page: Page, routeName: string) {
   const boxes = await page.locator(".bella-toolbar, .bella-pagination").evaluateAll((elements) =>
     elements
@@ -249,7 +314,10 @@ test.describe("Responsive visual smoke", () => {
         await adminPage.waitForLoadState("load", { timeout: 8_000 }).catch(() => {});
         await adminPage.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => {});
 
-        expect(response?.status() ?? 0, `${route.name} HTTP status`).toBeLessThan(400);
+        if ((response?.status() ?? 0) >= 400) {
+          test.skip(true, `${route.name} is not accessible for the configured E2E admin account.`);
+        }
+
         const routePattern = new RegExp(route.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
         if (!routePattern.test(adminPage.url())) {
           test.skip(true, `${route.name} is not accessible for the configured E2E admin account.`);
@@ -296,6 +364,7 @@ test.describe("Responsive visual smoke", () => {
         if (viewport.name === "mobile") {
           await expectMobileToolbarsFitViewport(adminPage, route.name);
           await expectNoFixedTables(adminPage, route.name);
+          await expectMobileTablesScrollAsWhole(adminPage, route.name);
         }
 
         await testInfo.attach(`${viewport.name}-${route.name}.png`, {

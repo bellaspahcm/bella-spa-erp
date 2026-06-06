@@ -193,7 +193,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Custom Scrollbar */
+.custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
   width: 6px;
 }
 
@@ -248,13 +254,21 @@ h1, h2, h3, h4, h5, h6 {
 
 .bella-data-table {
   border-collapse: collapse;
+  min-width: max-content;
   table-layout: auto;
   width: max-content;
 }
 
+.bella-data-table thead,
+.bella-data-table tr,
 .bella-data-table th,
 .bella-data-table td {
+  inset-inline-end: auto !important;
+  inset-inline-start: auto !important;
+  left: auto !important;
   max-width: none;
+  position: static !important;
+  right: auto !important;
   white-space: nowrap;
 }
 
