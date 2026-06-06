@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
 
 import { createClient } from '@/lib/supabase-client';
+import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
 import { getLocalDateString } from '@/lib/utils';
 import { createSessionLog, rescheduleSession, updateSessionLog } from '@/modules/booking/actions/session-actions';
 import { getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycle-actions';
@@ -61,19 +62,14 @@ export function useBookingsPageActions({
       }
 
       const booking = result.data;
-      const fullPrice = Number(booking.full_price || 0);
-      const discountPercent = Number(booking.discount_percent || 0);
-      const discountedPrice = fullPrice * (1 - discountPercent / 100);
-
-      const confirmedRevenue = (booking.revenue || [])
-        .filter((payment: RevenuePayment) => payment.status === 'confirmed')
-        .reduce((acc: number, payment: RevenuePayment) => acc + Number(payment.amount || 0), 0);
-
-      let debt = discountedPrice - confirmedRevenue;
-
-      if (debt <= 0 && booking.status === 'deposit_pending') {
-        debt = Number(booking.deposit_amount || 0);
-      }
+      const paymentState = calculateBookingPaymentState({
+        fullPrice: booking.full_price,
+        discountPercent: booking.discount_percent,
+        depositAmount: booking.deposit_amount,
+        bookingStatus: booking.status,
+        revenues: booking.revenue as RevenuePayment[] | null,
+      });
+      const debt = paymentState.remainingDebt;
 
       if (debt <= 0) {
         toast.success('Lịch hẹn này đã hoàn tất thanh toán (không còn dư nợ).');

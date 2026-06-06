@@ -73,4 +73,23 @@ describe('calculatePortalPaymentSummary', () => {
     expect(summary.depositDue).toBe(0);
     expect(summary.amountToPay).toBe(0);
   });
+
+  it('subtracts confirmed refunds from paid amount and reopens the remaining debt', () => {
+    const summary = calculatePortalPaymentSummary({
+      fullPrice: 6000000,
+      discountPercent: 25,
+      depositAmount: 200000,
+      bookingStatus: 'booked',
+      revenues: [
+        { amount: 4500000, status: 'confirmed', revenue_type: 'package_payment' },
+        { amount: 500000, status: 'confirmed', revenue_type: 'refund' },
+        { amount: 100000, status: 'pending', revenue_type: 'package_payment' },
+      ],
+      selectedTab: 'full',
+    });
+
+    expect(summary.totalPaid).toBe(4000000);
+    expect(summary.remainingDebt).toBe(500000);
+    expect(summary.amountToPay).toBe(500000);
+  });
 });

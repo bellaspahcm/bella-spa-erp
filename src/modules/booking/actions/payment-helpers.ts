@@ -1,4 +1,9 @@
 import { getLocalDateString } from '@/lib/utils';
+import {
+  calculateBookingPaymentState,
+  validatePaymentAmountAgainstState,
+  type PaymentRevenueLike,
+} from '@/lib/business-rules/payment';
 import { inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
 import type { createClient } from '@/lib/supabase-server';
@@ -25,6 +30,7 @@ type PaymentBookingSnapshot = {
   status: string | null;
   tenant_id: string | null;
   discount_percent: number | null;
+  revenue?: PaymentRevenueLike[] | null;
 };
 
 type PaymentRpcResult = {
@@ -38,7 +44,7 @@ export async function getBookingPaymentSnapshot(
 ) {
   const { data: booking, error } = await supabase
     .from('bookings')
-    .select('id, deposit_amount, full_price, status, tenant_id, discount_percent')
+    .select('id, deposit_amount, full_price, status, tenant_id, discount_percent, revenue(amount, status, revenue_type)')
     .eq('id', bookingId)
     .single();
 
@@ -53,19 +59,15 @@ export function validateRemainingPaymentAmount(
   booking: PaymentBookingSnapshot,
   amount: number
 ) {
-  if (amount <= 0) {
-    return { error: 'Số tiền thanh toán phải lớn hơn 0' };
-  }
+  const paymentState = calculateBookingPaymentState({
+    fullPrice: booking.full_price,
+    discountPercent: booking.discount_percent,
+    depositAmount: booking.deposit_amount,
+    bookingStatus: booking.status,
+    revenues: booking.revenue,
+  });
 
-  const fullPrice = Number(booking.full_price || 0);
-  const discountPercent = Number(booking.discount_percent || 0);
-  const currentDebt = (fullPrice * (1 - discountPercent / 100)) - Number(booking.deposit_amount || 0);
-
-  if (amount > currentDebt) {
-    return { error: `Số tiền thanh toán vượt quá số tiền còn nợ của gói (${currentDebt.toLocaleString()} đ)` };
-  }
-
-  return { success: true };
+  return validatePaymentAmountAgainstState(paymentState, amount);
 }
 
 export async function assertPaymentAccountingPeriod() {

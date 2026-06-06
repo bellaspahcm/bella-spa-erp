@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import { AccountingEngineService, type JournalEntryInput } from './accounting-engine';
 import { requireSupabaseAdminEnv } from '@/lib/supabase-admin-env';
+import { resolvePaymentAccountCode } from './accounting/ledger-rules';
 
 type AdminClient = SupabaseClient<Database>;
 
@@ -195,7 +196,7 @@ export class RevenueRecognitionService {
       expenseAccountCode = '6421'; // Chi phí lương/nhân viên theo template TT133
     }
 
-    const payAccountCode = paymentMethod?.toLowerCase() === 'cash' ? '111' : '112';
+    const payAccountCode = resolvePaymentAccountCode(paymentMethod);
 
     const [expenseAccountId, payAccountId] = await Promise.all([
       this.getAccountByCode(tenantId, expenseAccountCode),
@@ -232,7 +233,7 @@ export class RevenueRecognitionService {
 
     if (amount <= 0) return null;
 
-    const payAccountCode = paymentMethod?.toLowerCase() === 'cash' ? '111' : '112';
+    const payAccountCode = resolvePaymentAccountCode(paymentMethod);
 
     const [payableAccountId, payAccountId] = await Promise.all([
       this.getAccountByCode(tenantId, '334'),
@@ -343,7 +344,7 @@ export class RevenueRecognitionService {
       deferredAmount = refundAmount - recognizedRevenueRefundAmount;
     }
 
-    const payAccountCode = paymentMethod?.toLowerCase() === 'cash' ? '111' : '112';
+    const payAccountCode = resolvePaymentAccountCode(paymentMethod);
 
     const [deferredAccountId, revenueAccountId, payAccountId] = await Promise.all([
       deferredAmount > 0 ? this.getAccountByCode(tenantId, '3387') : Promise.resolve(null),

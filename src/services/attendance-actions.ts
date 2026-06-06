@@ -5,6 +5,7 @@ import { getCurrentUser } from './user-actions';
 import { revalidatePath } from 'next/cache';
 import { recordAuditLog } from './audit-actions';
 import { getLocalDateString } from '@/lib/utils';
+import { calculateAttendanceBreakdown } from '@/lib/business-rules/attendance';
 import type { Database } from '@/types/database.types';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -262,20 +263,7 @@ export async function getMonthlyAttendanceSummary(monthStr: string) {
 
   return ktvList.map((ktv) => {
     const ktvLogs = logsList.filter((l) => l.ktv_id === ktv.id);
-    
-    let presentCount = 0;
-    let lateCount = 0;
-    let absentCount = 0;
-    let halfDayCount = 0;
-
-    ktvLogs.forEach((l) => {
-      if (l.status === 'present') presentCount++;
-      else if (l.status === 'late') lateCount++;
-      else if (l.status === 'absent') absentCount++;
-      else if (l.status === 'half_day') halfDayCount++;
-    });
-
-    const totalDaysWorked = presentCount + lateCount + (halfDayCount * 0.5);
+    const attendanceBreakdown = calculateAttendanceBreakdown(ktvLogs);
 
     return {
       id: ktv.id,
@@ -284,11 +272,11 @@ export async function getMonthlyAttendanceSummary(monthStr: string) {
       baseSalary: ktv.base_salary || 6000000,
       hireDate: ktv.hire_date,
       resignationDate: ktv.resignation_date,
-      present: presentCount,
-      late: lateCount,
-      absent: absentCount,
-      halfDay: halfDayCount,
-      totalDays: totalDaysWorked,
+      present: attendanceBreakdown.present,
+      late: attendanceBreakdown.late,
+      absent: attendanceBreakdown.absent,
+      halfDay: attendanceBreakdown.halfDay,
+      totalDays: attendanceBreakdown.workDays,
       status: ktv.status,
       logs: ktvLogs.map((l) => ({
         date: l.date,

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/services/user-actions';
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
+import { calculateAttendancePenalty } from '@/lib/business-rules/attendance';
 import { calcProRataBaseSalary } from './base-salary-actions';
 import {
   buildPackageMultiplierMap,
@@ -128,8 +129,6 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       penalty_late_per_day:  stored.penalty_late_per_day  ?? 50000,
       penalty_absent_per_day: stored.penalty_absent_per_day ?? 200000,
     };
-    const penaltyLate   = salaryConfig.penalty_late_per_day   ?? 50000;
-    const penaltyAbsent = salaryConfig.penalty_absent_per_day ?? 200000;
 
     // Fetch KTVs
     const ktvQuery = supabase
@@ -255,7 +254,12 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         const avgRating: number | null = ktvLb?.average_rating ?? null;
         const lateDays   = ktvLb?.late_days   ?? 0;
         const absentDays = ktvLb?.absent_days ?? 0;
-        const autoAttendancePenalty = (lateDays * penaltyLate) + (absentDays * penaltyAbsent);
+        const autoAttendancePenalty = calculateAttendancePenalty({
+          lateDays,
+          absentDays,
+          penaltyLatePerDay: salaryConfig.penalty_late_per_day,
+          penaltyAbsentPerDay: salaryConfig.penalty_absent_per_day,
+        }).totalPenalty;
 
         const liveRatingBonus = calculateRatingBonus(ktvSessionsCount, avgRating, salaryConfig);
         const ratingBonus = shouldUseSavedFinancials && record?.rating_bonus !== undefined && record.rating_bonus !== null

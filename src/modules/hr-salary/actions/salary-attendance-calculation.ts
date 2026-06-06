@@ -1,6 +1,8 @@
-type AttendanceLike = {
-  status: string | null;
-};
+import {
+  STANDARD_SALARY_WORK_DAYS,
+  calculateAttendanceWorkDays,
+  calculateProRataBaseSalaryFromActualDays,
+} from '@/lib/business-rules/attendance';
 
 type SalaryConfigLike = {
   bonus_5_star: number;
@@ -28,26 +30,12 @@ type SessionLike = {
   bookings?: SessionBookingLike | null;
 };
 
-export const STANDARD_SALARY_WORK_DAYS = 26;
 export const DEFAULT_KTV_SESSION_COMMISSION = 150000;
-
-export function calculateAttendanceWorkDays(attendanceList: AttendanceLike[]) {
-  return attendanceList.reduce((total, attendance) => {
-    if (attendance.status === 'present' || attendance.status === 'late') {
-      return total + 1;
-    }
-
-    if (attendance.status === 'half_day') {
-      return total + 0.5;
-    }
-
-    return total;
-  }, 0);
-}
-
-export function calculateProRataBaseSalaryFromActualDays(baseSalary: number, actualDays: number) {
-  return Math.round((baseSalary / STANDARD_SALARY_WORK_DAYS) * actualDays);
-}
+export {
+  STANDARD_SALARY_WORK_DAYS,
+  calculateAttendanceWorkDays,
+  calculateProRataBaseSalaryFromActualDays,
+};
 
 export function buildPackageMultiplierMap(packages: PackageMultiplierLike[]) {
   const map = new Map<string, number>();

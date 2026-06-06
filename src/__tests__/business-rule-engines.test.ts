@@ -1,0 +1,104 @@
+import {
+  calculateBookingPaymentState,
+  calculateSessionRevenueRecognition,
+  validatePaymentAmountAgainstState,
+} from '@/lib/business-rules/payment';
+import {
+  calculateAttendanceBreakdown,
+  calculateAttendancePenalty,
+  calculateProRataBaseSalaryFromActualDays,
+} from '@/lib/business-rules/attendance';
+import {
+  INVENTORY_REASONS,
+  calculateConsumptionMovement,
+  calculateRestockMovement,
+  calculateRollbackStock,
+  classifyInventoryMovementReason,
+} from '@/lib/business-rules/inventory';
+
+describe('shared business rule engines', () => {
+  it('calculates customer payment state from confirmed revenue records', () => {
+    const state = calculateBookingPaymentState({
+      fullPrice: 6000000,
+      discountPercent: 25,
+      depositAmount: 200000,
+      bookingStatus: 'deposit_pending',
+      revenues: [
+        { amount: 200000, status: 'confirmed', revenue_type: 'deposit' },
+        { amount: 100000, status: 'pending', revenue_type: 'remaining_payment' },
+      ],
+    });
+
+    expect(state.priceAfterDiscount).toBe(4500000);
+    expect(state.totalPaid).toBe(200000);
+    expect(state.depositDue).toBe(0);
+    expect(state.remainingDebt).toBe(4300000);
+    expect(state.showDepositRequest).toBe(false);
+  });
+
+  it('rejects overpayment against the shared remaining debt state', () => {
+    const state = calculateBookingPaymentState({
+      fullPrice: 5000000,
+      discountPercent: 0,
+      depositAmount: 1000000,
+      revenues: [{ amount: 1000000, status: 'confirmed', revenue_type: 'deposit' }],
+    });
+
+    expect(validatePaymentAmountAgainstState(state, 4000000)).toEqual({ success: true });
+    expect(validatePaymentAmountAgainstState(state, 4000001)).toEqual({
+      error: 'Số tiền thanh toán vượt quá số tiền còn nợ của gói (4.000.000 đ)',
+    });
+  });
+
+  it('splits completed-session revenue from confirmed paid amount, not booking deposit field', () => {
+    const recognition = calculateSessionRevenueRecognition({
+      fullPrice: 500000,
+      discountPercent: 0,
+      totalSessions: 5,
+      currentSessionNumber: 2,
+      totalPaid: 200000,
+    });
+
+    expect(recognition.earnedRevenueAmount).toBe(100000);
+    expect(recognition.revenueRecognizedBefore).toBe(100000);
+    expect(recognition.deferredRevenueAmount).toBe(100000);
+    expect(recognition.receivableAmount).toBe(0);
+  });
+
+  it('calculates attendance workdays, pro-rata salary, and automatic penalties', () => {
+    const breakdown = calculateAttendanceBreakdown([
+      { status: 'present' },
+      { status: 'late' },
+      { status: 'half_day' },
+      { status: 'absent' },
+    ]);
+
+    expect(breakdown).toEqual({ present: 1, late: 1, absent: 1, halfDay: 1, workDays: 2.5 });
+    expect(calculateProRataBaseSalaryFromActualDays(5200000, breakdown.workDays)).toBe(500000);
+    expect(calculateAttendancePenalty({
+      lateDays: breakdown.late,
+      absentDays: breakdown.absent,
+      penaltyLatePerDay: 50000,
+      penaltyAbsentPerDay: 200000,
+    }).totalPenalty).toBe(250000);
+  });
+
+  it('classifies inventory movements and calculates stock changes', () => {
+    expect(classifyInventoryMovementReason(INVENTORY_REASONS.sessionConsumption)).toBe('consumption');
+    expect(classifyInventoryMovementReason(INVENTORY_REASONS.restock)).toBe('purchase');
+
+    expect(calculateRestockMovement({ stockLevel: 3, amount: 2 })).toEqual({
+      previousStock: 3,
+      changeAmount: 2,
+      newStock: 5,
+      reason: INVENTORY_REASONS.restock,
+    });
+    expect(calculateConsumptionMovement({ itemName: 'Gel', stockLevel: 5, amount: 2 })).toEqual({
+      previousStock: 5,
+      changeAmount: -2,
+      newStock: 3,
+      reason: INVENTORY_REASONS.sessionConsumption,
+    });
+    expect(calculateRollbackStock({ stockLevel: 3, changeAmount: -2 })).toBe(5);
+  });
+});

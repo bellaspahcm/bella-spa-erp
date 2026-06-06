@@ -2,6 +2,7 @@ import {
   calculateReadinessScore,
   findMissingRequiredFields,
   inferBusinessEventType,
+  resolvePaymentAccountCode,
 } from '../services/accounting/template-rules';
 
 describe('accounting template rules', () => {
@@ -14,6 +15,15 @@ describe('accounting template rules', () => {
       .toBe('CUSTOMER_FULL_PAYMENT');
     expect(inferBusinessEventType({ sourceTable: 'revenue', revenueType: 'session_completed' }))
       .toBe('SESSION_REVENUE_RECOGNIZED');
+  });
+
+  it('maps inventory movement reasons through the shared inventory rule', () => {
+    expect(inferBusinessEventType({ sourceTable: 'inventory_logs', reason: 'session_consumption' }))
+      .toBe('INVENTORY_CONSUMED');
+    expect(inferBusinessEventType({ sourceTable: 'inventory_logs', reason: 'restock' }))
+      .toBe('INVENTORY_PURCHASE');
+    expect(inferBusinessEventType({ sourceTable: 'inventory_logs', reason: 'stock_count' }))
+      .toBeNull();
   });
 
   it('maps expense categories to controlled accounting business events', () => {
@@ -55,5 +65,11 @@ describe('accounting template rules', () => {
       needsReview: 0,
       postingFailed: 0,
     })).toBe(100);
+  });
+
+  it('resolves payment method to ledger cash or bank account code', () => {
+    expect(resolvePaymentAccountCode('cash')).toBe('111');
+    expect(resolvePaymentAccountCode('bank_transfer')).toBe('112');
+    expect(resolvePaymentAccountCode(null)).toBe('112');
   });
 });

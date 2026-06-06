@@ -1,6 +1,7 @@
 'use client';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { ChevronRight, FileText, Image as ImageIcon, Loader2, MessageCircle, Share2, Sparkles, User } from 'lucide-react';
 import type { CustomerDetailBooking, KtvOption } from '../types';
@@ -42,7 +43,16 @@ export function ActiveBookingPanel({
   onUpdateKtv: (ktvId: string) => void;
   onOpenBookingSessions: () => void;
 }) {
-  const remainingBalance = ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0) / 100)) - (activeBooking?.deposit_amount || 0);
+  const paymentState = activeBooking
+    ? calculateBookingPaymentState({
+        fullPrice: activeBooking.full_price,
+        discountPercent: activeBooking.discount_percent,
+        depositAmount: activeBooking.deposit_amount,
+        bookingStatus: activeBooking.status,
+        revenues: activeBooking.revenue,
+      })
+    : null;
+  const remainingBalance = paymentState?.remainingDebt || 0;
 
   return (
           <div className="luxury-card-pink rounded-[3rem] p-8 relative shadow-2xl group">
@@ -94,11 +104,11 @@ export function ActiveBookingPanel({
                       </div>
                     )}
 
-                    {(!activeBooking || isDepositOnly || ((activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0)/100)) > (activeBooking.deposit_amount || 0)) && (
+                    {(!activeBooking || isDepositOnly || (paymentState?.remainingDebt || 0) > 0) && (
                       <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
                         <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Đã cọc</p>
                         <p className="font-black text-lg text-white">
-                          {formatNumberWithSeparator(activeBooking?.deposit_amount || 0)}đ
+                          {formatNumberWithSeparator(paymentState?.totalPaid || activeDepositAmount || 0)}đ
                         </p>
                       </div>
                     )}
@@ -108,13 +118,13 @@ export function ActiveBookingPanel({
                         <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Còn lại</p>
                         <p className="font-black text-lg text-white">
                           {isDepositOnly ? '---' : (
-                            ((activeBooking?.full_price || 0) > 0 || (activeBooking?.deposit_amount || 0) > 0) && Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0)) === 0
+                            ((activeBooking?.full_price || 0) > 0 || (paymentState?.totalPaid || 0) > 0) && remainingBalance === 0
                               ? <span className="text-emerald-300">Đã thanh toán đủ</span>
-                              : formatNumberWithSeparator(Math.max(0, ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0))) + 'đ'
+                              : formatNumberWithSeparator(remainingBalance) + 'đ'
                           )}
                         </p>
                       </div>
-                      {!isDepositOnly && ((activeBooking?.full_price || 0) * (1 - (activeBooking?.discount_percent || 0)/100)) - (activeBooking?.deposit_amount || 0) > 0 && (
+                      {!isDepositOnly && remainingBalance > 0 && (
                         <button
                           onClick={() => onPayRemaining(remainingBalance)}
                           className="bg-white text-rose-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all shadow-md active:scale-95 border border-white ml-2"

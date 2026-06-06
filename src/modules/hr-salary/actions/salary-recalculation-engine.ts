@@ -1,6 +1,7 @@
 'use server';
 
 import { getLocalDateString } from '@/lib/utils';
+import { calculateAttendancePenalty } from '@/lib/business-rules/attendance';
 import { Database } from '@/types/database.types';
 import { TenantSalaryConfig } from '@/types/domain';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -112,8 +113,6 @@ export async function recalculateAndSaveSalaryRecordEngine(
     penalty_late_per_day: stored.penalty_late_per_day ?? 50000,
     penalty_absent_per_day: stored.penalty_absent_per_day ?? 200000,
   };
-  const penaltyLate = salaryConfig.penalty_late_per_day ?? 50000;
-  const penaltyAbsent = salaryConfig.penalty_absent_per_day ?? 200000;
 
   const startOfMonthStr = monthYear;
   const endOfMonthStr = getLocalDateString(new Date(new Date(monthYear).getFullYear(), new Date(monthYear).getMonth() + 1, 1));
@@ -171,7 +170,13 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const avgRating: number | null = ktvRow?.average_rating ?? null;
   const lateDays = ktvRow?.late_days ?? 0;
   const absentDays = ktvRow?.absent_days ?? 0;
-  const autoAttendancePenalty = (lateDays * penaltyLate) + (absentDays * penaltyAbsent);
+  const attendancePenalty = calculateAttendancePenalty({
+    lateDays,
+    absentDays,
+    penaltyLatePerDay: salaryConfig.penalty_late_per_day,
+    penaltyAbsentPerDay: salaryConfig.penalty_absent_per_day,
+  });
+  const autoAttendancePenalty = attendancePenalty.totalPenalty;
 
   const { data: kpiRecords, error: kpiError } = await supabase
     .from('kpi_records')
@@ -246,7 +251,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
   }
 
   if (overrides?.violations_deduction === undefined && isDraft && (lateDays > 0 || absentDays > 0)) {
-    proRataNote += `⚠️ Tự động trừ ${autoAttendancePenalty.toLocaleString('vi-VN')}đ (trễ ${lateDays} ngày × ${penaltyLate.toLocaleString('vi-VN')}đ + vắng ${absentDays} ngày × ${penaltyAbsent.toLocaleString('vi-VN')}đ). `;
+    proRataNote += `⚠️ Tự động trừ ${autoAttendancePenalty.toLocaleString('vi-VN')}đ (trễ ${lateDays} ngày × ${attendancePenalty.penaltyLatePerDay.toLocaleString('vi-VN')}đ + vắng ${absentDays} ngày × ${attendancePenalty.penaltyAbsentPerDay.toLocaleString('vi-VN')}đ). `;
   }
 
   const advances = overrides?.service_percentage_bonus !== undefined
