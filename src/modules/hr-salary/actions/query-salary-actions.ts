@@ -4,12 +4,10 @@ import { createClient } from '@/lib/supabase-server';
 import { getCurrentUser } from '@/services/user-actions';
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
-import { calculateAttendancePenalty } from '@/lib/business-rules/attendance';
 import { calcProRataBaseSalary } from './base-salary-actions';
 import {
   buildPackageMultiplierMap,
-  calculateAttendanceWorkDays,
-  calculateProRataBaseSalaryFromActualDays,
+  calculateLiveAttendanceSalaryComponents,
   calculateRatingBonus,
   calculateSessionCommissionBonus,
   calculateWeightedSessionCount,
@@ -254,12 +252,19 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         const avgRating: number | null = ktvLb?.average_rating ?? null;
         const lateDays   = ktvLb?.late_days   ?? 0;
         const absentDays = ktvLb?.absent_days ?? 0;
-        const autoAttendancePenalty = calculateAttendancePenalty({
+
+        const ktvAttendance = attendanceLogsTyped.filter((a) => a.ktv_id === ktv.id);
+        const rawBaseSalary = ktv.base_salary ?? 6000000;
+        const liveAttendanceComponents = calculateLiveAttendanceSalaryComponents({
+          attendanceLogs: ktvAttendance,
+          rawBaseSalary,
           lateDays,
           absentDays,
           penaltyLatePerDay: salaryConfig.penalty_late_per_day,
           penaltyAbsentPerDay: salaryConfig.penalty_absent_per_day,
-        }).totalPenalty;
+        });
+        const actualDays = liveAttendanceComponents.actualDays;
+        const autoAttendancePenalty = liveAttendanceComponents.deductions;
 
         const liveRatingBonus = calculateRatingBonus(ktvSessionsCount, avgRating, salaryConfig);
         const ratingBonus = shouldUseSavedFinancials && record?.rating_bonus !== undefined && record.rating_bonus !== null
@@ -271,18 +276,13 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           ? Number(record.session_bonus)
           : liveSessionBonus;
 
-        // Attendance tracking
-        const ktvAttendance = attendanceLogsTyped.filter((a) => a.ktv_id === ktv.id);
-        const actualDays = calculateAttendanceWorkDays(ktvAttendance);
-
-        const rawBaseSalary = ktv.base_salary ?? 6000000;
         let baseSalary: number;
 
         // Base salary display: Use record value if not draft, or recalculate if draft
         if (record?.base_salary !== undefined && record.base_salary !== null && !isDraft) {
           baseSalary = Number(record.base_salary);
         } else {
-          baseSalary = calculateProRataBaseSalaryFromActualDays(rawBaseSalary, actualDays);
+          baseSalary = liveAttendanceComponents.baseSalary;
         }
 
         // Cap by resignation date if active

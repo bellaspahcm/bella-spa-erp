@@ -1,15 +1,13 @@
 'use server';
 
 import { getLocalDateString } from '@/lib/utils';
-import { calculateAttendancePenalty } from '@/lib/business-rules/attendance';
 import { Database } from '@/types/database.types';
 import { TenantSalaryConfig } from '@/types/domain';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { calcProRataBaseSalary } from './base-salary-actions';
 import {
   buildPackageMultiplierMap,
-  calculateAttendanceWorkDays,
-  calculateProRataBaseSalaryFromActualDays,
+  calculateLiveAttendanceSalaryComponents,
   calculateRatingBonus,
   calculateSessionCommissionBonus,
   calculateWeightedSessionCount,
@@ -128,8 +126,6 @@ export async function recalculateAndSaveSalaryRecordEngine(
   if (attError) throw attError;
   const attendanceListTyped = (attendanceList || []) as unknown as AttendanceLogAdmin[];
 
-  const actualDays = calculateAttendanceWorkDays(attendanceListTyped);
-
   const { data: sessions, error: sessionsError } = await supabase
     .from('session_logs')
     .select('id, rating, bookings(ktv_commission, package_name), session_reviews(rating, status)')
@@ -170,13 +166,18 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const avgRating: number | null = ktvRow?.average_rating ?? null;
   const lateDays = ktvRow?.late_days ?? 0;
   const absentDays = ktvRow?.absent_days ?? 0;
-  const attendancePenalty = calculateAttendancePenalty({
+  const liveAttendanceComponents = calculateLiveAttendanceSalaryComponents({
+    attendanceLogs: attendanceListTyped,
+    rawBaseSalary: ktv?.base_salary ?? 6000000,
     lateDays,
     absentDays,
     penaltyLatePerDay: salaryConfig.penalty_late_per_day,
     penaltyAbsentPerDay: salaryConfig.penalty_absent_per_day,
   });
-  const autoAttendancePenalty = attendancePenalty.totalPenalty;
+  const {
+    attendancePenalty,
+    deductions: autoAttendancePenalty,
+  } = liveAttendanceComponents;
 
   const { data: kpiRecords, error: kpiError } = await supabase
     .from('kpi_records')
@@ -236,8 +237,8 @@ export async function recalculateAndSaveSalaryRecordEngine(
     finalBaseSalary = Number(existing.base_salary);
     if (existing.notes) proRataNote = existing.notes;
   } else {
-    finalBaseSalary = calculateProRataBaseSalaryFromActualDays(rawBaseSalary, actualDays);
-    proRataNote = `Cong thuc te: ${actualDays}/26 ngay. `;
+    finalBaseSalary = liveAttendanceComponents.baseSalary;
+    proRataNote = liveAttendanceComponents.proRataNote;
   }
 
   let deductions: number;
@@ -250,7 +251,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
     deductions = autoAttendancePenalty;
   }
 
-  if (overrides?.violations_deduction === undefined && isDraft && (lateDays > 0 || absentDays > 0)) {
+  if (overrides?.violations_deduction === undefined && isDraft && liveAttendanceComponents.hasAutoPenalty) {
     proRataNote += `⚠️ Tự động trừ ${autoAttendancePenalty.toLocaleString('vi-VN')}đ (trễ ${lateDays} ngày × ${attendancePenalty.penaltyLatePerDay.toLocaleString('vi-VN')}đ + vắng ${absentDays} ngày × ${attendancePenalty.penaltyAbsentPerDay.toLocaleString('vi-VN')}đ). `;
   }
 

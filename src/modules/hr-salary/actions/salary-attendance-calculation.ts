@@ -1,5 +1,7 @@
 import {
+  calculateAttendancePenalty,
   STANDARD_SALARY_WORK_DAYS,
+  type AttendanceLike,
   calculateAttendanceWorkDays,
   calculateProRataBaseSalaryFromActualDays,
 } from '@/lib/business-rules/attendance';
@@ -36,6 +38,33 @@ export {
   calculateAttendanceWorkDays,
   calculateProRataBaseSalaryFromActualDays,
 };
+
+export function calculateLiveAttendanceSalaryComponents(input: {
+  attendanceLogs: AttendanceLike[];
+  rawBaseSalary: number;
+  lateDays?: number | string | null;
+  absentDays?: number | string | null;
+  penaltyLatePerDay?: number | string | null;
+  penaltyAbsentPerDay?: number | string | null;
+}) {
+  const actualDays = calculateAttendanceWorkDays(input.attendanceLogs);
+  const baseSalary = calculateProRataBaseSalaryFromActualDays(input.rawBaseSalary, actualDays);
+  const attendancePenalty = calculateAttendancePenalty({
+    lateDays: input.lateDays,
+    absentDays: input.absentDays,
+    penaltyLatePerDay: input.penaltyLatePerDay,
+    penaltyAbsentPerDay: input.penaltyAbsentPerDay,
+  });
+
+  return {
+    actualDays,
+    baseSalary,
+    attendancePenalty,
+    deductions: attendancePenalty.totalPenalty,
+    hasAutoPenalty: attendancePenalty.lateDays > 0 || attendancePenalty.absentDays > 0,
+    proRataNote: `Cong thuc te: ${actualDays}/26 ngay. `,
+  };
+}
 
 export function buildPackageMultiplierMap(packages: PackageMultiplierLike[]) {
   const map = new Map<string, number>();
