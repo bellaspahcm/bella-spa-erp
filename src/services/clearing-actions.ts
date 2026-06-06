@@ -41,6 +41,10 @@ export interface InterBranchClearingRecord {
   } | null;
 }
 
+export type InterBranchClearingRecordsResult =
+  | { success: true; data: InterBranchClearingRecord[]; error?: never }
+  | { success: false; data: InterBranchClearingRecord[]; error: string };
+
 /**
  * Lấy danh sách bản ghi đối soát liên chi nhánh.
  * HQ Admin xem được toàn bộ.
@@ -82,6 +86,23 @@ export async function getInterBranchClearingRecords(tenantId?: string): Promise<
   } catch (e) {
     console.error('[getInterBranchClearingRecords] Exception:', e);
     throw e;
+  }
+}
+
+/**
+ * Lấy dữ liệu bù trừ theo dạng result để client không nhận lỗi Server Action bị ẩn message.
+ */
+export async function getInterBranchClearingRecordsResult(tenantId?: string): Promise<InterBranchClearingRecordsResult> {
+  try {
+    const data = await getInterBranchClearingRecords(tenantId);
+    return { success: true, data };
+  } catch (e) {
+    console.error('[getInterBranchClearingRecordsResult] Exception:', e);
+    return {
+      success: false,
+      data: [],
+      error: getErrorMessage(e, 'Không thể tải dữ liệu bù trừ chi nhánh'),
+    };
   }
 }
 
