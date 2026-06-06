@@ -12,6 +12,7 @@
     "docs:api:versioning": "node scripts/check-api-versioning.mjs",
     "db:access:check": "node scripts/check-supabase-data-access.cjs",
     "db:rpc-grants:check": "node scripts/check-supabase-rpc-grants.cjs",
+    "db:rpc-smoke:check": "node scripts/check-supabase-rpc-smoke.cjs",
     "db:migration:check": "node scripts/check-supabase-migrations.cjs",
     "security:audit": "node scripts/audit-production.mjs",
     "security:secrets": "node scripts/check-secret-leaks.mjs",

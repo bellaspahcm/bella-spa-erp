@@ -51,6 +51,15 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DB_ACCESS_CHECK_OPTIONAL: "1"
 
+      - name: Supabase live RPC smoke
+        run: npm run db:rpc-smoke:check
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DB_RPC_SMOKE_OPTIONAL: "1"
+
       - name: Production build
         run: npm run build
 
