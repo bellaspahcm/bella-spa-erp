@@ -5,6 +5,7 @@ import { Database } from '@/types/database.types';
 import { TenantSalaryConfig } from '@/types/domain';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { calcProRataBaseSalary } from './base-salary-actions';
+import { calculateAttendanceWorkDays, calculateProRataBaseSalaryFromActualDays } from './salary-attendance-calculation';
 
 interface KtvUserDataAdmin {
   id: string;
@@ -119,16 +120,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
   if (attError) throw attError;
   const attendanceListTyped = (attendanceList || []) as unknown as AttendanceLogAdmin[];
 
-  let actualDays = 0;
-  if (attendanceListTyped.length > 0) {
-    attendanceListTyped.forEach((att) => {
-      if (att.status === 'present' || att.status === 'late') {
-        actualDays += 1.0;
-      } else if (att.status === 'half_day') {
-        actualDays += 0.5;
-      }
-    });
-  }
+  const actualDays = calculateAttendanceWorkDays(attendanceListTyped);
 
   const { data: sessions, error: sessionsError } = await supabase
     .from('session_logs')
@@ -224,12 +216,9 @@ export async function recalculateAndSaveSalaryRecordEngine(
   } else if (existing && !isDraft && existing.base_salary !== null && existing.base_salary !== undefined) {
     finalBaseSalary = Number(existing.base_salary);
     if (existing.notes) proRataNote = existing.notes;
-  } else if (attendanceListTyped.length > 0) {
-    finalBaseSalary = Math.round((rawBaseSalary / 26) * actualDays);
-    proRataNote = `📊 Công thực tế: ${actualDays}/26 ngày. `;
   } else {
-    finalBaseSalary = rawBaseSalary;
-    proRataNote = `ℹ️ Áp dụng lương cứng mặc định (Chưa có dữ liệu chấm công). `;
+    finalBaseSalary = calculateProRataBaseSalaryFromActualDays(rawBaseSalary, actualDays);
+    proRataNote = `Cong thuc te: ${actualDays}/26 ngay. `;
   }
 
   let deductions: number;
