@@ -15,6 +15,7 @@ import {
   calculateRollbackStock,
   classifyInventoryMovementReason,
 } from '@/lib/business-rules/inventory';
+import { calculateLiveAttendanceSalaryComponents } from '@/modules/hr-salary/actions/salary-attendance-calculation';
 
 describe('shared business rule engines', () => {
   it('calculates customer payment state from confirmed revenue records', () => {
@@ -81,6 +82,35 @@ describe('shared business rule engines', () => {
       penaltyLatePerDay: 50000,
       penaltyAbsentPerDay: 200000,
     }).totalPenalty).toBe(250000);
+  });
+
+  it('uses one live attendance salary helper for draft payroll components', () => {
+    const components = calculateLiveAttendanceSalaryComponents({
+      attendanceLogs: [
+        { status: 'present' },
+        { status: 'late' },
+        { status: 'half_day' },
+        { status: 'absent' },
+      ],
+      rawBaseSalary: 5200000,
+      lateDays: 1,
+      absentDays: 1,
+      penaltyLatePerDay: 50000,
+      penaltyAbsentPerDay: 200000,
+    });
+
+    expect(components).toMatchObject({
+      actualDays: 2.5,
+      baseSalary: 500000,
+      deductions: 250000,
+      hasAutoPenalty: true,
+      proRataNote: 'Cong thuc te: 2.5/26 ngay. ',
+    });
+    expect(components.attendancePenalty).toMatchObject({
+      lateDays: 1,
+      absentDays: 1,
+      totalPenalty: 250000,
+    });
   });
 
   it('classifies inventory movements and calculates stock changes', () => {
