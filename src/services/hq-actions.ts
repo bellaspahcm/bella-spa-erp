@@ -307,6 +307,8 @@ export interface ConsolidatedPnLRow {
   net_margin_percent: number;
   total_bookings_count: number;
   total_sessions_completed: number;
+  internal_revenue_eliminated: number;
+  internal_cogs_eliminated: number;
 }
 
 /**

@@ -24,6 +24,13 @@ from:
 
 Other posted journal lines remain included.
 
+The RPC also returns two transparency fields:
+
+- `internal_revenue_eliminated`
+- `internal_cogs_eliminated`
+
+These fields explain how much internal branch activity was removed from the consolidated report. They do not change the main KPI formulas, which already use the external-only revenue and COGS values.
+
 ## Expected Business Result
 
 HQ consolidated P&L shows external business performance only:
@@ -32,7 +39,8 @@ HQ consolidated P&L shows external business performance only:
 - real operating expenses stay included;
 - internal inter-branch transfer revenue and COGS are eliminated;
 - branch-level P&L can still reflect local clearing impact.
+- HQ users can see the eliminated totals in the financial overview instead of reconciling the difference manually.
 
 ## Verification
 
-Added regression coverage in `src/__tests__/consolidated-pnl.test.ts` to ensure the migration keeps the internal clearing exclusion on both revenue and COGS, and keeps anon access revoked for the HQ RPC.
+Added regression coverage in `src/__tests__/consolidated-pnl.test.ts` to ensure the migration keeps the internal clearing exclusion on both revenue and COGS, returns the eliminated totals, and keeps anon access revoked for the HQ RPC.

@@ -69,8 +69,24 @@ export default function FinancialOverviewClient({
     const totalProfit = initialRows.reduce((s, r) => s + Number(r.net_profit || 0), 0);
     const totalSessions = initialRows.reduce((s, r) => s + Number(r.total_sessions_completed || 0), 0);
     const totalBookings = initialRows.reduce((s, r) => s + Number(r.total_bookings_count || 0), 0);
+    const totalInternalRevenueEliminated = initialRows.reduce(
+      (s, r) => s + Number(r.internal_revenue_eliminated || 0),
+      0
+    );
+    const totalInternalCogsEliminated = initialRows.reduce(
+      (s, r) => s + Number(r.internal_cogs_eliminated || 0),
+      0
+    );
     const networkMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-    return { totalRevenue, totalProfit, totalSessions, totalBookings, networkMargin };
+    return {
+      totalRevenue,
+      totalProfit,
+      totalSessions,
+      totalBookings,
+      networkMargin,
+      totalInternalRevenueEliminated,
+      totalInternalCogsEliminated,
+    };
   }, [initialRows]);
 
   // Chart data — show active branches (max 10)
@@ -191,6 +207,38 @@ export default function FinancialOverviewClient({
           />
         </div>
 
+        <div className="rounded-[2rem] border border-amber-200/70 bg-amber-50/70 dark:border-amber-500/20 dark:bg-amber-500/10 p-5 md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-amber-700 dark:text-amber-300">
+                <PieChart className="h-4 w-4 shrink-0" />
+                Điều chỉnh hợp nhất
+              </div>
+              <p className="mt-2 text-sm font-medium text-slate-700 dark:text-[#CDBCAB]">
+                Báo cáo toàn network đã loại trừ giao dịch nội bộ giữa các chi nhánh để doanh thu và giá vốn không bị tính trùng.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:min-w-[460px]">
+              <div className="rounded-2xl border border-white/70 bg-white/80 p-4 dark:border-[#3E3A35]/60 dark:bg-[#11100F]/40">
+                <p className="text-3xs font-black uppercase tracking-widest text-slate-400 dark:text-[#CDBCAB]/60">
+                  Doanh thu nội bộ đã loại trừ
+                </p>
+                <p className="mt-1 font-mono text-lg font-black text-slate-900 dark:text-[#EFE9E1]">
+                  {fmtVND(aggregates.totalInternalRevenueEliminated)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/70 bg-white/80 p-4 dark:border-[#3E3A35]/60 dark:bg-[#11100F]/40">
+                <p className="text-3xs font-black uppercase tracking-widest text-slate-400 dark:text-[#CDBCAB]/60">
+                  Giá vốn nội bộ đã loại trừ
+                </p>
+                <p className="mt-1 font-mono text-lg font-black text-slate-900 dark:text-[#EFE9E1]">
+                  {fmtVND(aggregates.totalInternalCogsEliminated)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* ── COMPARISON CHART ── */}
         <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
           <h3 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider mb-6 flex items-center gap-2">
@@ -252,12 +300,14 @@ export default function FinancialOverviewClient({
             <div className="py-12 text-center text-slate-400 italic">Chưa có chi nhánh nào hoạt động.</div>
           ) : (
             <div className="-mx-6 overflow-x-auto overscroll-x-contain px-6 pb-2 custom-scrollbar">
-              <table className="bella-data-table min-w-[800px]">
+              <table className="bella-data-table min-w-[1080px]">
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
                     <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center whitespace-nowrap">#</th>
                     <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap">Chi nhánh</th>
                     <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">Doanh thu thuần</th>
+                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">DT nội bộ loại</th>
+                    <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">GV nội bộ loại</th>
                     <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">Chi phí QLKD</th>
                     <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">Lợi nhuận thuần</th>
                     <th className="px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-right whitespace-nowrap">Biên LN</th>
@@ -294,6 +344,12 @@ export default function FinancialOverviewClient({
                         <td className="px-4 py-4 text-right font-mono font-bold text-slate-700 dark:text-[#CDBCAB] whitespace-nowrap">
                           {fmtVND(row.net_revenue)}
                         </td>
+                        <td className="px-4 py-4 text-right font-mono text-2xs text-amber-600 dark:text-amber-300 whitespace-nowrap">
+                          {fmtVND(row.internal_revenue_eliminated)}
+                        </td>
+                        <td className="px-4 py-4 text-right font-mono text-2xs text-amber-600 dark:text-amber-300 whitespace-nowrap">
+                          {fmtVND(row.internal_cogs_eliminated)}
+                        </td>
                         <td className="px-4 py-4 text-right font-mono text-2xs text-rose-500 whitespace-nowrap">
                           {fmtVND(row.operating_expense)}
                         </td>
@@ -318,6 +374,12 @@ export default function FinancialOverviewClient({
                     </td>
                     <td className="px-4 py-4 text-right font-mono text-sm text-slate-900 dark:text-[#EFE9E1] whitespace-nowrap">
                       {fmtVND(aggregates.totalRevenue)}
+                    </td>
+                    <td className="px-4 py-4 text-right font-mono text-2xs text-amber-600 dark:text-amber-300 whitespace-nowrap">
+                      {fmtVND(aggregates.totalInternalRevenueEliminated)}
+                    </td>
+                    <td className="px-4 py-4 text-right font-mono text-2xs text-amber-600 dark:text-amber-300 whitespace-nowrap">
+                      {fmtVND(aggregates.totalInternalCogsEliminated)}
                     </td>
                     <td className="px-4 py-4 text-right font-mono text-2xs text-rose-500 whitespace-nowrap">
                       {fmtVND(initialRows.reduce((s, r) => s + Number(r.operating_expense || 0), 0))}
