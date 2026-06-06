@@ -154,21 +154,31 @@ describe('getConsolidatedPnLReport', () => {
     expect(result).toEqual([]);
   });
 
-  it('eliminates inter-branch clearing from consolidated revenue and COGS', () => {
+  it('reports inter-branch clearing eliminations in consolidated revenue and COGS', () => {
     const migrationSql = readFileSync(
       path.join(
         process.cwd(),
-        'supabase/migrations/20260606103000_eliminate_internal_clearing_from_consolidated_pnl.sql'
+        'supabase/migrations/20260606110000_add_consolidated_pnl_elimination_totals.sql'
       ),
       'utf8'
     );
 
+    expect(migrationSql).toContain('DROP FUNCTION IF EXISTS public.get_consolidated_pnl(DATE, DATE)');
+    expect(migrationSql).toContain('internal_revenue_eliminated DECIMAL(19,4)');
+    expect(migrationSql).toContain('internal_cogs_eliminated DECIMAL(19,4)');
     expect(migrationSql).toMatch(
       /a\.account_code LIKE '511%'[\s\S]*COALESCE\(e\.reference_type, ''\) <> 'INTER_BRANCH_CLEARING'/
     );
     expect(migrationSql).toMatch(
       /a\.account_code LIKE '632%'[\s\S]*COALESCE\(e\.reference_type, ''\) <> 'INTER_BRANCH_CLEARING'/
     );
+    expect(migrationSql).toMatch(
+      /a\.account_code LIKE '511%'[\s\S]*COALESCE\(e\.reference_type, ''\) = 'INTER_BRANCH_CLEARING'/
+    );
+    expect(migrationSql).toMatch(
+      /a\.account_code LIKE '632%'[\s\S]*COALESCE\(e\.reference_type, ''\) = 'INTER_BRANCH_CLEARING'/
+    );
+    expect(migrationSql).toContain('REVOKE ALL ON FUNCTION public.get_consolidated_pnl(DATE, DATE) FROM PUBLIC');
     expect(migrationSql).toContain('REVOKE EXECUTE ON FUNCTION public.get_consolidated_pnl(DATE, DATE) FROM anon');
   });
 });

@@ -3285,6 +3285,8 @@ export type Database = {
           financial_income: number
           gross_profit: number
           gross_revenue: number
+          internal_cogs_eliminated: number
+          internal_revenue_eliminated: number
           net_margin_percent: number
           net_profit: number
           net_revenue: number
