@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { 
   DollarSign, 
   Send, 
@@ -47,6 +47,10 @@ import AttendanceSummaryTable from './components/AttendanceSummaryTable';
 import HrProfileTable from './components/HrProfileTable';
 import ConfirmModal from './components/ConfirmModal';
 
+function getCurrentMonthString() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).substring(0, 7);
+}
+
 export default function SalaryPage() {
   const [ktvSalaries, setKtvSalaries] = useState<KtvSalaryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +62,8 @@ export default function SalaryPage() {
   const [matrixData, setMatrixData] = useState<KtvSessionMatrix | null>(null);
   const [isExportingMatrix, setIsExportingMatrix] = useState(false);
   const [attendanceData, setAttendanceData] = useState<KtvAttendanceSummary[]>([]);
+  const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
+  const [hasLoadedAttendance, setHasLoadedAttendance] = useState(false);
 
   // Tab State
   const [activeTab, setActiveTab] = useState<'payroll' | 'attendance' | 'hr_profile'>('payroll');
@@ -137,21 +143,42 @@ export default function SalaryPage() {
     fetchUser();
   }, []);
 
-  async function refreshData() {
+  const loadAttendanceData = useCallback(async () => {
+    setIsAttendanceLoading(true);
     try {
-      const currentMonthStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).substring(0, 7);
-      const [salaryData, matrix, attData] = await Promise.all([
+      const attData = await getMonthlyAttendanceSummary(getCurrentMonthString());
+      setAttendanceData(attData || []);
+      setHasLoadedAttendance(true);
+    } catch (error) {
+      console.error('Attendance data error:', error);
+    } finally {
+      setIsAttendanceLoading(false);
+    }
+  }, []);
+
+  const refreshData = useCallback(async (options: { includeAttendance?: boolean } = {}) => {
+    try {
+      const [salaryData, matrix] = await Promise.all([
         getSalaryData(),
         getKtvSessionMatrix(),
-        getMonthlyAttendanceSummary(currentMonthStr)
       ]);
       setKtvSalaries(salaryData || []);
       setMatrixData(matrix || null);
-      setAttendanceData(attData || []);
+
+      if (options.includeAttendance) {
+        await loadAttendanceData();
+      }
     } catch (error) {
       console.error('Refresh data error:', error);
     }
-  }
+  }, [loadAttendanceData]);
+
+  const handleTabChange = useCallback((tab: 'payroll' | 'attendance' | 'hr_profile') => {
+    setActiveTab(tab);
+    if (tab === 'attendance' && !hasLoadedAttendance && !isAttendanceLoading) {
+      void loadAttendanceData();
+    }
+  }, [hasLoadedAttendance, isAttendanceLoading, loadAttendanceData]);
 
   useEffect(() => {
     async function fetchData() {
@@ -169,7 +196,7 @@ export default function SalaryPage() {
       }
     }
     fetchData();
-  }, []);
+  }, [refreshData]);
 
   const handleApprove = (id: string, name: string) => {
     showConfirm({
@@ -441,7 +468,7 @@ export default function SalaryPage() {
         <div className="mb-6 w-full max-w-full overflow-x-auto overscroll-x-contain custom-scrollbar md:mb-10">
           <div className="flex bg-white/60 p-2 rounded-2xl border border-slate-100 gap-2 w-fit backdrop-blur-md whitespace-nowrap">
             <button
-              onClick={() => setActiveTab('payroll')}
+              onClick={() => handleTabChange('payroll')}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
                 activeTab === 'payroll'
@@ -453,7 +480,7 @@ export default function SalaryPage() {
               Bảng Lương realtime
             </button>
             <button
-              onClick={() => setActiveTab('attendance')}
+              onClick={() => handleTabChange('attendance')}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
                 activeTab === 'attendance'
@@ -465,7 +492,7 @@ export default function SalaryPage() {
               Chấm Công Thực Tế
             </button>
             <button
-              onClick={() => setActiveTab('hr_profile')}
+              onClick={() => handleTabChange('hr_profile')}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap",
                 activeTab === 'hr_profile'
@@ -536,7 +563,7 @@ export default function SalaryPage() {
 
       {/* Attendance Tab */}
       {activeTab === 'attendance' && currentUser?.role?.toLowerCase() !== 'ktv' && (
-        isLoading ? (
+        isLoading || isAttendanceLoading || !hasLoadedAttendance ? (
           <div className="rounded-[2rem] border border-slate-100 bg-white/80 p-4 shadow-sm dark:border-slate-800/60 dark:bg-zinc-900/60 sm:p-6 md:rounded-[2.5rem] md:p-8">
             <SkeletonTable />
           </div>
@@ -567,7 +594,7 @@ export default function SalaryPage() {
         isOpen={isCalendarModalOpen}
         onClose={() => setIsCalendarModalOpen(false)}
         selectedKtv={selectedKtv}
-        onSaveSuccess={refreshData}
+        onSaveSuccess={() => refreshData({ includeAttendance: true })}
       />
 
       {/* HR Profile Editor Modal */}
@@ -575,7 +602,7 @@ export default function SalaryPage() {
         isOpen={isHrModalOpen}
         onClose={() => setIsHrModalOpen(false)}
         hrKtvProfile={hrKtvProfile}
-        onSaveSuccess={refreshData}
+        onSaveSuccess={() => refreshData({ includeAttendance: hasLoadedAttendance })}
       />
 
       {/* Edit Salary Modal */}
