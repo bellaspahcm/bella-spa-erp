@@ -88,9 +88,9 @@ const visualRoutes: VisualRoute[] = [
     content: /doi soat luong|luong ktv|salary/i,
   },
   {
-    name: "ai-copilot",
-    path: "/dashboard/ai-copilot",
-    content: /ai coo|copilot|tong giam doc/i,
+    name: "ai-salary-reconciliation",
+    path: "/dashboard/ai-copilot/salary-reconciliation",
+    content: /doi soat bang luong|ai tinh|salary/i,
   },
 ];
 
@@ -540,18 +540,19 @@ test.describe("Responsive visual smoke", () => {
           height: viewport.height,
         });
 
+        await adminPage
+          .evaluate(() => {
+            window.localStorage.setItem("bella_onboarding_completed", "true");
+          })
+          .catch(() => {});
+
         const response = await adminPage.goto(route.path, { waitUntil: "domcontentloaded" });
         await adminPage.waitForLoadState("load", { timeout: 8_000 }).catch(() => {});
         await adminPage.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => {});
 
-        if ((response?.status() ?? 0) >= 400) {
-          test.skip(true, `${route.name} is not accessible for the configured E2E admin account.`);
-        }
+        expect(response?.status() ?? 0, `${route.name} must not return HTTP errors`).toBeLessThan(400);
 
         const routePattern = new RegExp(route.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-        if (!routePattern.test(adminPage.url())) {
-          test.skip(true, `${route.name} is not accessible for the configured E2E admin account.`);
-        }
         await expect(adminPage).toHaveURL(routePattern);
 
         const body = adminPage.locator("body");

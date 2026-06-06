@@ -5,6 +5,7 @@ import path from 'path';
 
 const mockGetUser = jest.fn();
 const mockRpc = jest.fn();
+const mockGetCurrentUser = jest.fn();
 
 jest.mock('@/lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({
@@ -15,12 +16,24 @@ jest.mock('@/lib/supabase-server', () => ({
   })),
 }));
 
+jest.mock('../services/user-actions', () => ({
+  getCurrentUser: () => mockGetCurrentUser(),
+}));
+
 import { getSalaryReconciliation } from '../services/salary-reconciliation-actions';
 
 describe('getSalaryReconciliation summary semantics', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetUser.mockResolvedValue({ data: { user: { id: 'admin-1' } }, error: null });
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      email: 'admin@example.com',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+      full_name: 'Admin',
+      avatar_url: null,
+    });
   });
 
   it('keeps NO_LEGACY rows separate from major discrepancies and total diff', async () => {
@@ -106,6 +119,44 @@ describe('getSalaryReconciliation summary semantics', () => {
       majorCount: 0,
       noLegacyCount: 1,
       totalDiffAbs: 0,
+    }));
+  });
+
+  it('uses the tenant-scoped report RPC when local dev-bypass has no auth session', async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: { message: 'Auth session missing' } });
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        {
+          ktv_id: 'ktv-pending',
+          ktv_name: 'KTV Pending',
+          legacy_total: 0,
+          ai_total: 6800000,
+          diff_total: -6800000,
+          diff_percent: 100,
+          status: 'PENDING_LEGACY',
+          legacy_status: 'missing',
+        },
+      ],
+      error: null,
+    });
+
+    const result = await getSalaryReconciliation('2026-05-01');
+
+    expect(result.error).toBeNull();
+    expect(mockRpc).toHaveBeenCalledWith('get_salary_reconciliation_report', {
+      p_tenant_id: 'tenant-1',
+      p_month_year: '2026-05-01',
+    });
+    expect(result.data).toEqual(expect.objectContaining({
+      totalKtv: 1,
+      noLegacyCount: 1,
+      majorCount: 0,
+      totalDiffAbs: 0,
+    }));
+    expect(result.data?.rows[0]).toEqual(expect.objectContaining({
+      status: 'NO_LEGACY',
+      has_legacy_record: false,
+      diff_percent: null,
     }));
   });
 });

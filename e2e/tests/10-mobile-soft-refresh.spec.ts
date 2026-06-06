@@ -1,4 +1,5 @@
 import { canAuthenticateAdminPage, expect, test } from "../fixtures/auth";
+import type { Page } from "@playwright/test";
 
 type SoftRefreshWindow = Window & {
   __bellaSoftRefreshProbe?: string;
@@ -37,14 +38,29 @@ const softRefreshRoutes: SoftRefreshRoute[] = [
     content: /kho vat tu|inventory/i,
   },
   {
+    name: "services",
+    path: "/dashboard/services",
+    content: /quan ly dich vu|dich vu|services/i,
+  },
+  {
     name: "finance",
     path: "/dashboard/finance",
     content: /tai chinh|finance/i,
   },
   {
+    name: "finance-reconciliation",
+    path: "/dashboard/finance/reconciliation",
+    content: /doi soat|cong no|reconciliation/i,
+  },
+  {
     name: "accounting-journals",
     path: "/dashboard/accounting/journals",
     content: /nhat ky|journal/i,
+  },
+  {
+    name: "accounting-reports",
+    path: "/dashboard/accounting/reports",
+    content: /bao cao|trial|financial|ket qua/i,
   },
   {
     name: "accounting-outbox",
@@ -60,6 +76,26 @@ const softRefreshRoutes: SoftRefreshRoute[] = [
     name: "accounting-manual-entry",
     path: "/dashboard/accounting/manual-entry",
     content: /but toan|manual|dinh khoan/i,
+  },
+  {
+    name: "salary",
+    path: "/dashboard/salary",
+    content: /luong ktv|bang tinh luong|salary/i,
+  },
+  {
+    name: "salary-reconciliation",
+    path: "/dashboard/accounting/salary-reconciliation",
+    content: /doi soat luong|luong ktv|salary/i,
+  },
+  {
+    name: "crm",
+    path: "/dashboard/crm",
+    content: /crm|zalo|marketing|chien dich|khach hang/i,
+  },
+  {
+    name: "ai-salary-reconciliation",
+    path: "/dashboard/ai-copilot/salary-reconciliation",
+    content: /doi soat bang luong|ai tinh|salary/i,
   },
   {
     name: "audit",
@@ -96,8 +132,78 @@ function normalizeVietnamese(value: string) {
     .replace(/Ä/g, "D");
 }
 
+const isVisualSmokeRunner = process.env.E2E_VISUAL_SMOKE_RUNNER === "1";
+const hasExplicitE2eTarget = Boolean(
+  process.env.E2E_BASE_URL ||
+  process.env.E2E_PORT ||
+  process.env.E2E_REUSE_SERVER === "0",
+);
+const isUnsafeImplicitLocalRun = !isVisualSmokeRunner && !hasExplicitE2eTarget;
+
+const appErrorPatterns = [
+  /application error/i,
+  /an error occurred in the server components render/i,
+  /unhandled runtime error/i,
+  /this page could not be found/i,
+];
+
+async function expectNoDocumentHorizontalOverflow(page: Page, routeName: string, phase: string) {
+  const overflow = await page.evaluate(() => ({
+    viewportWidth: window.innerWidth,
+    documentWidth: document.documentElement.scrollWidth,
+  }));
+
+  expect(
+    overflow.documentWidth,
+    `${routeName} should not create document-level horizontal scroll ${phase}`,
+  ).toBeLessThanOrEqual(overflow.viewportWidth + 8);
+}
+
+async function expectMobileRefreshButtonFitsViewport(page: Page, routeName: string) {
+  const button = page.getByRole("button", { name: /làm mới dữ liệu|lam moi du lieu/i }).first();
+
+  await expect(button, `${routeName} should expose the mobile refresh button`).toBeVisible();
+  await expect(button, `${routeName} mobile refresh button should be enabled`).toBeEnabled();
+
+  const box = await button.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const styles = window.getComputedStyle(element);
+
+    return {
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      pointerEvents: styles.pointerEvents,
+      visibility: styles.visibility,
+    };
+  });
+
+  expect(box.visibility, `${routeName} refresh button should be visible`).toBe("visible");
+  expect(box.pointerEvents, `${routeName} refresh button should receive taps`).not.toBe("none");
+  expect(box.left, `${routeName} refresh button should stay inside the viewport`).toBeGreaterThanOrEqual(0);
+  expect(box.top, `${routeName} refresh button should stay inside the viewport`).toBeGreaterThanOrEqual(0);
+  expect(box.right, `${routeName} refresh button should not overflow the viewport`).toBeLessThanOrEqual(
+    box.viewportWidth + 1,
+  );
+  expect(box.bottom, `${routeName} refresh button should not be clipped vertically`).toBeLessThanOrEqual(
+    box.viewportHeight + 1,
+  );
+  expect(box.width, `${routeName} refresh button should keep a tappable width`).toBeGreaterThanOrEqual(36);
+  expect(box.height, `${routeName} refresh button should keep a tappable height`).toBeGreaterThanOrEqual(36);
+}
+
 test.describe("Mobile soft refresh", () => {
   test.setTimeout(120_000);
+
+  test.skip(
+    isUnsafeImplicitLocalRun,
+    "Run mobile soft refresh with `npm run e2e:visual` so it uses an isolated port and cannot reuse a stale dev server.",
+  );
 
   test.skip(
     !canAuthenticateAdminPage(),
@@ -107,6 +213,11 @@ test.describe("Mobile soft refresh", () => {
   for (const route of softRefreshRoutes) {
     test(`${route.name} refreshes without hard page reload`, async ({ adminPage }) => {
       await adminPage.setViewportSize({ width: 390, height: 844 });
+      await adminPage
+        .evaluate(() => {
+          window.localStorage.setItem("bella_onboarding_completed", "true");
+        })
+        .catch(() => {});
       const auditConsoleErrors: string[] = [];
 
       if (route.name === "audit") {
@@ -124,17 +235,19 @@ test.describe("Mobile soft refresh", () => {
       await adminPage.waitForLoadState("load", { timeout: 8_000 }).catch(() => {});
       await adminPage.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => {});
 
-      if ((response?.status() ?? 0) >= 400) {
-        test.skip(true, `${route.name} is not accessible for the configured E2E admin account.`);
-      }
+      expect(response?.status() ?? 0, `${route.name} must not return HTTP errors`).toBeLessThan(400);
 
       const routePattern = new RegExp(route.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-      if (!routePattern.test(adminPage.url())) {
-        test.skip(true, `${route.name} is not accessible for the configured E2E admin account.`);
-      }
+      await expect(adminPage).toHaveURL(routePattern);
 
       const normalizedText = normalizeVietnamese(await adminPage.locator("body").innerText());
       expect(normalizedText, `${route.name} should render expected page content`).toMatch(route.content);
+      for (const pattern of appErrorPatterns) {
+        expect(normalizedText, `${route.name} should not show ${pattern}`).not.toMatch(pattern);
+      }
+
+      await expectNoDocumentHorizontalOverflow(adminPage, route.name, "before soft refresh");
+      await expectMobileRefreshButtonFitsViewport(adminPage, route.name);
 
       await adminPage.evaluate(() => {
         (window as SoftRefreshWindow).__bellaSoftRefreshProbe = String(Date.now());
@@ -156,7 +269,7 @@ test.describe("Mobile soft refresh", () => {
       await adminPage.keyboard.press("Escape").catch(() => {});
       await adminPage.locator(".fixed.inset-0").first().waitFor({ state: "detached", timeout: 1_000 }).catch(() => {});
 
-      await adminPage.getByRole("button", { name: /làm mới dữ liệu/i }).click({ force: true });
+      await adminPage.getByRole("button", { name: /làm mới dữ liệu|lam moi du lieu/i }).first().click();
       await adminPage.waitForTimeout(1_000);
 
       await expect(adminPage).toHaveURL(urlBefore);
@@ -169,6 +282,14 @@ test.describe("Mobile soft refresh", () => {
 
       if (hasSearchInput) {
         await expect(searchInput).toHaveValue("soft-refresh-probe");
+      }
+
+      await expectNoDocumentHorizontalOverflow(adminPage, route.name, "after soft refresh");
+      await expectMobileRefreshButtonFitsViewport(adminPage, route.name);
+
+      const refreshedText = normalizeVietnamese(await adminPage.locator("body").innerText());
+      for (const pattern of appErrorPatterns) {
+        expect(refreshedText, `${route.name} should not show ${pattern} after soft refresh`).not.toMatch(pattern);
       }
 
       if (route.name === "audit") {

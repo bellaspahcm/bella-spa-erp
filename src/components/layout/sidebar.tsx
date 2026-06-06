@@ -251,7 +251,7 @@ export function Sidebar() {
     <>
       {/* ── Mobile Top Header Bar (lg:hidden) ── */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 dark:bg-[#11100F]/95 border-b border-[#FFE4E6] dark:border-[#3E3A35] backdrop-blur-md z-30 px-6 flex items-center justify-between shadow-[0_2px_15px_rgba(0,0,0,0.02)] transition-colors duration-300">
-        <div className="flex w-[4.5rem] items-center justify-start">
+        <div className="flex w-20 items-center justify-start">
           <button
             onClick={() => setIsOpen(true)}
             className="p-2.5 rounded-xl text-[#BE185D] dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all"
@@ -271,14 +271,14 @@ export function Sidebar() {
           <span className="font-handwriting text-2xl text-[#BE185D] dark:text-[#A67D44] leading-none mt-1">Bella Spa</span>
         </div>
 
-        <div className="flex w-[4.5rem] items-center justify-end gap-2">
+        <div className="flex w-20 items-center justify-end gap-2">
           <button
             type="button"
             onClick={handleMobileRefresh}
             disabled={isMobileRefreshing}
             aria-label="Làm mới dữ liệu"
             title="Làm mới dữ liệu"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-pink-100 bg-white/80 text-[#BE185D] shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-70 dark:border-[#3E3A35] dark:bg-[#1C1B19] dark:text-[#A67D44] dark:hover:bg-[#5D1C34]/30"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-pink-100 bg-white/80 text-[#BE185D] shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-70 dark:border-[#3E3A35] dark:bg-[#1C1B19] dark:text-[#A67D44] dark:hover:bg-[#5D1C34]/30"
           >
             <RefreshCw className={cn('h-4 w-4', isMobileRefreshing && 'animate-spin')} />
           </button>

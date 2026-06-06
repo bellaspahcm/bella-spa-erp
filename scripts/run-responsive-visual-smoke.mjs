@@ -56,6 +56,7 @@ const playwrightArgs = [
   'playwright',
   'test',
   'e2e/tests/09-responsive-visual-smoke.spec.ts',
+  'e2e/tests/10-mobile-soft-refresh.spec.ts',
   ...process.argv.slice(2),
 ];
 const command = process.platform === 'win32' ? 'cmd.exe' : 'npx';

@@ -23,6 +23,7 @@
     "test:report": "jest --json --outputFile=test-results.json && node generate-report.js",
     "e2e": "playwright test",
     "e2e:visual": "node scripts/run-responsive-visual-smoke.mjs",
+    "e2e:visual:assert": "node scripts/assert-playwright-results.mjs",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
     "e2e:debug": "playwright test --debug",
@@ -33,7 +34,8 @@
     "load:spike": "k6 run load-tests/scripts/04-login-spike.js",
     "load:soak": "k6 run load-tests/scripts/05-checkout-soak.js",
     "load:soak:short": "k6 run -e SOAK_MINUTES=5 load-tests/scripts/05-checkout-soak.js",
-    "load:report": "k6 run --out json=load-tests/results/result.json load-tests/scripts/01-smoke.js"
+    "load:report": "k6 run --out json=load-tests/results/result.json load-tests/scripts/01-smoke.js",
+    "ci:env:check": "node scripts/check-ci-quality-env.mjs"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.53.1",

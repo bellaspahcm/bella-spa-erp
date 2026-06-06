@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase-server';
+import { getCurrentUser } from '@/services/user-actions';
 
 const ALLOWED_ROLES = ['admin', 'super_admin', 'accountant'] as const;
 
@@ -13,20 +13,13 @@ export default async function AICopilotLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: { user: authUser } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
-  if (!authUser) {
+  if (!user) {
     redirect('/login');
   }
 
-  const { data: userData } = await supabase
-    .from('users')
-    .select('role, tenant_id')
-    .eq('id', authUser.id)
-    .single();
-
-  if (!userData?.tenant_id || !ALLOWED_ROLES.includes(userData.role as typeof ALLOWED_ROLES[number])) {
+  if (!user.tenant_id || !ALLOWED_ROLES.includes(user.role as typeof ALLOWED_ROLES[number])) {
     redirect('/dashboard');
   }
 

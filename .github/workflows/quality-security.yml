@@ -12,7 +12,16 @@ permissions:
 jobs:
   quality-security:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL || secrets.SUPABASE_DATABASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
       - name: Checkout
@@ -27,6 +36,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Required CI environment config
+        run: npm run ci:env:check
+
       - name: Lint
         run: npm run lint
 
@@ -38,39 +50,18 @@ jobs:
 
       - name: Supabase migration drift check
         run: npm run db:migration:check
-        env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          DB_MIGRATION_CHECK_OPTIONAL: "1"
 
       - name: Supabase RPC grant policy
         run: npm run db:rpc-grants:check
 
       - name: Supabase data access smoke
         run: npm run db:access:check
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          DB_ACCESS_CHECK_OPTIONAL: "1"
 
       - name: Supabase live RPC smoke
         run: npm run db:rpc-smoke:check
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          DB_RPC_SMOKE_OPTIONAL: "1"
 
       - name: Business data invariant guard
         run: npm run db:business:check
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          DB_BUSINESS_INVARIANTS_OPTIONAL: "1"
 
       - name: Production build
         run: npm run build
@@ -91,22 +82,29 @@ jobs:
         run: npm test -- src/__tests__/log-redactor.test.ts --runInBand
 
       - name: Install Playwright Chromium
-        if: ${{ vars.RUN_VISUAL_SMOKE == 'true' }}
         run: npx playwright install --with-deps chromium
 
       - name: Responsive visual smoke
-        if: ${{ vars.RUN_VISUAL_SMOKE == 'true' }}
         run: npm run e2e:visual
         env:
+          E2E_VISUAL_EXPECTED_TESTS: "52"
           E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
           E2E_VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.E2E_VERCEL_AUTOMATION_BYPASS_SECRET }}
 
+      - name: Assert responsive visual smoke results
+        run: npm run e2e:visual:assert
+        env:
+          E2E_VISUAL_EXPECTED_TESTS: "52"
+
       - name: Upload Playwright report
-        if: ${{ always() && vars.RUN_VISUAL_SMOKE == 'true' }}
+        if: ${{ always() }}
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report
-          path: playwright-report
+          name: responsive-visual-smoke-artifacts
+          path: |
+            playwright-report
+            playwright-results.json
+            test-results
           if-no-files-found: ignore
