@@ -1,6 +1,10 @@
 'use client';
 
+import { usePageRefresh } from '@/hooks/usePageRefresh';
+
 export default function CustomerProfilePage() {
+  usePageRefresh(() => undefined);
+
   return (
     <div className="p-8">
       <h1 className="text-4xl font-handwriting text-primary mb-8">Hồ sơ cá nhân</h1>

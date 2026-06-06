@@ -15,6 +15,7 @@ import { getOutboxEvents, replayOutboxEvent } from '@/services/accounting-action
 import { toast } from 'sonner';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 type OutboxEventRow = Awaited<ReturnType<typeof getOutboxEvents>>[number];
 type OutboxFilters = NonNullable<Parameters<typeof getOutboxEvents>[0]>;
@@ -68,6 +69,8 @@ export default function OutboxMonitorPage() {
       void fetchOutbox();
     });
   }, [fetchOutbox]);
+
+  usePageRefresh(fetchOutbox);
 
   const handleReplay = async (outboxId: string, eventType: string) => {
     setRefreshing(true);
