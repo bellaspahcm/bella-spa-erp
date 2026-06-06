@@ -12,6 +12,13 @@ Khóa luồng gạch nợ bù trừ chi nhánh để không thể chuyển nhầ
 - Payload cập nhật dùng kiểu dữ liệu sinh từ schema để tránh ghi sai cột.
 - Test kiểm tra quyền truy cập, trạng thái không hợp lệ, lỗi cập nhật và race condition.
 
-## Phần cần làm tiếp
+## Bổ sung tiếp theo
 
-Chưa tạo event kế toán tự động cho bù trừ chi nhánh trong lượt này, vì hệ thống outbox hiện chưa có loại sự kiện chính thức cho `INTER_BRANCH_CLEARING`. Bước tiếp theo nên thêm event này theo đúng chuỗi: migration dữ liệu, rule hạch toán, worker xử lý, rollback khi side-effect lỗi, và test đối chiếu bút toán.
+Đã thêm event kế toán tự động cho `INTER_BRANCH_CLEARING`:
+
+- Gạch nợ bù trừ tạo hai outbox events, một cho chi nhánh trả và một cho chi nhánh nhận.
+- Nếu enqueue kế toán không đủ hai phía, hệ thống rollback trạng thái clear và dọn event đã tạo.
+- Worker kiểm tra bản ghi nguồn vẫn `cleared`, đúng tenant pair và đúng số tiền trước khi post journal.
+- Database migration mở rộng CHECK constraint và đổi idempotency sang `(tenant_id, event_type, reference_id)` để một bản bù trừ có thể đi vào hai sổ chi nhánh riêng.
+
+Phần cần theo dõi sau: báo cáo hợp nhất HQ nên có lớp loại trừ giao dịch nội bộ nếu muốn trình bày báo cáo consolidated không bị phóng đại doanh thu/giá vốn nội bộ.

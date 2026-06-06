@@ -23,11 +23,15 @@ const mockGetCurrentUser = jest.fn();
 const mockCheckHqAuth = jest.fn();
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
+const mockGetOutboxClient = jest.fn();
+const mockEnqueueAccountingEvent = jest.fn();
 
 (global as any).mockGetCurrentUser = mockGetCurrentUser;
 (global as any).mockCheckHqAuth = mockCheckHqAuth;
 (global as any).mockRpc = mockRpc;
 (global as any).mockFrom = mockFrom;
+(global as any).mockGetOutboxClient = mockGetOutboxClient;
+(global as any).mockEnqueueAccountingEvent = mockEnqueueAccountingEvent;
 
 jest.mock('@/services/user-actions', () => ({
   getCurrentUser: (...args: any[]) => (global as any).mockGetCurrentUser(...args),
@@ -44,6 +48,11 @@ jest.mock('@/lib/supabase-server', () => ({
   }),
 }));
 
+jest.mock('@/lib/accounting-outbox', () => ({
+  getOutboxClient: (...args: any[]) => (global as any).mockGetOutboxClient(...args),
+  enqueueAccountingEvent: (...args: any[]) => (global as any).mockEnqueueAccountingEvent(...args),
+}));
+
 // Helper class for mock query builders
 class MockQueryBuilder {
   public data: any;
@@ -57,6 +66,7 @@ class MockQueryBuilder {
   public ltSpy = jest.fn().mockReturnThis();
   public inSpy = jest.fn().mockReturnThis();
   public orSpy = jest.fn().mockReturnThis();
+  public deleteSpy = jest.fn().mockReturnThis();
 
   constructor(data: any = null, error: any = null) {
     this.data = data;
@@ -73,6 +83,7 @@ class MockQueryBuilder {
   or(...args: any[]) { this.orSpy(...args); return this; }
   update(...args: any[]) { this.updateSpy(...args); return this; }
   insert(...args: any[]) { this.insertSpy(...args); return this; }
+  delete(...args: any[]) { this.deleteSpy(...args); return this; }
   
   async single() {
     return { data: this.data, error: this.error };
@@ -90,6 +101,7 @@ class MockQueryBuilder {
 let tenantQueryMock = new MockQueryBuilder();
 let sessionLogQueryMock = new MockQueryBuilder();
 let clearingQueryMock = new MockQueryBuilder();
+let outboxQueryMock = new MockQueryBuilder();
 
 import { 
   getInterBranchClearingRecords,
@@ -102,6 +114,21 @@ import { lockMonth } from '../services/finance-actions';
 
 const adminUser = { id: 'admin-1', role: 'admin', tenant_id: 'branch-a-id', name: 'Branch Admin' };
 const hqAdminUser = { id: 'hq-admin-1', role: 'admin', tenant_id: 'hq-tenant-id', name: 'HQ Super Admin' };
+const pendingClearingRecord = (overrides: Record<string, unknown> = {}) => ({
+  id: '1',
+  clearing_number: 'CLR-2026-06-001',
+  month_year: '2026-06',
+  debtor_tenant_id: 'branch-a-id',
+  creditor_tenant_id: 'branch-b-id',
+  session_count: 1,
+  clearing_rate: 180000,
+  calculated_amount: 180000,
+  status: 'pending',
+  cleared_at: null,
+  payment_method: null,
+  notes: null,
+  ...overrides,
+});
 
 describe('Inter-Branch Clearing System', () => {
   beforeEach(() => {
@@ -111,15 +138,19 @@ describe('Inter-Branch Clearing System', () => {
     tenantQueryMock = new MockQueryBuilder();
     sessionLogQueryMock = new MockQueryBuilder();
     clearingQueryMock = new MockQueryBuilder();
+    outboxQueryMock = new MockQueryBuilder();
     
     mockFrom.mockImplementation((table: string) => {
       if (table === 'tenants') return tenantQueryMock;
       if (table === 'session_logs') return sessionLogQueryMock;
       if (table === 'inter_branch_clearing_records') return clearingQueryMock;
+      if (table === 'accounting_outbox') return outboxQueryMock;
       return new MockQueryBuilder();
     });
 
     mockRpc.mockResolvedValue({ error: null });
+    mockGetOutboxClient.mockImplementation(async (client) => client);
+    mockEnqueueAccountingEvent.mockResolvedValue(true);
   });
 
   describe('getInterBranchClearingRecords', () => {
@@ -178,7 +209,7 @@ describe('Inter-Branch Clearing System', () => {
       mockGetCurrentUser.mockResolvedValue(hqAdminUser);
       mockCheckHqAuth.mockResolvedValue({ authorized: true });
 
-      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'pending' };
+      const record = pendingClearingRecord();
       clearingQueryMock = new MockQueryBuilder(record);
 
       const result = await clearInterBranchRecord('1', 'VietQR');
@@ -189,13 +220,47 @@ describe('Inter-Branch Clearing System', () => {
         payment_method: 'VietQR'
       }));
       expect(clearingQueryMock.eqSpy).toHaveBeenCalledWith('status', 'pending');
+      expect(mockEnqueueAccountingEvent).toHaveBeenCalledTimes(2);
+      expect(mockEnqueueAccountingEvent).toHaveBeenNthCalledWith(
+        1,
+        expect.anything(),
+        expect.objectContaining({
+          tenantId: 'branch-a-id',
+          eventType: 'INTER_BRANCH_CLEARING',
+          referenceType: 'INTER_BRANCH_CLEARING_RECORD',
+          referenceId: '1',
+          payload: expect.objectContaining({
+            amount: 180000,
+            role: 'debtor',
+            debtorTenantId: 'branch-a-id',
+            creditorTenantId: 'branch-b-id',
+          }),
+        }),
+        '[clearInterBranchRecord]'
+      );
+      expect(mockEnqueueAccountingEvent).toHaveBeenNthCalledWith(
+        2,
+        expect.anything(),
+        expect.objectContaining({
+          tenantId: 'branch-b-id',
+          eventType: 'INTER_BRANCH_CLEARING',
+          referenceType: 'INTER_BRANCH_CLEARING_RECORD',
+          referenceId: '1',
+          payload: expect.objectContaining({
+            amount: 180000,
+            role: 'creditor',
+            paymentMethod: 'VietQR',
+          }),
+        }),
+        '[clearInterBranchRecord]'
+      );
     });
 
     it('should allow Debtor Admin to clear/gạch nợ their own payable record', async () => {
       mockGetCurrentUser.mockResolvedValue(adminUser); // tenant_id: branch-a-id
       mockCheckHqAuth.mockResolvedValue({ authorized: false });
 
-      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'pending' };
+      const record = pendingClearingRecord();
       clearingQueryMock = new MockQueryBuilder(record);
 
       const result = await clearInterBranchRecord('1', 'VietQR');
@@ -208,7 +273,7 @@ describe('Inter-Branch Clearing System', () => {
       mockGetCurrentUser.mockResolvedValue({ ...adminUser, tenant_id: 'branch-b-id' }); // tenant_id: branch-b-id
       mockCheckHqAuth.mockResolvedValue({ authorized: false });
 
-      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'pending' };
+      const record = pendingClearingRecord();
       clearingQueryMock = new MockQueryBuilder(record);
 
       const result = await clearInterBranchRecord('1', 'VietQR');
@@ -221,7 +286,7 @@ describe('Inter-Branch Clearing System', () => {
       mockGetCurrentUser.mockResolvedValue(adminUser); // tenant_id: branch-a-id
       mockCheckHqAuth.mockResolvedValue({ authorized: false });
 
-      const unrelatedRecord = { id: '2', debtor_tenant_id: 'branch-y-id', creditor_tenant_id: 'branch-z-id', status: 'pending' };
+      const unrelatedRecord = pendingClearingRecord({ id: '2', debtor_tenant_id: 'branch-y-id', creditor_tenant_id: 'branch-z-id' });
       clearingQueryMock = new MockQueryBuilder(unrelatedRecord);
 
       const result = await clearInterBranchRecord('2', 'VietQR');
@@ -235,7 +300,7 @@ describe('Inter-Branch Clearing System', () => {
       mockGetCurrentUser.mockResolvedValue(hqAdminUser);
       mockCheckHqAuth.mockResolvedValue({ authorized: true });
 
-      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'cleared' };
+      const record = pendingClearingRecord({ status: 'cleared' });
       clearingQueryMock = new MockQueryBuilder(record);
 
       const result = await clearInterBranchRecord('1', 'VietQR');
@@ -249,7 +314,7 @@ describe('Inter-Branch Clearing System', () => {
       mockGetCurrentUser.mockResolvedValue(hqAdminUser);
       mockCheckHqAuth.mockResolvedValue({ authorized: true });
 
-      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'pending' };
+      const record = pendingClearingRecord();
       clearingQueryMock = new MockQueryBuilder(record);
       clearingQueryMock.single = jest
         .fn()
@@ -268,7 +333,7 @@ describe('Inter-Branch Clearing System', () => {
       mockGetCurrentUser.mockResolvedValue(hqAdminUser);
       mockCheckHqAuth.mockResolvedValue({ authorized: true });
 
-      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'pending' };
+      const record = pendingClearingRecord();
       clearingQueryMock = new MockQueryBuilder(record);
       clearingQueryMock.single = jest
         .fn()
@@ -281,6 +346,35 @@ describe('Inter-Branch Clearing System', () => {
       expect(result.error).toContain('thao tác khác');
       expect(clearingQueryMock.updateSpy).toHaveBeenCalled();
       expect(clearingQueryMock.eqSpy).toHaveBeenCalledWith('status', 'pending');
+    });
+
+    it('should rollback the cleared status and cleanup outbox if creditor accounting enqueue fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(hqAdminUser);
+      mockCheckHqAuth.mockResolvedValue({ authorized: true });
+      mockEnqueueAccountingEvent
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false);
+
+      const record = pendingClearingRecord();
+      clearingQueryMock = new MockQueryBuilder(record);
+
+      const result = await clearInterBranchRecord('1', 'VietQR');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('chi nhánh nhận');
+      expect(clearingQueryMock.updateSpy).toHaveBeenNthCalledWith(1, expect.objectContaining({
+        status: 'cleared',
+      }));
+      expect(clearingQueryMock.updateSpy).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        status: 'pending',
+        cleared_at: null,
+        payment_method: null,
+        notes: null,
+      }));
+      expect(outboxQueryMock.deleteSpy).toHaveBeenCalled();
+      expect(outboxQueryMock.eqSpy).toHaveBeenCalledWith('tenant_id', 'branch-a-id');
+      expect(outboxQueryMock.eqSpy).toHaveBeenCalledWith('event_type', 'INTER_BRANCH_CLEARING');
+      expect(outboxQueryMock.eqSpy).toHaveBeenCalledWith('reference_id', '1');
     });
   });
 
@@ -312,7 +406,7 @@ describe('Inter-Branch Clearing System', () => {
       mockGetCurrentUser.mockResolvedValue(adminUser);
       mockCheckHqAuth.mockResolvedValue({ authorized: false });
 
-      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'pending' };
+      const record = pendingClearingRecord();
       clearingQueryMock = new MockQueryBuilder(record);
 
       const result = await simulateInterBranchClearing('1');

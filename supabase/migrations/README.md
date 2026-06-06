@@ -74,3 +74,4 @@ Supabase CLI sort migration theo **filename string** (alphabetical sau prefix). 
 | `20260526050000_dual_mode_accounting.sql` | Dual-mode SIMPLE/PROFESSIONAL |
 | `20260531010000_atomic_legacy_ledger_sync.sql` | RPC atomic cho sync legacy sang so cai va bat Professional |
 | `20260531020000_add_legacy_ledger_sync_preview.sql` | RPC dry-run preview truoc khi sync legacy sang so cai |
+| `20260606100000_inter_branch_clearing_outbox.sql` | Them event outbox va idempotency theo tenant cho bu tru lien chi nhanh |
