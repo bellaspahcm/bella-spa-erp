@@ -119,6 +119,10 @@ describe('salary reconciliation SQL regression guards', () => {
     path.join(process.cwd(), 'supabase/migrations/20260604091000_allow_service_role_salary_reconciliation_report.sql'),
     'utf8'
   );
+  const realtimeComponentsSql = fs.readFileSync(
+    path.join(process.cwd(), 'supabase/migrations/20260606093000_fix_salary_realtime_components.sql'),
+    'utf8'
+  );
 
   it('keeps all saved salary components in legacy totals', () => {
     for (const sql of [aiCopilotSql, accountingReportSql]) {
@@ -135,5 +139,13 @@ describe('salary reconciliation SQL regression guards', () => {
   it('keeps missing legacy salary records as pending statuses, not major differences', () => {
     expect(aiCopilotSql).toContain("WHEN lg.total_legacy IS NULL                            THEN 'NO_LEGACY'");
     expect(accountingReportSql).toContain("WHEN lr.legacy_tot IS NULL THEN 'PENDING_LEGACY'");
+  });
+
+  it('does not default realtime draft salary calculations to full-month attendance', () => {
+    expect(realtimeComponentsSql).not.toContain('COALESCE(aw.work_days, 26.0)');
+    expect(realtimeComponentsSql).toContain('COALESCE(aw.work_days, 0.0)');
+    expect(realtimeComponentsSql).toContain('saved_total_salary');
+    expect(realtimeComponentsSql).toContain('is_saved_financial_record');
+    expect(realtimeComponentsSql).toContain('public.get_ktv_leaderboard');
   });
 });

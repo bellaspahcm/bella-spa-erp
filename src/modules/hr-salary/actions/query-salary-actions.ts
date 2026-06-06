@@ -5,7 +5,15 @@ import { getCurrentUser } from '@/services/user-actions';
 import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import { calcProRataBaseSalary } from './base-salary-actions';
-import { calculateAttendanceWorkDays, calculateProRataBaseSalaryFromActualDays } from './salary-attendance-calculation';
+import {
+  buildPackageMultiplierMap,
+  calculateAttendanceWorkDays,
+  calculateProRataBaseSalaryFromActualDays,
+  calculateRatingBonus,
+  calculateSessionCommissionBonus,
+  calculateWeightedSessionCount,
+  getSessionPackageMultiplier,
+} from './salary-attendance-calculation';
 import { KtvSalaryRecord, KtvSessionMatrix, KtvSessionMatrixRecord, TenantSalaryConfig } from '@/types/domain';
 
 // Interfaces for Database Records
@@ -24,10 +32,13 @@ interface SalaryRecordDb {
   ktv_id: string;
   month_year: string;
   total_sessions: number | null;
+  session_bonus: number | null;
+  rating_bonus: number | null;
   base_salary: number | null;
   kpi_bonus: number | null;
   violations_deduction: number | null;
   service_percentage_bonus: number | null;
+  total_salary: number | null;
   status: string | null;
 }
 
@@ -60,13 +71,19 @@ interface AttendanceLogDb {
 
 interface PackageNameDb {
   name: string | null;
+  session_multiplier: number | null;
+}
+
+interface KpiRecordDb {
+  ktv_id: string;
+  bonus_amount: number | null;
 }
 
 interface MatrixBookingDb {
   id: string;
   package_name: string | null;
   full_price: number | null;
-  packages: { name: string | null } | null;
+  packages: { name: string | null; session_multiplier: number | null } | null;
 }
 
 interface MatrixSessionLogDb {
@@ -205,27 +222,33 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
       throw new Error(`[getSalaryData] packages query failed: ${packagesError.message}`);
     }
     const packagesList = packagesData || [];
+    const packageMultiplierMap = buildPackageMultiplierMap(packagesList);
 
-    // Create a map of package name -> multiplier
-    const packageMultiplierMap = new Map<string, number>();
-    packagesList.forEach((pkg: { name: string | null; session_multiplier: number | null }) => {
-      if (pkg.name) {
-        packageMultiplierMap.set(pkg.name, Number(pkg.session_multiplier ?? 1.0));
-      }
+    const { data: kpiRecordsData, error: kpiRecordsError } = await supabase
+      .from('kpi_records')
+      .select('ktv_id, bonus_amount')
+      .eq('month_year', currentMonthYear)
+      .eq('tenant_id', tenantId);
+    if (kpiRecordsError) {
+      throw new Error(`[getSalaryData] kpi_records query failed: ${kpiRecordsError.message}`);
+    }
+
+    const kpiBonusByKtv = new Map<string, number>();
+    ((kpiRecordsData || []) as KpiRecordDb[]).forEach((record) => {
+      kpiBonusByKtv.set(record.ktv_id, (kpiBonusByKtv.get(record.ktv_id) ?? 0) + Number(record.bonus_amount || 0));
     });
 
     const ktvSalaries = await Promise.all(realKtvs.map(async (ktv) => {
         const record = salaryRecords.find((r) => r.ktv_id === ktv.id);
+        const status = record?.status || 'draft';
+        const isDraft = !record || record.status === 'draft';
+        const shouldUseSavedFinancials = Boolean(record && !isDraft);
         
         const ktvCompletedSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
-        // Use confirmed count from record if available, otherwise use live count with multipliers
-        const ktvSessionsCount = record?.total_sessions !== undefined && record.total_sessions !== null
+        const liveSessionsCount = calculateWeightedSessionCount(ktvCompletedSessions, packageMultiplierMap);
+        const ktvSessionsCount = shouldUseSavedFinancials && record?.total_sessions !== undefined && record.total_sessions !== null
           ? Number(record.total_sessions)
-          : ktvCompletedSessions.reduce((acc: number, s) => {
-              const pkgName = s.bookings?.package_name || '';
-              const multiplier = packageMultiplierMap.get(pkgName) ?? 1.0;
-              return acc + multiplier;
-            }, 0);
+          : liveSessionsCount;
         
         // Blended composite rating + attendance breakdown from RPC.
         const ktvLb = leaderboardByKtv.get(ktv.id);
@@ -234,25 +257,19 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         const absentDays = ktvLb?.absent_days ?? 0;
         const autoAttendancePenalty = (lateDays * penaltyLate) + (absentDays * penaltyAbsent);
 
-        let bonusPerSession = 0;
-        if (avgRating !== null) {
-          if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
-          else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
-          else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
-        }
+        const liveRatingBonus = calculateRatingBonus(ktvSessionsCount, avgRating, salaryConfig);
+        const ratingBonus = shouldUseSavedFinancials && record?.rating_bonus !== undefined && record.rating_bonus !== null
+          ? Number(record.rating_bonus)
+          : liveRatingBonus;
 
-        const ratingBonus = ktvSessionsCount * bonusPerSession;
-        const status = record?.status || 'draft';
-
-        const sessionBonus = ktvCompletedSessions.reduce((acc: number, s) => {
-          return acc + (s.bookings?.ktv_commission || 150000);
-        }, 0);
+        const liveSessionBonus = calculateSessionCommissionBonus(ktvCompletedSessions);
+        const sessionBonus = shouldUseSavedFinancials && record?.session_bonus !== undefined && record.session_bonus !== null
+          ? Number(record.session_bonus)
+          : liveSessionBonus;
 
         // Attendance tracking
         const ktvAttendance = attendanceLogsTyped.filter((a) => a.ktv_id === ktv.id);
         const actualDays = calculateAttendanceWorkDays(ktvAttendance);
-
-        const isDraft = !record || record.status === 'draft';
 
         const rawBaseSalary = ktv.base_salary ?? 6000000;
         let baseSalary: number;
@@ -278,9 +295,7 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
         const kpiBonus = record?.kpi_bonus !== null && record?.kpi_bonus !== undefined && !isDraft
           ? Number(record.kpi_bonus)
-          : (ktvLb?.total_kpi_bonus !== null && ktvLb?.total_kpi_bonus !== undefined
-              ? Number(ktvLb.total_kpi_bonus)
-              : (ktvSessionsCount > salaryConfig.kpi_target_sessions ? salaryConfig.kpi_bonus_amount : 0));
+          : (kpiBonusByKtv.get(ktv.id) ?? 0);
 
         // Deductions display: Use record value if not draft, or recalculate if draft
         let deductions: number;
@@ -294,7 +309,10 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           ? Number(record.service_percentage_bonus)
           : 0;
 
-        const totalSalary = Math.max(0, baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances);
+        const liveTotalSalary = Math.max(0, baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances);
+        const totalSalary = shouldUseSavedFinancials && record?.total_salary !== undefined && record.total_salary !== null
+          ? Number(record.total_salary)
+          : liveTotalSalary;
 
         return {
           id: ktv.id,
@@ -329,13 +347,25 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
   noStore();
   
   const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    throw new Error('getKtvSessionMatrix missing tenantId for current user');
+  }
   
   try {
     // 1. Fetch all KTVs
-    const { data: ktvs, error: ktvsError } = await supabase
+    const ktvQuery = supabase
       .from('users')
       .select('id, full_name')
-      .eq('role', 'ktv');
+      .eq('role', 'ktv')
+      .eq('tenant_id', tenantId);
+
+    if (currentUser?.role?.toLowerCase() === 'ktv') {
+      ktvQuery.eq('id', currentUser.id);
+    }
+
+    const { data: ktvs, error: ktvsError } = await ktvQuery;
     if (ktvsError) {
       throw new Error(`getKtvSessionMatrix users query failed: ${ktvsError.message}`);
     }
@@ -350,7 +380,8 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
     const { data: salaryRecordsData, error: salaryRecordsError } = await supabase
       .from('salary_records')
       .select('ktv_id, total_sessions, status')
-      .eq('month_year', currentMonthYear);
+      .eq('month_year', currentMonthYear)
+      .eq('tenant_id', tenantId);
     if (salaryRecordsError) {
       throw new Error(`getKtvSessionMatrix salary_records query failed: ${salaryRecordsError.message}`);
     }
@@ -370,13 +401,15 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
           package_name,
           full_price,
           packages (
-            name
+            name,
+            session_multiplier
           )
         )
       `)
       .eq('status', 'completed')
       .gte('completed_date', currentMonthYear)
-      .lt('completed_date', endOfMonthStr);
+      .lt('completed_date', endOfMonthStr)
+      .eq('tenant_id', tenantId);
 
     if (sessionsError) {
       throw new Error(`getKtvSessionMatrix session_logs query failed: ${sessionsError.message}`);
@@ -388,11 +421,15 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
     const matrix: Record<string, Record<string, number>> = {};
     
     // Fetch all available packages from the database to ensure all columns are shown
-    const { data: allPackages, error: packagesError } = await supabase.from('packages').select('name');
+    const { data: allPackages, error: packagesError } = await supabase
+      .from('packages')
+      .select('name, session_multiplier')
+      .eq('tenant_id', tenantId);
     if (packagesError) {
       throw new Error(`getKtvSessionMatrix packages query failed: ${packagesError.message}`);
     }
     const packagesTyped = (allPackages || []) as PackageNameDb[];
+    const packageMultiplierMap = buildPackageMultiplierMap(packagesTyped);
     
     // Build list of package names from sessions AND available packages
     const dynamicPackageNames = new Set<string>();
@@ -421,7 +458,7 @@ export async function getKtvSessionMatrix(): Promise<KtvSessionMatrix> {
         const pkgName = s.bookings ? resolvePackageName(s.bookings) : 'Dịch vụ lẻ';
         
         if (!matrix[ktvId]) matrix[ktvId] = {};
-        matrix[ktvId][pkgName] = (matrix[ktvId][pkgName] || 0) + 1;
+        matrix[ktvId][pkgName] = (matrix[ktvId][pkgName] || 0) + getSessionPackageMultiplier(s, packageMultiplierMap);
       });
     }
 

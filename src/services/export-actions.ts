@@ -2,6 +2,9 @@
 
 import * as XLSX from 'xlsx';
 import { createClient } from '@/lib/supabase-server';
+import { getLocalDateString } from '@/lib/utils';
+import { buildPackageMultiplierMap, getSessionPackageMultiplier } from '@/modules/hr-salary/actions/salary-attendance-calculation';
+import { getCurrentUser } from '@/services/user-actions';
 
 type SheetCell = string | number | null;
 type SheetRow = SheetCell[];
@@ -10,10 +13,26 @@ type SalaryExportSession = {
   bookings?: {
     package_name?: string | null;
     ktv_commission?: number | null;
+    packages?: { name?: string | null; session_multiplier?: number | null } | null;
     customers?: {
       name_mother?: string | null;
     } | null;
   } | null;
+};
+
+type SalaryExportRecord = {
+  base_salary?: number | null;
+  session_bonus?: number | null;
+  rating_bonus?: number | null;
+  kpi_bonus?: number | null;
+  violations_deduction?: number | null;
+  service_percentage_bonus?: number | null;
+  total_salary?: number | null;
+};
+
+type SalaryExportPackage = {
+  name: string | null;
+  session_multiplier: number | null;
 };
 
 type PackageGroup = {
@@ -49,16 +68,27 @@ export interface TrialBalanceExportRow {
 export type AccountingReportRecord = Record<string, string | number | null | undefined>;
 export type AccountingReportData = TrialBalanceExportRow[] | AccountingReportRecord;
 
-export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthYear: string = '2026-05-01') {
+export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthYear?: string) {
   try {
     const supabase = await createClient();
+    const currentUser = await getCurrentUser();
+    const tenantId = currentUser?.tenant_id;
+    if (!tenantId) {
+      throw new Error('Missing tenant for salary export');
+    }
+    const salaryMonthYear = monthYear ?? `${getLocalDateString().slice(0, 7)}-01`;
+    const monthDate = new Date(salaryMonthYear);
+    const endOfMonthStr = getLocalDateString(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1));
 
     // 1. Fetch completed sessions for this KTV in this month
     const { data: sessions, error: sessionsError } = await supabase
       .from('session_logs')
-      .select('*, bookings(*, customers(name_mother))')
+      .select('*, bookings(*, customers(name_mother), packages(name, session_multiplier))')
       .eq('completed_by_ktv_id', ktvId)
-      .eq('status', 'completed');
+      .eq('status', 'completed')
+      .eq('tenant_id', tenantId)
+      .gte('completed_date', salaryMonthYear)
+      .lt('completed_date', endOfMonthStr);
 
     if (sessionsError) throw sessionsError;
 
@@ -67,16 +97,27 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
       .from('salary_records')
       .select('*')
       .eq('ktv_id', ktvId)
-      .eq('month_year', monthYear)
+      .eq('month_year', salaryMonthYear)
+      .eq('tenant_id', tenantId)
       .maybeSingle();
 
     if (salaryRecordError) throw salaryRecordError;
+
+    const { data: packages, error: packagesError } = await supabase
+      .from('packages')
+      .select('name, session_multiplier')
+      .eq('tenant_id', tenantId);
+
+    if (packagesError) throw packagesError;
+
+    const packageMultiplierMap = buildPackageMultiplierMap((packages || []) as SalaryExportPackage[]);
 
     // 3. Process data into groups by package
     const packageGroups: Record<string, PackageGroup> = {};
     const sessionRows = (sessions || []) as unknown as SalaryExportSession[];
     sessionRows.forEach((s) => {
       const packageName = s.bookings?.package_name || 'Dịch vụ lẻ';
+      const sessionWeight = getSessionPackageMultiplier(s, packageMultiplierMap);
       if (!packageGroups[packageName]) {
         packageGroups[packageName] = {
           name: packageName,
@@ -86,7 +127,7 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
           customerNames: new Set<string>()
         };
       }
-      packageGroups[packageName].sessions += 1;
+      packageGroups[packageName].sessions += sessionWeight;
       packageGroups[packageName].totalEarnings += (s.bookings?.ktv_commission || 150000);
       if (s.bookings?.customers?.name_mother) {
         packageGroups[packageName].customerNames.add(s.bookings.customers.name_mother);
@@ -100,7 +141,7 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
     const reportData: SheetRow[] = [
       ['BÁO CÁO CHI TIẾT LƯƠNG KTV'],
       ['Kỹ thuật viên:', ktvName],
-      ['Tháng/Năm:', monthYear],
+      ['Tháng/Năm:', salaryMonthYear],
       ['Ngày xuất báo cáo:', new Date().toLocaleDateString('vi-VN')],
       [],
       ['CHI TIẾT THEO GÓI DỊCH VỤ'],
@@ -121,20 +162,27 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
       totalSessionBonus += group.totalEarnings;
     });
 
-    const baseSalary = Number(record?.base_salary || 6000000);
-    const kpiBonus = Number(record?.kpi_bonus || (sessionRows.length > 30 ? 1000000 : 0));
-    const deductions = Number(record?.violations_deduction || 0);
-    const advances = Number(record?.service_percentage_bonus || 0);
-    const totalFinal = baseSalary + totalSessionBonus + kpiBonus - deductions - advances;
+    const salaryRecord = record as SalaryExportRecord | null;
+    const baseSalary = Number(salaryRecord?.base_salary ?? 0);
+    const sessionBonus = Number(salaryRecord?.session_bonus ?? totalSessionBonus);
+    const ratingBonus = Number(salaryRecord?.rating_bonus ?? 0);
+    const kpiBonus = Number(salaryRecord?.kpi_bonus ?? 0);
+    const deductions = Number(salaryRecord?.violations_deduction ?? 0);
+    const advances = Number(salaryRecord?.service_percentage_bonus ?? 0);
+    const totalFinal = Number(
+      salaryRecord?.total_salary ?? Math.max(0, baseSalary + sessionBonus + ratingBonus + kpiBonus - deductions - advances),
+    );
+    const weightedSessionTotal = Object.values(packageGroups).reduce((sum, group) => sum + group.sessions, 0);
 
     reportData.push(
       [],
       ['TỔNG HỢP THU NHẬP & CHI PHÍ'],
       ['1. Lương cơ bản', '', '', '', baseSalary.toLocaleString('vi-VN') + 'đ'],
-      ['2. Tổng hoa hồng buổi diễn', '', sessionRows.length + ' buổi', '', totalSessionBonus.toLocaleString('vi-VN') + 'đ'],
-      ['3. Thưởng KPI/Chuyên cần', '', '', '', kpiBonus.toLocaleString('vi-VN') + 'đ'],
-      ['4. Các khoản giảm trừ (Vi phạm)', '', '', '', '-' + deductions.toLocaleString('vi-VN') + 'đ'],
-      ['5. Tạm ứng', '', '', '', '-' + advances.toLocaleString('vi-VN') + 'đ'],
+      ['2. Tổng hoa hồng buổi diễn', '', weightedSessionTotal + ' buổi', '', sessionBonus.toLocaleString('vi-VN') + 'đ'],
+      ['3. Thưởng chất lượng', '', '', '', ratingBonus.toLocaleString('vi-VN') + 'đ'],
+      ['4. Thưởng KPI/Chuyên cần', '', '', '', kpiBonus.toLocaleString('vi-VN') + 'đ'],
+      ['5. Các khoản giảm trừ (Vi phạm)', '', '', '', '-' + deductions.toLocaleString('vi-VN') + 'đ'],
+      ['6. Tạm ứng', '', '', '', '-' + advances.toLocaleString('vi-VN') + 'đ'],
       ['TỔNG THỰC NHẬN', '', '', '', totalFinal.toLocaleString('vi-VN') + 'đ'],
       [],
       ['XÁC NHẬN CỦA KTV', '', '', 'XÁC NHẬN CỦA QUẢN LÝ'],
