@@ -146,7 +146,10 @@ class ScriptedQueryBuilder {
 }
 
 import { confirmTransaction, recordTransaction } from '../services/finance/transaction-mutations';
-import { confirmTransaction as confirmTransactionResult } from '../services/finance/transactions';
+import {
+  confirmTransaction as confirmTransactionResult,
+  recordTransaction as recordTransactionResult,
+} from '../services/finance/transactions';
 
 describe('finance transaction mutation outbox rollbacks', () => {
   let consoleErrorSpy: jest.SpyInstance;
@@ -184,6 +187,24 @@ describe('finance transaction mutation outbox rollbacks', () => {
     expect(result.success).toBe(false);
     if (result.success) throw new Error('Expected confirmTransactionResult to return an error result');
     expect(result.error).toContain('Failed to fetch revenue before confirmation: revenue missing');
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('returns an explicit public action failure when recording is blocked by a closed period', async () => {
+    mockAssertOpenAccountingPeriod.mockRejectedValueOnce(new Error('Accounting period is closed'));
+
+    const result = await recordTransactionResult({
+      amount: 200000,
+      type: 'expense',
+      category: 'other_admin',
+      notes: 'Mua khan giay',
+      status: 'confirmed',
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) throw new Error('Expected recordTransactionResult to return an error result');
+    expect(result.error).toMatch(/Accounting period is closed/);
+    expect(mockFrom).not.toHaveBeenCalledWith('expenses');
     expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
   });
 

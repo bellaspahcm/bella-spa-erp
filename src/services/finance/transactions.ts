@@ -10,6 +10,11 @@ export type ConfirmTransactionResult =
   | { success: true }
   | { success: false; error: string };
 
+export type RecordTransactionInput = Parameters<typeof recordTransactionAction>[0];
+export type RecordTransactionResult =
+  | { success: true }
+  | { success: false; error: string };
+
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message || fallback;
   if (typeof error === 'object' && error && 'message' in error) {
@@ -39,6 +44,15 @@ export async function confirmTransaction(
   }
 }
 
-export async function recordTransaction(data: Parameters<typeof recordTransactionAction>[0]) {
-  return recordTransactionAction(data);
+export async function recordTransaction(data: RecordTransactionInput): Promise<RecordTransactionResult> {
+  try {
+    await recordTransactionAction(data);
+    return { success: true };
+  } catch (error) {
+    console.error('[recordTransactionActionResult]', error);
+    return {
+      success: false,
+      error: getErrorMessage(error, 'Không thể ghi nhận giao dịch'),
+    };
+  }
 }

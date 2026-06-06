@@ -383,14 +383,16 @@ describe('Application Layer protection', () => {
     // Mock accounting_mode is PROFESSIONAL
     mockSingle.mockResolvedValueOnce({ data: { accounting_mode: 'PROFESSIONAL' }, error: null });
 
-    await expect(
-      recordTransaction({
-        amount: 200000,
-        type: 'expense',
-        category: 'other_admin',
-        notes: 'Mua khăn giấy',
-      })
-    ).rejects.toThrow(/Professional Core/);
+    const result = await recordTransaction({
+      amount: 200000,
+      type: 'expense',
+      category: 'other_admin',
+      notes: 'Mua khăn giấy',
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) throw new Error('Expected PROFESSIONAL mode to block manual recording');
+    expect(result.error).toMatch(/Professional Core/);
   });
 
   it('blocks manually confirmTransaction if mode is PROFESSIONAL', async () => {
@@ -417,14 +419,16 @@ describe('Application Layer protection', () => {
       return Promise.resolve({ data: null, error: null });
     });
 
-    await expect(
-      recordTransaction({
-        amount: 200000,
-        type: 'expense',
-        category: 'other_admin',
-        notes: 'Mua khan giay',
-      })
-    ).rejects.toThrow(/accounting period is closed/i);
+    const result = await recordTransaction({
+      amount: 200000,
+      type: 'expense',
+      category: 'other_admin',
+      notes: 'Mua khan giay',
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) throw new Error('Expected closed accounting period to block manual recording');
+    expect(result.error).toMatch(/accounting period is closed/i);
 
     expect(mockInsert).not.toHaveBeenCalled();
   });

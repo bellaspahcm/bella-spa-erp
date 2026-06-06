@@ -1,8 +1,8 @@
 'use client';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
-import { getLocalDateString } from '@/lib/utils';
 import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
+import { recordTransaction } from '@/services/finance-actions';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
 AlertCircle,
@@ -76,67 +76,23 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
 
     setIsSubmitting(true);
     try {
-      const { createClient } = await import('@/lib/supabase-client');
-      const supabase = createClient();
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Không tìm thấy phiên đăng nhập');
-
-      // Resolve tenant_id
-      const { data: profile } = await supabase
-        .from('users')
-        .select('tenant_id')
-        .eq('id', user.id)
-        .single();
-        
-      if (!profile?.tenant_id) {
-        throw new Error('Không xác định được Tenant ID của người dùng. Vui lòng thử lại.');
-      }
-      const tenantId = profile.tenant_id;
-
       const parsedAmount = Number(cleanAmount);
       const notesValue = notes || (type === 'revenue' ? 'Thu nhập' : 'Chi phí');
+      const normalizedCategory = type === 'revenue'
+        ? (category === 'package_deposit' ? 'deposit' : category === 'retail' ? 'additional' : category || 'additional')
+        : (category || 'other');
+      const result = await recordTransaction({
+        amount: parsedAmount,
+        type,
+        category: normalizedCategory,
+        notes: notesValue,
+        status: autoConfirm ? 'confirmed' : 'submitted',
+        booking_id: type === 'revenue' ? bookingId || undefined : undefined,
+      });
 
-      if (type === 'expense') {
-        const catMap: Record<string, string> = {
-          'office_rent': 'rent',
-          'other_admin': 'other',
-          'materials': 'materials',
-          'maintenance': 'maintenance'
-        };
-        const dbCategory = catMap[category] || category || 'other';
-        const dbStatus = autoConfirm ? 'approved' : 'submitted';
-
-        const { error } = await supabase.from('expenses').insert({
-          amount: Math.abs(parsedAmount),
-          category: dbCategory,
-          description: notesValue,
-          status: dbStatus,
-          expense_date: getLocalDateString(),
-          tenant_id: tenantId,
-          submitted_by_id: user.id,
-          approved_by_id: autoConfirm ? user.id : null
-        });
-
-        if (error) throw error;
-      } else {
-        const validRevenueTypes = ['deposit', 'session_completed', 'additional', 'package_payment', 'remaining_payment'];
-        const dbRevenueType = validRevenueTypes.includes(category) ? category : 'additional';
-        const dbStatus = autoConfirm ? 'confirmed' : 'pending';
-
-        const { error } = await supabase.from('revenue').insert({
-          amount: Math.abs(parsedAmount),
-          notes: notesValue,
-          booking_id: bookingId || null,
-          revenue_type: dbRevenueType,
-          payment_method: 'bank_transfer',
-          status: dbStatus,
-          received_date: getLocalDateString(),
-          tenant_id: tenantId,
-          recorded_by_id: user.id
-        });
-
-        if (error) throw error;
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
 
       toast.success('Ghi nhận giao dịch thành công');
@@ -245,7 +201,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
                 <PremiumSelect
                   value={category}
                   options={type === 'revenue' ? [
-                    { value: 'package_deposit', label: 'Cọc gói dịch vụ' },
+                    { value: 'deposit', label: 'Cọc gói dịch vụ' },
                     { value: 'package_payment', label: 'Thanh toán gói' },
                     { value: 'retail', label: 'Dịch vụ lẻ' },
                     { value: 'additional', label: 'Phát sinh khác' },
