@@ -107,7 +107,7 @@ export async function getDraftBooking(customerId: string) {
   
   const { data, error } = await supabase
     .from('bookings')
-    .select('*, customers(name_mother, phone, address)')
+    .select('*, customers(name_mother, phone, address), revenue(amount, status, revenue_type)')
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false })
     .limit(1);

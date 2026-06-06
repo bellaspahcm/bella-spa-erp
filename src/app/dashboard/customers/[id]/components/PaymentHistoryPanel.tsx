@@ -1,5 +1,6 @@
 'use client';
 
+import { calculateConfirmedPaidAmount } from '@/lib/business-rules/payment';
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 import { CreditCard as CreditCardIcon, DollarSign as DollarIcon } from 'lucide-react';
 import type { CustomerDetailBooking } from '../types';
@@ -12,6 +13,7 @@ export function PaymentHistoryPanel({
   userRole: 'admin' | 'ktv';
 }) {
   if (userRole !== 'admin' || !activeBooking) return null;
+  const confirmedPaidAmount = calculateConfirmedPaidAmount(activeBooking.revenue);
 
   return (
             <div className="bg-white rounded-[3rem] p-8 shadow-xl shadow-slate-200/50 border border-slate-100 mt-8">
@@ -21,7 +23,7 @@ export function PaymentHistoryPanel({
                   <span>Lịch sử Thanh toán & Đối soát</span>
                 </h3>
                 <span className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-primary">
-                  Tổng thu: {formatNumberWithSeparator(activeBooking.deposit_amount || 0)}đ
+                  Tổng thu: {formatNumberWithSeparator(confirmedPaidAmount)}đ
                 </span>
               </div>
 

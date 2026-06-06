@@ -2,6 +2,11 @@
 
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import {
+  calculateBookingPaymentState,
+  calculatePaymentRequest,
+  type PaymentRevenueLike,
+} from '@/lib/business-rules/payment';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { cn,formatNumberWithSeparator,getLocalDateString } from '@/lib/utils';
 import { createBooking,getBookingDetailsWithPayment,getDraftBooking } from '@/modules/booking/actions/lifecycle-actions';
@@ -180,19 +185,27 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
         }
 
         if (draft) {
-          const draftDepositAmount = draft.deposit_amount || 0;
+          const draftPaymentState = calculateBookingPaymentState({
+            fullPrice: draft.full_price || 0,
+            discountPercent: draft.discount_percent || 0,
+            depositAmount: draft.deposit_amount || 0,
+            bookingStatus: draft.status,
+            revenues: draft.revenue,
+          });
+          const draftDepositAmount = draftPaymentState.totalPaid;
           setDraftBooking(draft);
           // Pre-fill form data if draft exists
           setFormData(prev => ({
             ...prev,
             package_name: draft.package_name || '',
             full_price: draft.full_price || 0,
-            deposit_amount: draft.deposit_amount || 0,
+            deposit_amount: 0,
             total_sessions: draft.total_sessions || 21,
             start_date: draft.start_date || prev.start_date,
             preferred_time: draft.preferred_time || prev.preferred_time,
             assigned_ktv_id: draft.assigned_ktv_id || '',
           }));
+          setDiscountPercent(draft.discount_percent ? String(draft.discount_percent) : '');
           
           if (draft.package_name) {
             toast.success(`Đã tự động nạp thông tin gói "${draft.package_name}" và số tiền cọc cũ.`);
@@ -299,13 +312,23 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
           try {
             const payDetails = await getBookingDetailsWithPayment(booking.id);
             if (payDetails.data) {
-              setQrModalData({
-                bookingNumber: payDetails.data.booking_number,
-                amount: Number(payDetails.data.deposit_amount || 0),
-                tenantInfo: payDetails.data.tenants || null
+              const paymentRequest = calculatePaymentRequest({
+                fullPrice: payDetails.data.full_price,
+                discountPercent: payDetails.data.discount_percent,
+                depositAmount: payDetails.data.deposit_amount,
+                bookingStatus: payDetails.data.status,
+                revenues: payDetails.data.revenue,
+                selectedTab: 'deposit',
               });
-              setShowQrModal(true);
-              return; // Dừng ở đây để hiển thị modal QR, không đóng BookingModal hay gọi onSuccess ngay lập tức
+              if (paymentRequest.amountToPay > 0) {
+                setQrModalData({
+                  bookingNumber: payDetails.data.booking_number,
+                  amount: paymentRequest.amountToPay,
+                  tenantInfo: payDetails.data.tenants || null
+                });
+                setShowQrModal(true);
+                return; // Dừng ở đây để hiển thị modal QR, không đóng BookingModal hay gọi onSuccess ngay lập tức
+              }
             }
           } catch (err) {
             console.error("Error loading deposit QR:", err);
@@ -326,6 +349,30 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       setIsSubmitting(false);
     }
   };
+
+  const selectedDiscountPercent = Number(discountPercent) || 0;
+  const existingConfirmedPaidAmount = draftBooking
+    ? calculateBookingPaymentState({
+        fullPrice: draftBooking.full_price || 0,
+        discountPercent: selectedDiscountPercent,
+        depositAmount: draftBooking.deposit_amount || 0,
+        bookingStatus: draftBooking.status,
+        revenues: draftBooking.revenue,
+      }).totalPaid
+    : 0;
+  const previewPaymentState = calculateBookingPaymentState({
+    fullPrice: formData.full_price,
+    discountPercent: selectedDiscountPercent,
+    depositAmount: 0,
+    bookingStatus: draftBooking?.status,
+    revenues: [
+      ...((draftBooking?.revenue || []) as PaymentRevenueLike[]),
+      ...(formData.deposit_amount > 0
+        ? [{ amount: formData.deposit_amount, status: 'confirmed', revenue_type: 'deposit' }]
+        : []),
+    ],
+  });
+  const previewDiscountAmount = Math.max(0, formData.full_price - previewPaymentState.priceAfterDiscount);
 
   if (!isOpen) return null;
 
@@ -612,7 +659,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <CreditCard className="w-4 h-4" /> Tiền đặt cọc bổ sung (VNĐ) {Number(draftBooking?.deposit_amount || 0) > 0 && <span className="text-primary normal-case">(Đã cọc trước: {formatNumberWithSeparator(draftBooking?.deposit_amount || 0)}đ)</span>}
+                    <CreditCard className="w-4 h-4" /> Tiền đặt cọc bổ sung (VNĐ) {existingConfirmedPaidAmount > 0 && <span className="text-primary normal-case">(Đã cọc trước: {formatNumberWithSeparator(existingConfirmedPaidAmount)}đ)</span>}
                   </label>
                   <div className="relative">
                     <input 
@@ -654,20 +701,20 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     <span className="font-bold">Tổng tiền gói</span>
                     <span className="font-bold">{formatNumberWithSeparator(formData.full_price)}đ</span>
                   </div>
-                  {Number(discountPercent) > 0 && (
+                  {selectedDiscountPercent > 0 && (
                     <div className="flex justify-between items-center mb-4 opacity-70">
                       <span className="font-bold">Khuyến mãi giảm giá ({discountPercent}%)</span>
-                      <span className="font-bold text-rose-300">-{formatNumberWithSeparator(formData.full_price * Number(discountPercent) / 100)}đ</span>
+                      <span className="font-bold text-rose-300">-{formatNumberWithSeparator(previewDiscountAmount)}đ</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center mb-4 opacity-70">
                     <span className="font-bold">Tiền đã đặt cọc (Tổng)</span>
-                    <span className="font-bold">-{formatNumberWithSeparator((draftBooking?.deposit_amount || 0) + formData.deposit_amount)}đ</span>
+                    <span className="font-bold">-{formatNumberWithSeparator(previewPaymentState.totalPaid)}đ</span>
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-white/10">
                     <span className="font-bold">Cần thanh toán thêm</span>
                     <span className="text-2xl font-bold text-primary">
-                      {formatNumberWithSeparator(Math.max(0, formData.full_price * (1 - (Number(discountPercent) || 0) / 100) - (draftBooking?.deposit_amount || 0) - formData.deposit_amount))}đ
+                      {formatNumberWithSeparator(previewPaymentState.remainingDebt)}đ
                     </span>
                   </div>
                 </div>
