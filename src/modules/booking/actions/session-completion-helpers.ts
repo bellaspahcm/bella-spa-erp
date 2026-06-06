@@ -1,4 +1,9 @@
 import { FINANCE_CONSTANTS } from '@/constants/finance';
+import {
+  calculateConfirmedPaidAmount,
+  calculateSessionRevenueRecognition,
+  type PaymentRevenueLike,
+} from '@/lib/business-rules/payment';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
 import type { Database } from '@/types/database.types';
@@ -416,17 +421,29 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
   } = params;
 
   try {
-    const fullPrice = Number(currentBooking?.full_price || 0);
-    const discountPercent = Number(currentBooking?.discount_percent || 0);
-    const targetPrice = fullPrice * (1 - discountPercent / 100);
-    const totalSessions = Number(currentBooking?.total_sessions || 1);
-    const earnedRevenueAmount = totalSessions > 0 ? targetPrice / totalSessions : 0;
-    const paidAmount = Math.max(0, Number(currentBooking?.deposit_amount || 0));
     const currentSessionNumber = Math.max(1, Number(existingLog?.session_number || 1));
-    const revenueRecognizedBefore = earnedRevenueAmount * Math.max(0, currentSessionNumber - 1);
-    const deferredRevenueAvailable = Math.max(0, paidAmount - revenueRecognizedBefore);
-    const deferredRevenueAmount = Math.min(earnedRevenueAmount, deferredRevenueAvailable);
-    const receivableAmount = Math.max(0, earnedRevenueAmount - deferredRevenueAmount);
+    const { data: revenueRows, error: revenueRowsError } = await supabase
+      .from('revenue')
+      .select('amount, status, revenue_type')
+      .eq('booking_id', bookingId)
+      .eq('tenant_id', tenantId);
+
+    if (revenueRowsError) {
+      throw new Error(`Failed to fetch confirmed booking payments: ${revenueRowsError.message}`);
+    }
+
+    const totalPaid = calculateConfirmedPaidAmount((revenueRows || []) as PaymentRevenueLike[]);
+    const totalSessions = Number(currentBooking?.total_sessions || 1);
+    const revenueRecognition = calculateSessionRevenueRecognition({
+      fullPrice: currentBooking?.full_price,
+      discountPercent: currentBooking?.discount_percent,
+      totalSessions,
+      currentSessionNumber,
+      totalPaid,
+    });
+    const earnedRevenueAmount = revenueRecognition.earnedRevenueAmount;
+    const deferredRevenueAmount = revenueRecognition.deferredRevenueAmount;
+    const receivableAmount = revenueRecognition.receivableAmount;
     const commission = Number(currentBooking?.ktv_commission) || 0;
 
     const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');

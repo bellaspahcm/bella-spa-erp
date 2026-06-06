@@ -112,7 +112,9 @@ describe('session completion accounting side effects', () => {
 
   it('rolls back single-session revenue and booking progress when SESSION_DONE enqueue returns false', async () => {
     mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
-    const { calls, supabase } = createSupabaseMock();
+    const { calls, supabase } = createSupabaseMock([
+      { data: [{ amount: 200000, status: 'confirmed', revenue_type: 'deposit' }] },
+    ]);
 
     const result = await enqueueSessionDoneAccountingOutbox({
       supabase: supabase as never,
@@ -316,7 +318,7 @@ describe('session completion accounting side effects', () => {
       assigned_ktv_id: 'ktv-1',
       tenant_id: 'tenant-1',
       full_price: 500000,
-      deposit_amount: 200000,
+      deposit_amount: 0,
       discount_percent: 0,
     };
     const { calls, supabase } = createSupabaseMock([
@@ -326,6 +328,7 @@ describe('session completion accounting side effects', () => {
       { data: { id: 'revenue-1' } },
       { data: null },
       {},
+      { data: [{ amount: 200000, status: 'confirmed', revenue_type: 'deposit' }] },
     ]);
 
     const result = await processSessionCompletion(

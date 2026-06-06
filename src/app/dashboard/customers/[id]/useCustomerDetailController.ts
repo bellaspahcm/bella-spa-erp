@@ -2,6 +2,7 @@
 
 import type { ReceiptData } from '@/components/common/PaymentReceiptTemplate';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
 import { createClient } from '@/lib/supabase-client';
 import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
@@ -368,6 +369,13 @@ export function useCustomerDetailController() {
 
   const receiptData = useMemo<ReceiptData | null>(() => {
     if (!customer || !activeBooking) return null;
+    const paymentState = calculateBookingPaymentState({
+      fullPrice: activeBooking.full_price,
+      discountPercent: activeBooking.discount_percent,
+      depositAmount: activeBooking.deposit_amount,
+      bookingStatus: activeBooking.status,
+      revenues: activeBooking.revenue,
+    });
 
     return {
       customerName: customer.name_mother || 'Chưa cập nhật',
@@ -382,11 +390,11 @@ export function useCustomerDetailController() {
           unitPrice: Math.round((activeBooking.full_price || 0) / Math.max(1, activeBooking.total_sessions || 15)),
           total: activeBooking.full_price || 0,
           discountNote: activeBooking.discount_percent ? `Giảm ${activeBooking.discount_percent}%` : 'Không có',
-          prepaid: activeBooking.deposit_amount || 0,
-          finalPayment: Math.max(0, Math.round((activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0) / 100)) - (activeBooking.deposit_amount || 0)),
+          prepaid: paymentState.totalPaid,
+          finalPayment: paymentState.remainingDebt,
         },
       ],
-      totalAmount: Math.round((activeBooking.full_price || 0) * (1 - (activeBooking.discount_percent || 0) / 100)),
+      totalAmount: Math.round(paymentState.priceAfterDiscount),
       bankInfo: {
         ownerName: 'Cao Thị Thúy Vân',
         accountNumber: '8832041471',
@@ -488,10 +496,17 @@ export function useCustomerDetailController() {
     [activeBooking]
   );
   const nextSession = sortedSessions.find((session) => session.status === 'scheduled');
-  const activeDepositAmount = activeBooking?.deposit_amount || 0;
-  const activeFullPrice = activeBooking?.full_price || 0;
-  const activeDiscountPercent = activeBooking?.discount_percent || 0;
-  const activeNetPrice = Math.round(activeFullPrice * (1 - activeDiscountPercent / 100));
+  const activePaymentState = activeBooking
+    ? calculateBookingPaymentState({
+        fullPrice: activeBooking.full_price,
+        discountPercent: activeBooking.discount_percent,
+        depositAmount: activeBooking.deposit_amount,
+        bookingStatus: activeBooking.status,
+        revenues: activeBooking.revenue,
+      })
+    : null;
+  const activeDepositAmount = activePaymentState?.totalPaid || 0;
+  const activeNetPrice = Math.round(activePaymentState?.priceAfterDiscount || 0);
   const isCompleted = Boolean(activeBooking && (activeBooking.completed_sessions || 0) >= (activeBooking.total_sessions || 15));
 
   return {

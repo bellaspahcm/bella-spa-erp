@@ -2,6 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
+import {
+  INVENTORY_REASONS,
+  calculateConsumptionMovement,
+  calculateLowStockState,
+  calculateRestockMovement,
+  calculateRollbackStock,
+} from '@/lib/business-rules/inventory';
 import type { Database } from '@/types/database.types';
 
 type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Insert'];
@@ -125,7 +132,10 @@ export async function getInventorySummary() {
 
   return {
     totalItems: data.length,
-    lowStockCount: data.filter((i) => Number(i.stock_level) <= Number(i.min_stock_level)).length,
+    lowStockCount: data.filter((i) => calculateLowStockState({
+      stockLevel: i.stock_level,
+      minStockLevel: i.min_stock_level,
+    }).isLowStock).length,
     totalValue: data.reduce((sum: number, i) => sum + Number(i.stock_level) * Number(i.price_per_unit), 0)
   };
 }
@@ -392,7 +402,7 @@ export async function saveMonthlyReconciliation(
       const logPayload: InventoryLogInsert = {
         item_id: entry.item_id,
         change_amount: variance,
-        reason: 'monthly_reconciliation',
+        reason: INVENTORY_REASONS.monthlyReconciliation,
         notes: noteText,
         created_by: userId,
         tenant_id: tenantId,
@@ -478,7 +488,7 @@ export async function addInventoryItem(item: {
       const logPayload: InventoryLogInsert = {
         item_id: data.id,
         change_amount: initialStock,
-        reason: 'initial',
+        reason: INVENTORY_REASONS.initial,
         notes: 'Tồn kho ban đầu',
         created_by: userId,
         tenant_id: tenantId,
@@ -522,8 +532,14 @@ export async function restockItem(itemId: string, amount: number, notes?: string
 
     if (fetchError || !item) return { success: false, error: 'Không tìm thấy vật tư' };
 
-    const previousStock = Number(item.stock_level || 0);
-    const updatePayload: InventoryItemUpdate = { stock_level: previousStock + numericAmount };
+    const movement = calculateRestockMovement({
+      stockLevel: item.stock_level,
+      amount: numericAmount,
+    });
+    if ('error' in movement) return { success: false, error: movement.error };
+
+    const previousStock = movement.previousStock;
+    const updatePayload: InventoryItemUpdate = { stock_level: movement.newStock };
 
     const { error: updateError } = await supabase
       .from('inventory_items')
@@ -535,8 +551,8 @@ export async function restockItem(itemId: string, amount: number, notes?: string
 
     const logPayload: InventoryLogInsert = {
       item_id: itemId,
-      change_amount: numericAmount,
-      reason: 'restock',
+      change_amount: movement.changeAmount,
+      reason: movement.reason,
       notes: notes || 'Nhập hàng',
       created_by: userId,
       tenant_id: tenantId
@@ -589,13 +605,15 @@ export async function consumeInventory(
 
     if (fetchError || !item) return { success: false, error: 'Không tìm thấy vật tư' };
 
-    const previousStock = Number(item.stock_level || 0);
-    if (previousStock < numericAmount) {
-      return { success: false, error: `Mặt hàng "${item.name}" không đủ tồn kho (Hiện có: ${item.stock_level}, Cần tiêu hao: ${numericAmount})` };
-    }
+    const movement = calculateConsumptionMovement({
+      stockLevel: item.stock_level,
+      amount: numericAmount,
+      itemName: `Mặt hàng "${item.name}"`,
+    });
+    if ('error' in movement) return { success: false, error: movement.error };
 
-    const newStock = previousStock - numericAmount;
-    const updatePayload: InventoryItemUpdate = { stock_level: newStock };
+    const previousStock = movement.previousStock;
+    const updatePayload: InventoryItemUpdate = { stock_level: movement.newStock };
 
     const { error: updateError } = await supabase
       .from('inventory_items')
@@ -607,8 +625,8 @@ export async function consumeInventory(
 
     const logPayload: InventoryLogInsert = {
       item_id: itemId,
-      change_amount: -numericAmount,
-      reason: 'session_consumption',
+      change_amount: movement.changeAmount,
+      reason: movement.reason,
       session_log_id: sessionLogId || null,
       notes: notes || 'Tiêu hao buổi liệu trình',
       created_by: userId,
@@ -632,7 +650,7 @@ export async function consumeInventory(
     }
 
     revalidatePath('/dashboard/inventory');
-    return { success: true, newStock };
+    return { success: true, newStock: movement.newStock };
   } catch (e) {
     console.error('[consumeInventory]', e);
     return { success: false, error: 'Lỗi hệ thống' };
@@ -739,7 +757,7 @@ export async function rollbackInventoryConsumption(sessionLogId: string) {
       .from('inventory_logs')
       .select('id, item_id, change_amount')
       .eq('session_log_id', sessionLogId)
-      .eq('reason', 'session_consumption')
+      .eq('reason', INVENTORY_REASONS.sessionConsumption)
       .eq('tenant_id', tenantId);
 
     if (fetchErr) {
@@ -765,7 +783,10 @@ export async function rollbackInventoryConsumption(sessionLogId: string) {
       }
 
       const updatePayload: InventoryItemUpdate = {
-        stock_level: Number(item.stock_level) + Math.abs(Number(log.change_amount)),
+        stock_level: calculateRollbackStock({
+          stockLevel: item.stock_level,
+          changeAmount: log.change_amount,
+        }),
       };
       const { error: updateErr } = await supabase
         .from('inventory_items')
