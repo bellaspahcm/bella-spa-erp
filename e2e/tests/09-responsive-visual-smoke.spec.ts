@@ -106,6 +106,14 @@ const appErrorPatterns = [
   /this page could not be found/i,
 ];
 
+const isVisualSmokeRunner = process.env.E2E_VISUAL_SMOKE_RUNNER === "1";
+const hasExplicitE2eTarget = Boolean(
+  process.env.E2E_BASE_URL ||
+  process.env.E2E_PORT ||
+  process.env.E2E_REUSE_SERVER === "0",
+);
+const isUnsafeImplicitLocalRun = !isVisualSmokeRunner && !hasExplicitE2eTarget;
+
 function normalizeVietnamese(value: string) {
   return value
     .normalize("NFD")
@@ -216,6 +224,11 @@ async function expectMobileToolbarsFitViewport(page: Page, routeName: string) {
 
 test.describe("Responsive visual smoke", () => {
   test.setTimeout(180_000);
+
+  test.skip(
+    isUnsafeImplicitLocalRun,
+    "Run responsive visual smoke with `npm run e2e:visual` so it uses an isolated port and cannot reuse a stale dev server.",
+  );
 
   test.skip(
     !canAuthenticateAdminPage(),
