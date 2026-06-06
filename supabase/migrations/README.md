@@ -77,3 +77,4 @@ Supabase CLI sort migration theo **filename string** (alphabetical sau prefix). 
 | `20260606100000_inter_branch_clearing_outbox.sql` | Them event outbox va idempotency theo tenant cho bu tru lien chi nhanh |
 | `20260606103000_eliminate_internal_clearing_from_consolidated_pnl.sql` | Loai tru doanh thu va gia von noi bo khoi P&L hop nhat HQ |
 | `20260606110000_add_consolidated_pnl_elimination_totals.sql` | Tra them so doanh thu va gia von noi bo da loai tru tren P&L hop nhat HQ |
+| `20260606113000_grant_inter_branch_clearing_records_access.sql` | Cap quyen bang bu tru lien chi nhanh cho authenticated theo RLS |
