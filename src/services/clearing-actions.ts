@@ -6,6 +6,9 @@ import { getCurrentUser } from './user-actions';
 import { checkHqAuth } from './hq-actions';
 import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import type { Database } from '@/types/database.types';
+
+type ClearingRecordUpdate = Database['public']['Tables']['inter_branch_clearing_records']['Update'];
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   if (error instanceof Error) return error.message || fallback;
@@ -44,6 +47,12 @@ export interface InterBranchClearingRecord {
 export type InterBranchClearingRecordsResult =
   | { success: true; data: InterBranchClearingRecord[]; error?: never }
   | { success: false; data: InterBranchClearingRecord[]; error: string };
+
+function getInvalidClearingStatusMessage(status: string | null | undefined) {
+  if (status === 'cleared') return 'Bản ghi đối soát đã được gạch nợ.';
+  if (status === 'cancelled') return 'Bản ghi đối soát đã bị hủy, không thể gạch nợ.';
+  return 'Bản ghi đối soát không còn ở trạng thái chờ gạch nợ.';
+}
 
 /**
  * Lấy danh sách bản ghi đối soát liên chi nhánh.
@@ -111,6 +120,10 @@ export async function getInterBranchClearingRecordsResult(tenantId?: string): Pr
  */
 export async function clearInterBranchRecord(recordId: string, paymentMethod: string) {
   try {
+    if (!recordId?.trim()) {
+      return { success: false, error: 'Thiếu mã bản ghi đối soát cần gạch nợ.' };
+    }
+
     const supabase = await createClient();
     const user = await getCurrentUser();
     if (!user) return { success: false, error: 'Chưa đăng nhập' };
@@ -125,25 +138,40 @@ export async function clearInterBranchRecord(recordId: string, paymentMethod: st
       return { success: false, error: 'Không tìm thấy bản ghi đối soát cần gạch nợ.' };
     }
 
+    if (record.status !== 'pending') {
+      return { success: false, error: getInvalidClearingStatusMessage(record.status) };
+    }
+
     // Kiểm tra quyền hạn: HQ Admin hoặc Branch Admin của debtor hoặc creditor
     const authResult = await checkHqAuth();
     if (!authResult.authorized && record.debtor_tenant_id !== user.tenant_id && record.creditor_tenant_id !== user.tenant_id) {
       return { success: false, error: 'Quyền truy cập bị từ chối.' };
     }
 
-    const { error: updateErr } = await supabase
+    const clearedAt = new Date().toISOString();
+    const paymentLabel = paymentMethod?.trim() || 'VietQR';
+    const updatePayload: ClearingRecordUpdate = {
+      status: 'cleared',
+      cleared_at: clearedAt,
+      payment_method: paymentLabel,
+      notes: `Đã thanh toán bởi ${user.full_name || user.email} lúc ${new Date(clearedAt).toLocaleString('vi-VN')}`,
+    };
+
+    const { data: clearedRecord, error: updateErr } = await supabase
       .from('inter_branch_clearing_records')
-      .update({
-        status: 'cleared',
-        cleared_at: new Date().toISOString(),
-        payment_method: paymentMethod || 'VietQR',
-        notes: `Đã thanh toán bởi ${user.full_name || user.email} lúc ${new Date().toLocaleString('vi-VN')}`
-      })
-      .eq('id', recordId);
+      .update(updatePayload)
+      .eq('id', recordId)
+      .eq('status', 'pending')
+      .select('id, status')
+      .single();
 
     if (updateErr) {
       console.error('[clearInterBranchRecord] error:', updateErr);
-      return { success: false, error: 'Lỗi gạch nợ đối soát: ' + updateErr.message };
+      return { success: false, error: 'Lỗi gạch nợ đối soát: ' + getErrorMessage(updateErr) };
+    }
+
+    if (!clearedRecord) {
+      return { success: false, error: 'Bản ghi đối soát vừa được xử lý bởi thao tác khác. Vui lòng quét lại dữ liệu.' };
     }
 
     // Revalidate các view liên quan
@@ -153,7 +181,9 @@ export async function clearInterBranchRecord(recordId: string, paymentMethod: st
       revalidatePath('/hq');
       await safeRevalidatePath('/hq');
       await safeRevalidatePath('/dashboard/finance/reconciliation');
-    } catch {}
+    } catch (revalidateError) {
+      console.error('[clearInterBranchRecord] revalidate error:', revalidateError);
+    }
 
     return { success: true };
   } catch (e: unknown) {
