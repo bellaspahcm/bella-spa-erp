@@ -283,6 +283,139 @@ async function expectAccountingReportsTablePolish(page: Page) {
   }
 }
 
+async function expectPrimaryDataTableColumnsDoNotOverlap(page: Page, routeName: string) {
+  const result = await page.evaluate(() => {
+    const tables = Array.from(document.querySelectorAll("table"))
+      .filter((table): table is HTMLTableElement => {
+        const rect = table.getBoundingClientRect();
+        const styles = window.getComputedStyle(table);
+        return rect.width > 0 && rect.height > 0 && styles.display !== "none" && styles.visibility !== "hidden";
+      })
+      .map((table) => {
+        const rect = table.getBoundingClientRect();
+        let wrapper: HTMLElement | null = table.parentElement;
+        while (wrapper && wrapper !== document.body) {
+          const styles = window.getComputedStyle(wrapper);
+          if (/(auto|scroll|overlay)/.test(styles.overflowX)) {
+            break;
+          }
+          wrapper = wrapper.parentElement;
+        }
+
+        const tableClass = table.className.toString();
+        const firstHeaders = Array.from(table.querySelectorAll("thead tr:first-child th")).slice(0, 3) as HTMLElement[];
+        const firstBodyRow = table.querySelector("tbody tr");
+        const firstCells = firstBodyRow ? (Array.from(firstBodyRow.children).slice(0, 3) as HTMLElement[]) : [];
+
+        const measure = (element: HTMLElement) => {
+          const cellRect = element.getBoundingClientRect();
+          const styles = window.getComputedStyle(element);
+          return {
+            left: cellRect.left,
+            right: cellRect.right,
+            width: cellRect.width,
+            position: styles.position,
+            whiteSpace: styles.whiteSpace,
+          };
+        };
+
+        return {
+          tableClass,
+          isDataTable:
+            table.classList.contains("bella-data-table") ||
+            tableClass.includes("w-max") ||
+            tableClass.includes("min-w-"),
+          width: rect.width,
+          wrapperWidth: wrapper?.getBoundingClientRect().width ?? 0,
+          headers: firstHeaders.map(measure),
+          cells: firstCells.map(measure),
+        };
+      })
+      .filter((table) => table.isDataTable)
+      .sort((a, b) => b.width - a.width);
+
+    return tables[0] ?? null;
+  });
+
+  expect(result, `${routeName} should expose a primary responsive data table`).not.toBeNull();
+  if (!result) {
+    return;
+  }
+
+  expect(result.width, `${routeName} primary data table should scroll horizontally on mobile`).toBeGreaterThan(
+    result.wrapperWidth + 1,
+  );
+  expect(result.headers.length, `${routeName} should expose at least two data-table headers`).toBeGreaterThanOrEqual(2);
+
+  const checkSequence = (
+    items: { left: number; right: number; position: string; whiteSpace: string }[],
+    label: string,
+  ) => {
+    for (let index = 0; index < items.length - 1; index += 1) {
+      expect(items[index].position, `${routeName} ${label} ${index} should not be sticky or fixed`).toBe("static");
+      expect(items[index].right, `${routeName} ${label} ${index} should not overlap the next column`).toBeLessThanOrEqual(
+        items[index + 1].left + 1,
+      );
+      expect(items[index].whiteSpace, `${routeName} ${label} ${index} should stay in horizontal table flow`).toBe(
+        "nowrap",
+      );
+    }
+  };
+
+  checkSequence(result.headers, "header");
+  if (result.cells.length >= 2) {
+    checkSequence(result.cells, "cell");
+  }
+}
+
+async function expectVisibleTextStaysInsideViewport(page: Page, routeName: string) {
+  const offenders = await page
+    .locator("main span, main p, main a, main button, main h1, main h2, main h3, main h4, main label")
+    .evaluateAll((elements) =>
+      elements
+        .filter((element) => {
+          const rect = element.getBoundingClientRect();
+          const styles = window.getComputedStyle(element);
+          if (
+            rect.width <= 0 ||
+            rect.height <= 0 ||
+            styles.display === "none" ||
+            styles.visibility === "hidden" ||
+            !(element.textContent ?? "").trim()
+          ) {
+            return false;
+          }
+
+          if (element.closest("table")) {
+            return false;
+          }
+
+          let parent = element.parentElement;
+          while (parent && parent !== document.body) {
+            const parentStyles = window.getComputedStyle(parent);
+            if (/(auto|scroll|overlay)/.test(parentStyles.overflowX)) {
+              return false;
+            }
+            parent = parent.parentElement;
+          }
+
+          return true;
+        })
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            text: (element.textContent ?? "").trim().slice(0, 80),
+            left: rect.left,
+            right: rect.right,
+            viewportWidth: window.innerWidth,
+          };
+        })
+        .filter((item) => item.left < -1 || item.right > item.viewportWidth + 1),
+    );
+
+  expect(offenders, `${routeName} visible text should not bleed outside the mobile viewport`).toEqual([]);
+}
+
 async function expectNoFixedTables(page: Page, routeName: string) {
   const fixedTableCount = await page.locator("table.table-fixed").count();
   expect(fixedTableCount, `${routeName} should not use fixed table layout on responsive data tables`).toBe(0);
@@ -464,6 +597,14 @@ test.describe("Responsive visual smoke", () => {
         if (viewport.name === "mobile" && route.name === "finance") {
           await expectFinanceTransactionCellsDoNotBleed(adminPage);
           await expectFinanceTransactionColumnPolish(adminPage);
+        }
+
+        if (viewport.name === "mobile" && (route.name === "inventory" || route.name === "salary")) {
+          await expectPrimaryDataTableColumnsDoNotOverlap(adminPage, route.name);
+        }
+
+        if (viewport.name === "mobile" && (route.name === "customers" || route.name === "sessions")) {
+          await expectVisibleTextStaysInsideViewport(adminPage, route.name);
         }
 
         if (viewport.name === "mobile") {
