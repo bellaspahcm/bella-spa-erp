@@ -11,6 +11,7 @@
 
 // ── Setup environment variables BEFORE imports ──
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 process.env.CRON_SECRET = 'test-cron-secret-123';
 
@@ -98,6 +99,7 @@ describe('Accounting Outbox Worker API', () => {
       };
     });
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SECRET_KEY = 'test-secret-key';
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
     process.env.CRON_SECRET = 'test-cron-secret-123';
   });
@@ -153,6 +155,7 @@ describe('Accounting Outbox Worker API', () => {
     });
 
     it('returns 500 and does not claim outbox when Supabase admin env is missing', async () => {
+      delete process.env.SUPABASE_SECRET_KEY;
       delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 
       const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
