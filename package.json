@@ -10,6 +10,7 @@
     "lint:strict": "eslint --config eslint.strict.config.mjs \"src/**/*.{ts,tsx}\"",
     "docs:api:check": "node scripts/check-api-docs.mjs",
     "docs:api:versioning": "node scripts/check-api-versioning.mjs",
+    "db:migration:check": "node scripts/check-supabase-migrations.cjs",
     "security:audit": "node scripts/audit-production.mjs",
     "security:secrets": "node scripts/check-secret-leaks.mjs",
     "test": "jest",
