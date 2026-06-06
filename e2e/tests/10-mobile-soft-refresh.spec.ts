@@ -107,6 +107,18 @@ test.describe("Mobile soft refresh", () => {
   for (const route of softRefreshRoutes) {
     test(`${route.name} refreshes without hard page reload`, async ({ adminPage }) => {
       await adminPage.setViewportSize({ width: 390, height: 844 });
+      const auditConsoleErrors: string[] = [];
+
+      if (route.name === "audit") {
+        adminPage.on("console", (message) => {
+          if (message.type() !== "error") return;
+
+          const text = message.text();
+          if (/AuthSessionMissingError|Error fetching logs/i.test(text)) {
+            auditConsoleErrors.push(text);
+          }
+        });
+      }
 
       const response = await adminPage.goto(route.path, { waitUntil: "domcontentloaded" });
       await adminPage.waitForLoadState("load", { timeout: 8_000 }).catch(() => {});
@@ -157,6 +169,10 @@ test.describe("Mobile soft refresh", () => {
 
       if (hasSearchInput) {
         await expect(searchInput).toHaveValue("soft-refresh-probe");
+      }
+
+      if (route.name === "audit") {
+        expect(auditConsoleErrors).toEqual([]);
       }
     });
   }
