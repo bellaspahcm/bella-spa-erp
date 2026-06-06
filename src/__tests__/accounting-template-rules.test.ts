@@ -1,7 +1,9 @@
 import {
+  buildRevenueAccountingMetadata,
   calculateReadinessScore,
   findMissingRequiredFields,
   inferBusinessEventType,
+  resolveAccountingReviewStatus,
   resolvePaymentAccountCode,
 } from '../services/accounting/template-rules';
 
@@ -71,5 +73,72 @@ describe('accounting template rules', () => {
     expect(resolvePaymentAccountCode('cash')).toBe('111');
     expect(resolvePaymentAccountCode('bank_transfer')).toBe('112');
     expect(resolvePaymentAccountCode(null)).toBe('112');
+  });
+
+  it('builds standard revenue metadata and review status from one ledger rule', () => {
+    const depositEvent = inferBusinessEventType({
+      sourceTable: 'revenue',
+      revenueType: 'deposit',
+    });
+    const depositMetadata = buildRevenueAccountingMetadata({
+      revenueType: 'deposit',
+      amount: 200000,
+      paymentMethod: 'bank_transfer',
+      bookingId: 'booking-1',
+      reason: 'Coc goi Me Tien',
+    });
+
+    expect(depositEvent).toBe('CUSTOMER_DEPOSIT');
+    expect(depositMetadata).toEqual({
+      amount: 200000,
+      payment_method: 'bank_transfer',
+      booking_id: 'booking-1',
+      reason: 'Coc goi Me Tien',
+    });
+    expect(resolveAccountingReviewStatus(depositEvent, depositMetadata)).toBe('UNREVIEWED');
+
+    const refundEvent = inferBusinessEventType({
+      sourceTable: 'revenue',
+      revenueType: 'refund',
+    });
+    const refundMetadata = buildRevenueAccountingMetadata({
+      revenueType: 'refund',
+      amount: -500000,
+      paymentMethod: 'bank_transfer',
+      bookingId: 'booking-1',
+    });
+
+    expect(refundEvent).toBe('REFUND_TO_CUSTOMER');
+    expect(refundMetadata).toEqual({
+      amount: 500000,
+      payment_method: 'bank_transfer',
+      booking_id: 'booking-1',
+      reason: 'Hoan tien khach hang',
+      deferredRefundAmount: 0,
+      revenueReductionAmount: 500000,
+    });
+    expect(resolveAccountingReviewStatus(refundEvent, refundMetadata)).toBe('UNREVIEWED');
+    expect(resolveAccountingReviewStatus(refundEvent, { ...refundMetadata, reason: '' })).toBe('NEEDS_REVIEW');
+  });
+
+  it('keeps payment revenue types aligned with ledger event types', () => {
+    expect([
+      ['deposit', 'CUSTOMER_DEPOSIT'],
+      ['remaining_payment', 'CUSTOMER_REMAINING_PAYMENT'],
+      ['package_payment', 'CUSTOMER_FULL_PAYMENT'],
+      ['package_sale', 'CUSTOMER_FULL_PAYMENT'],
+      ['session_completed', 'SESSION_REVENUE_RECOGNIZED'],
+      ['refund', 'REFUND_TO_CUSTOMER'],
+    ].map(([revenueType, expected]) => [
+      inferBusinessEventType({ sourceTable: 'revenue', revenueType }),
+      expected,
+    ])).toEqual([
+      ['CUSTOMER_DEPOSIT', 'CUSTOMER_DEPOSIT'],
+      ['CUSTOMER_REMAINING_PAYMENT', 'CUSTOMER_REMAINING_PAYMENT'],
+      ['CUSTOMER_FULL_PAYMENT', 'CUSTOMER_FULL_PAYMENT'],
+      ['CUSTOMER_FULL_PAYMENT', 'CUSTOMER_FULL_PAYMENT'],
+      ['SESSION_REVENUE_RECOGNIZED', 'SESSION_REVENUE_RECOGNIZED'],
+      ['REFUND_TO_CUSTOMER', 'REFUND_TO_CUSTOMER'],
+    ]);
   });
 });

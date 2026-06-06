@@ -4,7 +4,7 @@ import {
   validatePaymentAmountAgainstState,
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
-import { inferBusinessEventType } from '@/services/accounting/template-rules';
+import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
 import type { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
@@ -100,12 +100,13 @@ export async function recordBookingPaymentRpc(params: {
     sourceTable: 'revenue',
     revenueType,
   });
-  const accountingPayload = {
+  const accountingPayload = buildRevenueAccountingMetadata({
+    revenueType,
     amount: payment.amount,
-    payment_method: payment.payment_method,
-    booking_id: payment.booking_id,
+    paymentMethod: payment.payment_method,
+    bookingId: payment.booking_id,
     reason: payment.notes,
-  };
+  });
 
   const rpcClient = supabase as unknown as {
     rpc: (

@@ -1,7 +1,7 @@
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
-import { inferBusinessEventType } from '@/services/accounting/template-rules';
+import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
 import { resolveKtvCommission } from './commission-actions';
 import type { createClient } from '@/lib/supabase-server';
@@ -288,12 +288,13 @@ export async function recordBookingDepositRevenue(params: {
     sourceTable: 'revenue',
     revenueType,
   });
-  const accountingPayload = {
+  const accountingPayload = buildRevenueAccountingMetadata({
+    revenueType,
     amount: depositAmount,
-    payment_method: 'bank_transfer',
-    booking_id: booking.id,
+    paymentMethod: 'bank_transfer',
+    bookingId: booking.id,
     reason: `Cọc gói ${resolvePackageName(booking)}`,
-  };
+  });
 
   try {
     await assertOpenAccountingPeriod(supabase, {

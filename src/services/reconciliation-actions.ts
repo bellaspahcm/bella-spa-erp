@@ -2,7 +2,11 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { getLocalDateString } from '@/lib/utils';
-import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
+import {
+  buildRevenueAccountingMetadata,
+  inferBusinessEventType,
+  resolveAccountingReviewStatus,
+} from '@/services/accounting/template-rules';
 import { assertOpenAccountingPeriod } from './accounting/period-guards';
 import { assertLegacyFinanceWriteAllowed } from './accounting/mode';
 import { getCurrentUser } from './user-actions';
@@ -18,16 +22,6 @@ type ReconciliationRole = string | null | undefined;
 
 function canWriteReconciliation(role: ReconciliationRole) {
   return role === 'admin' || role === 'accountant';
-}
-
-function resolveAccountingReviewStatus(
-  businessEventType: ReturnType<typeof inferBusinessEventType>,
-  payload: Record<string, unknown>
-) {
-  if (!businessEventType) return 'NEEDS_REVIEW';
-  return findMissingRequiredFields(businessEventType, payload).length > 0
-    ? 'NEEDS_REVIEW'
-    : 'UNREVIEWED';
 }
 
 export async function getFinancialAnomalies() {
@@ -131,12 +125,13 @@ export async function collectDebtPayment(input: {
       sourceTable: 'revenue',
       revenueType: 'additional',
     });
-    const accountingPayload = {
+    const accountingPayload = buildRevenueAccountingMetadata({
+      revenueType: 'additional',
       amount: input.amount,
-      payment_method: input.paymentMethod,
-      booking_id: input.bookingId,
+      paymentMethod: input.paymentMethod,
+      bookingId: input.bookingId,
       reason: `Thu đối soát công nợ - KH: ${customerStr} - Gói: ${packageStr} (Booking: ${shortBookingId})`,
-    };
+    });
     const receivedDate = getLocalDateString();
     const supabase = await createClient();
     await assertOpenAccountingPeriod(supabase, {
