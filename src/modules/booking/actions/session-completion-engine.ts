@@ -70,6 +70,7 @@ export async function processSessionCompletion(
     return { error: revenueResult.error };
   }
   const isRevenueCreated = revenueResult.isRevenueCreated;
+  const createdRevenueId = revenueResult.createdRevenueId;
 
   const salaryResult = await syncKtvSalaryAfterCompletion({
     supabase,
@@ -81,6 +82,7 @@ export async function processSessionCompletion(
     currentBooking,
     isInventoryConsumed,
     isRevenueCreated,
+    createdRevenueId,
   });
   if ('error' in salaryResult) {
     return { error: salaryResult.error };
@@ -94,15 +96,17 @@ export async function processSessionCompletion(
     currentBooking,
   });
   if ('error' in reviewResult) {
-    await rollbackCompletionSideEffects({
+    const rollbackResult = await rollbackCompletionSideEffects({
       supabase,
       sessionId,
       bookingId,
       currentBooking,
       isInventoryConsumed,
       isRevenueCreated,
+      createdRevenueId,
     });
-    return { error: reviewResult.error };
+    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    return { error: reviewResult.error + rollbackMessage };
   }
 
   const outboxResult = await enqueueSessionDoneAccountingOutbox({
@@ -116,6 +120,7 @@ export async function processSessionCompletion(
     currentBooking,
     isInventoryConsumed,
     isRevenueCreated,
+    createdRevenueId,
   });
   if ('error' in outboxResult) {
     return { error: outboxResult.error };

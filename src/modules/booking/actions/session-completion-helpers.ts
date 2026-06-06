@@ -84,10 +84,15 @@ export async function consumeInventoryForCompletedSession(
 }
 
 export async function rollbackInventoryIfConsumed(sessionId: string, isInventoryConsumed: boolean) {
-  if (!isInventoryConsumed) return;
+  if (!isInventoryConsumed) return { success: true };
 
   const { rollbackInventoryConsumption } = await import('@/services/inventory-actions');
-  await rollbackInventoryConsumption(sessionId);
+  const rollbackResult = await rollbackInventoryConsumption(sessionId);
+  if (rollbackResult && rollbackResult.success === false) {
+    return { error: rollbackResult.error || 'Không thể hoàn tác tiêu hao kho' };
+  }
+
+  return { success: true };
 }
 
 export async function restoreBookingProgress(
@@ -100,23 +105,32 @@ export async function restoreBookingProgress(
     status: currentBooking?.status || 'booked',
   };
 
-  await supabase
+  const { error } = await supabase
     .from('bookings')
     .update(rollbackPayload)
     .eq('id', bookingId);
+
+  return error?.message || '';
 }
 
 export async function deleteSingleSessionRevenue(
   supabase: SupabaseServerClient,
   bookingId: string,
-  packageName: string | null | undefined
+  packageName: string | null | undefined,
+  revenueId?: string | null
 ) {
-  await supabase
+  const deleteQuery = supabase
     .from('revenue')
-    .delete()
+    .delete();
+
+  const { error } = revenueId
+    ? await deleteQuery.eq('id', revenueId)
+    : await deleteQuery
     .eq('booking_id', bookingId)
     .eq('amount', FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE)
     .eq('notes', `Tự động: Thu phí dịch vụ lẻ - ${packageName}`);
+
+  return error?.message || '';
 }
 
 export async function rollbackCompletionSideEffects(params: {
@@ -126,15 +140,36 @@ export async function rollbackCompletionSideEffects(params: {
   currentBooking: CompletionBooking | null;
   isInventoryConsumed: boolean;
   isRevenueCreated?: boolean;
+  createdRevenueId?: string | null;
 }) {
-  const { supabase, sessionId, bookingId, currentBooking, isInventoryConsumed, isRevenueCreated } = params;
+  const { supabase, sessionId, bookingId, currentBooking, isInventoryConsumed, isRevenueCreated, createdRevenueId } = params;
+  const rollbackFailures: string[] = [];
 
   if (isRevenueCreated) {
-    await deleteSingleSessionRevenue(supabase, bookingId, currentBooking?.package_name);
+    const revenueRollbackError = await deleteSingleSessionRevenue(
+      supabase,
+      bookingId,
+      currentBooking?.package_name,
+      createdRevenueId,
+    );
+    if (revenueRollbackError) {
+      rollbackFailures.push(`revenue rollback failed: ${revenueRollbackError}`);
+    }
   }
 
-  await restoreBookingProgress(supabase, bookingId, currentBooking);
-  await rollbackInventoryIfConsumed(sessionId, isInventoryConsumed);
+  const bookingRollbackError = await restoreBookingProgress(supabase, bookingId, currentBooking);
+  if (bookingRollbackError) {
+    rollbackFailures.push(`booking progress rollback failed: ${bookingRollbackError}`);
+  }
+
+  const inventoryRollbackResult = await rollbackInventoryIfConsumed(sessionId, isInventoryConsumed);
+  if ('error' in inventoryRollbackResult) {
+    rollbackFailures.push(`inventory rollback failed: ${inventoryRollbackResult.error}`);
+  }
+
+  return rollbackFailures.length > 0
+    ? { error: rollbackFailures.join('; ') }
+    : { success: true };
 }
 
 export async function syncBookingCompletionProgress(params: {
@@ -153,8 +188,9 @@ export async function syncBookingCompletionProgress(params: {
     .eq('status', 'completed');
 
   if (countError) {
-    await rollbackInventoryIfConsumed(sessionId, isInventoryConsumed);
-    return { error: 'Lỗi đếm số buổi đã hoàn thành: ' + countError.message };
+    const rollbackResult = await rollbackInventoryIfConsumed(sessionId, isInventoryConsumed);
+    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    return { error: 'Lỗi đếm số buổi đã hoàn thành: ' + countError.message + rollbackMessage };
   }
 
   const { data: currentBooking } = await supabase
@@ -190,8 +226,9 @@ export async function syncBookingCompletionProgress(params: {
 
   if (bookingUpdateErr) {
     console.error('Error updating booking progress:', bookingUpdateErr);
-    await rollbackInventoryIfConsumed(sessionId, isInventoryConsumed);
-    return { error: 'Lỗi cập nhật tiến trình booking: ' + bookingUpdateErr.message };
+    const rollbackResult = await rollbackInventoryIfConsumed(sessionId, isInventoryConsumed);
+    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    return { error: 'Lỗi cập nhật tiến trình booking: ' + bookingUpdateErr.message + rollbackMessage };
   }
 
   return { currentBooking: currentBooking as CompletionBooking | null };
@@ -247,19 +284,31 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
 
   if (revenueError) {
     console.error('Error auto-creating revenue:', revenueError);
-    await rollbackCompletionSideEffects({
+    const rollbackResult = await rollbackCompletionSideEffects({
       supabase,
       sessionId,
       bookingId,
       currentBooking,
       isInventoryConsumed,
     });
-    return { error: 'Không thể ghi nhận doanh thu tự động cho gói lẻ: ' + revenueError.message };
+    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    return { error: 'Không thể ghi nhận doanh thu tự động cho gói lẻ: ' + revenueError.message + rollbackMessage };
   }
 
   const createdRevenueId = createdRevenue?.id || null;
   if (!createdRevenueId) {
-    return { isRevenueCreated: true, createdRevenueId: null };
+    const rollbackResult = await rollbackCompletionSideEffects({
+      supabase,
+      sessionId,
+      bookingId,
+      currentBooking,
+      isInventoryConsumed,
+      isRevenueCreated: true,
+      createdRevenueId,
+    });
+
+    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    return { error: 'Không xác định được mã doanh thu tự động vừa tạo. Đã hoàn tác ca làm.' + rollbackMessage };
   }
 
   const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
@@ -281,20 +330,18 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
   );
 
   if (!outboxEnqueued) {
-    await supabase
-      .from('revenue')
-      .delete()
-      .eq('id', createdRevenueId);
-
-    await rollbackCompletionSideEffects({
+    const rollbackResult = await rollbackCompletionSideEffects({
       supabase,
       sessionId,
       bookingId,
       currentBooking,
       isInventoryConsumed,
+      isRevenueCreated: true,
+      createdRevenueId,
     });
 
-    return { error: 'Không thể ghi nhận hàng đợi kế toán cho doanh thu gói lẻ. Đã hoàn tác ca làm.' };
+    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    return { error: 'Không thể ghi nhận hàng đợi kế toán cho doanh thu gói lẻ. Đã hoàn tác ca làm.' + rollbackMessage };
   }
 
   return { isRevenueCreated: true, createdRevenueId };
@@ -310,8 +357,20 @@ export async function syncKtvSalaryAfterCompletion(params: {
   currentBooking: CompletionBooking | null;
   isInventoryConsumed: boolean;
   isRevenueCreated: boolean;
+  createdRevenueId?: string | null;
 }) {
-  const { supabase, ktvId, tenantId, today, sessionId, bookingId, currentBooking, isInventoryConsumed, isRevenueCreated } = params;
+  const {
+    supabase,
+    ktvId,
+    tenantId,
+    today,
+    sessionId,
+    bookingId,
+    currentBooking,
+    isInventoryConsumed,
+    isRevenueCreated,
+    createdRevenueId,
+  } = params;
 
   if (!ktvId || !tenantId) {
     return { success: true };
@@ -332,16 +391,18 @@ export async function syncKtvSalaryAfterCompletion(params: {
   }
 
   console.error('[processSessionCompletion] Error updating salary record, rolling back...:', salaryError);
-  await rollbackCompletionSideEffects({
+  const rollbackResult = await rollbackCompletionSideEffects({
     supabase,
     sessionId,
     bookingId,
     currentBooking,
     isInventoryConsumed,
     isRevenueCreated,
+    createdRevenueId,
   });
 
-  return { error: 'Không thể ghi nhận lương cho KTV. Đã hoàn tác ca làm: ' + salaryError.message };
+  const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+  return { error: 'Không thể ghi nhận lương cho KTV. Đã hoàn tác ca làm: ' + salaryError.message + rollbackMessage };
 }
 
 export async function ensureSessionReviewPlaceholder(params: {
@@ -403,6 +464,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
   currentBooking: CompletionBooking | null;
   isInventoryConsumed: boolean;
   isRevenueCreated: boolean;
+  createdRevenueId?: string | null;
 }) {
   const {
     supabase,
@@ -414,6 +476,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
     currentBooking,
     isInventoryConsumed,
     isRevenueCreated,
+    createdRevenueId,
   } = params;
 
   try {
@@ -472,15 +535,17 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
     const error = outboxError instanceof Error ? outboxError : new Error(String(outboxError));
     console.error('[processSessionCompletion] Error enqueuing accounting outbox event, rolling back...', error);
 
-    await rollbackCompletionSideEffects({
+    const rollbackResult = await rollbackCompletionSideEffects({
       supabase,
       sessionId,
       bookingId,
       currentBooking,
       isInventoryConsumed,
       isRevenueCreated,
+      createdRevenueId,
     });
 
-    return { error: 'Không thể ghi nhận hàng đợi kế toán. Đã hoàn tác ca làm: ' + error.message };
+    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    return { error: 'Không thể ghi nhận hàng đợi kế toán. Đã hoàn tác ca làm: ' + error.message + rollbackMessage };
   }
 }
