@@ -58,9 +58,13 @@ export function useBookingsPageData() {
     setSessionHistory(data || []);
   }, []);
 
+  const refreshBookingsPage = useCallback(async () => {
+    await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs()]);
+  }, [fetchAllBookings, fetchKtvs, fetchSessions]);
+
   useEffect(() => {
     const initializeBookingsPage = async () => {
-      await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs()]);
+      await refreshBookingsPage();
     };
 
     void initializeBookingsPage();
@@ -80,7 +84,7 @@ export function useBookingsPageData() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [fetchAllBookings, fetchKtvs, fetchSessions]);
+  }, [fetchAllBookings, fetchSessions, refreshBookingsPage]);
 
   return {
     sessions,
@@ -91,5 +95,6 @@ export function useBookingsPageData() {
     fetchSessions,
     fetchAllBookings,
     fetchSessionHistory,
+    refreshBookingsPage,
   };
 }

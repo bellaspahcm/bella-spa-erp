@@ -12,9 +12,10 @@ PlusCircle,
 Search,
 X
 } from 'lucide-react';
-import { useEffect,useState } from 'react';
+import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
 type TreeAccount = AccountRow & { children: TreeAccount[] };
@@ -53,7 +54,7 @@ export default function ChartOfAccountsPage() {
   // Expanded tree nodes
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
-  const fetchCOA = async () => {
+  const fetchCOA = useCallback(async () => {
     try {
       const data = await getAccounts();
       setAccounts(data || []);
@@ -72,11 +73,13 @@ export default function ChartOfAccountsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCOA();
-  }, []);
+  }, [fetchCOA]);
+
+  usePageRefresh(fetchCOA);
 
   const toggleNode = (nodeId: string) => {
     setExpandedNodes(prev => ({

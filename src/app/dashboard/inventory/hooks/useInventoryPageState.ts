@@ -143,6 +143,20 @@ export function useInventoryPageState() {
     }
   }, [reconMonth, reconYear]);
 
+  const refreshPageData = useCallback(async () => {
+    const refreshTasks: Promise<void>[] = [fetchData()];
+
+    if (activeTab === 'requests') {
+      refreshTasks.push(fetchOrders());
+    }
+
+    if (activeTab === 'reconciliation') {
+      refreshTasks.push(fetchReconciliation());
+    }
+
+    await Promise.all(refreshTasks);
+  }, [activeTab, fetchData, fetchOrders, fetchReconciliation]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
       void fetchData();
@@ -424,5 +438,6 @@ export function useInventoryPageState() {
     submitTransferOrder,
     handleConfirmReceipt,
     handleCancelOrder,
+    refreshPageData,
   };
 }

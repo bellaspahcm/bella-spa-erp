@@ -1,6 +1,7 @@
 'use client';
 
 import { RefreshCw } from 'lucide-react';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { InventoryAddItemModal } from './components/InventoryAddItemModal';
 import { InventoryCreateRequestModal } from './components/InventoryCreateRequestModal';
 import { InventoryLogsPanel } from './components/InventoryLogsPanel';
@@ -67,7 +68,11 @@ export default function InventoryPage() {
     submitTransferOrder,
     handleConfirmReceipt,
     handleCancelOrder,
+    refreshPageData,
   } = useInventoryPageState();
+
+  usePageRefresh(refreshPageData);
+
   if (loading) return (
     <div className="flex-1 flex items-center justify-center">
       <RefreshCw className="w-10 h-10 text-primary animate-spin" />

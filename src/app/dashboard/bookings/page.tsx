@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getLocalDateString } from '@/lib/utils';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
 import { BookingsPageHeader, type BookingsViewMode } from './components/BookingsPageHeader';
@@ -45,6 +46,7 @@ function BookingsContent() {
     fetchSessions,
     fetchAllBookings,
     fetchSessionHistory,
+    refreshBookingsPage,
   } = useBookingsPageData();
   const {
     isUpdating,
@@ -68,6 +70,15 @@ function BookingsContent() {
       toast.info(`Đang mở biểu mẫu đặt lịch cho khách hàng: ${customerName}`);
     }
   }, [customerName]);
+
+  const handleSoftRefresh = useCallback(async () => {
+    await refreshBookingsPage();
+    if (modalData?.bookingId) {
+      await fetchSessionHistory(modalData.bookingId);
+    }
+  }, [fetchSessionHistory, modalData, refreshBookingsPage]);
+
+  usePageRefresh(handleSoftRefresh);
 
   const monthDays = getMonthDays(currentMonth);
   const today = new Date();

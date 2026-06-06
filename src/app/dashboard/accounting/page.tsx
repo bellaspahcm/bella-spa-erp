@@ -1,6 +1,7 @@
 'use client';
 
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { getAccountingHealthSummary,getBalanceSheetReport } from '@/services/accounting-actions';
 import { getFinancialOverview } from '@/services/finance-actions';
 import { motion } from 'framer-motion';
@@ -20,7 +21,7 @@ TrendingDown,
 TrendingUp
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect,useState } from 'react';
+import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
 
 type BalanceSheetReport = Awaited<ReturnType<typeof getBalanceSheetReport>>;
@@ -48,7 +49,7 @@ export default function AccountingOverviewPage() {
     dead: 0
   });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setRefreshing(true);
     try {
       const nowStr = new Date().toISOString().slice(0, 10);
@@ -84,11 +85,13 @@ export default function AccountingOverviewPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  usePageRefresh(fetchData);
 
   const totalAssets = bsData?.total_assets || 0;
   const totalLiabilities = bsData?.total_liabilities || 0;

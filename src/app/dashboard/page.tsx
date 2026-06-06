@@ -6,6 +6,7 @@ import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { createClient } from '@/lib/supabase-client';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { cn } from '@/lib/utils';
 import { completeSession,saveSessionNote } from '@/modules/booking/actions/session-actions';
 import {
@@ -203,6 +204,8 @@ export default function DashboardPage() {
       setIsLoading(false);
     }
   }, [selectedMonth, selectedYear, userRole]);
+
+  usePageRefresh(fetchData);
 
   useEffect(() => {
     fetchData();

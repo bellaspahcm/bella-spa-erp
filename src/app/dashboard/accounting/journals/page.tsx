@@ -14,6 +14,7 @@ Search
 import Link from 'next/link';
 import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 type JournalEntryRow = Awaited<ReturnType<typeof getJournalEntries>>[number];
 type JournalLineRow = NonNullable<JournalEntryRow['journal_lines']>[number];
@@ -77,6 +78,8 @@ export default function JournalsPage() {
   useEffect(() => {
     fetchJournals();
   }, [fetchJournals]);
+
+  usePageRefresh(fetchJournals);
 
   // Client side search filter
   const filteredEntries = entries.filter((e) => {

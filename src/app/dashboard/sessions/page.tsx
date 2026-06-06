@@ -27,6 +27,7 @@ import { Suspense,useCallback,useEffect,useMemo,useState } from 'react';
 import { toast } from 'sonner';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { LeaveApprovalModal } from './components/LeaveApprovalModal';
 import { SessionCard } from './components/SessionCard';
 import { SessionLogsDetailsModal } from './components/SessionLogsDetailsModal';
@@ -84,14 +85,14 @@ function SessionsContent() {
   ];
   const yearOptions = Array.from({length:4}, (_,i) => String(currentYear - i));
 
-  const loadPendingLeaves = async () => {
+  const loadPendingLeaves = useCallback(async () => {
     try {
       const leaves = await getPendingLeaveRequests() as LeaveRequest[];
       setPendingLeaves(leaves);
     } catch (err) {
       console.error("Failed to load pending leaves:", err);
     }
-  };
+  }, []);
 
   const loadSessions = useCallback(async () => {
     setIsSyncing(true);
@@ -137,7 +138,16 @@ function SessionsContent() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadSessions]);
+  }, [loadPendingLeaves, loadSessions]);
+
+  const handleSoftRefresh = useCallback(async () => {
+    await loadSessions();
+    if (userRole === 'admin') {
+      await loadPendingLeaves();
+    }
+  }, [loadPendingLeaves, loadSessions, userRole]);
+
+  usePageRefresh(handleSoftRefresh);
 
   // Dedicated Effect for Auto-opening from URL - Runs once after first data load
   useEffect(() => {

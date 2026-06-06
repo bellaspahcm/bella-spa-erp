@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { createClient } from '@/lib/supabase-client';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -148,6 +149,8 @@ export default function FinancialReconciliationPage() {
 
     return () => window.clearTimeout(timer);
   }, [fetchData]);
+
+  usePageRefresh(fetchData);
 
   const handleAllocate = async () => {
     if (!targetBookingId.trim() || !selectedOrphan) {

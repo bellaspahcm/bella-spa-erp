@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReceiptData } from '@/components/common/PaymentReceiptTemplate';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { createClient } from '@/lib/supabase-client';
 import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
@@ -177,6 +178,12 @@ export function useCustomerDetailController() {
       void supabase.removeChannel(channel);
     };
   }, [fetchKtvs, id, loadData]);
+
+  const refreshPageData = useCallback(async () => {
+    await Promise.all([loadData(), fetchKtvs()]);
+  }, [fetchKtvs, loadData]);
+
+  usePageRefresh(refreshPageData);
 
   const handleBack = useCallback(() => {
     router.back();

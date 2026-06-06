@@ -23,6 +23,7 @@ import {
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { toast } from 'sonner';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
 type AccountLedgerRow = AccountingReportRecord;
@@ -123,6 +124,8 @@ export default function AccountingReportsPage() {
       void loadReportData();
     });
   }, [loadReportData]);
+
+  usePageRefresh(loadReportData);
 
   // Trigger base64 compilation and force local browser download
   const handleExportExcel = async () => {
