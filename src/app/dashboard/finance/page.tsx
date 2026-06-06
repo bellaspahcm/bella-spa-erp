@@ -138,10 +138,13 @@ export default function FinancePage() {
     setIsConfirmingId(tx.id);
     try {
       const result = await confirmTransaction(tx.dbId, tx.type);
-      if (result.success) {
-        toast.success('Giao dịch đã được xác nhận thành công');
-        fetchData();
+      if (!result.success) {
+        toast.error(result.error || 'Không thể xác nhận giao dịch');
+        return;
       }
+
+      toast.success('Giao dịch đã được xác nhận thành công');
+      fetchData();
     } catch (error) {
       console.error('Confirm error:', error);
       toast.error('Lỗi khi xác nhận giao dịch. Vui lòng kiểm tra lại quyền truy cập hoặc kết nối mạng.');

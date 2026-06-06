@@ -146,6 +146,7 @@ class ScriptedQueryBuilder {
 }
 
 import { confirmTransaction, recordTransaction } from '../services/finance/transaction-mutations';
+import { confirmTransaction as confirmTransactionResult } from '../services/finance/transactions';
 
 describe('finance transaction mutation outbox rollbacks', () => {
   let consoleErrorSpy: jest.SpyInstance;
@@ -168,6 +169,23 @@ describe('finance transaction mutation outbox rollbacks', () => {
     mockFrom.mockImplementation((table: string) => new ScriptedQueryBuilder(table, scripts, calls));
     return calls;
   }
+
+  it('returns an explicit public action failure when confirm revenue lookup fails', async () => {
+    installScriptedSupabase([
+      {
+        table: 'revenue',
+        op: 'select',
+        error: { message: 'revenue missing' },
+      },
+    ]);
+
+    const result = await confirmTransactionResult('rev-missing', 'revenue');
+
+    expect(result.success).toBe(false);
+    if (result.success) throw new Error('Expected confirmTransactionResult to return an error result');
+    expect(result.error).toContain('Failed to fetch revenue before confirmation: revenue missing');
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
 
   it('restores revenue state when confirm revenue outbox enqueue returns false', async () => {
     mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
