@@ -39,6 +39,9 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           DB_MIGRATION_CHECK_OPTIONAL: "1"
 
+      - name: Supabase RPC grant policy
+        run: npm run db:rpc-grants:check
+
       - name: Supabase data access smoke
         run: npm run db:access:check
         env:
