@@ -33,6 +33,12 @@ jobs:
       - name: API versioning policy
         run: npm run docs:api:versioning
 
+      - name: Supabase migration drift check
+        run: npm run db:migration:check
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DB_MIGRATION_CHECK_OPTIONAL: "1"
+
       - name: Production build
         run: npm run build
 
