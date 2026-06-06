@@ -14,6 +14,7 @@ import type { Database } from '@/types/database.types';
 type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Insert'];
 type InventoryItemUpdate = Database['public']['Tables']['inventory_items']['Update'];
 type InventoryLogInsert = Database['public']['Tables']['inventory_logs']['Insert'];
+type InventoryLogRow = Database['public']['Tables']['inventory_logs']['Row'];
 type PackageMaterialInsert = Database['public']['Tables']['package_materials']['Insert'];
 type PackageMaterialRow = Database['public']['Tables']['package_materials']['Row'];
 
@@ -679,6 +680,31 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
     if (!isAutoConsumeEnabled) {
       console.log(`[autoConsumeForSession] Auto-consumption is disabled for tenant ${tenantId}. Bypassing.`);
       return { success: true, bypassed: true };
+    }
+
+    const { data: existingConsumptionLogs, error: existingConsumptionError } = await supabase
+      .from('inventory_logs')
+      .select('id, change_amount')
+      .eq('session_log_id', sessionLogId)
+      .eq('reason', INVENTORY_REASONS.sessionConsumption)
+      .eq('tenant_id', tenantId);
+
+    if (existingConsumptionError) {
+      return {
+        success: false,
+        error: `Lỗi kiểm tra tiêu hao kho đã ghi nhận: ${existingConsumptionError.message}`,
+      };
+    }
+
+    const existingLogs = (existingConsumptionLogs || []) as Pick<InventoryLogRow, 'id' | 'change_amount'>[];
+    if (existingLogs.length > 0) {
+      return {
+        success: true,
+        bypassed: true,
+        alreadyConsumed: true,
+        processed: existingLogs.length,
+        totalCost: 0,
+      };
     }
 
     const materials = await getPackageMaterials(packageId);

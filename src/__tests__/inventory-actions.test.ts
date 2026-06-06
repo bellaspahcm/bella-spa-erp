@@ -444,6 +444,19 @@ describe('inventory write action side effects', () => {
     expect(calls.some(c => c.table === 'inventory_logs' && c.op === 'delete')).toBe(false);
   });
 
+  it('treats repeated inventory rollback as a no-op when no consumption logs remain', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'inventory_logs', op: 'select', data: [] },
+    ]);
+
+    const result = await rollbackInventoryConsumption('session-1');
+
+    expect(result).toEqual({ success: true, processed: 0 });
+    expect(calls).toEqual([{ table: 'inventory_logs', op: 'select' }]);
+    expect(calls.some(c => c.table === 'inventory_items' && c.op === 'update')).toBe(false);
+    expect(calls.some(c => c.table === 'inventory_logs' && c.op === 'delete')).toBe(false);
+  });
+
   it('replaces package materials by deleting old rows and inserting valid new rows', async () => {
     const calls = installScriptedSupabase([
       { table: 'package_materials', op: 'select', data: [] },
@@ -594,6 +607,7 @@ describe('inventory write action side effects', () => {
   it('consumes all configured package materials and enqueues accounting outbox', async () => {
     const calls = installScriptedSupabase([
       { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
+      { table: 'inventory_logs', op: 'select', data: [] },
       {
         table: 'package_materials',
         op: 'select',
@@ -649,9 +663,49 @@ describe('inventory write action side effects', () => {
     );
   });
 
+  it('does not consume inventory twice when the session already has consumption logs', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
+      { table: 'inventory_logs', op: 'select', data: [{ id: 'log-1', change_amount: -2 }] },
+    ]);
+
+    const result = await autoConsumeForSession('pkg-1', 'session-1');
+
+    expect(result).toEqual({
+      success: true,
+      bypassed: true,
+      alreadyConsumed: true,
+      processed: 1,
+      totalCost: 0,
+    });
+    expect(calls).toEqual([
+      { table: 'tenants', op: 'select' },
+      { table: 'inventory_logs', op: 'select' },
+    ]);
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('returns explicit failure when existing consumption log check fails', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
+      { table: 'inventory_logs', op: 'select', error: { message: 'log check failed' } },
+    ]);
+
+    const result = await autoConsumeForSession('pkg-1', 'session-1');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('log check failed');
+    expect(calls).toEqual([
+      { table: 'tenants', op: 'select' },
+      { table: 'inventory_logs', op: 'select' },
+    ]);
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
   it('rolls back earlier auto consumption when a later material cannot be consumed', async () => {
     const calls = installScriptedSupabase([
       { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
+      { table: 'inventory_logs', op: 'select', data: [] },
       {
         table: 'package_materials',
         op: 'select',
@@ -678,7 +732,7 @@ describe('inventory write action side effects', () => {
       { stock_level: 8 },
       { stock_level: 10 },
     ]);
-    expect(calls.filter(c => c.table === 'inventory_logs').map(c => c.op)).toEqual(['insert', 'select', 'delete']);
+    expect(calls.filter(c => c.table === 'inventory_logs').map(c => c.op)).toEqual(['select', 'insert', 'select', 'delete']);
     expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
   });
 
@@ -686,6 +740,7 @@ describe('inventory write action side effects', () => {
     mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
     const calls = installScriptedSupabase([
       { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
+      { table: 'inventory_logs', op: 'select', data: [] },
       {
         table: 'package_materials',
         op: 'select',
@@ -710,6 +765,6 @@ describe('inventory write action side effects', () => {
       { stock_level: 8 },
       { stock_level: 10 },
     ]);
-    expect(calls.filter(c => c.table === 'inventory_logs').map(c => c.op)).toEqual(['insert', 'select', 'delete']);
+    expect(calls.filter(c => c.table === 'inventory_logs').map(c => c.op)).toEqual(['select', 'insert', 'select', 'delete']);
   });
 });
