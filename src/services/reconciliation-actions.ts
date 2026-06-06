@@ -55,9 +55,51 @@ type FinancialReconciliationSnapshot = FinancialAnomaliesData & {
 };
 
 type ReconciliationRole = string | null | undefined;
+type RevenueRow = Database['public']['Tables']['revenue']['Row'];
+type RevenueUpdate = Database['public']['Tables']['revenue']['Update'];
+type BookingRow = Database['public']['Tables']['bookings']['Row'];
+type OrphanedRevenueSnapshot = Pick<
+  RevenueRow,
+  | 'amount'
+  | 'payment_method'
+  | 'notes'
+  | 'received_date'
+  | 'tenant_id'
+  | 'status'
+  | 'revenue_type'
+  | 'business_event_type'
+  | 'accounting_review_status'
+  | 'accounting_metadata'
+>;
+type AllocationBookingTarget = Pick<BookingRow, 'id' | 'tenant_id' | 'status' | 'package_name' | 'deposit_amount'>;
+
+const PACKAGE_ALLOCATION_REVENUE_TYPES = new Set(['deposit', 'remaining_payment', 'package_payment', 'package_sale']);
 
 function canWriteReconciliation(role: ReconciliationRole) {
   return role === 'admin' || role === 'accountant';
+}
+
+function normalizeRevenueType(value: string | null | undefined) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function resolveAllocatedRevenueType(
+  existingType: string | null,
+  amount: number | string | null,
+  booking: AllocationBookingTarget,
+) {
+  const normalizedType = normalizeRevenueType(existingType);
+  if (PACKAGE_ALLOCATION_REVENUE_TYPES.has(normalizedType)) {
+    return normalizedType;
+  }
+
+  const revenueAmount = Math.abs(Number(amount ?? 0));
+  const depositAmount = Number(booking.deposit_amount ?? 0);
+  if (Number.isFinite(revenueAmount) && Number.isFinite(depositAmount) && depositAmount > 0 && revenueAmount <= depositAmount) {
+    return 'deposit';
+  }
+
+  return 'remaining_payment';
 }
 
 function assertOutboxEnqueued(result: unknown, eventType: string) {
@@ -79,6 +121,21 @@ async function deleteInsertedRevenue(
     .from('revenue')
     .delete()
     .eq('id', revenueId);
+
+  return error?.message || '';
+}
+
+async function rollbackAllocatedRevenue(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  revenueId: string,
+  tenantId: string,
+  payload: RevenueUpdate,
+) {
+  const { error } = await supabase
+    .from('revenue')
+    .update(payload)
+    .eq('id', revenueId)
+    .eq('tenant_id', tenantId);
 
   return error?.message || '';
 }
@@ -201,10 +258,14 @@ export async function allocateOrphanedRevenue(revenueId: string, bookingId: stri
     }
     await assertLegacyFinanceWriteAllowed('Phân bổ doanh thu treo');
 
+    if (!revenueId || !bookingId) {
+      return { success: false, error: 'Thiếu giao dịch hoặc booking cần phân bổ' };
+    }
+
     const supabase = await createClient();
     const { data: existingRevenue, error: existingRevenueError } = await supabase
       .from('revenue')
-      .select('received_date, tenant_id')
+      .select('amount, payment_method, notes, received_date, tenant_id, status, revenue_type, business_event_type, accounting_review_status, accounting_metadata')
       .eq('id', revenueId)
       .eq('tenant_id', user.tenant_id)
       .is('booking_id', null)
@@ -214,25 +275,102 @@ export async function allocateOrphanedRevenue(revenueId: string, bookingId: stri
       return { success: false, error: existingRevenueError?.message || 'Không tìm thấy doanh thu treo' };
     }
 
+    const orphanedRevenue = existingRevenue as OrphanedRevenueSnapshot;
+    const { data: targetBooking, error: targetBookingError } = await supabase
+      .from('bookings')
+      .select('id, tenant_id, status, package_name, deposit_amount')
+      .eq('id', bookingId)
+      .eq('tenant_id', user.tenant_id)
+      .single();
+
+    if (targetBookingError || !targetBooking) {
+      return { success: false, error: targetBookingError?.message || 'Không tìm thấy booking cần phân bổ' };
+    }
+
+    const booking = targetBooking as AllocationBookingTarget;
+    if (booking.status === 'cancelled' || booking.status === 'inquiry') {
+      return { success: false, error: 'Booking chưa đủ điều kiện nhận phân bổ tiền treo' };
+    }
+
+    const amount = Number(orphanedRevenue.amount ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return { success: false, error: 'Số tiền treo không hợp lệ' };
+    }
+
     await assertOpenAccountingPeriod(supabase, {
-      tenantId: existingRevenue.tenant_id,
-      date: existingRevenue.received_date,
+      tenantId: orphanedRevenue.tenant_id,
+      date: orphanedRevenue.received_date,
       context: 'Allocate orphaned revenue',
     });
 
-    const payload: Database['public']['Tables']['revenue']['Update'] = {
+    const revenueType = resolveAllocatedRevenueType(orphanedRevenue.revenue_type, amount, booking);
+    const reason = `Phân bổ tiền treo vào booking ${bookingId.split('-')[0]?.toUpperCase() || bookingId}`;
+    const accountingPayload = buildRevenueAccountingMetadata({
+      revenueType,
+      amount,
+      paymentMethod: orphanedRevenue.payment_method,
+      bookingId,
+      reason,
+    });
+    const businessEventType = inferBusinessEventType({
+      sourceTable: 'revenue',
+      revenueType,
+    });
+    const rollbackPayload: RevenueUpdate = {
+      booking_id: null,
+      status: orphanedRevenue.status,
+      revenue_type: orphanedRevenue.revenue_type,
+      business_event_type: orphanedRevenue.business_event_type,
+      accounting_review_status: orphanedRevenue.accounting_review_status,
+      accounting_metadata: orphanedRevenue.accounting_metadata,
+    };
+    const payload: RevenueUpdate = {
       booking_id: bookingId,
       status: 'confirmed',
+      revenue_type: revenueType,
+      business_event_type: businessEventType,
+      accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
+      accounting_metadata: accountingPayload,
     };
 
-    const { error } = await supabase
+    const { data: updatedRevenue, error } = await supabase
       .from('revenue')
       .update(payload)
       .eq('id', revenueId)
       .eq('tenant_id', user.tenant_id)
-      .is('booking_id', null);
+      .is('booking_id', null)
+      .select('id, tenant_id, amount, notes')
+      .single();
 
     if (error) return { success: false, error: error.message };
+    if (!updatedRevenue?.id) {
+      return { success: false, error: 'Không thể xác định giao dịch tiền treo vừa phân bổ' };
+    }
+
+    const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+    try {
+      const enqueued = await enqueueWithAutoClient(
+        supabase,
+        {
+          tenantId: user.tenant_id,
+          eventType: 'PACKAGE_SALE',
+          referenceType: 'REVENUE',
+          referenceId: updatedRevenue.id,
+          payload: {
+            totalAmount: Math.abs(amount),
+            vatRate: 0,
+            description: orphanedRevenue.notes || reason,
+            branchId: user.tenant_id,
+          },
+        },
+        '[allocateOrphanedRevenue]'
+      );
+      assertOutboxEnqueued(enqueued, 'PACKAGE_SALE');
+    } catch (outboxError) {
+      const rollbackError = await rollbackAllocatedRevenue(supabase, revenueId, user.tenant_id, rollbackPayload);
+      return { success: false, error: withRollbackFailure(outboxError, rollbackError) };
+    }
+
     return { success: true };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'Failed to allocate revenue' };
