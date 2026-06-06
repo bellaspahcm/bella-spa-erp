@@ -27,6 +27,9 @@ type AuditLogRow = Database['public']['Tables']['audit_logs']['Row'] & {
   users?: { full_name: string | null } | null;
 };
 type JsonRecord = { [key: string]: Json | undefined };
+type AuditSession =
+  | { status: 'ready'; userId: string }
+  | { status: 'missing' };
 
 interface AuditLog {
   id: string;
@@ -73,6 +76,11 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định')
     if (typeof message === 'string' && message) return message;
   }
   return fallback;
+}
+
+function isMissingAuthSession(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  return message.includes('auth session missing') || message.includes('missing session');
 }
 
 function formatJsonText(value: Json | undefined, fallback = 'Trống') {
@@ -315,6 +323,7 @@ export default function AuditPage() {
   const [filterTable, setFilterTable] = useState('all');
   const [filterAction, setFilterAction] = useState('all');
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const [authNotice, setAuthNotice] = useState<string | null>(null);
 
   // Reference maps to translate IDs
   const [usersMap, setUsersMap] = useState<Record<string, string>>({});
@@ -527,8 +536,24 @@ export default function AuditPage() {
     return <span>Không có thông tin chi tiết.</span>;
   };
 
+  const resolveAuditSession = useCallback(async (): Promise<AuditSession> => {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError) {
+      if (isMissingAuthSession(authError)) return { status: 'missing' };
+      throw authError;
+    }
+
+    if (!user) return { status: 'missing' };
+
+    return { status: 'ready', userId: user.id };
+  }, [supabase]);
+
   const fetchReferenceMaps = useCallback(async () => {
     try {
+      const session = await resolveAuditSession();
+      if (session.status === 'missing') return;
+
       const { data: users, error: usersError } = await supabase.from('users').select('id, full_name');
       if (usersError) throw usersError;
 
@@ -552,39 +577,39 @@ export default function AuditPage() {
       });
       setCustomersMap(cMap);
     } catch (err: unknown) {
+      if (isMissingAuthSession(err)) return;
+
       console.error('Error fetching reference maps:', err);
       toast.error('Không thể tải dữ liệu tham chiếu nhật ký: ' + getErrorMessage(err));
     }
-  }, [supabase]);
+  }, [resolveAuditSession, supabase]);
 
   const fetchLogs = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError) throw authError;
-      
-      if (!user) {
-        toast.error('Vui lòng đăng nhập để xem nhật ký.');
-        setIsLoading(false);
-        setIsRefreshing(false);
+      const session = await resolveAuditSession();
+
+      if (session.status === 'missing') {
+        setLogs([]);
+        setAuthNotice('Phiên đăng nhập chưa sẵn sàng. Vui lòng đăng nhập lại để xem nhật ký hệ thống.');
         return;
       }
       
       const { data: userData, error: userDataError } = await supabase
         .from('users')
         .select('tenant_id')
-        .eq('id', user.id)
+        .eq('id', session.userId)
         .single();
       if (userDataError) throw userDataError;
         
       if (!userData?.tenant_id) {
-        toast.error('Lỗi hệ thống: Không xác định được Tenant ID.');
-        setIsLoading(false);
-        setIsRefreshing(false);
+        setLogs([]);
+        setAuthNotice('Không xác định được chi nhánh hoặc quyền truy cập cho tài khoản hiện tại.');
         return;
       }
       
       const tenantId = userData.tenant_id;
+      setAuthNotice(null);
 
       const { data, error } = await supabase
         .from('audit_logs')
@@ -614,13 +639,19 @@ export default function AuditPage() {
 
       setLogs(formattedLogs);
     } catch (error: unknown) {
+      if (isMissingAuthSession(error)) {
+        setLogs([]);
+        setAuthNotice('Phiên đăng nhập chưa sẵn sàng. Vui lòng đăng nhập lại để xem nhật ký hệ thống.');
+        return;
+      }
+
       console.error('Error fetching logs:', error);
       toast.error('Không thể tải nhật ký hệ thống: ' + getErrorMessage(error));
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [supabase]);
+  }, [resolveAuditSession, supabase]);
 
   const refreshPageData = useCallback(async () => {
     await Promise.all([fetchReferenceMaps(), fetchLogs()]);
@@ -804,6 +835,16 @@ export default function AuditPage() {
                     <td colSpan={6} className="px-6 py-8 h-16 bg-slate-50/20 whitespace-nowrap"></td>
                   </tr>
                 ))
+              ) : authNotice ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-20 text-center">
+                    <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-slate-500">
+                      <AlertCircle className="w-12 h-12 text-amber-500" />
+                      <p className="text-sm font-semibold text-slate-700">Chưa thể tải nhật ký</p>
+                      <p className="text-sm leading-relaxed">{authNotice}</p>
+                    </div>
+                  </td>
+                </tr>
               ) : paginatedLogs.length > 0 ? (
                 paginatedLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
