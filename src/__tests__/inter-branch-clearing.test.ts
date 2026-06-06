@@ -188,6 +188,7 @@ describe('Inter-Branch Clearing System', () => {
         status: 'cleared',
         payment_method: 'VietQR'
       }));
+      expect(clearingQueryMock.eqSpy).toHaveBeenCalledWith('status', 'pending');
     });
 
     it('should allow Debtor Admin to clear/gạch nợ their own payable record', async () => {
@@ -228,6 +229,58 @@ describe('Inter-Branch Clearing System', () => {
       expect(result.success).toBe(false);
       expect(result.error).toMatch(/Quyền truy cập bị từ chối/i);
       expect(clearingQueryMock.updateSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not clear records that are no longer pending', async () => {
+      mockGetCurrentUser.mockResolvedValue(hqAdminUser);
+      mockCheckHqAuth.mockResolvedValue({ authorized: true });
+
+      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'cleared' };
+      clearingQueryMock = new MockQueryBuilder(record);
+
+      const result = await clearInterBranchRecord('1', 'VietQR');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('đã được gạch nợ');
+      expect(clearingQueryMock.updateSpy).not.toHaveBeenCalled();
+    });
+
+    it('should return an explicit failure when the guarded update fails', async () => {
+      mockGetCurrentUser.mockResolvedValue(hqAdminUser);
+      mockCheckHqAuth.mockResolvedValue({ authorized: true });
+
+      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'pending' };
+      clearingQueryMock = new MockQueryBuilder(record);
+      clearingQueryMock.single = jest
+        .fn()
+        .mockResolvedValueOnce({ data: record, error: null })
+        .mockResolvedValueOnce({ data: null, error: { message: 'guarded update failed' } });
+
+      const result = await clearInterBranchRecord('1', 'VietQR');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('guarded update failed');
+      expect(clearingQueryMock.updateSpy).toHaveBeenCalled();
+      expect(clearingQueryMock.eqSpy).toHaveBeenCalledWith('status', 'pending');
+    });
+
+    it('should surface a race-condition failure if another request clears first', async () => {
+      mockGetCurrentUser.mockResolvedValue(hqAdminUser);
+      mockCheckHqAuth.mockResolvedValue({ authorized: true });
+
+      const record = { id: '1', debtor_tenant_id: 'branch-a-id', creditor_tenant_id: 'branch-b-id', status: 'pending' };
+      clearingQueryMock = new MockQueryBuilder(record);
+      clearingQueryMock.single = jest
+        .fn()
+        .mockResolvedValueOnce({ data: record, error: null })
+        .mockResolvedValueOnce({ data: null, error: null });
+
+      const result = await clearInterBranchRecord('1', 'VietQR');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('thao tác khác');
+      expect(clearingQueryMock.updateSpy).toHaveBeenCalled();
+      expect(clearingQueryMock.eqSpy).toHaveBeenCalledWith('status', 'pending');
     });
   });
 
