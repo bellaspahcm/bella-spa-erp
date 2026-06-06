@@ -3,6 +3,9 @@
  * Mocks: next/cache, @sentry/nextjs, @/lib/supabase-server, user-actions, hq-actions, revalidate
  */
 
+import { readFileSync } from 'fs';
+import * as path from 'path';
+
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
 }));
@@ -201,6 +204,27 @@ describe('Inter-Branch Clearing System', () => {
       expect(result.success).toBe(false);
       expect(result.data).toEqual([]);
       expect(result.error).toContain('clearing query failed');
+    });
+  });
+
+  describe('inter-branch clearing SQL permissions', () => {
+    it('grants table privileges required before RLS policies can apply', () => {
+      const migrationSql = readFileSync(
+        path.join(
+          process.cwd(),
+          'supabase/migrations/20260606113000_grant_inter_branch_clearing_records_access.sql'
+        ),
+        'utf8'
+      );
+
+      expect(migrationSql).toContain('REVOKE ALL ON TABLE public.inter_branch_clearing_records FROM anon');
+      expect(migrationSql).toContain(
+        'GRANT SELECT, INSERT, UPDATE ON TABLE public.inter_branch_clearing_records TO authenticated'
+      );
+      expect(migrationSql).toContain(
+        'GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.inter_branch_clearing_records TO service_role'
+      );
+      expect(migrationSql).toContain("NOTIFY pgrst, 'reload schema'");
     });
   });
 
