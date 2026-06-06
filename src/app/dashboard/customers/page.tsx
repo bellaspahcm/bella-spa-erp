@@ -4,9 +4,10 @@ import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { AnimatePresence,motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useEffect,useMemo,useState } from 'react';
+import { useCallback,useEffect,useMemo,useState } from 'react';
 import { toast } from 'sonner';
 
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { cn,getLocalDateString } from '@/lib/utils';
 
 import {
@@ -83,7 +84,7 @@ export default function CustomersPage() {
     gender_baby: 'unknown'
   });
 
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async () => {
     setIsLoading(true);
     setIsSyncing(true);
     try {
@@ -118,11 +119,13 @@ export default function CustomersPage() {
       setIsLoading(false);
       setIsSyncing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadCustomers();
-  }, []);
+  }, [loadCustomers]);
+
+  usePageRefresh(loadCustomers);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

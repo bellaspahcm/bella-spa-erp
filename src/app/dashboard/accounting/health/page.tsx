@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Activity,
@@ -21,6 +21,7 @@ import {
   type AccountingHealthSummary,
 } from '@/services/accounting-actions';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { cn } from '@/lib/utils';
 
 const SEVERITY_TONE: Record<AccountingHealthSeverity, {
@@ -78,7 +79,7 @@ export default function AccountingHealthPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [summary, setSummary] = useState<AccountingHealthSummary | null>(null);
 
-  const loadData = async (monthValue = month) => {
+  const loadData = useCallback(async (monthValue = month) => {
     setRefreshing(true);
     try {
       const data = await getAccountingHealthSummary(`${monthValue}-01`);
@@ -90,12 +91,13 @@ export default function AccountingHealthPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [month]);
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadData]);
+
+  usePageRefresh(() => loadData(month));
 
   const severity = summary?.severity ?? 'warning';
   const tone = SEVERITY_TONE[severity];

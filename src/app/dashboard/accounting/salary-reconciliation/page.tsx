@@ -16,6 +16,7 @@ XCircle,
 import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(n) || 0);
@@ -88,6 +89,8 @@ export default function SalaryReconciliationPage() {
   }, [monthYear]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  usePageRefresh(fetchData);
 
   const total = rows.length;
   const matchCount = rows.filter((r) => r.status === 'MATCH').length;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   GitCompareArrows,
@@ -15,6 +15,7 @@ import { getReconciliationReport, getAccountingMode, syncLegacyToLedger, type Re
 import { toast } from 'sonner';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 const fmtVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', {
@@ -137,7 +138,7 @@ export default function ReconciliationPage() {
       });
   }, []);
 
-  const fetchData = async (fromStr: string, toStr: string, options?: { toastOnError?: boolean }) => {
+  const fetchData = useCallback(async (fromStr: string, toStr: string, options?: { toastOnError?: boolean }) => {
     if (!fromStr || !toStr) return [];
     setRefreshing(true);
     try {
@@ -155,7 +156,7 @@ export default function ReconciliationPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -206,7 +207,13 @@ export default function ReconciliationPage() {
         .then(() => fetchData(fromDate, toDate))
         .catch(() => undefined);
     }
-  }, [fromDate, toDate]);
+  }, [fetchData, fromDate, toDate]);
+
+  const handleSoftRefresh = useCallback(async () => {
+    await fetchData(fromDate, toDate);
+  }, [fetchData, fromDate, toDate]);
+
+  usePageRefresh(handleSoftRefresh);
 
   const totalChecks = rows.length;
   const matchCount = rows.filter((r) => r.status === 'MATCH').length;

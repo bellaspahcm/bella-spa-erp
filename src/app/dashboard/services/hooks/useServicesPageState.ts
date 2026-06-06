@@ -177,17 +177,27 @@ export function useServicesPageState() {
     }
   }, []);
 
+  const loadInventoryItems = useCallback(async () => {
+    try {
+      const items = await getInventoryItems();
+      setInventoryItems(items);
+    } catch (error) {
+      console.error('Load inventory items error:', error);
+      toast.error(getErrorMessage(error, 'Không thể tải danh mục vật tư'));
+    }
+  }, []);
+
+  const refreshData = useCallback(async () => {
+    await Promise.all([loadData(), loadInventoryItems()]);
+  }, [loadData, loadInventoryItems]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void loadData();
-      getInventoryItems().then(setInventoryItems).catch(error => {
-        console.error('Load inventory items error:', error);
-        toast.error(getErrorMessage(error, 'Không thể tải danh mục vật tư'));
-      });
+      void refreshData();
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [loadData]);
+  }, [refreshData]);
 
   const openAddModal = useCallback(() => {
     setModalMode('add');
@@ -458,5 +468,6 @@ export function useServicesPageState() {
     syncDefaultPackages,
     handleSubmit,
     handlePageChange,
+    refreshData,
   };
 }

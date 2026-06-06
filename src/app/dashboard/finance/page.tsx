@@ -5,6 +5,7 @@ import { TransactionModal } from '@/components/features/TransactionModal';
 import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader,{ SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { createClient } from '@/lib/supabase-client';
 import { confirmTransaction,getFinancialOverview,getMonthlyPnL,getServicePerformance,type MappedTransaction } from '@/services/finance-actions';
 import { motion } from 'framer-motion';
@@ -104,6 +105,8 @@ export default function FinancePage() {
   const handleMonthChange = (newMonth: string) => {
     setSelectedMonth(newMonth);
   };
+
+  usePageRefresh(() => fetchData(selectedMonth));
 
   const handleConfirm = async (tx: MappedTransaction) => {
     if (!tx.dbId) {

@@ -19,6 +19,7 @@ import {
 import { cn, formatNumberWithSeparator } from '@/lib/utils';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useServicesPageState } from './hooks/useServicesPageState';
 
 export default function ServicesPage() {
@@ -65,7 +66,10 @@ export default function ServicesPage() {
     syncDefaultPackages,
     handleSubmit,
     handlePageChange,
+    refreshData,
   } = useServicesPageState();
+
+  usePageRefresh(refreshData);
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10">
