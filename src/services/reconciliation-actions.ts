@@ -60,6 +60,29 @@ function canWriteReconciliation(role: ReconciliationRole) {
   return role === 'admin' || role === 'accountant';
 }
 
+function assertOutboxEnqueued(result: unknown, eventType: string) {
+  if (result === false) {
+    throw new Error(`Failed to enqueue ${eventType} accounting event`);
+  }
+}
+
+function withRollbackFailure(error: unknown, rollbackError: string) {
+  const message = error instanceof Error ? error.message : 'Lỗi hệ thống';
+  return rollbackError ? `${message}; rollback failed: ${rollbackError}` : message;
+}
+
+async function deleteInsertedRevenue(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  revenueId: string,
+) {
+  const { error } = await supabase
+    .from('revenue')
+    .delete()
+    .eq('id', revenueId);
+
+  return error?.message || '';
+}
+
 export async function getFinancialAnomalies() {
   try {
     const user = await getCurrentUser();
@@ -124,7 +147,7 @@ export async function getFinancialReconciliationSnapshot(): Promise<{
         )
       `)
       .eq('tenant_id', user.tenant_id)
-      .eq('revenue_type', 'additional')
+      .in('revenue_type', ['additional', 'remaining_payment'])
       .order('received_date', { ascending: false });
 
     if (historyError) {
@@ -238,12 +261,13 @@ export async function collectDebtPayment(input: {
     const customerStr = input.customerName || 'Khách hàng';
     const packageStr = input.packageName || 'Gói Dịch Vụ';
     const shortBookingId = input.bookingId.split('-')[0]?.toUpperCase() || 'N/A';
+    const revenueType = 'remaining_payment';
     const businessEventType = inferBusinessEventType({
       sourceTable: 'revenue',
-      revenueType: 'additional',
+      revenueType,
     });
     const accountingPayload = buildRevenueAccountingMetadata({
-      revenueType: 'additional',
+      revenueType,
       amount: input.amount,
       paymentMethod: input.paymentMethod,
       bookingId: input.bookingId,
@@ -261,7 +285,7 @@ export async function collectDebtPayment(input: {
       tenant_id: user.tenant_id,
       booking_id: input.bookingId,
       amount: input.amount,
-      revenue_type: 'additional',
+      revenue_type: revenueType,
       notes: accountingPayload.reason,
       status: 'confirmed',
       payment_method: input.paymentMethod,
@@ -272,8 +296,39 @@ export async function collectDebtPayment(input: {
       accounting_metadata: accountingPayload,
     };
 
-    const { error } = await supabase.from('revenue').insert(payload);
+    const { data: insertedRevenue, error } = await supabase
+      .from('revenue')
+      .insert(payload)
+      .select('id, tenant_id, amount, notes')
+      .single();
     if (error) return { success: false, error: error.message };
+    if (!insertedRevenue?.id) {
+      return { success: false, error: 'Không thể xác định giao dịch thu nợ vừa tạo' };
+    }
+
+    const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+    try {
+      const enqueued = await enqueueWithAutoClient(
+        supabase,
+        {
+          tenantId: user.tenant_id,
+          eventType: 'PACKAGE_SALE',
+          referenceType: 'REVENUE',
+          referenceId: insertedRevenue.id,
+          payload: {
+            totalAmount: Math.abs(input.amount),
+            vatRate: 0,
+            description: insertedRevenue.notes || accountingPayload.reason || 'Thu đối soát công nợ',
+            branchId: user.tenant_id,
+          },
+        },
+        '[collectDebtPayment]'
+      );
+      assertOutboxEnqueued(enqueued, 'PACKAGE_SALE');
+    } catch (outboxError) {
+      const rollbackError = await deleteInsertedRevenue(supabase, insertedRevenue.id);
+      return { success: false, error: withRollbackFailure(outboxError, rollbackError) };
+    }
 
     return { success: true };
   } catch (err: unknown) {

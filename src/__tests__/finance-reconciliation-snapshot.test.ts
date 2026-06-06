@@ -36,6 +36,7 @@ function createHistoryQuery(data: unknown[] = [], error: { message: string } | n
   const query = {
     select: jest.fn(() => query),
     eq: jest.fn(() => query),
+    in: jest.fn(() => query),
     order: jest.fn(() => Promise.resolve({ data, error })),
   };
   return query;
