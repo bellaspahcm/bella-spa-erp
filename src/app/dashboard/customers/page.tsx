@@ -8,6 +8,7 @@ import { useCallback,useEffect,useMemo,useState } from 'react';
 import { toast } from 'sonner';
 
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { calculateBookingPaymentState, type PaymentRevenueLike } from '@/lib/business-rules/payment';
 import { cn,getLocalDateString } from '@/lib/utils';
 
 import {
@@ -35,8 +36,10 @@ import type { Database } from '@/types/database.types';
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
 type CustomerBookingSummary = Pick<
   Database['public']['Tables']['bookings']['Row'],
-  'deposit_amount' | 'package_name' | 'full_price' | 'discount_percent' | 'created_at' | 'is_in_care'
->;
+  'deposit_amount' | 'package_name' | 'full_price' | 'discount_percent' | 'created_at' | 'is_in_care' | 'status'
+> & {
+  revenue?: PaymentRevenueLike[] | null;
+};
 type CustomerListItem = CustomerRow & {
   bookings?: CustomerBookingSummary[] | null;
   deposit_amount?: number | '';
@@ -91,7 +94,7 @@ export default function CustomersPage() {
       const supabase = createBrowserClient();
       const { data, error } = await supabase
         .from('customers')
-        .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care)')
+        .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care, status, revenue(amount, status, revenue_type))')
         .order('name_mother', { ascending: true });
       if (error) throw error;
       
@@ -100,7 +103,16 @@ export default function CustomersPage() {
         const latestBooking = c.bookings && c.bookings.length > 0 
           ? [...c.bookings].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0]
           : null;
-        const latestDepositAmount: number | '' = latestBooking?.deposit_amount ?? '';
+        const latestPaymentState = latestBooking
+          ? calculateBookingPaymentState({
+              fullPrice: latestBooking.full_price,
+              discountPercent: latestBooking.discount_percent,
+              depositAmount: latestBooking.deposit_amount,
+              bookingStatus: latestBooking.status,
+              revenues: latestBooking.revenue,
+            })
+          : null;
+        const latestDepositAmount: number | '' = latestPaymentState?.totalPaid ?? '';
         const latestPackageName = latestBooking?.package_name || '';
           
         return {
@@ -108,7 +120,7 @@ export default function CustomersPage() {
           deposit_amount: latestDepositAmount,
           package_name: latestPackageName,
           is_in_care: latestBooking?.is_in_care || false,
-          is_fully_paid: Number(latestBooking?.deposit_amount || 0) >= ((latestBooking?.full_price || 999999999) * (1 - (latestBooking?.discount_percent || 0)/100))
+          is_fully_paid: latestPaymentState ? !latestPaymentState.hasOutstandingDebt : false
         };
       });
       
