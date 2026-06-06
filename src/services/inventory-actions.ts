@@ -15,8 +15,37 @@ type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Inse
 type InventoryItemUpdate = Database['public']['Tables']['inventory_items']['Update'];
 type InventoryLogInsert = Database['public']['Tables']['inventory_logs']['Insert'];
 type InventoryLogRow = Database['public']['Tables']['inventory_logs']['Row'];
+type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+type AccountingOutboxRow = Database['public']['Tables']['accounting_outbox']['Row'];
 type PackageMaterialInsert = Database['public']['Tables']['package_materials']['Insert'];
 type PackageMaterialRow = Database['public']['Tables']['package_materials']['Row'];
+
+type InventorySessionRow = Pick<SessionLogRow, 'id' | 'status' | 'completed_date' | 'booking_id'>;
+type InventoryConsumptionLogRow = Pick<InventoryLogRow, 'id' | 'item_id' | 'session_log_id' | 'change_amount' | 'created_at'>;
+type InventoryOutboxRow = Pick<AccountingOutboxRow, 'id' | 'reference_id' | 'status'>;
+
+export type InventorySessionReconciliationIssueType =
+  | 'missing_inventory_log'
+  | 'orphan_inventory_log'
+  | 'duplicate_inventory_log'
+  | 'missing_inventory_outbox';
+
+export type InventorySessionReconciliationIssue = {
+  type: InventorySessionReconciliationIssueType;
+  severity: 'warning' | 'critical';
+  sessionLogId: string;
+  itemId?: string | null;
+  inventoryLogIds?: string[];
+  message: string;
+};
+
+export type InventorySessionReconciliationResult =
+  | {
+      success: true;
+      issues: InventorySessionReconciliationIssue[];
+      summary: Record<InventorySessionReconciliationIssueType, number>;
+    }
+  | { success: false; error: string; issues: InventorySessionReconciliationIssue[] };
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   return error instanceof Error ? error.message : fallback;
@@ -323,6 +352,194 @@ export async function getMonthlyReconciliation(year: number, month: number) {
   } catch (e: unknown) {
     console.error('[getMonthlyReconciliation]', e);
     return { success: false as const, error: getErrorMessage(e), items: [] };
+  }
+}
+
+export async function detectInventorySessionReconciliationIssues(options?: {
+  dateFrom?: string;
+  dateTo?: string;
+}): Promise<InventorySessionReconciliationResult> {
+  try {
+    const { supabase, tenantId } = await getSupabaseWithTenant();
+    if (!tenantId) return { success: false, error: 'Chưa đăng nhập', issues: [] };
+
+    let completedSessionsQuery = supabase
+      .from('session_logs')
+      .select('id, status, completed_date, booking_id')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'completed');
+
+    if (options?.dateFrom) completedSessionsQuery = completedSessionsQuery.gte('completed_date', options.dateFrom);
+    if (options?.dateTo) completedSessionsQuery = completedSessionsQuery.lte('completed_date', options.dateTo);
+
+    const { data: completedSessionsData, error: completedSessionsError } = await completedSessionsQuery;
+    if (completedSessionsError) {
+      return {
+        success: false,
+        error: `Lỗi tải danh sách ca hoàn thành: ${completedSessionsError.message}`,
+        issues: [],
+      };
+    }
+
+    let consumptionLogsQuery = supabase
+      .from('inventory_logs')
+      .select('id, item_id, session_log_id, change_amount, created_at')
+      .eq('tenant_id', tenantId)
+      .eq('reason', INVENTORY_REASONS.sessionConsumption);
+
+    if (options?.dateFrom) consumptionLogsQuery = consumptionLogsQuery.gte('created_at', options.dateFrom);
+    if (options?.dateTo) consumptionLogsQuery = consumptionLogsQuery.lte('created_at', options.dateTo);
+
+    const { data: consumptionLogsData, error: consumptionLogsError } = await consumptionLogsQuery;
+    if (consumptionLogsError) {
+      return {
+        success: false,
+        error: `Lỗi tải log tiêu hao kho: ${consumptionLogsError.message}`,
+        issues: [],
+      };
+    }
+
+    const completedSessions = (completedSessionsData || []) as InventorySessionRow[];
+    const consumptionLogs = (consumptionLogsData || []) as InventoryConsumptionLogRow[];
+    const completedSessionIds = new Set(completedSessions.map((session) => session.id));
+    const logSessionIds = Array.from(new Set(
+      consumptionLogs
+        .map((log) => log.session_log_id)
+        .filter((sessionLogId): sessionLogId is string => Boolean(sessionLogId)),
+    ));
+
+    let referencedSessions = new Map<string, InventorySessionRow>();
+    if (logSessionIds.length > 0) {
+      const { data: referencedSessionsData, error: referencedSessionsError } = await supabase
+        .from('session_logs')
+        .select('id, status, completed_date, booking_id')
+        .eq('tenant_id', tenantId)
+        .in('id', logSessionIds);
+
+      if (referencedSessionsError) {
+        return {
+          success: false,
+          error: `Lỗi tải ca liên quan tới log kho: ${referencedSessionsError.message}`,
+          issues: [],
+        };
+      }
+
+      referencedSessions = new Map(
+        ((referencedSessionsData || []) as InventorySessionRow[]).map((session) => [session.id, session]),
+      );
+    }
+
+    let outboxBySession = new Map<string, InventoryOutboxRow[]>();
+    if (logSessionIds.length > 0) {
+      const { data: outboxData, error: outboxError } = await supabase
+        .from('accounting_outbox')
+        .select('id, reference_id, status')
+        .eq('tenant_id', tenantId)
+        .eq('event_type', 'INVENTORY_CONSUMED')
+        .eq('reference_type', 'SESSION_LOG')
+        .in('reference_id', logSessionIds);
+
+      if (outboxError) {
+        return {
+          success: false,
+          error: `Lỗi tải hàng đợi kế toán kho: ${outboxError.message}`,
+          issues: [],
+        };
+      }
+
+      outboxBySession = ((outboxData || []) as InventoryOutboxRow[]).reduce((map, outbox) => {
+        const rows = map.get(outbox.reference_id) || [];
+        rows.push(outbox);
+        map.set(outbox.reference_id, rows);
+        return map;
+      }, new Map<string, InventoryOutboxRow[]>());
+    }
+
+    const logsBySession = consumptionLogs.reduce((map, log) => {
+      if (!log.session_log_id) return map;
+      const rows = map.get(log.session_log_id) || [];
+      rows.push(log);
+      map.set(log.session_log_id, rows);
+      return map;
+    }, new Map<string, InventoryConsumptionLogRow[]>());
+
+    const issues: InventorySessionReconciliationIssue[] = [];
+
+    completedSessions.forEach((session) => {
+      if (!logsBySession.has(session.id)) {
+        issues.push({
+          type: 'missing_inventory_log',
+          severity: 'warning',
+          sessionLogId: session.id,
+          message: `Ca ${session.id} đã hoàn thành nhưng chưa có log tiêu hao kho.`,
+        });
+      }
+    });
+
+    consumptionLogs.forEach((log) => {
+      const sessionLogId = log.session_log_id || '';
+      const referencedSession = sessionLogId ? referencedSessions.get(sessionLogId) : null;
+      if (!sessionLogId || !referencedSession || referencedSession.status !== 'completed') {
+        issues.push({
+          type: 'orphan_inventory_log',
+          severity: 'critical',
+          sessionLogId: sessionLogId || 'UNKNOWN_SESSION',
+          itemId: log.item_id,
+          inventoryLogIds: [log.id],
+          message: `Log kho ${log.id} đang trừ vật tư nhưng ca liên quan không còn trạng thái hoàn thành.`,
+        });
+      }
+    });
+
+    logsBySession.forEach((logs, sessionLogId) => {
+      const logsByItem = logs.reduce((map, log) => {
+        const rows = map.get(log.item_id) || [];
+        rows.push(log);
+        map.set(log.item_id, rows);
+        return map;
+      }, new Map<string, InventoryConsumptionLogRow[]>());
+
+      logsByItem.forEach((itemLogs, itemId) => {
+        if (itemLogs.length > 1) {
+          issues.push({
+            type: 'duplicate_inventory_log',
+            severity: 'critical',
+            sessionLogId,
+            itemId,
+            inventoryLogIds: itemLogs.map((log) => log.id),
+            message: `Ca ${sessionLogId} có nhiều log tiêu hao cho cùng vật tư ${itemId}.`,
+          });
+        }
+      });
+
+      if (completedSessionIds.has(sessionLogId) && !outboxBySession.has(sessionLogId)) {
+        issues.push({
+          type: 'missing_inventory_outbox',
+          severity: 'warning',
+          sessionLogId,
+          inventoryLogIds: logs.map((log) => log.id),
+          message: `Ca ${sessionLogId} đã trừ kho nhưng chưa có outbox kế toán INVENTORY_CONSUMED.`,
+        });
+      }
+    });
+
+    const summary = issues.reduce<Record<InventorySessionReconciliationIssueType, number>>(
+      (acc, issue) => {
+        acc[issue.type] += 1;
+        return acc;
+      },
+      {
+        missing_inventory_log: 0,
+        orphan_inventory_log: 0,
+        duplicate_inventory_log: 0,
+        missing_inventory_outbox: 0,
+      },
+    );
+
+    return { success: true, issues, summary };
+  } catch (e: unknown) {
+    console.error('[detectInventorySessionReconciliationIssues]', e);
+    return { success: false, error: getErrorMessage(e), issues: [] };
   }
 }
 

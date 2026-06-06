@@ -2,6 +2,7 @@ import {
   addInventoryItem,
   autoConsumeForSession,
   consumeInventory,
+  detectInventorySessionReconciliationIssues,
   getInventoryItems,
   getInventoryLogs,
   getInventoryLogsByDateRange,
@@ -426,6 +427,101 @@ describe('inventory write action side effects', () => {
     expect(result.failed).toBe(1);
     expect(result.error).toContain('update failed');
     expect(calls.filter(c => c.table === 'inventory_logs' && c.op === 'insert')).toHaveLength(1);
+  });
+
+  it('detects session inventory reconciliation issues across sessions, logs, duplicates, and outbox', async () => {
+    const calls = installScriptedSupabase([
+      {
+        table: 'session_logs',
+        op: 'select',
+        data: [
+          { id: 'session-missing-log', status: 'completed', completed_date: '2026-06-06', booking_id: 'booking-1' },
+          { id: 'session-ok', status: 'completed', completed_date: '2026-06-06', booking_id: 'booking-2' },
+          { id: 'session-dup', status: 'completed', completed_date: '2026-06-06', booking_id: 'booking-3' },
+        ],
+      },
+      {
+        table: 'inventory_logs',
+        op: 'select',
+        data: [
+          { id: 'log-ok', item_id: 'item-1', session_log_id: 'session-ok', change_amount: -2, created_at: '2026-06-06' },
+          { id: 'log-orphan', item_id: 'item-2', session_log_id: 'session-rolled-back', change_amount: -1, created_at: '2026-06-06' },
+          { id: 'log-dup-1', item_id: 'item-3', session_log_id: 'session-dup', change_amount: -1, created_at: '2026-06-06' },
+          { id: 'log-dup-2', item_id: 'item-3', session_log_id: 'session-dup', change_amount: -1, created_at: '2026-06-06' },
+        ],
+      },
+      {
+        table: 'session_logs',
+        op: 'select',
+        data: [
+          { id: 'session-ok', status: 'completed', completed_date: '2026-06-06', booking_id: 'booking-2' },
+          { id: 'session-dup', status: 'completed', completed_date: '2026-06-06', booking_id: 'booking-3' },
+          { id: 'session-rolled-back', status: 'assigned', completed_date: null, booking_id: 'booking-4' },
+        ],
+      },
+      {
+        table: 'accounting_outbox',
+        op: 'select',
+        data: [{ id: 'outbox-ok', reference_id: 'session-ok', status: 'PENDING' }],
+      },
+    ]);
+
+    const result = await detectInventorySessionReconciliationIssues();
+
+    expect(result.success).toBe(true);
+    if (!result.success) throw new Error(result.error);
+    expect(result.summary).toEqual({
+      missing_inventory_log: 1,
+      orphan_inventory_log: 1,
+      duplicate_inventory_log: 1,
+      missing_inventory_outbox: 1,
+    });
+    expect(result.issues.map((issue) => issue.type)).toEqual(expect.arrayContaining([
+      'missing_inventory_log',
+      'orphan_inventory_log',
+      'duplicate_inventory_log',
+      'missing_inventory_outbox',
+    ]));
+    expect(result.issues.find((issue) => issue.type === 'missing_inventory_log')).toMatchObject({
+      severity: 'warning',
+      sessionLogId: 'session-missing-log',
+    });
+    expect(result.issues.find((issue) => issue.type === 'orphan_inventory_log')).toMatchObject({
+      severity: 'critical',
+      sessionLogId: 'session-rolled-back',
+      inventoryLogIds: ['log-orphan'],
+    });
+    expect(result.issues.find((issue) => issue.type === 'duplicate_inventory_log')).toMatchObject({
+      severity: 'critical',
+      sessionLogId: 'session-dup',
+      itemId: 'item-3',
+      inventoryLogIds: ['log-dup-1', 'log-dup-2'],
+    });
+    expect(result.issues.find((issue) => issue.type === 'missing_inventory_outbox')).toMatchObject({
+      severity: 'warning',
+      sessionLogId: 'session-dup',
+      inventoryLogIds: ['log-dup-1', 'log-dup-2'],
+    });
+    expect(calls.map(c => `${c.table}.${c.op}`)).toEqual([
+      'session_logs.select',
+      'inventory_logs.select',
+      'session_logs.select',
+      'accounting_outbox.select',
+    ]);
+  });
+
+  it('returns explicit failure when inventory reconciliation session query fails', async () => {
+    installScriptedSupabase([
+      { table: 'session_logs', op: 'select', error: { message: 'session query failed' } },
+    ]);
+
+    const result = await detectInventorySessionReconciliationIssues();
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Lỗi tải danh sách ca hoàn thành: session query failed',
+      issues: [],
+    });
   });
 
   it('halts rollback and preserves logs when restoring stock fails', async () => {
