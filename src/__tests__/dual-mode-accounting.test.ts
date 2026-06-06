@@ -398,7 +398,11 @@ describe('Application Layer protection', () => {
     // Mock accounting_mode is PROFESSIONAL
     mockSingle.mockResolvedValueOnce({ data: { accounting_mode: 'PROFESSIONAL' }, error: null });
 
-    await expect(confirmTransaction('rev-1', 'revenue')).rejects.toThrow(/Professional Core/);
+    const result = await confirmTransaction('rev-1', 'revenue');
+
+    expect(result.success).toBe(false);
+    if (result.success) throw new Error('Expected PROFESSIONAL mode to block manual confirmation');
+    expect(result.error).toMatch(/Professional Core/);
   });
 
   it('blocks manually recordTransaction if the accounting period is closed', async () => {
