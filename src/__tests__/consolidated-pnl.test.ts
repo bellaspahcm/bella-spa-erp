@@ -42,6 +42,8 @@ jest.mock('../services/user-actions', () => ({
 }));
 
 import { getConsolidatedPnLReport } from '../services/hq-actions';
+import { readFileSync } from 'fs';
+import * as path from 'path';
 
 const HQ_ADMIN = { id: 'hq-uuid', tenant_id: 'hq-tenant-uuid', role: 'admin' };
 const BRANCH_ADMIN = { id: 'branch-uuid', tenant_id: 'branch-tenant-uuid', role: 'admin' };
@@ -150,5 +152,23 @@ describe('getConsolidatedPnLReport', () => {
 
     const result = await getConsolidatedPnLReport(FROM, TO);
     expect(result).toEqual([]);
+  });
+
+  it('eliminates inter-branch clearing from consolidated revenue and COGS', () => {
+    const migrationSql = readFileSync(
+      path.join(
+        process.cwd(),
+        'supabase/migrations/20260606103000_eliminate_internal_clearing_from_consolidated_pnl.sql'
+      ),
+      'utf8'
+    );
+
+    expect(migrationSql).toMatch(
+      /a\.account_code LIKE '511%'[\s\S]*COALESCE\(e\.reference_type, ''\) <> 'INTER_BRANCH_CLEARING'/
+    );
+    expect(migrationSql).toMatch(
+      /a\.account_code LIKE '632%'[\s\S]*COALESCE\(e\.reference_type, ''\) <> 'INTER_BRANCH_CLEARING'/
+    );
+    expect(migrationSql).toContain('REVOKE EXECUTE ON FUNCTION public.get_consolidated_pnl(DATE, DATE) FROM anon');
   });
 });
