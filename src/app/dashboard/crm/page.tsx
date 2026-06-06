@@ -10,6 +10,7 @@ import { CrmOverviewTab } from './components/CrmOverviewTab';
 import { CrmRemindersTab } from './components/CrmRemindersTab';
 import { CrmTabs } from './components/CrmTabs';
 import { CrmVoucherModal } from './components/CrmVoucherModal';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useCrmPageActions } from './hooks/useCrmPageActions';
 import { useCrmPageData } from './hooks/useCrmPageData';
 import { useCrmVoucherCampaigns } from './hooks/useCrmVoucherCampaigns';
@@ -47,6 +48,8 @@ export default function CRMPage() {
     closeVoucherModal,
     handleCreateVoucher,
   } = useCrmVoucherCampaigns();
+
+  usePageRefresh(loadData);
 
   return (
     <div className="flex flex-col flex-1 overflow-auto p-4 lg:p-8 space-y-8 custom-scrollbar bg-slate-50/50">

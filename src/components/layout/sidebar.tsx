@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { getCurrentUser } from '@/services/user-actions';
 import { getTenantSettings } from '@/services/tenant-actions';
 import { createClient } from '@/lib/supabase-client';
+import { createPageRefreshEvent } from '@/lib/page-refresh';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import type { CurrentUser } from '@/types/domain';
 
@@ -121,9 +122,23 @@ export function Sidebar() {
     setIsOpen(false);
   };
 
-  const handleMobileRefresh = () => {
+  const handleMobileRefresh = async () => {
+    if (isMobileRefreshing) return;
+
     setIsMobileRefreshing(true);
-    window.location.reload();
+    const refreshEvent = createPageRefreshEvent('mobile-header');
+    window.dispatchEvent(refreshEvent);
+
+    if (!refreshEvent.detail.handled) {
+      window.location.reload();
+      return;
+    }
+
+    try {
+      await refreshEvent.detail.done;
+    } finally {
+      setIsMobileRefreshing(false);
+    }
   };
 
   const baseMenuItems: SidebarMenuItem[] = user?.role?.toLowerCase() === 'customer'

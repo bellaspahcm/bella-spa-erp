@@ -26,6 +26,7 @@ import { getMonthlyAttendanceSummary } from '@/services/attendance-actions';
 import { exportSalaryToExcel, exportSessionMatrixToExcel } from '@/services/export-actions';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 // Types
@@ -179,6 +180,14 @@ export default function SalaryPage() {
       void loadAttendanceData();
     }
   }, [hasLoadedAttendance, isAttendanceLoading, loadAttendanceData]);
+
+  const handleSoftRefresh = useCallback(async () => {
+    await refreshData({
+      includeAttendance: hasLoadedAttendance || activeTab === 'attendance',
+    });
+  }, [activeTab, hasLoadedAttendance, refreshData]);
+
+  usePageRefresh(handleSoftRefresh);
 
   useEffect(() => {
     async function fetchData() {
