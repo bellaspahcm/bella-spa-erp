@@ -59,7 +59,7 @@ export default function SalaryTable({
 
       <div className="overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.32)]">
         <table className="w-max min-w-[90rem] text-left whitespace-nowrap">
-          <thead className="sticky top-0 z-10">
+          <thead>
             <tr className="bg-slate-50/80 backdrop-blur-md">
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[220px]">Kỹ thuật viên</th>
               <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[100px]">Số buổi</th>
