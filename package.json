@@ -11,6 +11,7 @@
     "docs:api:check": "node scripts/check-api-docs.mjs",
     "docs:api:versioning": "node scripts/check-api-versioning.mjs",
     "db:access:check": "node scripts/check-supabase-data-access.cjs",
+    "db:business:check": "node scripts/check-business-invariants.cjs",
     "db:rpc-grants:check": "node scripts/check-supabase-rpc-grants.cjs",
     "db:rpc-smoke:check": "node scripts/check-supabase-rpc-smoke.cjs",
     "db:migration:check": "node scripts/check-supabase-migrations.cjs",

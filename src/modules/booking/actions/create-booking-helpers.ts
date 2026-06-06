@@ -169,7 +169,8 @@ export async function buildBookingPayload(params: {
   existingBooking: BookingRow | null;
 }): Promise<BookingInsert> {
   const { validatedData, customerId, tenantId, existingBooking } = params;
-  const isFullBooking = validatedData.full_price > 0 && (validatedData.deposit_amount || 0) >= validatedData.full_price;
+  const confirmedDepositAmount = (existingBooking?.deposit_amount || 0) + (validatedData.deposit_amount || 0);
+  const hasConfirmedDeposit = confirmedDepositAmount > 0;
   const lockedCommission = validatedData.ktv_commission || await resolveKtvCommission(validatedData);
 
   const payload: BookingInsert = {
@@ -177,9 +178,9 @@ export async function buildBookingPayload(params: {
     booking_number: existingBooking?.booking_number || `BK-${new Date().getTime()}`,
     package_id: validatedData.package_id || null,
     package_name: validatedData.package_name || null,
-    status: isFullBooking ? 'booked' : 'deposit_pending',
+    status: hasConfirmedDeposit ? 'booked' : 'deposit_pending',
     full_price: validatedData.full_price,
-    deposit_amount: (existingBooking?.deposit_amount || 0) + (validatedData.deposit_amount || 0),
+    deposit_amount: confirmedDepositAmount,
     total_sessions: validatedData.total_sessions,
     ktv_commission: lockedCommission,
     discount_percent: validatedData.discount_percent || 0,
