@@ -40,7 +40,7 @@ const reportTabs = [
 ];
 
 const dateInputClassName =
-  'h-11 w-full min-w-[10.75rem] rounded-xl border border-slate-100 bg-slate-50 px-4 pr-10 text-xs font-bold text-slate-800 outline-none [color-scheme:light] dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1] dark:[color-scheme:dark]';
+  'h-11 w-full min-w-0 max-w-full appearance-none truncate rounded-xl border border-slate-100 bg-slate-50 px-4 pr-3 text-xs font-bold text-slate-800 outline-none [color-scheme:light] dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1] dark:[color-scheme:dark]';
 const dateFieldClassName = 'grid w-full min-w-0 grid-cols-1 gap-1.5 sm:w-auto sm:min-w-[10.75rem]';
 const dateLabelClassName = 'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap';
 const reportTableWrapperClassName =

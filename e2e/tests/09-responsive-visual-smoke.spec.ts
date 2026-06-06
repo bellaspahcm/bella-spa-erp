@@ -186,6 +186,103 @@ async function expectFinanceTransactionCellsDoNotBleed(page: Page) {
   );
 }
 
+async function expectFinanceTransactionColumnPolish(page: Page) {
+  const result = await page.evaluate(() => {
+    const table = Array.from(document.querySelectorAll("table")).find((candidate) =>
+      /chi\s*ti/i.test((candidate.textContent ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")),
+    ) as HTMLTableElement | undefined;
+    const headers = table ? (Array.from(table.querySelectorAll("thead th")).slice(0, 3) as HTMLElement[]) : [];
+    const row = table?.querySelector("tbody tr");
+    const cells = row ? (Array.from(row.children).slice(0, 2) as HTMLElement[]) : [];
+
+    const measure = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      const styles = window.getComputedStyle(element);
+      return {
+        left: rect.left,
+        right: rect.right,
+        width: rect.width,
+        whiteSpace: styles.whiteSpace,
+      };
+    };
+
+    return {
+      foundTable: Boolean(table),
+      tableWidth: table?.getBoundingClientRect().width ?? 0,
+      wrapperWidth: table?.parentElement?.getBoundingClientRect().width ?? 0,
+      headers: headers.map(measure),
+      cells: cells.map(measure),
+    };
+  });
+
+  expect(result.foundTable, "finance transaction table should render for column polish checks").toBe(true);
+  expect(result.tableWidth, "finance transaction table should scroll horizontally on mobile").toBeGreaterThan(
+    result.wrapperWidth + 1,
+  );
+  expect(result.headers.length, "finance transaction table should expose category/detail/date headers").toBeGreaterThanOrEqual(3);
+  expect(result.headers[1].width, "finance detail header should keep a readable width").toBeGreaterThanOrEqual(360);
+  expect(result.headers[0].right, "finance category header should not overlap detail header").toBeLessThanOrEqual(
+    result.headers[1].left + 1,
+  );
+  expect(result.headers[1].right, "finance detail header should not overlap date header").toBeLessThanOrEqual(
+    result.headers[2].left + 1,
+  );
+
+  if (result.cells.length >= 2) {
+    expect(result.cells[1].width, "finance detail cell should keep a readable width").toBeGreaterThanOrEqual(360);
+    expect(result.cells[0].whiteSpace, "finance category cell should stay on one line inside horizontal scroll").toBe("nowrap");
+    expect(result.cells[1].whiteSpace, "finance detail cell should stay on one line inside horizontal scroll").toBe("nowrap");
+  }
+}
+
+async function expectAccountingReportsTablePolish(page: Page) {
+  const result = await page.evaluate(() => {
+    const table = document.querySelector("table") as HTMLTableElement | null;
+    const firstHeaderRow = table?.querySelector("thead tr");
+    const firstHeaders = firstHeaderRow ? (Array.from(firstHeaderRow.children).slice(0, 2) as HTMLElement[]) : [];
+    const firstBodyRow = table?.querySelector("tbody tr");
+    const firstRowCells = firstBodyRow ? (Array.from(firstBodyRow.children).slice(0, 2) as HTMLElement[]) : [];
+
+    const measure = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      const styles = window.getComputedStyle(element);
+      return {
+        left: rect.left,
+        right: rect.right,
+        position: styles.position,
+        whiteSpace: styles.whiteSpace,
+      };
+    };
+
+    return {
+      foundTable: Boolean(table),
+      tableWidth: table?.getBoundingClientRect().width ?? 0,
+      wrapperWidth: table?.parentElement?.getBoundingClientRect().width ?? 0,
+      headers: firstHeaders.map(measure),
+      cells: firstRowCells.map(measure),
+    };
+  });
+
+  expect(result.foundTable, "accounting reports table should render").toBe(true);
+  expect(result.tableWidth, "accounting reports table should scroll horizontally on mobile").toBeGreaterThan(
+    result.wrapperWidth + 1,
+  );
+  expect(result.headers.length, "accounting reports should expose first two headers").toBeGreaterThanOrEqual(2);
+  expect(result.headers[0].position, "accounting reports first header should not be sticky").toBe("static");
+  expect(result.headers[0].right, "accounting reports first header should not overlap second header").toBeLessThanOrEqual(
+    result.headers[1].left + 1,
+  );
+  expect(result.headers[0].whiteSpace, "accounting report code header should stay on one line").toBe("nowrap");
+
+  if (result.cells.length >= 2) {
+    expect(result.cells[0].position, "accounting reports first data cell should not be sticky").toBe("static");
+    expect(result.cells[0].right, "accounting reports first data cell should not overlap second cell").toBeLessThanOrEqual(
+      result.cells[1].left + 1,
+    );
+    expect(result.cells[0].whiteSpace, "accounting report code cell should stay on one line").toBe("nowrap");
+  }
+}
+
 async function expectNoFixedTables(page: Page, routeName: string) {
   const fixedTableCount = await page.locator("table.table-fixed").count();
   expect(fixedTableCount, `${routeName} should not use fixed table layout on responsive data tables`).toBe(0);
@@ -353,12 +450,20 @@ test.describe("Responsive visual smoke", () => {
           `${route.name} should not create document-level horizontal scroll`,
         ).toBeLessThanOrEqual(pageOverflow.viewportWidth + 8);
 
-        if (viewport.name === "mobile" && route.name === "accounting-journals") {
+        if (
+          viewport.name === "mobile" &&
+          (route.name === "accounting-journals" || route.name === "accounting-reports")
+        ) {
           await expectDateInputsFitMobile(adminPage, route.name);
+        }
+
+        if (viewport.name === "mobile" && route.name === "accounting-reports") {
+          await expectAccountingReportsTablePolish(adminPage);
         }
 
         if (viewport.name === "mobile" && route.name === "finance") {
           await expectFinanceTransactionCellsDoNotBleed(adminPage);
+          await expectFinanceTransactionColumnPolish(adminPage);
         }
 
         if (viewport.name === "mobile") {
