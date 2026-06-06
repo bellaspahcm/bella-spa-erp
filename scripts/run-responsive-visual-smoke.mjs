@@ -42,6 +42,7 @@ function quoteCmdArg(value) {
 }
 
 const env = { ...process.env };
+env.E2E_VISUAL_SMOKE_RUNNER = '1';
 
 if (!env.E2E_BASE_URL && !env.E2E_PORT) {
   env.E2E_PORT = String(await findAvailablePort(3104));
