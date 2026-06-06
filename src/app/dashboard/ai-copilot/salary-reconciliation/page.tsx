@@ -1,4 +1,5 @@
 import { getSalaryReconciliation } from '@/services/salary-reconciliation-actions';
+import { SalaryReconciliationRefreshHandler } from './salary-reconciliation-refresh-handler';
 import {
 AlertTriangle,
 CheckCircle2,
@@ -47,6 +48,7 @@ export default async function SalaryReconciliationPage({
   if (error || !data) {
     return (
       <div className="flex items-center justify-center h-64">
+        <SalaryReconciliationRefreshHandler />
         <p className="text-rose-500 font-bold text-sm">⚠️ {error ?? 'Không tải được dữ liệu đối soát.'}</p>
       </div>
     );
@@ -57,6 +59,7 @@ export default async function SalaryReconciliationPage({
 
   return (
     <div className="space-y-8 p-6">
+      <SalaryReconciliationRefreshHandler />
 
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
