@@ -7,7 +7,7 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader,{ SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { createClient } from '@/lib/supabase-client';
-import { confirmTransaction,getFinancialOverview,getMonthlyPnL,getServicePerformance,type MappedTransaction } from '@/services/finance-actions';
+import { confirmTransaction,getFinanceDashboardSnapshot,type MappedTransaction } from '@/services/finance-actions';
 import { motion } from 'framer-motion';
 import {
 ArrowDownRight,
@@ -25,9 +25,10 @@ Wallet
 import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
 
-type FinancialOverview = Awaited<ReturnType<typeof getFinancialOverview>>;
-type MonthlyPnL = Awaited<ReturnType<typeof getMonthlyPnL>>;
-type ServicePerformanceRow = Awaited<ReturnType<typeof getServicePerformance>>[number];
+type FinanceDashboardSnapshot = Awaited<ReturnType<typeof getFinanceDashboardSnapshot>>['data'];
+type FinancialOverview = FinanceDashboardSnapshot['overview'];
+type MonthlyPnL = FinanceDashboardSnapshot['monthlyPnl'];
+type ServicePerformanceRow = FinanceDashboardSnapshot['servicePerformance'][number];
 type SortableTransactionKey = keyof MappedTransaction;
 
 const tableWrapperClassName =
@@ -66,11 +67,27 @@ export default function FinancePage() {
   const fetchData = useCallback(async (month = selectedMonth) => {
     setIsRefreshing(true);
     try {
-      const [overviewResult, pnlResult, perfResult] = await Promise.allSettled([
-        getFinancialOverview(),
-        getMonthlyPnL(month),
-        getServicePerformance()
-      ]);
+      const snapshot = await getFinanceDashboardSnapshot(month);
+      setData(snapshot.data.overview);
+      setPnlData(snapshot.data.monthlyPnl);
+      setPerformanceData(snapshot.data.servicePerformance || []);
+
+      if (snapshot.errors.overview) toast.error(snapshot.errors.overview);
+      if (snapshot.errors.monthlyPnl) toast.error(snapshot.errors.monthlyPnl);
+      if (snapshot.errors.servicePerformance) toast.error(snapshot.errors.servicePerformance);
+
+      const overviewResult = {
+        status: 'fulfilled',
+        value: snapshot.data.overview,
+      } as PromiseSettledResult<FinancialOverview>;
+      const pnlResult = {
+        status: 'fulfilled',
+        value: snapshot.data.monthlyPnl,
+      } as PromiseSettledResult<MonthlyPnL>;
+      const perfResult = {
+        status: 'fulfilled',
+        value: snapshot.data.servicePerformance,
+      } as PromiseSettledResult<ServicePerformanceRow[]>;
 
       if (overviewResult.status === 'fulfilled' && overviewResult.value) {
         setData(overviewResult.value);
