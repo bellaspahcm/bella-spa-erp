@@ -167,6 +167,56 @@ describe('CRM Zalo config read actions', () => {
     expect(mockDecrypt).toHaveBeenCalledWith('refresh-token');
   });
 
+  it('uses the first tenant Zalo config row when Supabase returns an array result', async () => {
+    scriptedResults = [
+      {
+        data: [
+          {
+            zalo_app_id: 'active-app',
+            zalo_secret_key: 'active-secret',
+            zalo_oa_id: 'active-oa',
+            zalo_access_token: 'active-access',
+            zalo_refresh_token: 'active-refresh',
+            zalo_token_expires_at: '2026-06-03T00:00:00.000Z',
+            zalo_template_reminder_id: 'active-reminder-template',
+            zalo_template_birthday_id: 'active-birthday-template',
+            zalo_auto_scan: true,
+          },
+          {
+            zalo_app_id: 'duplicate-app',
+            zalo_secret_key: 'duplicate-secret',
+            zalo_oa_id: 'duplicate-oa',
+            zalo_access_token: 'duplicate-access',
+            zalo_refresh_token: 'duplicate-refresh',
+            zalo_token_expires_at: '2026-06-04T00:00:00.000Z',
+            zalo_template_reminder_id: 'duplicate-reminder-template',
+            zalo_template_birthday_id: 'duplicate-birthday-template',
+            zalo_auto_scan: false,
+          },
+        ],
+        error: null,
+      },
+    ];
+
+    await expect(getZaloConfig()).resolves.toEqual({
+      zalo_app_id: 'active-app',
+      zalo_secret_key: 'decrypted:active-secret',
+      zalo_oa_id: 'active-oa',
+      zalo_access_token: 'decrypted:active-access',
+      zalo_refresh_token: 'decrypted:active-refresh',
+      zalo_token_expires_at: '2026-06-03T00:00:00.000Z',
+      zalo_template_reminder_id: 'active-reminder-template',
+      zalo_template_birthday_id: 'active-birthday-template',
+      zalo_auto_scan: true,
+    });
+
+    expect(queryCalls[0]).toEqual(expect.objectContaining({
+      table: 'tenants',
+      filters: [{ method: 'eq', args: ['id', 'tenant-1'] }],
+      limitCount: 1,
+    }));
+  });
+
   it('returns blank fields only when the tenant config row loads successfully with null fields', async () => {
     scriptedResults = [
       {
@@ -208,14 +258,22 @@ describe('CRM Zalo config read actions', () => {
     );
   });
 
-  it('rejects missing tenant config rows instead of returning a blank config', async () => {
+  it('returns an empty Zalo config when no tenant config row is visible', async () => {
     scriptedResults = [
       { data: null, error: null },
     ];
 
-    await expect(getZaloConfig()).rejects.toThrow(
-      '[getZaloConfig] Tenant Zalo config not found',
-    );
+    await expect(getZaloConfig()).resolves.toEqual({
+      zalo_app_id: '',
+      zalo_secret_key: '',
+      zalo_oa_id: '',
+      zalo_access_token: '',
+      zalo_refresh_token: '',
+      zalo_token_expires_at: '',
+      zalo_template_reminder_id: '',
+      zalo_template_birthday_id: '',
+      zalo_auto_scan: true,
+    });
   });
 
   it('rejects Zalo config reads without tenant context', async () => {
@@ -303,6 +361,7 @@ describe('CRM Zalo config read actions', () => {
     expect(global.fetch).not.toHaveBeenCalled();
     expect(queryCalls).toHaveLength(1);
     expect(queryCalls[0].operation).toBe('select');
+    expect(queryCalls[0].limitCount).toBe(1);
   });
 
   it('returns null when required Zalo credential config is missing', async () => {

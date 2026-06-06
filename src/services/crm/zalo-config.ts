@@ -5,6 +5,19 @@ import { getCurrentUser } from '../user-actions';
 import { recordAuditLog } from '../audit-actions';
 import { encrypt, decrypt } from '@/lib/crypto';
 import type { ZaloConfig } from './types';
+import { pickFirstTenantRow } from './tenant-row';
+
+const EMPTY_ZALO_CONFIG: ZaloConfig = {
+  zalo_app_id: '',
+  zalo_secret_key: '',
+  zalo_oa_id: '',
+  zalo_access_token: '',
+  zalo_refresh_token: '',
+  zalo_token_expires_at: '',
+  zalo_template_reminder_id: '',
+  zalo_template_birthday_id: '',
+  zalo_auto_scan: true,
+};
 
 function getErrorMessage(error: unknown, fallback = 'Unknown error') {
   if (error instanceof Error && error.message.trim()) return error.message;
@@ -29,26 +42,28 @@ export async function getZaloConfig(): Promise<ZaloConfig> {
     .from('tenants')
     .select('zalo_app_id, zalo_secret_key, zalo_oa_id, zalo_access_token, zalo_refresh_token, zalo_token_expires_at, zalo_template_reminder_id, zalo_template_birthday_id, zalo_auto_scan')
     .eq('id', tenantId)
-    .single();
+    .limit(1);
 
   if (error) {
     throw new Error(`[getZaloConfig] tenants Zalo config query failed: ${error.message}`);
   }
 
-  if (!data) {
-    throw new Error('[getZaloConfig] Tenant Zalo config not found');
+  const tenant = pickFirstTenantRow(data);
+
+  if (!tenant) {
+    return { ...EMPTY_ZALO_CONFIG };
   }
 
   return {
-    zalo_app_id: data.zalo_app_id || '',
-    zalo_secret_key: decrypt(data.zalo_secret_key || ''),
-    zalo_oa_id: data.zalo_oa_id || '',
-    zalo_access_token: decrypt(data.zalo_access_token || ''),
-    zalo_refresh_token: decrypt(data.zalo_refresh_token || ''),
-    zalo_token_expires_at: data.zalo_token_expires_at || '',
-    zalo_template_reminder_id: data.zalo_template_reminder_id || '',
-    zalo_template_birthday_id: data.zalo_template_birthday_id || '',
-    zalo_auto_scan: data.zalo_auto_scan !== false
+    zalo_app_id: tenant.zalo_app_id || '',
+    zalo_secret_key: decrypt(tenant.zalo_secret_key || ''),
+    zalo_oa_id: tenant.zalo_oa_id || '',
+    zalo_access_token: decrypt(tenant.zalo_access_token || ''),
+    zalo_refresh_token: decrypt(tenant.zalo_refresh_token || ''),
+    zalo_token_expires_at: tenant.zalo_token_expires_at || '',
+    zalo_template_reminder_id: tenant.zalo_template_reminder_id || '',
+    zalo_template_birthday_id: tenant.zalo_template_birthday_id || '',
+    zalo_auto_scan: tenant.zalo_auto_scan !== false
   };
 }
 
@@ -107,15 +122,17 @@ export async function saveZaloConfig(config: Partial<ZaloConfig>) {
 export async function getOrRefreshZaloToken(tenantId: string): Promise<string | null> {
   const supabase = await createClient();
 
-  const { data: tenant, error } = await supabase
+  const { data, error } = await supabase
     .from('tenants')
     .select('zalo_app_id, zalo_secret_key, zalo_access_token, zalo_refresh_token, zalo_token_expires_at')
     .eq('id', tenantId)
-    .single();
+    .limit(1);
 
   if (error) {
     throw new Error(`[getOrRefreshZaloToken] tenants token query failed for tenant ${tenantId}: ${error.message}`);
   }
+
+  const tenant = pickFirstTenantRow(data);
 
   if (!tenant) {
     throw new Error(`[getOrRefreshZaloToken] tenant token row not found for tenant ${tenantId}`);
