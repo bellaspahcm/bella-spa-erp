@@ -5,7 +5,14 @@ import { Database } from '@/types/database.types';
 import { TenantSalaryConfig } from '@/types/domain';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { calcProRataBaseSalary } from './base-salary-actions';
-import { calculateAttendanceWorkDays, calculateProRataBaseSalaryFromActualDays } from './salary-attendance-calculation';
+import {
+  buildPackageMultiplierMap,
+  calculateAttendanceWorkDays,
+  calculateProRataBaseSalaryFromActualDays,
+  calculateRatingBonus,
+  calculateSessionCommissionBonus,
+  calculateWeightedSessionCount,
+} from './salary-attendance-calculation';
 
 interface KtvUserDataAdmin {
   id: string;
@@ -82,6 +89,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
     .from('users')
     .select('id, full_name, base_salary, resignation_date')
     .eq('id', ktvId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (ktvError) throw ktvError;
@@ -114,6 +122,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
     .from('attendance')
     .select('status, date')
     .eq('ktv_id', ktvId)
+    .eq('tenant_id', tenantId)
     .gte('date', startOfMonthStr)
     .lt('date', endOfMonthStr);
 
@@ -126,6 +135,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
     .from('session_logs')
     .select('id, rating, bookings(ktv_commission, package_name), session_reviews(rating, status)')
     .eq('completed_by_ktv_id', ktvId)
+    .eq('tenant_id', tenantId)
     .eq('status', 'completed')
     .gte('completed_date', startOfMonthStr)
     .lt('completed_date', endOfMonthStr);
@@ -141,23 +151,9 @@ export async function recalculateAndSaveSalaryRecordEngine(
   if (packagesError) throw packagesError;
   const packagesList = (packagesData || []) as PackageMultiplierRow[];
 
-  const packageMultiplierMap = new Map<string, number>();
-  packagesList.forEach((pkg) => {
-    if (pkg.name) {
-      packageMultiplierMap.set(pkg.name, Number(pkg.session_multiplier ?? 1.0));
-    }
-  });
-
-  const sessionsCount = overrides?.total_sessions !== undefined
-    ? overrides.total_sessions
-    : sessionsTyped.reduce((acc: number, s) => {
-        const pkgName = s.bookings?.package_name || '';
-        const multiplier = packageMultiplierMap.get(pkgName) ?? 1.0;
-        return acc + multiplier;
-      }, 0);
-
-  const sessionBonus = sessionsTyped.reduce((acc: number, s) =>
-    acc + (s.bookings?.ktv_commission || 150000), 0);
+  const packageMultiplierMap = buildPackageMultiplierMap(packagesList);
+  const liveSessionsCount = calculateWeightedSessionCount(sessionsTyped, packageMultiplierMap);
+  const liveSessionBonus = calculateSessionCommissionBonus(sessionsTyped);
 
   const { data: leaderboardData, error: leaderboardError } = await supabase.rpc(
     'get_ktv_leaderboard',
@@ -177,19 +173,12 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const absentDays = ktvRow?.absent_days ?? 0;
   const autoAttendancePenalty = (lateDays * penaltyLate) + (absentDays * penaltyAbsent);
 
-  let bonusPerSession = 0;
-  if (avgRating !== null) {
-    if (avgRating === 5.0) bonusPerSession = salaryConfig.bonus_5_star;
-    else if (avgRating >= 4.5) bonusPerSession = salaryConfig.bonus_4_5_star;
-    else if (avgRating >= 4.0) bonusPerSession = salaryConfig.bonus_4_star;
-  }
-  const ratingBonus = sessionsCount * bonusPerSession;
-
   const { data: kpiRecords, error: kpiError } = await supabase
     .from('kpi_records')
     .select('bonus_amount')
     .eq('ktv_id', ktvId)
-    .eq('month_year', monthYear);
+    .eq('month_year', monthYear)
+    .eq('tenant_id', tenantId);
 
   if (kpiError) throw kpiError;
   const kpiRecordsTyped = (kpiRecords || []) as KpiBonusRow[];
@@ -200,6 +189,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
     .select('*')
     .eq('ktv_id', ktvId)
     .eq('month_year', monthYear)
+    .eq('tenant_id', tenantId)
     .maybeSingle();
 
   if (existingError) throw existingError;
@@ -209,6 +199,30 @@ export async function recalculateAndSaveSalaryRecordEngine(
   let proRataNote = '';
 
   const isDraft = !existing || existing.status === 'draft';
+  const hasFinancialOverrides =
+    overrides?.base_salary !== undefined ||
+    overrides?.kpi_bonus !== undefined ||
+    overrides?.violations_deduction !== undefined ||
+    overrides?.service_percentage_bonus !== undefined ||
+    overrides?.total_sessions !== undefined;
+  const shouldUseStoredSessionComponents = Boolean(existing && !isDraft && overrides?.total_sessions === undefined);
+  const shouldUseStoredTotalSalary = Boolean(existing && !isDraft && !hasFinancialOverrides);
+
+  const sessionsCount = overrides?.total_sessions !== undefined
+    ? overrides.total_sessions
+    : (shouldUseStoredSessionComponents && existing?.total_sessions !== null && existing?.total_sessions !== undefined
+        ? Number(existing.total_sessions)
+        : liveSessionsCount);
+
+  const sessionBonus =
+    shouldUseStoredSessionComponents && existing?.session_bonus !== null && existing?.session_bonus !== undefined
+      ? Number(existing.session_bonus)
+      : liveSessionBonus;
+
+  const ratingBonus =
+    shouldUseStoredSessionComponents && existing?.rating_bonus !== null && existing?.rating_bonus !== undefined
+      ? Number(existing.rating_bonus)
+      : calculateRatingBonus(sessionsCount, avgRating, salaryConfig);
 
   let finalBaseSalary: number;
   if (overrides?.base_salary !== undefined) {
@@ -256,7 +270,11 @@ export async function recalculateAndSaveSalaryRecordEngine(
     }
   }
 
-  const totalSalary = Math.max(0, finalBaseSalary + sessionBonus + ratingBonus + finalKpiBonus - deductions - advances);
+  const calculatedTotalSalary = Math.max(0, finalBaseSalary + sessionBonus + ratingBonus + finalKpiBonus - deductions - advances);
+  const totalSalary =
+    shouldUseStoredTotalSalary && existing?.total_salary !== null && existing?.total_salary !== undefined
+      ? Number(existing.total_salary)
+      : calculatedTotalSalary;
   const status = overrides?.status || existing?.status || 'draft';
 
   const payload: Database['public']['Tables']['salary_records']['Insert'] = {

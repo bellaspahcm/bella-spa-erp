@@ -12,6 +12,12 @@ jest.mock("@/lib/supabase-server", () => ({
   createClient: jest.fn(),
 }));
 
+const mockGetCurrentUser = jest.fn();
+
+jest.mock("@/services/user-actions", () => ({
+  getCurrentUser: () => mockGetCurrentUser(),
+}));
+
 type SheetRow = unknown[];
 
 const mockCreateClient = createClient as jest.Mock;
@@ -33,13 +39,11 @@ function rowsFromSheet(workbook: XLSX.WorkBook, sheetName: string): SheetRow[] {
 function mockSessionQuery(
   result: { data: unknown[] | null; error: Error | null },
 ) {
-  let eqCalls = 0;
   const query = {
     select: jest.fn(() => query),
-    eq: jest.fn(() => {
-      eqCalls += 1;
-      return eqCalls >= 2 ? Promise.resolve(result) : query;
-    }),
+    eq: jest.fn(() => query),
+    gte: jest.fn(() => query),
+    lt: jest.fn(() => Promise.resolve(result)),
   };
   return query;
 }
@@ -49,6 +53,14 @@ function mockSalaryQuery(data: Record<string, unknown> | null, error: Error | nu
     select: jest.fn(() => query),
     eq: jest.fn(() => query),
     maybeSingle: jest.fn().mockResolvedValue({ data, error }),
+  };
+  return query;
+}
+
+function mockPackagesQuery(data: Record<string, unknown>[] | null = [], error: Error | null = null) {
+  const query = {
+    select: jest.fn(() => query),
+    eq: jest.fn().mockResolvedValue({ data, error }),
   };
   return query;
 }
@@ -289,13 +301,18 @@ describe("exportSalaryToExcel", () => {
     });
     const salaryQuery = mockSalaryQuery({
       base_salary: 6_000_000,
+      session_bonus: 400_000,
+      rating_bonus: 75_000,
       kpi_bonus: 500_000,
       violations_deduction: 100_000,
       service_percentage_bonus: 50_000,
+      total_salary: 6_825_000,
     });
+    const packagesQuery = mockPackagesQuery([{ name: "VIP Package", session_multiplier: 2 }]);
     const from = jest.fn((table: string) => {
       if (table === "session_logs") return sessionQuery;
       if (table === "salary_records") return salaryQuery;
+      if (table === "packages") return packagesQuery;
       throw new Error(`Unexpected table ${table}`);
     });
     mockCreateClient.mockResolvedValueOnce({ from });
@@ -306,13 +323,14 @@ describe("exportSalaryToExcel", () => {
     const rows = rowsFromSheet(workbook, "Bang Luong Chi Tiet");
 
     const vipRow = rows.find((row) => row[1] === "VIP Package");
-    expect(vipRow?.[2]).toBe(2);
+    expect(vipRow?.[2]).toBe(4);
     expect(String(vipRow?.[4])).toContain("400");
     expect(String(vipRow?.[5])).toContain("Customer A");
     expect(String(vipRow?.[5])).toContain("Customer B");
-    expect(rows.some((row) => String(row[4]).includes("6.750.000"))).toBe(true);
+    expect(rows.some((row) => String(row[4]).includes("6.825.000"))).toBe(true);
     expect(from).toHaveBeenCalledWith("session_logs");
     expect(from).toHaveBeenCalledWith("salary_records");
+    expect(from).toHaveBeenCalledWith("packages");
   });
 
   it("propagates session query failures instead of returning a fake workbook", async () => {
@@ -368,4 +386,9 @@ describe("exportSalaryToExcel", () => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockGetCurrentUser.mockResolvedValue({
+    id: "admin-1",
+    role: "admin",
+    tenant_id: "tenant-1",
+  });
 });

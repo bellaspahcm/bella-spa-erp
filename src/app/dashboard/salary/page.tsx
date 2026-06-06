@@ -364,7 +364,7 @@ export default function SalaryPage() {
   const handleExport = async (s: KtvSalaryRecord) => {
     try {
       const toastId = toast.loading(`Đang tạo báo cáo cho ${s.name}...`);
-      const base64 = await exportSalaryToExcel(s.id, s.name);
+      const base64 = await exportSalaryToExcel(s.id, s.name, `${getCurrentMonthString()}-01`);
       
       const blob = await (await fetch(`data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`)).blob();
       const url = window.URL.createObjectURL(blob);

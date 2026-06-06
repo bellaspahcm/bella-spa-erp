@@ -157,6 +157,7 @@ describe('getSalaryData query errors', () => {
         data: [{ id: 'att-1', ktv_id: 'ktv-1', date: '2026-06-02', status: 'present' }],
       },
       { table: 'packages', op: 'select', data: [{ name: 'Combo VIP', session_multiplier: 1.5 }] },
+      { table: 'kpi_records', op: 'select', data: [{ ktv_id: 'ktv-1', bonus_amount: 123000 }] },
     ]);
 
     const result = await getSalaryData();
@@ -168,7 +169,8 @@ describe('getSalaryData query errors', () => {
       baseSalary: 100000,
       sessionBonus: 200000,
       ratingBonus: 75000,
-      totalSalary: 375000,
+      kpiBonus: 123000,
+      totalSalary: 498000,
       actualDays: 1,
     })]);
     expect(mockRpc).toHaveBeenCalledWith('get_ktv_leaderboard', {
@@ -203,6 +205,7 @@ describe('getSalaryData query errors', () => {
       { table: 'session_logs', op: 'select', data: [] },
       { table: 'attendance', op: 'select', data: [] },
       { table: 'packages', op: 'select', data: [] },
+      { table: 'kpi_records', op: 'select', data: [] },
     ]);
 
     const result = await getSalaryData();
@@ -238,16 +241,20 @@ describe('getSalaryData query errors', () => {
         data: [{
           ktv_id: 'ktv-1',
           total_sessions: 0,
+          session_bonus: 111000,
+          rating_bonus: 222000,
           base_salary: 2600000,
           kpi_bonus: 0,
           violations_deduction: 0,
           service_percentage_bonus: 0,
+          total_salary: 2933000,
           status: 'published',
         }],
       },
       { table: 'session_logs', op: 'select', data: [] },
       { table: 'attendance', op: 'select', data: [] },
       { table: 'packages', op: 'select', data: [] },
+      { table: 'kpi_records', op: 'select', data: [] },
     ]);
 
     const result = await getSalaryData();
@@ -255,7 +262,9 @@ describe('getSalaryData query errors', () => {
     expect(result).toEqual([expect.objectContaining({
       id: 'ktv-1',
       baseSalary: 2600000,
-      totalSalary: 2600000,
+      sessionBonus: 111000,
+      ratingBonus: 222000,
+      totalSalary: 2933000,
       actualDays: 0,
       status: 'published',
     })]);
@@ -283,6 +292,11 @@ describe('getKtvSessionMatrix query errors', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers().setSystemTime(new Date('2026-06-15T08:00:00.000Z'));
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'admin-1',
+      role: 'admin',
+      tenant_id: 'tenant-1',
+    });
   });
 
   afterEach(() => {
@@ -292,7 +306,7 @@ describe('getKtvSessionMatrix query errors', () => {
   it('returns package columns and KTV rows when all matrix queries succeed', async () => {
     const calls = setupDb([
       { table: 'users', op: 'select', data: [{ id: 'ktv-1', full_name: 'KTV One' }] },
-      { table: 'salary_records', op: 'select', data: [{ ktv_id: 'ktv-1', total_sessions: 1, status: 'pending_approval' }] },
+      { table: 'salary_records', op: 'select', data: [{ ktv_id: 'ktv-1', total_sessions: 1.5, status: 'pending_approval' }] },
       {
         table: 'session_logs',
         op: 'select',
@@ -305,11 +319,11 @@ describe('getKtvSessionMatrix query errors', () => {
             id: 'booking-1',
             package_name: 'Combo A',
             full_price: 1000000,
-            packages: { name: 'Combo A' },
+            packages: { name: 'Combo A', session_multiplier: 1.5 },
           },
         }],
       },
-      { table: 'packages', op: 'select', data: [{ name: 'Combo A' }] },
+      { table: 'packages', op: 'select', data: [{ name: 'Combo A', session_multiplier: 1.5 }] },
     ]);
 
     const result = await getKtvSessionMatrix();
@@ -319,7 +333,7 @@ describe('getKtvSessionMatrix query errors', () => {
       id: 'ktv-1',
       name: 'KTV One',
       isConfirmed: true,
-      'Combo A': 1,
+      'Combo A': 1.5,
       'Dịch vụ lẻ': 0,
     }]);
     expect(mockNoStore).toHaveBeenCalled();
@@ -327,7 +341,9 @@ describe('getKtvSessionMatrix query errors', () => {
       { field: 'status', value: 'completed' },
       { field: 'completed_date', value: '2026-06-01' },
       { field: 'completed_date', value: '2026-07-01' },
+      { field: 'tenant_id', value: 'tenant-1' },
     ]);
+    expect(calls[3].filters).toContainEqual({ field: 'tenant_id', value: 'tenant-1' });
   });
 
   it('throws instead of returning an empty matrix when the session query fails', async () => {
