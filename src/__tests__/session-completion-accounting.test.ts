@@ -138,6 +138,7 @@ describe('session completion accounting side effects', () => {
       },
       isInventoryConsumed: false,
       isRevenueCreated: true,
+      createdRevenueId: 'revenue-1',
     });
 
     expect(result).toEqual({
@@ -147,11 +148,7 @@ describe('session completion accounting side effects', () => {
       expect.objectContaining({
         table: 'revenue',
         op: 'delete',
-        filters: expect.arrayContaining([
-          ['booking_id', 'booking-1'],
-          ['amount', 350000],
-          ['notes', 'Tự động: Thu phí dịch vụ lẻ - Gói dịch vụ lẻ'],
-        ]),
+        filters: [['id', 'revenue-1']],
       }),
       expect.objectContaining({
         table: 'bookings',
@@ -160,6 +157,60 @@ describe('session completion accounting side effects', () => {
         filters: [['id', 'booking-1']],
       }),
     ]));
+  });
+
+  it('reports rollback failures when inventory rollback cannot be restored', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
+    mockRollbackInventoryConsumption.mockResolvedValueOnce({
+      success: false,
+      error: 'inventory rollback failed',
+    });
+    const { calls, supabase } = createSupabaseMock([
+      { data: [{ amount: 200000, status: 'confirmed', revenue_type: 'deposit' }] },
+    ]);
+
+    const result = await enqueueSessionDoneAccountingOutbox({
+      supabase: supabase as never,
+      sessionId: 'session-1',
+      bookingId: 'booking-1',
+      tenantId: 'tenant-1',
+      ktvId: 'ktv-1',
+      today: '2026-06-03',
+      existingLog: { session_number: 2 },
+      currentBooking: {
+        package_name: 'G\u00f3i d\u1ecbch v\u1ee5 l\u1ebb',
+        completed_sessions: 1,
+        status: 'booked',
+        total_sessions: 5,
+        ktv_commission: 30000,
+        assigned_ktv_id: 'ktv-1',
+        tenant_id: 'tenant-1',
+        full_price: 500000,
+        deposit_amount: 200000,
+        discount_percent: 0,
+      },
+      isInventoryConsumed: true,
+      isRevenueCreated: true,
+      createdRevenueId: 'revenue-1',
+    });
+
+    expect(result).toEqual({
+      error: expect.stringContaining('rollback failed: inventory rollback failed'),
+    });
+    expect(calls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'revenue',
+        op: 'delete',
+        filters: [['id', 'revenue-1']],
+      }),
+      expect.objectContaining({
+        table: 'bookings',
+        op: 'update',
+        payload: { completed_sessions: 1, status: 'booked' },
+        filters: [['id', 'booking-1']],
+      }),
+    ]));
+    expect(mockRollbackInventoryConsumption).toHaveBeenCalledWith('session-1');
   });
 
   it('returns an explicit error when the review placeholder insert fails', async () => {
@@ -459,10 +510,7 @@ describe('session completion accounting side effects', () => {
       expect.objectContaining({
         table: 'revenue',
         op: 'delete',
-        filters: expect.arrayContaining([
-          ['booking_id', 'booking-1'],
-          ['amount', 350000],
-        ]),
+        filters: [['id', 'revenue-1']],
       }),
       expect.objectContaining({
         table: 'bookings',
