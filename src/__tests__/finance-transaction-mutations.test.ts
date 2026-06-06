@@ -31,7 +31,39 @@ jest.mock('../services/accounting/template-rules', () => ({
     if (input.sourceTable === 'revenue' && input.revenueType === 'refund') {
       return 'REFUND_TO_CUSTOMER';
     }
-    return 'PACKAGE_SALE';
+    if (input.sourceTable === 'revenue' && input.revenueType === 'deposit') {
+      return 'CUSTOMER_DEPOSIT';
+    }
+    if (input.sourceTable === 'revenue' && input.revenueType === 'remaining_payment') {
+      return 'CUSTOMER_REMAINING_PAYMENT';
+    }
+    if (
+      input.sourceTable === 'revenue' &&
+      (input.revenueType === 'package_payment' || input.revenueType === 'package_sale')
+    ) {
+      return 'CUSTOMER_FULL_PAYMENT';
+    }
+    return 'EXPENSE_OTHER';
+  }),
+  buildRevenueAccountingMetadata: jest.fn((input: {
+    revenueType?: string | null;
+    amount: number;
+    paymentMethod?: string | null;
+    bookingId?: string | null;
+    reason?: string | null;
+  }) => {
+    const amount = Math.abs(Number(input.amount || 0));
+    const metadata: Record<string, unknown> = {
+      amount,
+      payment_method: input.paymentMethod || 'bank_transfer',
+      booking_id: input.bookingId || null,
+      reason: input.reason || (input.revenueType === 'refund' ? 'Hoan tien khach hang' : null),
+    };
+    if (input.revenueType === 'refund') {
+      metadata.deferredRefundAmount = 0;
+      metadata.revenueReductionAmount = amount;
+    }
+    return metadata;
   }),
 }));
 

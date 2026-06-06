@@ -1,6 +1,6 @@
 import { revalidatePath } from 'next/cache';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
-import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
+import { inferBusinessEventType, resolveAccountingReviewStatus } from '@/services/accounting/template-rules';
 import { recordAuditLog } from '@/services/audit-actions';
 import { Database } from '@/types/database.types';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -23,16 +23,6 @@ interface SalaryAuditInput {
   amount?: number | null;
   ktvName?: string | null;
   extraData?: Record<string, unknown>;
-}
-
-function resolveAccountingReviewStatus(
-  businessEventType: ReturnType<typeof inferBusinessEventType>,
-  payload: Record<string, unknown>
-) {
-  if (!businessEventType) return 'NEEDS_REVIEW';
-  return findMissingRequiredFields(businessEventType, payload).length > 0
-    ? 'NEEDS_REVIEW'
-    : 'UNREVIEWED';
 }
 
 export async function getSalaryMonthLockFailure(

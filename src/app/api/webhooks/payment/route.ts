@@ -4,7 +4,11 @@ import { enqueueWithAutoClient } from "@/lib/accounting-outbox";
 import { safeStringify } from "@/lib/log-redactor";
 import { requireSupabaseAdminEnv } from "@/lib/supabase-admin-env";
 import { assertOpenAccountingPeriod } from "@/services/accounting/period-guards";
-import { findMissingRequiredFields, inferBusinessEventType } from "@/services/accounting/template-rules";
+import {
+  buildRevenueAccountingMetadata,
+  inferBusinessEventType,
+  resolveAccountingReviewStatus,
+} from "@/services/accounting/template-rules";
 import type { Database } from "@/types/database.types";
 
 function createWebhookSupabaseClient() {
@@ -45,16 +49,6 @@ type SupabaseErrorLike = {
   code?: string;
   message?: string;
 };
-
-function resolveAccountingReviewStatus(
-  businessEventType: ReturnType<typeof inferBusinessEventType>,
-  payload: Record<string, unknown>
-) {
-  if (!businessEventType) return "NEEDS_REVIEW";
-  return findMissingRequiredFields(businessEventType, payload).length > 0
-    ? "NEEDS_REVIEW"
-    : "UNREVIEWED";
-}
 
 function isRecord(value: unknown): value is WebhookRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -114,14 +108,17 @@ function isUniqueViolation(error: unknown) {
   return maybeError?.code === "23505";
 }
 
-function buildWebhookAccountingPayload(transaction: Transaction, bookingId: string) {
+function buildWebhookAccountingPayload(transaction: Transaction, bookingId: string, revenueType: string) {
   return {
-    amount: transaction.amount,
-    payment_method: "VietQR",
-    booking_id: bookingId,
-    reason: `Webhook VietQR transaction ${transaction.transactionId}: ${transaction.description}`,
+    ...buildRevenueAccountingMetadata({
+      revenueType,
+      amount: transaction.amount,
+      paymentMethod: "VietQR",
+      bookingId,
+      reason: `Webhook VietQR transaction ${transaction.transactionId}: ${transaction.description}`,
+      webhookTransactionId: transaction.transactionId,
+    }),
     webhook_provider: "VietQR",
-    webhook_transaction_id: transaction.transactionId,
     webhook_description: transaction.description,
     webhook_received_date: transaction.receivedDate,
   };
@@ -521,7 +518,7 @@ export async function POST(request: NextRequest) {
         sourceTable: "revenue",
         revenueType,
       });
-      const accountingPayload = buildWebhookAccountingPayload(tx, booking.id);
+      const accountingPayload = buildWebhookAccountingPayload(tx, booking.id, revenueType);
       const revenuePayload: RevenueInsert = {
         booking_id: booking.id,
         amount,

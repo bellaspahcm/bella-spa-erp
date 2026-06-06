@@ -5,7 +5,11 @@ import {
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
-import { findMissingRequiredFields, inferBusinessEventType } from '@/services/accounting/template-rules';
+import {
+  buildRevenueAccountingMetadata,
+  inferBusinessEventType,
+  resolveAccountingReviewStatus,
+} from '@/services/accounting/template-rules';
 import type { Database } from '@/types/database.types';
 import type { createClient } from '@/lib/supabase-server';
 
@@ -28,16 +32,6 @@ type CompletionBooking = Pick<
   | 'deposit_amount'
   | 'discount_percent'
 >;
-
-function resolveAccountingReviewStatus(
-  businessEventType: ReturnType<typeof inferBusinessEventType>,
-  payload: Record<string, unknown>
-) {
-  if (!businessEventType) return 'NEEDS_REVIEW';
-  return findMissingRequiredFields(businessEventType, payload).length > 0
-    ? 'NEEDS_REVIEW'
-    : 'UNREVIEWED';
-}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -218,21 +212,23 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
     return { isRevenueCreated: false, createdRevenueId: null };
   }
 
+  const revenueType = 'package_payment';
   const businessEventType = inferBusinessEventType({
     sourceTable: 'revenue',
-    revenueType: 'package_payment',
+    revenueType,
   });
-  const accountingPayload = {
+  const accountingPayload = buildRevenueAccountingMetadata({
+    revenueType,
     amount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
-    payment_method: 'bank_transfer',
-    booking_id: bookingId,
+    paymentMethod: 'bank_transfer',
+    bookingId,
     reason: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
-  };
+  });
 
   const revenuePayload: RevenueInsert = {
     booking_id: bookingId,
     amount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
-    revenue_type: 'package_payment',
+    revenue_type: revenueType,
     payment_method: 'bank_transfer',
     received_date: today,
     status: 'confirmed',

@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getLocalDateString } from '@/lib/utils';
 import { resolveTenantId } from './shared';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
-import { inferBusinessEventType } from '@/services/accounting/template-rules';
+import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveReviewStatus } from './transaction-review';
 import type { Database } from '@/types/database.types';
 
@@ -96,24 +96,6 @@ function isRevenueRefundType(revenueType: string | null | undefined) {
   return normalizeFinanceCategory(revenueType) === 'refund';
 }
 
-function buildRefundAccountingPayload(input: {
-  amount: number;
-  paymentMethod?: string | null;
-  bookingId?: string | null;
-  notes?: string | null;
-}) {
-  const amount = Math.abs(input.amount);
-
-  return {
-    amount,
-    payment_method: input.paymentMethod || 'bank_transfer',
-    booking_id: input.bookingId || null,
-    reason: input.notes || 'Hoan tien khach hang',
-    deferredRefundAmount: 0,
-    revenueReductionAmount: amount,
-  };
-}
-
 function buildRefundOutboxPayload(input: {
   amount: number;
   paymentMethod?: string | null;
@@ -163,19 +145,13 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       sourceTable: 'revenue',
       revenueType: existingRev?.revenue_type,
     });
-    const accountingPayload = isRevenueRefundType(existingRev?.revenue_type)
-      ? buildRefundAccountingPayload({
-          amount: Number(existingRev?.amount || 0),
-          paymentMethod: existingRev?.payment_method,
-          bookingId: existingRev?.booking_id,
-          notes: existingRev?.notes,
-        })
-      : {
-          amount: Number(existingRev?.amount || 0),
-          payment_method: existingRev?.payment_method || 'bank_transfer',
-          booking_id: existingRev?.booking_id,
-          reason: existingRev?.notes,
-        };
+    const accountingPayload = buildRevenueAccountingMetadata({
+      revenueType: existingRev?.revenue_type,
+      amount: Number(existingRev?.amount || 0),
+      paymentMethod: existingRev?.payment_method,
+      bookingId: existingRev?.booking_id,
+      reason: existingRev?.notes,
+    });
     const revenueRollbackPayload: RevenueUpdate = {
       status: existingRev?.status,
       received_date: existingRev?.received_date,
@@ -549,19 +525,13 @@ export async function recordTransaction(data: {
         sourceTable: 'revenue',
         revenueType: dbRevenueType,
       });
-      const accountingPayload = isRevenueRefundType(dbRevenueType)
-        ? buildRefundAccountingPayload({
-            amount: data.amount,
-            paymentMethod: 'bank_transfer',
-            bookingId: data.booking_id || null,
-            notes: data.notes,
-          })
-        : {
-            amount: Math.abs(data.amount),
-            payment_method: 'bank_transfer',
-            booking_id: data.booking_id || null,
-            reason: data.notes,
-          };
+      const accountingPayload = buildRevenueAccountingMetadata({
+        revenueType: dbRevenueType,
+        amount: data.amount,
+        paymentMethod: 'bank_transfer',
+        bookingId: data.booking_id || null,
+        reason: data.notes,
+      });
       await assertOpenAccountingPeriod(supabase, {
         tenantId,
         date: receivedDate,

@@ -48,6 +48,71 @@ export function resolvePaymentAccountCode(paymentMethod?: string | null) {
   return normalize(paymentMethod) === 'cash' ? '111' : '112';
 }
 
+function asFiniteNumber(value: number | string | null | undefined, fallback = 0) {
+  const numeric = Number(value ?? fallback);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+export function resolveAccountingReviewStatus(
+  businessEventType: BusinessEventType | null,
+  payload: Record<string, unknown>,
+) {
+  if (!businessEventType) return 'NEEDS_REVIEW';
+  return findMissingRequiredFields(businessEventType, payload).length > 0
+    ? 'NEEDS_REVIEW'
+    : 'UNREVIEWED';
+}
+
+type AccountingMetadataValue = string | number | boolean | null | undefined;
+
+export type RevenueAccountingMetadata = {
+  amount: number;
+  payment_method: string;
+  booking_id: string | null;
+  reason: string | null;
+  webhook_transaction_id?: string;
+  deferredRefundAmount?: number;
+  revenueReductionAmount?: number;
+  [key: string]: AccountingMetadataValue;
+};
+
+export function buildRevenueAccountingMetadata(input: {
+  revenueType?: string | null;
+  amount: number | string | null | undefined;
+  paymentMethod?: string | null;
+  bookingId?: string | null;
+  reason?: string | null;
+  webhookTransactionId?: string | null;
+  deferredRefundAmount?: number | string | null;
+  revenueReductionAmount?: number | string | null;
+}): RevenueAccountingMetadata {
+  const amount = Math.abs(asFiniteNumber(input.amount));
+  const revenueType = normalize(input.revenueType);
+  const reason = input.reason || (revenueType === 'refund' ? 'Hoan tien khach hang' : null);
+  const metadata: RevenueAccountingMetadata = {
+    amount,
+    payment_method: input.paymentMethod || 'bank_transfer',
+    booking_id: input.bookingId || null,
+    reason,
+  };
+
+  if (input.webhookTransactionId) {
+    metadata.webhook_transaction_id = input.webhookTransactionId;
+  }
+
+  if (revenueType === 'refund') {
+    metadata.deferredRefundAmount = Math.max(0, asFiniteNumber(input.deferredRefundAmount));
+    metadata.revenueReductionAmount = Math.max(
+      0,
+      input.revenueReductionAmount === undefined || input.revenueReductionAmount === null
+        ? amount
+        : asFiniteNumber(input.revenueReductionAmount),
+    );
+  }
+
+  return metadata;
+}
+
 export function inferBusinessEventType(input: {
   sourceTable: string;
   category?: string | null;

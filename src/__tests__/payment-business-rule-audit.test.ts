@@ -6,6 +6,11 @@ import {
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
 import { validateRemainingPaymentAmount } from '@/modules/booking/actions/payment-helpers';
+import {
+  buildRevenueAccountingMetadata,
+  inferBusinessEventType,
+  resolveAccountingReviewStatus,
+} from '@/services/accounting/template-rules';
 
 describe('payment business rule audit', () => {
   it('keeps a confirmed bank-transfer deposit from reopening the deposit QR', () => {
@@ -61,6 +66,21 @@ describe('payment business rule audit', () => {
 
     expect(validateRemainingPaymentAmount(booking, 4300000)).toEqual({ success: true });
     expect(validateRemainingPaymentAmount(booking, 4300001).error).toContain('4.300.000');
+
+    const depositLedgerEvent = inferBusinessEventType({
+      sourceTable: 'revenue',
+      revenueType: 'deposit',
+    });
+    const depositLedgerMetadata = buildRevenueAccountingMetadata({
+      revenueType: 'deposit',
+      amount: 200000,
+      paymentMethod: 'bank_transfer',
+      bookingId: booking.id,
+      reason: 'Coc goi Me Tien',
+    });
+
+    expect(depositLedgerEvent).toBe('CUSTOMER_DEPOSIT');
+    expect(resolveAccountingReviewStatus(depositLedgerEvent, depositLedgerMetadata)).toBe('UNREVIEWED');
   });
 
   it('marks every payment surface as closed when confirmed revenue covers the package price', () => {
