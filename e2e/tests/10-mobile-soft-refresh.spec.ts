@@ -46,6 +46,46 @@ const softRefreshRoutes: SoftRefreshRoute[] = [
     path: "/dashboard/accounting/journals",
     content: /nhat ky|journal/i,
   },
+  {
+    name: "accounting-outbox",
+    path: "/dashboard/accounting/outbox",
+    content: /outbox|hang doi|event/i,
+  },
+  {
+    name: "accounting-periods",
+    path: "/dashboard/accounting/periods",
+    content: /ky ke toan|period|dong ky/i,
+  },
+  {
+    name: "accounting-manual-entry",
+    path: "/dashboard/accounting/manual-entry",
+    content: /but toan|manual|dinh khoan/i,
+  },
+  {
+    name: "audit",
+    path: "/dashboard/audit",
+    content: /audit|nhat ky|he thong/i,
+  },
+  {
+    name: "settings",
+    path: "/dashboard/settings",
+    content: /cai dat|settings|cau hinh/i,
+  },
+  {
+    name: "customer-profile",
+    path: "/dashboard/customer/profile",
+    content: /ho so|profile|ca nhan/i,
+  },
+  {
+    name: "customer-history",
+    path: "/dashboard/customer/history",
+    content: /lich su|history|lieu trinh/i,
+  },
+  {
+    name: "customer-notifications",
+    path: "/dashboard/customer/notifications",
+    content: /thong bao|notifications/i,
+  },
 ];
 
 function normalizeVietnamese(value: string) {
@@ -90,7 +130,11 @@ test.describe("Mobile soft refresh", () => {
 
       const urlBefore = adminPage.url();
       const searchInput = adminPage.locator('input[type="text"], input[type="search"]').first();
-      const hasSearchInput = await searchInput.isVisible().catch(() => false);
+      const hasSearchInput = await searchInput.evaluate((input) => {
+        if (!(input instanceof HTMLInputElement)) return false;
+        const hint = `${input.type} ${input.placeholder} ${input.getAttribute("aria-label") ?? ""}`.toLowerCase();
+        return input.offsetParent !== null && /search|tim|tìm/.test(hint);
+      }).catch(() => false);
 
       if (hasSearchInput) {
         await searchInput.fill("soft-refresh-probe");

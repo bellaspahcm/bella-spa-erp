@@ -15,9 +15,10 @@ Plus,
 Trash2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect,useState } from 'react';
+import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
 type StaffRow = Awaited<ReturnType<typeof getUsers>>[number];
@@ -31,7 +32,7 @@ interface JournalLineRow {
 
 export default function ManualEntryPage() {
   const router = useRouter();
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
@@ -49,30 +50,33 @@ export default function ManualEntryPage() {
     { account_id: '', debit_amount: 0, credit_amount: 0, ktv_id: '' },
   ]);
 
-  useEffect(() => {
-    const loadMetadata = async () => {
-      try {
-        const [accData, ktvData] = await Promise.all([
-          getAccounts(),
-          getUsers()
-        ]);
-        
-        // Filter to only allow leaf accounts (accounts with no children) for posting
-        const leafAccounts = (accData || []).filter((a) => {
-          return !accData.some((sub) => sub.parent_id === a.id);
-        });
-        
-        setAccounts(leafAccounts);
-        setKtvs(ktvData || []);
-      } catch (err: unknown) {
-        console.error('Error loading metadata:', err);
-        toast.error('Không thể tải siêu dữ liệu hệ thống.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadMetadata();
+  const loadMetadata = useCallback(async () => {
+    try {
+      const [accData, ktvData] = await Promise.all([
+        getAccounts(),
+        getUsers()
+      ]);
+
+      // Filter to only allow leaf accounts (accounts with no children) for posting
+      const leafAccounts = (accData || []).filter((a) => {
+        return !accData.some((sub) => sub.parent_id === a.id);
+      });
+
+      setAccounts(leafAccounts);
+      setKtvs(ktvData || []);
+    } catch (err: unknown) {
+      console.error('Error loading metadata:', err);
+      toast.error('Không thể tải siêu dữ liệu hệ thống.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadMetadata();
+  }, [loadMetadata]);
+
+  usePageRefresh(loadMetadata);
 
   const handleAddLine = () => {
     setLines(prev => [...prev, { account_id: '', debit_amount: 0, credit_amount: 0, ktv_id: '' }]);

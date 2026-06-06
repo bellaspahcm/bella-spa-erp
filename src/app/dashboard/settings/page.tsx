@@ -1,7 +1,7 @@
 "use client";
 // Version: 1.3.0 - Refactored Component & Strict Types
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Store,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getTenantSettings, saveTenantSettings } from "@/services/tenant-actions";
+import { usePageRefresh } from "@/hooks/usePageRefresh";
 import { cn } from "@/lib/utils";
 import { TenantGeneralSettings } from "@/types/domain";
 
@@ -71,42 +72,45 @@ export default function SettingsPage() {
     }
   });
 
-  useEffect(() => {
-    async function loadSettings() {
-      setIsLoadingSettings(true);
-      try {
-        const data = await getTenantSettings();
-        if (data) {
-          const sc = (data.salary_config ?? {}) as Record<string, unknown>;
-          setGeneralSettings({
-            name: data.name || "",
-            phone: data.contact_phone || "",
-            email: data.email || "",
-            address: data.address || "",
-            qr_bank_code: data.qr_bank_code || "",
-            qr_account_number: data.qr_account_number || "",
-            qr_account_name: data.qr_account_name || "",
-            salary_config: {
-              bonus_5_star: Number(sc.bonus_5_star ?? 50000),
-              bonus_4_5_star: Number(sc.bonus_4_5_star ?? 30000),
-              bonus_4_star: Number(sc.bonus_4_star ?? 10000),
-              kpi_target_sessions: Number(sc.kpi_target_sessions ?? 30),
-              kpi_bonus_amount: Number(sc.kpi_bonus_amount ?? 1000000),
-              penalty_late_per_day: sc.penalty_late_per_day !== undefined ? Number(sc.penalty_late_per_day) : undefined,
-              penalty_absent_per_day: sc.penalty_absent_per_day !== undefined ? Number(sc.penalty_absent_per_day) : undefined,
-              auto_consume_inventory: sc.auto_consume_inventory !== undefined ? !!sc.auto_consume_inventory : undefined,
-            }
-          });
-        }
-      } catch (err) {
-        console.error("Error loading settings:", err);
-        toast.error("Không thể tải thông tin cấu hình");
-      } finally {
-        setIsLoadingSettings(false);
+  const loadSettings = useCallback(async () => {
+    setIsLoadingSettings(true);
+    try {
+      const data = await getTenantSettings();
+      if (data) {
+        const sc = (data.salary_config ?? {}) as Record<string, unknown>;
+        setGeneralSettings({
+          name: data.name || "",
+          phone: data.contact_phone || "",
+          email: data.email || "",
+          address: data.address || "",
+          qr_bank_code: data.qr_bank_code || "",
+          qr_account_number: data.qr_account_number || "",
+          qr_account_name: data.qr_account_name || "",
+          salary_config: {
+            bonus_5_star: Number(sc.bonus_5_star ?? 50000),
+            bonus_4_5_star: Number(sc.bonus_4_5_star ?? 30000),
+            bonus_4_star: Number(sc.bonus_4_star ?? 10000),
+            kpi_target_sessions: Number(sc.kpi_target_sessions ?? 30),
+            kpi_bonus_amount: Number(sc.kpi_bonus_amount ?? 1000000),
+            penalty_late_per_day: sc.penalty_late_per_day !== undefined ? Number(sc.penalty_late_per_day) : undefined,
+            penalty_absent_per_day: sc.penalty_absent_per_day !== undefined ? Number(sc.penalty_absent_per_day) : undefined,
+            auto_consume_inventory: sc.auto_consume_inventory !== undefined ? !!sc.auto_consume_inventory : undefined,
+          }
+        });
       }
+    } catch (err) {
+      console.error("Error loading settings:", err);
+      toast.error("Không thể tải thông tin cấu hình");
+    } finally {
+      setIsLoadingSettings(false);
     }
-    loadSettings();
   }, []);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
+
+  usePageRefresh(loadSettings);
 
   const handleSave = async () => {
     setIsSaving(true);

@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase-client';
 import { toast } from 'sonner';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 import type { Database, Json } from '@/types/database.types';
 
 type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE' | 'UNKNOWN';
@@ -621,6 +622,10 @@ export default function AuditPage() {
     }
   }, [supabase]);
 
+  const refreshPageData = useCallback(async () => {
+    await Promise.all([fetchReferenceMaps(), fetchLogs()]);
+  }, [fetchLogs, fetchReferenceMaps]);
+
   useEffect(() => {
     const referenceTimer = setTimeout(() => {
       fetchReferenceMaps();
@@ -633,6 +638,8 @@ export default function AuditPage() {
       clearTimeout(timer);
     };
   }, [fetchLogs, fetchReferenceMaps]);
+
+  usePageRefresh(refreshPageData);
 
   // Reset pagination on filter change
   useEffect(() => {

@@ -22,9 +22,10 @@ TrendingUp,
 Unlock,
 X
 } from 'lucide-react';
-import { useEffect,useState } from 'react';
+import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
+import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 type ClosingPreviewRow = {
   step: number;
@@ -62,7 +63,7 @@ export default function PeriodsPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [closing, setClosing] = useState(false);
 
-  const fetchPeriods = async () => {
+  const fetchPeriods = useCallback(async () => {
     setRefreshing(true);
     try {
       const data = await getAccountingPeriods();
@@ -74,11 +75,13 @@ export default function PeriodsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPeriods();
-  }, []);
+  }, [fetchPeriods]);
+
+  usePageRefresh(fetchPeriods);
 
   // ── Step 1: open modal + load preview ────────────────────────────────────
   const handleOpenCloseModal = async (period: Period) => {
