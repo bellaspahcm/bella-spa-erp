@@ -8,4 +8,10 @@ export type {
 
 export { getFinancialOverview, confirmTransaction, recordTransaction } from './finance/transactions';
 export { getMonthlyPnL, getServicePerformance } from './finance/reports';
+export { getFinanceDashboardSnapshot } from './finance/dashboard-snapshot';
+export type {
+  FinanceDashboardSnapshot,
+  FinanceDashboardSnapshotErrors,
+  FinanceDashboardSnapshotResult,
+} from './finance/dashboard-snapshot';
 export { lockMonth, unlockMonth } from './finance/lock-month';

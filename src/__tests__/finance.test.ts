@@ -1,4 +1,9 @@
-import { getFinancialOverview, getMonthlyPnL, getServicePerformance } from '../services/finance-actions';
+import {
+  getFinanceDashboardSnapshot,
+  getFinancialOverview,
+  getMonthlyPnL,
+  getServicePerformance,
+} from '../services/finance-actions';
 
 // Mock MockQueryBuilder for Supabase chains
 class MockQueryBuilder {
@@ -201,5 +206,41 @@ describe('getServicePerformance', () => {
     await expect(getServicePerformance()).rejects.toThrow(
       '[getServicePerformance] bookings query failed: bookings query failed'
     );
+  });
+});
+
+describe('getFinanceDashboardSnapshot', () => {
+  beforeEach(() => {
+    MockQueryBuilder.errorsByTable = {};
+    MockQueryBuilder.dataByTable = {};
+  });
+
+  it('returns a complete safe snapshot when all finance sources load', async () => {
+    const result = await getFinanceDashboardSnapshot('2026-05-01');
+
+    expect(result.success).toBe(true);
+    expect(result.errors).toEqual({});
+    expect(result.data.overview.totalRevenueMonth).toBe(1000000);
+    expect(result.data.monthlyPnl?.total_revenue).toBe(1000000);
+    expect(result.data.servicePerformance).toHaveLength(1);
+  });
+
+  it('returns partial safe snapshot with explicit errors when finance queries fail', async () => {
+    MockQueryBuilder.errorsByTable.revenue = { message: 'revenue unavailable' };
+
+    const result = await getFinanceDashboardSnapshot('2026-05-01');
+
+    expect(result.success).toBe(false);
+    expect(result.data.overview).toEqual({
+      totalBalance: 0,
+      totalRevenueMonth: 0,
+      totalExpenseMonth: 0,
+      transactions: [],
+    });
+    expect(result.data.monthlyPnl).toBeNull();
+    expect(result.data.servicePerformance).toHaveLength(1);
+    expect(result.errors.overview).toContain('revenue unavailable');
+    expect(result.errors.monthlyPnl).toContain('revenue unavailable');
+    expect(result.errors.servicePerformance).toBeUndefined();
   });
 });
