@@ -29,6 +29,7 @@ import {
   InventoryTransferOrder
 } from '@/services/inventory-transfer-actions';
 import { createClient } from '@/lib/supabase-client';
+import { formatMoneyInput, parseIntegerInput, parseMoneyInput } from '@/lib/utils';
 import { toast } from 'sonner';
 import { HqDashboardStats, HqTenantRecord, CurrentUser, HqAuditLogRecord, HqPackageTemplate } from '@/types/domain';
 import { getHqAuditLogs, getAuditTables, getAuditUsers } from '@/services/audit-actions';
@@ -432,23 +433,23 @@ export default function HqDashboardClient({
     setEditingTemplate(template);
     if (template) {
       setTemplateName(template.name);
-      setTemplatePrice(String(template.price));
+      setTemplatePrice(formatMoneyInput(template.price));
       setTemplateDuration(template.duration ?? '');
-      setTemplateTotalSessions(String(template.total_sessions));
-      setTemplateKtvCommission(String(template.ktv_commission));
-      setTemplatePriceFloor(String(template.price_floor ?? template.price));
-      setTemplatePriceCap(String(template.price_cap ?? template.price));
+      setTemplateTotalSessions(String(parseIntegerInput(template.total_sessions, { min: 1, max: 100, fallback: 10 })));
+      setTemplateKtvCommission(formatMoneyInput(template.ktv_commission));
+      setTemplatePriceFloor(formatMoneyInput(template.price_floor ?? template.price));
+      setTemplatePriceCap(formatMoneyInput(template.price_cap ?? template.price));
       setTemplateAllowedOverride(template.allowed_franchise_override);
       setTemplateDetails(template.details || []);
       setTemplateOffer(template.offer || '');
     } else {
       setTemplateName('');
-      setTemplatePrice('500000');
+      setTemplatePrice(formatMoneyInput(500000));
       setTemplateDuration('90 phút/buổi');
       setTemplateTotalSessions('10');
-      setTemplateKtvCommission('150000');
-      setTemplatePriceFloor('400000');
-      setTemplatePriceCap('600000');
+      setTemplateKtvCommission(formatMoneyInput(150000));
+      setTemplatePriceFloor(formatMoneyInput(400000));
+      setTemplatePriceCap(formatMoneyInput(600000));
       setTemplateAllowedOverride(true);
       setTemplateDetails([]);
       setTemplateOffer('');
@@ -464,11 +465,11 @@ export default function HqDashboardClient({
       return;
     }
 
-    const priceNum = parseFloat(templatePrice) || 0;
-    const totalSessionsNum = parseInt(templateTotalSessions) || 1;
-    const commissionNum = parseFloat(templateKtvCommission) || 0;
-    const floorNum = parseFloat(templatePriceFloor) || 0;
-    const capNum = parseFloat(templatePriceCap) || 0;
+    const priceNum = parseMoneyInput(templatePrice);
+    const totalSessionsNum = parseIntegerInput(templateTotalSessions, { min: 1, max: 100, fallback: 1 });
+    const commissionNum = parseMoneyInput(templateKtvCommission);
+    const floorNum = parseMoneyInput(templatePriceFloor);
+    const capNum = parseMoneyInput(templatePriceCap);
 
     const data = {
       name: templateName,
@@ -1090,12 +1091,14 @@ export default function HqDashboardClient({
           onClose={() => setShowTemplateModal(false)}
           onSubmit={handleSaveTemplate}
           onTemplateNameChange={setTemplateName}
-          onTemplatePriceChange={setTemplatePrice}
+          onTemplatePriceChange={(value) => setTemplatePrice(formatMoneyInput(value))}
           onTemplateDurationChange={setTemplateDuration}
-          onTemplateTotalSessionsChange={setTemplateTotalSessions}
-          onTemplateKtvCommissionChange={setTemplateKtvCommission}
-          onTemplatePriceFloorChange={setTemplatePriceFloor}
-          onTemplatePriceCapChange={setTemplatePriceCap}
+          onTemplateTotalSessionsChange={(value) => {
+            setTemplateTotalSessions(value === '' ? '' : String(parseIntegerInput(value, { min: 1, max: 100, fallback: 1 })));
+          }}
+          onTemplateKtvCommissionChange={(value) => setTemplateKtvCommission(formatMoneyInput(value))}
+          onTemplatePriceFloorChange={(value) => setTemplatePriceFloor(formatMoneyInput(value))}
+          onTemplatePriceCapChange={(value) => setTemplatePriceCap(formatMoneyInput(value))}
           onTemplateAllowedOverrideChange={setTemplateAllowedOverride}
           onTemplateOfferChange={setTemplateOffer}
           onNewDetailTextChange={setNewDetailText}

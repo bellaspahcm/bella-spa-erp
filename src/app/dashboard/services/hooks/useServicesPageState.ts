@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { toast } from 'sonner';
 
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
+import { formatMoneyInput, parseDecimalInput, parseIntegerInput, parseMoneyInput } from '@/lib/utils';
 import { getInventoryItems, getPackageMaterials, upsertPackageMaterials } from '@/services/inventory-actions';
 import {
   createPackage,
@@ -210,12 +211,12 @@ export function useServicesPageState() {
     setSelectedService(service);
     setForm({
       name: service.name,
-      price: service.price?.toString() || '',
+      price: formatMoneyInput(service.price),
       duration: service.duration?.replace(/[^\d]/g, '') || '90',
-      sessions: service.total_sessions?.toString() || '10',
+      sessions: String(parseIntegerInput(service.total_sessions, { min: 1, max: 100, fallback: 10 })),
       offer: service.offer || '',
       details: Array.isArray(service.details) ? service.details.join(', ') : (service.details || ''),
-      ktvCommission: service.ktv_commission?.toString() || '150000',
+      ktvCommission: formatMoneyInput(service.ktv_commission ?? 150000),
       status: service.status === 'active' ? 'active' : 'inactive',
     });
     setMaterialRows([]);
@@ -226,7 +227,7 @@ export function useServicesPageState() {
       const mats = await getPackageMaterials(service.id);
       const rows: MaterialRow[] = (mats as PackageMaterialWithItem[]).map(m => ({
         item_id: m.item_id || m.inventory_items?.id || '',
-        quantity_per_session: Number(m.quantity_per_session) || 0,
+        quantity_per_session: parseDecimalInput(m.quantity_per_session, { min: 0 }),
         name: m.inventory_items?.name || undefined,
         unit: m.inventory_items?.unit || undefined,
       }));
@@ -339,12 +340,12 @@ export function useServicesPageState() {
       const tenantId = await getTenantId();
       const dbData: PackageActionInput = {
         name: form.name,
-        price: form.price,
+        price: parseMoneyInput(form.price),
         duration: `${form.duration} phút/buổi`,
-        total_sessions: form.sessions,
+        total_sessions: parseIntegerInput(form.sessions, { min: 1, max: 100, fallback: 1 }),
         details: form.details.split(',').map(detail => detail.trim()).filter(Boolean),
         offer: form.offer || '',
-        ktv_commission: form.ktvCommission,
+        ktv_commission: parseMoneyInput(form.ktvCommission),
         status: form.status,
         tenant_id: tenantId,
       };
@@ -373,10 +374,10 @@ export function useServicesPageState() {
           toast.error('Có vật tư bị trùng trong định mức tiêu hao. Vui lòng kiểm tra lại.');
         } else {
           const payload = materialRows
-            .filter(row => row.item_id && Number(row.quantity_per_session) > 0)
+            .filter(row => row.item_id && parseDecimalInput(row.quantity_per_session, { min: 0 }) > 0)
             .map(row => ({
               item_id: row.item_id,
-              quantity_per_session: Number(row.quantity_per_session),
+              quantity_per_session: parseDecimalInput(row.quantity_per_session, { min: 0 }),
             }));
           const res = await upsertPackageMaterials(packageId, payload);
           if (!res.success) {

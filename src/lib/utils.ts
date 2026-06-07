@@ -69,6 +69,16 @@ export function parseIntegerInput(value: number | string | null | undefined, opt
   return clampNumericInput(integer, options);
 }
 
+export function parseDecimalInput(value: number | string | null | undefined, options: NumericInputOptions = {}) {
+  const fallback = options.fallback ?? options.min ?? 0;
+  if (value === null || value === undefined || value === '') {
+    return clampNumericInput(fallback, options);
+  }
+
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return clampNumericInput(numeric, { fallback, ...options });
+}
+
 export function formatNumberWithSeparator(value: number | string) {
   if (value === null || value === undefined) return '';
   if (typeof value === 'number') {

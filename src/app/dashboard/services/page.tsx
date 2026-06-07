@@ -16,7 +16,13 @@ import {
   Trash2,
   RefreshCw
 } from 'lucide-react';
-import { cn, formatNumberWithSeparator } from '@/lib/utils';
+import {
+  cn,
+  formatMoneyInput,
+  formatNumberWithSeparator,
+  parseDecimalInput,
+  parseIntegerInput,
+} from '@/lib/utils';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
@@ -346,7 +352,7 @@ export default function ServicesPage() {
                         type="text" 
                         required
                         value={price}
-                        onChange={(e) => setPrice(formatNumberWithSeparator(e.target.value))}
+                        onChange={(e) => setPrice(formatMoneyInput(e.target.value))}
                         className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
                         placeholder="VD: 15,500,000" 
                       />
@@ -368,7 +374,10 @@ export default function ServicesPage() {
                         type="number" 
                         required
                         value={sessions}
-                        onChange={(e) => setSessions(e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setSessions(value === '' ? '' : String(parseIntegerInput(value, { min: 1, max: 100, fallback: 1 })));
+                        }}
                         className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
                         placeholder="VD: 15" 
                       />
@@ -378,11 +387,8 @@ export default function ServicesPage() {
                       <input 
                         type="text" 
                         required
-                        value={ktvCommission ? formatNumberWithSeparator(ktvCommission) : ''}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^\d]/g, '');
-                          setKtvCommission(val);
-                        }}
+                        value={formatMoneyInput(ktvCommission)}
+                        onChange={(e) => setKtvCommission(formatMoneyInput(e.target.value))}
                         className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/10 outline-none font-bold text-slate-700" 
                         placeholder="VD: 150,000" 
                       />
@@ -508,7 +514,7 @@ export default function ServicesPage() {
                                           value={row.quantity_per_session === '' ? '' : row.quantity_per_session}
                                           onFocus={e => e.target.select()}
                                           onChange={e => updateMaterialRow(idx, {
-                                            quantity_per_session: e.target.value === '' ? '' : Number(e.target.value),
+                                            quantity_per_session: e.target.value === '' ? '' : parseDecimalInput(e.target.value, { min: 0 }),
                                           })}
                                           placeholder="0"
                                           className="w-full bg-slate-50 px-4 py-2.5 rounded-xl text-sm font-bold text-center outline-none focus:ring-2 focus:ring-primary/20"
