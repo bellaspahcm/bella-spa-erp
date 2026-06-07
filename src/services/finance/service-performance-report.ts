@@ -1,5 +1,6 @@
 'use server';
 
+import { calculatePriceAfterDiscount } from '@/lib/business-rules/payment';
 import { resolveTenantId } from './shared';
 import type { ServiceBookingDBRow } from './types';
 
@@ -41,7 +42,10 @@ export async function getServicePerformance() {
         };
       }
       byPackage[key].total_bookings += 1;
-      const actualPrice = Number(b.full_price || 0) * (1 - (b.discount_percent || 0)/100);
+      const actualPrice = calculatePriceAfterDiscount({
+        fullPrice: b.full_price,
+        discountPercent: b.discount_percent,
+      });
       byPackage[key].total_revenue += actualPrice;
       // KTV cost = commission per session × completed sessions
       const commission = Number(b.ktv_commission || 150000);

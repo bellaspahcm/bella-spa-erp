@@ -1,3 +1,4 @@
+import { readFileSync } from 'fs';
 import { calculatePortalPaymentSummary } from '@/app/portal/[token]/payment-utils';
 import {
   calculateBookingPaymentState,
@@ -11,6 +12,10 @@ import {
   inferBusinessEventType,
   resolveAccountingReviewStatus,
 } from '@/services/accounting/template-rules';
+
+function readSource(path: string) {
+  return readFileSync(path, 'utf8');
+}
 
 describe('payment business rule audit', () => {
   it('keeps a confirmed bank-transfer deposit from reopening the deposit QR', () => {
@@ -118,5 +123,22 @@ describe('payment business rule audit', () => {
     expect(portalSummary.amountToPay).toBe(0);
     expect(bookingQrRequest.amountToPay).toBe(0);
     expect(validateRemainingPaymentAmount(booking, 1).error).toBeTruthy();
+  });
+
+  it('keeps production discount pricing routed through the shared payment engine', () => {
+    const bookingModalSource = readSource('src/components/features/BookingModal.tsx');
+    const activeBookingPanelSource = readSource('src/app/dashboard/customers/[id]/components/ActiveBookingPanel.tsx');
+    const servicePerformanceSource = readSource('src/services/finance/service-performance-report.ts');
+    const auditedProductionSources = [
+      bookingModalSource,
+      activeBookingPanelSource,
+      servicePerformanceSource,
+    ].join('\n');
+
+    expect(bookingModalSource).toContain('calculateBookingPaymentState');
+    expect(activeBookingPanelSource).toContain('paymentState.priceAfterDiscount');
+    expect(servicePerformanceSource).toContain('calculatePriceAfterDiscount');
+    expect(auditedProductionSources).not.toMatch(/discount_percent[^\n]*(?:\/\s*100|\*)/);
+    expect(auditedProductionSources).not.toMatch(/discountPercent[^\n]*(?:\/\s*100|\*)/);
   });
 });

@@ -53,6 +53,9 @@ export function ActiveBookingPanel({
       })
     : null;
   const remainingBalance = paymentState?.remainingDebt || 0;
+  const discountAmount = activeBooking && paymentState
+    ? Math.max(0, Number(activeBooking.full_price || 0) - paymentState.priceAfterDiscount)
+    : 0;
 
   return (
           <div className="luxury-card-pink rounded-[3rem] p-8 relative shadow-2xl group">
@@ -99,7 +102,7 @@ export function ActiveBookingPanel({
                       <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-[1.5rem] border border-white/20">
                         <p className="text-[9px] text-rose-100/80 font-bold uppercase tracking-[0.2em] mb-1">Khuyến mãi ({activeBooking?.discount_percent}%)</p>
                         <p className="font-black text-lg text-rose-200">
-                          -{formatNumberWithSeparator((activeBooking?.full_price || 0) * (activeBooking?.discount_percent || 0) / 100)}đ
+                          -{formatNumberWithSeparator(discountAmount)}đ
                         </p>
                       </div>
                     )}
