@@ -157,6 +157,7 @@ describe('getMonthlyPnL', () => {
       ],
       attendance: [
         ...Array.from({ length: 13 }, () => ({ ktv_id: 'ktv-unsaved', status: 'present' })),
+        { ktv_id: 'ktv-unsaved', status: 'half_day' },
         { ktv_id: 'ktv-unsaved', status: 'absent' },
         { ktv_id: 'ktv-saved', status: 'present' },
       ],
@@ -165,11 +166,11 @@ describe('getMonthlyPnL', () => {
     const result = await getMonthlyPnL('2026-05-01');
 
     // saved record: 4,500,000
-    // unsaved with 13 working days: (5,200,000 / 26) * 13 + 150,000 = 2,750,000
+    // unsaved with 13.5 working days: (5,200,000 / 26) * 13.5 + 150,000 = 2,850,000
     // unsaved with 0 working days: base component 0 + session commission 120,000
-    expect(result.total_ktv_salaries).toBe(7370000);
+    expect(result.total_ktv_salaries).toBe(7470000);
     expect(result.total_operating_expenses).toBe(250000);
-    expect(result.net_profit).toBe(2380000);
+    expect(result.net_profit).toBe(2280000);
   });
 });
 

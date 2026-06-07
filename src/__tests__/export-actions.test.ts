@@ -48,21 +48,16 @@ function mockSessionQuery(
   return query;
 }
 
-function mockSalaryQuery(data: Record<string, unknown> | null, error: Error | null = null) {
-  const query = {
-    select: jest.fn(() => query),
-    eq: jest.fn(() => query),
-    maybeSingle: jest.fn().mockResolvedValue({ data, error }),
-  };
-  return query;
-}
-
 function mockPackagesQuery(data: Record<string, unknown>[] | null = [], error: Error | null = null) {
   const query = {
     select: jest.fn(() => query),
     eq: jest.fn().mockResolvedValue({ data, error }),
   };
   return query;
+}
+
+function mockSalarySheetRpc(data: Record<string, unknown>[] | null, error: Error | null = null) {
+  return jest.fn().mockResolvedValue({ data, error });
 }
 
 describe("exportSessionMatrixToExcel", () => {
@@ -279,7 +274,7 @@ describe("exportAccountingReportToExcel", () => {
 });
 
 describe("exportSalaryToExcel", () => {
-  it("writes grouped package commissions and saved salary components", async () => {
+  it("writes grouped package commissions and central salary sheet components", async () => {
     const sessionQuery = mockSessionQuery({
       data: [
         {
@@ -299,23 +294,25 @@ describe("exportSalaryToExcel", () => {
       ],
       error: null,
     });
-    const salaryQuery = mockSalaryQuery({
+    const rpc = mockSalarySheetRpc([{
+      ktv_id: "ktv-1",
       base_salary: 6_000_000,
       session_bonus: 400_000,
       rating_bonus: 75_000,
       kpi_bonus: 500_000,
-      violations_deduction: 100_000,
-      service_percentage_bonus: 50_000,
+      deductions: 100_000,
+      advances: 50_000,
       total_salary: 6_825_000,
-    });
+      total_sessions: 4,
+      status: "published",
+    }]);
     const packagesQuery = mockPackagesQuery([{ name: "VIP Package", session_multiplier: 2 }]);
     const from = jest.fn((table: string) => {
       if (table === "session_logs") return sessionQuery;
-      if (table === "salary_records") return salaryQuery;
       if (table === "packages") return packagesQuery;
       throw new Error(`Unexpected table ${table}`);
     });
-    mockCreateClient.mockResolvedValueOnce({ from });
+    mockCreateClient.mockResolvedValueOnce({ from, rpc });
 
     const workbook = workbookFromBase64(
       await exportSalaryToExcel("ktv-1", "KTV A", "2026-05-01"),
@@ -328,9 +325,13 @@ describe("exportSalaryToExcel", () => {
     expect(String(vipRow?.[5])).toContain("Customer A");
     expect(String(vipRow?.[5])).toContain("Customer B");
     expect(rows.some((row) => String(row[4]).includes("6.825.000"))).toBe(true);
+    expect(rows.find((row) => String(row[0]).startsWith("2."))?.[2]).toBe("4 buổi");
     expect(from).toHaveBeenCalledWith("session_logs");
-    expect(from).toHaveBeenCalledWith("salary_records");
+    expect(from).not.toHaveBeenCalledWith("salary_records");
     expect(from).toHaveBeenCalledWith("packages");
+    expect(rpc).toHaveBeenCalledWith("calculate_ktv_salary_sheet", {
+      p_month_year: "2026-05-01",
+    });
   });
 
   it("propagates session query failures instead of returning a fake workbook", async () => {
@@ -343,17 +344,18 @@ describe("exportSalaryToExcel", () => {
       if (table === "session_logs") return sessionQuery;
       throw new Error(`Unexpected table ${table}`);
     });
-    mockCreateClient.mockResolvedValueOnce({ from });
+    const rpc = mockSalarySheetRpc([]);
+    mockCreateClient.mockResolvedValueOnce({ from, rpc });
 
     await expect(
       exportSalaryToExcel("ktv-1", "KTV A", "2026-05-01"),
     ).rejects.toThrow("session query failed");
-    expect(from).not.toHaveBeenCalledWith("salary_records");
+    expect(rpc).not.toHaveBeenCalled();
 
     consoleError.mockRestore();
   });
 
-  it("propagates salary record query failures instead of using fallback salary amounts", async () => {
+  it("propagates salary sheet RPC failures instead of using fallback salary amounts", async () => {
     const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
     const sessionQuery = mockSessionQuery({
       data: [
@@ -367,18 +369,36 @@ describe("exportSalaryToExcel", () => {
       ],
       error: null,
     });
-    const salaryQuery = mockSalaryQuery(null, new Error("salary record query failed"));
+    const rpc = mockSalarySheetRpc(null, new Error("salary sheet failed"));
     const from = jest.fn((table: string) => {
       if (table === "session_logs") return sessionQuery;
-      if (table === "salary_records") return salaryQuery;
       throw new Error(`Unexpected table ${table}`);
     });
-    mockCreateClient.mockResolvedValueOnce({ from });
+    mockCreateClient.mockResolvedValueOnce({ from, rpc });
 
     await expect(
       exportSalaryToExcel("ktv-1", "KTV A", "2026-05-01"),
-    ).rejects.toThrow("salary record query failed");
-    expect(from).toHaveBeenCalledWith("salary_records");
+    ).rejects.toThrow("salary sheet failed");
+    expect(from).not.toHaveBeenCalledWith("packages");
+
+    consoleError.mockRestore();
+  });
+
+  it("rejects salary export when the central salary sheet has no KTV row", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    const sessionQuery = mockSessionQuery({ data: [], error: null });
+    const packagesQuery = mockPackagesQuery([]);
+    const rpc = mockSalarySheetRpc([{ ktv_id: "ktv-other", total_salary: 1 }]);
+    const from = jest.fn((table: string) => {
+      if (table === "session_logs") return sessionQuery;
+      if (table === "packages") return packagesQuery;
+      throw new Error(`Unexpected table ${table}`);
+    });
+    mockCreateClient.mockResolvedValueOnce({ from, rpc });
+
+    await expect(
+      exportSalaryToExcel("ktv-1", "KTV A", "2026-05-01"),
+    ).rejects.toThrow("Salary sheet row not found for KTV ktv-1 in 2026-05-01");
 
     consoleError.mockRestore();
   });
