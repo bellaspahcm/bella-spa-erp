@@ -4,6 +4,12 @@ import {
   calculateSessionRevenueRecognition,
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
+import {
+  buildCompletionRollbackPayload,
+  calculateBookingCompletionUpdate,
+  formatRollbackAppend,
+  shouldCreateSingleSessionRevenue,
+} from '@/lib/business-rules/session-completion';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import {
   buildRevenueAccountingMetadata,
@@ -100,10 +106,7 @@ export async function restoreBookingProgress(
   bookingId: string,
   currentBooking: CompletionBooking | null
 ) {
-  const rollbackPayload: BookingUpdate = {
-    completed_sessions: currentBooking?.completed_sessions || 0,
-    status: currentBooking?.status || 'booked',
-  };
+  const rollbackPayload: BookingUpdate = buildCompletionRollbackPayload(currentBooking);
 
   const { error } = await supabase
     .from('bookings')
@@ -189,7 +192,7 @@ export async function syncBookingCompletionProgress(params: {
 
   if (countError) {
     const rollbackResult = await rollbackInventoryIfConsumed(sessionId, isInventoryConsumed);
-    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    const rollbackMessage = formatRollbackAppend(rollbackResult);
     return { error: 'Lỗi đếm số buổi đã hoàn thành: ' + countError.message + rollbackMessage };
   }
 
@@ -199,25 +202,11 @@ export async function syncBookingCompletionProgress(params: {
     .eq('id', bookingId)
     .single();
 
-  const bookingUpdates: BookingUpdate = {
-    completed_sessions: count || 0,
-    last_updated_date: today,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (
-    count &&
-    count > 0 &&
-    (currentBooking?.status === 'deposit_pending' ||
-      currentBooking?.status === 'booked' ||
-      currentBooking?.status === 'deposit')
-  ) {
-    bookingUpdates.status = 'in_progress';
-  }
-
-  if (currentBooking?.total_sessions && count && count >= currentBooking.total_sessions) {
-    bookingUpdates.status = 'completed';
-  }
+  const bookingUpdates: BookingUpdate = calculateBookingCompletionUpdate({
+    completedSessionCount: count,
+    currentBooking,
+    today,
+  });
 
   const { error: bookingUpdateErr } = await supabase
     .from('bookings')
@@ -227,7 +216,7 @@ export async function syncBookingCompletionProgress(params: {
   if (bookingUpdateErr) {
     console.error('Error updating booking progress:', bookingUpdateErr);
     const rollbackResult = await rollbackInventoryIfConsumed(sessionId, isInventoryConsumed);
-    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    const rollbackMessage = formatRollbackAppend(rollbackResult);
     return { error: 'Lỗi cập nhật tiến trình booking: ' + bookingUpdateErr.message + rollbackMessage };
   }
 
@@ -245,7 +234,8 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
 }) {
   const { supabase, bookingId, tenantId, today, currentBooking, sessionId, isInventoryConsumed } = params;
 
-  if (!currentBooking?.package_name?.toLowerCase().includes('lẻ')) {
+  const packageName = currentBooking?.package_name ?? '';
+  if (!shouldCreateSingleSessionRevenue(packageName)) {
     return { isRevenueCreated: false, createdRevenueId: null };
   }
 
@@ -259,7 +249,7 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
     amount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
     paymentMethod: 'bank_transfer',
     bookingId,
-    reason: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
+    reason: `Tự động: Thu phí dịch vụ lẻ - ${packageName}`,
   });
 
   const revenuePayload: RevenueInsert = {
@@ -269,7 +259,7 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
     payment_method: 'bank_transfer',
     received_date: today,
     status: 'confirmed',
-    notes: `Tự động: Thu phí dịch vụ lẻ - ${currentBooking.package_name}`,
+    notes: `Tự động: Thu phí dịch vụ lẻ - ${packageName}`,
     tenant_id: tenantId,
     business_event_type: businessEventType,
     accounting_review_status: resolveAccountingReviewStatus(businessEventType, accountingPayload),
@@ -291,7 +281,7 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
       currentBooking,
       isInventoryConsumed,
     });
-    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    const rollbackMessage = formatRollbackAppend(rollbackResult);
     return { error: 'Không thể ghi nhận doanh thu tự động cho gói lẻ: ' + revenueError.message + rollbackMessage };
   }
 
@@ -307,7 +297,7 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
       createdRevenueId,
     });
 
-    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    const rollbackMessage = formatRollbackAppend(rollbackResult);
     return { error: 'Không xác định được mã doanh thu tự động vừa tạo. Đã hoàn tác ca làm.' + rollbackMessage };
   }
 
@@ -340,7 +330,7 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
       createdRevenueId,
     });
 
-    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    const rollbackMessage = formatRollbackAppend(rollbackResult);
     return { error: 'Không thể ghi nhận hàng đợi kế toán cho doanh thu gói lẻ. Đã hoàn tác ca làm.' + rollbackMessage };
   }
 
@@ -401,7 +391,7 @@ export async function syncKtvSalaryAfterCompletion(params: {
     createdRevenueId,
   });
 
-  const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+  const rollbackMessage = formatRollbackAppend(rollbackResult);
   return { error: 'Không thể ghi nhận lương cho KTV. Đã hoàn tác ca làm: ' + salaryError.message + rollbackMessage };
 }
 
@@ -545,7 +535,7 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
       createdRevenueId,
     });
 
-    const rollbackMessage = 'error' in rollbackResult ? `; rollback failed: ${rollbackResult.error}` : '';
+    const rollbackMessage = formatRollbackAppend(rollbackResult);
     return { error: 'Không thể ghi nhận hàng đợi kế toán. Đã hoàn tác ca làm: ' + error.message + rollbackMessage };
   }
 }

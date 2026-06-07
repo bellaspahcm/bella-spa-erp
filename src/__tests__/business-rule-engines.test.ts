@@ -28,6 +28,12 @@ import {
   calculateSalaryDetails,
   calculateSalaryTotal,
 } from '@/lib/business-rules/salary';
+import {
+  buildCompletionRollbackPayload,
+  calculateBookingCompletionUpdate,
+  formatRollbackAppend,
+  shouldCreateSingleSessionRevenue,
+} from '@/lib/business-rules/session-completion';
 
 describe('shared business rule engines', () => {
   it('calculates customer payment state from confirmed revenue records', () => {
@@ -211,5 +217,36 @@ describe('shared business rule engines', () => {
       items: [{ itemId: 'oil', quantity: 2, unitCost: 50000, cost: 100000 }],
       totalCost: 100000,
     });
+  });
+
+  it('centralizes session completion orchestration rules', () => {
+    expect(shouldCreateSingleSessionRevenue('Gói dịch vụ lẻ')).toBe(true);
+    expect(shouldCreateSingleSessionRevenue('Goi dich vu le')).toBe(true);
+    expect(shouldCreateSingleSessionRevenue('Combo Mẹ & Bé')).toBe(false);
+
+    expect(calculateBookingCompletionUpdate({
+      completedSessionCount: 1,
+      currentBooking: { total_sessions: 3, status: 'booked' },
+      today: '2026-06-07',
+      nowIso: '2026-06-07T01:00:00.000Z',
+    })).toEqual({
+      completed_sessions: 1,
+      last_updated_date: '2026-06-07',
+      updated_at: '2026-06-07T01:00:00.000Z',
+      status: 'in_progress',
+    });
+
+    expect(calculateBookingCompletionUpdate({
+      completedSessionCount: 3,
+      currentBooking: { total_sessions: 3, status: 'in_progress' },
+      today: '2026-06-07',
+      nowIso: '2026-06-07T01:00:00.000Z',
+    }).status).toBe('completed');
+
+    expect(buildCompletionRollbackPayload({ completed_sessions: 2, status: 'in_progress' }))
+      .toEqual({ completed_sessions: 2, status: 'in_progress' });
+    expect(formatRollbackAppend({ success: true })).toBe('');
+    expect(formatRollbackAppend({ error: 'inventory rollback failed' }))
+      .toBe('; rollback failed: inventory rollback failed');
   });
 });
