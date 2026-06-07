@@ -358,6 +358,48 @@ describe('business health summary', () => {
     }));
   });
 
+  it('surfaces missing salary paid accounting side-effect with a safe repair action', async () => {
+    tableRows.salary_records = [
+      {
+        id: 'salary-1',
+        ktv_id: 'ktv-1',
+        month_year: '2026-06-01',
+        tenant_id: 'tenant-a',
+        status: 'paid',
+        paid_date: '2026-06-30',
+        paid_method: 'bank_transfer',
+        notes: 'Thanh toán lương tháng 6',
+        total_sessions: 12,
+        base_salary: 6000000,
+        session_bonus: 500000,
+        rating_bonus: 200000,
+        kpi_bonus: 300000,
+        violations_deduction: 0,
+        service_percentage_bonus: 0,
+        total_salary: 7000000,
+        business_event_type: 'SALARY_PAYMENT',
+        accounting_review_status: 'AUTO_POSTED',
+      },
+    ];
+
+    const summary = await getBusinessHealthSummary('2026-06-01');
+    const finding = summary.findings.find((item) => item.code === 'paid_salary_missing_accounting_side_effect');
+
+    expect(finding).toEqual(expect.objectContaining({
+      href: '/dashboard/salary',
+      repair_action: 'enqueue_missing_salary_paid_accounting',
+      repair_label: 'Tạo SALARY_PAID',
+      repair_requires_confirmation: true,
+      details: expect.arrayContaining([
+        expect.objectContaining({ label: 'KTV', value: 'ktv-1' }),
+        expect.objectContaining({ label: 'Kỳ lương', value: '2026-06-01' }),
+        expect.objectContaining({ label: 'Lương đã trả', value: '7.000.000đ' }),
+        expect.objectContaining({ label: 'Ngày trả lương', value: '2026-06-30' }),
+        expect.objectContaining({ label: 'Phương thức trả', value: 'bank_transfer' }),
+      ]),
+    }));
+  });
+
   it('propagates database failures instead of returning a fake healthy summary', async () => {
     tableErrors.bookings = { message: 'permission denied for bookings' };
 
@@ -1009,6 +1051,250 @@ describe('business health summary', () => {
       action: 'enqueue_missing_package_sale_accounting',
       targetId: 'revenue-1',
     })).rejects.toThrow(/Không thể tạo outbox PACKAGE_SALE/i);
+  });
+
+  it('enqueues missing SALARY_PAID accounting outbox after audit', async () => {
+    tableRows.salary_records = [
+      {
+        id: 'salary-1',
+        ktv_id: 'ktv-1',
+        month_year: '2026-06-01',
+        tenant_id: 'tenant-a',
+        status: 'paid',
+        paid_date: '2026-06-30',
+        paid_method: 'bank_transfer',
+        notes: 'Thanh toán lương tháng 6',
+        total_sessions: 12,
+        base_salary: 6000000,
+        session_bonus: 500000,
+        rating_bonus: 200000,
+        kpi_bonus: 300000,
+        violations_deduction: 0,
+        service_percentage_bonus: 0,
+        total_salary: 7000000,
+        business_event_type: 'SALARY_PAYMENT',
+        accounting_review_status: 'AUTO_POSTED',
+      },
+    ];
+
+    const result = await runBusinessHealthRepairAction({
+      action: 'enqueue_missing_salary_paid_accounting',
+      targetId: 'salary-1',
+    });
+
+    expect(result).toEqual(expect.objectContaining({
+      success: true,
+      action: 'enqueue_missing_salary_paid_accounting',
+    }));
+    expect(mockInsert).toHaveBeenCalledWith('audit_logs', expect.objectContaining({
+      table_name: 'accounting_outbox',
+      record_id: 'salary-1',
+      old_data: expect.objectContaining({
+        existing_salary_paid_outbox: 0,
+        existing_active_journal: false,
+      }),
+      new_data: expect.objectContaining({
+        reason: 'business_health_enqueue_missing_salary_paid',
+        event_type: 'SALARY_PAID',
+        reference_type: 'SALARY_RECORD',
+        reference_id: 'salary-1',
+        ktv_id: 'ktv-1',
+        month_year: '2026-06-01',
+        paid_method: 'bank_transfer',
+        total_salary: 7000000,
+      }),
+    }));
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      expect.objectContaining({ from: mockFrom, rpc: mockRpc }),
+      expect.objectContaining({
+        eventType: 'SALARY_PAID',
+        referenceType: 'SALARY_RECORD',
+        referenceId: 'salary-1',
+        payload: expect.objectContaining({
+          amount: 7000000,
+          paymentMethod: 'bank_transfer',
+          description: 'Thanh toán lương tháng 6',
+          ktvId: 'ktv-1',
+          branchId: 'tenant-a',
+        }),
+      }),
+      '[businessHealth.salaryPaidRepair]'
+    );
+    expect(mockInsert.mock.invocationCallOrder[0]).toBeLessThan(mockEnqueueWithAutoClient.mock.invocationCallOrder[0]);
+  });
+
+  it('does not enqueue duplicate SALARY_PAID outbox when one already exists', async () => {
+    tableRows.salary_records = [
+      {
+        id: 'salary-1',
+        ktv_id: 'ktv-1',
+        month_year: '2026-06-01',
+        tenant_id: 'tenant-a',
+        status: 'paid',
+        paid_date: '2026-06-30',
+        paid_method: 'bank_transfer',
+        notes: null,
+        total_sessions: 12,
+        base_salary: 6000000,
+        session_bonus: 500000,
+        rating_bonus: 200000,
+        kpi_bonus: 300000,
+        violations_deduction: 0,
+        service_percentage_bonus: 0,
+        total_salary: 7000000,
+        business_event_type: 'SALARY_PAYMENT',
+        accounting_review_status: 'AUTO_POSTED',
+      },
+    ];
+    tableRows.accounting_outbox = [
+      {
+        id: 'outbox-1',
+        tenant_id: 'tenant-a',
+        event_type: 'SALARY_PAID',
+        reference_type: 'SALARY_RECORD',
+        reference_id: 'salary-1',
+        status: 'PENDING',
+        retry_count: 0,
+        max_retries: 3,
+        last_error: null,
+        created_at: '2026-06-30T00:00:00.000Z',
+      },
+    ];
+
+    await expect(runBusinessHealthRepairAction({
+      action: 'enqueue_missing_salary_paid_accounting',
+      targetId: 'salary-1',
+    })).rejects.toThrow(/đã có outbox SALARY_PAID/i);
+
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('does not enqueue SALARY_PAID when salary is not paid', async () => {
+    tableRows.salary_records = [
+      {
+        id: 'salary-1',
+        ktv_id: 'ktv-1',
+        month_year: '2026-06-01',
+        tenant_id: 'tenant-a',
+        status: 'published',
+        paid_date: null,
+        paid_method: null,
+        notes: null,
+        total_sessions: 12,
+        base_salary: 6000000,
+        session_bonus: 500000,
+        rating_bonus: 200000,
+        kpi_bonus: 300000,
+        violations_deduction: 0,
+        service_percentage_bonus: 0,
+        total_salary: 7000000,
+        business_event_type: 'SALARY_ACCRUAL',
+        accounting_review_status: 'AUTO_POSTED',
+      },
+    ];
+
+    await expect(runBusinessHealthRepairAction({
+      action: 'enqueue_missing_salary_paid_accounting',
+      targetId: 'salary-1',
+    })).rejects.toThrow(/đã trả/i);
+
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('does not enqueue SALARY_PAID when paid salary amount is zero', async () => {
+    tableRows.salary_records = [
+      {
+        id: 'salary-1',
+        ktv_id: 'ktv-1',
+        month_year: '2026-06-01',
+        tenant_id: 'tenant-a',
+        status: 'paid',
+        paid_date: '2026-06-30',
+        paid_method: 'bank_transfer',
+        notes: null,
+        total_sessions: 0,
+        base_salary: 0,
+        session_bonus: 0,
+        rating_bonus: 0,
+        kpi_bonus: 0,
+        violations_deduction: 0,
+        service_percentage_bonus: 0,
+        total_salary: 0,
+        business_event_type: 'SALARY_PAYMENT',
+        accounting_review_status: 'AUTO_POSTED',
+      },
+    ];
+
+    await expect(runBusinessHealthRepairAction({
+      action: 'enqueue_missing_salary_paid_accounting',
+      targetId: 'salary-1',
+    })).rejects.toThrow(/tổng lương dương/i);
+
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('does not enqueue SALARY_PAID when audit logging fails', async () => {
+    tableRows.salary_records = [
+      {
+        id: 'salary-1',
+        ktv_id: 'ktv-1',
+        month_year: '2026-06-01',
+        tenant_id: 'tenant-a',
+        status: 'paid',
+        paid_date: '2026-06-30',
+        paid_method: 'bank_transfer',
+        notes: null,
+        total_sessions: 12,
+        base_salary: 6000000,
+        session_bonus: 500000,
+        rating_bonus: 200000,
+        kpi_bonus: 300000,
+        violations_deduction: 0,
+        service_percentage_bonus: 0,
+        total_salary: 7000000,
+        business_event_type: 'SALARY_PAYMENT',
+        accounting_review_status: 'AUTO_POSTED',
+      },
+    ];
+    tableErrors.audit_logs = { message: 'audit insert failed' };
+
+    await expect(runBusinessHealthRepairAction({
+      action: 'enqueue_missing_salary_paid_accounting',
+      targetId: 'salary-1',
+    })).rejects.toThrow(/audit insert failed/i);
+
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('propagates SALARY_PAID enqueue failure explicitly', async () => {
+    mockEnqueueWithAutoClient.mockResolvedValueOnce(false);
+    tableRows.salary_records = [
+      {
+        id: 'salary-1',
+        ktv_id: 'ktv-1',
+        month_year: '2026-06-01',
+        tenant_id: 'tenant-a',
+        status: 'paid',
+        paid_date: '2026-06-30',
+        paid_method: 'bank_transfer',
+        notes: null,
+        total_sessions: 12,
+        base_salary: 6000000,
+        session_bonus: 500000,
+        rating_bonus: 200000,
+        kpi_bonus: 300000,
+        violations_deduction: 0,
+        service_percentage_bonus: 0,
+        total_salary: 7000000,
+        business_event_type: 'SALARY_PAYMENT',
+        accounting_review_status: 'AUTO_POSTED',
+      },
+    ];
+
+    await expect(runBusinessHealthRepairAction({
+      action: 'enqueue_missing_salary_paid_accounting',
+      targetId: 'salary-1',
+    })).rejects.toThrow(/Không thể tạo outbox SALARY_PAID/i);
   });
 
   it('enqueues missing SESSION_DONE accounting outbox after audit and revenue recognition recalculation', async () => {

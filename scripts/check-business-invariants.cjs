@@ -220,7 +220,7 @@ async function loadBusinessDataset({
       ...common,
       table: 'salary_records',
       select:
-        'id,ktv_id,month_year,tenant_id,status,total_sessions,base_salary,session_bonus,rating_bonus,kpi_bonus,violations_deduction,service_percentage_bonus,total_salary,business_event_type,accounting_review_status',
+        'id,ktv_id,month_year,tenant_id,status,paid_date,paid_method,notes,total_sessions,base_salary,session_bonus,rating_bonus,kpi_bonus,violations_deduction,service_percentage_bonus,total_salary,business_event_type,accounting_review_status',
     }),
     fetchTableRows({
       ...common,
@@ -918,11 +918,15 @@ function checkCrossModuleSideEffects(dataset) {
   (dataset.salaryRecords || []).forEach((record) => {
     if (normalize(record.status) !== 'paid') return;
 
-    if (!hasAccountingSideEffect(dataset, 'SALARY_PAID', record.id)) {
+    if (asFiniteNumber(record.total_salary) > 0 && record.ktv_id && !hasAccountingSideEffect(dataset, 'SALARY_PAID', record.id)) {
       addFinding(findings, getMissingAccountingSideEffectSeverity(record), 'paid_salary_missing_accounting_side_effect', 'Paid salary record should have a SALARY_PAID outbox event or active journal entry.', {
         recordId: record.id,
         sourceTable: 'salary_records',
         ktvId: record.ktv_id,
+        salaryAmount: asFiniteNumber(record.total_salary),
+        salaryMonth: record.month_year,
+        paidDate: record.paid_date,
+        paymentMethod: record.paid_method,
       });
     }
   });

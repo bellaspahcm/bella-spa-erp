@@ -5,6 +5,7 @@ import { enqueueWithAutoClient } from '@/lib/accounting-outbox';
 import {
   buildInventoryConsumedOutboxEvent,
   buildPackageSaleOutboxEvent,
+  buildSalaryPaidOutboxEvent,
   buildSessionDoneOutboxEvent,
   isPackageSaleRevenueType,
 } from '@/lib/business-rules/accounting-outbox';
@@ -136,6 +137,9 @@ type SalaryRecordRow = Pick<
   | 'month_year'
   | 'tenant_id'
   | 'status'
+  | 'paid_date'
+  | 'paid_method'
+  | 'notes'
   | 'total_sessions'
   | 'base_salary'
   | 'session_bonus'
@@ -229,6 +233,10 @@ type InvariantFinding = {
   revenueType?: string;
   revenueAmount?: number;
   receivedDate?: string;
+  salaryAmount?: number;
+  salaryMonth?: string;
+  paidDate?: string;
+  paymentMethod?: string;
   inventoryLogCount?: number;
   consumptionSummary?: string;
   consumptionCost?: number;
@@ -379,6 +387,10 @@ const PACKAGE_SALE_ACCOUNTING_REPAIR_CODES = new Set([
   'confirmed_package_revenue_missing_accounting_side_effect',
 ]);
 
+const SALARY_PAID_ACCOUNTING_REPAIR_CODES = new Set([
+  'paid_salary_missing_accounting_side_effect',
+]);
+
 function rowsOrEmpty<T>(rows: T[] | null | undefined) {
   return rows ?? [];
 }
@@ -483,7 +495,7 @@ async function loadBusinessHealthDataset(supabase: SupabaseClient, tenantId: str
     queryRows<SalaryRecordRow>(
       supabase
         .from('salary_records')
-        .select('id, ktv_id, month_year, tenant_id, status, total_sessions, base_salary, session_bonus, rating_bonus, kpi_bonus, violations_deduction, service_percentage_bonus, total_salary, business_event_type, accounting_review_status')
+        .select('id, ktv_id, month_year, tenant_id, status, paid_date, paid_method, notes, total_sessions, base_salary, session_bonus, rating_bonus, kpi_bonus, violations_deduction, service_percentage_bonus, total_salary, business_event_type, accounting_review_status')
         .eq('tenant_id', tenantId)
         .limit(MAX_ROWS),
       'salary_records'
@@ -618,6 +630,10 @@ function buildDetails(finding: InvariantFinding): BusinessHealthFindingDetail[] 
   addDetail(details, 'Loại thu', finding.revenueType);
   addDetail(details, 'Số tiền thu', formatMoney(finding.revenueAmount));
   addDetail(details, 'Ngày thu', finding.receivedDate);
+  addDetail(details, 'Kỳ lương', finding.salaryMonth);
+  addDetail(details, 'Lương đã trả', formatMoney(finding.salaryAmount));
+  addDetail(details, 'Ngày trả lương', finding.paidDate);
+  addDetail(details, 'Phương thức trả', finding.paymentMethod);
   addDetail(details, 'Log kho', finding.inventoryLogCount);
   addDetail(details, 'Vật tư đã trừ', finding.consumptionSummary);
   addDetail(details, 'Giá trị tiêu hao', formatMoney(finding.consumptionCost));
@@ -702,6 +718,15 @@ function getRepairAction(finding: InvariantFinding): Pick<
       repair_action: 'enqueue_missing_package_sale_accounting',
       repair_target_id: finding.recordId,
       repair_label: 'Tạo PACKAGE_SALE',
+      repair_requires_confirmation: true,
+    };
+  }
+
+  if (SALARY_PAID_ACCOUNTING_REPAIR_CODES.has(finding.code) && finding.recordId) {
+    return {
+      repair_action: 'enqueue_missing_salary_paid_accounting',
+      repair_target_id: finding.recordId,
+      repair_label: 'Tạo SALARY_PAID',
       repair_requires_confirmation: true,
     };
   }
@@ -920,6 +945,21 @@ export async function runBusinessHealthRepairAction(params: {
     }
 
     const message = await enqueueMissingPackageSaleAccounting(params.targetId);
+    await safeRevalidatePath('/dashboard/accounting/health');
+
+    return {
+      success: true,
+      action: params.action,
+      message,
+    };
+  }
+
+  if (params.action === 'enqueue_missing_salary_paid_accounting') {
+    if (!params.targetId) {
+      throw new Error('Thiếu mã bản ghi lương cần tạo side-effect kế toán SALARY_PAID.');
+    }
+
+    const message = await enqueueMissingSalaryPaidAccounting(params.targetId);
     await safeRevalidatePath('/dashboard/accounting/health');
 
     return {
@@ -1287,6 +1327,125 @@ function hasActivePackageSaleJournal(entries: JournalEntryRow[], revenueId: stri
     entry.reference_id === revenueId &&
     String(entry.status ?? '').trim().toLowerCase() !== 'canceled'
   );
+}
+
+function hasActiveSalaryPaidJournal(entries: JournalEntryRow[], salaryRecordId: string) {
+  return entries.some((entry) =>
+    entry.reference_type === 'SALARY_PAYMENT' &&
+    entry.reference_id === salaryRecordId &&
+    String(entry.status ?? '').trim().toLowerCase() !== 'canceled'
+  );
+}
+
+async function enqueueMissingSalaryPaidAccounting(salaryRecordId: string): Promise<string> {
+  const { supabase, tenantId } = await resolveTenantContext();
+  const { data: salaryRecord, error: salaryError } = await supabase
+    .from('salary_records')
+    .select('id, ktv_id, month_year, tenant_id, status, paid_date, paid_method, notes, total_sessions, base_salary, session_bonus, rating_bonus, kpi_bonus, violations_deduction, service_percentage_bonus, total_salary, business_event_type, accounting_review_status')
+    .eq('id', salaryRecordId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (salaryError || !salaryRecord) {
+    throw new Error(salaryError?.message ?? 'Không tìm thấy bản ghi lương cần tạo side-effect SALARY_PAID.');
+  }
+
+  const currentSalary = salaryRecord as SalaryRecordRow;
+  if (String(currentSalary.status ?? '').trim().toLowerCase() !== 'paid') {
+    throw new Error('Chỉ bản ghi lương đã trả mới được tạo side-effect kế toán SALARY_PAID.');
+  }
+
+  const totalSalary = Number(currentSalary.total_salary ?? 0);
+  if (!Number.isFinite(totalSalary) || totalSalary <= 0) {
+    throw new Error('Bản ghi lương đã trả phải có tổng lương dương trước khi tạo side-effect kế toán.');
+  }
+
+  if (!currentSalary.ktv_id) {
+    throw new Error('Bản ghi lương thiếu KTV nên không thể tạo side-effect SALARY_PAID.');
+  }
+
+  const existingOutbox = await queryRows<AccountingOutboxRow>(
+    supabase
+      .from('accounting_outbox')
+      .select('id, tenant_id, event_type, reference_type, reference_id, status, retry_count, max_retries, last_error, created_at')
+      .eq('tenant_id', tenantId)
+      .eq('event_type', 'SALARY_PAID')
+      .eq('reference_type', 'SALARY_RECORD')
+      .eq('reference_id', currentSalary.id)
+      .limit(MAX_ROWS),
+    'existing SALARY_PAID outbox'
+  );
+
+  if (existingOutbox.length > 0) {
+    throw new Error('Bản ghi lương này đã có outbox SALARY_PAID, không tạo trùng.');
+  }
+
+  const existingJournals = await queryRows<JournalEntryRow>(
+    supabase
+      .from('journal_entries')
+      .select('id, tenant_id, entry_date, reference_type, reference_id, status, description')
+      .eq('tenant_id', tenantId)
+      .eq('reference_type', 'SALARY_PAYMENT')
+      .eq('reference_id', currentSalary.id)
+      .limit(MAX_ROWS),
+    'existing SALARY_PAID journals'
+  );
+
+  if (hasActiveSalaryPaidJournal(existingJournals, currentSalary.id)) {
+    throw new Error('Bản ghi lương này đã có bút toán SALARY_PAYMENT active, không tạo outbox trùng.');
+  }
+
+  const paymentMethod = currentSalary.paid_method || 'bank_transfer';
+  const outboxEvent = buildSalaryPaidOutboxEvent({
+    tenantId,
+    salaryRecordId: currentSalary.id,
+    amount: totalSalary,
+    paymentMethod,
+    description: currentSalary.notes ||
+      `Health repair: thanh toán lương kỳ ${currentSalary.month_year} cho KTV ${currentSalary.ktv_id}`,
+    ktvId: currentSalary.ktv_id,
+  });
+
+  await recordAuditLog({
+    action: 'INSERT',
+    table_name: 'accounting_outbox',
+    record_id: currentSalary.id,
+    old_data: {
+      salary_record_id: currentSalary.id,
+      existing_salary_paid_outbox: 0,
+      existing_active_journal: false,
+    },
+    new_data: {
+      reason: 'business_health_enqueue_missing_salary_paid',
+      event_type: outboxEvent.eventType,
+      reference_type: outboxEvent.referenceType,
+      reference_id: outboxEvent.referenceId,
+      payload: outboxEvent.payload as Json,
+      ktv_id: currentSalary.ktv_id,
+      month_year: currentSalary.month_year,
+      paid_date: currentSalary.paid_date,
+      paid_method: paymentMethod,
+      total_salary: totalSalary,
+    },
+  });
+
+  const outboxEnqueued = await enqueueWithAutoClient(
+    supabase,
+    outboxEvent,
+    '[businessHealth.salaryPaidRepair]'
+  );
+
+  if (!outboxEnqueued) {
+    throw new Error('Không thể tạo outbox SALARY_PAID cho bản ghi lương đã trả.');
+  }
+
+  await safeRevalidatePath('/dashboard/accounting/outbox');
+  await safeRevalidatePath('/dashboard/accounting/journals');
+  await safeRevalidatePath('/dashboard/accounting/salary-reconciliation');
+  await safeRevalidatePath('/dashboard/salary');
+  await safeRevalidatePath('/dashboard/finance');
+
+  return `Đã tạo outbox SALARY_PAID ${Math.round(totalSalary).toLocaleString('vi-VN')}đ cho KTV ${currentSalary.ktv_id}, kỳ ${currentSalary.month_year}.`;
 }
 
 async function enqueueMissingPackageSaleAccounting(revenueId: string): Promise<string> {

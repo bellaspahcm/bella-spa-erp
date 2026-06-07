@@ -23,6 +23,7 @@ area: accounting-health
 - Thêm repair có xác nhận cho lỗi ca hoàn thành thiếu side-effect kế toán `SESSION_DONE`, enqueue lại outbox bằng rule engine chuẩn.
 - Thêm repair có xác nhận cho lỗi ca đã trừ kho nhưng thiếu side-effect kế toán `INVENTORY_CONSUMED`, tính lại giá trị tiêu hao từ log kho và đơn giá vật tư trước khi enqueue outbox.
 - Thêm repair có xác nhận cho lỗi khoản thu gói/cọc đã xác nhận nhưng thiếu side-effect kế toán `PACKAGE_SALE`, enqueue lại outbox bằng rule engine chuẩn.
+- Thêm repair có xác nhận cho lỗi bản ghi lương đã trả nhưng thiếu side-effect kế toán `SALARY_PAID`, enqueue lại outbox bằng rule engine chuẩn.
 - Chưa thêm auto-fix lương/session sâu vì cần quy trình duyệt và rollback riêng.
 
 ## Safety Rules
@@ -40,6 +41,8 @@ area: accounting-health
 - Repair `INVENTORY_CONSUMED` không được tạo bút toán 0đ: nếu log kho thiếu vật tư hoặc vật tư chưa có đơn giá, action phải fail rõ ràng để admin cập nhật cấu hình giá vốn trước.
 - Repair `PACKAGE_SALE` phải đọc lại khoản thu, booking và dấu vết outbox/journal mới nhất; chỉ chạy khi khoản thu đã `confirmed`, thuộc nhóm cọc/thanh toán gói, số tiền dương, và booking hợp lệ cùng chi nhánh.
 - Repair `PACKAGE_SALE` chỉ enqueue vào `accounting_outbox`; worker kế toán chịu trách nhiệm post journal `PACKAGE_SALE`, nhờ vậy không có đường ghi sổ song song.
+- Repair `SALARY_PAID` phải đọc lại bản ghi lương và dấu vết outbox/journal mới nhất; chỉ chạy khi bản ghi đã `paid`, có KTV, tổng lương dương, và chưa có outbox `SALARY_PAID` hoặc journal `SALARY_PAYMENT` active.
+- Repair `SALARY_PAID` không tự đổi số lương, trạng thái lương hay ngày trả; nó chỉ phục hồi side-effect kế toán bị thiếu cho một record đã được quy trình lương xác nhận là đã trả.
 - Không tự sửa lương, tạo/xóa session hoặc bypass engine side-effect nghiệp vụ trong dashboard health.
 - Không thay đổi rule tính toán hiện có.
 
