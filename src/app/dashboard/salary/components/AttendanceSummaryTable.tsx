@@ -29,7 +29,7 @@ export default function AttendanceSummaryTable({
         </div>
         
         <div className="overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.32)]">
-          <table className="w-max min-w-[72rem] text-left whitespace-nowrap">
+          <table className="bella-data-table min-w-[72rem] text-left">
             <thead>
               <tr className="bg-slate-50/80 backdrop-blur-md">
                 <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] min-w-[200px]">
