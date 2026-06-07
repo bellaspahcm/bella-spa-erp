@@ -2,6 +2,11 @@
 
 import { resolveTenantId } from './shared';
 import type { RevenueDBRow, ExpenseDBRow, KtvDBRow, SalaryRecordDBRow, SessionLogDBRow, BookingDBRow } from './types';
+import {
+  DEFAULT_KTV_SESSION_COMMISSION,
+  calculateSalaryTotal,
+} from '@/lib/business-rules/salary';
+import { calculateAttendanceWorkDays } from '@/lib/business-rules/attendance';
 
 export async function getMonthlyPnL(month?: string) {
   const { createClient } = await import('@/lib/supabase-server');
@@ -107,24 +112,37 @@ export async function getMonthlyPnL(month?: string) {
         // RULE: If KTV already has a salary_record → use total_salary directly
         // This respects the saved calculation (including pro-rata, deductions, KPI, etc.)
         if (record) {
-          accruedSalaries += Number(record.total_salary || 0);
+          accruedSalaries += record.total_salary !== null && record.total_salary !== undefined
+            ? Number(record.total_salary || 0)
+            : calculateSalaryTotal({
+              baseSalary: record.base_salary,
+              sessionBonus: record.session_bonus,
+              ratingBonus: record.rating_bonus,
+              kpiBonus: record.kpi_bonus,
+              deductions: record.violations_deduction,
+              advances: record.service_percentage_bonus,
+            });
           return;
         }
 
         // RULE: No salary_record → calculate pro-rata from attendance
-        // Only count days where status is NOT 'absent' (present, late, etc.)
         const ktvAttendance = attendanceData.filter(
-          (a) => a.ktv_id === ktv.id && a.status !== 'absent'
+          (a) => a.ktv_id === ktv.id
         );
-        const actualDays = ktvAttendance.length;
+        const actualDays = calculateAttendanceWorkDays(ktvAttendance);
 
         // If no attendance at all → no salary accrued (KTV hasn't worked this month)
         if (actualDays === 0) {
           // Still add session commissions if any (edge case: completed session without checkin)
           const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
-          const sessionCommissions = ktvSessions
-            .reduce((sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || 150000), 0);
-          accruedSalaries += sessionCommissions;
+          const sessionCommissions = ktvSessions.reduce(
+            (sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || DEFAULT_KTV_SESSION_COMMISSION),
+            0,
+          );
+          accruedSalaries += calculateSalaryTotal({
+            baseSalary: 0,
+            sessionBonus: sessionCommissions,
+          });
           return;
         }
 
@@ -134,11 +152,15 @@ export async function getMonthlyPnL(month?: string) {
 
         // Session commissions for this KTV
         const ktvSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
-        const sessionCommissions = ktvSessions
-          .reduce((sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || 150000), 0);
+        const sessionCommissions = ktvSessions.reduce(
+          (sum: number, s) => sum + (Number(s.bookings?.ktv_commission) || DEFAULT_KTV_SESSION_COMMISSION),
+          0,
+        );
 
-        const ktvTotal = proRataBase + sessionCommissions;
-        accruedSalaries += ktvTotal;
+        accruedSalaries += calculateSalaryTotal({
+          baseSalary: proRataBase,
+          sessionBonus: sessionCommissions,
+        });
       });
 
       totalKtvSalaries = accruedSalaries;

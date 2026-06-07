@@ -3,6 +3,7 @@
 import * as XLSX from 'xlsx';
 import { createClient } from '@/lib/supabase-server';
 import { getLocalDateString } from '@/lib/utils';
+import { DEFAULT_KTV_SESSION_COMMISSION, calculateSalaryTotal } from '@/lib/business-rules/salary';
 import { buildPackageMultiplierMap, getSessionPackageMultiplier } from '@/modules/hr-salary/actions/salary-attendance-calculation';
 import { getCurrentUser } from '@/services/user-actions';
 
@@ -21,13 +22,17 @@ type SalaryExportSession = {
 };
 
 type SalaryExportRecord = {
+  ktv_id: string;
+  ktv_name?: string | null;
   base_salary?: number | null;
   session_bonus?: number | null;
   rating_bonus?: number | null;
   kpi_bonus?: number | null;
-  violations_deduction?: number | null;
-  service_percentage_bonus?: number | null;
+  deductions?: number | null;
+  advances?: number | null;
   total_salary?: number | null;
+  total_sessions?: number | null;
+  status?: string | null;
 };
 
 type SalaryExportPackage = {
@@ -92,16 +97,13 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
 
     if (sessionsError) throw sessionsError;
 
-    // 2. Fetch salary record for fixed amounts
-    const { data: record, error: salaryRecordError } = await supabase
-      .from('salary_records')
-      .select('*')
-      .eq('ktv_id', ktvId)
-      .eq('month_year', salaryMonthYear)
-      .eq('tenant_id', tenantId)
-      .maybeSingle();
+    // 2. Fetch central salary sheet components. This RPC preserves saved
+    // non-draft salary records and recalculates drafts through the salary engine.
+    const { data: salaryRows, error: salarySheetError } = await supabase.rpc('calculate_ktv_salary_sheet', {
+      p_month_year: salaryMonthYear,
+    });
 
-    if (salaryRecordError) throw salaryRecordError;
+    if (salarySheetError) throw salarySheetError;
 
     const { data: packages, error: packagesError } = await supabase
       .from('packages')
@@ -122,13 +124,13 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
         packageGroups[packageName] = {
           name: packageName,
           sessions: 0,
-          commissionRate: s.bookings?.ktv_commission || 150000,
+          commissionRate: s.bookings?.ktv_commission || DEFAULT_KTV_SESSION_COMMISSION,
           totalEarnings: 0,
           customerNames: new Set<string>()
         };
       }
       packageGroups[packageName].sessions += sessionWeight;
-      packageGroups[packageName].totalEarnings += (s.bookings?.ktv_commission || 150000);
+      packageGroups[packageName].totalEarnings += (s.bookings?.ktv_commission || DEFAULT_KTV_SESSION_COMMISSION);
       if (s.bookings?.customers?.name_mother) {
         packageGroups[packageName].customerNames.add(s.bookings.customers.name_mother);
       }
@@ -162,17 +164,32 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
       totalSessionBonus += group.totalEarnings;
     });
 
-    const salaryRecord = record as SalaryExportRecord | null;
+    const salaryRecord = ((salaryRows || []) as SalaryExportRecord[])
+      .find((row) => row.ktv_id === ktvId) ?? null;
+
+    if (!salaryRecord) {
+      throw new Error(`Salary sheet row not found for KTV ${ktvId} in ${salaryMonthYear}`);
+    }
+
     const baseSalary = Number(salaryRecord?.base_salary ?? 0);
     const sessionBonus = Number(salaryRecord?.session_bonus ?? totalSessionBonus);
     const ratingBonus = Number(salaryRecord?.rating_bonus ?? 0);
     const kpiBonus = Number(salaryRecord?.kpi_bonus ?? 0);
-    const deductions = Number(salaryRecord?.violations_deduction ?? 0);
-    const advances = Number(salaryRecord?.service_percentage_bonus ?? 0);
+    const deductions = Number(salaryRecord?.deductions ?? 0);
+    const advances = Number(salaryRecord?.advances ?? 0);
     const totalFinal = Number(
-      salaryRecord?.total_salary ?? Math.max(0, baseSalary + sessionBonus + ratingBonus + kpiBonus - deductions - advances),
+      salaryRecord?.total_salary ?? calculateSalaryTotal({
+        baseSalary,
+        sessionBonus,
+        ratingBonus,
+        kpiBonus,
+        deductions,
+        advances,
+      }),
     );
-    const weightedSessionTotal = Object.values(packageGroups).reduce((sum, group) => sum + group.sessions, 0);
+    const weightedSessionTotal = Number(
+      salaryRecord?.total_sessions ?? Object.values(packageGroups).reduce((sum, group) => sum + group.sessions, 0),
+    );
 
     reportData.push(
       [],
