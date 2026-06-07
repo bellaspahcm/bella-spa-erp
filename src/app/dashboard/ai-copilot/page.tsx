@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/services/user-actions';
 import AICopilotClient from './ai-copilot-client';
+import { canUseAiCopilotRole } from '@/lib/business-rules/permissions';
 
 export const metadata = {
   title: 'Bella AI Copilot — Trợ lý điều phối vận hành',
@@ -23,7 +24,7 @@ export default async function AICopilotPage() {
     redirect('/login?redirect=/dashboard/ai-copilot');
   }
 
-  if (!['admin', 'super_admin', 'accountant'].includes(user.role || '')) {
+  if (!canUseAiCopilotRole(user.role)) {
     // KTV, ktv_lead, admin_staff không có quyền vào AI Copilot
     redirect('/dashboard');
   }

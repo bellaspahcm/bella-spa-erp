@@ -1,3 +1,5 @@
+import { isManualPermittedByRole } from '@/lib/business-rules/permissions';
+
 export interface GuideListItem {
   slug: string;
   title: string;
@@ -48,35 +50,5 @@ export const ALL_GUIDES: GuideListItem[] = [
  * Kiểm tra quyền truy cập của role đối với tài liệu tương ứng
  */
 export function isManualPermitted(role: string | null | undefined, slug: string): boolean {
-  if (!role) return false;
-  const normalizedRole = role.toLowerCase();
-  const normalizedSlug = slug.toLowerCase();
-
-  // SOP & Hub index are visible to everyone authenticated
-  if (normalizedSlug === 'sop' || normalizedSlug === 'index') {
-    return true;
-  }
-
-  // Admin has absolute access
-  if (normalizedRole === 'admin') {
-    return true;
-  }
-
-  // KTV guide: visible to ktv, ktv_lead, hr, admin
-  if (normalizedSlug === 'ktv') {
-    return ['ktv', 'ktv_lead', 'hr'].includes(normalizedRole);
-  }
-
-  // HR guide: visible to hr, admin
-  if (normalizedSlug === 'hr') {
-    return normalizedRole === 'hr';
-  }
-
-  // Accountant guide: visible to accountant, admin
-  if (normalizedSlug === 'accountant') {
-    return normalizedRole === 'accountant';
-  }
-
-  // Admin guide is restricted solely to admin
-  return false;
+  return isManualPermittedByRole(role, slug);
 }

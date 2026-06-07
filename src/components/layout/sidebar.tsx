@@ -36,6 +36,10 @@ import { createClient } from '@/lib/supabase-client';
 import { createPageRefreshEvent } from '@/lib/page-refresh';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import type { CurrentUser } from '@/types/domain';
+import {
+  isSidebarItemAllowed,
+  type RolePermissions,
+} from '@/lib/business-rules/permissions';
 
 type MenuHeader = {
   type: 'header';
@@ -50,7 +54,6 @@ type MenuLink = {
 };
 
 type SidebarMenuItem = MenuHeader | MenuLink;
-type RolePermissions = Record<string, boolean>;
 
 function isMenuHeader(item: SidebarMenuItem): item is MenuHeader {
   return item.type === 'header';
@@ -159,46 +162,11 @@ export function Sidebar() {
           return true; // Keep headers for post-processing cleanup
         }
         if (user && user.role !== 'admin' && user.role !== 'customer') {
-          if (rolePermissions) {
-            const moduleMap: Record<string, string> = {
-              'Dashboard': 'dashboard',
-              'AI Copilot': 'ai_copilot',
-              'Khách hàng': 'customers',
-              'Lịch hẹn': 'bookings',
-              'Thẻ liệu trình': 'sessions',
-              'Tin nhắn': 'chat',
-              'CRM & Zalo': 'crm',
-              'Dịch vụ': 'services',
-              'Tài chính': 'finance',
-              'Đối soát Tài chính': 'reconciliation',
-              'Kế toán sổ cái': 'accounting',
-              'Kho hàng': 'inventory',
-              'Bảng lương': 'salary',
-              'Nhật ký hệ thống': 'audit',
-              'Cài đặt': 'settings'
-            };
-            const moduleId = moduleMap[item.label];
-            if (moduleId && rolePermissions[moduleId] === false) {
-              return false;
-            }
-          } else {
-            // Default fallbacks while loading or if no custom permissions set
-            if (user.role === 'ktv') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát Tài chính', 'Nhật ký hệ thống', 'Kho hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương (AI)'].includes(item.label);
-            }
-            if (user.role === 'ktv_lead') {
-              return !['Tài chính', 'Cài đặt', 'Bảng lương', 'Đối soát Tài chính', 'Nhật ký hệ thống', 'Kho hàng', 'Khách hàng', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương (AI)'].includes(item.label);
-            }
-            if (user.role === 'admin_staff') {
-              return !['Đối soát Tài chính', 'Bảng lương', 'Nhật ký hệ thống', 'Cài đặt', 'Kế toán sổ cái', 'AI Copilot', 'Đối soát Lương (AI)'].includes(item.label);
-            }
-            if (user.role === 'accountant') {
-              return !['Khách hàng', 'Lịch hẹn', 'Thẻ liệu trình', 'Tin nhắn', 'CRM & Zalo', 'Nhật ký hệ thống', 'Cài đặt', 'AI Copilot'].includes(item.label);
-            }
-            if (user.role === 'hr') {
-              return !['Khách hàng', 'Lịch hẹn', 'Tin nhắn', 'CRM & Zalo', 'Dịch vụ', 'Tài chính', 'Đối soát Tài chính', 'Kho hàng', 'Kế toán sổ cái', 'Nhật ký hệ thống', 'Cài đặt', 'AI Copilot', 'Đối soát Lương (AI)'].includes(item.label);
-            }
-          }
+          return isSidebarItemAllowed({
+            role: user.role,
+            label: item.label,
+            rolePermissions,
+          });
         }
         return true;
       });

@@ -12,6 +12,7 @@ import {
   calculateSessionCommissionBonus,
   calculateWeightedSessionCount,
 } from './salary-attendance-calculation';
+import { calculateSalaryTotal } from '@/lib/business-rules/salary';
 
 interface KtvUserDataAdmin {
   id: string;
@@ -276,7 +277,14 @@ export async function recalculateAndSaveSalaryRecordEngine(
     }
   }
 
-  const calculatedTotalSalary = Math.max(0, finalBaseSalary + sessionBonus + ratingBonus + finalKpiBonus - deductions - advances);
+  const calculatedTotalSalary = calculateSalaryTotal({
+    baseSalary: finalBaseSalary,
+    sessionBonus,
+    ratingBonus,
+    kpiBonus: finalKpiBonus,
+    deductions,
+    advances,
+  });
   const totalSalary =
     shouldUseStoredTotalSalary && existing?.total_salary !== null && existing?.total_salary !== undefined
       ? Number(existing.total_salary)

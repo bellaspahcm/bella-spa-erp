@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import type { Database } from "@/types/database.types";
+import { canUseAiCopilotRole } from "@/lib/business-rules/permissions";
 
 type AppNotificationInsert = Database["public"]["Tables"]["app_notifications"]["Insert"];
 type AIAgentLogInsert = Database["public"]["Tables"]["ai_agent_logs"]["Insert"];
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Tài khoản của bạn không được liên kết với chi nhánh hợp lệ." }, { status: 403 });
     }
 
-    if (!["admin", "super_admin", "accountant"].includes(userData.role)) {
+    if (!canUseAiCopilotRole(userData.role)) {
       console.warn(`[AI Action Approval] Người dùng ${userData.full_name} với vai trò ${userData.role} cố gắng phê duyệt.`);
       return NextResponse.json({ error: "Quyền hạn không hợp lệ. Chỉ có Admin/Super Admin/Kế toán trưởng mới có quyền phê duyệt hành động của AI." }, { status: 403 });
     }

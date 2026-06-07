@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { runCOOOrchestrator } from "@/services/ai-coo-service";
+import { canUseAiCopilotRole } from "@/lib/business-rules/permissions";
 
 // Cấu trúc yêu cầu của CEO
 interface COORequest {
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Chỉ cho phép admin hoặc accountant chi nhánh/HQ gọi bộ điều phối AI COO
-    if (!["admin", "accountant"].includes(userData.role)) {
+    if (!canUseAiCopilotRole(userData.role)) {
       console.warn(`[AI COO Orchestrator] Người dùng ${userData.full_name} với vai trò ${userData.role} bị từ chối truy cập.`);
       return NextResponse.json({ error: "Quyền hạn không hợp lệ. Chỉ có Tổng giám đốc (Admin) và Kế toán trưởng mới có quyền điều phối AI COO." }, { status: 403 });
     }
