@@ -24,6 +24,6 @@ export const bookingSchema = z.object({
   start_date: z.string().optional(),
   assigned_ktv_id: z.string().optional(),
   ktv_commission: z.coerce.number().optional(),
-  discount_percent: z.coerce.number().optional(),
+  discount_percent: z.coerce.number().min(0).max(100).optional(),
   preferred_time: z.string().optional(),
 });

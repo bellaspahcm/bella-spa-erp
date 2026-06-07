@@ -1,6 +1,7 @@
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { buildPackageSaleOutboxEvent } from '@/lib/business-rules/accounting-outbox';
+import { normalizeDiscountPercent } from '@/lib/business-rules/payment';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
@@ -184,7 +185,7 @@ export async function buildBookingPayload(params: {
     deposit_amount: confirmedDepositAmount,
     total_sessions: validatedData.total_sessions,
     ktv_commission: lockedCommission,
-    discount_percent: validatedData.discount_percent || 0,
+    discount_percent: normalizeDiscountPercent(validatedData.discount_percent),
     start_date: validatedData.start_date || null,
     assigned_ktv_id: validatedData.assigned_ktv_id || null,
     preferred_time: validatedData.preferred_time || null,

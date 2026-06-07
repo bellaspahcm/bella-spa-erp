@@ -47,4 +47,28 @@ describe('create booking payment status', () => {
     expect(payload.status).toBe('deposit_pending');
     expect(payload.deposit_amount).toBe(0);
   });
+
+  it('normalizes discount_percent before persisting the booking payload', async () => {
+    const overDiscountPayload = await buildBookingPayload({
+      validatedData: {
+        ...baseValidatedData,
+        discount_percent: 150,
+      },
+      customerId: 'customer-1',
+      tenantId: 'tenant-1',
+      existingBooking: null,
+    });
+    const negativeDiscountPayload = await buildBookingPayload({
+      validatedData: {
+        ...baseValidatedData,
+        discount_percent: -10,
+      },
+      customerId: 'customer-1',
+      tenantId: 'tenant-1',
+      existingBooking: null,
+    });
+
+    expect(overDiscountPayload.discount_percent).toBe(100);
+    expect(negativeDiscountPayload.discount_percent).toBe(0);
+  });
 });

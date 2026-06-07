@@ -5,6 +5,7 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import {
   calculateBookingPaymentState,
   calculatePaymentRequest,
+  normalizeDiscountPercent,
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
@@ -262,9 +263,15 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   };
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val === '' || (Number(val) >= 0 && Number(val) <= 100)) {
-       setDiscountPercent(val);
+    const val = e.target.value.trim();
+    if (val === '') {
+      setDiscountPercent('');
+      return;
+    }
+
+    const numericValue = Number(val);
+    if (Number.isFinite(numericValue)) {
+      setDiscountPercent(String(normalizeDiscountPercent(numericValue)));
     }
   };
 
@@ -287,7 +294,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     try {
       const payload: BookingSubmitPayload = {
         ...formData,
-        discount_percent: discountPercent ? Number(discountPercent) : 0,
+        discount_percent: normalizeDiscountPercent(discountPercent),
         customer_id: mode === 'new' ? 'new' : selectedCustomer?.id || '',
       };
 
@@ -350,7 +357,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     }
   };
 
-  const selectedDiscountPercent = Number(discountPercent) || 0;
+  const selectedDiscountPercent = normalizeDiscountPercent(discountPercent);
   const existingConfirmedPaidAmount = draftBooking
     ? calculateBookingPaymentState({
         fullPrice: draftBooking.full_price || 0,
