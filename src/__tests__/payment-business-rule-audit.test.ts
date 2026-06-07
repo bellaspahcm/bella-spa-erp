@@ -217,4 +217,16 @@ describe('payment business rule audit', () => {
     expect(auditedServerSources).not.toMatch(/Number\(templateData/);
     expect(auditedServerSources).not.toMatch(/newPrice\s*[<>]/);
   });
+
+  it('keeps salary display and optimistic totals routed through the shared salary contract', () => {
+    const salaryPageSource = readSource('src/app/dashboard/salary/page.tsx');
+    const querySalarySource = readSource('src/modules/hr-salary/actions/query-salary-actions.ts');
+    const recalculationSource = readSource('src/modules/hr-salary/actions/salary-recalculation-engine.ts');
+
+    expect(salaryPageSource).toContain('calculateSalaryTotal');
+    expect(querySalarySource).toContain('buildSalaryDisplayComponents');
+    expect(recalculationSource).toContain('isDraftSalaryRecord');
+    expect(salaryPageSource).not.toMatch(/totalSalary:\s*editingSalary\.baseSalary\s*\+/);
+    expect(querySalarySource).not.toContain("const isDraft = !record || record.status === 'draft'");
+  });
 });

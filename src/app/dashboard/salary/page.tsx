@@ -27,6 +27,7 @@ import { exportSalaryToExcel, exportSessionMatrixToExcel } from '@/services/expo
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { calculateSalaryTotal } from '@/lib/business-rules/salary';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 // Types
@@ -250,7 +251,14 @@ export default function SalaryPage() {
             deductions: editingSalary.deductions,
             advances: editingSalary.advances,
             status: 'pending',
-            totalSalary: editingSalary.baseSalary + s.sessionBonus + (s.ratingBonus || 0) + editingSalary.kpiBonus - editingSalary.deductions - editingSalary.advances
+            totalSalary: calculateSalaryTotal({
+              baseSalary: editingSalary.baseSalary,
+              sessionBonus: s.sessionBonus,
+              ratingBonus: s.ratingBonus,
+              kpiBonus: editingSalary.kpiBonus,
+              deductions: editingSalary.deductions,
+              advances: editingSalary.advances,
+            }),
           };
         }
         return s;

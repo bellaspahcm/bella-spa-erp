@@ -13,7 +13,7 @@ import {
   calculateWeightedSessionCount,
   getSessionPackageMultiplier,
 } from './salary-attendance-calculation';
-import { calculateSalaryTotal } from '@/lib/business-rules/salary';
+import { buildSalaryDisplayComponents } from '@/lib/business-rules/salary';
 import { KtvSalaryRecord, KtvSessionMatrix, KtvSessionMatrixRecord, TenantSalaryConfig } from '@/types/domain';
 
 // Interfaces for Database Records
@@ -238,15 +238,9 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
 
     const ktvSalaries = await Promise.all(realKtvs.map(async (ktv) => {
         const record = salaryRecords.find((r) => r.ktv_id === ktv.id);
-        const status = record?.status || 'draft';
-        const isDraft = !record || record.status === 'draft';
-        const shouldUseSavedFinancials = Boolean(record && !isDraft);
         
         const ktvCompletedSessions = sessions.filter((s) => s.completed_by_ktv_id === ktv.id);
         const liveSessionsCount = calculateWeightedSessionCount(ktvCompletedSessions, packageMultiplierMap);
-        const ktvSessionsCount = shouldUseSavedFinancials && record?.total_sessions !== undefined && record.total_sessions !== null
-          ? Number(record.total_sessions)
-          : liveSessionsCount;
         
         // Blended composite rating + attendance breakdown from RPC.
         const ktvLb = leaderboardByKtv.get(ktv.id);
@@ -266,80 +260,49 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
         });
         const actualDays = liveAttendanceComponents.actualDays;
         const autoAttendancePenalty = liveAttendanceComponents.deductions;
+        let liveBaseSalary = liveAttendanceComponents.baseSalary;
 
-        const liveRatingBonus = calculateRatingBonus(ktvSessionsCount, avgRating, salaryConfig);
-        const ratingBonus = shouldUseSavedFinancials && record?.rating_bonus !== undefined && record.rating_bonus !== null
-          ? Number(record.rating_bonus)
-          : liveRatingBonus;
-
+        const liveRatingBonus = calculateRatingBonus(liveSessionsCount, avgRating, salaryConfig);
         const liveSessionBonus = calculateSessionCommissionBonus(ktvCompletedSessions);
-        const sessionBonus = shouldUseSavedFinancials && record?.session_bonus !== undefined && record.session_bonus !== null
-          ? Number(record.session_bonus)
-          : liveSessionBonus;
 
-        let baseSalary: number;
-
-        // Base salary display: Use record value if not draft, or recalculate if draft
-        if (record?.base_salary !== undefined && record.base_salary !== null && !isDraft) {
-          baseSalary = Number(record.base_salary);
-        } else {
-          baseSalary = liveAttendanceComponents.baseSalary;
-        }
-
-        // Cap by resignation date if active
+        // Cap live draft base salary by resignation date if active.
+        // Non-draft saved records are preserved by buildSalaryDisplayComponents.
         if (ktv.resignation_date) {
           const resignDate = new Date(ktv.resignation_date);
           const monthDate = new Date(currentMonthYear);
           if (resignDate.getFullYear() === now.getFullYear() && resignDate.getMonth() === now.getMonth()) {
             const resignCap = await calcProRataBaseSalary(rawBaseSalary, resignDate, monthDate);
-            if (baseSalary > resignCap) {
-              baseSalary = resignCap;
+            if (liveBaseSalary > resignCap) {
+              liveBaseSalary = resignCap;
             }
           }
         }
 
-        const kpiBonus = record?.kpi_bonus !== null && record?.kpi_bonus !== undefined && !isDraft
-          ? Number(record.kpi_bonus)
-          : (kpiBonusByKtv.get(ktv.id) ?? 0);
-
-        // Deductions display: Use record value if not draft, or recalculate if draft
-        let deductions: number;
-        if (record?.violations_deduction !== undefined && record.violations_deduction !== null && !isDraft) {
-          deductions = Number(record.violations_deduction);
-        } else {
-          deductions = autoAttendancePenalty;
-        }
-
-        const advances = record?.service_percentage_bonus !== undefined && record.service_percentage_bonus !== null
-          ? Number(record.service_percentage_bonus)
-          : 0;
-
-        const liveTotalSalary = calculateSalaryTotal({
-          baseSalary,
-          sessionBonus,
-          ratingBonus,
-          kpiBonus,
-          deductions,
-          advances,
+        const salaryDisplay = buildSalaryDisplayComponents({
+          record,
+          liveSessionsCount,
+          liveSessionBonus,
+          liveRatingBonus,
+          liveBaseSalary,
+          liveKpiBonus: kpiBonusByKtv.get(ktv.id) ?? 0,
+          liveDeductions: autoAttendancePenalty,
+          liveAdvances: 0,
         });
-        const totalSalary = shouldUseSavedFinancials && record?.total_salary !== undefined && record.total_salary !== null
-          ? Number(record.total_salary)
-          : liveTotalSalary;
 
         return {
           id: ktv.id,
           name: ktv.full_name || '',
-          sessions: ktvSessionsCount,
-          isConfirmed: status === 'confirmed' || status === 'finalized',
+          sessions: salaryDisplay.sessions,
+          isConfirmed: salaryDisplay.status === 'confirmed' || salaryDisplay.status === 'finalized',
           avgRating,
-          baseSalary,
-          sessionBonus,
-          ratingBonus,
-          kpiBonus,
-          deductions,
-          advances,
-          totalSalary,
-          status,
+          baseSalary: salaryDisplay.baseSalary,
+          sessionBonus: salaryDisplay.sessionBonus,
+          ratingBonus: salaryDisplay.ratingBonus,
+          kpiBonus: salaryDisplay.kpiBonus,
+          deductions: salaryDisplay.deductions,
+          advances: salaryDisplay.advances,
+          totalSalary: salaryDisplay.totalSalary,
+          status: salaryDisplay.status,
           hireDate: ktv.hire_date,
           resignationDate: ktv.resignation_date,
           ktvStatus: ktv.status || 'active',

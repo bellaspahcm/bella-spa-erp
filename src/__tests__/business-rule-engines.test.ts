@@ -25,6 +25,7 @@ import {
   normalizePackageMaterialRows,
 } from '@/lib/business-rules/inventory';
 import {
+  buildSalaryDisplayComponents,
   calculateLiveAttendanceSalaryComponents,
   calculateSalaryDetails,
   calculateSalaryTotal,
@@ -191,6 +192,52 @@ describe('shared business rule engines', () => {
       deductions: 2000000,
       advances: 0,
     })).toBe(0);
+  });
+
+  it('uses one salary display contract for draft live data and saved non-draft records', () => {
+    expect(buildSalaryDisplayComponents({
+      record: null,
+      liveSessionsCount: 2,
+      liveSessionBonus: 300000,
+      liveRatingBonus: 100000,
+      liveBaseSalary: 1000000,
+      liveKpiBonus: 200000,
+      liveDeductions: 50000,
+      liveAdvances: 0,
+    })).toMatchObject({
+      status: 'draft',
+      isDraft: true,
+      sessions: 2,
+      baseSalary: 1000000,
+      totalSalary: 1550000,
+    });
+
+    expect(buildSalaryDisplayComponents({
+      record: {
+        status: 'published',
+        total_sessions: 26,
+        base_salary: 6000000,
+        session_bonus: 1000000,
+        rating_bonus: 500000,
+        kpi_bonus: 300000,
+        violations_deduction: 100000,
+        service_percentage_bonus: 200000,
+        total_salary: 7500000,
+      },
+      liveSessionsCount: 1,
+      liveSessionBonus: 100000,
+      liveRatingBonus: 0,
+      liveBaseSalary: 100000,
+      liveKpiBonus: 0,
+      liveDeductions: 0,
+      liveAdvances: 0,
+    })).toMatchObject({
+      status: 'published',
+      isDraft: false,
+      sessions: 26,
+      baseSalary: 6000000,
+      totalSalary: 7500000,
+    });
   });
 
   it('classifies inventory movements and calculates stock changes', () => {

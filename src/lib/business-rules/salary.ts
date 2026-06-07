@@ -42,7 +42,31 @@ export type SalaryTotalInput = {
   advances?: number | string | null;
 };
 
+export type SalaryRecordFinancialLike = {
+  status?: string | null;
+  total_sessions?: number | string | null;
+  session_bonus?: number | string | null;
+  rating_bonus?: number | string | null;
+  base_salary?: number | string | null;
+  kpi_bonus?: number | string | null;
+  violations_deduction?: number | string | null;
+  service_percentage_bonus?: number | string | null;
+  total_salary?: number | string | null;
+} | null | undefined;
+
+export type SalaryDisplayComponentsInput = {
+  record?: SalaryRecordFinancialLike;
+  liveSessionsCount: number | string | null | undefined;
+  liveSessionBonus: number | string | null | undefined;
+  liveRatingBonus: number | string | null | undefined;
+  liveBaseSalary: number | string | null | undefined;
+  liveKpiBonus: number | string | null | undefined;
+  liveDeductions: number | string | null | undefined;
+  liveAdvances?: number | string | null;
+};
+
 export const DEFAULT_KTV_SESSION_COMMISSION = 150000;
+export const DRAFT_SALARY_STATUS = 'draft';
 
 function asFiniteNumber(value: number | string | null | undefined, fallback = 0) {
   const numeric = Number(value ?? fallback);
@@ -153,6 +177,65 @@ export function calculateSalaryTotal(input: SalaryTotalInput) {
       asFiniteNumber(input.deductions) -
       asFiniteNumber(input.advances),
   );
+}
+
+export function isDraftSalaryRecord(record: SalaryRecordFinancialLike) {
+  return !record || record.status === DRAFT_SALARY_STATUS;
+}
+
+export function shouldUseSavedSalaryFinancials(record: SalaryRecordFinancialLike) {
+  return Boolean(record && !isDraftSalaryRecord(record));
+}
+
+function selectSavedOrLive(
+  shouldUseSaved: boolean,
+  savedValue: number | string | null | undefined,
+  liveValue: number | string | null | undefined,
+) {
+  return shouldUseSaved && savedValue !== null && savedValue !== undefined
+    ? asFiniteNumber(savedValue)
+    : asFiniteNumber(liveValue);
+}
+
+export function buildSalaryDisplayComponents(input: SalaryDisplayComponentsInput) {
+  const record = input.record;
+  const status = record?.status || DRAFT_SALARY_STATUS;
+  const useSavedFinancials = shouldUseSavedSalaryFinancials(record);
+  const sessions = selectSavedOrLive(useSavedFinancials, record?.total_sessions, input.liveSessionsCount);
+  const sessionBonus = selectSavedOrLive(useSavedFinancials, record?.session_bonus, input.liveSessionBonus);
+  const ratingBonus = selectSavedOrLive(useSavedFinancials, record?.rating_bonus, input.liveRatingBonus);
+  const baseSalary = selectSavedOrLive(useSavedFinancials, record?.base_salary, input.liveBaseSalary);
+  const kpiBonus = selectSavedOrLive(useSavedFinancials, record?.kpi_bonus, input.liveKpiBonus);
+  const deductions = selectSavedOrLive(useSavedFinancials, record?.violations_deduction, input.liveDeductions);
+  const advances = record?.service_percentage_bonus !== null && record?.service_percentage_bonus !== undefined
+    ? asFiniteNumber(record.service_percentage_bonus)
+    : asFiniteNumber(input.liveAdvances);
+  const calculatedTotalSalary = calculateSalaryTotal({
+    baseSalary,
+    sessionBonus,
+    ratingBonus,
+    kpiBonus,
+    deductions,
+    advances,
+  });
+  const totalSalary = useSavedFinancials && record?.total_salary !== null && record?.total_salary !== undefined
+    ? asFiniteNumber(record.total_salary)
+    : calculatedTotalSalary;
+
+  return {
+    status,
+    isDraft: !useSavedFinancials,
+    useSavedFinancials,
+    sessions,
+    sessionBonus,
+    ratingBonus,
+    baseSalary,
+    kpiBonus,
+    deductions,
+    advances,
+    calculatedTotalSalary,
+    totalSalary,
+  };
 }
 
 export function calculateSalaryDetails(
