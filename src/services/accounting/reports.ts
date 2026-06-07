@@ -2,6 +2,12 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import { AI_SALARY_RECON_THRESHOLDS } from '@/config/ai-constants';
+import {
+  calculateSalaryReconciliationDiffPercent,
+  hasSalaryLegacyReconciliationRecord,
+  resolveSalaryReconciliationStatus,
+} from '@/lib/business-rules/salary';
 import { getCurrentUser } from '../user-actions';
 import { createAccountingDataClient } from './client';
 import type { ReconciliationRow, SalaryReconciliationRow } from './types';
@@ -29,6 +35,44 @@ type SalaryReconciliationRpcClient = {
 
 function callSalaryReconciliationReportRpc(client: unknown, args: SalaryReconciliationRpcArgs) {
   return (client as SalaryReconciliationRpcClient).rpc('get_salary_reconciliation_report', args);
+}
+
+function normalizeSalaryReconciliationReportRows(data: unknown): SalaryReconciliationRow[] {
+  const rows = Array.isArray(data) ? data as SalaryReconciliationRow[] : [];
+
+  return rows.map((row) => {
+    const hasLegacyRecord = hasSalaryLegacyReconciliationRecord({
+      status: row.status,
+      legacyStatus: row.legacy_status,
+    });
+    const diffTotal = hasLegacyRecord
+      ? Number(row.diff_total ?? (Number(row.legacy_total || 0) - Number(row.ai_total || 0)))
+      : null;
+    const diffPercent = hasLegacyRecord
+      ? row.diff_percent ?? calculateSalaryReconciliationDiffPercent({
+        legacyTotal: row.legacy_total,
+        aiTotal: row.ai_total,
+        hasLegacyRecord,
+      })
+      : null;
+    const normalizedStatus = resolveSalaryReconciliationStatus({
+      status: row.status,
+      legacyStatus: row.legacy_status,
+      hasLegacyRecord,
+      legacyTotal: row.legacy_total,
+      aiTotal: row.ai_total,
+      diffAmount: diffTotal,
+      diffPercent,
+      thresholds: AI_SALARY_RECON_THRESHOLDS,
+    });
+
+    return {
+      ...row,
+      diff_total: diffTotal,
+      diff_percent: diffPercent,
+      status: normalizedStatus === 'NO_LEGACY' ? 'PENDING_LEGACY' : normalizedStatus,
+    };
+  });
 }
 
 export async function getTrialBalanceReport(asOfDate: string) {
@@ -174,5 +218,5 @@ export async function getSalaryReconciliationReport(monthYear: string): Promise<
     }, null, 2));
     throw error; // Zero Silent Database Failures
   }
-  return (data as unknown as SalaryReconciliationRow[]) || [];
+  return normalizeSalaryReconciliationReportRows(data);
 }

@@ -73,6 +73,100 @@ function asFiniteNumber(value: number | string | null | undefined, fallback = 0)
   return Number.isFinite(numeric) ? numeric : fallback;
 }
 
+export type SalaryReconciliationStatus = 'MATCH' | 'MINOR_DIFF' | 'MAJOR_DIFF' | 'NO_LEGACY';
+
+export type SalaryReconciliationThresholds = {
+  MATCH_ABS_VND: number;
+  MATCH_PERCENT: number;
+  MAJOR_DIFF_PERCENT: number;
+};
+
+export type SalaryReconciliationStateInput = {
+  status?: string | null;
+  legacyStatus?: string | null;
+  hasLegacyRecord?: boolean | null;
+};
+
+export type SalaryReconciliationStatusInput = SalaryReconciliationStateInput & {
+  legacyTotal?: number | string | null;
+  aiTotal?: number | string | null;
+  diffAmount?: number | string | null;
+  diffPercent?: number | string | null;
+  thresholds: SalaryReconciliationThresholds;
+};
+
+function normalizeStatusText(value: string | null | undefined) {
+  return String(value ?? '').trim().toUpperCase();
+}
+
+export function hasSalaryLegacyReconciliationRecord(input: SalaryReconciliationStateInput) {
+  const status = normalizeStatusText(input.status);
+  const legacyStatus = normalizeStatusText(input.legacyStatus);
+
+  if (
+    input.hasLegacyRecord === false ||
+    status === 'NO_LEGACY' ||
+    status === 'PENDING_LEGACY' ||
+    legacyStatus === 'MISSING' ||
+    legacyStatus === 'NONE'
+  ) {
+    return false;
+  }
+
+  return input.hasLegacyRecord ?? true;
+}
+
+export function calculateSalaryReconciliationDiffPercent(input: {
+  legacyTotal?: number | string | null;
+  aiTotal?: number | string | null;
+  hasLegacyRecord: boolean;
+}) {
+  if (!input.hasLegacyRecord) return null;
+
+  const legacyTotal = asFiniteNumber(input.legacyTotal);
+  const aiTotal = asFiniteNumber(input.aiTotal);
+  const diff = Math.abs(aiTotal - legacyTotal);
+
+  if (aiTotal <= 0) return diff === 0 ? 0 : null;
+  return Math.round((diff / aiTotal) * 10000) / 100;
+}
+
+export function resolveSalaryReconciliationStatus(input: SalaryReconciliationStatusInput): SalaryReconciliationStatus {
+  const hasLegacyRecord = hasSalaryLegacyReconciliationRecord(input);
+  if (!hasLegacyRecord) return 'NO_LEGACY';
+
+  const status = normalizeStatusText(input.status);
+  const hasComparableTotals = input.legacyTotal !== undefined ||
+    input.aiTotal !== undefined ||
+    input.diffAmount !== undefined ||
+    input.diffPercent !== undefined;
+  if (!hasComparableTotals && (status === 'MATCH' || status === 'MINOR_DIFF' || status === 'MAJOR_DIFF')) {
+    return status;
+  }
+
+  const legacyTotal = asFiniteNumber(input.legacyTotal);
+  const aiTotal = asFiniteNumber(input.aiTotal);
+  const diffAmount = input.diffAmount !== null && input.diffAmount !== undefined
+    ? Math.abs(asFiniteNumber(input.diffAmount))
+    : Math.abs(aiTotal - legacyTotal);
+  const diffPercent = input.diffPercent !== null && input.diffPercent !== undefined
+    ? asFiniteNumber(input.diffPercent)
+    : calculateSalaryReconciliationDiffPercent({ legacyTotal, aiTotal, hasLegacyRecord });
+
+  if (
+    diffAmount < input.thresholds.MATCH_ABS_VND ||
+    (diffPercent !== null && diffPercent < input.thresholds.MATCH_PERCENT)
+  ) {
+    return 'MATCH';
+  }
+
+  if (diffPercent !== null && diffPercent < input.thresholds.MAJOR_DIFF_PERCENT) {
+    return 'MINOR_DIFF';
+  }
+
+  return 'MAJOR_DIFF';
+}
+
 export function calculateLiveAttendanceSalaryComponents(input: {
   attendanceLogs: AttendanceLike[];
   rawBaseSalary: number;

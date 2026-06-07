@@ -1,6 +1,11 @@
 'use server';
 
 import { AI_SALARY_RECON_THRESHOLDS } from '@/config/ai-constants';
+import {
+  hasSalaryLegacyReconciliationRecord,
+  resolveSalaryReconciliationStatus,
+  type SalaryReconciliationStatus,
+} from '@/lib/business-rules/salary';
 import { createClient } from '@/lib/supabase-server';
 import { createAccountingDataClient } from './accounting/client';
 import { getCurrentUser } from './user-actions';
@@ -12,7 +17,7 @@ export interface SalaryReconRow {
   ai_total: number;
   diff_amount: number;
   diff_percent: number | null;
-  status: 'MATCH' | 'MINOR_DIFF' | 'MAJOR_DIFF' | 'NO_LEGACY';
+  status: SalaryReconciliationStatus;
   legacy_status: string;
   has_legacy_record: boolean;
 }
@@ -34,7 +39,7 @@ type SalaryReconReportRow = {
   ktv_name: string;
   legacy_total: number;
   ai_total: number;
-  diff_total: number;
+  diff_total: number | null;
   diff_percent: number | null;
   status: string;
   legacy_status: string;
@@ -49,19 +54,50 @@ type SalaryReconciliationReportRpcClient = {
 
 const allowedSalaryReconRoles = ['admin', 'super_admin', 'accountant', 'hr'];
 
-function isSalaryReconStatus(value: string): value is SalaryReconRow['status'] {
-  return value === 'MATCH' || value === 'MINOR_DIFF' || value === 'MAJOR_DIFF' || value === 'NO_LEGACY';
+function asNumber(value: number | null | undefined) {
+  return Number(value ?? 0);
+}
+
+function normalizeSalaryReconRow(row: SalaryReconRow): SalaryReconRow {
+  const hasLegacyRecord = hasSalaryLegacyReconciliationRecord({
+    status: row.status,
+    legacyStatus: row.legacy_status,
+    hasLegacyRecord: row.has_legacy_record,
+  });
+  const diffAmount = hasLegacyRecord
+    ? asNumber(row.diff_amount ?? (row.ai_total - row.legacy_total))
+    : 0;
+  const status = resolveSalaryReconciliationStatus({
+    status: row.status,
+    legacyStatus: row.legacy_status,
+    hasLegacyRecord,
+    legacyTotal: row.legacy_total,
+    aiTotal: row.ai_total,
+    diffAmount,
+    diffPercent: row.diff_percent,
+    thresholds: AI_SALARY_RECON_THRESHOLDS,
+  });
+
+  return {
+    ...row,
+    diff_amount: diffAmount,
+    diff_percent: hasLegacyRecord ? row.diff_percent : null,
+    status,
+    has_legacy_record: hasLegacyRecord,
+  };
 }
 
 function summarizeSalaryRows(rows: SalaryReconRow[]): SalaryReconSummary {
+  const normalizedRows = rows.map(normalizeSalaryReconRow);
+
   return {
-    rows,
-    totalKtv: rows.length,
-    matchCount: rows.filter((row) => row.status === 'MATCH').length,
-    minorCount: rows.filter((row) => row.status === 'MINOR_DIFF').length,
-    majorCount: rows.filter((row) => row.status === 'MAJOR_DIFF').length,
-    noLegacyCount: rows.filter((row) => row.status === 'NO_LEGACY').length,
-    totalDiffAbs: rows
+    rows: normalizedRows,
+    totalKtv: normalizedRows.length,
+    matchCount: normalizedRows.filter((row) => row.status === 'MATCH').length,
+    minorCount: normalizedRows.filter((row) => row.status === 'MINOR_DIFF').length,
+    majorCount: normalizedRows.filter((row) => row.status === 'MAJOR_DIFF').length,
+    noLegacyCount: normalizedRows.filter((row) => row.status === 'NO_LEGACY').length,
+    totalDiffAbs: normalizedRows
       .filter((row) => row.has_legacy_record && row.status !== 'NO_LEGACY')
       .reduce((sum, row) => sum + Math.abs(row.diff_amount ?? 0), 0),
     thresholds: AI_SALARY_RECON_THRESHOLDS,
@@ -70,17 +106,28 @@ function summarizeSalaryRows(rows: SalaryReconRow[]): SalaryReconSummary {
 
 function mapReportRowsToSummary(rows: SalaryReconReportRow[]): SalaryReconSummary {
   const mappedRows = rows.map((row): SalaryReconRow => {
-    const hasLegacyRecord = row.status !== 'PENDING_LEGACY' && row.legacy_status !== 'missing';
-    const normalizedStatus = row.status === 'PENDING_LEGACY' ? 'NO_LEGACY' : row.status;
+    const hasLegacyRecord = hasSalaryLegacyReconciliationRecord({
+      status: row.status,
+      legacyStatus: row.legacy_status,
+    });
 
     return {
       ktv_id: row.ktv_id,
       ktv_name: row.ktv_name,
       legacy_total: row.legacy_total,
       ai_total: row.ai_total,
-      diff_amount: row.ai_total - row.legacy_total,
+      diff_amount: hasLegacyRecord ? row.ai_total - row.legacy_total : 0,
       diff_percent: hasLegacyRecord ? row.diff_percent : null,
-      status: isSalaryReconStatus(normalizedStatus) ? normalizedStatus : 'MAJOR_DIFF',
+      status: resolveSalaryReconciliationStatus({
+        status: row.status,
+        legacyStatus: row.legacy_status,
+        hasLegacyRecord,
+        legacyTotal: row.legacy_total,
+        aiTotal: row.ai_total,
+        diffAmount: row.ai_total - row.legacy_total,
+        diffPercent: row.diff_percent,
+        thresholds: AI_SALARY_RECON_THRESHOLDS,
+      }),
       legacy_status: row.legacy_status,
       has_legacy_record: hasLegacyRecord,
     };
