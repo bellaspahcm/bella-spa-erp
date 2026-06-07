@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { getCurrentUser } from '@/services/user-actions';
+import { getAuthorizedTenantUser } from '@/services/auth-guards';
 import { recordAuditLog } from '@/services/audit-actions';
 import { getMonthStart } from '@/lib/utils';
 import { Database } from '@/types/database.types';
@@ -37,6 +37,16 @@ type BulkSalaryActionResult = {
   failures: BulkSalaryActionFailure[];
   error?: string;
 };
+
+const SALARY_ADMIN_ROLES = ['admin', 'super_admin', 'accountant', 'hr'] as const;
+const SALARY_AUTH_ERROR = 'Không xác định được chi nhánh của người dùng';
+
+async function getSalaryAdminAuth() {
+  return getAuthorizedTenantUser({
+    allowedRoles: SALARY_ADMIN_ROLES,
+    errorMessage: SALARY_AUTH_ERROR,
+  });
+}
 
 /**
  * Helper to recalculate and save a KTV salary record.
@@ -315,10 +325,11 @@ function buildBulkSalaryActionResult(
  * Calculates final salary breakdown and sets status to 'published'.
  */
 export async function publishSalaryRecord(ktvId: string) {
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const supabase = await createClient();
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id;
-  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+  const tenantId = auth.tenantId;
 
   const now = new Date();
   const monthYear = getMonthStart(now);
@@ -370,15 +381,16 @@ export async function publishSalaryRecord(ktvId: string) {
 
 /** ADMIN: Publish ALL draft salary records in current period */
 export async function publishAllSalaryRecords() {
-  const supabase = await createClient();
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id;
-  if (!tenantId) {
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) {
     return buildBulkSalaryActionResult('Gửi đối soát tất cả', 0, 0, [{
       ktvId: 'UNKNOWN',
-      error: 'Không xác định được chi nhánh của người dùng',
+      error: auth.error,
     }]);
   }
+
+  const supabase = await createClient();
+  const tenantId = auth.tenantId;
 
   const { data: ktvs, error: ktvError } = await supabase
     .from('users')
@@ -413,10 +425,11 @@ export async function publishAllSalaryRecords() {
 
 /** ADMIN: Confirm salary on behalf of KTV (no-smartphone case) */
 export async function adminConfirmOnBehalf(ktvId: string) {
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const supabase = await createClient();
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id;
-  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+  const tenantId = auth.tenantId;
 
   const monthYear = getMonthStart();
 
@@ -485,10 +498,11 @@ export async function adminConfirmOnBehalf(ktvId: string) {
 
 /** ADMIN: Finalize salary record — locks and creates expense entry */
 export async function finalizeSalaryRecord(ktvId: string) {
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const supabase = await createClient();
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id;
-  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+  const tenantId = auth.tenantId;
 
   const now = new Date();
   const monthYear = getMonthStart(now);
@@ -607,15 +621,16 @@ export async function finalizeSalaryRecord(ktvId: string) {
 
 /** ADMIN: Finalize ALL confirmed records */
 export async function finalizeAllSalaryRecords() {
-  const supabase = await createClient();
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id;
-  if (!tenantId) {
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) {
     return buildBulkSalaryActionResult('Chốt sổ tất cả', 0, 0, [{
       ktvId: 'UNKNOWN',
-      error: 'Không xác định được chi nhánh của người dùng',
+      error: auth.error,
     }]);
   }
+
+  const supabase = await createClient();
+  const tenantId = auth.tenantId;
 
   const monthYear = getMonthStart();
   const { data: confirmed, error: confirmedError } = await supabase
@@ -652,18 +667,18 @@ export async function finalizeAllSalaryRecords() {
 
 /** ADMIN: Trigger auto-confirm for records published > 48h ago */
 export async function checkAndAutoConfirm() {
-  const supabase = await createClient();
-  const currentUser = await getCurrentUser();
-  if (!currentUser?.tenant_id) {
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) {
     return {
       success: false,
       count: 0,
-      error: 'Không xác định được chi nhánh của người dùng',
+      error: auth.error,
     };
   }
 
+  const supabase = await createClient();
   const { data, error } = await supabase.rpc('auto_confirm_stale_salary_records', {
-    p_tenant_id: currentUser.tenant_id,
+    p_tenant_id: auth.tenantId,
   });
 
   if (error) {
@@ -684,7 +699,11 @@ export async function approveSalary(ktvId: string) {
   const now = new Date();
   const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   const monthLabel = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const supabase = await createClient();
+  const tenantId = auth.tenantId;
 
   const lockFailure = await getSalaryMonthLockFailure(
     monthYear,
@@ -693,12 +712,6 @@ export async function approveSalary(ktvId: string) {
   if (lockFailure) return lockFailure;
 
   try {
-    const currentUser = await getCurrentUser();
-    const tenantId = currentUser?.tenant_id;
-    if (!tenantId) {
-      return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
-    }
-
     // 1. Get KTV info for description
     const { data: ktvData, error: ktvError } = await supabase
       .from('users')
@@ -828,7 +841,11 @@ export async function approveSalary(ktvId: string) {
 export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: number, kpiBonus: number, deductions: number, advances: number }) {
   const now = new Date();
   const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) return { success: false, error: auth.error };
+
   const supabase = await createClient();
+  const tenantId = auth.tenantId;
 
   const lockFailure = await getSalaryMonthLockFailure(
     monthYear,
@@ -837,10 +854,6 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
   if (lockFailure) return lockFailure;
 
   try {
-    const currentUser = await getCurrentUser();
-    const tenantId = currentUser?.tenant_id;
-    if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
-
     const previousSalaryRecord = await snapshotSalaryRecord(supabase, ktvId, monthYear, tenantId);
 
     await recalculateAndSaveSalaryRecord(supabase, ktvId, monthYear, tenantId, {
@@ -885,12 +898,13 @@ export async function updateSalaryConfig(ktvId: string, payload: { baseSalary: n
 }
 
 export async function confirmKtvSessions(ktvId: string, totalSessions: number) {
-  const supabase = await createClient();
   const now = new Date();
   const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id;
-  if (!tenantId) return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+  const auth = await getSalaryAdminAuth();
+  if (!auth.ok) return { success: false, error: auth.error };
+
+  const supabase = await createClient();
+  const tenantId = auth.tenantId;
 
   const lockFailure = await getSalaryMonthLockFailure(
     currentMonthYear,
