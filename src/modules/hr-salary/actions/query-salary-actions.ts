@@ -13,6 +13,7 @@ import {
   calculateWeightedSessionCount,
   getSessionPackageMultiplier,
 } from './salary-attendance-calculation';
+import { calculateSalaryTotal } from '@/lib/business-rules/salary';
 import { KtvSalaryRecord, KtvSessionMatrix, KtvSessionMatrixRecord, TenantSalaryConfig } from '@/types/domain';
 
 // Interfaces for Database Records
@@ -313,7 +314,14 @@ export async function getSalaryData(): Promise<KtvSalaryRecord[]> {
           ? Number(record.service_percentage_bonus)
           : 0;
 
-        const liveTotalSalary = Math.max(0, baseSalary + sessionBonus + kpiBonus + ratingBonus - deductions - advances);
+        const liveTotalSalary = calculateSalaryTotal({
+          baseSalary,
+          sessionBonus,
+          ratingBonus,
+          kpiBonus,
+          deductions,
+          advances,
+        });
         const totalSalary = shouldUseSavedFinancials && record?.total_salary !== undefined && record.total_salary !== null
           ? Number(record.total_salary)
           : liveTotalSalary;

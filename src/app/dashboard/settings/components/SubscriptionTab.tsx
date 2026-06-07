@@ -26,6 +26,7 @@ import {
 } from '@/services/subscription-actions';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/types/database.types';
+import { UNLIMITED_QUOTA, calculateUsagePercent } from '@/lib/business-rules/subscription';
 
 type SubscriptionPlanOption = {
   id: 'free_trial' | 'basic' | 'pro' | 'enterprise';
@@ -102,14 +103,12 @@ type SubscriptionStatus = Awaited<ReturnType<typeof getSubscriptionStatus>>;
 type PendingSubscriptionInvoice = Database['public']['Tables']['subscription_invoices']['Row'];
 
 function getUsagePercent(current?: number, max?: number) {
-  if (!max || max === 999999) return 0;
-  return Math.min(100, Math.round(((current ?? 0) / max) * 100));
+  return calculateUsagePercent(current, max);
 }
 
 function getUsageWidth(current?: number, max?: number) {
-  if (max === 999999) return 100;
-  if (!max) return 0;
-  return Math.min(100, ((current ?? 0) / max) * 100);
+  if (max === UNLIMITED_QUOTA) return 100;
+  return calculateUsagePercent(current, max);
 }
 
 function getExpiryDateString(status: SubscriptionStatus | null) {

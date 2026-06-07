@@ -1,5 +1,13 @@
 import { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
+import {
+  UNLIMITED_QUOTA,
+  buildEffectiveSubscriptionLimits,
+  buildQuotaSnapshot,
+  calculateSubscriptionUsageState,
+  isSubscriptionExpired,
+  type SubscriptionFeatureKey,
+} from '@/lib/business-rules/subscription';
 
 export interface SubscriptionLimit {
   maxKtv: number;
@@ -8,52 +16,15 @@ export interface SubscriptionLimit {
   tierName: string;
 }
 
-type EffectiveEntitlement =
-  Database['public']['Functions']['get_effective_subscription_entitlements']['Returns'][number];
 type SubscriptionPlanDisplay = Pick<
   Database['public']['Tables']['subscription_plans']['Row'],
   'plan_code' | 'display_name'
 >;
 
-const UNLIMITED_QUOTA = 999999;
-
-function entitlementLimitValue(entitlement: EffectiveEntitlement) {
-  if (entitlement.is_unlimited) return UNLIMITED_QUOTA;
-  return Number(entitlement.limit_value ?? 0);
-}
-
-function buildQuotaSnapshot(
-  tierName: string,
-  maxKtv: number,
-  maxCustomers: number,
-  maxSms: number
-): SubscriptionLimit {
-  return {
-    maxKtv,
-    maxCustomers,
-    maxSms,
-    tierName,
-  };
-}
-
-function buildEffectiveLimits(tierName: string, entitlements: EffectiveEntitlement[]): SubscriptionLimit {
-  const byFeature = new Map(entitlements.map((row) => [row.feature_key, row]));
-  const ktv = byFeature.get('ktv');
-  const customer = byFeature.get('customer');
-  const sms = byFeature.get('sms');
-
-  return buildQuotaSnapshot(
-    tierName,
-    ktv ? entitlementLimitValue(ktv) : 0,
-    customer ? entitlementLimitValue(customer) : 0,
-    sms ? entitlementLimitValue(sms) : 0
-  );
-}
-
 async function getEffectiveEntitlements(
   supabase: Awaited<ReturnType<typeof createClient>>,
   tenantId: string,
-  limitType: 'ktv' | 'customer' | 'sms'
+  limitType: SubscriptionFeatureKey
 ) {
   const { data, error } = await supabase.rpc('get_effective_subscription_entitlements', {
     p_tenant_id: tenantId,
@@ -117,7 +88,7 @@ async function getCurrentSmsUsage(
  */
 export async function checkSubscriptionLimit(
   tenantId: string,
-  limitType: 'ktv' | 'customer' | 'sms'
+  limitType: SubscriptionFeatureKey
 ) {
   const supabase = await createClient();
 
@@ -154,18 +125,16 @@ export async function checkSubscriptionLimit(
   }
 
   const tier = tenant.subscription_tier || 'free_trial';
-  const expiresAt = tenant.subscription_expires_at ? new Date(tenant.subscription_expires_at) : null;
   const tierName = await getSubscriptionPlanDisplayName(supabase, tier);
 
-  if (expiresAt && expiresAt < new Date()) {
-    console.warn(`[checkSubscriptionLimit] Tenant ${tenantId} subscription expired on ${expiresAt}`);
+  if (isSubscriptionExpired(tenant.subscription_expires_at)) {
+    console.warn(`[checkSubscriptionLimit] Tenant ${tenantId} subscription expired on ${tenant.subscription_expires_at}`);
     const limits = buildQuotaSnapshot(tierName, 0, 0, 0);
     return { isBlocked: true, current: 0, max: 0, tier, isExpired: true, limits };
   }
 
   const { entitlements, requested } = await getEffectiveEntitlements(supabase, tenantId, limitType);
-  const limits = buildEffectiveLimits(tierName, entitlements);
-  const maxLimit = entitlementLimitValue(requested);
+  const limits = buildEffectiveSubscriptionLimits(tierName, entitlements);
 
   if (limitType === 'ktv') {
     const { count, error } = await supabase
@@ -178,10 +147,11 @@ export async function checkSubscriptionLimit(
       throw new Error(`[checkSubscriptionLimit] users count failed: ${error.message}`);
     }
     const currentCount = count || 0;
+    const usage = calculateSubscriptionUsageState({ current: currentCount, entitlement: requested });
     return {
-      isBlocked: requested.is_unlimited ? false : currentCount >= maxLimit,
-      current: currentCount,
-      max: maxLimit,
+      isBlocked: usage.isBlocked,
+      current: usage.current,
+      max: usage.max,
       tier,
       isExpired: false,
       limits,
@@ -198,10 +168,11 @@ export async function checkSubscriptionLimit(
       throw new Error(`[checkSubscriptionLimit] customers count failed: ${error.message}`);
     }
     const currentCount = count || 0;
+    const usage = calculateSubscriptionUsageState({ current: currentCount, entitlement: requested });
     return {
-      isBlocked: requested.is_unlimited ? false : currentCount >= maxLimit,
-      current: currentCount,
-      max: maxLimit,
+      isBlocked: usage.isBlocked,
+      current: usage.current,
+      max: usage.max,
       tier,
       isExpired: false,
       limits,
@@ -209,10 +180,11 @@ export async function checkSubscriptionLimit(
   }
 
   const currentCount = await getCurrentSmsUsage(supabase, tenantId);
+  const usage = calculateSubscriptionUsageState({ current: currentCount, entitlement: requested });
   return {
-    isBlocked: requested.is_unlimited ? false : currentCount >= maxLimit,
-    current: currentCount,
-    max: maxLimit,
+    isBlocked: usage.isBlocked,
+    current: usage.current,
+    max: usage.max,
     tier,
     isExpired: false,
     limits,

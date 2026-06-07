@@ -5,6 +5,10 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import { recordAuditLog } from './audit-actions';
 import { checkHqAuth } from './hq-actions';
 import type { Database, Json } from '@/types/database.types';
+import {
+  normalizeQuotaOverride,
+  validateQuotaOverrideLimit,
+} from '@/lib/business-rules/subscription';
 
 type TenantRow = Database['public']['Tables']['tenants']['Row'];
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
@@ -120,14 +124,7 @@ function usageCounterAuditJson(row: TenantUsageCounterRow): Json {
 }
 
 function validateOverrideLimit(input: SetTenantQuotaOverrideInput) {
-  const isUnlimited = input.isUnlimited ?? false;
-  const limitValue = isUnlimited ? null : input.limitValue;
-
-  if (!isUnlimited && (limitValue === null || limitValue === undefined || limitValue < 0)) {
-    return 'Quota override can only be limited with a non-negative limitValue or marked unlimited.';
-  }
-
-  return null;
+  return validateQuotaOverrideLimit(input);
 }
 
 export async function getHqSubscriptionOverview() {
@@ -348,8 +345,7 @@ export async function setTenantQuotaOverride(input: SetTenantQuotaOverrideInput)
   }
 
   const now = new Date().toISOString();
-  const isUnlimited = input.isUnlimited ?? false;
-  const limitValue = isUnlimited ? null : input.limitValue ?? null;
+  const { isUnlimited, limitValue } = normalizeQuotaOverride(input);
 
   if (existing) {
     const updatePayload: TenantSubscriptionOverrideUpdate = {

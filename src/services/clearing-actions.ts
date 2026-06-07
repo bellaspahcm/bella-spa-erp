@@ -7,6 +7,10 @@ import { checkHqAuth } from './hq-actions';
 import { revalidatePath } from 'next/cache';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
+import {
+  buildInterBranchClearingAccountingPayload,
+  getClearingAmount,
+} from '@/lib/business-rules/franchise';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 type ClearingRecordRow = Database['public']['Tables']['inter_branch_clearing_records']['Row'];
@@ -56,43 +60,6 @@ function getInvalidClearingStatusMessage(status: string | null | undefined) {
   if (status === 'cleared') return 'Bản ghi đối soát đã được gạch nợ.';
   if (status === 'cancelled') return 'Bản ghi đối soát đã bị hủy, không thể gạch nợ.';
   return 'Bản ghi đối soát không còn ở trạng thái chờ gạch nợ.';
-}
-
-function getClearingAmount(record: Pick<ClearingRecordRow, 'calculated_amount'>) {
-  const amount = Number(record.calculated_amount);
-  return Number.isFinite(amount) ? amount : 0;
-}
-
-function buildClearingAccountingPayload(input: {
-  record: Pick<
-    ClearingRecordRow,
-    | 'id'
-    | 'clearing_number'
-    | 'month_year'
-    | 'session_count'
-    | 'clearing_rate'
-    | 'calculated_amount'
-  >;
-  debtorTenantId: string;
-  creditorTenantId: string;
-  paymentMethod: string;
-  role: InterBranchClearingRole;
-}) {
-  const amount = getClearingAmount(input.record);
-  return {
-    amount,
-    paymentMethod: input.paymentMethod,
-    role: input.role,
-    debtorTenantId: input.debtorTenantId,
-    creditorTenantId: input.creditorTenantId,
-    debtor_tenant_id: input.debtorTenantId,
-    creditor_tenant_id: input.creditorTenantId,
-    clearingNumber: input.record.clearing_number,
-    monthYear: input.record.month_year,
-    sessionCount: Number(input.record.session_count) || 0,
-    clearingRate: Number(input.record.clearing_rate) || 0,
-    description: `Bù trừ liên chi nhánh ${input.record.clearing_number} (${input.record.month_year})`,
-  };
 }
 
 async function rollbackClearingAfterOutboxFailure(
@@ -283,7 +250,7 @@ export async function clearInterBranchRecord(recordId: string, paymentMethod: st
           eventType: 'INTER_BRANCH_CLEARING',
           referenceType: 'INTER_BRANCH_CLEARING_RECORD',
           referenceId: record.id,
-          payload: buildClearingAccountingPayload({
+          payload: buildInterBranchClearingAccountingPayload({
             record,
             debtorTenantId,
             creditorTenantId,

@@ -5,7 +5,13 @@ import { getCurrentUser } from './user-actions';
 import { revalidatePath } from 'next/cache';
 import { recordAuditLog } from './audit-actions';
 import { getLocalDateString } from '@/lib/utils';
-import { calculateAttendanceBreakdown } from '@/lib/business-rules/attendance';
+import {
+  buildAttendanceTimestamp,
+  calculateAttendanceBreakdown,
+  calculateCheckInAttendanceStatus,
+  getLeaveAttendanceStatus,
+  normalizeAttendanceStatus,
+} from '@/lib/business-rules/attendance';
 import type { Database } from '@/types/database.types';
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -18,7 +24,6 @@ type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type StaffLeaveUpdate = Database['public']['Tables']['staff_leaves']['Update'];
 type UserRow = Database['public']['Tables']['users']['Row'];
-type AttendanceStatus = Database['public']['Enums']['AttendanceStatus'];
 
 type MonthlyAttendanceKtv = Pick<
   UserRow,
@@ -53,13 +58,6 @@ function getErrorMessage(error: unknown, fallback = 'Lá»—i há»‡ thá»�
     if (typeof message === 'string') return message;
   }
   return fallback;
-}
-
-function normalizeAttendanceStatus(status: string | null): AttendanceStatus {
-  if (status === 'present' || status === 'late' || status === 'absent' || status === 'half_day') {
-    return status;
-  }
-  return 'present';
 }
 
 function getSessionHour(session: ConflictSession, fallbackTime: string) {
@@ -140,8 +138,7 @@ export async function ktvCheckIn() {
 
   // Determine status (Late if check-in is after 08:30:00 local time)
   const currentHour = now.toLocaleTimeString('en-US', { hour12: false, timeZone: 'Asia/Ho_Chi_Minh' });
-  const isLate = currentHour > '08:30:00';
-  const status = isLate ? 'late' : 'present';
+  const status = calculateCheckInAttendanceStatus({ localTime: currentHour });
 
   // Check if already checked in
   const { data: existing, error: existingError } = await supabase
@@ -321,8 +318,8 @@ export async function adminOverrideAttendance(payload: {
     ktv_id: payload.ktvId,
     date: payload.date,
     status: payload.status,
-    checkin_time: payload.checkinTime ? new Date(payload.checkinTime.includes('+') || payload.checkinTime.includes('Z') ? payload.checkinTime : `${payload.checkinTime}+07:00`).toISOString() : null,
-    checkout_time: payload.checkoutTime ? new Date(payload.checkoutTime.includes('+') || payload.checkoutTime.includes('Z') ? payload.checkoutTime : `${payload.checkoutTime}+07:00`).toISOString() : null,
+    checkin_time: buildAttendanceTimestamp(payload.checkinTime),
+    checkout_time: buildAttendanceTimestamp(payload.checkoutTime),
     tenant_id: tenantId,
   };
 
@@ -638,9 +635,7 @@ export async function approveLeaveRequest(
   // - Nghỉ buổi sáng (morning) hoặc buổi chiều (afternoon) → half_day (0.5 ngày công)
   // - Nghỉ cả ngày (full / full_day) → absent (0 ngày công)
   try {
-    const leaveAttendanceStatus = (leave.leave_type === 'morning' || leave.leave_type === 'afternoon')
-      ? 'half_day'
-      : 'absent';
+    const leaveAttendanceStatus = getLeaveAttendanceStatus(leave.leave_type);
 
     const { data: existingAtt, error: existingAttError } = await supabase
       .from('attendance')

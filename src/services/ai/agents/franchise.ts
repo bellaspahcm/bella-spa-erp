@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 import type { SubAgentResponse } from '../types';
+import { calculateRoyaltyAmount } from '@/lib/business-rules/franchise';
 
 export async function runFranchiseAgent(
   supabase: SupabaseClient<Database>,
@@ -48,13 +49,12 @@ export async function runFranchiseAgent(
 
   const totalRevenue = (revenues || []).reduce((sum, r) => sum + Number(r.amount || 0), 0);
 
-  let expectedRoyalty = 0;
-  if (tenantConfig.royalty_type === "fixed") {
-    expectedRoyalty = Number(tenantConfig.royalty_fixed_amount || 0);
-  } else {
-    const rate = Number(tenantConfig.royalty_rate || 0) / 100;
-    expectedRoyalty = totalRevenue * rate;
-  }
+  const expectedRoyalty = calculateRoyaltyAmount({
+    grossRevenue: totalRevenue,
+    royaltyType: tenantConfig.royalty_type,
+    royaltyRate: tenantConfig.royalty_rate,
+    royaltyFixedAmount: tenantConfig.royalty_fixed_amount,
+  });
 
   const summaryText = `Đã hoàn tất phân tích đối soát Nhượng quyền. Chi nhánh "${tenantConfig.name}" áp dụng mô hình phí "${tenantConfig.royalty_type === 'percentage' ? `tỷ lệ phần trăm (${tenantConfig.royalty_rate}%)` : `cố định (${Number(tenantConfig.royalty_fixed_amount).toLocaleString('vi-VN')}đ)`}". Doanh thu thực tế tháng này đạt ${totalRevenue.toLocaleString('vi-VN')}đ, phí nhượng quyền thực tế tính toán là ${expectedRoyalty.toLocaleString('vi-VN')}đ. Ghi nhận ${(invoices || []).length} hóa đơn trong lịch sử.`;
 

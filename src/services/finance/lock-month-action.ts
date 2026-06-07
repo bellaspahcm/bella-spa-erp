@@ -5,6 +5,12 @@ import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { assertMonthClosePreflight } from '@/services/accounting/health';
 import type { Database } from '@/types/database.types';
+import {
+  buildBranchAbbreviation,
+  calculateInterBranchClearingAmount,
+  calculateRoyaltyAmount,
+  resolveRoyaltyType,
+} from '@/lib/business-rules/franchise';
 
 type RevenueUpdate = Database['public']['Tables']['revenue']['Update'];
 type ExpenseUpdate = Database['public']['Tables']['expenses']['Update'];
@@ -218,13 +224,15 @@ async function syncFranchiseRoyalty(
   }
 
   const grossRevenue = (revenues || []).reduce((sum: number, r) => sum + (Number(r.amount) || 0), 0);
-  const royaltyType = tenant.royalty_type || 'percentage';
-  const calculatedAmount = royaltyType === 'percentage'
-    ? (grossRevenue * (Number(tenant.royalty_rate) || 0)) / 100
-    : Number(tenant.royalty_fixed_amount) || 0;
+  const royaltyType = resolveRoyaltyType(tenant.royalty_type);
+  const calculatedAmount = calculateRoyaltyAmount({
+    grossRevenue,
+    royaltyType,
+    royaltyRate: tenant.royalty_rate,
+    royaltyFixedAmount: tenant.royalty_fixed_amount,
+  });
 
-  const nameParts = (tenant.name || 'BRANCH').split(' ');
-  const abbreviation = nameParts.map((p: string) => p[0]).join('').toUpperCase().slice(0, 5);
+  const abbreviation = buildBranchAbbreviation(tenant.name, 'BRANCH');
   const randomSuffix = Math.floor(1000 + Math.random() * 9000);
   const yearMonth = month.substring(0, 7).replace('-', '');
   const invoiceNumber = `ROY-${yearMonth}-${abbreviation}-${randomSuffix}`;
@@ -355,10 +363,13 @@ async function syncInterBranchClearing(
     const debtorName = tenantMap[pair.debtor_tenant_id]?.name || 'DEBTOR';
     const creditorName = tenantMap[pair.creditor_tenant_id]?.name || 'CREDITOR';
     const clearingRate = tenantMap[pair.creditor_tenant_id]?.internal_clearing_rate || 150000.00;
-    const calculatedAmount = pair.session_count * clearingRate;
+    const calculatedAmount = calculateInterBranchClearingAmount({
+      sessionCount: pair.session_count,
+      clearingRate,
+    });
 
-    const debtorAbbr = debtorName.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 5);
-    const creditorAbbr = creditorName.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 5);
+    const debtorAbbr = buildBranchAbbreviation(debtorName, 'DEBTOR');
+    const creditorAbbr = buildBranchAbbreviation(creditorName, 'CREDITOR');
     const yearMonth = month.substring(0, 7).replace('-', '');
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const clearingNumber = `CLR-${yearMonth}-${debtorAbbr}-${creditorAbbr}-${randomSuffix}`;

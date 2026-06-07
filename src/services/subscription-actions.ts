@@ -5,6 +5,10 @@ import { getCurrentUser } from './user-actions';
 import { checkSubscriptionLimit } from '@/lib/subscription';
 import { revalidatePath } from 'next/cache';
 import type { Database } from '@/types/database.types';
+import {
+  calculateSubscriptionInvoiceAmount,
+  validateSubscriptionDuration,
+} from '@/lib/business-rules/subscription';
 
 export interface SubscriptionInvoice {
   id: string;
@@ -112,8 +116,9 @@ export async function createUpgradeInvoice(tier: string, durationMonths: number)
     return { error: 'Không xác định được chi nhánh của người dùng' };
   }
 
-  if (!Number.isInteger(durationMonths) || durationMonths <= 0) {
-    return { error: 'Thời hạn gói cước không hợp lệ' };
+  const durationError = validateSubscriptionDuration(durationMonths);
+  if (durationError) {
+    return { error: durationError };
   }
 
   const { data: plan, error: planError } = await (supabase
@@ -131,12 +136,19 @@ export async function createUpgradeInvoice(tier: string, durationMonths: number)
     return { error: 'Gói cước không hợp lệ' };
   }
 
-  const totalAmount = Number(plan.price_monthly) * durationMonths;
+  const invoiceAmount = calculateSubscriptionInvoiceAmount({
+    priceMonthly: plan.price_monthly,
+    durationMonths,
+  });
+  if (!invoiceAmount.success) {
+    return { error: invoiceAmount.error };
+  }
+
   const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
   const invoicePayload: SubscriptionInvoiceInsert = {
     tenant_id: tenantId,
     invoice_number: invoiceNumber,
-    amount: totalAmount,
+    amount: invoiceAmount.amount,
     status: 'pending',
     tier,
     duration_months: durationMonths,

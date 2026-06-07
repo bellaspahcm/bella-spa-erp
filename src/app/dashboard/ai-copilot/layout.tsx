@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/services/user-actions';
-
-const ALLOWED_ROLES = ['admin', 'super_admin', 'accountant'] as const;
+import { canAccessAiCopilot } from '@/lib/business-rules/permissions';
 
 /**
  * Server-side role guard cho toàn bộ /dashboard/ai-copilot.
@@ -19,7 +18,7 @@ export default async function AICopilotLayout({
     redirect('/login');
   }
 
-  if (!user.tenant_id || !ALLOWED_ROLES.includes(user.role as typeof ALLOWED_ROLES[number])) {
+  if (!canAccessAiCopilot({ role: user.role, tenantId: user.tenant_id })) {
     redirect('/dashboard');
   }
 

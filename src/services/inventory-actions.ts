@@ -4,10 +4,14 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
 import {
   INVENTORY_REASONS,
+  buildSessionConsumptionPlan,
+  calculateInventorySummary,
+  calculateMonthlyReconciliationEntry,
   calculateConsumptionMovement,
-  calculateLowStockState,
+  calculateOpeningStock,
   calculateRestockMovement,
   calculateRollbackStock,
+  normalizePackageMaterialRows,
 } from '@/lib/business-rules/inventory';
 import type { Database } from '@/types/database.types';
 
@@ -158,16 +162,7 @@ export async function getInventorySummary() {
   if (error) {
     throw new Error(`Failed to fetch inventory summary: ${error.message}`);
   }
-  if (!data) return { totalItems: 0, lowStockCount: 0, totalValue: 0 };
-
-  return {
-    totalItems: data.length,
-    lowStockCount: data.filter((i) => calculateLowStockState({
-      stockLevel: i.stock_level,
-      minStockLevel: i.min_stock_level,
-    }).isLowStock).length,
-    totalValue: data.reduce((sum: number, i) => sum + Number(i.stock_level) * Number(i.price_per_unit), 0)
-  };
+  return calculateInventorySummary(data);
 }
 
 export async function getPackageMaterials(packageId: string) {
@@ -232,13 +227,12 @@ export async function upsertPackageMaterials(
     }
 
     // 2. Lọc các dòng hợp lệ (item_id không rỗng, quantity > 0)
-    const validRows: PackageMaterialInsert[] = rows
-      .filter(r => r.item_id && Number(r.quantity_per_session) > 0)
+    const validRows: PackageMaterialInsert[] = normalizePackageMaterialRows(rows)
       .map(r => ({
         tenant_id: tenantId,
         package_id: packageId,
         item_id: r.item_id,
-        quantity_per_session: Number(r.quantity_per_session),
+        quantity_per_session: r.quantity_per_session,
       }));
 
     if (validRows.length === 0) {
@@ -573,8 +567,13 @@ export async function saveMonthlyReconciliation(
         failures.push('Thiếu mã vật tư');
         continue;
       }
-      const actual = Number(entry.actual_stock);
-      if (!Number.isFinite(actual) || actual < 0) {
+      const actualSnapshot = calculateMonthlyReconciliationEntry({
+        actualStock: entry.actual_stock,
+        expectedStock: 0,
+        periodLabel,
+        notes: entry.notes,
+      });
+      if ('error' in actualSnapshot) {
         failures.push(`Item ${entry.item_id}: số liệu không hợp lệ`);
         continue;
       }
@@ -592,12 +591,21 @@ export async function saveMonthlyReconciliation(
         continue;
       }
 
-      const expected = Number(itemRow.stock_level || 0);
-      const variance = actual - expected;
+      const reconciliation = calculateMonthlyReconciliationEntry({
+        actualStock: entry.actual_stock,
+        expectedStock: itemRow.stock_level,
+        unit: itemRow.unit,
+        periodLabel,
+        notes: entry.notes,
+      });
+      if ('error' in reconciliation) {
+        failures.push(`Item ${entry.item_id}: số liệu không hợp lệ`);
+        continue;
+      }
 
       // Cập nhật stock_level về số thực tế
       const updatePayload: InventoryItemUpdate = {
-        stock_level: actual,
+        stock_level: reconciliation.actualStock,
         updated_at: new Date().toISOString(),
       };
 
@@ -612,16 +620,11 @@ export async function saveMonthlyReconciliation(
         continue;
       }
 
-      // Ghi log kiểm kê (luôn ghi để có audit, kể cả khi variance = 0)
-      const noteText = variance === 0
-        ? `Kiểm kê tháng ${periodLabel}: khớp sổ${entry.notes ? ' - ' + entry.notes : ''}`
-        : `Kiểm kê tháng ${periodLabel}: thực tế ${actual} vs dự kiến ${expected} (${variance > 0 ? '+' : ''}${variance} ${itemRow.unit})${entry.notes ? ' - ' + entry.notes : ''}`;
-
       const logPayload: InventoryLogInsert = {
         item_id: entry.item_id,
-        change_amount: variance,
-        reason: INVENTORY_REASONS.monthlyReconciliation,
-        notes: noteText,
+        change_amount: reconciliation.variance,
+        reason: reconciliation.reason,
+        notes: reconciliation.noteText,
         created_by: userId,
         tenant_id: tenantId,
       };
@@ -630,7 +633,7 @@ export async function saveMonthlyReconciliation(
 
       if (logErr) {
         const rollbackPayload: InventoryItemUpdate = {
-          stock_level: expected,
+          stock_level: reconciliation.expectedStock,
           updated_at: new Date().toISOString(),
         };
         const { error: rollbackErr } = await supabase
@@ -680,10 +683,11 @@ export async function addInventoryItem(item: {
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
     if (!item.name || !item.unit) return { success: false, error: 'Nhập tên và đơn vị' };
 
-    const initialStock = Number(item.stock_level || 0);
-    if (!Number.isFinite(initialStock) || initialStock < 0) {
+    const openingStock = calculateOpeningStock(item.stock_level);
+    if ('error' in openingStock) {
       return { success: false, error: 'Tồn kho ban đầu không hợp lệ' };
     }
+    const { initialStock } = openingStock;
 
     const insertPayload: InventoryItemInsert = {
       ...item,
@@ -925,36 +929,27 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
     }
 
     const materials = await getPackageMaterials(packageId);
-    let totalCost = 0;
-    const consumedItems: Array<{ id: string; qty: number }> = [];
+    const consumptionPlan = buildSessionConsumptionPlan(materials);
 
-    for (const mat of materials) {
-      const qty = Number(mat.quantity_per_session || 0);
-      const itemId = mat.inventory_items?.id;
-      if (!itemId || qty <= 0) continue;
-
-      const cost = qty * Number(mat.inventory_items?.price_per_unit || 0);
-      totalCost += cost;
-
+    for (const item of consumptionPlan.items) {
       const consumeResult = await consumeInventory(
-        itemId,
-        qty,
+        item.itemId,
+        item.quantity,
         sessionLogId,
         'Tự động tiêu hao buổi liệu trình'
       );
 
       if (!consumeResult.success) {
-        console.warn(`[autoConsumeForSession] Consume failed for item ${itemId}, rolling back consumed items...`);
+        console.warn(`[autoConsumeForSession] Consume failed for item ${item.itemId}, rolling back consumed items...`);
         // Rollback lại các mặt hàng đã trừ của session này
         const rollbackResult = await rollbackInventoryConsumption(sessionLogId);
         const rollbackError = rollbackResult.success ? '' : `; rollback thất bại: ${rollbackResult.error}`;
         return { success: false, error: `${consumeResult.error || 'Kho không đủ nguyên liệu'}${rollbackError}` };
       }
-      consumedItems.push({ id: itemId, qty });
     }
 
     // Enqueue INVENTORY_CONSUMED outbox event if totalCost > 0
-    if (totalCost > 0) {
+    if (consumptionPlan.totalCost > 0) {
       const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
       const outboxEnqueued = await enqueueWithAutoClient(
         supabase,
@@ -964,7 +959,7 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
           referenceType: 'SESSION_LOG',
           referenceId: sessionLogId,
           payload: {
-            amount: totalCost,
+            amount: consumptionPlan.totalCost,
             description: `Vật tư tiêu hao ca trị liệu, buổi ID: ${sessionLogId}`,
             // TODO Phase 29: dùng branch_id thực khi multi-branch
             branchId: tenantId,
@@ -977,7 +972,7 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
       }
     }
 
-    return { success: true, processed: consumedItems.length, totalCost };
+    return { success: true, processed: consumptionPlan.items.length, totalCost: consumptionPlan.totalCost };
   } catch (e: unknown) {
     console.error('[autoConsumeForSession]', e);
     // Hủy bỏ và hoàn kho nếu gặp lỗi hệ thống giữa chừng

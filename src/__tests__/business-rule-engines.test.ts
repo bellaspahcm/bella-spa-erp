@@ -4,18 +4,30 @@ import {
   validatePaymentAmountAgainstState,
 } from '@/lib/business-rules/payment';
 import {
+  buildAttendanceTimestamp,
+  calculateCheckInAttendanceStatus,
   calculateAttendanceBreakdown,
   calculateAttendancePenalty,
   calculateProRataBaseSalaryFromActualDays,
+  getLeaveAttendanceStatus,
+  normalizeAttendanceStatus,
 } from '@/lib/business-rules/attendance';
 import {
   INVENTORY_REASONS,
+  buildSessionConsumptionPlan,
+  calculateInventorySummary,
+  calculateMonthlyReconciliationEntry,
   calculateConsumptionMovement,
   calculateRestockMovement,
   calculateRollbackStock,
   classifyInventoryMovementReason,
+  normalizePackageMaterialRows,
 } from '@/lib/business-rules/inventory';
-import { calculateLiveAttendanceSalaryComponents } from '@/modules/hr-salary/actions/salary-attendance-calculation';
+import {
+  calculateLiveAttendanceSalaryComponents,
+  calculateSalaryDetails,
+  calculateSalaryTotal,
+} from '@/lib/business-rules/salary';
 
 describe('shared business rule engines', () => {
   it('calculates customer payment state from confirmed revenue records', () => {
@@ -84,6 +96,15 @@ describe('shared business rule engines', () => {
     }).totalPenalty).toBe(250000);
   });
 
+  it('centralizes attendance lifecycle rules for check-in, leave, and timestamps', () => {
+    expect(calculateCheckInAttendanceStatus({ localTime: '08:30:00' })).toBe('present');
+    expect(calculateCheckInAttendanceStatus({ localTime: '08:30:01' })).toBe('late');
+    expect(getLeaveAttendanceStatus('full_day')).toBe('absent');
+    expect(getLeaveAttendanceStatus('morning')).toBe('half_day');
+    expect(normalizeAttendanceStatus('unknown')).toBe('present');
+    expect(buildAttendanceTimestamp('2026-06-07T08:00:00')).toBe('2026-06-07T01:00:00.000Z');
+  });
+
   it('uses one live attendance salary helper for draft payroll components', () => {
     const components = calculateLiveAttendanceSalaryComponents({
       attendanceLogs: [
@@ -113,6 +134,32 @@ describe('shared business rule engines', () => {
     });
   });
 
+  it('calculates salary details and final total through the shared salary engine', () => {
+    const salaryConfig = {
+      bonus_5_star: 50000,
+      bonus_4_5_star: 30000,
+      bonus_4_star: 10000,
+      kpi_target_sessions: 30,
+      kpi_bonus_amount: 1000000,
+    };
+
+    expect(calculateSalaryDetails(35, 5, salaryConfig, 6000000, 200000, 300000, 2000000))
+      .toMatchObject({
+        bonusPerSession: 50000,
+        ratingBonus: 1750000,
+        kpiBonus: 1000000,
+        totalSalary: 10250000,
+      });
+    expect(calculateSalaryTotal({
+      baseSalary: 1000000,
+      sessionBonus: 100000,
+      ratingBonus: 50000,
+      kpiBonus: 0,
+      deductions: 2000000,
+      advances: 0,
+    })).toBe(0);
+  });
+
   it('classifies inventory movements and calculates stock changes', () => {
     expect(classifyInventoryMovementReason(INVENTORY_REASONS.sessionConsumption)).toBe('consumption');
     expect(classifyInventoryMovementReason(INVENTORY_REASONS.restock)).toBe('purchase');
@@ -130,5 +177,39 @@ describe('shared business rule engines', () => {
       reason: INVENTORY_REASONS.sessionConsumption,
     });
     expect(calculateRollbackStock({ stockLevel: 3, changeAmount: -2 })).toBe(5);
+  });
+
+  it('centralizes inventory summary, material normalization, reconciliation, and consumption plan', () => {
+    expect(calculateInventorySummary([
+      { stock_level: 3, min_stock_level: 5, price_per_unit: 10000 },
+      { stock_level: 10, min_stock_level: 5, price_per_unit: 20000 },
+    ])).toEqual({ totalItems: 2, lowStockCount: 1, totalValue: 230000 });
+
+    expect(normalizePackageMaterialRows([
+      { item_id: ' item-1 ', quantity_per_session: '2' },
+      { item_id: 'item-2', quantity_per_session: 0 },
+      { item_id: '', quantity_per_session: 4 },
+    ])).toEqual([{ item_id: 'item-1', quantity_per_session: 2 }]);
+
+    expect(calculateMonthlyReconciliationEntry({
+      actualStock: 12,
+      expectedStock: 10,
+      unit: 'chai',
+      periodLabel: '06/2026',
+      notes: 'counted',
+    })).toMatchObject({
+      actualStock: 12,
+      expectedStock: 10,
+      variance: 2,
+      reason: INVENTORY_REASONS.monthlyReconciliation,
+    });
+
+    expect(buildSessionConsumptionPlan([
+      { quantity_per_session: 2, inventory_items: { id: 'oil', price_per_unit: 50000 } },
+      { quantity_per_session: 0, inventory_items: { id: 'skip', price_per_unit: 10000 } },
+    ])).toEqual({
+      items: [{ itemId: 'oil', quantity: 2, unitCost: 50000, cost: 100000 }],
+      totalCost: 100000,
+    });
   });
 });
