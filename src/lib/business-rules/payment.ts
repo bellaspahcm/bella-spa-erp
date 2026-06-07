@@ -47,7 +47,7 @@ function asFiniteNumber(value: number | string | null | undefined, fallback = 0)
 }
 
 function asMoney(value: number | string | null | undefined) {
-  return Math.max(0, asFiniteNumber(value));
+  return Math.max(0, Math.round(asFiniteNumber(value)));
 }
 
 function normalizeDiscountPercent(value: number | string | null | undefined) {
@@ -68,7 +68,7 @@ export function calculatePriceAfterDiscount(input: {
 }) {
   const fullPrice = asMoney(input.fullPrice);
   const discountPercent = normalizeDiscountPercent(input.discountPercent);
-  return Math.max(0, fullPrice * (1 - discountPercent / 100));
+  return asMoney(fullPrice * (1 - discountPercent / 100));
 }
 
 export function calculateConfirmedPaidAmount(revenues: PaymentRevenueLike[] | null | undefined) {

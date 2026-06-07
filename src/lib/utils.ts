@@ -17,7 +17,21 @@ export function parseCurrency(value: string) {
 
 export function formatNumberWithSeparator(value: number | string) {
   if (value === null || value === undefined) return '';
-  const str = typeof value === 'number' ? value.toString() : value;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return '';
+    return new Intl.NumberFormat('vi-VN').format(Math.round(value));
+  }
+
+  const str = value;
+  const trimmed = str.trim();
+  const decimalMatch = trimmed.match(/^(-?\d+)\.(\d+)$/);
+  if (decimalMatch && (decimalMatch[2].length !== 3 || decimalMatch[1].replace('-', '').length > 3)) {
+    const numeric = Number(trimmed);
+    if (Number.isFinite(numeric)) {
+      return new Intl.NumberFormat('vi-VN').format(Math.round(numeric));
+    }
+  }
+
   const isNegative = str.startsWith('-');
   const digits = str.replace(/\D/g, '');
   if (!digits) return '';
