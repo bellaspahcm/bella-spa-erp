@@ -198,4 +198,23 @@ describe('payment business rule audit', () => {
     expect(hqDashboardSource).not.toMatch(/parseFloat\(template/);
     expect(hqDashboardSource).not.toMatch(/parseInt\(template/);
   });
+
+  it('keeps service package server actions routed through the package rule engine', () => {
+    const packageActionsSource = readSource('src/services/package-actions.ts');
+    const brandServiceActionsSource = readSource('src/services/brand-service-actions.ts');
+    const servicePackageEngineSource = readSource('src/lib/business-rules/service-package.ts');
+    const auditedServerSources = [
+      packageActionsSource,
+      brandServiceActionsSource,
+    ].join('\n');
+
+    expect(packageActionsSource).toContain('buildServicePackagePayload');
+    expect(packageActionsSource).toContain('buildServicePackageUpdatePayload');
+    expect(brandServiceActionsSource).toContain('buildHqPackageTemplatePayload');
+    expect(brandServiceActionsSource).toContain('resolveDistributedPackagePrice');
+    expect(servicePackageEngineSource).toContain('validateTenantPackagePriceOverride');
+    expect(auditedServerSources).not.toContain('parseNumericValue');
+    expect(auditedServerSources).not.toMatch(/Number\(templateData/);
+    expect(auditedServerSources).not.toMatch(/newPrice\s*[<>]/);
+  });
 });

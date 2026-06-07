@@ -190,6 +190,16 @@ describe('Brand Service Master System (Phase 2)', () => {
       expect(result.success).toBe(true);
       expect(result.data?.name).toBe('Tắm trắng phi thuyền VIP');
       expect(packageQueryMock.insertSpy).toHaveBeenCalled();
+      expect(packageQueryMock.insertSpy).toHaveBeenCalledWith([expect.objectContaining({
+        name: 'Tắm trắng phi thuyền VIP',
+        price: 1500000,
+        price_floor: 1200000,
+        price_cap: 2000000,
+        total_sessions: 10,
+        ktv_commission: 150000,
+        is_hq_template: true,
+        tenant_id: 'hq-tenant-id',
+      })]);
     });
 
     it('should reject creation if price_floor is greater than price_cap', async () => {
@@ -228,6 +238,59 @@ describe('Brand Service Master System (Phase 2)', () => {
       expect(result.error).toBe('Audit write failed');
       expect(packageQueryMock.deleteSpy).toHaveBeenCalled();
       expect(packageQueryMock.eqSpy).toHaveBeenCalledWith('id', 't-audit-fail');
+    });
+  });
+
+  describe('updateHqPackageTemplate', () => {
+    it('returns propagation failures instead of silently ignoring distributed package errors', async () => {
+      mockCheckHqAuth.mockResolvedValue({ authorized: true, user: hqAdminUser });
+
+      const oldTemplate = {
+        id: 'template-1',
+        name: 'VIP Template',
+        price: 1000000,
+        duration: '90 phút/buổi',
+        total_sessions: 10,
+        details: [],
+        offer: '',
+        ktv_commission: 150000,
+        price_floor: 800000,
+        price_cap: 1200000,
+        allowed_franchise_override: true,
+      };
+      const updatedTemplate = {
+        ...oldTemplate,
+        price: 1200000,
+        allowed_franchise_override: false,
+      };
+      const oldQuery = new MockQueryBuilder(oldTemplate);
+      const updateQuery = new MockQueryBuilder(updatedTemplate);
+      const propagateQuery = new MockQueryBuilder(null, { message: 'propagation failed' });
+
+      mockFrom
+        .mockReturnValueOnce(oldQuery)
+        .mockReturnValueOnce(updateQuery)
+        .mockReturnValueOnce(propagateQuery);
+
+      const result = await updateHqPackageTemplate('template-1', {
+        name: 'VIP Template',
+        price: 1200000,
+        duration: '90 phút/buổi',
+        total_sessions: 10,
+        details: [],
+        offer: '',
+        ktv_commission: 150000,
+        price_floor: 800000,
+        price_cap: 1200000,
+        allowed_franchise_override: false,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('propagation failed');
+      expect(propagateQuery.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+        price: 1200000,
+        allowed_franchise_override: false,
+      }));
     });
   });
 

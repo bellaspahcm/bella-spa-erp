@@ -155,9 +155,9 @@ describe('package actions transaction safety', () => {
     const insertedPackage = createPackageRow();
     const input: PackageActionInput = {
       name: 'VIP',
-      price: '1,000,000',
+      price: '1.000.000',
       sessions: '10',
-      ktv_commission: '150,000',
+      ktv_commission: '150.000',
       details: ['Massage body'],
     };
     queueResult([insertedPackage]);

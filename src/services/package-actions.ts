@@ -2,6 +2,10 @@
 
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import {
+  buildServicePackagePayload,
+  buildServicePackageUpdatePayload,
+} from '@/lib/business-rules/service-package';
 import type { Database, Json } from '@/types/database.types';
 
 type PackageRow = Database['public']['Tables']['packages']['Row'];
@@ -19,7 +23,7 @@ export type PackageActionInput = {
   ktv_commission?: number | string | null;
   status?: string | null;
   tenant_id?: string | null;
-  session_multiplier?: number | null;
+  session_multiplier?: number | string | null;
 };
 
 type PackageActionResult = {
@@ -36,62 +40,12 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-function parseNumericValue(value: number | string | null | undefined, fallback: number) {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
-  if (typeof value !== 'string') return fallback;
-
-  const normalized = value.replace(/[^\d.-]/g, '');
-  if (!normalized) return fallback;
-
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-function normalizeDetails(details: PackageActionInput['details']) {
-  if (Array.isArray(details)) return details;
-  if (typeof details === 'string') {
-    return details.split(',').map(detail => detail.trim()).filter(Boolean);
-  }
-  return [];
-}
-
 function buildPackageInsert(packageData: PackageActionInput): PackageInsert {
-  const payload: PackageInsert = {
-    name: packageData.name,
-    price: parseNumericValue(packageData.price, 0),
-    duration: packageData.duration?.toString() || '90 phút/buổi',
-    total_sessions: parseNumericValue(packageData.total_sessions ?? packageData.sessions, 10),
-    details: normalizeDetails(packageData.details),
-    offer: packageData.offer || '',
-    ktv_commission: parseNumericValue(packageData.ktv_commission, 150000),
-    status: packageData.status || 'active',
-  };
-
-  if (packageData.tenant_id) payload.tenant_id = packageData.tenant_id;
-  if (packageData.session_multiplier !== undefined) payload.session_multiplier = packageData.session_multiplier;
-
-  return payload;
+  return buildServicePackagePayload(packageData);
 }
 
 function buildPackageUpdate(packageData: Partial<PackageActionInput>): PackageUpdate {
-  const payload: PackageUpdate = {};
-
-  if (packageData.name !== undefined) payload.name = packageData.name;
-  if (packageData.price !== undefined) payload.price = parseNumericValue(packageData.price, 0);
-  if (packageData.duration !== undefined) payload.duration = packageData.duration?.toString() || '90 phút/buổi';
-  if (packageData.total_sessions !== undefined || packageData.sessions !== undefined) {
-    payload.total_sessions = parseNumericValue(packageData.total_sessions ?? packageData.sessions, 10);
-  }
-  if (packageData.details !== undefined) payload.details = normalizeDetails(packageData.details);
-  if (packageData.offer !== undefined) payload.offer = packageData.offer || '';
-  if (packageData.ktv_commission !== undefined) {
-    payload.ktv_commission = parseNumericValue(packageData.ktv_commission, 150000);
-  }
-  if (packageData.status !== undefined) payload.status = packageData.status || 'active';
-  if (packageData.tenant_id !== undefined) payload.tenant_id = packageData.tenant_id;
-  if (packageData.session_multiplier !== undefined) payload.session_multiplier = packageData.session_multiplier;
-
-  return payload;
+  return buildServicePackageUpdatePayload(packageData);
 }
 
 function toAuditJson(value: PackageRow | PackageInsert | PackageUpdate): Json {
