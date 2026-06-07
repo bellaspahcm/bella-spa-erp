@@ -575,6 +575,16 @@ function isOutboxStale(row, now) {
   return ageHours > STALE_OUTBOX_WARNING_HOURS;
 }
 
+function getMissingAccountingSideEffectSeverity(row) {
+  const reviewStatus = normalize(row?.accounting_review_status);
+
+  if (['auto_posted', 'approved', 'posting_failed'].includes(reviewStatus)) {
+    return CRITICAL;
+  }
+
+  return WARNING;
+}
+
 function monthMatches(value, monthDate) {
   return String(value || '').slice(0, 10) === monthDate;
 }
@@ -784,7 +794,7 @@ function checkCrossModuleSideEffects(dataset) {
 
     const revenueType = normalize(row.revenue_type);
     if (isPackageRevenueType(revenueType) && !hasAccountingSideEffect(dataset, 'PACKAGE_SALE', row.id)) {
-      addFinding(findings, CRITICAL, 'confirmed_package_revenue_missing_accounting_side_effect', 'Confirmed package revenue must have a PACKAGE_SALE outbox event or active journal entry.', {
+      addFinding(findings, getMissingAccountingSideEffectSeverity(row), 'confirmed_package_revenue_missing_accounting_side_effect', 'Confirmed package revenue should have a PACKAGE_SALE outbox event or active journal entry.', {
         recordId: row.id,
         sourceTable: 'revenue',
         bookingId: row.booking_id,
@@ -792,7 +802,7 @@ function checkCrossModuleSideEffects(dataset) {
     }
 
     if (revenueType === 'refund' && !hasAccountingSideEffect(dataset, 'REFUND_ISSUED', row.id)) {
-      addFinding(findings, CRITICAL, 'confirmed_refund_missing_accounting_side_effect', 'Confirmed refund revenue must have a REFUND_ISSUED outbox event or active journal entry.', {
+      addFinding(findings, getMissingAccountingSideEffectSeverity(row), 'confirmed_refund_missing_accounting_side_effect', 'Confirmed refund revenue should have a REFUND_ISSUED outbox event or active journal entry.', {
         recordId: row.id,
         sourceTable: 'revenue',
         bookingId: row.booking_id,
@@ -811,7 +821,7 @@ function checkCrossModuleSideEffects(dataset) {
     }
 
     if (!hasAccountingSideEffect(dataset, 'SESSION_DONE', session.id)) {
-      addFinding(findings, CRITICAL, 'completed_session_missing_session_done_side_effect', 'Completed session must have a SESSION_DONE outbox event or active journal entry.', {
+      addFinding(findings, getMissingAccountingSideEffectSeverity(session), 'completed_session_missing_session_done_side_effect', 'Completed session should have a SESSION_DONE outbox event or active journal entry.', {
         recordId: session.id,
         sourceTable: 'session_logs',
         bookingId: session.booking_id,
@@ -826,7 +836,7 @@ function checkCrossModuleSideEffects(dataset) {
       consumptionLogsBySession.has(session.id) &&
       !hasAccountingSideEffect(dataset, 'INVENTORY_CONSUMED', session.id)
     ) {
-      addFinding(findings, CRITICAL, 'inventory_consumption_missing_accounting_side_effect', 'Session inventory consumption must have an INVENTORY_CONSUMED outbox event or active journal entry.', {
+      addFinding(findings, getMissingAccountingSideEffectSeverity(session), 'inventory_consumption_missing_accounting_side_effect', 'Session inventory consumption should have an INVENTORY_CONSUMED outbox event or active journal entry.', {
         recordId: session.id,
         sourceTable: 'session_logs',
         bookingId: session.booking_id,
@@ -856,7 +866,7 @@ function checkCrossModuleSideEffects(dataset) {
     if (normalize(record.status) !== 'paid') return;
 
     if (!hasAccountingSideEffect(dataset, 'SALARY_PAID', record.id)) {
-      addFinding(findings, CRITICAL, 'paid_salary_missing_accounting_side_effect', 'Paid salary record must have a SALARY_PAID outbox event or active journal entry.', {
+      addFinding(findings, getMissingAccountingSideEffectSeverity(record), 'paid_salary_missing_accounting_side_effect', 'Paid salary record should have a SALARY_PAID outbox event or active journal entry.', {
         recordId: record.id,
         sourceTable: 'salary_records',
         ktvId: record.ktv_id,

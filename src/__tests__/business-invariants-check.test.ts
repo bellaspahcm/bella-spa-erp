@@ -247,6 +247,7 @@ describe('business invariant check script', () => {
           status: 'confirmed',
           revenue_type: 'deposit',
           tenant_id: 'tenant-1',
+          accounting_review_status: 'AUTO_POSTED',
         },
         {
           id: 'rev-refund',
@@ -255,6 +256,7 @@ describe('business invariant check script', () => {
           status: 'confirmed',
           revenue_type: 'refund',
           tenant_id: 'tenant-1',
+          accounting_review_status: 'AUTO_POSTED',
         },
       ],
       sessionLogs: [
@@ -264,6 +266,7 @@ describe('business invariant check script', () => {
           status: 'completed',
           completed_by_ktv_id: 'ktv-1',
           tenant_id: 'tenant-1',
+          accounting_review_status: 'AUTO_POSTED',
         },
       ],
       packageMaterials: [
@@ -290,10 +293,12 @@ describe('business invariant check script', () => {
           tenant_id: 'tenant-1',
           month_year: '2026-06-01',
           status: 'paid',
+          accounting_review_status: 'AUTO_POSTED',
         },
       ],
     });
 
+    expect(result.criticalCount).toBe(6);
     expect(result.findings.map((finding: { code: string }) => finding.code)).toEqual(
       expect.arrayContaining([
         'confirmed_package_revenue_missing_accounting_side_effect',
@@ -304,6 +309,35 @@ describe('business invariant check script', () => {
         'paid_salary_missing_accounting_side_effect',
       ])
     );
+  });
+
+  it('warns but does not block for unreviewed legacy side-effect gaps', () => {
+    const result = checkCrossModuleSideEffects({
+      ...emptyDataset,
+      bookings: [
+        {
+          id: 'booking-1',
+          booking_number: 'B-001',
+          tenant_id: 'tenant-1',
+          completed_sessions: 1,
+        },
+      ],
+      sessionLogs: [
+        {
+          id: 'session-legacy',
+          booking_id: 'booking-1',
+          status: 'completed',
+          completed_by_ktv_id: 'ktv-1',
+          tenant_id: 'tenant-1',
+          accounting_review_status: 'UNREVIEWED',
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.criticalCount).toBe(0);
+    expect(result.warningCount).toBe(1);
+    expect(result.findings[0].code).toBe('completed_session_missing_session_done_side_effect');
   });
 
   it('warns when accounting outbox events stay pending too long', () => {
