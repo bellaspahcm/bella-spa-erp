@@ -19,7 +19,7 @@ describe('accounting outbox helpers', () => {
 
   it('enqueues an accounting event and returns true on success', async () => {
     const client = {
-      rpc: jest.fn().mockResolvedValue({ error: null }),
+      rpc: jest.fn().mockResolvedValue({ data: 'outbox-1', error: null }),
     };
 
     await expect(enqueueAccountingEvent(client, params)).resolves.toBe(true);
@@ -35,7 +35,15 @@ describe('accounting outbox helpers', () => {
 
   it('returns false when the enqueue RPC returns an error', async () => {
     const client = {
-      rpc: jest.fn().mockResolvedValue({ error: { message: 'outbox unavailable' } }),
+      rpc: jest.fn().mockResolvedValue({ data: null, error: { message: 'outbox unavailable' } }),
+    };
+
+    await expect(enqueueAccountingEvent(client, params)).resolves.toBe(false);
+  });
+
+  it('returns false when the enqueue RPC does not return an outbox id', async () => {
+    const client = {
+      rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
     };
 
     await expect(enqueueAccountingEvent(client, params)).resolves.toBe(false);
