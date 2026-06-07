@@ -1,6 +1,7 @@
 'use client';
 
-import { cn, formatNumberWithSeparator } from '@/lib/utils';
+import { normalizeDiscountPercent } from '@/lib/business-rules/payment';
+import { cn, formatMoneyInput, parseMoneyInput } from '@/lib/utils';
 import { geocodeAddress } from '@/services/customer-actions';
 import { motion } from 'framer-motion';
 import { AlertCircle, Camera, CheckCircle2, CreditCard as CreditCardIcon, DollarSign as DollarIcon, FileText, Image as ImageIcon, Loader2, PlusCircle, Sparkles, User } from 'lucide-react';
@@ -286,13 +287,9 @@ export function BookingPaymentModal({
             <div className="relative">
               <input
                 type="text"
-                value={formatNumberWithSeparator(data.amount)}
+                value={formatMoneyInput(data.amount)}
                 onChange={(e) => {
-                  const raw = e.target.value;
-                  const isNegative = raw.includes('-');
-                  const val = raw.replace(/[^\d]/g, '');
-                  const parsed = val ? parseInt(val) : 0;
-                  setData({ ...data, amount: isNegative ? -parsed : parsed });
+                  setData({ ...data, amount: parseMoneyInput(e.target.value) });
                 }}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-black text-lg text-primary"
               />
@@ -502,10 +499,9 @@ export function EditBookingModal({
               <div className="relative">
                 <input
                   type="text"
-                  value={formatNumberWithSeparator(data.full_price)}
+                  value={formatMoneyInput(data.full_price)}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^\d]/g, '');
-                    setData({ ...data, full_price: val ? parseInt(val) : 0 });
+                    setData({ ...data, full_price: parseMoneyInput(e.target.value) });
                   }}
                   className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
                 />
@@ -521,7 +517,7 @@ export function EditBookingModal({
                   min="0"
                   max="100"
                   value={data.discount_percent}
-                  onChange={(e) => setData({ ...data, discount_percent: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
+                  onChange={(e) => setData({ ...data, discount_percent: normalizeDiscountPercent(e.target.value) })}
                   className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
                 />
                 <span className="absolute right-6 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">%</span>
@@ -533,10 +529,9 @@ export function EditBookingModal({
               <div className="relative">
                 <input
                   type="text"
-                  value={formatNumberWithSeparator(data.deposit_amount)}
+                  value={formatMoneyInput(data.deposit_amount)}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^\d]/g, '');
-                    setData({ ...data, deposit_amount: val ? parseInt(val) : 0 });
+                    setData({ ...data, deposit_amount: parseMoneyInput(e.target.value) });
                   }}
                   className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
                 />

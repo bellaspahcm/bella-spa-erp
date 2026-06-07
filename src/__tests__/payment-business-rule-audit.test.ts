@@ -141,4 +141,20 @@ describe('payment business rule audit', () => {
     expect(auditedProductionSources).not.toMatch(/discount_percent[^\n]*(?:\/\s*100|\*)/);
     expect(auditedProductionSources).not.toMatch(/discountPercent[^\n]*(?:\/\s*100|\*)/);
   });
+
+  it('keeps high-risk payment inputs routed through shared money input helpers', () => {
+    const auditedMoneyInputSources = [
+      'src/components/features/BookingModal.tsx',
+      'src/components/features/TransactionModal.tsx',
+      'src/app/dashboard/customers/[id]/components/CustomerDetailModals.tsx',
+      'src/app/dashboard/finance/reconciliation/page.tsx',
+      'src/app/dashboard/finance/reconciliation/components/DebtPaymentModal.tsx',
+    ].map(readSource).join('\n');
+
+    expect(auditedMoneyInputSources).toContain('parseMoneyInput');
+    expect(auditedMoneyInputSources).toContain('formatMoneyInput');
+    expect(auditedMoneyInputSources).not.toMatch(/replace\(\s*\/\\D/);
+    expect(auditedMoneyInputSources).not.toMatch(/replace\(\s*\/\[\^\\d\]/);
+    expect(auditedMoneyInputSources).not.toMatch(/Number\([^\n]*replace/);
+  });
 });

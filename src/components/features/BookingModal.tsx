@@ -9,7 +9,7 @@ import {
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
-import { cn,formatNumberWithSeparator,getLocalDateString } from '@/lib/utils';
+import { cn,formatMoneyInput,formatNumberWithSeparator,getLocalDateString,parseMoneyInput } from '@/lib/utils';
 import { createBooking,getBookingDetailsWithPayment,getDraftBooking } from '@/modules/booking/actions/lifecycle-actions';
 import type { Database } from '@/types/database.types';
 import { AnimatePresence,motion } from 'framer-motion';
@@ -672,10 +672,9 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                     <input 
                       type="text" 
                       placeholder="0"
-                      value={formData.deposit_amount ? formatNumberWithSeparator(formData.deposit_amount) : ''}
+                      value={formatMoneyInput(formData.deposit_amount)}
                       onChange={(e) => {
-                        const val = e.target.value.replace(/[^\d]/g, '');
-                        setFormData({...formData, deposit_amount: val ? parseInt(val) : 0});
+                        setFormData({...formData, deposit_amount: parseMoneyInput(e.target.value)});
                       }}
                       className="w-full pl-5 pr-12 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"
                     />

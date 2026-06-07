@@ -1,6 +1,7 @@
 'use client';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { formatMoneyInput, parseMoneyInput } from '@/lib/utils';
 import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
 import { recordTransaction } from '@/services/finance-actions';
 import { AnimatePresence,motion } from 'framer-motion';
@@ -68,15 +69,14 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanAmount = amount.replace(/\D/g, '');
-    if (!cleanAmount || isNaN(Number(cleanAmount))) {
+    const parsedAmount = parseMoneyInput(amount);
+    if (parsedAmount <= 0) {
       toast.error('Vui lòng nhập số tiền hợp lệ');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const parsedAmount = Number(cleanAmount);
       const notesValue = notes || (type === 'revenue' ? 'Thu nhập' : 'Chi phí');
       const normalizedCategory = type === 'revenue'
         ? (category === 'package_deposit' ? 'deposit' : category === 'retail' ? 'additional' : category || 'additional')
@@ -184,8 +184,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
                   placeholder="0"
                   value={amount}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, '');
-                    setAmount(val ? Number(val).toLocaleString() : '');
+                    setAmount(formatMoneyInput(e.target.value));
                   }}
                   className="w-full pl-16 pr-8 py-5 bg-slate-50 border-2 border-transparent focus:border-primary/20 focus:bg-white rounded-3xl outline-none transition-all text-2xl font-bold text-slate-900"
                 />
@@ -276,7 +275,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
             </div>
 
             {/* Warning if Large Amount */}
-            {amount && Number(amount.replace(/\D/g, '')) > 20000000 && (
+            {parseMoneyInput(amount) > 20000000 && (
               <div className="flex items-center gap-3 p-4 bg-amber-50 text-amber-600 rounded-2xl border border-amber-100">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <p className="text-xs font-bold">Giao dịch rất lớn (trên 20M), vui lòng kiểm tra kỹ chứng từ trước khi lưu!</p>

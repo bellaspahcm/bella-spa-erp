@@ -6,7 +6,9 @@
 import {
   cn,
   formatCurrency,
+  formatMoneyInput,
   parseCurrency,
+  parseMoneyInput,
   formatNumberWithSeparator,
   resolvePackageName,
   getLocalDateString,
@@ -70,6 +72,29 @@ describe("utils: parseCurrency", () => {
   });
   it("preserves leading zeros (string return)", () => {
     expect(parseCurrency("0.000.500")).toBe("0000500");
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// parseMoneyInput / formatMoneyInput
+// ═════════════════════════════════════════════════════════════════════════════
+describe("utils: money input helpers", () => {
+  it("parses formatted VND input into a positive integer amount", () => {
+    expect(parseMoneyInput("1.500.000đ")).toBe(1_500_000);
+    expect(parseMoneyInput(" 200,000 ")).toBe(200_000);
+    expect(parseMoneyInput(148500.00000000006)).toBe(148_500);
+  });
+
+  it("normalizes invalid and negative money input to zero", () => {
+    expect(parseMoneyInput("abc")).toBe(0);
+    expect(parseMoneyInput(null)).toBe(0);
+    expect(parseMoneyInput(-500_000)).toBe(0);
+  });
+
+  it("formats money input for text fields without showing zero placeholders", () => {
+    expect(formatMoneyInput(1_500_000)).toBe("1.500.000");
+    expect(formatMoneyInput("1500000")).toBe("1.500.000");
+    expect(formatMoneyInput(0)).toBe("");
   });
 });
 
