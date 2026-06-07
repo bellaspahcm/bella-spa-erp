@@ -261,6 +261,27 @@ describe('tenant settings actions', () => {
     );
   });
 
+  it('blocks non-admin users from saving tenant settings before side effects', async () => {
+    mockGetCurrentUser.mockResolvedValueOnce({
+      id: 'staff-1',
+      tenant_id: 'tenant-1',
+      role: 'admin_staff',
+    });
+
+    const result = await saveTenantSettings({
+      role_permissions: { admin_staff: { settings: true } },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Không có quyền cập nhật cấu hình chi nhánh.',
+    });
+    expect(queryCalls).toHaveLength(0);
+    expect(mockCreateSupabaseJsClient).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
   it('fails closed when tenant snapshot cannot be loaded', async () => {
     scriptedResults = [
       { data: null, error: { message: 'snapshot unavailable' } },
