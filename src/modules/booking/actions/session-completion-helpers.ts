@@ -10,6 +10,10 @@ import {
   formatRollbackAppend,
   shouldCreateSingleSessionRevenue,
 } from '@/lib/business-rules/session-completion';
+import {
+  buildPackageSaleOutboxEvent,
+  buildSessionDoneOutboxEvent,
+} from '@/lib/business-rules/accounting-outbox';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import {
   buildRevenueAccountingMetadata,
@@ -304,18 +308,12 @@ export async function recordSingleSessionRevenueIfNeeded(params: {
   const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
   const outboxEnqueued = await enqueueWithAutoClient(
     supabase,
-    {
+    buildPackageSaleOutboxEvent({
       tenantId,
-      eventType: 'PACKAGE_SALE',
-      referenceType: 'REVENUE',
-      referenceId: createdRevenueId,
-      payload: {
-        totalAmount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
-        vatRate: 0,
-        description: accountingPayload.reason,
-        branchId: tenantId,
-      },
-    },
+      revenueId: createdRevenueId,
+      totalAmount: FINANCE_CONSTANTS.SINGLE_SESSION_REVENUE,
+      description: accountingPayload.reason,
+    }),
     '[processSessionCompletion:single-session-revenue]'
   );
 
@@ -498,22 +496,17 @@ export async function enqueueSessionDoneAccountingOutbox(params: {
     const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
     const outboxEnqueued = await enqueueWithAutoClient(
       supabase,
-      {
+      buildSessionDoneOutboxEvent({
         tenantId,
-        eventType: 'SESSION_DONE',
-        referenceType: 'SESSION_LOG',
-        referenceId: sessionId,
-        payload: {
-          earnedRevenueAmount,
-          deferredRevenueAmount,
-          receivableAmount,
-          bookingId,
-          commissionAmount: commission,
-          ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
-          branchId: tenantId,
-          description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`,
-        },
-      },
+        sessionLogId: sessionId,
+        bookingId,
+        ktvId: ktvId || currentBooking?.assigned_ktv_id || null,
+        earnedRevenueAmount,
+        deferredRevenueAmount,
+        receivableAmount,
+        commissionAmount: commission,
+        description: `Hoàn thành buổi ${existingLog?.session_number || '--'}/${totalSessions} - ${currentBooking?.package_name || 'Gói dịch vụ'}`,
+      }),
       '[processSessionCompletion]'
     );
     if (!outboxEnqueued) {

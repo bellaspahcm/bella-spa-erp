@@ -12,6 +12,10 @@ import { assertLegacyFinanceWriteAllowed } from './accounting/mode';
 import { getCurrentUser } from './user-actions';
 import type { Database } from '@/types/database.types';
 import {
+  assertOutboxEnqueued,
+  buildPackageSaleOutboxEvent,
+} from '@/lib/business-rules/accounting-outbox';
+import {
   getInterBranchClearingRecordsResult,
   type InterBranchClearingRecord,
 } from './clearing-actions';
@@ -100,12 +104,6 @@ function resolveAllocatedRevenueType(
   }
 
   return 'remaining_payment';
-}
-
-function assertOutboxEnqueued(result: unknown, eventType: string) {
-  if (result === false) {
-    throw new Error(`Failed to enqueue ${eventType} accounting event`);
-  }
 }
 
 function withRollbackFailure(error: unknown, rollbackError: string) {
@@ -351,18 +349,12 @@ export async function allocateOrphanedRevenue(revenueId: string, bookingId: stri
     try {
       const enqueued = await enqueueWithAutoClient(
         supabase,
-        {
+        buildPackageSaleOutboxEvent({
           tenantId: user.tenant_id,
-          eventType: 'PACKAGE_SALE',
-          referenceType: 'REVENUE',
-          referenceId: updatedRevenue.id,
-          payload: {
-            totalAmount: Math.abs(amount),
-            vatRate: 0,
-            description: orphanedRevenue.notes || reason,
-            branchId: user.tenant_id,
-          },
-        },
+          revenueId: updatedRevenue.id,
+          totalAmount: Math.abs(amount),
+          description: orphanedRevenue.notes || reason,
+        }),
         '[allocateOrphanedRevenue]'
       );
       assertOutboxEnqueued(enqueued, 'PACKAGE_SALE');
@@ -448,18 +440,12 @@ export async function collectDebtPayment(input: {
     try {
       const enqueued = await enqueueWithAutoClient(
         supabase,
-        {
+        buildPackageSaleOutboxEvent({
           tenantId: user.tenant_id,
-          eventType: 'PACKAGE_SALE',
-          referenceType: 'REVENUE',
-          referenceId: insertedRevenue.id,
-          payload: {
-            totalAmount: Math.abs(input.amount),
-            vatRate: 0,
-            description: insertedRevenue.notes || accountingPayload.reason || 'Thu đối soát công nợ',
-            branchId: user.tenant_id,
-          },
-        },
+          revenueId: insertedRevenue.id,
+          totalAmount: Math.abs(input.amount),
+          description: insertedRevenue.notes || accountingPayload.reason || 'Thu đối soát công nợ',
+        }),
         '[collectDebtPayment]'
       );
       assertOutboxEnqueued(enqueued, 'PACKAGE_SALE');
