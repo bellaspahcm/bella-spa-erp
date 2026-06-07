@@ -15,6 +15,7 @@
     "db:rpc-grants:check": "node scripts/check-supabase-rpc-grants.cjs",
     "db:rpc-smoke:check": "node scripts/check-supabase-rpc-smoke.cjs",
     "db:migration:check": "node scripts/check-supabase-migrations.cjs",
+    "cron:accounting:smoke": "node scripts/check-accounting-worker-cron-smoke.cjs",
     "security:audit": "node scripts/audit-production.mjs",
     "security:secrets": "node scripts/check-secret-leaks.mjs",
     "test": "jest",
