@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, DollarSign, X } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn, formatMoneyInput } from '@/lib/utils';
 
 import type { DebtAlert, PaymentMethod } from '../types';
 import { formatNumberishCurrency } from '../utils';
@@ -83,7 +83,7 @@ export function DebtPaymentModal({
                 </label>
                 <input
                   type="text"
-                  value={paymentAmount ? Number(paymentAmount.toString().replace(/\D/g, '')).toLocaleString() : ''}
+                  value={formatMoneyInput(paymentAmount)}
                   onChange={(event) => onPaymentAmountChange(event.target.value)}
                   placeholder="VD: 5,000,000"
                   className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-lg font-black focus:ring-2 focus:ring-primary/20 outline-none transition-all text-rose-600"

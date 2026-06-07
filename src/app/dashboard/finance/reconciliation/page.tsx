@@ -14,7 +14,7 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, parseMoneyInput } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { AllocateRevenueModal } from './components/AllocateRevenueModal';
 import { DebtPaymentModal } from './components/DebtPaymentModal';
@@ -153,7 +153,7 @@ export default function FinancialReconciliationPage() {
 
     setIsPaying(true);
     try {
-      const cleanAmount = Number(paymentAmount.replace(/\D/g, ''));
+      const cleanAmount = parseMoneyInput(paymentAmount);
       if (!cleanAmount) throw new Error('Số tiền không hợp lệ');
 
       const res = await collectDebtPayment({

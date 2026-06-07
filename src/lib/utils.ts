@@ -15,6 +15,24 @@ export function parseCurrency(value: string) {
   return value.replace(/\D/g, '');
 }
 
+export function parseMoneyInput(value: number | string | null | undefined) {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0;
+  }
+
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return 0;
+
+  const parsed = Number.parseInt(digits, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
+export function formatMoneyInput(value: number | string | null | undefined) {
+  const amount = parseMoneyInput(value);
+  return amount > 0 ? formatNumberWithSeparator(amount) : '';
+}
+
 export function formatNumberWithSeparator(value: number | string) {
   if (value === null || value === undefined) return '';
   if (typeof value === 'number') {
