@@ -1615,6 +1615,213 @@ export type Database = {
           },
         ]
       }
+      marketing_meta_ad_accounts: {
+        Row: {
+          account_name: string | null
+          ad_account_id: string
+          created_at: string
+          currency: string | null
+          id: string
+          is_active: boolean
+          last_synced_at: string | null
+          tenant_id: string
+          timezone_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_name?: string | null
+          ad_account_id: string
+          created_at?: string
+          currency?: string | null
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string | null
+          tenant_id: string
+          timezone_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string | null
+          ad_account_id?: string
+          created_at?: string
+          currency?: string | null
+          id?: string
+          is_active?: boolean
+          last_synced_at?: string | null
+          tenant_id?: string
+          timezone_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_meta_ad_accounts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "marketing_meta_ad_accounts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_meta_ads_insights_daily: {
+        Row: {
+          actions: Json
+          ad_account_id: string
+          ad_id: string
+          ad_name: string | null
+          adset_id: string
+          adset_name: string | null
+          campaign_id: string
+          campaign_name: string | null
+          clicks: number
+          cpc: number
+          cpm: number
+          created_at: string
+          ctr: number
+          date_start: string
+          date_stop: string
+          id: string
+          impressions: number
+          raw_payload: Json
+          reach: number
+          spend: number
+          synced_at: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          actions?: Json
+          ad_account_id: string
+          ad_id?: string
+          ad_name?: string | null
+          adset_id?: string
+          adset_name?: string | null
+          campaign_id?: string
+          campaign_name?: string | null
+          clicks?: number
+          cpc?: number
+          cpm?: number
+          created_at?: string
+          ctr?: number
+          date_start: string
+          date_stop: string
+          id?: string
+          impressions?: number
+          raw_payload?: Json
+          reach?: number
+          spend?: number
+          synced_at?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          actions?: Json
+          ad_account_id?: string
+          ad_id?: string
+          ad_name?: string | null
+          adset_id?: string
+          adset_name?: string | null
+          campaign_id?: string
+          campaign_name?: string | null
+          clicks?: number
+          cpc?: number
+          cpm?: number
+          created_at?: string
+          ctr?: number
+          date_start?: string
+          date_stop?: string
+          id?: string
+          impressions?: number
+          raw_payload?: Json
+          reach?: number
+          spend?: number
+          synced_at?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_meta_ads_insights_daily_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "marketing_meta_ads_insights_daily_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_meta_ads_sync_runs: {
+        Row: {
+          ad_account_id: string
+          created_at: string
+          date_from: string
+          date_to: string
+          error_message: string | null
+          finished_at: string | null
+          id: string
+          rows_synced: number
+          started_at: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          ad_account_id: string
+          created_at?: string
+          date_from: string
+          date_to: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          rows_synced?: number
+          started_at?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          ad_account_id?: string
+          created_at?: string
+          date_from?: string
+          date_to?: string
+          error_message?: string | null
+          finished_at?: string | null
+          id?: string
+          rows_synced?: number
+          started_at?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_meta_ads_sync_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "marketing_meta_ads_sync_runs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       membership_records: {
         Row: {
           benefits_redeemed: string[] | null
