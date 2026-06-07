@@ -26,9 +26,12 @@ import {
 } from '@/lib/business-rules/inventory';
 import {
   buildSalaryDisplayComponents,
+  calculateSalaryReconciliationDiffPercent,
   calculateLiveAttendanceSalaryComponents,
   calculateSalaryDetails,
   calculateSalaryTotal,
+  hasSalaryLegacyReconciliationRecord,
+  resolveSalaryReconciliationStatus,
 } from '@/lib/business-rules/salary';
 import {
   buildCompletionRollbackPayload,
@@ -238,6 +241,46 @@ describe('shared business rule engines', () => {
       baseSalary: 6000000,
       totalSalary: 7500000,
     });
+  });
+
+  it('centralizes salary reconciliation status rules and missing legacy semantics', () => {
+    const thresholds = {
+      MATCH_ABS_VND: 5000,
+      MATCH_PERCENT: 1,
+      MAJOR_DIFF_PERCENT: 5,
+    };
+
+    expect(hasSalaryLegacyReconciliationRecord({
+      status: 'PENDING_LEGACY',
+      legacyStatus: 'missing',
+    })).toBe(false);
+    expect(calculateSalaryReconciliationDiffPercent({
+      legacyTotal: 0,
+      aiTotal: 6800000,
+      hasLegacyRecord: false,
+    })).toBeNull();
+    expect(resolveSalaryReconciliationStatus({
+      status: 'PENDING_LEGACY',
+      legacyStatus: 'missing',
+      legacyTotal: 0,
+      aiTotal: 6800000,
+      thresholds,
+    })).toBe('NO_LEGACY');
+    expect(resolveSalaryReconciliationStatus({
+      legacyTotal: 10000000,
+      aiTotal: 10003000,
+      thresholds,
+    })).toBe('MATCH');
+    expect(resolveSalaryReconciliationStatus({
+      legacyTotal: 10000000,
+      aiTotal: 10200000,
+      thresholds,
+    })).toBe('MINOR_DIFF');
+    expect(resolveSalaryReconciliationStatus({
+      legacyTotal: 10000000,
+      aiTotal: 10600000,
+      thresholds,
+    })).toBe('MAJOR_DIFF');
   });
 
   it('classifies inventory movements and calculates stock changes', () => {

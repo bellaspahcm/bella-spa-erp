@@ -7,7 +7,7 @@
  *   3. Allows accountant role (M2 extended RBAC)
  *   4. Rejects users without tenant_id
  *   5. Propagates RPC errors
- *   6. Status enum preservation (MATCH / MINOR_DIFF / MAJOR_DIFF / PENDING_LEGACY)
+ *   6. Status normalization (MATCH / MINOR_DIFF / MAJOR_DIFF / PENDING_LEGACY)
  */
 
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
@@ -61,7 +61,7 @@ beforeEach(() => {
 describe('getSalaryReconciliationReport', () => {
   const MONTH = '2026-05-01';
 
-  it('returns typed rows preserving status enum for admin', async () => {
+  it('returns typed rows normalized by salary reconciliation thresholds for admin', async () => {
     mockGetCurrentUser.mockResolvedValue(ADMIN_USER);
     const fakeRows = [
       {
@@ -99,9 +99,11 @@ describe('getSalaryReconciliationReport', () => {
 
     expect(result).toHaveLength(3);
     expect(result[0].status).toBe('MATCH');
-    expect(result[1].status).toBe('MINOR_DIFF');
+    expect(result[1].status).toBe('MATCH');
     expect(result[2].status).toBe('PENDING_LEGACY');
     expect(result[1].diff_total).toBe(-3000);
+    expect(result[2].diff_total).toBeNull();
+    expect(result[2].diff_percent).toBeNull();
 
     expect(mockRpc).toHaveBeenCalledTimes(1);
     expect(mockRpc).toHaveBeenCalledWith('get_salary_reconciliation_report', {

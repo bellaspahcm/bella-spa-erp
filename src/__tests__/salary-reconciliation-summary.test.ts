@@ -122,6 +122,41 @@ describe('getSalaryReconciliation summary semantics', () => {
     }));
   });
 
+  it('normalizes pending legacy rows from either salary reconciliation RPC shape', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        {
+          ktv_id: 'ktv-pending',
+          ktv_name: 'KTV Pending',
+          legacy_total: 0,
+          ai_total: 6800000,
+          diff_amount: 6800000,
+          diff_percent: 100,
+          status: 'PENDING_LEGACY',
+          legacy_status: 'missing',
+          has_legacy_record: false,
+        },
+      ],
+      error: null,
+    });
+
+    const result = await getSalaryReconciliation('2026-05-01');
+
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual(expect.objectContaining({
+      totalKtv: 1,
+      majorCount: 0,
+      noLegacyCount: 1,
+      totalDiffAbs: 0,
+    }));
+    expect(result.data?.rows[0]).toEqual(expect.objectContaining({
+      status: 'NO_LEGACY',
+      has_legacy_record: false,
+      diff_amount: 0,
+      diff_percent: null,
+    }));
+  });
+
   it('uses the tenant-scoped report RPC when local dev-bypass has no auth session', async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: { message: 'Auth session missing' } });
     mockRpc.mockResolvedValueOnce({
@@ -174,6 +209,10 @@ describe('salary reconciliation SQL regression guards', () => {
     path.join(process.cwd(), 'supabase/migrations/20260606093000_fix_salary_realtime_components.sql'),
     'utf8'
   );
+  const normalizedPendingLegacySql = fs.readFileSync(
+    path.join(process.cwd(), 'supabase/migrations/20260607010000_normalize_salary_reconciliation_pending_legacy.sql'),
+    'utf8'
+  );
 
   it('keeps all saved salary components in legacy totals', () => {
     for (const sql of [aiCopilotSql, accountingReportSql]) {
@@ -190,6 +229,10 @@ describe('salary reconciliation SQL regression guards', () => {
   it('keeps missing legacy salary records as pending statuses, not major differences', () => {
     expect(aiCopilotSql).toContain("WHEN lg.total_legacy IS NULL                            THEN 'NO_LEGACY'");
     expect(accountingReportSql).toContain("WHEN lr.legacy_tot IS NULL THEN 'PENDING_LEGACY'");
+    expect(normalizedPendingLegacySql).toContain('WHEN lr.legacy_tot IS NULL THEN NULL');
+    expect(normalizedPendingLegacySql).toContain("WHEN lr.legacy_tot IS NULL THEN 'PENDING_LEGACY'");
+    expect(normalizedPendingLegacySql).toContain("THEN 'MINOR_DIFF'");
+    expect(normalizedPendingLegacySql).toContain('0.05');
   });
 
   it('does not default realtime draft salary calculations to full-month attendance', () => {

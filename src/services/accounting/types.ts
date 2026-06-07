@@ -45,9 +45,9 @@ export interface SalaryReconciliationRow {
   ai_kpi_bonus: number;
   ai_deductions: number;
   ai_total: number;
-  diff_total: number;
-  diff_percent: number;
-  status: 'MATCH' | 'MINOR_DIFF' | 'MAJOR_DIFF' | 'PENDING_LEGACY';
+  diff_total: number | null;
+  diff_percent: number | null;
+  status: 'MATCH' | 'MINOR_DIFF' | 'MAJOR_DIFF' | 'PENDING_LEGACY' | 'NO_LEGACY';
 }
 
 export type AccountingStandardProfile = 'TT133' | 'TT200';

@@ -16,6 +16,7 @@ XCircle,
 import { useCallback,useEffect,useState } from 'react';
 import { toast } from 'sonner';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
+import { hasSalaryLegacyReconciliationRecord } from '@/lib/business-rules/salary';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 const fmtVND = (n: number) =>
@@ -56,7 +57,7 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; border: string;
     icon: XCircle,
   },
   PENDING_LEGACY: {
-    label: 'Chưa có legacy',
+    label: 'Chưa chốt lương',
     bg: 'bg-slate-50 dark:bg-slate-500/10',
     border: 'border-slate-200 dark:border-slate-500/30',
     text: 'text-slate-700 dark:text-slate-400',
@@ -92,15 +93,23 @@ export default function SalaryReconciliationPage() {
 
   usePageRefresh(fetchData);
 
-  const total = rows.length;
+  const hasLegacyRecord = useCallback((row: SalaryReconciliationRow) => (
+    hasSalaryLegacyReconciliationRecord({
+      status: row.status,
+      legacyStatus: row.legacy_status,
+    })
+  ), []);
+  const reconciledRows = rows.filter(hasLegacyRecord);
   const matchCount = rows.filter((r) => r.status === 'MATCH').length;
   const minorCount = rows.filter((r) => r.status === 'MINOR_DIFF').length;
   const majorCount = rows.filter((r) => r.status === 'MAJOR_DIFF').length;
-  const pendingCount = rows.filter((r) => r.status === 'PENDING_LEGACY').length;
-  const matchRate = total > 0 ? (matchCount / total) * 100 : 0;
-  const totalAi = rows.reduce((s, r) => s + Number(r.ai_total || 0), 0);
-  const totalLegacy = rows.reduce((s, r) => s + Number(r.legacy_total || 0), 0);
-  const totalDiff = totalLegacy - totalAi;
+  const pendingCount = rows.filter((r) => !hasLegacyRecord(r)).length;
+  const reconciledTotal = reconciledRows.length;
+  const matchRate = reconciledTotal > 0 ? (matchCount / reconciledTotal) * 100 : 0;
+  const totalAi = reconciledRows.reduce((s, r) => s + Number(r.ai_total || 0), 0);
+  const totalLegacy = reconciledRows.reduce((s, r) => s + Number(r.legacy_total || 0), 0);
+  const totalDiff = reconciledRows.reduce((s, r) => s + Number(r.diff_total || 0), 0);
+  const totalDiffAbs = reconciledRows.reduce((s, r) => s + Math.abs(Number(r.diff_total || 0)), 0);
 
   return (
     <div className="space-y-8 relative">
@@ -126,7 +135,7 @@ export default function SalaryReconciliationPage() {
             Detect drift trước khi switch hoàn toàn sang AI.
           </p>
           <p className="text-2xs text-amber-700 dark:text-amber-400 mt-2 italic">
-            ⓘ Lệch &lt; 5,000đ = MATCH (làm tròn) · Lệch &lt; 1% = MINOR_DIFF · Lệch ≥ 1% = MAJOR_DIFF cần điều tra.
+            ⓘ Lệch &lt; 5,000đ hoặc &lt; 1% = MATCH · Lệch &lt; 5% = MINOR_DIFF · Lệch ≥ 5% = MAJOR_DIFF cần điều tra.
           </p>
         </div>
       </div>
@@ -148,9 +157,9 @@ export default function SalaryReconciliationPage() {
         <div className={`rounded-2xl border p-5 ${matchRate === 100 ? 'bg-emerald-50/40 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30' : matchRate >= 66 ? 'bg-amber-50/40 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30' : 'bg-rose-50/40 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30'}`}>
           <p className="text-3xs font-black uppercase tracking-widest opacity-70 mb-2">Tỷ lệ khớp</p>
           <p className={`text-2xl font-mono font-black ${matchRate === 100 ? 'text-emerald-600 dark:text-emerald-400' : matchRate >= 66 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`}>
-            {matchRate.toFixed(0)}%
+            {reconciledTotal > 0 ? `${matchRate.toFixed(0)}%` : '—'}
           </p>
-          <p className="text-3xs text-slate-500 mt-1">{matchCount}/{total} KTV</p>
+          <p className="text-3xs text-slate-500 mt-1">{matchCount}/{reconciledTotal} KTV đã chốt</p>
         </div>
 
         <div className="bg-white dark:bg-[#1C1B19] rounded-2xl border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 shadow-sm">
@@ -165,7 +174,7 @@ export default function SalaryReconciliationPage() {
 
         <div className="bg-white dark:bg-[#1C1B19] rounded-2xl border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 shadow-sm">
           <p className="text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest mb-2">Tổng chênh lệch</p>
-          <p className={`text-sm font-mono font-black mt-1 ${Math.abs(totalDiff) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+          <p className={`text-sm font-mono font-black mt-1 ${totalDiffAbs < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
             {totalDiff >= 0 ? '+' : ''}{fmtVND(totalDiff)}
           </p>
           <p className="text-3xs text-slate-400 mt-1">Legacy − AI</p>
@@ -201,8 +210,13 @@ export default function SalaryReconciliationPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-sans text-xs">
                 {rows.map((row) => {
-                  const cfg = STATUS_CONFIG[row.status] || STATUS_CONFIG.MAJOR_DIFF;
+                  const rowHasLegacyRecord = hasLegacyRecord(row);
+                  const cfg = STATUS_CONFIG[row.status] || STATUS_CONFIG.PENDING_LEGACY;
                   const StatusIcon = cfg.icon;
+                  const diffTotal = Number(row.diff_total || 0);
+                  const diffPercent = row.diff_percent === null || row.diff_percent === undefined
+                    ? null
+                    : Number(row.diff_percent);
                   return (
                     <motion.tr
                       key={row.ktv_id}
@@ -219,11 +233,11 @@ export default function SalaryReconciliationPage() {
                       <td className="px-3 py-3 text-right font-mono font-bold text-pink-700 dark:text-pink-300">
                         {fmtVND(row.ai_total)}
                       </td>
-                      <td className={`px-3 py-3 text-right font-mono font-black ${Math.abs(Number(row.diff_total)) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {Number(row.diff_total) > 0 ? '+' : ''}{fmtVND(row.diff_total)}
+                      <td className={`px-3 py-3 text-right font-mono font-black ${!rowHasLegacyRecord ? 'text-slate-400' : Math.abs(diffTotal) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {rowHasLegacyRecord ? `${diffTotal > 0 ? '+' : ''}${fmtVND(diffTotal)}` : '—'}
                       </td>
-                      <td className={`px-3 py-3 text-right font-mono font-bold ${Number(row.diff_percent) < 1 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {Number(row.diff_percent).toFixed(2)}%
+                      <td className={`px-3 py-3 text-right font-mono font-bold ${!rowHasLegacyRecord ? 'text-slate-400' : diffPercent !== null && diffPercent < 5 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {rowHasLegacyRecord && diffPercent !== null ? `${diffPercent.toFixed(2)}%` : '—'}
                       </td>
                       <td className="px-3 py-3 text-center">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-4xs font-black uppercase tracking-wider border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
@@ -240,7 +254,7 @@ export default function SalaryReconciliationPage() {
                   <td className={`${stickyBodyCellClassName} px-3 py-4 text-xs uppercase tracking-widest text-slate-900 dark:text-[#EFE9E1]`}>Tổng cộng</td>
                   <td className="px-3 py-4 text-right font-mono text-sm text-blue-700 dark:text-blue-300">{fmtVND(totalLegacy)}</td>
                   <td className="px-3 py-4 text-right font-mono text-sm text-pink-700 dark:text-pink-300">{fmtVND(totalAi)}</td>
-                  <td className={`px-3 py-4 text-right font-mono text-sm ${Math.abs(totalDiff) < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  <td className={`px-3 py-4 text-right font-mono text-sm ${totalDiffAbs < 5000 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                     {totalDiff >= 0 ? '+' : ''}{fmtVND(totalDiff)}
                   </td>
                   <td colSpan={2} className="px-3 py-4 text-right font-mono text-3xs text-slate-500">
