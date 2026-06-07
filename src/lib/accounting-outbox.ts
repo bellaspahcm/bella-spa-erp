@@ -88,7 +88,7 @@ type EnqueueAccountingRpcClient = {
   rpc: (
     fn: 'enqueue_accounting_event',
     args: EnqueueAccountingRpcArgs
-  ) => Promise<{ error: RpcError | null }>;
+  ) => Promise<{ data: string | null; error: RpcError | null }>;
 };
 
 let cachedAdminClient: AdminClient | null = null;
@@ -130,9 +130,9 @@ export async function getOutboxClient<T extends RpcCapableClient>(
 /**
  * Enqueue an accounting event into the transactional outbox.
  *
- * Returns `true` on success, `false` if the underlying RPC errored.
- * Idempotency is enforced by the UNIQUE (event_type, reference_id) constraint —
- * calling this twice for the same (eventType, referenceId) is a no-op.
+ * Returns `true` on success, `false` if the underlying RPC errored or did not
+ * return an outbox id. Idempotency is enforced by the UNIQUE
+ * (tenant_id, event_type, reference_type, reference_id) constraint.
  *
  * This helper returns an explicit boolean instead of throwing. Callers on
  * accounting-critical flows must treat `false` as a failed side effect and
@@ -145,7 +145,7 @@ export async function enqueueAccountingEvent(
 ): Promise<boolean> {
   try {
     const rpcClient = asEnqueueAccountingRpcClient(client);
-    const { error } = await rpcClient.rpc('enqueue_accounting_event', {
+    const { data: outboxId, error } = await rpcClient.rpc('enqueue_accounting_event', {
       p_tenant_id: params.tenantId,
       p_event_type: params.eventType,
       p_reference_type: params.referenceType,
@@ -158,7 +158,12 @@ export async function enqueueAccountingEvent(
       return false;
     }
 
-    console.log(`${logPrefix} Enqueued ${params.eventType} for ${params.referenceType}:${params.referenceId}`);
+    if (!outboxId) {
+      console.error(`${logPrefix} Failed to enqueue ${params.eventType} for ${params.referenceType}:${params.referenceId}: missing outbox id`);
+      return false;
+    }
+
+    console.log(`${logPrefix} Enqueued/reused ${params.eventType} for ${params.referenceType}:${params.referenceId}`);
     return true;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
