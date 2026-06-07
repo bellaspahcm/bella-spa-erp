@@ -251,6 +251,57 @@ describe('Promotions Server Actions System', () => {
       expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/crm');
     });
 
+    it('normalizes voucher code, percent, and text before inserting', async () => {
+      const createdPromo = promotion({
+        title: 'Mother Day',
+        description: 'Discount services',
+        discount_code: 'MOTHER33',
+        discount_percent: 100,
+      });
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+      scriptedResults = [{ data: createdPromo, error: null }];
+
+      const res = await createPromotion({
+        title: '  Mother Day  ',
+        description: '  Discount services  ',
+        discount_code: ' mother 33 ',
+        discount_percent: 150,
+        start_date: '',
+        end_date: null,
+      });
+
+      expect(res.success).toBe(true);
+      expect(queryCalls[0]).toMatchObject({
+        table: 'promotions',
+        operation: 'insert',
+        payload: {
+          title: 'Mother Day',
+          description: 'Discount services',
+          discount_code: 'MOTHER33',
+          discount_percent: 100,
+          start_date: null,
+          end_date: null,
+          is_active: true,
+          tenant_id: 'tenant-123',
+          image_url: null,
+        },
+      });
+    });
+
+    it('returns error when promotion date range is invalid', async () => {
+      mockGetCurrentUser.mockResolvedValue(currentUser());
+
+      const res = await createPromotion({
+        ...payload,
+        start_date: '2026-06-30',
+        end_date: '2026-06-01',
+      });
+
+      expect(res.success).toBe(false);
+      expect(res.error).toBe('Ngay bat dau khong duoc sau ngay ket thuc.');
+      expect(mockSupabase.from).not.toHaveBeenCalled();
+    });
+
     it('returns error with DB failure', async () => {
       mockGetCurrentUser.mockResolvedValue(currentUser());
       scriptedResults = [{ data: null, error: { message: 'Insert constraint violation' } }];

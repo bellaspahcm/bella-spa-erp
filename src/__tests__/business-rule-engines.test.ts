@@ -5,6 +5,13 @@ import {
   validatePaymentAmountAgainstState,
 } from '@/lib/business-rules/payment';
 import {
+  buildPromotionPayload,
+  buildVoucherPromotionPayload,
+  normalizePromotionCode,
+  normalizePromotionDiscountPercent,
+  validatePromotionDateRange,
+} from '@/lib/business-rules/promotion';
+import {
   buildAttendanceTimestamp,
   calculateCheckInAttendanceStatus,
   calculateAttendanceBreakdown,
@@ -85,6 +92,59 @@ describe('shared business rule engines', () => {
     expect(thirtyThreePercentState.priceAfterDiscount).toBe(301500);
     expect(450000 - thirtyThreePercentState.priceAfterDiscount).toBe(148500);
     expect(thirtyThreePercentState.remainingDebt).toBe(301500);
+  });
+
+  it('normalizes promotion and voucher payloads without changing booking pricing rules', () => {
+    expect(normalizePromotionCode(' bella baby 10 ')).toBe('BELLABABY10');
+    expect(normalizePromotionDiscountPercent(150)).toBe(100);
+    expect(normalizePromotionDiscountPercent(-5)).toBe(0);
+    expect(normalizePromotionDiscountPercent(null)).toBeNull();
+
+    expect(buildPromotionPayload({
+      title: '  Thang cua me  ',
+      description: '  Uu dai dich vu  ',
+      discount_code: ' me 33 ',
+      discount_percent: 33.4,
+      start_date: '2026-06-01',
+      end_date: '2026-06-30',
+    })).toEqual({
+      success: true,
+      payload: {
+        title: 'Thang cua me',
+        description: 'Uu dai dich vu',
+        image_url: null,
+        discount_code: 'ME33',
+        discount_percent: 33.4,
+        start_date: '2026-06-01',
+        end_date: '2026-06-30',
+        is_active: true,
+      },
+    });
+
+    expect(buildVoucherPromotionPayload({
+      code: ' baby 10 ',
+      target: 'Be tron 1 tuoi',
+      discount: 10,
+      status: 'paused',
+    })).toEqual({
+      success: true,
+      payload: expect.objectContaining({
+        title: 'BABY10',
+        discount_code: 'BABY10',
+        discount_percent: 10,
+        is_active: false,
+      }),
+    });
+  });
+
+  it('rejects invalid promotion date ranges in the shared promotion rules', () => {
+    expect(validatePromotionDateRange({
+      startDate: '2026-07-01',
+      endDate: '2026-06-30',
+    })).toEqual({
+      success: false,
+      error: 'Ngay bat dau khong duoc sau ngay ket thuc.',
+    });
   });
 
   it('rejects overpayment against the shared remaining debt state', () => {

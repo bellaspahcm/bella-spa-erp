@@ -5,6 +5,22 @@
 
 ---
 
+### 08/06/2026: Standardize Promotion Voucher Rules
+* **Muc tieu rule nho**:
+  * Gom normalize/validate voucher code, phan tram giam gia va khoang ngay khuyen mai vao helper thuan.
+  * Khong tao pricing engine moi vi booking/payment pricing da thuoc `payment.ts`.
+* **Thay doi chinh**:
+  * Them `src/lib/business-rules/promotion.ts`.
+  * `promotions-actions`, CRM voucher hook va Settings promotion hook/form dung helper chung.
+  * Cap nhat public promotion UI source contract test theo vi tri hook hien tai.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-standardize-promotion-voucher-rules.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/business-rule-engines.test.ts src/__tests__/promotions.test.ts --runInBand` pass, 2 suites / 36 tests.
+  * `npm.cmd test -- src/__tests__/crm-ui.test.ts src/__tests__/promotions-ui.test.ts src/__tests__/public-promotions-ui.test.ts --runInBand` pass, 3 suites / 8 tests.
+  * `npm.cmd run lint` pass.
+  * `npm.cmd run build` pass.
+
 ### 08/06/2026: Add Business Rule Production Guard
 * **Muc tieu van hanh**:
   * Dua cac business rule engine lien module tu CI guard thanh production guard dinh ky.
