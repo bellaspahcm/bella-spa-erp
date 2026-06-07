@@ -60,7 +60,7 @@ type ScriptedResult = {
   table: string;
   op: DbOperation;
   data?: unknown;
-  error?: { message: string };
+  error?: { message: string; code?: string };
 };
 
 type DbCall = {
@@ -810,6 +810,38 @@ describe('finalizeSalaryRecord side-effect rollback', () => {
     expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/finance');
   });
 
+  it('recovers finalize salary from a unique-index race by re-querying the existing expense', async () => {
+    const calls = setupDb([
+      { table: 'salary_records', op: 'select', data: confirmedSalaryRecord },
+      { table: 'session_logs', op: 'select', data: sessionSnapshots },
+      { table: 'salary_records', op: 'update', data: null },
+      { table: 'session_logs', op: 'update', data: null },
+      { table: 'expenses', op: 'select', data: null },
+      {
+        table: 'expenses',
+        op: 'insert',
+        error: { code: '23505', message: 'duplicate key value violates unique constraint' },
+      },
+      { table: 'expenses', op: 'select', data: { id: 'expense-raced-finalize', amount: 6500000 } },
+    ]);
+
+    const result = await finalizeSalaryRecord('ktv-1');
+
+    expect(result).toEqual({ success: true });
+    expect(calls.filter((call) => call.table === 'expenses' && call.op === 'delete')).toHaveLength(0);
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'salary_records',
+      record_id: 'ktv-1',
+      new_data: {
+        status: 'finalized',
+        amount: 6500000,
+      },
+    });
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/finance');
+  });
+
   it('rolls back finalization when an existing finalize salary expense has a different amount', async () => {
     const calls = setupDb([
       { table: 'salary_records', op: 'select', data: confirmedSalaryRecord },
@@ -1079,6 +1111,39 @@ describe('approveSalary audit rollback', () => {
 
     expect(result).toEqual({ success: true });
     expect(calls.filter((call) => call.table === 'expenses' && call.op === 'insert')).toHaveLength(0);
+    expect(calls.filter((call) => call.table === 'expenses' && call.op === 'delete')).toHaveLength(0);
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'salary_records',
+      record_id: 'ktv-1',
+      new_data: {
+        status: 'approved',
+        amount: 6500000,
+        ktv_name: 'KTV One',
+      },
+    });
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/finance', 'page');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/salary', 'page');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/', 'layout');
+  });
+
+  it('recovers approved salary from a unique-index race by re-querying the existing expense', async () => {
+    const calls = setupDb([
+      { table: 'users', op: 'select', data: ktvRecord },
+      { table: 'salary_records', op: 'select', data: salarySnapshot },
+      { table: 'salary_records', op: 'select', data: approvedRecord },
+      { table: 'expenses', op: 'select', data: null },
+      {
+        table: 'expenses',
+        op: 'insert',
+        error: { code: '23505', message: 'duplicate key value violates unique constraint' },
+      },
+      { table: 'expenses', op: 'select', data: { id: 'expense-raced-approve', amount: 6500000 } },
+    ]);
+
+    const result = await approveSalary('ktv-1');
+
+    expect(result).toEqual({ success: true });
     expect(calls.filter((call) => call.table === 'expenses' && call.op === 'delete')).toHaveLength(0);
     expect(mockRecordAuditLog).toHaveBeenCalledWith({
       action: 'UPDATE',

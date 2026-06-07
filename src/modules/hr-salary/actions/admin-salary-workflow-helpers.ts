@@ -22,12 +22,59 @@ type ExistingSalaryExpense = {
   amount: number | null;
 };
 
+type SupabaseErrorLike = {
+  code?: string | null;
+  message?: string | null;
+};
+
 interface SalaryAuditInput {
   recordId: string;
   status: string;
   amount?: number | null;
   ktvName?: string | null;
   extraData?: Record<string, unknown>;
+}
+
+function isUniqueViolation(error: unknown) {
+  const maybeError = error as SupabaseErrorLike | null;
+  return maybeError?.code === '23505';
+}
+
+function assertMatchingSalaryExpenseAmount({
+  existing,
+  amount,
+  description,
+  context,
+}: {
+  existing: ExistingSalaryExpense;
+  amount: number;
+  description: string;
+  context: string;
+}) {
+  if (Number(existing.amount || 0) !== Number(amount || 0)) {
+    throw new Error(
+      `${context}: existing salary expense amount mismatch for "${description}" (expected ${amount}, found ${existing.amount ?? 0})`,
+    );
+  }
+
+  return { created: false, expenseId: existing.id };
+}
+
+async function findExistingSalaryExpense(
+  supabase: SalaryWorkflowClient,
+  tenantId: string,
+  description: string
+): Promise<ExistingSalaryExpense | null> {
+  const { data: existingExpense, error: existingExpenseError } = await supabase
+    .from('expenses')
+    .select('id, amount')
+    .eq('tenant_id', tenantId)
+    .eq('category', 'salary')
+    .eq('description', description)
+    .maybeSingle();
+
+  if (existingExpenseError) throw existingExpenseError;
+  return existingExpense as ExistingSalaryExpense | null;
 }
 
 export async function getSalaryMonthLockFailure(
@@ -65,25 +112,9 @@ export async function createSalaryExpense({
     context,
   });
 
-  const { data: existingExpense, error: existingExpenseError } = await supabase
-    .from('expenses')
-    .select('id, amount')
-    .eq('tenant_id', tenantId)
-    .eq('category', 'salary')
-    .eq('description', description)
-    .maybeSingle();
-
-  if (existingExpenseError) throw existingExpenseError;
-
+  const existingExpense = await findExistingSalaryExpense(supabase, tenantId, description);
   if (existingExpense) {
-    const existing = existingExpense as ExistingSalaryExpense;
-    if (Number(existing.amount || 0) !== Number(amount || 0)) {
-      throw new Error(
-        `${context}: existing salary expense amount mismatch for "${description}" (expected ${amount}, found ${existing.amount ?? 0})`,
-      );
-    }
-
-    return { created: false, expenseId: existing.id };
+    return assertMatchingSalaryExpenseAmount({ existing: existingExpense, amount, description, context });
   }
 
   const expensePayload: Database['public']['Tables']['expenses']['Insert'] = {
@@ -99,7 +130,16 @@ export async function createSalaryExpense({
   };
 
   const { error } = await supabase.from('expenses').insert(expensePayload);
-  if (error) throw error;
+  if (error) {
+    if (isUniqueViolation(error)) {
+      const racedExpense = await findExistingSalaryExpense(supabase, tenantId, description);
+      if (racedExpense) {
+        return assertMatchingSalaryExpenseAmount({ existing: racedExpense, amount, description, context });
+      }
+    }
+
+    throw error;
+  }
   return { created: true, expenseId: null };
 }
 
