@@ -17,6 +17,11 @@ interface SalaryExpenseInput {
   context: string;
 }
 
+type ExistingSalaryExpense = {
+  id: string;
+  amount: number | null;
+};
+
 interface SalaryAuditInput {
   recordId: string;
   status: string;
@@ -60,6 +65,27 @@ export async function createSalaryExpense({
     context,
   });
 
+  const { data: existingExpense, error: existingExpenseError } = await supabase
+    .from('expenses')
+    .select('id, amount')
+    .eq('tenant_id', tenantId)
+    .eq('category', 'salary')
+    .eq('description', description)
+    .maybeSingle();
+
+  if (existingExpenseError) throw existingExpenseError;
+
+  if (existingExpense) {
+    const existing = existingExpense as ExistingSalaryExpense;
+    if (Number(existing.amount || 0) !== Number(amount || 0)) {
+      throw new Error(
+        `${context}: existing salary expense amount mismatch for "${description}" (expected ${amount}, found ${existing.amount ?? 0})`,
+      );
+    }
+
+    return { created: false, expenseId: existing.id };
+  }
+
   const expensePayload: Database['public']['Tables']['expenses']['Insert'] = {
     amount,
     category: 'salary',
@@ -74,6 +100,7 @@ export async function createSalaryExpense({
 
   const { error } = await supabase.from('expenses').insert(expensePayload);
   if (error) throw error;
+  return { created: true, expenseId: null };
 }
 
 export async function recordSalaryStatusAudit({
