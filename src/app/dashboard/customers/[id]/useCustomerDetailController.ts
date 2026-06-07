@@ -2,8 +2,9 @@
 
 import type { ReceiptData } from '@/components/common/PaymentReceiptTemplate';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
-import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
+import { calculateBookingPaymentState, normalizeDiscountPercent } from '@/lib/business-rules/payment';
 import { createClient } from '@/lib/supabase-client';
+import { parseIntegerInput, parseMoneyInput } from '@/lib/utils';
 import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
 import { getCurrentUser, getUsers } from '@/services/user-actions';
@@ -263,11 +264,11 @@ export function useCustomerDetailController() {
     try {
       const result = await updateBooking(activeBooking.id, {
         package_name: editBookingData.package_name || null,
-        full_price: Number(editBookingData.full_price) || 0,
-        deposit_amount: Number(editBookingData.deposit_amount) || 0,
-        discount_percent: Number(editBookingData.discount_percent) || 0,
-        total_sessions: Number(editBookingData.total_sessions) || 0,
-        completed_sessions: Number(editBookingData.completed_sessions) || 0,
+        full_price: parseMoneyInput(editBookingData.full_price),
+        deposit_amount: parseMoneyInput(editBookingData.deposit_amount),
+        discount_percent: normalizeDiscountPercent(editBookingData.discount_percent),
+        total_sessions: parseIntegerInput(editBookingData.total_sessions, { min: 0, max: 100 }),
+        completed_sessions: parseIntegerInput(editBookingData.completed_sessions, { min: 0, max: 100 }),
         preferred_time: editBookingData.preferred_time || '08:00',
         start_date: editBookingData.start_date || null,
         status: editBookingData.status,

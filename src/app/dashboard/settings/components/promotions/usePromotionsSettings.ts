@@ -3,6 +3,7 @@
 import type { FormEvent } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { parsePercentInput } from '@/lib/utils';
 import {
   createPromotion,
   deletePromotion,
@@ -64,7 +65,7 @@ export function usePromotionsSettings() {
         title: form.title.trim(),
         description: form.description.trim(),
         discount_code: form.discountCode.trim() || null,
-        discount_percent: form.discountPercent ? Number(form.discountPercent) : null,
+        discount_percent: form.discountPercent ? parsePercentInput(form.discountPercent) : null,
         start_date: form.startDate || null,
         end_date: form.endDate || null,
         is_active: true,

@@ -1,7 +1,6 @@
 'use client';
 
-import { normalizeDiscountPercent } from '@/lib/business-rules/payment';
-import { cn, formatMoneyInput, parseMoneyInput } from '@/lib/utils';
+import { cn, formatMoneyInput, parseIntegerInput, parseMoneyInput, parsePercentInput } from '@/lib/utils';
 import { geocodeAddress } from '@/services/customer-actions';
 import { motion } from 'framer-motion';
 import { AlertCircle, Camera, CheckCircle2, CreditCard as CreditCardIcon, DollarSign as DollarIcon, FileText, Image as ImageIcon, Loader2, PlusCircle, Sparkles, User } from 'lucide-react';
@@ -517,7 +516,7 @@ export function EditBookingModal({
                   min="0"
                   max="100"
                   value={data.discount_percent}
-                  onChange={(e) => setData({ ...data, discount_percent: normalizeDiscountPercent(e.target.value) })}
+                  onChange={(e) => setData({ ...data, discount_percent: parsePercentInput(e.target.value) })}
                   className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
                 />
                 <span className="absolute right-6 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-xs">%</span>
@@ -544,7 +543,7 @@ export function EditBookingModal({
               <input
                 type="number"
                 value={data.total_sessions}
-                onChange={(e) => setData({ ...data, total_sessions: parseInt(e.target.value) || 0 })}
+                onChange={(e) => setData({ ...data, total_sessions: parseIntegerInput(e.target.value, { min: 0, max: 100 }) })}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
               />
             </div>
@@ -554,7 +553,7 @@ export function EditBookingModal({
               <input
                 type="number"
                 value={data.completed_sessions}
-                onChange={(e) => setData({ ...data, completed_sessions: parseInt(e.target.value) || 0 })}
+                onChange={(e) => setData({ ...data, completed_sessions: parseIntegerInput(e.target.value, { min: 0, max: 100 }) })}
                 className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-slate-700"
               />
             </div>

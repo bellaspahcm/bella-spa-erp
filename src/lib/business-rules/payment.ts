@@ -1,3 +1,5 @@
+import { parsePercentInput } from '@/lib/utils';
+
 export type PaymentTab = 'deposit' | 'full';
 
 export type PaymentRevenueLike = {
@@ -51,7 +53,7 @@ function asMoney(value: number | string | null | undefined) {
 }
 
 export function normalizeDiscountPercent(value: number | string | null | undefined) {
-  return Math.max(0, Math.min(100, asFiniteNumber(value)));
+  return parsePercentInput(value);
 }
 
 function normalizeStatus(status: string | null | undefined) {

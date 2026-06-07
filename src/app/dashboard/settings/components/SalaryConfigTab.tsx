@@ -4,6 +4,7 @@
 import React from "react";
 import { Coins, Star, Zap, Database, AlertOctagon } from "lucide-react";
 import { TenantGeneralSettings } from "@/types/domain";
+import { parseIntegerInput, parseMoneyInput } from "@/lib/utils";
 
 interface SalaryConfigTabProps {
   generalSettings: TenantGeneralSettings;
@@ -62,10 +63,9 @@ export default function SalaryConfigTab({
                   type="text"
                   value={(salaryConfig.bonus_5_star || 0).toLocaleString('vi-VN')}
                   onChange={(e) => {
-                    const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
                     setGeneralSettings({
                       ...generalSettings,
-                      salary_config: { ...salaryConfig, bonus_5_star: isNaN(numericValue) ? 0 : numericValue }
+                      salary_config: { ...salaryConfig, bonus_5_star: parseMoneyInput(e.target.value) }
                     });
                   }}
                   className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
@@ -83,10 +83,9 @@ export default function SalaryConfigTab({
                   type="text"
                   value={(salaryConfig.bonus_4_5_star || 0).toLocaleString('vi-VN')}
                   onChange={(e) => {
-                    const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
                     setGeneralSettings({
                       ...generalSettings,
-                      salary_config: { ...salaryConfig, bonus_4_5_star: isNaN(numericValue) ? 0 : numericValue }
+                      salary_config: { ...salaryConfig, bonus_4_5_star: parseMoneyInput(e.target.value) }
                     });
                   }}
                   className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
@@ -104,10 +103,9 @@ export default function SalaryConfigTab({
                   type="text"
                   value={(salaryConfig.bonus_4_star || 0).toLocaleString('vi-VN')}
                   onChange={(e) => {
-                    const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
                     setGeneralSettings({
                       ...generalSettings,
-                      salary_config: { ...salaryConfig, bonus_4_star: isNaN(numericValue) ? 0 : numericValue }
+                      salary_config: { ...salaryConfig, bonus_4_star: parseMoneyInput(e.target.value) }
                     });
                   }}
                   className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
@@ -138,7 +136,7 @@ export default function SalaryConfigTab({
                   value={salaryConfig.kpi_target_sessions ?? 0}
                   onChange={(e) => setGeneralSettings({
                     ...generalSettings,
-                    salary_config: { ...salaryConfig, kpi_target_sessions: parseInt(e.target.value) || 0 }
+                    salary_config: { ...salaryConfig, kpi_target_sessions: parseIntegerInput(e.target.value, { min: 0, max: 500 }) }
                   })}
                   className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
                 />
@@ -156,10 +154,9 @@ export default function SalaryConfigTab({
                   type="text"
                   value={(salaryConfig.kpi_bonus_amount || 0).toLocaleString('vi-VN')}
                   onChange={(e) => {
-                    const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
                     setGeneralSettings({
                       ...generalSettings,
-                      salary_config: { ...salaryConfig, kpi_bonus_amount: isNaN(numericValue) ? 0 : numericValue }
+                      salary_config: { ...salaryConfig, kpi_bonus_amount: parseMoneyInput(e.target.value) }
                     });
                   }}
                   className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
@@ -196,10 +193,9 @@ export default function SalaryConfigTab({
                   type="text"
                   value={(salaryConfig.penalty_late_per_day ?? 50000).toLocaleString('vi-VN')}
                   onChange={(e) => {
-                    const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
                     setGeneralSettings({
                       ...generalSettings,
-                      salary_config: { ...salaryConfig, penalty_late_per_day: isNaN(numericValue) ? 0 : numericValue }
+                      salary_config: { ...salaryConfig, penalty_late_per_day: parseMoneyInput(e.target.value) }
                     });
                   }}
                   className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"
@@ -218,10 +214,9 @@ export default function SalaryConfigTab({
                   type="text"
                   value={(salaryConfig.penalty_absent_per_day ?? 200000).toLocaleString('vi-VN')}
                   onChange={(e) => {
-                    const numericValue = parseInt(e.target.value.replace(/\D/g, ''), 10);
                     setGeneralSettings({
                       ...generalSettings,
-                      salary_config: { ...salaryConfig, penalty_absent_per_day: isNaN(numericValue) ? 0 : numericValue }
+                      salary_config: { ...salaryConfig, penalty_absent_per_day: parseMoneyInput(e.target.value) }
                     });
                   }}
                   className="w-full px-6 py-4 bg-white/50 border border-pink-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 pr-12"

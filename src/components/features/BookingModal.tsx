@@ -9,7 +9,7 @@ import {
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
-import { cn,formatMoneyInput,formatNumberWithSeparator,getLocalDateString,parseMoneyInput } from '@/lib/utils';
+import { cn,formatMoneyInput,formatNumberWithSeparator,getLocalDateString,parseIntegerInput,parseMoneyInput } from '@/lib/utils';
 import { createBooking,getBookingDetailsWithPayment,getDraftBooking } from '@/modules/booking/actions/lifecycle-actions';
 import type { Database } from '@/types/database.types';
 import { AnimatePresence,motion } from 'framer-motion';
@@ -258,7 +258,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       package_id: pkg.id,
       package_name: pkg.name,
       full_price: pkgPrice,
-      total_sessions: Number(pkg.total_sessions || 10)
+      total_sessions: parseIntegerInput(pkg.total_sessions, { min: 1, max: 100, fallback: 10 })
     });
   };
 
@@ -658,7 +658,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                         min="1"
                         max="100"
                         value={formData.total_sessions}
-                        onChange={(e) => setFormData({...formData, total_sessions: parseInt(e.target.value) || 1})}
+                        onChange={(e) => setFormData({...formData, total_sessions: parseIntegerInput(e.target.value, { min: 1, max: 100, fallback: 1 })})}
                         className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold text-sm"
                       />
                     </div>
