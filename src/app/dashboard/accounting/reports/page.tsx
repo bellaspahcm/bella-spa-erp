@@ -21,6 +21,7 @@ import {
   type TrialBalanceExportRow,
 } from '@/services/export-actions';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { toast } from 'sonner';
 import { getAccountingErrorMessage as getErrorMessage } from '@/lib/accounting-error-message';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
@@ -218,19 +219,18 @@ export default function AccountingReportsPage() {
           ) : activeTab === 'account_ledger' ? (
             <div className="grid w-full min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(14rem,22rem)_auto] lg:items-end">
               {/* Account Dropdown */}
-              <div className={dateFieldClassName}>
+              <div className="grid w-full min-w-0 grid-cols-1 gap-1.5 sm:w-auto sm:min-w-[22rem]">
                 <span className={dateLabelClassName}>Tài khoản:</span>
-                <select
+                <PremiumSelect
                   value={selectedAccountId}
-                  onChange={(e) => setSelectedAccountId(e.target.value)}
-                  className="h-11 w-full min-w-0 rounded-xl border border-slate-100 bg-slate-50 px-3.5 text-xs font-bold text-slate-800 outline-none dark:border-[#3E3A35]/50 dark:bg-[#11100F] dark:text-[#EFE9E1]"
-                >
-                  {accounts.map(a => (
-                    <option key={a.id} value={a.id}>
-                      [{a.account_code}] - {a.account_name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedAccountId}
+                  options={accounts.map((account) => ({
+                    value: account.id,
+                    label: `[${account.account_code}] - ${account.account_name}`,
+                  }))}
+                  placeholder="Chọn tài khoản"
+                  buttonClassName={`${dateInputClassName} flex items-center justify-between gap-3 px-3.5 py-0 text-left transition-all hover:border-rose-200 hover:bg-white dark:hover:bg-[#1C1B19]`}
+                />
               </div>
 
               {/* Date Ranges */}

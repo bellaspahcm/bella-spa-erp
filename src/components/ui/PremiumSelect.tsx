@@ -102,9 +102,9 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-50 mt-2 w-full min-w-0 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-100 bg-white py-2 shadow-2xl shadow-slate-200/50"
+            className="absolute z-50 mt-2 w-full min-w-0 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-100 bg-white py-2 shadow-2xl shadow-slate-200/50 dark:border-[#3E3A35]/70 dark:bg-[#1C1B19] dark:shadow-none"
           >
-            <div className="max-h-[240px] overflow-auto scrollbar-hide">
+            <div className="max-h-[18rem] overflow-y-auto overscroll-contain custom-scrollbar">
               {options.length === 0 ? (
                 <div className="px-5 py-4 text-sm text-slate-400 text-center italic">
                   Không có tùy chọn nào
@@ -126,10 +126,10 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                           setIsOpen(false);
                         }}
                         className={cn(
-                          "w-full flex items-center justify-between px-5 py-3 text-sm transition-colors",
-                          value === option.value 
-                            ? "bg-rose-50 text-rose-700 font-bold" 
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                          "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
+                          value === option.value
+                            ? "bg-rose-50 text-rose-700 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
                         )}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -160,10 +160,10 @@ export const PremiumSelect: React.FC<PremiumSelectProps> = ({
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "w-full flex items-center justify-between px-5 py-3 text-sm transition-colors",
-                      value === option.value 
-                        ? "bg-rose-50 text-rose-700 font-bold" 
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      "w-full flex items-center justify-between px-5 py-3 text-left text-sm transition-colors",
+                      value === option.value
+                        ? "bg-rose-50 text-rose-700 font-bold dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1]"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-[#CDBCAB] dark:hover:bg-[#11100F] dark:hover:text-[#EFE9E1]"
                     )}
                   >
                     <div className="flex items-center gap-3 min-w-0">
