@@ -107,6 +107,12 @@ const baseMetrics: AccountingHealthSummary['metrics'] = {
   legacy_pending_expense: 0,
   legacy_pending_salary: 0,
   legacy_journal_entries_to_create: 0,
+  worker_last_run_at: null,
+  worker_minutes_since_last_run: null,
+  worker_runs_24h: 0,
+  worker_failed_runs_24h: 0,
+  worker_failure_rate_24h: 0,
+  worker_silent_with_pending: 0,
 };
 
 const basePnl = {

@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  Clock,
   Database,
   FileWarning,
   ListChecks,
@@ -116,6 +117,14 @@ function formatNumber(value: number) {
   return value.toLocaleString('vi-VN');
 }
 
+function formatWorkerLastRun(lastRunAt: string | null | undefined, minutes: number | null | undefined) {
+  if (!lastRunAt) return 'Chưa có';
+  if (minutes === null || minutes === undefined) return 'Chưa rõ';
+  if (minutes < 1) return 'Vừa chạy';
+  if (minutes < 60) return `${formatNumber(minutes)} phút`;
+  return `${formatNumber(Math.floor(minutes / 60))} giờ`;
+}
+
 export default function AccountingHealthPage() {
   const [month, setMonth] = useState(currentMonthValue);
   const [loading, setLoading] = useState(true);
@@ -191,6 +200,13 @@ export default function AccountingHealthPage() {
   );
   const failedOutbox = (summary?.metrics.outbox_failed ?? 0) + (summary?.metrics.outbox_dead ?? 0);
   const pendingOutbox = (summary?.metrics.outbox_pending ?? 0) + (summary?.metrics.outbox_processing ?? 0);
+  const workerLastRun = formatWorkerLastRun(
+    summary?.metrics.worker_last_run_at,
+    summary?.metrics.worker_minutes_since_last_run
+  );
+  const workerHasRisk =
+    (summary?.metrics.worker_silent_with_pending ?? 0) > 0 ||
+    (summary?.metrics.worker_failed_runs_24h ?? 0) > 0;
   const businessSeverity = businessSummary?.severity ?? 'warning';
   const businessTone = BUSINESS_SEVERITY_TONE[businessSeverity];
   const BusinessStatusIcon = businessTone.icon;
@@ -238,9 +254,9 @@ export default function AccountingHealthPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
           {loading ? (
-            [1, 2, 3, 4].map((item) => <SkeletonLoader key={item} variant="card" className="h-28" />)
+            [1, 2, 3, 4, 5].map((item) => <SkeletonLoader key={item} variant="card" className="h-28" />)
           ) : (
             <>
               <MetricCard
@@ -254,6 +270,12 @@ export default function AccountingHealthPage() {
                 label="Outbox lỗi"
                 value={formatNumber(failedOutbox)}
                 tone={failedOutbox > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}
+              />
+              <MetricCard
+                icon={Clock}
+                label="Worker gần nhất"
+                value={workerLastRun}
+                tone={workerHasRisk ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}
               />
               <MetricCard
                 icon={FileWarning}
@@ -465,6 +487,9 @@ export default function AccountingHealthPage() {
           </h3>
           <div className="mt-5 space-y-3">
             <SideMetric label="Outbox pending/processing" value={pendingOutbox} />
+            <SideMetric label="Worker runs 24h" value={summary?.metrics.worker_runs_24h ?? 0} />
+            <SideMetric label="Worker lỗi 24h" value={summary?.metrics.worker_failed_runs_24h ?? 0} />
+            <SideMetric label="Tỷ lệ lỗi worker (%)" value={summary?.metrics.worker_failure_rate_24h ?? 0} />
             <SideMetric label="Reference active trùng" value={summary?.metrics.duplicate_active_references ?? 0} />
             <SideMetric label="Thiếu business event" value={summary?.metrics.missing_business_event ?? 0} />
             <SideMetric label="Cần review/posting failed" value={(summary?.metrics.needs_review ?? 0) + (summary?.metrics.posting_failed ?? 0)} />
@@ -475,6 +500,7 @@ export default function AccountingHealthPage() {
             <p className="text-3xs font-black uppercase tracking-widest text-slate-400">Điều kiện preflight</p>
             <ul className="mt-3 space-y-2 text-2xs font-medium text-slate-600 dark:text-[#CDBCAB]/75">
               <li>Không có DEAD/FAILED outbox.</li>
+              <li>Worker cron chạy đều khi còn outbox chờ xử lý.</li>
               <li>Không có bút toán DRAFT trong tháng.</li>
               <li>Không có reference nghiệp vụ active bị trùng.</li>
             </ul>

@@ -19,6 +19,8 @@ type WorkerEventResult = {
   error?: string;
   markFailedError?: string;
 };
+type AccountingWorkerRunStatus = 'success' | 'partial_failure' | 'critical_failure' | 'claim_failed' | 'exception';
+type AccountingWorkerRunInsert = Database['public']['Tables']['accounting_worker_runs']['Insert'];
 type MarkOutboxCompletedRpc = (
   fn: 'mark_outbox_completed',
   args: { p_outbox_id: string; p_journal_entry_id: string | null }
@@ -40,8 +42,98 @@ function getAdminClient() {
 function getErrorMessage(error: unknown, fallback = 'Unknown error') {
   if (error instanceof Error) return error.message || fallback;
   if (typeof error === 'string' && error.trim()) return error;
+  if (
+    error &&
+    typeof error === 'object' &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    error.message.trim()
+  ) {
+    return error.message;
+  }
   if (error === null || error === undefined) return fallback;
   return String(error);
+}
+
+function getUniqueTenantIds(events: OutboxEvent[]) {
+  return Array.from(new Set(
+    events
+      .map((event) => event.tenant_id)
+      .filter((tenantId): tenantId is string => typeof tenantId === 'string' && tenantId.length > 0)
+  ));
+}
+
+function workerDetailsToJson(details: WorkerEventResult[]): Json {
+  const rows: Record<string, Json | undefined>[] = details.map((detail) => ({
+    eventId: detail.eventId,
+    eventType: detail.eventType,
+    referenceId: detail.referenceId,
+    status: detail.status,
+    journalEntryId: detail.journalEntryId ?? null,
+    error: detail.error,
+    markFailedError: detail.markFailedError,
+  }));
+
+  return rows;
+}
+
+function buildWorkerRunInsert(params: {
+  status: AccountingWorkerRunStatus;
+  startedAt: Date;
+  finishedAt?: Date;
+  claimedCount?: number;
+  successCount?: number;
+  deadLetterCount?: number;
+  failureCount?: number;
+  criticalFailureCount?: number;
+  tenantIds?: string[];
+  details?: WorkerEventResult[];
+  error?: string | null;
+}): AccountingWorkerRunInsert {
+  const finishedAt = params.finishedAt ?? new Date();
+
+  return {
+    status: params.status,
+    started_at: params.startedAt.toISOString(),
+    finished_at: finishedAt.toISOString(),
+    duration_ms: Math.max(0, finishedAt.getTime() - params.startedAt.getTime()),
+    claimed_count: params.claimedCount ?? 0,
+    success_count: params.successCount ?? 0,
+    dead_letter_count: params.deadLetterCount ?? 0,
+    failure_count: params.failureCount ?? 0,
+    critical_failure_count: params.criticalFailureCount ?? 0,
+    tenant_ids: params.tenantIds ?? [],
+    details: workerDetailsToJson(params.details ?? []),
+    error: params.error ?? null,
+  };
+}
+
+async function recordWorkerRun(supabase: AdminClient, payload: AccountingWorkerRunInsert) {
+  const { error } = await supabase
+    .from('accounting_worker_runs')
+    .insert(payload);
+
+  return error ? getErrorMessage(error) : null;
+}
+
+async function safelyRecordWorkerRun(supabase: AdminClient, payload: AccountingWorkerRunInsert) {
+  try {
+    return await recordWorkerRun(supabase, payload);
+  } catch (error) {
+    return getErrorMessage(error);
+  }
+}
+
+function withWorkerRunLogFailure<T extends Record<string, unknown>>(body: T, workerRunLogError: string) {
+  return NextResponse.json(
+    {
+      ...body,
+      success: false,
+      workerRunLogged: false,
+      workerRunLogError,
+    },
+    { status: 500 }
+  );
 }
 
 function asPayloadRecord(payload: Json): OutboxPayload {
@@ -263,9 +355,11 @@ export async function GET(req: NextRequest) {
   }
 
   console.log('[Accounting Worker] Started scanning outbox queue...');
-  
+  const startedAt = new Date();
+  let supabase: AdminClient | null = null;
+
   try {
-    const supabase = getAdminClient();
+    supabase = getAdminClient();
 
     // 1. Claim next batch of events to process
     const { data: batch, error: claimError } = await supabase.rpc('claim_outbox_batch', {
@@ -274,13 +368,42 @@ export async function GET(req: NextRequest) {
 
     if (claimError) {
       console.error('[Accounting Worker] Failed to claim outbox batch:', claimError);
-      return NextResponse.json({ success: false, error: claimError.message }, { status: 500 });
+      const workerRunLogError = await safelyRecordWorkerRun(supabase, buildWorkerRunInsert({
+        status: 'claim_failed',
+        startedAt,
+        error: claimError.message,
+      }));
+      const body = {
+        success: false,
+        status: 'claim_failed',
+        error: claimError.message,
+        workerRunLogged: workerRunLogError === null,
+      };
+
+      if (workerRunLogError) {
+        return NextResponse.json({ ...body, workerRunLogError }, { status: 500 });
+      }
+
+      return NextResponse.json(body, { status: 500 });
     }
 
     const typedBatch: OutboxEvent[] = batch || [];
     if (typedBatch.length === 0) {
       console.log('[Accounting Worker] No pending outbox events found.');
-      return NextResponse.json({ success: true, processed: 0 });
+      const workerRunLogError = await safelyRecordWorkerRun(supabase, buildWorkerRunInsert({
+        status: 'success',
+        startedAt,
+      }));
+
+      if (workerRunLogError) {
+        return withWorkerRunLogFailure({
+          status: 'critical_failure',
+          processed: 0,
+          error: 'Accounting worker completed but failed to persist worker run log.',
+        }, workerRunLogError);
+      }
+
+      return NextResponse.json({ success: true, processed: 0, workerRunLogged: true });
     }
 
     console.log(`[Accounting Worker] Claimed ${typedBatch.length} events for processing.`);
@@ -551,6 +674,30 @@ export async function GET(req: NextRequest) {
     const status = criticalFailureCount > 0
       ? 'critical_failure'
       : failureCount === 0 ? 'success' : 'partial_failure';
+    const workerRunLogError = await safelyRecordWorkerRun(supabase, buildWorkerRunInsert({
+      status,
+      startedAt,
+      claimedCount: typedBatch.length,
+      successCount,
+      deadLetterCount,
+      failureCount,
+      criticalFailureCount,
+      tenantIds: getUniqueTenantIds(typedBatch),
+      details,
+    }));
+
+    if (workerRunLogError) {
+      return withWorkerRunLogFailure({
+        status: 'critical_failure',
+        processed: typedBatch.length,
+        successCount,
+        deadLetterCount,
+        failureCount,
+        criticalFailureCount,
+        details,
+        error: 'Accounting worker completed but failed to persist worker run log.',
+      }, workerRunLogError);
+    }
 
     return NextResponse.json({
       success: failureCount === 0 && criticalFailureCount === 0,
@@ -561,12 +708,28 @@ export async function GET(req: NextRequest) {
       failureCount,
       criticalFailureCount,
       details,
+      workerRunLogged: true,
     });
 
   } catch (globalErr: unknown) {
     console.error('[Accounting Worker] Critical exception:', globalErr);
+    const errorMessage = getErrorMessage(globalErr) || 'Lỗi hệ thống khi chạy worker.';
+    const workerRunLogError = supabase
+      ? await safelyRecordWorkerRun(supabase, buildWorkerRunInsert({
+        status: 'exception',
+        startedAt,
+        error: errorMessage,
+      }))
+      : null;
+
     return NextResponse.json(
-      { success: false, error: getErrorMessage(globalErr) || 'Lỗi hệ thống khi chạy worker.' },
+      {
+        success: false,
+        status: 'exception',
+        error: errorMessage,
+        workerRunLogged: supabase ? workerRunLogError === null : false,
+        ...(workerRunLogError ? { workerRunLogError } : {}),
+      },
       { status: 500 }
     );
   }

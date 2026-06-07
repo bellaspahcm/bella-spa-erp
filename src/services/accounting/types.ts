@@ -209,6 +209,12 @@ export interface AccountingHealthMetrics {
   legacy_pending_expense: number;
   legacy_pending_salary: number;
   legacy_journal_entries_to_create: number;
+  worker_last_run_at: string | null;
+  worker_minutes_since_last_run: number | null;
+  worker_runs_24h: number;
+  worker_failed_runs_24h: number;
+  worker_failure_rate_24h: number;
+  worker_silent_with_pending: number;
 }
 
 export interface AccountingHealthSummary {
