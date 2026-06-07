@@ -241,9 +241,16 @@ type InvariantFinding = {
   consumptionSummary?: string;
   consumptionCost?: number;
   totalPaid?: number;
+  bookingPaidAmount?: number;
   depositTarget?: number;
+  depositDue?: number;
+  remainingDebt?: number;
+  portalAmountToPay?: number;
+  portalMode?: string;
   priceAfterDiscount?: number;
   overpaidAmount?: number;
+  revenueIds?: string[];
+  missingLedgerCount?: number;
 };
 type InvariantResult = {
   name: string;
@@ -289,6 +296,12 @@ const GROUP_META: Record<string, Pick<BusinessHealthGroup, 'label' | 'descriptio
     href: '/dashboard/finance/reconciliation',
     action_label: 'Mở đối soát',
   },
+  booking_financial_integrity: {
+    label: 'Toàn vẹn tiền booking',
+    description: 'Đối chiếu 4 lớp booking, revenue, QR portal và side-effect hạch toán theo từng booking.',
+    href: '/dashboard/finance/reconciliation',
+    action_label: 'Mở đối soát',
+  },
   ledger: {
     label: 'Sổ cái & bút toán',
     description: 'Kiểm tra bút toán đã post, cân Nợ/Có và trạng thái hàng chờ hạch toán.',
@@ -327,6 +340,10 @@ const FINDING_TITLE: Record<string, string> = {
   revenue_booking_tenant_mismatch: 'Khoản thu và booking khác chi nhánh',
   deposit_paid_but_booking_still_pending: 'Khách đã cọc nhưng booking vẫn chờ cọc',
   booking_overpaid: 'Khách đang trả vượt giá trị gói sau giảm giá',
+  booking_payment_amount_drift: 'Số tiền đã thu trên booking lệch revenue xác nhận',
+  portal_deposit_qr_should_be_closed: 'Portal phải đóng QR cọc của booking này',
+  booking_revenue_ledger_gap: 'Booking có doanh thu nhưng thiếu side-effect hạch toán',
+  booking_paid_in_full_but_status_open: 'Booking đã thu đủ nhưng trạng thái thanh toán còn mở',
   posted_journal_too_few_lines: 'Bút toán đã post thiếu dòng Nợ/Có',
   posted_journal_unbalanced: 'Bút toán đã post không cân Nợ/Có',
   invalid_journal_line_amounts: 'Dòng bút toán có số tiền không hợp lệ',
@@ -365,6 +382,8 @@ const METADATA_BACKFILL_CODES = new Set([
 
 const BOOKING_STATUS_REPAIR_CODES = new Set([
   'deposit_paid_but_booking_still_pending',
+  'portal_deposit_qr_should_be_closed',
+  'booking_paid_in_full_but_status_open',
 ]);
 
 const BOOKING_PROGRESS_REPAIR_CODES = new Set([
@@ -385,6 +404,7 @@ const INVENTORY_ACCOUNTING_REPAIR_CODES = new Set([
 
 const PACKAGE_SALE_ACCOUNTING_REPAIR_CODES = new Set([
   'confirmed_package_revenue_missing_accounting_side_effect',
+  'booking_revenue_ledger_gap',
 ]);
 
 const SALARY_PAID_ACCOUNTING_REPAIR_CODES = new Set([
@@ -638,9 +658,16 @@ function buildDetails(finding: InvariantFinding): BusinessHealthFindingDetail[] 
   addDetail(details, 'Vật tư đã trừ', finding.consumptionSummary);
   addDetail(details, 'Giá trị tiêu hao', formatMoney(finding.consumptionCost));
   addDetail(details, 'Đã thu', formatMoney(finding.totalPaid));
+  addDetail(details, 'Booking ghi nhận đã thu', formatMoney(finding.bookingPaidAmount));
   addDetail(details, 'Mức cọc', formatMoney(finding.depositTarget));
+  addDetail(details, 'Cọc còn phải thu', formatMoney(finding.depositDue));
+  addDetail(details, 'Còn nợ', formatMoney(finding.remainingDebt));
+  addDetail(details, 'QR/Portal yêu cầu', formatMoney(finding.portalAmountToPay));
+  addDetail(details, 'Chế độ QR/Portal', finding.portalMode);
   addDetail(details, 'Giá sau giảm', formatMoney(finding.priceAfterDiscount));
   addDetail(details, 'Trả vượt', formatMoney(finding.overpaidAmount));
+  addDetail(details, 'Revenue thiếu ledger', finding.revenueIds?.join(', '));
+  addDetail(details, 'Số revenue thiếu ledger', finding.missingLedgerCount);
   addDetail(details, 'Số ca lưu', finding.savedSessions);
   addDetail(details, 'Số ca thực tế', finding.liveSessions);
   addDetail(details, 'Buổi lưu', finding.savedCompleted);

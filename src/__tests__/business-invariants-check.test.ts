@@ -1,5 +1,6 @@
 const {
   calculateBookingPaymentState,
+  checkBookingFinancialIntegrity,
   checkCrossModuleSideEffects,
   checkInventory,
   checkLedger,
@@ -74,6 +75,89 @@ describe('business invariant check script', () => {
 
     expect(result.criticalCount).toBe(1);
     expect(result.findings[0].code).toBe('deposit_paid_but_booking_still_pending');
+  });
+
+  it('checks booking financial integrity across booking, revenue, portal, and ledger layers', () => {
+    const result = checkBookingFinancialIntegrity({
+      ...emptyDataset,
+      bookings: [
+        {
+          id: 'booking-me-tien',
+          booking_number: 'B-ME-TIEN',
+          status: 'deposit_pending',
+          deposit_amount: 200000,
+          full_price: 6000000,
+          discount_percent: 25,
+          tenant_id: 'tenant-1',
+        },
+      ],
+      revenue: [
+        {
+          id: 'revenue-deposit',
+          booking_id: 'booking-me-tien',
+          amount: 200000,
+          status: 'confirmed',
+          revenue_type: 'deposit',
+          tenant_id: 'tenant-1',
+        },
+      ],
+      accountingOutbox: [
+        {
+          id: 'outbox-deposit',
+          event_type: 'PACKAGE_SALE',
+          reference_type: 'REVENUE',
+          reference_id: 'revenue-deposit',
+          status: 'COMPLETED',
+        },
+      ],
+    });
+
+    expect(result.name).toBe('booking_financial_integrity');
+    expect(result.findings).toEqual([
+      expect.objectContaining({
+        code: 'portal_deposit_qr_should_be_closed',
+        totalPaid: 200000,
+        depositDue: 0,
+        remainingDebt: 4300000,
+        portalAmountToPay: 4300000,
+        portalMode: 'full',
+      }),
+    ]);
+  });
+
+  it('flags booking revenue without ledger side effects in financial integrity checks', () => {
+    const result = checkBookingFinancialIntegrity({
+      ...emptyDataset,
+      bookings: [
+        {
+          id: 'booking-1',
+          booking_number: 'B-001',
+          status: 'booked',
+          deposit_amount: 450000,
+          full_price: 450000,
+          discount_percent: 0,
+          tenant_id: 'tenant-1',
+        },
+      ],
+      revenue: [
+        {
+          id: 'revenue-1',
+          booking_id: 'booking-1',
+          amount: 450000,
+          status: 'confirmed',
+          revenue_type: 'package_payment',
+          tenant_id: 'tenant-1',
+        },
+      ],
+    });
+
+    expect(result.findings).toEqual([
+      expect.objectContaining({
+        code: 'booking_revenue_ledger_gap',
+        revenueIds: ['revenue-1'],
+        missingLedgerCount: 1,
+      }),
+    ]);
   });
 
   it('flags unbalanced posted journal entries', () => {

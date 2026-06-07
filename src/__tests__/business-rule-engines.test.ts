@@ -49,6 +49,7 @@ import {
   buildSessionDoneOutboxEvent,
   isPackageSaleRevenueType,
 } from '@/lib/business-rules/accounting-outbox';
+import { evaluateBookingFinancialIntegrity } from '@/lib/business-rules/financial-integrity';
 
 describe('shared business rule engines', () => {
   it('calculates customer payment state from confirmed revenue records', () => {
@@ -98,6 +99,80 @@ describe('shared business rule engines', () => {
     expect(validatePaymentAmountAgainstState(state, 4000001)).toEqual({
       error: 'Số tiền thanh toán vượt quá số tiền còn nợ của gói (4.000.000 đ)',
     });
+  });
+
+  it('evaluates booking financial integrity across payment, portal, and ledger layers', () => {
+    const meTien = evaluateBookingFinancialIntegrity({
+      booking: {
+        id: 'booking-me-tien',
+        booking_number: 'B-ME-TIEN',
+        status: 'deposit_pending',
+        deposit_amount: 200000,
+        full_price: 6000000,
+        discount_percent: 25,
+        tenant_id: 'tenant-1',
+      },
+      revenues: [
+        {
+          id: 'revenue-deposit',
+          booking_id: 'booking-me-tien',
+          tenant_id: 'tenant-1',
+          amount: 200000,
+          status: 'confirmed',
+          revenue_type: 'deposit',
+        },
+      ],
+      outboxEvents: [
+        {
+          id: 'outbox-deposit',
+          event_type: 'PACKAGE_SALE',
+          reference_type: 'REVENUE',
+          reference_id: 'revenue-deposit',
+        },
+      ],
+    });
+
+    expect(meTien.totalPaid).toBe(200000);
+    expect(meTien.remainingDebt).toBe(4300000);
+    expect(meTien.portalShouldShowDepositQr).toBe(false);
+    expect(meTien.portalMode).toBe('full');
+    expect(meTien.portalAmountToPay).toBe(4300000);
+    expect(meTien.issues.map((issue) => issue.code)).toContain('portal_deposit_qr_should_be_closed');
+    expect(meTien.issues.map((issue) => issue.code)).not.toContain('booking_revenue_ledger_gap');
+  });
+
+  it('flags confirmed booking revenue missing PACKAGE_SALE side effects', () => {
+    const result = evaluateBookingFinancialIntegrity({
+      booking: {
+        id: 'booking-ledger-gap',
+        booking_number: 'B-GAP',
+        status: 'booked',
+        deposit_amount: 450000,
+        full_price: 450000,
+        discount_percent: 0,
+        tenant_id: 'tenant-1',
+      },
+      revenues: [
+        {
+          id: 'revenue-paid',
+          booking_id: 'booking-ledger-gap',
+          tenant_id: 'tenant-1',
+          amount: 450000,
+          status: 'confirmed',
+          revenue_type: 'package_payment',
+        },
+      ],
+      outboxEvents: [],
+      journalEntries: [],
+    });
+
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        code: 'booking_revenue_ledger_gap',
+        revenueIds: ['revenue-paid'],
+        missingLedgerCount: 1,
+      }),
+    ]);
   });
 
   it('splits completed-session revenue from confirmed paid amount, not booking deposit field', () => {
