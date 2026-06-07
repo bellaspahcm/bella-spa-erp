@@ -51,6 +51,7 @@ export interface SystemMonitorSummary {
     worker_silent_with_pending: number;
     cron_smoke_open_alerts: number;
     internal_worker_open_alerts: number;
+    business_rule_open_alerts: number;
   };
 }
 
@@ -62,6 +63,7 @@ type AppNotificationRow = Pick<
 const SYSTEM_ALERT_TYPES = [
   'accounting_worker_cron_alert',
   'accounting_worker_health_alert',
+  'business_rule_health_alert',
 ];
 
 function currentMonthValue() {
@@ -136,6 +138,12 @@ function getNotificationSeverity(row: AppNotificationRow): SystemMonitorStatus {
   if (row.type === 'accounting_worker_cron_alert') return 'critical';
   if (isRecord(row.data) && row.data.severity === 'critical') return 'critical';
   return 'warning';
+}
+
+function getNotificationSourceLabel(row: AppNotificationRow) {
+  if (row.type === 'accounting_worker_cron_alert') return 'Cron smoke';
+  if (row.type === 'business_rule_health_alert') return 'Rule engine';
+  return 'Worker health';
 }
 
 function envStatus(value: string | undefined) {
@@ -229,6 +237,7 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
 
   const cronSmokeOpenAlerts = openAlertRows.filter((row) => row.type === 'accounting_worker_cron_alert').length;
   const internalWorkerOpenAlerts = openAlertRows.filter((row) => row.type === 'accounting_worker_health_alert').length;
+  const businessRuleOpenAlerts = openAlertRows.filter((row) => row.type === 'business_rule_health_alert').length;
   const failedOutbox = accountingHealth.metrics.outbox_failed + accountingHealth.metrics.outbox_dead;
   const pendingOutbox = accountingHealth.metrics.outbox_pending + accountingHealth.metrics.outbox_processing;
 
@@ -297,6 +306,16 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
       href: '/dashboard/accounting/health',
     },
     {
+      id: 'business-rule-production-alerts',
+      label: 'Rule engine production',
+      status: businessRuleOpenAlerts > 0 ? 'critical' : 'healthy',
+      value: String(businessRuleOpenAlerts),
+      message: businessRuleOpenAlerts > 0
+        ? 'Dang co canh bao rule engine production chua doc.'
+        : 'Khong co canh bao rule engine production dang mo.',
+      href: '/dashboard/system-monitor',
+    },
+    {
       id: 'outbox-blockers',
       label: 'Outbox failed/dead',
       status: failedOutbox > 0 ? 'critical' : pendingOutbox > 0 ? 'warning' : 'healthy',
@@ -326,7 +345,7 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
       id: row.id,
       label: row.title,
       status: getNotificationSeverity(row),
-      value: row.type === 'accounting_worker_cron_alert' ? 'Cron smoke' : 'Worker health',
+      value: getNotificationSourceLabel(row),
       message: row.message,
       href: getNotificationHref(row.data),
     }))
@@ -372,6 +391,7 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
       worker_silent_with_pending: accountingHealth.metrics.worker_silent_with_pending,
       cron_smoke_open_alerts: cronSmokeOpenAlerts,
       internal_worker_open_alerts: internalWorkerOpenAlerts,
+      business_rule_open_alerts: businessRuleOpenAlerts,
     },
   };
 }

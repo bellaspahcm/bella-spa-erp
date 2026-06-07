@@ -252,6 +252,7 @@ export default function SystemMonitorPage() {
             <QuickStat label="Worker im lặng" value={quickMetrics?.worker_silent_with_pending ?? 0} />
             <QuickStat label="Cron smoke alert" value={quickMetrics?.cron_smoke_open_alerts ?? 0} />
             <QuickStat label="Worker alert mở" value={quickMetrics?.internal_worker_open_alerts ?? 0} />
+            <QuickStat label="Rule alert mở" value={quickMetrics?.business_rule_open_alerts ?? 0} />
           </div>
         )}
       </section>

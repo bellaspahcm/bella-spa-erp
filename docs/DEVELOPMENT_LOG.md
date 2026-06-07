@@ -5,6 +5,24 @@
 
 ---
 
+### 08/06/2026: Add Business Rule Production Guard
+* **Muc tieu van hanh**:
+  * Dua cac business rule engine lien module tu CI guard thanh production guard dinh ky.
+  * Bao admin trong app khi rule engine phat hien loi nghiem trong ve booking/payment/revenue/salary/inventory/accounting.
+* **Thay doi chinh**:
+  * Them `scripts/check-business-rule-production-guard.cjs` de tai su dung `check-business-invariants.cjs`, fail khi co critical va tao notification dedupe `business_rule_health_alert`.
+  * Them script `npm run cron:business-rules:smoke` va noi vao `.github/workflows/production-cron-smoke.yml`.
+  * System Monitor doc them alert type business rule, quick metric `business_rule_open_alerts`, va data check rieng cho rule engine production.
+* **Artifact**:
+  * `docs/implementation-artifacts/spec-add-business-rule-production-guard.md`
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/business-rule-production-guard.test.ts src/__tests__/system-monitor-actions.test.ts --runInBand` pass, 2 suites / 11 tests.
+  * `npm.cmd test -- src/__tests__/accounting-worker-cron-smoke.test.ts src/__tests__/business-invariants-check.test.ts --runInBand` pass, 2 suites / 22 tests.
+  * `npm.cmd run lint` pass.
+  * `npm.cmd run build` pass.
+  * `npm.cmd run test:critical` pass, 10 suites / 122 tests.
+  * `git diff --check` pass, chi co canh bao LF/CRLF cua Windows.
+
 ### 05/06/2026: Landing Packages Refactor And Production Smoke
 * **Muc tieu UI/van hanh**:
   * Giam do phuc tap cua landing page public, tach section bang gia/dich vu thanh cac component va hook data rieng.
