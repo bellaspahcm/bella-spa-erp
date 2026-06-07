@@ -1,6 +1,7 @@
 'use client';
 
 import type { FormEvent } from 'react';
+import { parsePercentInput } from '@/lib/utils';
 import type { NewVoucherCampaign } from '../types';
 
 interface CrmVoucherModalProps {
@@ -38,7 +39,7 @@ export function CrmVoucherModal({ newVoucher, onChange, onClose, onSubmit }: Crm
               max={100}
               required
               value={newVoucher.discount}
-              onChange={(event) => onChange({ ...newVoucher, discount: parseInt(event.target.value) || 10 })}
+              onChange={(event) => onChange({ ...newVoucher, discount: parsePercentInput(event.target.value, { min: 1, max: 100, fallback: 10 }) })}
               className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 focus:outline-none focus:border-rose-100 text-sm font-semibold"
             />
           </div>

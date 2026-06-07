@@ -33,6 +33,42 @@ export function formatMoneyInput(value: number | string | null | undefined) {
   return amount > 0 ? formatNumberWithSeparator(amount) : '';
 }
 
+type NumericInputOptions = {
+  min?: number;
+  max?: number;
+  fallback?: number;
+};
+
+function clampNumericInput(value: number, options: NumericInputOptions = {}) {
+  const min = options.min ?? 0;
+  const fallback = options.fallback ?? min;
+  const normalized = Number.isFinite(value) ? value : fallback;
+  const max = options.max;
+  const lowerBounded = Math.max(min, normalized);
+  return max === undefined ? lowerBounded : Math.min(max, lowerBounded);
+}
+
+export function parsePercentInput(value: number | string | null | undefined, options: NumericInputOptions = {}) {
+  const fallback = options.fallback ?? 0;
+  if (value === null || value === undefined || value === '') {
+    return clampNumericInput(fallback, { min: 0, max: 100, ...options });
+  }
+
+  const numeric = typeof value === 'number' ? value : Number(value);
+  return clampNumericInput(numeric, { min: 0, max: 100, fallback, ...options });
+}
+
+export function parseIntegerInput(value: number | string | null | undefined, options: NumericInputOptions = {}) {
+  const fallback = options.fallback ?? options.min ?? 0;
+  if (value === null || value === undefined || value === '') {
+    return clampNumericInput(Math.trunc(fallback), options);
+  }
+
+  const numeric = typeof value === 'number' ? value : Number(value);
+  const integer = Number.isFinite(numeric) ? Math.trunc(numeric) : Math.trunc(fallback);
+  return clampNumericInput(integer, options);
+}
+
 export function formatNumberWithSeparator(value: number | string) {
   if (value === null || value === undefined) return '';
   if (typeof value === 'number') {

@@ -8,7 +8,9 @@ import {
   formatCurrency,
   formatMoneyInput,
   parseCurrency,
+  parseIntegerInput,
   parseMoneyInput,
+  parsePercentInput,
   formatNumberWithSeparator,
   resolvePackageName,
   getLocalDateString,
@@ -95,6 +97,31 @@ describe("utils: money input helpers", () => {
     expect(formatMoneyInput(1_500_000)).toBe("1.500.000");
     expect(formatMoneyInput("1500000")).toBe("1.500.000");
     expect(formatMoneyInput(0)).toBe("");
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// parsePercentInput / parseIntegerInput
+// ═════════════════════════════════════════════════════════════════════════════
+describe("utils: percent and integer input helpers", () => {
+  it("clamps percent input to the configured 0-100 range", () => {
+    expect(parsePercentInput("33")).toBe(33);
+    expect(parsePercentInput("-5")).toBe(0);
+    expect(parsePercentInput("150")).toBe(100);
+    expect(parsePercentInput("")).toBe(0);
+  });
+
+  it("supports custom percent bounds and fallback values", () => {
+    expect(parsePercentInput("", { min: 1, max: 100, fallback: 10 })).toBe(10);
+    expect(parsePercentInput("0", { min: 1, max: 100, fallback: 10 })).toBe(1);
+  });
+
+  it("parses integer inputs with min, max, and fallback controls", () => {
+    expect(parseIntegerInput("21", { min: 1 })).toBe(21);
+    expect(parseIntegerInput("5.8", { min: 1 })).toBe(5);
+    expect(parseIntegerInput("", { min: 1, fallback: 1 })).toBe(1);
+    expect(parseIntegerInput("150", { min: 1, max: 100 })).toBe(100);
+    expect(parseIntegerInput("-3", { min: 0 })).toBe(0);
   });
 });
 

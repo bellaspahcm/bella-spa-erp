@@ -157,4 +157,22 @@ describe('payment business rule audit', () => {
     expect(auditedMoneyInputSources).not.toMatch(/replace\(\s*\/\[\^\\d\]/);
     expect(auditedMoneyInputSources).not.toMatch(/Number\([^\n]*replace/);
   });
+
+  it('keeps high-risk percent and integer inputs routed through shared numeric helpers', () => {
+    const auditedNumericInputSources = [
+      'src/components/features/BookingModal.tsx',
+      'src/app/dashboard/customers/[id]/components/CustomerDetailModals.tsx',
+      'src/app/dashboard/customers/[id]/useCustomerDetailController.ts',
+      'src/app/dashboard/settings/components/SalaryConfigTab.tsx',
+      'src/app/dashboard/crm/components/CrmVoucherModal.tsx',
+      'src/app/dashboard/crm/hooks/useCrmVoucherCampaigns.ts',
+      'src/app/dashboard/settings/components/promotions/PromotionForm.tsx',
+      'src/app/dashboard/settings/components/promotions/usePromotionsSettings.ts',
+    ].map(readSource).join('\n');
+
+    expect(auditedNumericInputSources).toContain('parsePercentInput');
+    expect(auditedNumericInputSources).toContain('parseIntegerInput');
+    expect(auditedNumericInputSources).not.toMatch(/parseInt\(/);
+    expect(auditedNumericInputSources).not.toMatch(/Number\([^\n]*\)\s*\|\|\s*0/);
+  });
 });

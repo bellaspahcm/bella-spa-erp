@@ -2,6 +2,7 @@
 
 import type { FormEvent } from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import { parsePercentInput } from '@/lib/utils';
 import { createPromotion, getPromotions } from '@/services/promotions-actions';
 import type { Database } from '@/types/database.types';
 import type { NewVoucherCampaign, VoucherCampaign } from '../types';
@@ -25,7 +26,7 @@ function promotionToVoucher(promotion: PromotionRow): VoucherCampaign {
   return {
     id: promotion.id,
     code: promotion.discount_code || promotion.title,
-    discount: Number(promotion.discount_percent || 0),
+    discount: parsePercentInput(promotion.discount_percent),
     target: promotion.description,
     status: promotion.is_active ? 'active' : 'paused',
     usage: 0,
@@ -77,7 +78,7 @@ export function useCrmVoucherCampaigns() {
       title: newVoucher.code.trim(),
       description: newVoucher.target,
       discount_code: newVoucher.code.trim().toUpperCase(),
-      discount_percent: newVoucher.discount,
+      discount_percent: parsePercentInput(newVoucher.discount),
       is_active: newVoucher.status === 'active',
     };
 
