@@ -2,7 +2,7 @@
  * Cross-Module End-to-End Integrity & Downstream Side-Effect Tests (Phase 29.1)
  *
  * Verifies the complete business pipeline across multiple modules:
- * 1. Booking creation -> updates status to deposit_pending, records revenue, enqueues PACKAGE_SALE in outbox.
+ * 1. Booking creation with confirmed deposit -> updates status to booked, records revenue, enqueues PACKAGE_SALE in outbox.
  * 2. Paying remaining balance -> updates status to booked, records revenue, enqueues remaining payment in outbox.
  * 3. Completing service session -> consumes inventory, increments sessions completed, updates salary commission, creates session reviews, enqueues SESSION_DONE.
  * 4. Month locking -> locks financial records, computes franchise royalty invoice, updates inter-branch clearing.
@@ -374,7 +374,7 @@ describe('Cross-Module End-to-End Integrity Tests', () => {
 
   it('runs the complete cross-module pipeline successfully', async () => {
     // ----------------------------------------------------
-    // 1. Online Booking Creation (deposit pending)
+    // 1. Online Booking Creation (confirmed deposit)
     // ----------------------------------------------------
     const bookingFormData = {
       customer_id: 'cust-123',
@@ -393,7 +393,7 @@ describe('Cross-Module End-to-End Integrity Tests', () => {
     expect(createResult.data).toBeDefined();
 
     const booking = createResult.data!;
-    expect(booking.status).toBe('deposit_pending');
+    expect(booking.status).toBe('booked');
     expect(mockStore.revenue).toHaveLength(1);
     expect(mockStore.revenue[0].amount).toBe(1000000);
     expect(mockStore.revenue[0].revenue_type).toBe('deposit');

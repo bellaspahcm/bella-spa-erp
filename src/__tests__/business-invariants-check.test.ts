@@ -1,5 +1,6 @@
 const {
   calculateBookingPaymentState,
+  checkCrossModuleSideEffects,
   checkInventory,
   checkLedger,
   checkPaymentBookingRevenue,
@@ -155,6 +156,178 @@ describe('business invariant check script', () => {
     expect(result.findings.map((finding: { code: string }) => finding.code)).toEqual(
       expect.arrayContaining(['negative_inventory_stock', 'consumption_log_not_negative', 'orphan_consumption_log'])
     );
+  });
+
+  it('passes cross-module side-effect checks when outbox events are present', () => {
+    const result = checkCrossModuleSideEffects({
+      ...emptyDataset,
+      bookings: [
+        {
+          id: 'booking-1',
+          booking_number: 'B-001',
+          tenant_id: 'tenant-1',
+          package_id: 'package-1',
+          completed_sessions: 1,
+        },
+      ],
+      revenue: [
+        {
+          id: 'rev-1',
+          booking_id: 'booking-1',
+          amount: 200000,
+          status: 'confirmed',
+          revenue_type: 'deposit',
+          tenant_id: 'tenant-1',
+        },
+      ],
+      sessionLogs: [
+        {
+          id: 'session-1',
+          booking_id: 'booking-1',
+          status: 'completed',
+          completed_by_ktv_id: 'ktv-1',
+          tenant_id: 'tenant-1',
+        },
+      ],
+      packageMaterials: [
+        {
+          id: 'material-1',
+          package_id: 'package-1',
+          item_id: 'item-1',
+          quantity_per_session: 1,
+        },
+      ],
+      inventoryLogs: [
+        {
+          id: 'inventory-log-1',
+          item_id: 'item-1',
+          session_log_id: 'session-1',
+          reason: 'session_consumption',
+          change_amount: -1,
+        },
+      ],
+      salaryRecords: [
+        {
+          id: 'salary-1',
+          ktv_id: 'ktv-1',
+          tenant_id: 'tenant-1',
+          month_year: '2026-06-01',
+          status: 'paid',
+        },
+      ],
+      accountingOutbox: [
+        { id: 'outbox-1', event_type: 'PACKAGE_SALE', reference_type: 'REVENUE', reference_id: 'rev-1', status: 'COMPLETED' },
+        { id: 'outbox-2', event_type: 'SESSION_DONE', reference_type: 'SESSION_LOG', reference_id: 'session-1', status: 'COMPLETED' },
+        { id: 'outbox-3', event_type: 'INVENTORY_CONSUMED', reference_type: 'SESSION_LOG', reference_id: 'session-1', status: 'COMPLETED' },
+        { id: 'outbox-4', event_type: 'SALARY_PAID', reference_type: 'SALARY_RECORD', reference_id: 'salary-1', status: 'COMPLETED' },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.criticalCount).toBe(0);
+  });
+
+  it('flags missing cross-module accounting side effects and booking progress drift', () => {
+    const result = checkCrossModuleSideEffects({
+      ...emptyDataset,
+      bookings: [
+        {
+          id: 'booking-1',
+          booking_number: 'B-001',
+          tenant_id: 'tenant-1',
+          package_id: 'package-1',
+          completed_sessions: 0,
+        },
+      ],
+      revenue: [
+        {
+          id: 'rev-package',
+          booking_id: 'booking-1',
+          amount: 200000,
+          status: 'confirmed',
+          revenue_type: 'deposit',
+          tenant_id: 'tenant-1',
+        },
+        {
+          id: 'rev-refund',
+          booking_id: 'booking-1',
+          amount: 100000,
+          status: 'confirmed',
+          revenue_type: 'refund',
+          tenant_id: 'tenant-1',
+        },
+      ],
+      sessionLogs: [
+        {
+          id: 'session-1',
+          booking_id: 'booking-1',
+          status: 'completed',
+          completed_by_ktv_id: 'ktv-1',
+          tenant_id: 'tenant-1',
+        },
+      ],
+      packageMaterials: [
+        {
+          id: 'material-1',
+          package_id: 'package-1',
+          item_id: 'item-1',
+          quantity_per_session: 1,
+        },
+      ],
+      inventoryLogs: [
+        {
+          id: 'inventory-log-1',
+          item_id: 'item-1',
+          session_log_id: 'session-1',
+          reason: 'session_consumption',
+          change_amount: -1,
+        },
+      ],
+      salaryRecords: [
+        {
+          id: 'salary-1',
+          ktv_id: 'ktv-1',
+          tenant_id: 'tenant-1',
+          month_year: '2026-06-01',
+          status: 'paid',
+        },
+      ],
+    });
+
+    expect(result.findings.map((finding: { code: string }) => finding.code)).toEqual(
+      expect.arrayContaining([
+        'confirmed_package_revenue_missing_accounting_side_effect',
+        'confirmed_refund_missing_accounting_side_effect',
+        'completed_session_missing_session_done_side_effect',
+        'inventory_consumption_missing_accounting_side_effect',
+        'booking_completed_sessions_drift',
+        'paid_salary_missing_accounting_side_effect',
+      ])
+    );
+  });
+
+  it('warns when accounting outbox events stay pending too long', () => {
+    const result = checkLedger(
+      {
+        ...emptyDataset,
+        accountingOutbox: [
+          {
+            id: 'outbox-stale',
+            event_type: 'PACKAGE_SALE',
+            reference_type: 'REVENUE',
+            reference_id: 'rev-1',
+            status: 'PENDING',
+            retry_count: 0,
+            max_retries: 3,
+            created_at: '2026-06-05T00:00:00.000Z',
+          },
+        ],
+      },
+      { now: new Date('2026-06-07T00:30:00.000Z') }
+    );
+
+    expect(result.warningCount).toBe(1);
+    expect(result.findings[0].code).toBe('stale_accounting_outbox');
   });
 
   it('summarizes all check groups with warnings as non-blocking by default', () => {

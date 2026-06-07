@@ -3,6 +3,7 @@ const WARNING = 'warning';
 const MONEY_TOLERANCE = 1;
 const SESSION_TOLERANCE = 0.01;
 const DEFAULT_MAX_ROWS = 20000;
+const STALE_OUTBOX_WARNING_HOURS = 24;
 
 const SOURCE_ACCOUNTING_CHECKS = [
   {
@@ -442,7 +443,7 @@ function checkPaymentBookingRevenue(dataset) {
   return createResult('payment_booking_revenue', findings);
 }
 
-function checkLedger(dataset) {
+function checkLedger(dataset, context = {}) {
   const findings = [];
   const linesByEntryId = groupBy(dataset.journalLines, (line) => line.entry_id);
 
@@ -507,9 +508,71 @@ function checkLedger(dataset) {
         maxRetries,
       });
     }
+
+    if ((status === 'pending' || status === 'processing') && isOutboxStale(event, context.now)) {
+      addFinding(findings, WARNING, 'stale_accounting_outbox', 'Accounting outbox event has been pending/processing for too long.', {
+        recordId: event.id,
+        sourceTable: 'accounting_outbox',
+        eventType: event.event_type,
+        status: event.status,
+        createdAt: event.created_at,
+      });
+    }
   });
 
   return createResult('accounting_ledger', findings);
+}
+
+function getAccountingJournalReferenceType(eventType) {
+  switch (normalize(eventType).toUpperCase()) {
+    case 'PACKAGE_SALE':
+      return 'PACKAGE_SALE';
+    case 'SESSION_DONE':
+      return 'SESSION_DONE';
+    case 'EXPENSE_RECORDED':
+      return 'EXPENSE';
+    case 'SALARY_PAID':
+      return 'SALARY_PAYMENT';
+    case 'INVENTORY_CONSUMED':
+      return 'INVENTORY_CONSUMPTION';
+    case 'REFUND_ISSUED':
+      return 'REFUND';
+    default:
+      return null;
+  }
+}
+
+function hasAccountingOutboxEvent(dataset, eventType, referenceId) {
+  return (dataset.accountingOutbox || []).some((event) =>
+    normalize(event.event_type).toUpperCase() === eventType &&
+    event.reference_id === referenceId
+  );
+}
+
+function hasActiveJournalEntry(dataset, eventType, referenceId) {
+  const journalReferenceType = getAccountingJournalReferenceType(eventType);
+  if (!journalReferenceType) return false;
+
+  return (dataset.journalEntries || []).some((entry) =>
+    normalize(entry.status) !== 'canceled' &&
+    entry.reference_type === journalReferenceType &&
+    entry.reference_id === referenceId
+  );
+}
+
+function hasAccountingSideEffect(dataset, eventType, referenceId) {
+  return hasAccountingOutboxEvent(dataset, eventType, referenceId) ||
+    hasActiveJournalEntry(dataset, eventType, referenceId);
+}
+
+function isOutboxStale(row, now) {
+  if (!now || !row.created_at) return false;
+
+  const createdAtMs = Date.parse(row.created_at);
+  if (!Number.isFinite(createdAtMs)) return false;
+
+  const ageHours = (now.getTime() - createdAtMs) / (1000 * 60 * 60);
+  return ageHours > STALE_OUTBOX_WARNING_HOURS;
 }
 
 function monthMatches(value, monthDate) {
@@ -706,6 +769,104 @@ function checkInventory(dataset) {
   return createResult('inventory', findings);
 }
 
+function checkCrossModuleSideEffects(dataset) {
+  const findings = [];
+  const bookingsById = indexBy(dataset.bookings, 'id');
+  const packageMaterialsByPackageId = groupBy(dataset.packageMaterials, (row) => row.package_id);
+  const consumptionLogsBySession = groupBy(
+    (dataset.inventoryLogs || []).filter((log) => isConsumptionReason(log.reason)),
+    (log) => log.session_log_id
+  );
+  const completedSessionsByBooking = new Map();
+
+  (dataset.revenue || []).forEach((row) => {
+    if (normalize(row.status) !== 'confirmed') return;
+
+    const revenueType = normalize(row.revenue_type);
+    if (isPackageRevenueType(revenueType) && !hasAccountingSideEffect(dataset, 'PACKAGE_SALE', row.id)) {
+      addFinding(findings, CRITICAL, 'confirmed_package_revenue_missing_accounting_side_effect', 'Confirmed package revenue must have a PACKAGE_SALE outbox event or active journal entry.', {
+        recordId: row.id,
+        sourceTable: 'revenue',
+        bookingId: row.booking_id,
+      });
+    }
+
+    if (revenueType === 'refund' && !hasAccountingSideEffect(dataset, 'REFUND_ISSUED', row.id)) {
+      addFinding(findings, CRITICAL, 'confirmed_refund_missing_accounting_side_effect', 'Confirmed refund revenue must have a REFUND_ISSUED outbox event or active journal entry.', {
+        recordId: row.id,
+        sourceTable: 'revenue',
+        bookingId: row.booking_id,
+      });
+    }
+  });
+
+  (dataset.sessionLogs || []).forEach((session) => {
+    if (normalize(session.status) !== 'completed') return;
+
+    if (session.booking_id) {
+      completedSessionsByBooking.set(
+        session.booking_id,
+        (completedSessionsByBooking.get(session.booking_id) || 0) + 1
+      );
+    }
+
+    if (!hasAccountingSideEffect(dataset, 'SESSION_DONE', session.id)) {
+      addFinding(findings, CRITICAL, 'completed_session_missing_session_done_side_effect', 'Completed session must have a SESSION_DONE outbox event or active journal entry.', {
+        recordId: session.id,
+        sourceTable: 'session_logs',
+        bookingId: session.booking_id,
+      });
+    }
+
+    const booking = bookingsById.get(session.booking_id);
+    const packageMaterials = booking?.package_id ? packageMaterialsByPackageId.get(booking.package_id) || [] : [];
+    const requiresInventory = packageMaterials.some((material) => asFiniteNumber(material.quantity_per_session) > 0);
+    if (
+      requiresInventory &&
+      consumptionLogsBySession.has(session.id) &&
+      !hasAccountingSideEffect(dataset, 'INVENTORY_CONSUMED', session.id)
+    ) {
+      addFinding(findings, CRITICAL, 'inventory_consumption_missing_accounting_side_effect', 'Session inventory consumption must have an INVENTORY_CONSUMED outbox event or active journal entry.', {
+        recordId: session.id,
+        sourceTable: 'session_logs',
+        bookingId: session.booking_id,
+      });
+    }
+  });
+
+  completedSessionsByBooking.forEach((completedCount, bookingId) => {
+    const booking = bookingsById.get(bookingId);
+    if (!booking) return;
+
+    const savedCompleted = asFiniteNumber(booking.completed_sessions, NaN);
+    if (!Number.isFinite(savedCompleted)) return;
+
+    if (Math.abs(savedCompleted - completedCount) > SESSION_TOLERANCE) {
+      addFinding(findings, CRITICAL, 'booking_completed_sessions_drift', 'Booking completed_sessions must match completed session logs.', {
+        recordId: booking.id,
+        bookingNumber: booking.booking_number,
+        sourceTable: 'bookings',
+        savedCompleted,
+        completedSessionLogs: completedCount,
+      });
+    }
+  });
+
+  (dataset.salaryRecords || []).forEach((record) => {
+    if (normalize(record.status) !== 'paid') return;
+
+    if (!hasAccountingSideEffect(dataset, 'SALARY_PAID', record.id)) {
+      addFinding(findings, CRITICAL, 'paid_salary_missing_accounting_side_effect', 'Paid salary record must have a SALARY_PAID outbox event or active journal entry.', {
+        recordId: record.id,
+        sourceTable: 'salary_records',
+        ktvId: record.ktv_id,
+      });
+    }
+  });
+
+  return createResult('cross_module_side_effects', findings);
+}
+
 function checkAccountingReadiness(dataset) {
   const findings = [];
 
@@ -742,16 +903,19 @@ function checkAccountingReadiness(dataset) {
 }
 
 function runBusinessInvariantChecksOnDataset(dataset, options = {}) {
+  const now = options.now || new Date();
   const context = {
-    ...getBusinessDateContext(options.now || new Date()),
+    ...getBusinessDateContext(now),
+    now,
     ...(options.context || {}),
   };
 
   return [
     checkPaymentBookingRevenue(dataset),
-    checkLedger(dataset),
+    checkLedger(dataset, context),
     checkSalary(dataset, context),
     checkInventory(dataset),
+    checkCrossModuleSideEffects(dataset),
     checkAccountingReadiness(dataset),
   ];
 }
@@ -889,6 +1053,7 @@ module.exports = {
   buildRestUrl,
   calculateBookingPaymentState,
   checkAccountingReadiness,
+  checkCrossModuleSideEffects,
   checkInventory,
   checkLedger,
   checkPaymentBookingRevenue,
