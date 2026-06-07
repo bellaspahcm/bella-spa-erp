@@ -29,6 +29,11 @@ type InventorySessionRow = Pick<SessionLogRow, 'id' | 'status' | 'completed_date
 type InventoryConsumptionLogRow = Pick<InventoryLogRow, 'id' | 'item_id' | 'session_log_id' | 'change_amount' | 'created_at'>;
 type InventoryOutboxRow = Pick<AccountingOutboxRow, 'id' | 'reference_id' | 'status'>;
 
+export type AutoConsumeForSessionOptions = {
+  force?: boolean;
+  source?: 'auto_checkout' | 'business_health_repair';
+};
+
 export type InventorySessionReconciliationIssueType =
   | 'missing_inventory_log'
   | 'orphan_inventory_log'
@@ -881,7 +886,11 @@ export async function consumeInventory(
 }
 
 // ─── Auto-consume khi hoàn thành buổi ─────────────────────────────────────────
-export async function autoConsumeForSession(packageId: string, sessionLogId: string) {
+export async function autoConsumeForSession(
+  packageId: string,
+  sessionLogId: string,
+  options: AutoConsumeForSessionOptions = {}
+) {
   try {
     const { supabase, tenantId } = await getSupabaseWithTenant();
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
@@ -899,7 +908,7 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
     const salaryConfig = (tenantData?.salary_config as Record<string, unknown> | null) || {};
     const isAutoConsumeEnabled = !!salaryConfig.auto_consume_inventory;
 
-    if (!isAutoConsumeEnabled) {
+    if (!isAutoConsumeEnabled && !options.force) {
       console.log(`[autoConsumeForSession] Auto-consumption is disabled for tenant ${tenantId}. Bypassing.`);
       return { success: true, bypassed: true };
     }
@@ -937,7 +946,9 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
         item.itemId,
         item.quantity,
         sessionLogId,
-        'Tự động tiêu hao buổi liệu trình'
+        options.source === 'business_health_repair'
+          ? 'Health repair: tiêu hao buổi liệu trình'
+          : 'Tự động tiêu hao buổi liệu trình'
       );
 
       if (!consumeResult.success) {

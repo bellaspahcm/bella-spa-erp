@@ -700,6 +700,39 @@ describe('inventory write action side effects', () => {
     expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
   });
 
+  it('allows manual repair to force inventory consumption when tenant auto consume is disabled', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: false } } },
+      { table: 'inventory_logs', op: 'select', data: [] },
+      {
+        table: 'package_materials',
+        op: 'select',
+        data: [
+          { quantity_per_session: 2, inventory_items: { id: 'item-1', price_per_unit: 0 } },
+        ],
+      },
+      { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 10 } },
+      { table: 'inventory_items', op: 'update' },
+      { table: 'inventory_logs', op: 'insert' },
+    ]);
+
+    const result = await autoConsumeForSession('pkg-1', 'session-1', {
+      force: true,
+      source: 'business_health_repair',
+    });
+
+    expect(result).toEqual({ success: true, processed: 1, totalCost: 0 });
+    expect(calls.filter(c => c.table === 'inventory_logs' && c.op === 'insert')?.[0]?.payload).toMatchObject({
+      item_id: 'item-1',
+      change_amount: -2,
+      reason: 'session_consumption',
+      session_log_id: 'session-1',
+      notes: 'Health repair: tiêu hao buổi liệu trình',
+      tenant_id: 'tenant-1',
+    });
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
   it('consumes all configured package materials and enqueues accounting outbox', async () => {
     const calls = installScriptedSupabase([
       { table: 'tenants', op: 'select', data: { salary_config: { auto_consume_inventory: true } } },
