@@ -21,6 +21,7 @@ export type RecordRemainingPaymentParams = {
   status?: string;
   revenue_type?: string;
   receipt_url?: string;
+  idempotency_key?: string;
 };
 
 type PaymentBookingSnapshot = {
@@ -37,6 +38,28 @@ type PaymentRpcResult = {
   data: unknown;
   error: { message: string } | null;
 };
+
+function normalizeIdempotencyPart(value: unknown) {
+  return String(value ?? '').trim().replace(/\s+/g, ' ');
+}
+
+export function buildManualPaymentIdempotencyKey(
+  payment: RecordRemainingPaymentParams,
+  receivedDate: string,
+  revenueType = payment.revenue_type || 'remaining_payment'
+) {
+  const normalizedAmount = Number(payment.amount || 0).toFixed(2);
+  return [
+    'manual-payment:v1',
+    normalizeIdempotencyPart(payment.booking_id),
+    normalizeIdempotencyPart(receivedDate),
+    normalizeIdempotencyPart(revenueType).toLowerCase(),
+    normalizedAmount,
+    normalizeIdempotencyPart(payment.payment_method).toLowerCase(),
+    normalizeIdempotencyPart(payment.notes),
+    normalizeIdempotencyPart(payment.receipt_url),
+  ].join('|');
+}
 
 export async function getBookingPaymentSnapshot(
   supabase: SupabaseServerClient,
@@ -96,6 +119,8 @@ export async function recordBookingPaymentRpc(params: {
   const { supabase, payment, tenantId, actorId } = params;
   const receivedDate = getLocalDateString();
   const revenueType = payment.revenue_type || 'remaining_payment';
+  const manualPaymentIdempotencyKey = payment.idempotency_key
+    || buildManualPaymentIdempotencyKey(payment, receivedDate, revenueType);
   const businessEventType = inferBusinessEventType({
     sourceTable: 'revenue',
     revenueType,
@@ -107,6 +132,8 @@ export async function recordBookingPaymentRpc(params: {
     bookingId: payment.booking_id,
     reason: payment.notes,
   });
+  accountingPayload.manual_payment_idempotency_key = manualPaymentIdempotencyKey;
+  accountingPayload.payment_source = 'manual_remaining_payment';
 
   const rpcClient = supabase as unknown as {
     rpc: (
@@ -135,6 +162,7 @@ export async function recordBookingPaymentRpc(params: {
         vatRate: 0,
         description: payment.notes || 'Thanh toán nốt phần còn lại.',
         branchId: tenantId,
+        idempotencyKey: manualPaymentIdempotencyKey,
       },
     }
   );
