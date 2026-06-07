@@ -5,12 +5,25 @@ import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from '@/services/user-actions';
 import { recordAuditLog } from '@/services/audit-actions';
 import { getLocalDateString, getMonthStart } from '@/lib/utils';
+import { createAccountingDataClient } from '@/services/accounting/client';
 import type { Database } from '@/types/database.types';
 
 type SalaryRecordRow = Database['public']['Tables']['salary_records']['Row'];
 type SalaryRecordUpdate = Database['public']['Tables']['salary_records']['Update'];
 type SalaryDisputeInsert = Database['public']['Tables']['salary_disputes']['Insert'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+type SalarySheetRow = {
+  ktv_id: string;
+  base_salary: number | null;
+  session_bonus: number | null;
+  rating_bonus: number | null;
+  kpi_bonus: number | null;
+  deductions: number | null;
+  advances: number | null;
+  total_salary: number | null;
+  total_sessions: number | null;
+  status: string | null;
+};
 export type KtvSalaryConfirmationSession = Pick<
   SessionLogRow,
   'id' | 'completed_date' | 'session_number'
@@ -28,6 +41,45 @@ export type KtvSalaryConfirmation = {
   record: SalaryRecordRow | null;
   sessions: KtvSalaryConfirmationSession[];
 };
+
+function mergeSalarySheetIntoRecord(record: SalaryRecordRow, sheetRow: SalarySheetRow): SalaryRecordRow {
+  return {
+    ...record,
+    base_salary: sheetRow.base_salary ?? record.base_salary,
+    session_bonus: sheetRow.session_bonus ?? record.session_bonus,
+    rating_bonus: sheetRow.rating_bonus ?? record.rating_bonus,
+    kpi_bonus: sheetRow.kpi_bonus ?? record.kpi_bonus,
+    violations_deduction: sheetRow.deductions ?? record.violations_deduction,
+    service_percentage_bonus: sheetRow.advances ?? record.service_percentage_bonus,
+    total_salary: sheetRow.total_salary ?? record.total_salary,
+    total_sessions: sheetRow.total_sessions ?? record.total_sessions,
+  };
+}
+
+async function getCentralSalarySheetRecordForKtv(params: {
+  ktvId: string;
+  tenantId: string;
+  monthYear: string;
+}) {
+  const dataClient = await createAccountingDataClient();
+  const { error: tenantContextError } = await dataClient.rpc('set_session_tenant', {
+    p_tenant_id: params.tenantId,
+  });
+
+  if (tenantContextError) {
+    throw new Error(`Failed to set salary sheet tenant context: ${tenantContextError.message}`);
+  }
+
+  const { data, error } = await dataClient.rpc('calculate_ktv_salary_sheet', {
+    p_month_year: params.monthYear,
+  });
+
+  if (error) {
+    throw new Error(`Failed to fetch central KTV salary sheet: ${error.message}`);
+  }
+
+  return ((data || []) as SalarySheetRow[]).find((row) => row.ktv_id === params.ktvId) ?? null;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -150,6 +202,25 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
     throw new Error(`Failed to fetch KTV salary confirmation record: ${recordError.message}`);
   }
 
+  let resolvedRecord = record;
+  if (record) {
+    if (!currentUser.tenant_id) {
+      throw new Error('Cannot fetch central KTV salary sheet without tenant context');
+    }
+
+    const centralSalaryRow = await getCentralSalarySheetRecordForKtv({
+      ktvId: currentUser.id,
+      tenantId: currentUser.tenant_id,
+      monthYear: monthStr,
+    });
+
+    if (!centralSalaryRow) {
+      throw new Error(`Central KTV salary sheet row not found for ${currentUser.id} in ${monthStr}`);
+    }
+
+    resolvedRecord = mergeSalarySheetIntoRecord(record, centralSalaryRow);
+  }
+
   // Get session details for KTV to cross-check
   const { data: sessions, error: sessionsError } = await supabase
     .from('session_logs')
@@ -165,7 +236,7 @@ export async function getKtvSalaryForConfirmation(month?: string): Promise<KtvSa
   }
 
   return {
-    record,
+    record: resolvedRecord,
     sessions: (sessions || []) as unknown as KtvSalaryConfirmationSession[],
   };
 }
