@@ -6,7 +6,55 @@ import { getCurrentUser } from '../user-actions';
 import { AccountingEngineService } from '../accounting-engine';
 import { createAccountingDataClient } from './client';
 import type { AccountingReferenceType } from '@/lib/accounting-outbox';
+import {
+  classifyAccountingOutboxError,
+  getOutboxAgeMinutes,
+  getOutboxJournalReferenceType,
+  getOutboxOriginHref,
+  getOutboxReplayDiagnostics,
+  isAccountingOutboxStale,
+} from '@/lib/accounting-outbox-monitoring';
+import type { Database } from '@/types/database.types';
 import type { ManualJournalInput } from './types';
+
+type OutboxRow = Database['public']['Tables']['accounting_outbox']['Row'];
+type OutboxUpdate = Database['public']['Tables']['accounting_outbox']['Update'];
+type OutboxReplayRow = Pick<
+  OutboxRow,
+  | 'id'
+  | 'tenant_id'
+  | 'status'
+  | 'event_type'
+  | 'reference_type'
+  | 'reference_id'
+  | 'retry_count'
+  | 'max_retries'
+  | 'last_error'
+  | 'journal_entry_id'
+  | 'created_at'
+  | 'next_retry_at'
+>;
+type ExistingReplayJournal = {
+  id: string;
+  status: string;
+};
+type MarkOutboxCompletedRpcClient = {
+  rpc: (
+    fn: 'mark_outbox_completed',
+    args: { p_outbox_id: string; p_journal_entry_id: string | null }
+  ) => Promise<{ error: { message: string } | null }>;
+};
+
+export type OutboxEventWithDiagnostics = OutboxRow & {
+  age_minutes: number;
+  is_stale: boolean;
+  error_category: string;
+  error_category_label: string;
+  origin_href: string | null;
+  journal_reference_type: string | null;
+  replay_state: string;
+  replay_reason: string;
+};
 
 export async function getJournalEntries(filters?: {
   from_date?: string;
@@ -132,7 +180,7 @@ export async function reverseJournalEntry(entryId: string, reason: string) {
 export async function getOutboxEvents(filters?: {
   status?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'DEAD';
   event_type?: string;
-}) {
+}): Promise<OutboxEventWithDiagnostics[]> {
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Only branch admins can monitor the transactional outbox queue.');
@@ -154,25 +202,154 @@ export async function getOutboxEvents(filters?: {
   const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  const now = new Date();
+
+  return ((data || []) as OutboxRow[]).map((row) => {
+    const errorCategory = classifyAccountingOutboxError(row.last_error);
+    const replay = getOutboxReplayDiagnostics(row.status);
+
+    return {
+      ...row,
+      age_minutes: getOutboxAgeMinutes(row.created_at, now),
+      is_stale: isAccountingOutboxStale(row, now),
+      error_category: errorCategory.category,
+      error_category_label: errorCategory.label,
+      origin_href: getOutboxOriginHref(row.reference_type, row.reference_id),
+      journal_reference_type: getOutboxJournalReferenceType(row.event_type),
+      replay_state: replay.state,
+      replay_reason: replay.reason,
+    };
+  });
 }
 
-export async function replayOutboxEvent(outboxId: string) {
+async function findExistingReplayJournal(
+  supabase: Awaited<ReturnType<typeof createAccountingDataClient>>,
+  tenantId: string,
+  eventType: string,
+  referenceId: string
+): Promise<ExistingReplayJournal | null> {
+  const journalReferenceType = getOutboxJournalReferenceType(eventType);
+  if (!journalReferenceType) return null;
+
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('id,status')
+    .eq('tenant_id', tenantId)
+    .eq('reference_type', journalReferenceType)
+    .eq('reference_id', referenceId)
+    .neq('status', 'CANCELED')
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Khong the kiem tra but toan active truoc khi replay: ${error.message}`);
+  }
+
+  return data ? { id: data.id, status: data.status } : null;
+}
+
+async function markOutboxCompletedFromReplay(
+  supabase: Awaited<ReturnType<typeof createAccountingDataClient>>,
+  outboxId: string,
+  journalEntryId: string
+) {
+  const rpcClient = supabase as unknown as MarkOutboxCompletedRpcClient;
+  const { error } = await rpcClient.rpc('mark_outbox_completed', {
+    p_outbox_id: outboxId,
+    p_journal_entry_id: journalEntryId,
+  });
+
+  if (error) {
+    throw new Error(`Khong the danh dau outbox da hoan tat: ${error.message}`);
+  }
+}
+
+export async function replayOutboxEvent(outboxId: string): Promise<{
+  success: true;
+  action: 'queued_replay' | 'completed_existing_journal';
+  message: string;
+  data: OutboxRow | OutboxReplayRow;
+}> {
   const user = await getCurrentUser();
   if (!user?.tenant_id || !['admin', 'super_admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Only branch admins can trigger outbox retries.');
   }
   const supabase = await createAccountingDataClient();
 
-  // Reset outbox entry to PENDING, retry_count = 0, and clear last error to make cron worker claim it immediately
+  const { data: outbox, error: fetchError } = await supabase
+    .from('accounting_outbox')
+    .select('id, tenant_id, status, event_type, reference_type, reference_id, retry_count, max_retries, last_error, journal_entry_id, created_at, next_retry_at')
+    .eq('id', outboxId)
+    .eq('tenant_id', user.tenant_id)
+    .single();
+
+  if (fetchError || !outbox) {
+    throw new Error(fetchError?.message ?? 'Khong tim thay su kien outbox can replay.');
+  }
+
+  const currentOutbox = outbox as OutboxReplayRow;
+  if (currentOutbox.status === 'COMPLETED') {
+    throw new Error('Outbox da hoan tat, khong can replay.');
+  }
+  if (currentOutbox.status === 'PROCESSING') {
+    throw new Error('Outbox dang duoc worker xu ly, khong replay de tranh tao but toan lap.');
+  }
+  if (!['FAILED', 'DEAD'].includes(currentOutbox.status)) {
+    throw new Error('Chi replay cac outbox dang FAILED hoac DEAD.');
+  }
+
+  const existingJournal = await findExistingReplayJournal(
+    supabase,
+    user.tenant_id,
+    currentOutbox.event_type,
+    currentOutbox.reference_id
+  );
+
+  if (existingJournal?.status === 'POSTED') {
+    await markOutboxCompletedFromReplay(supabase, currentOutbox.id, existingJournal.id);
+
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'accounting_outbox',
+      record_id: outboxId,
+      old_data: {
+        status: currentOutbox.status,
+        retry_count: currentOutbox.retry_count,
+        last_error: currentOutbox.last_error,
+      },
+      new_data: {
+        status: 'COMPLETED',
+        completed_from_existing_journal: existingJournal.id,
+        reset_by: user.id,
+      },
+    });
+
+    await safeRevalidatePath('/dashboard/accounting/outbox');
+    return {
+      success: true,
+      action: 'completed_existing_journal',
+      message: 'Da co but toan POSTED, da danh dau outbox hoan tat ma khong post lai.',
+      data: {
+        ...currentOutbox,
+        status: 'COMPLETED',
+        journal_entry_id: existingJournal.id,
+      },
+    };
+  }
+
+  if (existingJournal) {
+    throw new Error(`Da co but toan ${existingJournal.status} cho nghiep vu nay. Khong replay tu dong de tranh lech so.`);
+  }
+
+  const replayPayload: OutboxUpdate = {
+    status: 'PENDING',
+    retry_count: 0,
+    last_error: null,
+    next_retry_at: new Date().toISOString(),
+  };
+
   const { data, error } = await supabase
     .from('accounting_outbox')
-    .update({
-      status: 'PENDING',
-      retry_count: 0,
-      last_error: null,
-      next_retry_at: new Date().toISOString(),
-    })
+    .update(replayPayload)
     .eq('id', outboxId)
     .eq('tenant_id', user.tenant_id)
     .select()
@@ -184,11 +361,21 @@ export async function replayOutboxEvent(outboxId: string) {
     action: 'UPDATE',
     table_name: 'accounting_outbox',
     record_id: outboxId,
+    old_data: {
+      status: currentOutbox.status,
+      retry_count: currentOutbox.retry_count,
+      last_error: currentOutbox.last_error,
+    },
     new_data: { status: 'PENDING', reset_by: user.id },
   });
 
   await safeRevalidatePath('/dashboard/accounting/outbox');
-  return { success: true, data };
+  return {
+    success: true,
+    action: 'queued_replay',
+    message: 'Da dua outbox ve PENDING de worker xu ly lai.',
+    data: data as OutboxRow,
+  };
 }
 
 export async function postManualJournalEntry(input: ManualJournalInput) {

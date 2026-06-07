@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -9,7 +10,10 @@ import {
   Play,
   Clock,
   Eye,
-  X
+  X,
+  AlertTriangle,
+  Timer,
+  ExternalLink
 } from 'lucide-react';
 import { getOutboxEvents, replayOutboxEvent } from '@/services/accounting-actions';
 import { toast } from 'sonner';
@@ -23,15 +27,16 @@ type OutboxStatusFilter = 'ALL' | NonNullable<OutboxFilters['status']>;
 
 const statuses: { value: OutboxStatusFilter; label: string }[] = [
   { value: 'ALL', label: 'TẤT CẢ EVENTS' },
-  { value: 'PENDING', label: 'PENDING (ĐANG CHỜ)' },
-  { value: 'COMPLETED', label: 'COMPLETED (THÀNH CÔNG)' },
-  { value: 'FAILED', label: 'FAILED (TẠM LỖI)' },
-  { value: 'DEAD', label: 'DEAD (KẸT NGHIÊM TRỌNG)' },
+  { value: 'PENDING', label: 'PENDING' },
+  { value: 'PROCESSING', label: 'PROCESSING' },
+  { value: 'COMPLETED', label: 'COMPLETED' },
+  { value: 'FAILED', label: 'FAILED' },
+  { value: 'DEAD', label: 'DEAD' },
 ];
 
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
-const tableClassName = 'w-max min-w-[76rem] border-collapse whitespace-nowrap';
+const tableClassName = 'w-max min-w-[92rem] border-collapse whitespace-nowrap';
 const stickyHeaderCellClassName =
   'bg-slate-50 dark:bg-[#11100F]';
 const stickyBodyCellClassName =
@@ -77,7 +82,7 @@ export default function OutboxMonitorPage() {
     try {
       const res = await replayOutboxEvent(outboxId);
       if (res.success) {
-        toast.success(`Đã xếp lịch hạch toán lại cho sự kiện "${eventType}" thành công!`);
+        toast.success(res.message || `Đã xử lý replay cho sự kiện "${eventType}" thành công!`);
         await fetchOutbox();
       } else {
         toast.error(`Không thể xếp lịch hạch toán lại cho sự kiện "${eventType}".`);
@@ -89,6 +94,19 @@ export default function OutboxMonitorPage() {
       setRefreshing(false);
     }
   };
+
+  const summary = events.reduce(
+    (acc, event) => {
+      if (event.status === 'PENDING') acc.pending += 1;
+      if (event.status === 'PROCESSING') acc.processing += 1;
+      if (event.status === 'FAILED') acc.failed += 1;
+      if (event.status === 'DEAD') acc.dead += 1;
+      if (event.is_stale) acc.stale += 1;
+      if (event.replay_state === 'ready') acc.replayable += 1;
+      return acc;
+    },
+    { pending: 0, processing: 0, failed: 0, dead: 0, stale: 0, replayable: 0 }
+  );
 
   return (
     <div className="space-y-8 relative">
@@ -118,15 +136,46 @@ export default function OutboxMonitorPage() {
       </div>
 
       {/* ── QUEUE LIST TABLE ── */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+        {[
+          { label: 'Đang chờ', value: summary.pending, tone: 'bg-blue-50 text-blue-600' },
+          { label: 'Đang xử lý', value: summary.processing, tone: 'bg-yellow-50 text-yellow-600' },
+          { label: 'Tạm lỗi', value: summary.failed, tone: 'bg-amber-50 text-amber-600' },
+          { label: 'Kẹt nặng', value: summary.dead, tone: 'bg-red-50 text-red-600' },
+          { label: 'Bị treo', value: summary.stale, tone: 'bg-fuchsia-50 text-fuchsia-600' },
+          { label: 'Replay được', value: summary.replayable, tone: 'bg-emerald-50 text-emerald-600' },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-[#3E3A35]/50 dark:bg-[#1C1B19]"
+          >
+            <p className="text-4xs font-black uppercase tracking-widest text-slate-400 dark:text-[#CDBCAB]/60">{item.label}</p>
+            <div className={`mt-2 inline-flex min-w-12 items-center justify-center rounded-xl px-3 py-1.5 text-sm font-black ${item.tone}`}>
+              {item.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-6 md:p-8 shadow-sm">
-        <div className="flex items-center justify-between mb-6 border-b border-slate-50 dark:border-[#3E3A35]/30 pb-4">
+        <div className="flex flex-col gap-3 mb-6 border-b border-slate-50 dark:border-[#3E3A35]/30 pb-4 md:flex-row md:items-center md:justify-between">
           <h4 className="text-base font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider flex items-center gap-2">
             <Activity className="w-5.5 h-5.5 text-primary" />
             Bảng Giám sát Hàng đợi Hạch toán (Transactional Outbox Queue)
           </h4>
-          <span className="text-xs font-bold text-slate-400 dark:text-[#CDBCAB]/60">
-            Tổng cộng: <span className="text-slate-900 dark:text-[#EFE9E1] font-black">{events.length}</span> events
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-400 dark:text-[#CDBCAB]/60">
+              Tổng cộng: <span className="text-slate-900 dark:text-[#EFE9E1] font-black">{events.length}</span> events
+            </span>
+            <button
+              onClick={fetchOutbox}
+              disabled={refreshing}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-3xs font-black uppercase tracking-widest text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-60 dark:border-[#3E3A35] dark:bg-[#11100F] dark:text-[#CDBCAB]"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              Làm mới
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -143,6 +192,7 @@ export default function OutboxMonitorPage() {
                 <tr className="text-left bg-slate-50/50 dark:bg-[#11100F]/40 border-b border-slate-100 dark:border-[#3E3A35]/30">
                   <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Loại Sự kiện (Event)</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Chứng từ Gốc (Ref)</th>
+                  <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Chẩn đoán</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Lần thử lại</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest">Lỗi chi tiết (Last Error)</th>
                   <th className="px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest text-center">Trạng thái</th>
@@ -153,7 +203,7 @@ export default function OutboxMonitorPage() {
                 {events.map((ev) => {
                   const isDead = ev.status === 'DEAD';
                   const isFailed = ev.status === 'FAILED';
-                  const canReplay = isDead || isFailed;
+                  const canReplay = (isDead || isFailed) && ev.replay_state === 'ready';
 
                   const statusColors: Record<string, string> = {
                     'PENDING': 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 border-blue-100/50',
@@ -173,6 +223,11 @@ export default function OutboxMonitorPage() {
                         <div className="max-w-[18rem]">
                           <p className="text-xs font-black text-slate-800 dark:text-[#EFE9E1] leading-snug">{ev.event_type}</p>
                           <span className="text-4xs font-mono text-slate-400 dark:text-[#CDBCAB]/40 mt-1 block">ID: {ev.id}</span>
+                          {ev.journal_reference_type && (
+                            <span className="mt-1 block text-4xs font-bold text-slate-400 dark:text-[#CDBCAB]/45">
+                              Journal ref: {ev.journal_reference_type}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -182,6 +237,36 @@ export default function OutboxMonitorPage() {
                           </span>
                           <span className="text-4xs font-mono text-slate-400 dark:text-[#CDBCAB]/40 truncate block max-w-40">
                             {ev.reference_id}
+                          </span>
+                          {ev.origin_href && (
+                            <Link
+                              href={ev.origin_href}
+                              className="inline-flex w-fit items-center gap-1 text-4xs font-black uppercase tracking-widest text-primary hover:text-primary-hover"
+                            >
+                              Mở nguồn
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex max-w-[16rem] flex-col gap-1.5">
+                          <span className={`inline-flex w-fit items-center gap-1 rounded-lg px-2.5 py-1 text-4xs font-black uppercase tracking-widest ${
+                            ev.error_category === 'none'
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : 'bg-amber-50 text-amber-600'
+                          }`}>
+                            {ev.error_category !== 'none' && <AlertTriangle className="h-3 w-3" />}
+                            {ev.error_category_label}
+                          </span>
+                          <span className={`inline-flex w-fit items-center gap-1 rounded-lg px-2.5 py-1 text-4xs font-black uppercase tracking-widest ${
+                            ev.is_stale ? 'bg-fuchsia-50 text-fuchsia-600' : 'bg-slate-50 text-slate-400'
+                          }`}>
+                            <Timer className="h-3 w-3" />
+                            {ev.age_minutes} phút {ev.is_stale ? 'treo' : 'tuổi'}
+                          </span>
+                          <span className="whitespace-normal text-4xs font-bold leading-snug text-slate-400 dark:text-[#CDBCAB]/45">
+                            {ev.replay_reason}
                           </span>
                         </div>
                       </td>

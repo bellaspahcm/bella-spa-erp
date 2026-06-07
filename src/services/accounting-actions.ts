@@ -3,6 +3,10 @@
 // continue to resolve. Types re-exported from the plain ./accounting/types module.
 
 export type {
+  OutboxEventWithDiagnostics,
+} from './accounting/journals';
+
+export type {
   AccountingEventTemplate,
   AccountingBackfillResult,
   AccountingDuplicateJournalReference,
