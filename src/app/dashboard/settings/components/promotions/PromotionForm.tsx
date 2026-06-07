@@ -2,7 +2,7 @@
 
 import { Calendar, Percent, Plus, RefreshCw, Tag } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { parsePercentInput } from '@/lib/utils';
+import { normalizePromotionDiscountPercent } from '@/lib/business-rules/promotion';
 import type { PromotionFormState } from './types';
 
 interface PromotionFormProps {
@@ -84,7 +84,7 @@ export function PromotionForm({
               onChange={(event) => onChange({
                 discountPercent: event.target.value === ''
                   ? ''
-                  : String(parsePercentInput(event.target.value)),
+                  : String(normalizePromotionDiscountPercent(event.target.value) ?? 0),
               })}
               placeholder="10"
               className="w-full px-5 py-3 bg-white/50 border border-pink-100 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-sm"

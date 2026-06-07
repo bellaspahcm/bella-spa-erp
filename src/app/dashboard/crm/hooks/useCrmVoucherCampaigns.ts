@@ -2,7 +2,10 @@
 
 import type { FormEvent } from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { parsePercentInput } from '@/lib/utils';
+import {
+  buildVoucherPromotionPayload,
+  normalizePromotionDiscountPercent,
+} from '@/lib/business-rules/promotion';
 import { createPromotion, getPromotions } from '@/services/promotions-actions';
 import type { Database } from '@/types/database.types';
 import type { NewVoucherCampaign, VoucherCampaign } from '../types';
@@ -26,7 +29,7 @@ function promotionToVoucher(promotion: PromotionRow): VoucherCampaign {
   return {
     id: promotion.id,
     code: promotion.discount_code || promotion.title,
-    discount: parsePercentInput(promotion.discount_percent),
+    discount: normalizePromotionDiscountPercent(promotion.discount_percent) ?? 0,
     target: promotion.description,
     status: promotion.is_active ? 'active' : 'paused',
     usage: 0,
@@ -74,15 +77,13 @@ export function useCrmVoucherCampaigns() {
     event.preventDefault();
     if (!newVoucher.code.trim()) return;
 
-    const promotionPayload = {
-      title: newVoucher.code.trim(),
-      description: newVoucher.target,
-      discount_code: newVoucher.code.trim().toUpperCase(),
-      discount_percent: parsePercentInput(newVoucher.discount),
-      is_active: newVoucher.status === 'active',
-    };
+    const promotionPayload = buildVoucherPromotionPayload(newVoucher);
+    if (!promotionPayload.success) {
+      setVoucherError(`Không thể tạo voucher: ${promotionPayload.error}`);
+      return;
+    }
 
-    const result = await createPromotion(promotionPayload);
+    const result = await createPromotion(promotionPayload.payload);
     if (!result.success) {
       setVoucherError(`Không thể tạo voucher: ${result.error || 'Lỗi không xác định'}`);
       return;

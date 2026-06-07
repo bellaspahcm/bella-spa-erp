@@ -9,14 +9,14 @@ function read(relativePath: string) {
 
 describe('Public promotions UI source contracts', () => {
   it('uses typed shared promotion helpers instead of promo any mappings', () => {
-    const landingSource = read('src/app/page.tsx');
+    const landingHookSource = read('src/components/features/landing/useLandingData.ts');
     const portalSource = read('src/app/portal/[token]/page.tsx');
     const helperSource = read('src/lib/promotions.ts');
 
-    expect(landingSource).toContain('filterActivePromotions');
-    expect(landingSource).toContain('useState<Promotion[]>');
-    expect(landingSource).not.toContain('promo: any');
-    expect(landingSource).not.toContain('useState<any[]>([])');
+    expect(landingHookSource).toContain('filterActivePromotions');
+    expect(landingHookSource).toContain('useState<Promotion[]>');
+    expect(landingHookSource).not.toContain('promo: any');
+    expect(landingHookSource).not.toContain('useState<any[]>([])');
     expect(portalSource).toContain('import type { CustomerPortalBooking }');
     expect(portalSource).toContain('booking.active_promotions.map');
     expect(portalSource).not.toContain('as Promotion[]');

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { buildPromotionPayload } from '@/lib/business-rules/promotion';
 import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';
@@ -180,19 +181,13 @@ export async function createPromotion(payload: {
     return { success: false, error: 'Không xác định được chi nhánh của người dùng.' };
   }
 
-  if (!payload.title || !payload.description) {
-    return { success: false, error: 'Tiêu đề và Mô tả là bắt buộc.' };
+  const promotionPayload = buildPromotionPayload(payload);
+  if (!promotionPayload.success) {
+    return { success: false, error: promotionPayload.error };
   }
 
   const insertData: PromotionInsert = {
-    title: payload.title,
-    description: payload.description,
-    image_url: payload.image_url ?? null,
-    discount_code: payload.discount_code ?? null,
-    discount_percent: payload.discount_percent !== undefined ? Number(payload.discount_percent) : null,
-    start_date: payload.start_date ?? null,
-    end_date: payload.end_date ?? null,
-    is_active: payload.is_active !== undefined ? payload.is_active : true,
+    ...promotionPayload.payload,
     tenant_id: tenantId,
   };
 

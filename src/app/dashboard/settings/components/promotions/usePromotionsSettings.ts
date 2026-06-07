@@ -3,7 +3,7 @@
 import type { FormEvent } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { parsePercentInput } from '@/lib/utils';
+import { buildPromotionPayload } from '@/lib/business-rules/promotion';
 import {
   createPromotion,
   deletePromotion,
@@ -61,15 +61,22 @@ export function usePromotionsSettings() {
 
     setIsSubmitting(true);
     try {
-      const result = await createPromotion({
+      const promotionPayload = buildPromotionPayload({
         title: form.title.trim(),
         description: form.description.trim(),
         discount_code: form.discountCode.trim() || null,
-        discount_percent: form.discountPercent ? parsePercentInput(form.discountPercent) : null,
+        discount_percent: form.discountPercent,
         start_date: form.startDate || null,
         end_date: form.endDate || null,
         is_active: true,
       });
+
+      if (!promotionPayload.success) {
+        toast.error(promotionPayload.error);
+        return;
+      }
+
+      const result = await createPromotion(promotionPayload.payload);
 
       if (!result.success) {
         toast.error(`Lỗi khi thêm khuyến mãi: ${result.error}`);
