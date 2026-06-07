@@ -12,7 +12,7 @@ import {
   calculateSessionCommissionBonus,
   calculateWeightedSessionCount,
 } from './salary-attendance-calculation';
-import { calculateSalaryTotal } from '@/lib/business-rules/salary';
+import { calculateSalaryTotal, isDraftSalaryRecord } from '@/lib/business-rules/salary';
 
 interface KtvUserDataAdmin {
   id: string;
@@ -205,7 +205,7 @@ export async function recalculateAndSaveSalaryRecordEngine(
   const rawBaseSalary = ktv?.base_salary ?? 6000000;
   let proRataNote = '';
 
-  const isDraft = !existing || existing.status === 'draft';
+  const isDraft = isDraftSalaryRecord(existing);
   const hasFinancialOverrides =
     overrides?.base_salary !== undefined ||
     overrides?.kpi_bonus !== undefined ||
