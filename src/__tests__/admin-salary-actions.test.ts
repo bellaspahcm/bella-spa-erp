@@ -174,6 +174,53 @@ function setupDb(scripts: ScriptedResult[]) {
   return calls;
 }
 
+describe('admin salary auth guard', () => {
+  const salaryAuthError = 'Không xác định được chi nhánh của người dùng';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'ktv-1',
+      role: 'ktv',
+      tenant_id: 'tenant-1',
+      full_name: 'KTV Bella',
+    });
+  });
+
+  it('blocks tenant users without salary-admin roles before side effects', async () => {
+    const protectedActions = [
+      () => publishSalaryRecord('ktv-1'),
+      () => publishAllSalaryRecords(),
+      () => adminConfirmOnBehalf('ktv-1'),
+      () => finalizeSalaryRecord('ktv-1'),
+      () => finalizeAllSalaryRecords(),
+      () => checkAndAutoConfirm(),
+      () => approveSalary('ktv-1'),
+      () => updateSalaryConfig('ktv-1', {
+        baseSalary: 6000000,
+        kpiBonus: 500000,
+        deductions: 150000,
+        advances: 250000,
+      }),
+      () => confirmKtvSessions('ktv-1', 12),
+    ];
+
+    for (const runAction of protectedActions) {
+      const result = await runAction();
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain(salaryAuthError);
+    }
+
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockCheckMonthLock).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRecalculateAndSaveSalaryRecordEngine).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
 describe('publishSalaryRecord audit rollback', () => {
   beforeEach(() => {
     jest.clearAllMocks();
