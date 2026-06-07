@@ -224,3 +224,87 @@ export interface AccountingHealthSummary {
   warnings: AccountingHealthCheck[];
   duplicate_journal_references: AccountingDuplicateJournalReference[];
 }
+
+export type BusinessHealthSeverity = 'healthy' | 'warning' | 'critical';
+
+export type BusinessHealthFindingSeverity = 'critical' | 'warning';
+
+export type BusinessHealthRepairAction =
+  | 'replay_outbox'
+  | 'run_metadata_backfill'
+  | 'sync_paid_deposit_booking_status'
+  | 'sync_booking_completed_sessions'
+  | 'create_missing_inventory_consumption'
+  | 'enqueue_missing_session_done_accounting'
+  | 'enqueue_missing_inventory_consumed_accounting'
+  | 'enqueue_missing_package_sale_accounting';
+
+export interface BusinessHealthFindingDetail {
+  label: string;
+  value: string;
+}
+
+export interface BusinessHealthFinding {
+  id: string;
+  group: string;
+  group_label: string;
+  severity: BusinessHealthFindingSeverity;
+  code: string;
+  title: string;
+  message: string;
+  action_label: string;
+  href: string;
+  details: BusinessHealthFindingDetail[];
+  repair_action?: BusinessHealthRepairAction;
+  repair_target_id?: string;
+  repair_label?: string;
+  repair_requires_confirmation?: boolean;
+}
+
+export interface BusinessHealthGroup {
+  id: string;
+  label: string;
+  description: string;
+  status: AccountingHealthStatus;
+  critical_count: number;
+  warning_count: number;
+  checked_count: number;
+  href: string;
+  action_label: string;
+}
+
+export interface BusinessHealthDatasetCounts {
+  bookings: number;
+  revenue: number;
+  session_logs: number;
+  salary_records: number;
+  packages: number;
+  package_materials: number;
+  inventory_items: number;
+  inventory_logs: number;
+  journal_entries: number;
+  journal_lines: number;
+  accounting_outbox: number;
+}
+
+export interface BusinessHealthSummary {
+  generated_at: string;
+  month: string;
+  severity: BusinessHealthSeverity;
+  score: number;
+  checked_groups: number;
+  critical_count: number;
+  warning_count: number;
+  can_operate_cleanly: boolean;
+  dataset_counts: BusinessHealthDatasetCounts;
+  groups: BusinessHealthGroup[];
+  findings: BusinessHealthFinding[];
+  blockers: BusinessHealthFinding[];
+  warnings: BusinessHealthFinding[];
+}
+
+export interface BusinessHealthRepairResult {
+  success: true;
+  action: BusinessHealthRepairAction;
+  message: string;
+}

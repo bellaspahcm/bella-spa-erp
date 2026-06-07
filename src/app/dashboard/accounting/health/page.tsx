@@ -7,7 +7,9 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  Database,
   FileWarning,
+  ListChecks,
   RefreshCw,
   ShieldCheck,
   XCircle,
@@ -16,9 +18,14 @@ import {
 import { toast } from 'sonner';
 import {
   getAccountingHealthSummary,
+  getBusinessHealthSummary,
+  runBusinessHealthRepairAction,
   type AccountingHealthCheck,
   type AccountingHealthSeverity,
   type AccountingHealthSummary,
+  type BusinessHealthFinding,
+  type BusinessHealthGroup,
+  type BusinessHealthSeverity,
 } from '@/services/accounting-actions';
 import SkeletonLoader, { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
@@ -60,6 +67,42 @@ const CHECK_TONE: Record<AccountingHealthCheck['status'], string> = {
   fail: 'bg-rose-50 text-rose-700 border-rose-200',
 };
 
+const BUSINESS_SEVERITY_TONE: Record<BusinessHealthSeverity, {
+  label: string;
+  icon: LucideIcon;
+  text: string;
+  bg: string;
+  border: string;
+}> = {
+  healthy: {
+    label: 'Dữ liệu sạch',
+    icon: CheckCircle2,
+    text: 'text-emerald-700 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+    border: 'border-emerald-200 dark:border-emerald-500/30',
+  },
+  warning: {
+    label: 'Cần rà soát',
+    icon: AlertTriangle,
+    text: 'text-amber-700 dark:text-amber-400',
+    bg: 'bg-amber-50 dark:bg-amber-500/10',
+    border: 'border-amber-200 dark:border-amber-500/30',
+  },
+  critical: {
+    label: 'Có lỗi chặn',
+    icon: XCircle,
+    text: 'text-rose-700 dark:text-rose-400',
+    bg: 'bg-rose-50 dark:bg-rose-500/10',
+    border: 'border-rose-200 dark:border-rose-500/30',
+  },
+};
+
+const BUSINESS_GROUP_TONE: Record<BusinessHealthGroup['status'], string> = {
+  pass: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400',
+  warn: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400',
+  fail: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400',
+};
+
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
 const stickyBodyCellClassName =
@@ -78,12 +121,19 @@ export default function AccountingHealthPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [summary, setSummary] = useState<AccountingHealthSummary | null>(null);
+  const [businessSummary, setBusinessSummary] = useState<Awaited<ReturnType<typeof getBusinessHealthSummary>> | null>(null);
+  const [repairingFindingId, setRepairingFindingId] = useState<string | null>(null);
+  const [confirmingRepairFinding, setConfirmingRepairFinding] = useState<BusinessHealthFinding | null>(null);
 
   const loadData = useCallback(async (monthValue = month) => {
     setRefreshing(true);
     try {
-      const data = await getAccountingHealthSummary(`${monthValue}-01`);
-      setSummary(data);
+      const [accountingData, businessData] = await Promise.all([
+        getAccountingHealthSummary(`${monthValue}-01`),
+        getBusinessHealthSummary(`${monthValue}-01`),
+      ]);
+      setSummary(accountingData);
+      setBusinessSummary(businessData);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Không thể tải sức khỏe sổ kế toán.';
       toast.error(message);
@@ -99,6 +149,35 @@ export default function AccountingHealthPage() {
 
   usePageRefresh(() => loadData(month));
 
+  const executeRepairFinding = async (finding: BusinessHealthFinding) => {
+    if (!finding.repair_action) return;
+
+    setRepairingFindingId(finding.id);
+    try {
+      const result = await runBusinessHealthRepairAction({
+        action: finding.repair_action,
+        targetId: finding.repair_target_id,
+      });
+      toast.success(result.message);
+      await loadData(month);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể xử lý nhanh cảnh báo dữ liệu.';
+      toast.error(message);
+    } finally {
+      setRepairingFindingId(null);
+      setConfirmingRepairFinding(null);
+    }
+  };
+
+  const handleRepairFinding = async (finding: BusinessHealthFinding) => {
+    if (finding.repair_requires_confirmation) {
+      setConfirmingRepairFinding(finding);
+      return;
+    }
+
+    await executeRepairFinding(finding);
+  };
+
   const severity = summary?.severity ?? 'warning';
   const tone = SEVERITY_TONE[severity];
   const StatusIcon = tone.icon;
@@ -106,8 +185,15 @@ export default function AccountingHealthPage() {
     () => [...(summary?.blockers ?? []), ...(summary?.warnings ?? [])],
     [summary]
   );
+  const businessAttentionItems = useMemo(
+    () => [...(businessSummary?.blockers ?? []), ...(businessSummary?.warnings ?? [])],
+    [businessSummary]
+  );
   const failedOutbox = (summary?.metrics.outbox_failed ?? 0) + (summary?.metrics.outbox_dead ?? 0);
   const pendingOutbox = (summary?.metrics.outbox_pending ?? 0) + (summary?.metrics.outbox_processing ?? 0);
+  const businessSeverity = businessSummary?.severity ?? 'warning';
+  const businessTone = BUSINESS_SEVERITY_TONE[businessSeverity];
+  const BusinessStatusIcon = businessTone.icon;
 
   return (
     <div className="space-y-6">
@@ -182,6 +268,139 @@ export default function AccountingHealthPage() {
                 tone={(summary?.metrics.readiness_score ?? 0) >= 95 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}
               />
             </>
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-3xl md:rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 md:p-8 shadow-sm">
+        <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-5 mb-6">
+          <div className="flex items-start gap-4">
+            <div className={cn('w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border', businessTone.bg, businessTone.border)}>
+              <BusinessStatusIcon className={cn('w-6 h-6', businessTone.text)} />
+            </div>
+            <div>
+              <p className="text-3xs font-black uppercase tracking-[0.22em] text-slate-400 dark:text-[#CDBCAB]/60">
+                Operational data health
+              </p>
+              <h3 className="mt-2 text-lg md:text-xl font-black uppercase tracking-tight text-slate-950 dark:text-[#EFE9E1]">
+                Sức khỏe dữ liệu vận hành
+              </h3>
+              <p className="mt-2 max-w-3xl text-xs md:text-sm font-medium leading-relaxed text-slate-600 dark:text-[#CDBCAB]/75">
+                Quét các liên kết giữa thanh toán, booking, doanh thu, ca làm, kho, lương và hạch toán để phát hiện dữ liệu lệch trước khi vận hành tiếp.
+              </p>
+            </div>
+          </div>
+          <span className={cn('inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border px-4 py-2 text-3xs font-black uppercase tracking-widest', businessTone.text, businessTone.border, businessTone.bg)}>
+            <BusinessStatusIcon className="h-3.5 w-3.5" />
+            {businessTone.label}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {loading ? (
+            [1, 2, 3, 4].map((item) => <SkeletonLoader key={item} variant="card" className="h-24" />)
+          ) : (
+            <>
+              <MetricCard
+                icon={ShieldCheck}
+                label="Điểm dữ liệu"
+                value={`${businessSummary?.score ?? 0}/100`}
+                tone={(businessSummary?.score ?? 0) >= 90 ? 'text-emerald-700 dark:text-emerald-400' : (businessSummary?.score ?? 0) >= 70 ? 'text-amber-700 dark:text-amber-400' : 'text-rose-700 dark:text-rose-400'}
+              />
+              <MetricCard
+                icon={XCircle}
+                label="Lỗi chặn"
+                value={formatNumber(businessSummary?.critical_count ?? 0)}
+                tone={(businessSummary?.critical_count ?? 0) > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'}
+              />
+              <MetricCard
+                icon={AlertTriangle}
+                label="Cảnh báo"
+                value={formatNumber(businessSummary?.warning_count ?? 0)}
+                tone={(businessSummary?.warning_count ?? 0) > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}
+              />
+              <MetricCard
+                icon={ListChecks}
+                label="Nhóm đã quét"
+                value={formatNumber(businessSummary?.checked_groups ?? 0)}
+                tone="text-slate-800 dark:text-[#EFE9E1]"
+              />
+            </>
+          )}
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3">
+          {loading ? (
+            [1, 2, 3, 4, 5, 6].map((item) => <SkeletonLoader key={item} variant="card" className="h-24" />)
+          ) : (
+            (businessSummary?.groups ?? []).map((group) => (
+              <BusinessGroupCard key={group.id} group={group} />
+            ))
+          )}
+        </div>
+
+        <div className="mt-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div>
+              <h4 className="text-sm font-black uppercase tracking-wider text-slate-950 dark:text-[#EFE9E1]">
+                Việc cần xử lý
+              </h4>
+              <p className="mt-1 text-2xs font-medium text-slate-500 dark:text-[#CDBCAB]/60">
+                Lỗi chặn cần xử lý trước; cảnh báo là dữ liệu cần rà soát hoặc bản ghi lịch sử.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-slate-50 dark:bg-[#11100F] px-3 py-1.5 text-3xs font-black uppercase tracking-widest text-slate-500 dark:text-[#CDBCAB]/70">
+              <Database className="h-3.5 w-3.5" />
+              {formatNumber(
+                (businessSummary?.dataset_counts.bookings ?? 0) +
+                (businessSummary?.dataset_counts.revenue ?? 0) +
+                (businessSummary?.dataset_counts.session_logs ?? 0) +
+                (businessSummary?.dataset_counts.salary_records ?? 0)
+              )} bản ghi lõi
+            </span>
+          </div>
+
+          {loading ? (
+            <SkeletonTable />
+          ) : businessAttentionItems.length === 0 ? (
+            <div className="py-10 text-center">
+              <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500" />
+              <p className="mt-3 text-xs font-black uppercase tracking-wider text-slate-700 dark:text-[#EFE9E1]">
+                Không phát hiện lỗi dữ liệu vận hành
+              </p>
+              <p className="mt-1 text-2xs font-medium text-slate-400">Các rule liên module đang sạch tại thời điểm quét.</p>
+            </div>
+          ) : (
+            <div className={tableWrapperClassName}>
+              <table className="bella-data-table min-w-[78rem] text-xs whitespace-nowrap">
+                <colgroup>
+                  <col className="w-[22rem]" />
+                  <col className="w-[14rem]" />
+                  <col className="w-[10rem]" />
+                  <col className="w-[28rem]" />
+                  <col className="w-[10rem]" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-slate-100 dark:border-[#3E3A35]/50 text-left">
+                    <th className="py-3 pr-4 text-3xs font-black uppercase tracking-widest text-slate-400">Vấn đề</th>
+                    <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400">Nhóm</th>
+                    <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400">Mức độ</th>
+                    <th className="py-3 px-4 text-3xs font-black uppercase tracking-widest text-slate-400">Dữ liệu liên quan</th>
+                    <th className="py-3 pl-4 text-3xs font-black uppercase tracking-widest text-slate-400 text-right">Xử lý</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/30">
+                  {businessAttentionItems.map((finding) => (
+                    <BusinessFindingRow
+                      key={finding.id}
+                      finding={finding}
+                      isRepairing={repairingFindingId === finding.id}
+                      onRepair={handleRepairFinding}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </section>
@@ -322,6 +541,15 @@ export default function AccountingHealthPage() {
           </div>
         )}
       </section>
+
+      {confirmingRepairFinding ? (
+        <RepairConfirmModal
+          finding={confirmingRepairFinding}
+          isRepairing={repairingFindingId === confirmingRepairFinding.id}
+          onCancel={() => setConfirmingRepairFinding(null)}
+          onConfirm={() => executeRepairFinding(confirmingRepairFinding)}
+        />
+      ) : null}
     </div>
   );
 }
@@ -344,6 +572,185 @@ function MetricCard({
         <Icon className={cn('w-5 h-5', tone)} />
       </div>
       <div className={cn('mt-4 text-2xl font-black tracking-tight', tone)}>{value}</div>
+    </div>
+  );
+}
+
+function BusinessGroupCard({ group }: { group: BusinessHealthGroup }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 dark:border-[#3E3A35]/50 bg-slate-50/70 dark:bg-[#11100F]/50 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-black text-slate-900 dark:text-[#EFE9E1]">{group.label}</p>
+          <p className="mt-1 line-clamp-2 text-3xs font-medium leading-relaxed text-slate-500 dark:text-[#CDBCAB]/65">
+            {group.description}
+          </p>
+        </div>
+        <span className={cn('shrink-0 rounded-full border px-2.5 py-1 text-4xs font-black uppercase tracking-widest', BUSINESS_GROUP_TONE[group.status])}>
+          {group.status === 'pass' ? 'Sạch' : group.status === 'warn' ? 'Rà soát' : 'Lỗi'}
+        </span>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-3xs font-black uppercase tracking-widest">
+          <span className={cn(group.critical_count > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-400')}>
+            {formatNumber(group.critical_count)} lỗi
+          </span>
+          <span className="text-slate-300">/</span>
+          <span className={cn(group.warning_count > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-slate-400')}>
+            {formatNumber(group.warning_count)} cảnh báo
+          </span>
+        </div>
+        <Link
+          href={group.href}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-white dark:bg-[#1C1B19] px-3 py-1.5 text-4xs font-black uppercase tracking-widest text-slate-600 dark:text-[#CDBCAB] hover:text-primary"
+        >
+          {group.action_label}
+          <ArrowRight className="w-3 h-3" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function BusinessFindingRow({
+  finding,
+  isRepairing,
+  onRepair,
+}: {
+  finding: BusinessHealthFinding;
+  isRepairing: boolean;
+  onRepair: (finding: BusinessHealthFinding) => void;
+}) {
+  const isCritical = finding.severity === 'critical';
+  const tone = isCritical
+    ? 'bg-rose-50 text-rose-700 border-rose-200'
+    : 'bg-amber-50 text-amber-700 border-amber-200';
+
+  return (
+    <tr>
+      <td className={`${stickyBodyCellClassName} py-4 pr-4 min-w-[280px]`}>
+        <div className="font-black text-slate-900 dark:text-[#EFE9E1]">{finding.title}</div>
+        <div className="mt-1 max-w-[24rem] whitespace-normal text-3xs font-medium leading-relaxed text-slate-500 dark:text-[#CDBCAB]/60">
+          {finding.message}
+        </div>
+      </td>
+      <td className="py-4 px-4 font-bold text-slate-700 dark:text-[#CDBCAB]">{finding.group_label}</td>
+      <td className="py-4 px-4">
+        <span className={cn('inline-flex rounded-full border px-3 py-1 text-4xs font-black uppercase tracking-widest', tone)}>
+          {isCritical ? 'Lỗi chặn' : 'Cảnh báo'}
+        </span>
+      </td>
+      <td className="py-4 px-4">
+        {finding.details.length === 0 ? (
+          <span className="text-3xs font-bold text-slate-400">-</span>
+        ) : (
+          <div className="flex max-w-[28rem] flex-wrap gap-1.5 whitespace-normal">
+            {finding.details.slice(0, 5).map((detail) => (
+              <span
+                key={`${finding.id}:${detail.label}:${detail.value}`}
+                className="rounded-lg bg-slate-50 dark:bg-[#11100F] px-2 py-1 font-mono text-4xs font-bold text-slate-500 dark:text-[#CDBCAB]/70"
+              >
+                {detail.label}: {detail.value}
+              </span>
+            ))}
+          </div>
+        )}
+      </td>
+      <td className="py-4 pl-4 text-right">
+        <div className="flex items-center justify-end gap-2">
+          {finding.repair_action ? (
+            <button
+              type="button"
+              onClick={() => onRepair(finding)}
+              disabled={isRepairing}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 px-3 py-1.5 text-3xs font-black uppercase tracking-widest text-white hover:opacity-90 disabled:opacity-60 dark:bg-[#EFE9E1] dark:text-[#11100F]"
+            >
+              <RefreshCw className={cn('w-3 h-3', isRepairing && 'animate-spin')} />
+              {finding.repair_label ?? 'Xử lý'}
+            </button>
+          ) : null}
+          <Link
+            href={finding.href}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 dark:bg-[#11100F] px-3 py-1.5 text-3xs font-black uppercase tracking-widest text-slate-600 dark:text-[#CDBCAB] hover:text-primary"
+          >
+            {finding.repair_action ? 'Mở' : finding.action_label}
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function RepairConfirmModal({
+  finding,
+  isRepairing,
+  onCancel,
+  onConfirm,
+}: {
+  finding: BusinessHealthFinding;
+  isRepairing: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-3xl border border-[#FFE4E6] bg-white p-6 shadow-2xl dark:border-[#3E3A35] dark:bg-[#1C1B19]">
+        <div className="flex items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-3xs font-black uppercase tracking-[0.22em] text-slate-400">
+              Xác nhận xử lý dữ liệu
+            </p>
+            <h4 className="mt-2 text-lg font-black text-slate-950 dark:text-[#EFE9E1]">
+              {finding.title}
+            </h4>
+            <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600 dark:text-[#CDBCAB]/75">
+              Hệ thống sẽ kiểm tra lại điều kiện trên dữ liệu mới nhất trước khi cập nhật. Nếu ghi audit thất bại, thao tác sẽ rollback.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl bg-slate-50 p-4 dark:bg-[#11100F]">
+          <p className="text-3xs font-black uppercase tracking-widest text-slate-400">Dữ liệu sẽ dùng để xác nhận</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {finding.details.length === 0 ? (
+              <span className="text-xs font-bold text-slate-500">Không có chi tiết bổ sung.</span>
+            ) : (
+              finding.details.slice(0, 8).map((detail) => (
+                <span
+                  key={`${finding.id}:confirm:${detail.label}:${detail.value}`}
+                  className="rounded-lg bg-white px-2.5 py-1.5 font-mono text-3xs font-bold text-slate-600 dark:bg-[#1C1B19] dark:text-[#CDBCAB]"
+                >
+                  {detail.label}: {detail.value}
+                </span>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isRepairing}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 px-4 text-3xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 disabled:opacity-60 dark:border-[#3E3A35] dark:text-[#CDBCAB] dark:hover:bg-[#11100F]"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isRepairing}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-3xs font-black uppercase tracking-widest text-white hover:opacity-90 disabled:opacity-60 dark:bg-[#EFE9E1] dark:text-[#11100F]"
+          >
+            <RefreshCw className={cn('h-4 w-4', isRepairing && 'animate-spin')} />
+            {isRepairing ? 'Đang xử lý' : finding.repair_label ?? 'Xác nhận'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

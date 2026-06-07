@@ -11,6 +11,15 @@ export type {
   AccountingHealthSeverity,
   AccountingHealthStatus,
   AccountingHealthSummary,
+  BusinessHealthDatasetCounts,
+  BusinessHealthFinding,
+  BusinessHealthFindingDetail,
+  BusinessHealthFindingSeverity,
+  BusinessHealthGroup,
+  BusinessHealthRepairAction,
+  BusinessHealthRepairResult,
+  BusinessHealthSeverity,
+  BusinessHealthSummary,
   AccountingReadinessSummary,
   AccountingReviewItem,
   AccountingReviewResolutionStatus,
@@ -63,3 +72,8 @@ export {
   getMonthClosePreflight,
   assertMonthClosePreflight,
 } from './accounting/health';
+
+export {
+  getBusinessHealthSummary,
+  runBusinessHealthRepairAction,
+} from './accounting/business-health';

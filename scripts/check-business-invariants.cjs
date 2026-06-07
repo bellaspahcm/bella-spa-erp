@@ -208,7 +208,7 @@ async function loadBusinessDataset({
       ...common,
       table: 'revenue',
       select:
-        'id,booking_id,amount,status,revenue_type,tenant_id,received_date,business_event_type,accounting_review_status,accounting_metadata',
+        'id,booking_id,amount,status,revenue_type,tenant_id,received_date,notes,payment_method,business_event_type,accounting_review_status,accounting_metadata',
     }),
     fetchTableRows({
       ...common,
@@ -235,7 +235,7 @@ async function loadBusinessDataset({
     fetchTableRows({
       ...common,
       table: 'inventory_items',
-      select: 'id,tenant_id,name,stock_level,min_stock_level,unit',
+      select: 'id,tenant_id,name,stock_level,min_stock_level,unit,price_per_unit',
     }),
     fetchTableRows({
       ...common,
@@ -713,6 +713,7 @@ function checkInventory(dataset) {
   const findings = [];
   const sessionsById = indexBy(dataset.sessionLogs, 'id');
   const bookingsById = indexBy(dataset.bookings, 'id');
+  const inventoryItemsById = indexBy(dataset.inventoryItems, 'id');
   const packageMaterialsByPackageId = groupBy(dataset.packageMaterials, (row) => row.package_id);
   const consumptionLogs = dataset.inventoryLogs.filter((log) => isConsumptionReason(log.reason));
   const consumptionLogsBySession = groupBy(consumptionLogs, (log) => log.session_log_id);
@@ -765,12 +766,28 @@ function checkInventory(dataset) {
 
     const booking = bookingsById.get(session.booking_id);
     const packageMaterials = booking?.package_id ? packageMaterialsByPackageId.get(booking.package_id) || [] : [];
-    const requiresInventory = packageMaterials.some((material) => asFiniteNumber(material.quantity_per_session) > 0);
+    const requiredMaterials = packageMaterials.filter((material) => asFiniteNumber(material.quantity_per_session) > 0);
+    const requiresInventory = requiredMaterials.length > 0;
 
     if (requiresInventory && !consumptionLogsBySession.has(session.id)) {
+      const materialSummary = requiredMaterials
+        .map((material) => {
+          const item = inventoryItemsById.get(material.item_id);
+          const quantity = asFiniteNumber(material.quantity_per_session);
+          const unit = item?.unit ? ` ${item.unit}` : '';
+          return `${item?.name || material.item_id}: ${quantity}${unit}`;
+        })
+        .join('; ');
+
       addFinding(findings, CRITICAL, 'completed_session_missing_inventory_consumption', 'Completed session package has material rules but no consumption log.', {
         recordId: session.id,
+        sessionLogId: session.id,
         bookingId: session.booking_id,
+        bookingNumber: booking?.booking_number,
+        packageId: booking?.package_id,
+        packageName: booking?.package_name,
+        materialCount: requiredMaterials.length,
+        materialSummary,
         sourceTable: 'session_logs',
       });
     }
@@ -782,6 +799,7 @@ function checkInventory(dataset) {
 function checkCrossModuleSideEffects(dataset) {
   const findings = [];
   const bookingsById = indexBy(dataset.bookings, 'id');
+  const inventoryItemsById = indexBy(dataset.inventoryItems, 'id');
   const packageMaterialsByPackageId = groupBy(dataset.packageMaterials, (row) => row.package_id);
   const consumptionLogsBySession = groupBy(
     (dataset.inventoryLogs || []).filter((log) => isConsumptionReason(log.reason)),
@@ -793,11 +811,22 @@ function checkCrossModuleSideEffects(dataset) {
     if (normalize(row.status) !== 'confirmed') return;
 
     const revenueType = normalize(row.revenue_type);
-    if (isPackageRevenueType(revenueType) && !hasAccountingSideEffect(dataset, 'PACKAGE_SALE', row.id)) {
+    const booking = row.booking_id ? bookingsById.get(row.booking_id) : null;
+    const hasValidBooking = booking && row.tenant_id === booking.tenant_id;
+    if (
+      isPackageRevenueType(revenueType) &&
+      asFiniteNumber(row.amount) > 0 &&
+      hasValidBooking &&
+      !hasAccountingSideEffect(dataset, 'PACKAGE_SALE', row.id)
+    ) {
       addFinding(findings, getMissingAccountingSideEffectSeverity(row), 'confirmed_package_revenue_missing_accounting_side_effect', 'Confirmed package revenue should have a PACKAGE_SALE outbox event or active journal entry.', {
         recordId: row.id,
         sourceTable: 'revenue',
         bookingId: row.booking_id,
+        bookingNumber: booking?.booking_number,
+        revenueType: row.revenue_type,
+        revenueAmount: asFiniteNumber(row.amount),
+        receivedDate: row.received_date,
       });
     }
 
@@ -823,23 +852,47 @@ function checkCrossModuleSideEffects(dataset) {
     if (!hasAccountingSideEffect(dataset, 'SESSION_DONE', session.id)) {
       addFinding(findings, getMissingAccountingSideEffectSeverity(session), 'completed_session_missing_session_done_side_effect', 'Completed session should have a SESSION_DONE outbox event or active journal entry.', {
         recordId: session.id,
+        sessionLogId: session.id,
         sourceTable: 'session_logs',
         bookingId: session.booking_id,
+        bookingNumber: bookingsById.get(session.booking_id)?.booking_number,
+        ktvId: session.completed_by_ktv_id,
       });
     }
 
     const booking = bookingsById.get(session.booking_id);
     const packageMaterials = booking?.package_id ? packageMaterialsByPackageId.get(booking.package_id) || [] : [];
     const requiresInventory = packageMaterials.some((material) => asFiniteNumber(material.quantity_per_session) > 0);
+    const consumptionLogs = consumptionLogsBySession.get(session.id) || [];
     if (
       requiresInventory &&
-      consumptionLogsBySession.has(session.id) &&
+      consumptionLogs.length > 0 &&
       !hasAccountingSideEffect(dataset, 'INVENTORY_CONSUMED', session.id)
     ) {
+      const consumptionSummary = consumptionLogs
+        .map((log) => {
+          const item = inventoryItemsById.get(log.item_id);
+          const quantity = Math.abs(asFiniteNumber(log.change_amount));
+          const unit = item?.unit ? ` ${item.unit}` : '';
+          return `${item?.name || log.item_id}: ${quantity}${unit}`;
+        })
+        .join('; ');
+      const consumptionCost = consumptionLogs.reduce((sum, log) => {
+        const item = inventoryItemsById.get(log.item_id);
+        return sum + Math.abs(asFiniteNumber(log.change_amount)) * asFiniteNumber(item?.price_per_unit);
+      }, 0);
+
       addFinding(findings, getMissingAccountingSideEffectSeverity(session), 'inventory_consumption_missing_accounting_side_effect', 'Session inventory consumption should have an INVENTORY_CONSUMED outbox event or active journal entry.', {
         recordId: session.id,
+        sessionLogId: session.id,
         sourceTable: 'session_logs',
         bookingId: session.booking_id,
+        bookingNumber: booking?.booking_number,
+        packageId: booking?.package_id,
+        packageName: booking?.package_name,
+        inventoryLogCount: consumptionLogs.length,
+        consumptionSummary,
+        consumptionCost,
       });
     }
   });
