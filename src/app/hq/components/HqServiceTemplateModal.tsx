@@ -113,7 +113,7 @@ export function HqServiceTemplateModal({
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Giá chuẩn HQ (VNĐ) *</label>
                   <input
-                    type="number"
+                    type="text"
                     required
                     value={templatePrice}
                     onChange={e => onTemplatePriceChange(e.target.value)}
@@ -123,7 +123,7 @@ export function HqServiceTemplateModal({
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">KTV Hoa hồng/buổi (VNĐ)</label>
                   <input
-                    type="number"
+                    type="text"
                     value={templateKtvCommission}
                     onChange={e => onTemplateKtvCommissionChange(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-bold text-slate-800"
@@ -173,7 +173,7 @@ export function HqServiceTemplateModal({
                   <div>
                     <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Giá sàn (Tối thiểu)</label>
                     <input
-                      type="number"
+                      type="text"
                       value={templatePriceFloor}
                       onChange={e => onTemplatePriceFloorChange(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"
@@ -182,7 +182,7 @@ export function HqServiceTemplateModal({
                   <div>
                     <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Giá trần (Tối đa)</label>
                     <input
-                      type="number"
+                      type="text"
                       value={templatePriceCap}
                       onChange={e => onTemplatePriceCapChange(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800"

@@ -175,4 +175,27 @@ describe('payment business rule audit', () => {
     expect(auditedNumericInputSources).not.toMatch(/parseInt\(/);
     expect(auditedNumericInputSources).not.toMatch(/Number\([^\n]*\)\s*\|\|\s*0/);
   });
+
+  it('keeps service package and HQ template numeric inputs routed through shared helpers', () => {
+    const servicesPageSource = readSource('src/app/dashboard/services/page.tsx');
+    const servicesHookSource = readSource('src/app/dashboard/services/hooks/useServicesPageState.ts');
+    const hqDashboardSource = readSource('src/app/hq/hq-dashboard-client.tsx');
+    const hqTemplateModalSource = readSource('src/app/hq/components/HqServiceTemplateModal.tsx');
+    const auditedServiceSources = [
+      servicesPageSource,
+      servicesHookSource,
+      hqDashboardSource,
+      hqTemplateModalSource,
+    ].join('\n');
+
+    expect(auditedServiceSources).toContain('parseMoneyInput');
+    expect(auditedServiceSources).toContain('formatMoneyInput');
+    expect(auditedServiceSources).toContain('parseIntegerInput');
+    expect(auditedServiceSources).toContain('parseDecimalInput');
+    expect(servicesPageSource).not.toContain('formatNumberWithSeparator(e.target.value)');
+    expect(servicesPageSource).not.toMatch(/replace\(\s*\/\[\^\\d\]/);
+    expect(servicesHookSource).not.toMatch(/Number\(row\.quantity_per_session\)/);
+    expect(hqDashboardSource).not.toMatch(/parseFloat\(template/);
+    expect(hqDashboardSource).not.toMatch(/parseInt\(template/);
+  });
 });

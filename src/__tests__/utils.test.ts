@@ -8,6 +8,7 @@ import {
   formatCurrency,
   formatMoneyInput,
   parseCurrency,
+  parseDecimalInput,
   parseIntegerInput,
   parseMoneyInput,
   parsePercentInput,
@@ -122,6 +123,13 @@ describe("utils: percent and integer input helpers", () => {
     expect(parseIntegerInput("", { min: 1, fallback: 1 })).toBe(1);
     expect(parseIntegerInput("150", { min: 1, max: 100 })).toBe(100);
     expect(parseIntegerInput("-3", { min: 0 })).toBe(0);
+  });
+
+  it("parses decimal inputs for material consumption without truncating fractions", () => {
+    expect(parseDecimalInput("0.25", { min: 0 })).toBe(0.25);
+    expect(parseDecimalInput("", { min: 0, fallback: 0 })).toBe(0);
+    expect(parseDecimalInput("-1", { min: 0 })).toBe(0);
+    expect(parseDecimalInput("12.5", { min: 0, max: 10 })).toBe(10);
   });
 });
 
