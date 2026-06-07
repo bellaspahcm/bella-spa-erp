@@ -6,6 +6,7 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  BellRing,
   CheckCircle2,
   Clock,
   Database,
@@ -20,6 +21,7 @@ import { toast } from 'sonner';
 import {
   getAccountingHealthSummary,
   getBusinessHealthSummary,
+  publishAccountingHealthAlertNotification,
   runBusinessHealthRepairAction,
   type AccountingHealthCheck,
   type AccountingHealthSeverity,
@@ -129,6 +131,7 @@ export default function AccountingHealthPage() {
   const [month, setMonth] = useState(currentMonthValue);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [publishingWorkerAlert, setPublishingWorkerAlert] = useState(false);
   const [summary, setSummary] = useState<AccountingHealthSummary | null>(null);
   const [businessSummary, setBusinessSummary] = useState<Awaited<ReturnType<typeof getBusinessHealthSummary>> | null>(null);
   const [repairingFindingId, setRepairingFindingId] = useState<string | null>(null);
@@ -187,6 +190,20 @@ export default function AccountingHealthPage() {
     await executeRepairFinding(finding);
   };
 
+  const handlePublishWorkerAlert = async () => {
+    setPublishingWorkerAlert(true);
+    try {
+      const result = await publishAccountingHealthAlertNotification(`${month}-01`);
+      toast.success(result.message);
+      await loadData(month);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Không thể tạo thông báo nội bộ cho cảnh báo worker.';
+      toast.error(message);
+    } finally {
+      setPublishingWorkerAlert(false);
+    }
+  };
+
   const severity = summary?.severity ?? 'warning';
   const tone = SEVERITY_TONE[severity];
   const StatusIcon = tone.icon;
@@ -207,6 +224,12 @@ export default function AccountingHealthPage() {
   const workerHasRisk =
     (summary?.metrics.worker_silent_with_pending ?? 0) > 0 ||
     (summary?.metrics.worker_failed_runs_24h ?? 0) > 0;
+  const workerAlertTitle = (summary?.metrics.worker_silent_with_pending ?? 0) > 0
+    ? 'Cron kế toán có thể đang im lặng'
+    : 'Worker kế toán có lỗi trong 24h';
+  const workerAlertMessage = (summary?.metrics.worker_silent_with_pending ?? 0) > 0
+    ? `Còn ${formatNumber(pendingOutbox)} sự kiện đang chờ/lỗi nhưng lần chạy worker gần nhất là ${workerLastRun}.`
+    : `Có ${formatNumber(summary?.metrics.worker_failed_runs_24h ?? 0)} lần chạy lỗi, tỷ lệ lỗi ${formatNumber(summary?.metrics.worker_failure_rate_24h ?? 0)}%.`;
   const businessSeverity = businessSummary?.severity ?? 'warning';
   const businessTone = BUSINESS_SEVERITY_TONE[businessSeverity];
   const BusinessStatusIcon = businessTone.icon;
@@ -292,6 +315,47 @@ export default function AccountingHealthPage() {
             </>
           )}
         </div>
+
+        {!loading && workerHasRisk ? (
+          <div className="mt-5 rounded-2xl border border-amber-200 bg-white/85 p-4 shadow-sm dark:border-amber-500/30 dark:bg-[#11100F]/70">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                  <BellRing className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-3xs font-black uppercase tracking-[0.2em] text-amber-700 dark:text-amber-400">
+                    Cảnh báo production
+                  </p>
+                  <h3 className="mt-1 text-sm font-black uppercase tracking-tight text-slate-950 dark:text-[#EFE9E1]">
+                    {workerAlertTitle}
+                  </h3>
+                  <p className="mt-1 max-w-3xl text-2xs font-medium leading-relaxed text-slate-600 dark:text-[#CDBCAB]/75">
+                    {workerAlertMessage} Hệ thống nên phát thông báo nội bộ để admin/HQ xử lý trước khi tiếp tục khóa sổ.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Link
+                  href="/dashboard/accounting/outbox"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-white px-4 text-3xs font-black uppercase tracking-widest text-amber-700 hover:bg-amber-50 dark:border-amber-500/30 dark:bg-[#1C1B19] dark:text-amber-400 dark:hover:bg-amber-500/10"
+                >
+                  Xem outbox
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={handlePublishWorkerAlert}
+                  disabled={publishingWorkerAlert}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 text-3xs font-black uppercase tracking-widest text-white hover:bg-amber-700 disabled:opacity-60 dark:bg-amber-500 dark:text-[#11100F] dark:hover:bg-amber-400"
+                >
+                  <RefreshCw className={cn('h-3.5 w-3.5', publishingWorkerAlert && 'animate-spin')} />
+                  Gửi thông báo nội bộ
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="rounded-3xl md:rounded-[2rem] bg-white dark:bg-[#1C1B19] border border-[#FFE4E6] dark:border-[#3E3A35]/50 p-5 md:p-8 shadow-sm">

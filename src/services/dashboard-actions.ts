@@ -78,6 +78,7 @@ export interface AppNotificationDBRow {
   created_at: string | null;
   data: {
     customer_id?: string;
+    href?: string;
   } | null;
 }
 
@@ -619,7 +620,9 @@ export async function getImportantAlerts() {
         
         for (const notif of appNotifsData) {
           let link = '/dashboard';
-          if (notif.type === 'new_booking' && notif.data?.customer_id) {
+          if (notif.data?.href) {
+            link = notif.data.href;
+          } else if (notif.type === 'new_booking' && notif.data?.customer_id) {
             link = `/dashboard/customers/${notif.data.customer_id}`;
           }
           

@@ -10,6 +10,8 @@ export type {
   AccountingEventTemplate,
   AccountingBackfillResult,
   AccountingDuplicateJournalReference,
+  AccountingHealthAlertKind,
+  AccountingHealthAlertNotificationResult,
   AccountingHealthCheck,
   AccountingHealthMetrics,
   AccountingHealthSeverity,
@@ -73,6 +75,7 @@ export {
 
 export {
   getAccountingHealthSummary,
+  publishAccountingHealthAlertNotification,
   getMonthClosePreflight,
   assertMonthClosePreflight,
 } from './accounting/health';

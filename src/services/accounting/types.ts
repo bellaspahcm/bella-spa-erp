@@ -231,6 +231,18 @@ export interface AccountingHealthSummary {
   duplicate_journal_references: AccountingDuplicateJournalReference[];
 }
 
+export type AccountingHealthAlertKind =
+  | 'worker_silent_with_pending'
+  | 'worker_failed_runs_24h';
+
+export interface AccountingHealthAlertNotificationResult {
+  success: true;
+  created: boolean;
+  notification_id: string | null;
+  alert_kind: AccountingHealthAlertKind | null;
+  message: string;
+}
+
 export type BusinessHealthSeverity = 'healthy' | 'warning' | 'critical';
 
 export type BusinessHealthFindingSeverity = 'critical' | 'warning';

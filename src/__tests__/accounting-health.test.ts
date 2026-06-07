@@ -1,5 +1,10 @@
 jest.mock('server-only', () => ({}), { virtual: true });
 
+const mockRevalidatePath = jest.fn();
+jest.mock('next/cache', () => ({
+  revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args),
+}));
+
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
 const mockSupabase = { rpc: mockRpc, from: mockFrom };
@@ -16,22 +21,43 @@ jest.mock('@/services/user-actions', () => ({
 import {
   assertMonthClosePreflight,
   getAccountingHealthSummary,
+  publishAccountingHealthAlertNotification,
 } from '../services/accounting-actions';
 
 const ADMIN_USER = { id: 'admin-1', role: 'admin', tenant_id: 'tenant-a' };
 
 let tableRows: Record<string, unknown[] | null>;
 let tableErrors: Record<string, { message: string } | null>;
+let insertedNotifications: unknown[];
 let readinessRows: unknown[];
 let legacyPreviewRows: unknown[];
 
 function setupTableMocks() {
   mockFrom.mockImplementation((table: string) => {
+    let insertPayload: unknown = null;
     const chain: any = {
       select: jest.fn(() => chain),
       eq: jest.fn(() => chain),
+      contains: jest.fn(() => chain),
       order: jest.fn(() => chain),
       limit: jest.fn(() => chain),
+      insert: jest.fn((payload: unknown) => {
+        insertPayload = payload;
+        return chain;
+      }),
+      single: jest.fn(() => {
+        if (table === 'app_notifications') {
+          if (tableErrors.app_notifications) {
+            return Promise.resolve({ data: null, error: tableErrors.app_notifications });
+          }
+          insertedNotifications.push(insertPayload);
+          return Promise.resolve({ data: { id: 'notif-worker-alert' }, error: null });
+        }
+        return Promise.resolve({
+          data: (tableRows[table] ?? [])[0] ?? null,
+          error: tableErrors[table] ?? null,
+        });
+      }),
       then: (cb: any, onRejected?: any) => Promise.resolve({
         data: tableRows[table] ?? [],
         error: tableErrors[table] ?? null,
@@ -48,12 +74,15 @@ beforeEach(() => {
     accounting_outbox: [],
     journal_entries: [],
     accounting_worker_runs: [],
+    app_notifications: [],
   };
   tableErrors = {
     accounting_outbox: null,
     journal_entries: null,
     accounting_worker_runs: null,
+    app_notifications: null,
   };
+  insertedNotifications = [];
   readinessRows = [
     {
       source_table: 'revenue',
@@ -270,6 +299,72 @@ describe('accounting health summary', () => {
       'accounting_worker_failures_24h',
     ]));
     expect(summary.warnings.map((check) => check.id)).not.toContain('accounting_worker_silent');
+  });
+
+  it('creates a deduped app notification for worker health risk', async () => {
+    tableRows.accounting_outbox = [
+      {
+        id: 'outbox-pending',
+        tenant_id: 'tenant-a',
+        status: 'PENDING',
+        event_type: 'PACKAGE_SALE',
+        reference_type: 'REVENUE',
+        reference_id: '88888888-8888-8888-8888-888888888888',
+        retry_count: 0,
+        last_error: null,
+        created_at: '2026-05-02T08:00:00Z',
+      },
+    ];
+
+    const result = await publishAccountingHealthAlertNotification('2026-05-01');
+
+    expect(result).toEqual(expect.objectContaining({
+      success: true,
+      created: true,
+      notification_id: 'notif-worker-alert',
+      alert_kind: 'worker_silent_with_pending',
+    }));
+    expect(insertedNotifications).toHaveLength(1);
+    expect(insertedNotifications[0]).toEqual(expect.objectContaining({
+      tenant_id: 'tenant-a',
+      type: 'accounting_worker_health_alert',
+      is_read: false,
+      data: expect.objectContaining({
+        source: 'accounting_health',
+        alert_kind: 'worker_silent_with_pending',
+        href: '/dashboard/accounting/health',
+        outbox_pending: 1,
+      }),
+    }));
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/accounting/health');
+  });
+
+  it('reuses an unread app notification instead of creating duplicate worker alerts', async () => {
+    tableRows.accounting_outbox = [
+      {
+        id: 'outbox-pending',
+        tenant_id: 'tenant-a',
+        status: 'PENDING',
+        event_type: 'PACKAGE_SALE',
+        reference_type: 'REVENUE',
+        reference_id: '88888888-8888-8888-8888-888888888888',
+        retry_count: 0,
+        last_error: null,
+        created_at: '2026-05-02T08:00:00Z',
+      },
+    ];
+    tableRows.app_notifications = [{ id: 'notif-existing' }];
+
+    const result = await publishAccountingHealthAlertNotification('2026-05-01');
+
+    expect(result).toEqual(expect.objectContaining({
+      success: true,
+      created: false,
+      notification_id: 'notif-existing',
+      alert_kind: 'worker_silent_with_pending',
+    }));
+    expect(insertedNotifications).toHaveLength(0);
   });
 
   it('month-close preflight throws before advisory RPC checks when blockers exist', async () => {
