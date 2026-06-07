@@ -43,6 +43,7 @@ export type SalaryTotalInput = {
 };
 
 export type SalaryRecordFinancialLike = {
+  is_locked?: boolean | null;
   status?: string | null;
   total_sessions?: number | string | null;
   session_bonus?: number | string | null;
@@ -52,6 +53,15 @@ export type SalaryRecordFinancialLike = {
   violations_deduction?: number | string | null;
   service_percentage_bonus?: number | string | null;
   total_salary?: number | string | null;
+} | null | undefined;
+
+export type SalaryRecalculationLifecycleOverrides = {
+  base_salary?: unknown;
+  kpi_bonus?: unknown;
+  violations_deduction?: unknown;
+  service_percentage_bonus?: unknown;
+  total_sessions?: unknown;
+  status?: string | null;
 } | null | undefined;
 
 export type SalaryDisplayComponentsInput = {
@@ -67,6 +77,7 @@ export type SalaryDisplayComponentsInput = {
 
 export const DEFAULT_KTV_SESSION_COMMISSION = 150000;
 export const DRAFT_SALARY_STATUS = 'draft';
+export const FINALIZED_SALARY_STATUS = 'finalized';
 
 function asFiniteNumber(value: number | string | null | undefined, fallback = 0) {
   const numeric = Number(value ?? fallback);
@@ -279,6 +290,35 @@ export function isDraftSalaryRecord(record: SalaryRecordFinancialLike) {
 
 export function shouldUseSavedSalaryFinancials(record: SalaryRecordFinancialLike) {
   return Boolean(record && !isDraftSalaryRecord(record));
+}
+
+export function hasSalaryFinancialRecalculationOverrides(
+  overrides: SalaryRecalculationLifecycleOverrides,
+) {
+  return Boolean(
+    overrides &&
+      (
+        overrides.base_salary !== undefined ||
+        overrides.kpi_bonus !== undefined ||
+        overrides.violations_deduction !== undefined ||
+        overrides.service_percentage_bonus !== undefined ||
+        overrides.total_sessions !== undefined
+      ),
+  );
+}
+
+export function assertSalaryRecalculationLifecycle(
+  record: SalaryRecordFinancialLike,
+) {
+  if (!record) return;
+
+  if (record.is_locked) {
+    throw new Error('Cannot recalculate locked salary record');
+  }
+
+  if (String(record.status ?? '').toLowerCase() === FINALIZED_SALARY_STATUS) {
+    throw new Error('Cannot recalculate finalized salary record');
+  }
 }
 
 function selectSavedOrLive(

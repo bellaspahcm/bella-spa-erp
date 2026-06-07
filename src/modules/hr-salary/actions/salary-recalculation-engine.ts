@@ -12,7 +12,12 @@ import {
   calculateSessionCommissionBonus,
   calculateWeightedSessionCount,
 } from './salary-attendance-calculation';
-import { calculateSalaryTotal, isDraftSalaryRecord } from '@/lib/business-rules/salary';
+import {
+  assertSalaryRecalculationLifecycle,
+  calculateSalaryTotal,
+  hasSalaryFinancialRecalculationOverrides,
+  isDraftSalaryRecord,
+} from '@/lib/business-rules/salary';
 
 interface KtvUserDataAdmin {
   id: string;
@@ -58,6 +63,7 @@ export interface SalaryRecordDbAdmin {
   total_sessions: number | null;
   total_salary: number | null;
   status: string | null;
+  is_locked?: boolean | null;
   published_at?: string | null;
   notes?: string | null;
   tenant_id: string;
@@ -201,17 +207,13 @@ export async function recalculateAndSaveSalaryRecordEngine(
 
   if (existingError) throw existingError;
   const existing = existingData as SalaryRecordDbAdmin | null;
+  assertSalaryRecalculationLifecycle(existing);
 
   const rawBaseSalary = ktv?.base_salary ?? 6000000;
   let proRataNote = '';
 
   const isDraft = isDraftSalaryRecord(existing);
-  const hasFinancialOverrides =
-    overrides?.base_salary !== undefined ||
-    overrides?.kpi_bonus !== undefined ||
-    overrides?.violations_deduction !== undefined ||
-    overrides?.service_percentage_bonus !== undefined ||
-    overrides?.total_sessions !== undefined;
+  const hasFinancialOverrides = hasSalaryFinancialRecalculationOverrides(overrides);
   const shouldUseStoredSessionComponents = Boolean(existing && !isDraft && overrides?.total_sessions === undefined);
   const shouldUseStoredTotalSalary = Boolean(existing && !isDraft && !hasFinancialOverrides);
 
