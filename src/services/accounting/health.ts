@@ -1,11 +1,14 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createAccountingDataClient, type AccountingSupabaseClient } from './client';
 import { getCurrentUser } from '../user-actions';
 import { calculateReadinessScore } from './template-rules';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import type {
   AccountingDuplicateJournalReference,
+  AccountingHealthAlertKind,
+  AccountingHealthAlertNotificationResult,
   AccountingHealthCheck,
   AccountingHealthMetrics,
   AccountingHealthSummary,
@@ -35,6 +38,8 @@ type WorkerRunRow = Pick<
   | 'critical_failure_count'
   | 'error'
 >;
+type AppNotificationInsert = Database['public']['Tables']['app_notifications']['Insert'];
+type AppNotificationRow = Pick<Database['public']['Tables']['app_notifications']['Row'], 'id'>;
 type HealthContext = {
   supabase?: SupabaseClient;
   tenantId?: string;
@@ -54,6 +59,7 @@ const ACTIVE_REFERENCE_TYPES = new Set([
   'REFUND',
   'MANUAL',
 ]);
+const ACCOUNTING_WORKER_HEALTH_ALERT_TYPE = 'accounting_worker_health_alert';
 
 const EMPTY_METRICS: AccountingHealthMetrics = {
   outbox_pending: 0,
@@ -115,6 +121,60 @@ function rowsOrEmpty<T>(rows: T[] | null | undefined) {
 
 function addCheck(checks: AccountingHealthCheck[], check: AccountingHealthCheck) {
   checks.push(check);
+}
+
+function getAlertDateKey(now = new Date()) {
+  return now.toISOString().slice(0, 10);
+}
+
+function getAccountingWorkerAlertKind(
+  metrics: AccountingHealthMetrics
+): AccountingHealthAlertKind | null {
+  if (metrics.worker_silent_with_pending > 0) {
+    return 'worker_silent_with_pending';
+  }
+
+  if (metrics.worker_failed_runs_24h > 0) {
+    return 'worker_failed_runs_24h';
+  }
+
+  return null;
+}
+
+function buildAccountingWorkerAlertCopy(
+  summary: AccountingHealthSummary,
+  alertKind: AccountingHealthAlertKind
+) {
+  if (alertKind === 'worker_silent_with_pending') {
+    return {
+      title: 'Cron kế toán cần kiểm tra ngay',
+      message:
+        `Outbox còn ${summary.metrics.outbox_pending} PENDING, ${summary.metrics.outbox_processing} PROCESSING, ` +
+        `${summary.metrics.outbox_failed} FAILED và ${summary.metrics.outbox_dead} DEAD nhưng worker không có lần chạy gần đây.`,
+    };
+  }
+
+  return {
+    title: 'Worker kế toán có lỗi trong 24h',
+    message:
+      `Worker kế toán có ${summary.metrics.worker_failed_runs_24h} lần chạy lỗi trong 24h gần nhất ` +
+      `(tỷ lệ lỗi ${summary.metrics.worker_failure_rate_24h}%). Cần xem outbox và cấu hình cron.`,
+  };
+}
+
+function buildAccountingWorkerAlertDedupeKey(params: {
+  tenantId: string;
+  alertKind: AccountingHealthAlertKind;
+  month: string | null;
+  now?: Date;
+}) {
+  return [
+    ACCOUNTING_WORKER_HEALTH_ALERT_TYPE,
+    params.tenantId,
+    params.month ?? 'all-months',
+    params.alertKind,
+    getAlertDateKey(params.now),
+  ].join(':');
 }
 
 async function resolveTenantContext(context?: HealthContext) {
@@ -517,6 +577,111 @@ export async function getAccountingHealthSummary(month?: string | null): Promise
     month,
     includeAdvisoryChecks: true,
   });
+}
+
+export async function publishAccountingHealthAlertNotification(
+  month?: string | null
+): Promise<AccountingHealthAlertNotificationResult> {
+  const { supabase, tenantId } = await resolveTenantContext();
+  const summary = await buildAccountingHealthSummary({
+    supabase,
+    tenantId,
+    month,
+    includeAdvisoryChecks: true,
+  });
+  const alertKind = getAccountingWorkerAlertKind(summary.metrics);
+
+  if (!alertKind) {
+    return {
+      success: true,
+      created: false,
+      notification_id: null,
+      alert_kind: null,
+      message: 'Worker kế toán đang ổn định, không cần tạo thông báo nội bộ.',
+    };
+  }
+
+  const dedupeKey = buildAccountingWorkerAlertDedupeKey({
+    tenantId,
+    alertKind,
+    month: summary.month,
+  });
+  const { title, message } = buildAccountingWorkerAlertCopy(summary, alertKind);
+
+  const { data: existingRows, error: existingError } = await supabase
+    .from('app_notifications')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('type', ACCOUNTING_WORKER_HEALTH_ALERT_TYPE)
+    .eq('is_read', false)
+    .contains('data', { dedupe_key: dedupeKey })
+    .limit(1);
+
+  if (existingError) {
+    throw new Error(`[accountingHealth] Failed to check existing worker alert notification: ${existingError.message}`);
+  }
+
+  const existing = rowsOrEmpty(existingRows as AppNotificationRow[] | null)[0];
+  if (existing) {
+    return {
+      success: true,
+      created: false,
+      notification_id: existing.id,
+      alert_kind: alertKind,
+      message: 'Đã có thông báo nội bộ chưa đọc cho cảnh báo worker hôm nay.',
+    };
+  }
+
+  const notificationData: Json = {
+    source: 'accounting_health',
+    severity: 'warning',
+    alert_kind: alertKind,
+    dedupe_key: dedupeKey,
+    href: '/dashboard/accounting/health',
+    outbox_pending: summary.metrics.outbox_pending,
+    outbox_processing: summary.metrics.outbox_processing,
+    outbox_failed: summary.metrics.outbox_failed,
+    outbox_dead: summary.metrics.outbox_dead,
+    worker_last_run_at: summary.metrics.worker_last_run_at,
+    worker_minutes_since_last_run: summary.metrics.worker_minutes_since_last_run,
+    worker_failed_runs_24h: summary.metrics.worker_failed_runs_24h,
+    worker_failure_rate_24h: summary.metrics.worker_failure_rate_24h,
+    generated_at: summary.generated_at,
+    month: summary.month,
+  };
+  const payload: AppNotificationInsert = {
+    tenant_id: tenantId,
+    type: ACCOUNTING_WORKER_HEALTH_ALERT_TYPE,
+    title,
+    message,
+    data: notificationData,
+    is_read: false,
+  };
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('app_notifications')
+    .insert(payload)
+    .select('id')
+    .single();
+
+  if (insertError) {
+    throw new Error(`[accountingHealth] Failed to create worker alert notification: ${insertError.message}`);
+  }
+
+  if (!inserted?.id) {
+    throw new Error('[accountingHealth] Worker alert notification insert returned no id.');
+  }
+
+  revalidatePath('/dashboard');
+  revalidatePath('/dashboard/accounting/health');
+
+  return {
+    success: true,
+    created: true,
+    notification_id: inserted.id,
+    alert_kind: alertKind,
+    message: 'Đã tạo thông báo nội bộ cho cảnh báo worker kế toán.',
+  };
 }
 
 export async function getMonthClosePreflight(month: string): Promise<AccountingHealthSummary> {

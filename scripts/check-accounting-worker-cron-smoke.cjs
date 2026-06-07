@@ -39,6 +39,11 @@ function getCronSmokeConfig(env = process.env) {
     env.VERCEL_URL ||
     ''
   );
+  const alertTenantId =
+    env.ACCOUNTING_ALERT_TENANT_ID ||
+    env.ALERT_TENANT_ID ||
+    env.TENANT_ID ||
+    '';
   const cronSecret = env.CRON_SECRET || '';
   const vercelBypassSecret =
     env.E2E_VERCEL_AUTOMATION_BYPASS_SECRET ||
@@ -58,6 +63,7 @@ function getCronSmokeConfig(env = process.env) {
   return {
     ...supabase,
     baseUrl,
+    alertTenantId,
     cronSecret,
     vercelBypassSecret,
     cronUrl: baseUrl ? `${baseUrl}/api/cron/accounting-worker` : '',
@@ -105,6 +111,25 @@ function getSupabaseHeaders(serviceRoleKey) {
   };
 }
 
+function getSupabaseWriteHeaders(serviceRoleKey) {
+  return {
+    ...getSupabaseHeaders(serviceRoleKey),
+    'Content-Type': 'application/json',
+    Prefer: 'return=representation',
+  };
+}
+
+function buildActiveTenantQueryUrl(supabaseUrl) {
+  const params = new URLSearchParams({
+    select: 'id,name,status',
+    status: 'eq.active',
+    order: 'created_at.asc',
+    limit: '1',
+  });
+
+  return `${trimTrailingSlash(supabaseUrl)}/rest/v1/tenants?${params.toString()}`;
+}
+
 function buildWorkerRunsQueryUrl(supabaseUrl, sinceIso) {
   const params = new URLSearchParams({
     select: 'id,status,started_at,finished_at,claimed_count,success_count,dead_letter_count,failure_count,critical_failure_count,error',
@@ -114,6 +139,23 @@ function buildWorkerRunsQueryUrl(supabaseUrl, sinceIso) {
   });
 
   return `${trimTrailingSlash(supabaseUrl)}/rest/v1/accounting_worker_runs?${params.toString()}`;
+}
+
+function buildAppNotificationDedupeQueryUrl(supabaseUrl, tenantId, type, dedupeKey) {
+  const params = new URLSearchParams({
+    select: 'id,created_at',
+    tenant_id: `eq.${tenantId}`,
+    type: `eq.${type}`,
+    is_read: 'eq.false',
+    data: `cs.${JSON.stringify({ dedupe_key: dedupeKey })}`,
+    limit: '1',
+  });
+
+  return `${trimTrailingSlash(supabaseUrl)}/rest/v1/app_notifications?${params.toString()}`;
+}
+
+function buildAppNotificationInsertUrl(supabaseUrl) {
+  return `${trimTrailingSlash(supabaseUrl)}/rest/v1/app_notifications`;
 }
 
 function assertWorkerResponseHealthy(body) {
@@ -182,6 +224,122 @@ async function fetchLatestWorkerRunSince({
   return rows[0];
 }
 
+async function resolveAlertTenantId({
+  config,
+  fetchImpl = globalThis.fetch,
+}) {
+  if (config.alertTenantId) {
+    return config.alertTenantId;
+  }
+
+  const response = await fetchImpl(buildActiveTenantQueryUrl(config.supabaseUrl), {
+    method: 'GET',
+    headers: getSupabaseHeaders(config.serviceRoleKey),
+  });
+  const bodyText = await response.text().catch(() => '');
+
+  if (!response.ok) {
+    throw new Error(`active tenant lookup failed (${response.status}): ${parseResponseError(bodyText)}`);
+  }
+
+  const rows = parseResponseBody(bodyText);
+  if (!Array.isArray(rows) || rows.length === 0 || !rows[0]?.id) {
+    throw new Error('No active tenant found for accounting worker alert notification.');
+  }
+
+  return rows[0].id;
+}
+
+function buildCronFailureDedupeKey({ baseUrl, now = new Date() }) {
+  const dayKey = now.toISOString().slice(0, 10);
+  return `accounting_worker_cron_smoke:${baseUrl || 'unknown-base-url'}:${dayKey}`;
+}
+
+function buildCronFailureNotificationPayload({ tenantId, error, config, now = new Date() }) {
+  const message = error instanceof Error ? error.message : String(error);
+  const dedupeKey = buildCronFailureDedupeKey({ baseUrl: config.baseUrl, now });
+
+  return {
+    tenant_id: tenantId,
+    type: 'accounting_worker_cron_alert',
+    title: 'Cron kế toán production đang lỗi',
+    message: `Smoke check không xác nhận được worker kế toán production: ${message}`,
+    data: {
+      source: 'github_actions_cron_smoke',
+      severity: 'critical',
+      dedupe_key: dedupeKey,
+      href: '/dashboard/accounting/health',
+      outbox_href: '/dashboard/accounting/outbox',
+      base_url: config.baseUrl || null,
+      failed_at: now.toISOString(),
+      error: message.slice(0, 800),
+    },
+    is_read: false,
+  };
+}
+
+async function createCronFailureNotification({
+  config,
+  error,
+  fetchImpl = globalThis.fetch,
+  now = new Date(),
+}) {
+  if (!config.supabaseUrl || !config.serviceRoleKey) {
+    throw new Error('Cannot create cron failure notification without Supabase URL and service-role key.');
+  }
+
+  const tenantId = await resolveAlertTenantId({ config, fetchImpl });
+  const payload = buildCronFailureNotificationPayload({ tenantId, error, config, now });
+  const dedupeKey = payload.data.dedupe_key;
+  const existingResponse = await fetchImpl(
+    buildAppNotificationDedupeQueryUrl(config.supabaseUrl, tenantId, payload.type, dedupeKey),
+    {
+      method: 'GET',
+      headers: getSupabaseHeaders(config.serviceRoleKey),
+    }
+  );
+  const existingBodyText = await existingResponse.text().catch(() => '');
+
+  if (!existingResponse.ok) {
+    throw new Error(`app_notifications dedupe lookup failed (${existingResponse.status}): ${parseResponseError(existingBodyText)}`);
+  }
+
+  const existingRows = parseResponseBody(existingBodyText);
+  if (Array.isArray(existingRows) && existingRows.length > 0) {
+    return {
+      created: false,
+      notificationId: existingRows[0]?.id || null,
+      tenantId,
+      dedupeKey,
+    };
+  }
+
+  const insertResponse = await fetchImpl(buildAppNotificationInsertUrl(config.supabaseUrl), {
+    method: 'POST',
+    headers: getSupabaseWriteHeaders(config.serviceRoleKey),
+    body: JSON.stringify(payload),
+  });
+  const insertBodyText = await insertResponse.text().catch(() => '');
+
+  if (!insertResponse.ok) {
+    throw new Error(`app_notifications insert failed (${insertResponse.status}): ${parseResponseError(insertBodyText)}`);
+  }
+
+  const insertedRows = parseResponseBody(insertBodyText);
+  const notificationId = Array.isArray(insertedRows) ? insertedRows[0]?.id || null : null;
+
+  if (!notificationId) {
+    throw new Error('app_notifications insert returned no notification id.');
+  }
+
+  return {
+    created: true,
+    notificationId,
+    tenantId,
+    dedupeKey,
+  };
+}
+
 async function runAccountingWorkerCronSmoke({
   config = getCronSmokeConfig(),
   fetchImpl = globalThis.fetch,
@@ -227,6 +385,17 @@ async function main() {
   } catch (error) {
     console.error('[FAIL] Accounting worker cron smoke failed.');
     console.error(error instanceof Error ? error.message : String(error));
+    try {
+      const notification = await createCronFailureNotification({ config, error });
+      if (notification.created) {
+        console.error(`[FAIL] Created app notification ${notification.notificationId} for tenant ${notification.tenantId}.`);
+      } else {
+        console.error(`[FAIL] Existing unread app notification ${notification.notificationId || '(unknown)'} already covers this failure.`);
+      }
+    } catch (notificationError) {
+      console.error('[FAIL] Could not create app notification for cron smoke failure.');
+      console.error(notificationError instanceof Error ? notificationError.message : String(notificationError));
+    }
     process.exit(1);
   }
 }
@@ -237,8 +406,12 @@ if (require.main === module) {
 
 module.exports = {
   assertWorkerResponseHealthy,
+  buildActiveTenantQueryUrl,
+  buildAppNotificationDedupeQueryUrl,
+  buildAppNotificationInsertUrl,
   buildWorkerRunsQueryUrl,
   callAccountingWorker,
+  createCronFailureNotification,
   fetchLatestWorkerRunSince,
   getCronSmokeConfig,
   getSupabaseCredentials,
