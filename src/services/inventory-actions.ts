@@ -13,6 +13,7 @@ import {
   calculateRollbackStock,
   normalizePackageMaterialRows,
 } from '@/lib/business-rules/inventory';
+import { buildInventoryConsumedOutboxEvent } from '@/lib/business-rules/accounting-outbox';
 import type { Database } from '@/types/database.types';
 
 type InventoryItemInsert = Database['public']['Tables']['inventory_items']['Insert'];
@@ -953,18 +954,11 @@ export async function autoConsumeForSession(packageId: string, sessionLogId: str
       const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
       const outboxEnqueued = await enqueueWithAutoClient(
         supabase,
-        {
+        buildInventoryConsumedOutboxEvent({
           tenantId,
-          eventType: 'INVENTORY_CONSUMED',
-          referenceType: 'SESSION_LOG',
-          referenceId: sessionLogId,
-          payload: {
-            amount: consumptionPlan.totalCost,
-            description: `Vật tư tiêu hao ca trị liệu, buổi ID: ${sessionLogId}`,
-            // TODO Phase 29: dùng branch_id thực khi multi-branch
-            branchId: tenantId,
-          },
-        },
+          sessionLogId,
+          amount: consumptionPlan.totalCost,
+        }),
         '[autoConsumeForSession]'
       );
       if (!outboxEnqueued) {

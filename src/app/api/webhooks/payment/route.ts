@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { enqueueWithAutoClient } from "@/lib/accounting-outbox";
+import { buildPackageSaleOutboxEvent } from "@/lib/business-rules/accounting-outbox";
 import { safeStringify } from "@/lib/log-redactor";
 import { requireSupabaseAdminEnv } from "@/lib/supabase-admin-env";
 import { assertOpenAccountingPeriod } from "@/services/accounting/period-guards";
@@ -214,18 +215,12 @@ async function ensureWebhookRevenueSideEffects(
 
   const outboxEnqueued = await enqueueWithAutoClient(
     supabase,
-    {
+    buildPackageSaleOutboxEvent({
       tenantId: booking.tenant_id,
-      eventType: "PACKAGE_SALE",
-      referenceType: "REVENUE",
-      referenceId: revenue.id,
-      payload: {
-        totalAmount: revenue.amount,
-        vatRate: 0,
-        description: revenue.notes || buildWebhookRevenueNotes(transaction),
-        branchId: booking.tenant_id,
-      },
-    },
+      revenueId: revenue.id,
+      totalAmount: Number(revenue.amount),
+      description: revenue.notes || buildWebhookRevenueNotes(transaction),
+    }),
     "[Payment Webhook]"
   );
 

@@ -34,6 +34,16 @@ import {
   formatRollbackAppend,
   shouldCreateSingleSessionRevenue,
 } from '@/lib/business-rules/session-completion';
+import {
+  assertOutboxEnqueued,
+  buildExpenseRecordedOutboxEvent,
+  buildInventoryConsumedOutboxEvent,
+  buildPackageSaleOutboxEvent,
+  buildRefundIssuedOutboxEvent,
+  buildSalaryPaidOutboxEvent,
+  buildSessionDoneOutboxEvent,
+  isPackageSaleRevenueType,
+} from '@/lib/business-rules/accounting-outbox';
 
 describe('shared business rule engines', () => {
   it('calculates customer payment state from confirmed revenue records', () => {
@@ -248,5 +258,107 @@ describe('shared business rule engines', () => {
     expect(formatRollbackAppend({ success: true })).toBe('');
     expect(formatRollbackAppend({ error: 'inventory rollback failed' }))
       .toBe('; rollback failed: inventory rollback failed');
+  });
+
+  it('centralizes accounting outbox event payloads', () => {
+    expect(isPackageSaleRevenueType(' Remaining_Payment ')).toBe(true);
+    expect(isPackageSaleRevenueType('session_completed')).toBe(false);
+
+    expect(buildPackageSaleOutboxEvent({
+      tenantId: 'tenant-1',
+      revenueId: 'revenue-1',
+      totalAmount: 200000,
+      description: 'Deposit package',
+    })).toEqual({
+      tenantId: 'tenant-1',
+      eventType: 'PACKAGE_SALE',
+      referenceType: 'REVENUE',
+      referenceId: 'revenue-1',
+      payload: {
+        totalAmount: 200000,
+        vatRate: 0,
+        description: 'Deposit package',
+        branchId: 'tenant-1',
+      },
+    });
+
+    expect(buildRefundIssuedOutboxEvent({
+      tenantId: 'tenant-1',
+      revenueId: 'refund-1',
+      amount: -120000,
+      paymentMethod: 'cash',
+      description: 'Refund customer',
+    }).payload).toMatchObject({
+      amount: 120000,
+      deferredRefundAmount: 0,
+      revenueReductionAmount: 120000,
+      paymentMethod: 'cash',
+      branchId: 'tenant-1',
+    });
+
+    expect(buildExpenseRecordedOutboxEvent({
+      tenantId: 'tenant-1',
+      expenseId: 'expense-1',
+      amount: -50000,
+      category: 'materials',
+    })).toMatchObject({
+      eventType: 'EXPENSE_RECORDED',
+      referenceType: 'EXPENSE',
+      referenceId: 'expense-1',
+      payload: { amount: 50000, category: 'materials', branchId: 'tenant-1' },
+    });
+
+    expect(buildSalaryPaidOutboxEvent({
+      tenantId: 'tenant-1',
+      salaryRecordId: 'salary-1',
+      amount: 6000000,
+      ktvId: 'ktv-1',
+    })).toMatchObject({
+      eventType: 'SALARY_PAID',
+      referenceType: 'SALARY_RECORD',
+      referenceId: 'salary-1',
+      payload: { amount: 6000000, ktvId: 'ktv-1', branchId: 'tenant-1' },
+    });
+
+    expect(buildInventoryConsumedOutboxEvent({
+      tenantId: 'tenant-1',
+      sessionLogId: 'session-1',
+      amount: 75000,
+    })).toMatchObject({
+      eventType: 'INVENTORY_CONSUMED',
+      referenceType: 'SESSION_LOG',
+      referenceId: 'session-1',
+      payload: { amount: 75000, branchId: 'tenant-1' },
+    });
+
+    expect(buildSessionDoneOutboxEvent({
+      tenantId: 'tenant-1',
+      sessionLogId: 'session-1',
+      bookingId: 'booking-1',
+      ktvId: 'ktv-1',
+      earnedRevenueAmount: 300000,
+      deferredRevenueAmount: 2700000,
+      receivableAmount: 0,
+      commissionAmount: 50000,
+      description: 'Session done',
+    })).toMatchObject({
+      eventType: 'SESSION_DONE',
+      referenceType: 'SESSION_LOG',
+      referenceId: 'session-1',
+      payload: {
+        earnedRevenueAmount: 300000,
+        deferredRevenueAmount: 2700000,
+        receivableAmount: 0,
+        bookingId: 'booking-1',
+        ktvId: 'ktv-1',
+        commissionAmount: 50000,
+        branchId: 'tenant-1',
+        description: 'Session done',
+      },
+    });
+
+    expect(() => assertOutboxEnqueued(true, 'PACKAGE_SALE')).not.toThrow();
+    expect(() => assertOutboxEnqueued(false, 'PACKAGE_SALE'))
+      .toThrow('Failed to enqueue PACKAGE_SALE accounting event');
   });
 });

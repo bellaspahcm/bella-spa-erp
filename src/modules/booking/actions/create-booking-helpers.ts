@@ -1,5 +1,6 @@
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import { buildPackageSaleOutboxEvent } from '@/lib/business-rules/accounting-outbox';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
@@ -372,18 +373,12 @@ export async function recordBookingDepositRevenue(params: {
     const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
     const outboxEnqueued = await enqueueWithAutoClient(
       supabase,
-      {
+      buildPackageSaleOutboxEvent({
         tenantId,
-        eventType: 'PACKAGE_SALE',
-        referenceType: 'REVENUE',
-        referenceId: insertedRevenue.id,
-        payload: {
-          totalAmount: depositAmount,
-          vatRate: 0,
-          description: `Cọc gói ${resolvePackageName(booking)}`,
-          branchId: tenantId,
-        },
-      },
+        revenueId: insertedRevenue.id,
+        totalAmount: depositAmount,
+        description: `Cọc gói ${resolvePackageName(booking)}`,
+      }),
       '[createBooking]'
     );
     if (!outboxEnqueued) {
