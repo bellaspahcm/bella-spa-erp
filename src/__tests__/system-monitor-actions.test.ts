@@ -139,6 +139,7 @@ describe('system monitor actions', () => {
       accounting_blockers: 0,
       business_critical: 0,
       cron_smoke_open_alerts: 0,
+      business_rule_open_alerts: 0,
     }));
     expect(mockGetAccountingHealthSummary).toHaveBeenCalledWith('2026-06-01');
     expect(mockGetBusinessHealthSummary).toHaveBeenCalledWith('2026-06-01');
@@ -165,6 +166,38 @@ describe('system monitor actions', () => {
       href: '/dashboard/accounting/health',
       severity: 'critical',
     }));
+  });
+
+  it('raises critical status when a business rule production alert is still open', async () => {
+    mockFrom.mockReturnValue(new MockQueryBuilder([
+      {
+        id: 'notif-rule-1',
+        type: 'business_rule_health_alert',
+        title: 'Rule engine production can xu ly',
+        message: 'Business rule guard phat hien 1 loi nghiem trong.',
+        created_at: '2026-06-08T00:00:00.000Z',
+        data: { href: '/dashboard/system-monitor', severity: 'critical' },
+      },
+    ]));
+
+    const summary = await getSystemMonitorSummary('2026-06-01');
+
+    expect(summary.overall_status).toBe('critical');
+    expect(summary.quick_metrics.business_rule_open_alerts).toBe(1);
+    expect(summary.open_alerts[0]).toEqual(expect.objectContaining({
+      id: 'notif-rule-1',
+      href: '/dashboard/system-monitor',
+      severity: 'critical',
+    }));
+    expect(summary.sections.find((section) => section.id === 'data')?.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'business-rule-production-alerts',
+          status: 'critical',
+          value: '1',
+        }),
+      ])
+    );
   });
 
   it('propagates system alert query failures instead of returning a fake healthy state', async () => {

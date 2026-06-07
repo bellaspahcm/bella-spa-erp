@@ -20,6 +20,9 @@ jobs:
       NEXT_TELEMETRY_DISABLED: "1"
       ACCOUNTING_WORKER_BASE_URL: ${{ vars.ACCOUNTING_WORKER_BASE_URL || vars.E2E_BASE_URL || vars.NEXT_PUBLIC_APP_URL }}
       ACCOUNTING_ALERT_TENANT_ID: ${{ vars.ACCOUNTING_ALERT_TENANT_ID }}
+      BUSINESS_RULE_ALERT_TENANT_ID: ${{ vars.BUSINESS_RULE_ALERT_TENANT_ID || vars.ACCOUNTING_ALERT_TENANT_ID }}
+      BUSINESS_RULE_GUARD_FAIL_ON_WARNING: ${{ vars.BUSINESS_RULE_GUARD_FAIL_ON_WARNING }}
+      DB_BUSINESS_INVARIANT_MAX_ROWS: ${{ vars.DB_BUSINESS_INVARIANT_MAX_ROWS }}
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
@@ -42,3 +45,7 @@ jobs:
 
       - name: Accounting worker cron smoke
         run: npm run cron:accounting:smoke
+
+      - name: Business rule production guard
+        if: ${{ always() }}
+        run: npm run cron:business-rules:smoke
