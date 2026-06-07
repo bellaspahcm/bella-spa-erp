@@ -40,6 +40,7 @@ function setupTableMocks() {
     const chain = {
       select: jest.fn(() => chain),
       eq: jest.fn(() => chain),
+      neq: jest.fn(() => chain),
       or: jest.fn(() => chain),
       in: jest.fn(() => chain),
       limit: jest.fn(() => chain),
@@ -56,6 +57,10 @@ function setupTableMocks() {
       }),
       single: jest.fn(() => Promise.resolve({
         data: tableRows[table]?.[0] ?? { id: `${table}-updated` },
+        error: tableErrors[table] ?? null,
+      })),
+      maybeSingle: jest.fn(() => Promise.resolve({
+        data: tableRows[table]?.[0] ?? null,
         error: tableErrors[table] ?? null,
       })),
       then: (cb: (value: { data: unknown[] | null; error: { message: string } | null }) => unknown, onRejected?: (reason: unknown) => unknown) => Promise.resolve({
@@ -222,9 +227,11 @@ describe('business health summary', () => {
     expect(summary.severity).toBe('critical');
     expect(summary.critical_count).toBeGreaterThan(0);
     expect(summary.dataset_counts.bookings).toBe(1);
-    expect(summary.groups).toHaveLength(6);
+    expect(summary.groups).toHaveLength(7);
     expect(summary.findings.map((finding) => finding.code)).toEqual(expect.arrayContaining([
       'deposit_paid_but_booking_still_pending',
+      'portal_deposit_qr_should_be_closed',
+      'booking_revenue_ledger_gap',
       'booking_completed_sessions_drift',
       'completed_session_missing_inventory_consumption',
       'draft_salary_session_count_drift',
@@ -237,6 +244,23 @@ describe('business health summary', () => {
         href: '/dashboard/finance/reconciliation',
         repair_action: 'sync_paid_deposit_booking_status',
         repair_requires_confirmation: true,
+      })
+    );
+    expect(summary.findings.find((finding) => finding.code === 'portal_deposit_qr_should_be_closed')).toEqual(
+      expect.objectContaining({
+        title: 'Portal phải đóng QR cọc của booking này',
+        href: '/dashboard/finance/reconciliation',
+        details: expect.arrayContaining([
+          expect.objectContaining({ label: 'Cọc còn phải thu', value: '0đ' }),
+          expect.objectContaining({ label: 'QR/Portal yêu cầu', value: '4.300.000đ' }),
+          expect.objectContaining({ label: 'Chế độ QR/Portal', value: 'full' }),
+        ]),
+      })
+    );
+    expect(summary.findings.find((finding) => finding.code === 'booking_revenue_ledger_gap')).toEqual(
+      expect.objectContaining({
+        title: 'Booking có doanh thu nhưng thiếu side-effect hạch toán',
+        href: '/dashboard/finance/reconciliation',
       })
     );
     expect(summary.findings.find((finding) => finding.code === 'booking_completed_sessions_drift')).toEqual(

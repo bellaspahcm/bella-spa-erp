@@ -4,6 +4,7 @@ const MONEY_TOLERANCE = 1;
 const SESSION_TOLERANCE = 0.01;
 const DEFAULT_MAX_ROWS = 20000;
 const STALE_OUTBOX_WARNING_HOURS = 24;
+const OPEN_PAYMENT_STATUSES = new Set(['deposit_pending', 'deposit', 'inquiry']);
 
 const SOURCE_ACCOUNTING_CHECKS = [
   {
@@ -367,6 +368,18 @@ function isPackageRevenueType(revenueType) {
   return ['deposit', 'remaining_payment', 'package_payment', 'package_sale'].includes(normalize(revenueType));
 }
 
+function calculatePortalPaymentRequest(input) {
+  const state = calculateBookingPaymentState(input);
+  const effectiveTab = state.showDepositRequest ? 'deposit' : 'full';
+  const amountToPay = effectiveTab === 'deposit' ? state.depositDue : state.remainingDebt;
+
+  return {
+    ...state,
+    effectiveTab,
+    amountToPay,
+  };
+}
+
 function checkPaymentBookingRevenue(dataset) {
   const findings = [];
   const bookingsById = indexBy(dataset.bookings, 'id');
@@ -563,6 +576,82 @@ function hasActiveJournalEntry(dataset, eventType, referenceId) {
 function hasAccountingSideEffect(dataset, eventType, referenceId) {
   return hasAccountingOutboxEvent(dataset, eventType, referenceId) ||
     hasActiveJournalEntry(dataset, eventType, referenceId);
+}
+
+function checkBookingFinancialIntegrity(dataset) {
+  const findings = [];
+  const revenueByBookingId = groupBy(dataset.revenue, (row) => row.booking_id);
+
+  (dataset.bookings || []).forEach((booking) => {
+    const revenues = revenueByBookingId.get(booking.id) || [];
+    const paymentRequest = calculatePortalPaymentRequest({
+      fullPrice: booking.full_price,
+      discountPercent: booking.discount_percent,
+      depositAmount: booking.deposit_amount,
+      bookingStatus: booking.status,
+      revenues,
+    });
+    const bookingPaidAmount = asMoney(booking.deposit_amount);
+    const packageRevenues = revenues.filter((revenue) =>
+      normalize(revenue.status) === 'confirmed' &&
+      isPackageRevenueType(revenue.revenue_type) &&
+      asMoney(revenue.amount) > MONEY_TOLERANCE &&
+      revenue.tenant_id === booking.tenant_id
+    );
+    const missingLedgerRevenueIds = packageRevenues
+      .filter((revenue) => !hasAccountingSideEffect(dataset, 'PACKAGE_SALE', revenue.id))
+      .map((revenue) => revenue.id);
+    const baseDetails = {
+      recordId: booking.id,
+      bookingId: booking.id,
+      bookingNumber: booking.booking_number,
+      sourceTable: 'bookings',
+      totalPaid: paymentRequest.totalPaid,
+      bookingPaidAmount,
+      priceAfterDiscount: paymentRequest.priceAfterDiscount,
+      depositTarget: paymentRequest.depositTarget,
+      depositDue: paymentRequest.depositDue,
+      remainingDebt: paymentRequest.remainingDebt,
+      portalAmountToPay: paymentRequest.amountToPay,
+      portalMode: paymentRequest.effectiveTab,
+    };
+
+    if (
+      paymentRequest.totalPaid > MONEY_TOLERANCE &&
+      Math.abs(bookingPaidAmount - paymentRequest.totalPaid) > MONEY_TOLERANCE
+    ) {
+      addFinding(findings, CRITICAL, 'booking_payment_amount_drift', 'Booking paid amount must match confirmed revenue total.', baseDetails);
+    }
+
+    if (
+      normalize(booking.status) === 'deposit_pending' &&
+      paymentRequest.depositTarget > MONEY_TOLERANCE &&
+      paymentRequest.depositDue <= MONEY_TOLERANCE &&
+      paymentRequest.totalPaid + MONEY_TOLERANCE >= paymentRequest.depositTarget
+    ) {
+      addFinding(findings, CRITICAL, 'portal_deposit_qr_should_be_closed', 'Confirmed deposit is already recorded; portal deposit QR must stay closed.', baseDetails);
+    }
+
+    if (missingLedgerRevenueIds.length > 0) {
+      addFinding(findings, CRITICAL, 'booking_revenue_ledger_gap', 'Booking has confirmed package revenue without PACKAGE_SALE outbox or active journal.', {
+        ...baseDetails,
+        recordId: missingLedgerRevenueIds[0],
+        revenueIds: missingLedgerRevenueIds,
+        revenueType: 'package_payment',
+        missingLedgerCount: missingLedgerRevenueIds.length,
+      });
+    }
+
+    if (
+      paymentRequest.remainingDebt <= MONEY_TOLERANCE &&
+      paymentRequest.priceAfterDiscount > MONEY_TOLERANCE &&
+      OPEN_PAYMENT_STATUSES.has(normalize(booking.status))
+    ) {
+      addFinding(findings, WARNING, 'booking_paid_in_full_but_status_open', 'Booking is fully paid but still has an open payment status.', baseDetails);
+    }
+  });
+
+  return createResult('booking_financial_integrity', findings);
 }
 
 function isOutboxStale(row, now) {
@@ -979,6 +1068,7 @@ function runBusinessInvariantChecksOnDataset(dataset, options = {}) {
 
   return [
     checkPaymentBookingRevenue(dataset),
+    checkBookingFinancialIntegrity(dataset),
     checkLedger(dataset, context),
     checkSalary(dataset, context),
     checkInventory(dataset),
@@ -1120,6 +1210,7 @@ module.exports = {
   buildRestUrl,
   calculateBookingPaymentState,
   checkAccountingReadiness,
+  checkBookingFinancialIntegrity,
   checkCrossModuleSideEffects,
   checkInventory,
   checkLedger,
