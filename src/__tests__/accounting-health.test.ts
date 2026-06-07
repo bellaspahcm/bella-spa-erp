@@ -30,6 +30,8 @@ function setupTableMocks() {
     const chain: any = {
       select: jest.fn(() => chain),
       eq: jest.fn(() => chain),
+      order: jest.fn(() => chain),
+      limit: jest.fn(() => chain),
       then: (cb: any, onRejected?: any) => Promise.resolve({
         data: tableRows[table] ?? [],
         error: tableErrors[table] ?? null,
@@ -45,10 +47,12 @@ beforeEach(() => {
   tableRows = {
     accounting_outbox: [],
     journal_entries: [],
+    accounting_worker_runs: [],
   };
   tableErrors = {
     accounting_outbox: null,
     journal_entries: null,
+    accounting_worker_runs: null,
   };
   readinessRows = [
     {
@@ -181,6 +185,7 @@ describe('accounting health summary', () => {
     expect(summary.metrics.outbox_failed).toBe(1);
     expect(summary.metrics.outbox_dead).toBe(1);
     expect(summary.metrics.outbox_pending).toBe(1);
+    expect(summary.metrics.worker_silent_with_pending).toBe(1);
     expect(summary.metrics.journal_draft).toBe(1);
     expect(summary.metrics.duplicate_active_references).toBe(1);
     expect(summary.metrics.legacy_journal_entries_to_create).toBe(2);
@@ -192,6 +197,7 @@ describe('accounting health summary', () => {
     ]));
     expect(summary.warnings.map((check) => check.id)).toEqual(expect.arrayContaining([
       'outbox_pending_processing',
+      'accounting_worker_silent',
       'readiness_advisory',
       'legacy_sync_advisory',
     ]));
@@ -203,6 +209,67 @@ describe('accounting health summary', () => {
         entry_ids: ['journal-posted-a', 'journal-posted-b'],
       }),
     ]);
+  });
+
+  it('reports recent worker run health and 24h worker failures', async () => {
+    const recentSuccess = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const recentFailure = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
+    tableRows.accounting_outbox = [
+      {
+        id: 'outbox-pending',
+        tenant_id: 'tenant-a',
+        status: 'PENDING',
+        event_type: 'PACKAGE_SALE',
+        reference_type: 'REVENUE',
+        reference_id: '88888888-8888-8888-8888-888888888888',
+        retry_count: 0,
+        last_error: null,
+        created_at: '2026-05-02T08:00:00Z',
+      },
+    ];
+    tableRows.accounting_worker_runs = [
+      {
+        id: 'worker-success',
+        status: 'success',
+        started_at: recentSuccess,
+        finished_at: recentSuccess,
+        duration_ms: 120,
+        claimed_count: 1,
+        success_count: 1,
+        dead_letter_count: 0,
+        failure_count: 0,
+        critical_failure_count: 0,
+        error: null,
+      },
+      {
+        id: 'worker-failure',
+        status: 'partial_failure',
+        started_at: recentFailure,
+        finished_at: recentFailure,
+        duration_ms: 200,
+        claimed_count: 1,
+        success_count: 0,
+        dead_letter_count: 0,
+        failure_count: 1,
+        critical_failure_count: 0,
+        error: null,
+      },
+    ];
+
+    const summary = await getAccountingHealthSummary('2026-05-01');
+
+    expect(summary.metrics.worker_last_run_at).toBe(recentSuccess);
+    expect(summary.metrics.worker_minutes_since_last_run).toBeGreaterThanOrEqual(5);
+    expect(summary.metrics.worker_runs_24h).toBe(2);
+    expect(summary.metrics.worker_failed_runs_24h).toBe(1);
+    expect(summary.metrics.worker_failure_rate_24h).toBe(50);
+    expect(summary.metrics.worker_silent_with_pending).toBe(0);
+    expect(summary.warnings.map((check) => check.id)).toEqual(expect.arrayContaining([
+      'outbox_pending_processing',
+      'accounting_worker_failures_24h',
+    ]));
+    expect(summary.warnings.map((check) => check.id)).not.toContain('accounting_worker_silent');
   });
 
   it('month-close preflight throws before advisory RPC checks when blockers exist', async () => {

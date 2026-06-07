@@ -178,6 +178,57 @@ export type Database = {
           },
         ]
       }
+      accounting_worker_runs: {
+        Row: {
+          claimed_count: number
+          created_at: string
+          critical_failure_count: number
+          dead_letter_count: number
+          details: Json
+          duration_ms: number
+          error: string | null
+          failure_count: number
+          finished_at: string
+          id: string
+          started_at: string
+          status: string
+          success_count: number
+          tenant_ids: string[]
+        }
+        Insert: {
+          claimed_count?: number
+          created_at?: string
+          critical_failure_count?: number
+          dead_letter_count?: number
+          details?: Json
+          duration_ms?: number
+          error?: string | null
+          failure_count?: number
+          finished_at: string
+          id?: string
+          started_at: string
+          status: string
+          success_count?: number
+          tenant_ids?: string[]
+        }
+        Update: {
+          claimed_count?: number
+          created_at?: string
+          critical_failure_count?: number
+          dead_letter_count?: number
+          details?: Json
+          duration_ms?: number
+          error?: string | null
+          failure_count?: number
+          finished_at?: string
+          id?: string
+          started_at?: string
+          status?: string
+          success_count?: number
+          tenant_ids?: string[]
+        }
+        Relationships: []
+      }
       accounting_periods: {
         Row: {
           created_at: string | null

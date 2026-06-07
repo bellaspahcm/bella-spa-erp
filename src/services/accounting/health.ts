@@ -21,6 +21,20 @@ type JournalEntryRow = Pick<
   Database['public']['Tables']['journal_entries']['Row'],
   'id' | 'status' | 'reference_type' | 'reference_id' | 'entry_date' | 'description'
 >;
+type WorkerRunRow = Pick<
+  Database['public']['Tables']['accounting_worker_runs']['Row'],
+  | 'id'
+  | 'status'
+  | 'started_at'
+  | 'finished_at'
+  | 'duration_ms'
+  | 'claimed_count'
+  | 'success_count'
+  | 'dead_letter_count'
+  | 'failure_count'
+  | 'critical_failure_count'
+  | 'error'
+>;
 type HealthContext = {
   supabase?: SupabaseClient;
   tenantId?: string;
@@ -59,6 +73,12 @@ const EMPTY_METRICS: AccountingHealthMetrics = {
   legacy_pending_expense: 0,
   legacy_pending_salary: 0,
   legacy_journal_entries_to_create: 0,
+  worker_last_run_at: null,
+  worker_minutes_since_last_run: null,
+  worker_runs_24h: 0,
+  worker_failed_runs_24h: 0,
+  worker_failure_rate_24h: 0,
+  worker_silent_with_pending: 0,
 };
 
 function getMonthScope(month?: string | null): MonthScope | null {
@@ -143,6 +163,22 @@ async function loadJournalRows(
   if (!scope) return rows;
 
   return rows.filter((row) => row.entry_date >= scope.monthStart && row.entry_date < scope.nextMonthStart);
+}
+
+async function loadWorkerRunRows(supabase: SupabaseClient): Promise<WorkerRunRow[]> {
+  const { data, error } = await supabase
+    .from('accounting_worker_runs')
+    .select(
+      'id, status, started_at, finished_at, duration_ms, claimed_count, success_count, dead_letter_count, failure_count, critical_failure_count, error'
+    )
+    .order('started_at', { ascending: false })
+    .limit(200);
+
+  if (error) {
+    throw new Error(`[accountingHealth] Failed to load accounting_worker_runs: ${error.message}`);
+  }
+
+  return rowsOrEmpty(data) as WorkerRunRow[];
 }
 
 async function loadReadinessMetrics(supabase: SupabaseClient, tenantId: string) {
@@ -246,6 +282,36 @@ function countJournalRows(rows: JournalEntryRow[]) {
   );
 }
 
+function countWorkerRows(
+  rows: WorkerRunRow[],
+  outboxCounts: ReturnType<typeof countOutboxRows>,
+  now: Date
+) {
+  const oneDayAgo = now.getTime() - (24 * 60 * 60 * 1000);
+  const latestRun = rows[0] ?? null;
+  const workerMinutesSinceLastRun = latestRun
+    ? Math.max(0, Math.floor((now.getTime() - new Date(latestRun.started_at).getTime()) / 60000))
+    : null;
+  const runs24h = rows.filter((row) => new Date(row.started_at).getTime() >= oneDayAgo);
+  const failedRuns24h = runs24h.filter((row) => row.status !== 'success').length;
+  const pendingLikeOutbox =
+    outboxCounts.outbox_pending +
+    outboxCounts.outbox_processing +
+    outboxCounts.outbox_failed +
+    outboxCounts.outbox_dead;
+  const workerIsSilent = pendingLikeOutbox > 0
+    && (workerMinutesSinceLastRun === null || workerMinutesSinceLastRun > 15);
+
+  return {
+    worker_last_run_at: latestRun?.started_at ?? null,
+    worker_minutes_since_last_run: workerMinutesSinceLastRun,
+    worker_runs_24h: runs24h.length,
+    worker_failed_runs_24h: failedRuns24h,
+    worker_failure_rate_24h: runs24h.length > 0 ? Math.round((failedRuns24h / runs24h.length) * 100) : 0,
+    worker_silent_with_pending: workerIsSilent ? 1 : 0,
+  };
+}
+
 function findDuplicateActiveReferences(rows: JournalEntryRow[]): AccountingDuplicateJournalReference[] {
   const references = new Map<string, AccountingDuplicateJournalReference>();
 
@@ -336,6 +402,28 @@ function buildChecks(metrics: AccountingHealthMetrics, includeAdvisoryChecks: bo
       : 'Khong co su kien PENDING/PROCESSING.',
   });
 
+  addCheck(checks, {
+    id: 'accounting_worker_silent',
+    label: 'Worker ke toan',
+    status: metrics.worker_silent_with_pending > 0 ? 'warn' : 'pass',
+    count: metrics.worker_silent_with_pending,
+    href: '/dashboard/accounting/outbox',
+    message: metrics.worker_silent_with_pending > 0
+      ? 'Outbox con su kien dang cho/loi nhung cron worker khong co lan chay gan day; can kiem tra lich cron.'
+      : 'Worker ke toan co dau vet chay gan day hoac khong co outbox can xu ly.',
+  });
+
+  addCheck(checks, {
+    id: 'accounting_worker_failures_24h',
+    label: 'Worker loi 24h',
+    status: metrics.worker_failed_runs_24h > 0 ? 'warn' : 'pass',
+    count: metrics.worker_failed_runs_24h,
+    href: '/dashboard/accounting/outbox',
+    message: metrics.worker_failed_runs_24h > 0
+      ? `${metrics.worker_failed_runs_24h} lan chay worker trong 24h gan nhat co loi; can xem outbox va cau hinh cron.`
+      : 'Khong co lan chay worker loi trong 24h gan nhat.',
+  });
+
   if (includeAdvisoryChecks) {
     const readinessIssues = metrics.missing_business_event + metrics.needs_review + metrics.posting_failed;
     addCheck(checks, {
@@ -371,16 +459,20 @@ async function buildAccountingHealthSummary(params: {
   includeAdvisoryChecks: boolean;
 }): Promise<AccountingHealthSummary> {
   const scope = getMonthScope(params.month);
-  const [outboxRows, journalRows] = await Promise.all([
+  const now = new Date();
+  const [outboxRows, journalRows, workerRows] = await Promise.all([
     loadOutboxRows(params.supabase, params.tenantId),
     loadJournalRows(params.supabase, params.tenantId, scope),
+    loadWorkerRunRows(params.supabase),
   ]);
   const duplicateReferences = findDuplicateActiveReferences(journalRows);
+  const outboxCounts = countOutboxRows(outboxRows);
 
   let metrics: AccountingHealthMetrics = {
     ...EMPTY_METRICS,
-    ...countOutboxRows(outboxRows),
+    ...outboxCounts,
     ...countJournalRows(journalRows),
+    ...countWorkerRows(workerRows, outboxCounts, now),
     duplicate_active_references: duplicateReferences.length,
   };
 
@@ -403,7 +495,7 @@ async function buildAccountingHealthSummary(params: {
   const severity = blockers.length > 0 ? 'critical' : warnings.length > 0 ? 'warning' : 'healthy';
 
   return {
-    generated_at: new Date().toISOString(),
+    generated_at: now.toISOString(),
     month: scope?.monthLabel ?? null,
     severity,
     can_close_month: blockers.length === 0,

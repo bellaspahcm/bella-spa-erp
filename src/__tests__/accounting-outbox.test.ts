@@ -18,6 +18,7 @@ process.env.CRON_SECRET = 'test-cron-secret-123';
 // ── Mock Supabase Client ──
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
+const mockWorkerRunInsert = jest.fn();
 const mockClient = {
   rpc: mockRpc,
   from: mockFrom,
@@ -55,6 +56,7 @@ import { NextRequest } from 'next/server';
 describe('Accounting Outbox Worker API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockWorkerRunInsert.mockResolvedValue({ error: null });
     mockFrom.mockImplementation((table: string) => {
       if (table === 'session_logs') {
         return {
@@ -81,6 +83,12 @@ describe('Accounting Outbox Worker API', () => {
             },
             error: null,
           }),
+        };
+      }
+
+      if (table === 'accounting_worker_runs') {
+        return {
+          insert: mockWorkerRunInsert,
         };
       }
 
@@ -152,6 +160,64 @@ describe('Accounting Outbox Worker API', () => {
       const json = await response.json();
       expect(json.success).toBe(true);
       expect(json.processed).toBe(0);
+      expect(json.workerRunLogged).toBe(true);
+      expect(mockWorkerRunInsert).toHaveBeenCalledWith(expect.objectContaining({
+        status: 'success',
+        claimed_count: 0,
+        success_count: 0,
+        failure_count: 0,
+        tenant_ids: [],
+      }));
+    });
+
+    it('records an explicit claim_failed worker run when the batch claim fails', async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'claim rpc unavailable' },
+      });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(json.success).toBe(false);
+      expect(json.status).toBe('claim_failed');
+      expect(json.workerRunLogged).toBe(true);
+      expect(mockWorkerRunInsert).toHaveBeenCalledWith(expect.objectContaining({
+        status: 'claim_failed',
+        error: 'claim rpc unavailable',
+        claimed_count: 0,
+      }));
+    });
+
+    it('fails explicitly when the worker run log cannot be persisted', async () => {
+      mockRpc.mockResolvedValueOnce({ data: [], error: null });
+      mockWorkerRunInsert.mockResolvedValueOnce({
+        error: { message: 'permission denied for accounting_worker_runs' },
+      });
+
+      const req = new NextRequest('http://localhost/api/cron/accounting-worker', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer test-cron-secret-123',
+        },
+      });
+
+      const response = await GET(req);
+      const json = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(json.success).toBe(false);
+      expect(json.status).toBe('critical_failure');
+      expect(json.workerRunLogged).toBe(false);
+      expect(json.workerRunLogError).toContain('permission denied for accounting_worker_runs');
     });
 
     it('returns 500 and does not claim outbox when Supabase admin env is missing', async () => {
@@ -239,6 +305,7 @@ describe('Accounting Outbox Worker API', () => {
       expect(json.processed).toBe(2);
       expect(json.successCount).toBe(2);
       expect(json.failureCount).toBe(0);
+      expect(json.workerRunLogged).toBe(true);
 
       // Verify RPC claim call
       expect(mockRpc).toHaveBeenNthCalledWith(1, 'claim_outbox_batch', { p_limit: 50 });
@@ -274,6 +341,25 @@ describe('Accounting Outbox Worker API', () => {
         p_outbox_id: 'outbox-id-2',
         p_journal_entry_id: 'journal-entry-2',
       });
+      expect(mockWorkerRunInsert).toHaveBeenCalledWith(expect.objectContaining({
+        status: 'success',
+        claimed_count: 2,
+        success_count: 2,
+        failure_count: 0,
+        tenant_ids: ['tenant-uuid-1'],
+        details: expect.arrayContaining([
+          expect.objectContaining({
+            eventId: 'outbox-id-1',
+            status: 'completed',
+            journalEntryId: 'journal-entry-1',
+          }),
+          expect.objectContaining({
+            eventId: 'outbox-id-2',
+            status: 'completed',
+            journalEntryId: 'journal-entry-2',
+          }),
+        ]),
+      }));
     });
 
     it('dead-letters stale SESSION_DONE events when the source session is no longer completed', async () => {
@@ -288,6 +374,12 @@ describe('Accounting Outbox Worker API', () => {
               data: { id: 'ref-stale-session', status: 'scheduled' },
               error: null,
             }),
+          };
+        }
+
+        if (table === 'accounting_worker_runs') {
+          return {
+            insert: mockWorkerRunInsert,
           };
         }
 
@@ -811,6 +903,12 @@ describe('Accounting Outbox Worker API', () => {
           };
         }
 
+        if (table === 'accounting_worker_runs') {
+          return {
+            insert: mockWorkerRunInsert,
+          };
+        }
+
         if (table === 'accounting_outbox') {
           return {
             update: jest.fn().mockReturnThis(),
@@ -902,6 +1000,12 @@ describe('Accounting Outbox Worker API', () => {
               data: { id: 'journal-draft-1', status: 'DRAFT' },
               error: null,
             }),
+          };
+        }
+
+        if (table === 'accounting_worker_runs') {
+          return {
+            insert: mockWorkerRunInsert,
           };
         }
 
