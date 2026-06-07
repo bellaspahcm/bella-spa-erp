@@ -284,6 +284,11 @@ async function expectAccountingReportsTablePolish(page: Page) {
 }
 
 async function expectPrimaryDataTableColumnsDoNotOverlap(page: Page, routeName: string) {
+  await page
+    .locator('table.bella-data-table, table[class*="w-max"], table[class*="min-w-"]')
+    .first()
+    .waitFor({ state: "visible", timeout: 30_000 });
+
   const result = await page.evaluate(() => {
     const tables = Array.from(document.querySelectorAll("table"))
       .filter((table): table is HTMLTableElement => {
