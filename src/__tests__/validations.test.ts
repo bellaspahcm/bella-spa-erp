@@ -193,6 +193,11 @@ describe("validations: bookingSchema", () => {
     }
   });
 
+  it("rejects discount_percent outside the 0-100 range", () => {
+    expect(bookingSchema.safeParse({ ...baseValid, discount_percent: -1 }).success).toBe(false);
+    expect(bookingSchema.safeParse({ ...baseValid, discount_percent: 101 }).success).toBe(false);
+  });
+
   it("rejects non-numeric full_price", () => {
     const r = bookingSchema.safeParse({ ...baseValid, full_price: "abc" });
     expect(r.success).toBe(false);

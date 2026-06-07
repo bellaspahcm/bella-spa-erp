@@ -50,7 +50,7 @@ function asMoney(value: number | string | null | undefined) {
   return Math.max(0, Math.round(asFiniteNumber(value)));
 }
 
-function normalizeDiscountPercent(value: number | string | null | undefined) {
+export function normalizeDiscountPercent(value: number | string | null | undefined) {
   return Math.max(0, Math.min(100, asFiniteNumber(value)));
 }
 
