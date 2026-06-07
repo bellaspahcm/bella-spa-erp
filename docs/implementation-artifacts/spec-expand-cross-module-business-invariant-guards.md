@@ -14,6 +14,7 @@ Tang lop kiem tra du lieu sau khi van hanh de phat hien cac chuoi nghiep vu bi d
 - Kiem tra booking `completed_sessions` phai khop so session log da completed.
 - Kiem tra salary record da paid phai co `SALARY_PAID`.
 - Canh bao outbox PENDING/PROCESSING qua 24 gio de tranh nghiep vu da ghi nhung chua vao so.
+- Phan cap loi: ban ghi `AUTO_POSTED`, `APPROVED`, hoac `POSTING_FAILED` thieu side-effect la critical; ban ghi `UNREVIEWED`/legacy metadata-only la warning de khong chan CI vi du lieu lich su.
 
 ## Ket qua mong doi
 
