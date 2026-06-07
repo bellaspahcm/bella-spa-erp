@@ -226,6 +226,7 @@ describe('payment business rule audit', () => {
     expect(salaryPageSource).toContain('calculateSalaryTotal');
     expect(querySalarySource).toContain('buildSalaryDisplayComponents');
     expect(recalculationSource).toContain('isDraftSalaryRecord');
+    expect(recalculationSource).toContain('assertSalaryRecalculationLifecycle');
     expect(salaryPageSource).not.toMatch(/totalSalary:\s*editingSalary\.baseSalary\s*\+/);
     expect(querySalarySource).not.toContain("const isDraft = !record || record.status === 'draft'");
   });
