@@ -5,6 +5,12 @@ import { checkHqAuth } from './hq-actions';
 import { HqPackageTemplate } from '@/types/domain';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { getCurrentUser } from './user-actions';
+import {
+  buildHqPackageTemplatePayload,
+  buildTemplateDistributionBasePayload,
+  resolveDistributedPackagePrice,
+  validateTenantPackagePriceOverride,
+} from '@/lib/business-rules/service-package';
 import type { Database } from '@/types/database.types';
 
 type PackageRow = Database['public']['Tables']['packages']['Row'];
@@ -65,26 +71,14 @@ export async function createHqPackageTemplate(templateData: Partial<HqPackageTem
       return { success: false, error: 'Tên gói dịch vụ là bắt buộc.' };
     }
 
-    const dbData = {
-      name: templateData.name,
-      price: Number(templateData.price || 0),
-      duration: templateData.duration || '90 phút/buổi',
-      total_sessions: Number(templateData.total_sessions || 10),
-      details: templateData.details || [],
-      offer: templateData.offer || '',
-      ktv_commission: Number(templateData.ktv_commission || 150000),
-      status: 'active',
-      is_hq_template: true,
-      tenant_id: hqTenantId, // templates belong to the HQ tenant group
-      price_cap: templateData.price_cap ? Number(templateData.price_cap) : null,
-      price_floor: templateData.price_floor ? Number(templateData.price_floor) : null,
-      allowed_franchise_override: templateData.allowed_franchise_override !== false
-    };
-
-    // Validation
-    if (dbData.price_floor && dbData.price_cap && dbData.price_floor > dbData.price_cap) {
-      return { success: false, error: 'Giá sàn không được lớn hơn giá trần.' };
+    const templatePayload = buildHqPackageTemplatePayload(templateData, {
+      tenantId: hqTenantId,
+      isHqTemplate: true,
+    });
+    if (!templatePayload.success) {
+      return { success: false, error: templatePayload.error };
     }
+    const dbData: PackageInsert = templatePayload.payload;
 
     const { data, error } = await supabase
       .from('packages')
@@ -148,24 +142,14 @@ export async function updateHqPackageTemplate(id: string, templateData: Partial<
       return { success: false, error: oldPackageError.message };
     }
 
-    const dbData = {
-      name: templateData.name,
-      price: Number(templateData.price || 0),
-      duration: templateData.duration,
-      total_sessions: Number(templateData.total_sessions),
-      details: templateData.details || [],
-      offer: templateData.offer || '',
-      ktv_commission: Number(templateData.ktv_commission),
-      price_cap: templateData.price_cap ? Number(templateData.price_cap) : null,
-      price_floor: templateData.price_floor ? Number(templateData.price_floor) : null,
-      allowed_franchise_override: templateData.allowed_franchise_override !== false,
+    const templatePayload = buildHqPackageTemplatePayload(templateData);
+    if (!templatePayload.success) {
+      return { success: false, error: templatePayload.error };
+    }
+    const dbData: PackageUpdate = {
+      ...templatePayload.payload,
       updated_at: new Date().toISOString()
     };
-
-    // Validation
-    if (dbData.price_floor && dbData.price_cap && dbData.price_floor > dbData.price_cap) {
-      return { success: false, error: 'Giá sàn không được lớn hơn giá trần.' };
-    }
 
     const { data, error } = await supabase
       .from('packages')
@@ -205,27 +189,39 @@ export async function updateHqPackageTemplate(id: string, templateData: Partial<
     // Also auto-propagate non-overrideable configuration changes to distributed packages
     // For example, if allowed_franchise_override is false, we should force all distributed packages
     // to match the new template price. Let's do that in background.
-    if (!dbData.allowed_franchise_override || templateData.price !== oldPackage?.price) {
+    if (!dbData.allowed_franchise_override || dbData.price !== oldPackage?.price) {
+      const distributionBase = buildTemplateDistributionBasePayload({
+        id,
+        ...templatePayload.payload,
+      });
       const propagateData: PackageUpdate = {
-        name: dbData.name,
-        duration: dbData.duration,
-        total_sessions: dbData.total_sessions,
-        details: dbData.details,
-        offer: dbData.offer,
-        ktv_commission: dbData.ktv_commission,
-        price_cap: dbData.price_cap,
-        price_floor: dbData.price_floor,
-        allowed_franchise_override: dbData.allowed_franchise_override
+        name: distributionBase.name,
+        duration: distributionBase.duration,
+        total_sessions: distributionBase.total_sessions,
+        details: distributionBase.details,
+        offer: distributionBase.offer,
+        ktv_commission: distributionBase.ktv_commission,
+        price_cap: distributionBase.price_cap,
+        price_floor: distributionBase.price_floor,
+        allowed_franchise_override: distributionBase.allowed_franchise_override,
       };
-
-      if (!dbData.allowed_franchise_override) {
-        propagateData.price = dbData.price;
+      if (distributionBase.session_multiplier !== undefined) {
+        propagateData.session_multiplier = distributionBase.session_multiplier;
       }
 
-      await supabase
+      if (!dbData.allowed_franchise_override) {
+        propagateData.price = resolveDistributedPackagePrice({
+          template: templatePayload.payload,
+        });
+      }
+
+      const { error: propagateError } = await supabase
         .from('packages')
         .update(propagateData)
         .eq('template_id', id);
+      if (propagateError) {
+        return { success: false, error: propagateError.message };
+      }
     }
 
     safeRevalidatePath('/hq');
@@ -340,35 +336,17 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
         continue;
       }
 
-      const dbData: PackageInsert = {
-        name: template.name,
-        duration: template.duration,
-        total_sessions: template.total_sessions,
-        details: template.details,
-        offer: template.offer,
-        ktv_commission: template.ktv_commission,
-        is_hq_template: false,
-        template_id: template.id,
-        price_cap: template.price_cap,
-        price_floor: template.price_floor,
-        allowed_franchise_override: template.allowed_franchise_override,
-        status: 'active'
-      };
+      const dbData = buildTemplateDistributionBasePayload(template);
 
       if (existingPkg) {
         // Update existing distribution
         const updateData: PackageUpdate = { ...dbData };
-        // If not allowed override or existing price is out of bounds, reset it
-        if (!template.allowed_franchise_override) {
-          updateData.price = template.price;
-        } else {
-          // Verify existing price is within floor/cap
-          const price = Number(existingPkg.price);
-          if (template.price_floor && price < Number(template.price_floor)) {
-            updateData.price = template.price_floor;
-          } else if (template.price_cap && price > Number(template.price_cap)) {
-            updateData.price = template.price_cap;
-          }
+        const resolvedPrice = resolveDistributedPackagePrice({
+          template,
+          existingPrice: existingPkg.price,
+        });
+        if (resolvedPrice !== existingPkg.price || template.allowed_franchise_override === false) {
+          updateData.price = resolvedPrice;
         }
 
         const { error: upErr } = await supabase
@@ -386,7 +364,7 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
         // Insert new distribution
         const insertData = {
           ...dbData,
-          price: template.price, // Default price
+          price: resolveDistributedPackagePrice({ template }),
           tenant_id: tenantId
         };
 
@@ -443,31 +421,18 @@ export async function overrideTenantPackagePrice(packageId: string, newPrice: nu
       return { success: false, error: 'Bạn không có quyền chỉnh sửa gói dịch vụ này.' };
     }
 
-    // If template, validate limits
-    if (pkg.template_id) {
-      if (!pkg.allowed_franchise_override) {
-        return { success: false, error: 'Gói dịch vụ chuẩn này được khóa giá cố định bởi HQ, không thể sửa đổi.' };
-      }
-
-      if (pkg.price_floor && newPrice < Number(pkg.price_floor)) {
-        return { 
-          success: false, 
-          error: `Giá bán lẻ không được thấp hơn giá sàn quy định (${Number(pkg.price_floor).toLocaleString('vi-VN')} VNĐ)` 
-        };
-      }
-
-      if (pkg.price_cap && newPrice > Number(pkg.price_cap)) {
-        return { 
-          success: false, 
-          error: `Giá bán lẻ không được vượt quá giá trần quy định (${Number(pkg.price_cap).toLocaleString('vi-VN')} VNĐ)` 
-        };
-      }
+    const priceValidation = validateTenantPackagePriceOverride({
+      packageRow: pkg,
+      newPrice,
+    });
+    if (!priceValidation.success) {
+      return { success: false, error: priceValidation.error };
     }
 
     // Update
     const { data: updatedPkg, error: upErr } = await supabase
       .from('packages')
-      .update({ price: newPrice, updated_at: new Date().toISOString() })
+      .update({ price: priceValidation.price, updated_at: new Date().toISOString() })
       .eq('id', packageId)
       .select()
       .single();
