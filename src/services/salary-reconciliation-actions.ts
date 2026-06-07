@@ -7,8 +7,8 @@ import {
   type SalaryReconciliationStatus,
 } from '@/lib/business-rules/salary';
 import { createClient } from '@/lib/supabase-server';
+import { getAuthorizedTenantUser } from './auth-guards';
 import { createAccountingDataClient } from './accounting/client';
-import { getCurrentUser } from './user-actions';
 
 export interface SalaryReconRow {
   ktv_id: string;
@@ -52,7 +52,7 @@ type SalaryReconciliationReportRpcClient = {
   ) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>;
 };
 
-const allowedSalaryReconRoles = ['admin', 'super_admin', 'accountant', 'hr'];
+const salaryReconRoles = ['admin', 'super_admin', 'accountant', 'hr'] as const;
 
 function asNumber(value: number | null | undefined) {
   return Number(value ?? 0);
@@ -139,13 +139,11 @@ function mapReportRowsToSummary(rows: SalaryReconReportRow[]): SalaryReconSummar
 export async function getSalaryReconciliation(
   monthYear: string,
 ): Promise<{ data: SalaryReconSummary | null; error: string | null }> {
-  const currentUser = await getCurrentUser();
-  if (
-    !currentUser?.tenant_id ||
-    !allowedSalaryReconRoles.includes(currentUser.role || '')
-  ) {
-    return { data: null, error: 'Yeu cau dang nhap.' };
-  }
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: salaryReconRoles,
+    errorMessage: 'Yeu cau dang nhap.',
+  });
+  if (!auth.ok) return { data: null, error: auth.error };
 
   const supabase = await createClient();
   const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
@@ -170,7 +168,7 @@ export async function getSalaryReconciliation(
   const dataClient = await createAccountingDataClient();
   const { data: reportRows, error: reportError } = await (dataClient as unknown as SalaryReconciliationReportRpcClient)
     .rpc('get_salary_reconciliation_report', {
-      p_tenant_id: currentUser.tenant_id,
+      p_tenant_id: auth.tenantId,
       p_month_year: monthYear,
     });
 
