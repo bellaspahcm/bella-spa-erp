@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import { getAuthorizedTenantUser } from './auth-guards';
 import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';
@@ -11,6 +12,10 @@ import type { Database, Json } from '@/types/database.types';
 type TenantRow = Database['public']['Tables']['tenants']['Row'];
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
 type TenantSupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+const TENANT_SETTINGS_ADMIN_ROLES = ['admin', 'super_admin'] as const;
+const TENANT_SETTINGS_TENANT_ERROR = 'Không xác định được chi nhánh của người dùng';
+const TENANT_SETTINGS_FORBIDDEN_ERROR = 'Không có quyền cập nhật cấu hình chi nhánh.';
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định') {
   if (error instanceof Error) return error.message || fallback;
@@ -124,13 +129,19 @@ export async function saveTenantSettings(settings: {
   salary_config?: Json;
   role_permissions?: Json;
 }) {
-  const supabase = await createClient();
-  const currentUser = await getCurrentUser();
-  const tenantId = currentUser?.tenant_id;
-
-  if (!tenantId) {
-    return { success: false, error: 'Không xác định được chi nhánh của người dùng' };
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: TENANT_SETTINGS_ADMIN_ROLES,
+    errorMessage: TENANT_SETTINGS_TENANT_ERROR,
+  });
+  if (!auth.ok) {
+    return {
+      success: false,
+      error: auth.reason === 'FORBIDDEN' ? TENANT_SETTINGS_FORBIDDEN_ERROR : auth.error,
+    };
   }
+
+  const supabase = await createClient();
+  const tenantId = auth.tenantId;
 
   try {
     const { data: oldSettings, error: snapshotError } = await fetchTenantSnapshot(supabase, tenantId);
