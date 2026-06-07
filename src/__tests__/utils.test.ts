@@ -83,6 +83,11 @@ describe("utils: formatNumberWithSeparator", () => {
   it("formats string input", () => {
     expect(formatNumberWithSeparator("1500000")).toBe("1.500.000");
   });
+  it("rounds floating-point currency artifacts before formatting", () => {
+    expect(formatNumberWithSeparator(148500.00000000006)).toBe("148.500");
+    expect(formatNumberWithSeparator(301499.99999999994)).toBe("301.500");
+    expect(formatNumberWithSeparator("148500.00000000006")).toBe("148.500");
+  });
   it("preserves negative sign", () => {
     expect(formatNumberWithSeparator(-500_000)).toBe("-500.000");
     expect(formatNumberWithSeparator("-500000")).toBe("-500.000");

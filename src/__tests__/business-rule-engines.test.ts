@@ -1,5 +1,6 @@
 import {
   calculateBookingPaymentState,
+  calculatePriceAfterDiscount,
   calculateSessionRevenueRecognition,
   validatePaymentAmountAgainstState,
 } from '@/lib/business-rules/payment';
@@ -63,6 +64,22 @@ describe('shared business rule engines', () => {
     expect(state.depositDue).toBe(0);
     expect(state.remainingDebt).toBe(4300000);
     expect(state.showDepositRequest).toBe(false);
+  });
+
+  it('rounds fractional discount math to integer VND amounts for 33 and 34 percent discounts', () => {
+    expect(calculatePriceAfterDiscount({ fullPrice: 450000, discountPercent: 33 })).toBe(301500);
+    expect(calculatePriceAfterDiscount({ fullPrice: 450000, discountPercent: 34 })).toBe(297000);
+
+    const thirtyThreePercentState = calculateBookingPaymentState({
+      fullPrice: 450000,
+      discountPercent: 33,
+      depositAmount: 0,
+      revenues: [],
+    });
+
+    expect(thirtyThreePercentState.priceAfterDiscount).toBe(301500);
+    expect(450000 - thirtyThreePercentState.priceAfterDiscount).toBe(148500);
+    expect(thirtyThreePercentState.remainingDebt).toBe(301500);
   });
 
   it('rejects overpayment against the shared remaining debt state', () => {
