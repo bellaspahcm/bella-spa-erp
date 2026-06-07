@@ -563,8 +563,9 @@ export async function finalizeSalaryRecord(ktvId: string) {
   const expenseAmount = record.total_salary || 0;
   const expenseDate = new Date().toISOString();
   const expenseDescription = `Lương T${monthLabel} - ${record.users?.full_name || 'KTV'} [salary_record_id:${record.id}] [ktv_id:${ktvId}]`;
+  let createdSalaryExpense = false;
   try {
-    await createSalaryExpense({
+    const salaryExpenseResult = await createSalaryExpense({
       supabase,
       tenantId,
       amount: expenseAmount,
@@ -572,6 +573,7 @@ export async function finalizeSalaryRecord(ktvId: string) {
       context: 'Finalize salary expense',
       expenseDate,
     });
+    createdSalaryExpense = salaryExpenseResult.created;
   } catch (error: unknown) {
     const rollbackErrors = await rollbackFinalizeSalarySideEffects({
       supabase,
@@ -591,8 +593,8 @@ export async function finalizeSalaryRecord(ktvId: string) {
       supabase,
       salarySnapshot,
       sessionSnapshots,
-      tenantId,
-      expenseDescription,
+      tenantId: createdSalaryExpense ? tenantId : undefined,
+      expenseDescription: createdSalaryExpense ? expenseDescription : undefined,
     });
     return {
       success: false,
@@ -760,8 +762,9 @@ export async function approveSalary(ktvId: string) {
     const expenseAmount = res.totalSalary;
     const expenseDate = new Date().toISOString();
     const expenseDescription = `Thanh toán lương T${monthLabel} - KTV ${ktv.full_name || 'Nhân viên'} [salary_record_id:${approvedRecord.id}] [ktv_id:${ktvId}]`;
+    let createdSalaryExpense = false;
     try {
-      await createSalaryExpense({
+      const salaryExpenseResult = await createSalaryExpense({
         supabase,
         tenantId,
         amount: expenseAmount,
@@ -769,6 +772,7 @@ export async function approveSalary(ktvId: string) {
         context: 'Approve salary expense',
         expenseDate,
       });
+      createdSalaryExpense = salaryExpenseResult.created;
     } catch (expenseError: unknown) {
       const rollbackError = await restoreSalaryConfigSnapshot(
         supabase,
@@ -792,7 +796,9 @@ export async function approveSalary(ktvId: string) {
         ktvName: ktv.full_name,
       });
     } catch (auditError: unknown) {
-      const expenseRollbackError = await deleteSalaryExpenseByDescription(supabase, tenantId, expenseDescription);
+      const expenseRollbackError = createdSalaryExpense
+        ? await deleteSalaryExpenseByDescription(supabase, tenantId, expenseDescription)
+        : undefined;
       const salaryRollbackError = await restoreSalaryConfigSnapshot(
         supabase,
         previousSalaryRecord,
