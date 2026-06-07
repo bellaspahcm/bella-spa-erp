@@ -56,6 +56,17 @@ function isMenuHeader(item: SidebarMenuItem): item is MenuHeader {
   return item.type === 'header';
 }
 
+function isPathActive(pathname: string, href: string) {
+  const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+  const normalizedHref = href.replace(/\/+$/, '') || '/';
+
+  if (normalizedHref === '/dashboard') {
+    return normalizedPath === '/dashboard';
+  }
+
+  return normalizedPath === normalizedHref || normalizedPath.startsWith(`${normalizedHref}/`);
+}
+
 const menuItems: SidebarMenuItem[] = [
   { type: 'header', label: 'Tổng quan & AI' },
   { icon: LayoutDashboard, label: 'Dashboard',          href: '/dashboard' },
@@ -224,6 +235,12 @@ export function Sidebar() {
     }
   });
 
+  const activeHref = finalMenuItems
+    .filter((item): item is MenuLink => !isMenuHeader(item))
+    .map((item) => item.href)
+    .filter((href) => isPathActive(pathname, href))
+    .sort((a, b) => b.length - a.length)[0];
+
   const handleLogout = async () => {
     try {
       if (process.env.NODE_ENV === 'development') {
@@ -354,18 +371,24 @@ export function Sidebar() {
               );
             }
 
-            const isActive = pathname === item.href;
+            const isActive = activeHref === item.href;
             return (
-              <Link key={item.href} href={item.href} onClick={handleNavigation}>
+              <Link key={item.href} href={item.href} onClick={handleNavigation} aria-current={isActive ? 'page' : undefined}>
                 <motion.div
                   whileHover={{ x: 4 }}
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group cursor-pointer border",
                     isActive
-                      ? "bg-white text-[#BE185D] border-[#FFE4E6] shadow-[0_8px_20px_rgba(219,39,119,0.08)] dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/30 dark:shadow-none"
+                      ? "bg-white text-[#BE185D] border-[#F9A8D4] shadow-[0_8px_20px_rgba(219,39,119,0.12)] ring-1 ring-[#F9A8D4]/45 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
                       : "text-[#8A6D7C] bg-transparent border-transparent hover:bg-white/70 hover:text-[#BE185D] hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50 dark:text-[#CDBCAB] dark:hover:bg-[#1C1B19]/50 dark:hover:text-[#EFE9E1] dark:hover:border-[#3E3A35]/50"
                   )}
                 >
+                  {isActive && (
+                    <motion.div
+                      layoutId="desktop-active-rail"
+                      className="absolute left-1.5 top-1/2 hidden h-8 w-1 -translate-y-1/2 rounded-full bg-[#BE185D] shadow-[0_0_10px_rgba(190,24,93,0.35)] dark:bg-[#A67D44] dark:shadow-[0_0_10px_rgba(166,125,68,0.25)] lg:block"
+                    />
+                  )}
                   <item.icon className={cn(
                     "w-[18px] h-[18px] transition-all duration-300",
                     isActive 

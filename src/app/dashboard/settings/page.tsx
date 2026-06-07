@@ -1,13 +1,15 @@
 "use client";
 // Version: 1.3.0 - Refactored Component & Strict Types
 
-import { useCallback, useState, useEffect } from "react";
+import { Suspense, useCallback, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Store,
   Save,
   ChevronRight,
   Sparkles,
+  Loader2,
   Bell,
   Palette,
   Shield,
@@ -48,10 +50,23 @@ const TABS = [
   { id: "notifications", label: "Thông báo", icon: Bell },
   { id: "appearance", label: "Giao diện", icon: Palette },
   { id: "promotions", label: "Khuyến mãi", icon: Sparkles },
-];
+] as const;
 
-export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("general");
+type SettingsTabId = (typeof TABS)[number]["id"];
+
+const DEFAULT_SETTINGS_TAB: SettingsTabId = "general";
+
+function isSettingsTabId(value: string | null): value is SettingsTabId {
+  return TABS.some((tab) => tab.id === value);
+}
+
+function SettingsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(
+    isSettingsTabId(initialTab) ? initialTab : DEFAULT_SETTINGS_TAB
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
@@ -110,7 +125,31 @@ export default function SettingsPage() {
     loadSettings();
   }, [loadSettings]);
 
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (isSettingsTabId(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
   usePageRefresh(loadSettings);
+
+  const handleTabChange = useCallback(
+    (tabId: SettingsTabId) => {
+      setActiveTab(tabId);
+
+      const params = new URLSearchParams(searchParams.toString());
+      if (tabId === DEFAULT_SETTINGS_TAB) {
+        params.delete("tab");
+      } else {
+        params.set("tab", tabId);
+      }
+
+      const query = params.toString();
+      router.replace(query ? `/dashboard/settings?${query}` : "/dashboard/settings", { scroll: false });
+    },
+    [router, searchParams]
+  );
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -164,7 +203,7 @@ export default function SettingsPage() {
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={cn(
                 "w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all duration-300 font-bold group",
                 activeTab === tab.id
@@ -253,5 +292,19 @@ export default function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background/30">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <SettingsContent />
+    </Suspense>
   );
 }
