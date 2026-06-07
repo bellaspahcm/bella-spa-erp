@@ -237,7 +237,8 @@ export type BusinessHealthRepairAction =
   | 'create_missing_inventory_consumption'
   | 'enqueue_missing_session_done_accounting'
   | 'enqueue_missing_inventory_consumed_accounting'
-  | 'enqueue_missing_package_sale_accounting';
+  | 'enqueue_missing_package_sale_accounting'
+  | 'enqueue_missing_salary_paid_accounting';
 
 export interface BusinessHealthFindingDetail {
   label: string;
