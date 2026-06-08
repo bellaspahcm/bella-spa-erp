@@ -31,6 +31,7 @@ import type {
   ResourceStatus,
   ResourceType,
   ServiceModalMode,
+  ServiceModuleFilter,
   ServicePackage,
   ServiceStatus,
   ServiceStatusFilter,
@@ -137,6 +138,7 @@ export function useServicesPageState() {
   const [selectedService, setSelectedService] = useState<ServicePackage | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ServiceStatusFilter>('all');
+  const [moduleFilter, setModuleFilter] = useState<ServiceModuleFilter>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   const [form, setForm] = useState(createBlankServiceForm);
@@ -158,6 +160,11 @@ export function useServicesPageState() {
 
   const updateStatusFilter = (value: ServiceStatusFilter) => {
     setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const updateModuleFilter = (value: ServiceModuleFilter) => {
+    setModuleFilter(value);
     setCurrentPage(1);
   };
 
@@ -232,11 +239,16 @@ export function useServicesPageState() {
   const loadTenantModuleConfig = useCallback(async () => {
     try {
       const tenant = await getTenantSettings();
-      setIsBeautySpaEnabled(normalizeEnabledModules(tenant?.enabled_modules).beauty_spa);
+      const beautySpaEnabled = normalizeEnabledModules(tenant?.enabled_modules).beauty_spa;
+      setIsBeautySpaEnabled(beautySpaEnabled);
+      if (!beautySpaEnabled) setModuleFilter('all');
+      return beautySpaEnabled;
     } catch (error) {
       console.error('Load tenant module config error:', error);
       toast.error(getErrorMessage(error, 'Không thể tải cấu hình module'));
       setIsBeautySpaEnabled(false);
+      setModuleFilter('all');
+      return false;
     }
   }, []);
 
@@ -260,8 +272,18 @@ export function useServicesPageState() {
   }, []);
 
   const refreshData = useCallback(async () => {
-    await Promise.all([loadData(), loadInventoryItems(), loadTenantModuleConfig(), loadBookingResources()]);
-  }, [loadBookingResources, loadData, loadInventoryItems, loadTenantModuleConfig]);
+    const loadModuleScopedResources = async () => {
+      const beautySpaEnabled = await loadTenantModuleConfig();
+      if (beautySpaEnabled) {
+        await loadBookingResources();
+        return;
+      }
+      setBookingResources([]);
+      resetResourceForm();
+    };
+
+    await Promise.all([loadData(), loadInventoryItems(), loadModuleScopedResources()]);
+  }, [loadBookingResources, loadData, loadInventoryItems, loadTenantModuleConfig, resetResourceForm]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -571,14 +593,17 @@ export function useServicesPageState() {
   const filteredServices = useMemo(() => services
     .filter(service => {
       const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase());
-      if (statusFilter === 'all') return matchesSearch;
-      return matchesSearch && service.status === statusFilter;
+      const normalizedModuleKey = service.module_key === 'beauty_spa' ? 'beauty_spa' : 'babycare';
+      const matchesModule = !isBeautySpaEnabled || moduleFilter === 'all' || normalizedModuleKey === moduleFilter;
+      const matchesStatus = statusFilter === 'all' || service.status === statusFilter;
+
+      return matchesSearch && matchesModule && matchesStatus;
     })
     .sort((a, b) => {
       if (a.status === 'active' && b.status !== 'active') return -1;
       if (a.status !== 'active' && b.status === 'active') return 1;
       return a.name.localeCompare(b.name);
-    }), [searchQuery, services, statusFilter]);
+    }), [isBeautySpaEnabled, moduleFilter, searchQuery, services, statusFilter]);
 
   const totalPages = Math.ceil(filteredServices.length / PAGE_SIZE) || 1;
   const paginatedServices = filteredServices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -600,6 +625,8 @@ export function useServicesPageState() {
     setSearchQuery: updateSearchQuery,
     statusFilter,
     setStatusFilter: updateStatusFilter,
+    moduleFilter,
+    setModuleFilter: updateModuleFilter,
     currentPage,
     name: form.name,
     setName,
