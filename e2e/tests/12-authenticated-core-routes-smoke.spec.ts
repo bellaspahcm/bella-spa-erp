@@ -44,6 +44,7 @@ const appErrorPatterns = [
 ];
 
 const benignConsoleErrorPatterns = [
+  /TypeError: Failed to fetch\s+at fetchServerAction/i,
   /vercel\.live\/_next-live\/feedback\/feedback\.js.*Content Security Policy/i,
 ];
 
