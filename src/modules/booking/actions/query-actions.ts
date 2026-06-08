@@ -1,6 +1,7 @@
 'use server';
 
 import { resolvePackageName } from '@/lib/utils';
+import { getPackages as getTenantPackages } from '@/services/package-actions';
 import type { Database } from '@/types/database.types';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -26,27 +27,30 @@ type BookingCustomerDetailItem = BookingRow & {
   })[];
 };
 
-export async function getPackages() {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('packages')
-    .select('*')
-    .eq('status', 'active')
-    .order('name', { ascending: true });
+const BOOKING_TENANT_ACCESS_ERROR = 'Không xác định được đơn vị kinh doanh của người dùng hiện tại.';
 
-  if (error) {
-    throw new Error(`Failed to fetch active packages: ${error.message}`);
+async function requireCurrentTenantId() {
+  const { getCurrentUser } = await import('@/services/user-actions');
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.tenant_id) {
+    throw new Error(BOOKING_TENANT_ACCESS_ERROR);
   }
-  return data || [];
+  return currentUser.tenant_id;
+}
+
+export async function getPackages() {
+  const packages = await getTenantPackages();
+  return packages.filter(pkg => pkg.status === 'active');
 }
 
 export async function getBookings() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const tenantId = await requireCurrentTenantId();
   const { data, error } = await supabase
     .from('bookings')
     .select('*, customers(name_mother, phone), packages!bookings_package_id_fkey(name)')
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -68,6 +72,7 @@ export async function getBookings() {
 export async function getBookingsByCustomerId(customerId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const tenantId = await requireCurrentTenantId();
   const { data, error } = await supabase
     .from('bookings')
     .select(`
@@ -84,6 +89,7 @@ export async function getBookingsByCustomerId(customerId: string) {
       )
     `)
     .eq('customer_id', customerId)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -104,11 +110,13 @@ export async function getBookingsByCustomerId(customerId: string) {
 export async function getDraftBooking(customerId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const tenantId = await requireCurrentTenantId();
   
   const { data, error } = await supabase
     .from('bookings')
     .select('*, customers(name_mother, phone, address), revenue(amount, status, revenue_type)')
     .eq('customer_id', customerId)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .limit(1);
 

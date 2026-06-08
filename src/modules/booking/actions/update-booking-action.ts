@@ -12,10 +12,24 @@ type SessionLogSchedulePick = Pick<
   'session_number' | 'assigned_date' | 'status'
 >;
 
+const BOOKING_TENANT_ACCESS_ERROR = 'Không xác định được đơn vị kinh doanh của người dùng hiện tại.';
+
+async function requireCurrentTenantId() {
+  const { getCurrentUser } = await import('@/services/user-actions');
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.tenant_id) {
+    throw new Error(BOOKING_TENANT_ACCESS_ERROR);
+  }
+  return currentUser.tenant_id;
+}
+
 export async function updateBooking(id: string, payload: BookingUpdate) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
-  const updatePayload: BookingUpdate = { ...payload };
+  const tenantId = await requireCurrentTenantId();
+  const { tenant_id: _ignoredTenantId, ...scopedPayload } = payload;
+  void _ignoredTenantId;
+  const updatePayload: BookingUpdate = { ...scopedPayload };
 
   if (updatePayload.preferred_time !== undefined) {
     updatePayload.preferred_time = sanitizeTime(updatePayload.preferred_time);
@@ -27,6 +41,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
       .from('bookings')
       .select('*')
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .single();
     if (existingError) {
       return { error: existingError.message };
@@ -42,6 +57,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
     .from('bookings')
     .update(updatePayload)
     .eq('id', id)
+    .eq('tenant_id', tenantId)
     .select();
 
   if (error) {
@@ -53,6 +69,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         .from('bookings')
         .update(retryPayload)
         .eq('id', id)
+        .eq('tenant_id', tenantId)
         .select();
       
       if (retryError) {
@@ -75,7 +92,8 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
             await supabase
               .from('bookings')
               .update(oldBooking)
-              .eq('id', id);
+              .eq('id', id)
+              .eq('tenant_id', tenantId);
           }
           return {
             error: auditErr instanceof Error
@@ -106,7 +124,8 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         await supabase
           .from('bookings')
           .update(oldBooking)
-          .eq('id', id);
+          .eq('id', id)
+          .eq('tenant_id', tenantId);
       }
       return {
         error: auditErr instanceof Error
@@ -123,6 +142,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         .from('session_logs')
         .select('session_number, assigned_date, status')
         .eq('booking_id', id)
+        .eq('tenant_id', tenantId)
         .order('session_number', { ascending: true });
 
       if (existingLogsError) {
@@ -137,6 +157,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
           .from('session_logs')
           .delete()
           .eq('booking_id', id)
+          .eq('tenant_id', tenantId)
           .gt('session_number', newTotal)
           .eq('status', 'scheduled');
         if (deleteLogsError) {
@@ -150,13 +171,14 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
             .from('bookings')
             .select('start_date')
             .eq('id', id)
+            .eq('tenant_id', tenantId)
             .single();
           baseDateStr = b?.start_date || null;
         }
 
         const lastLogWithDate = [...logs].reverse().find((l) => l.assigned_date);
         let lastAssignedDate = lastLogWithDate?.assigned_date || baseDateStr;
-        const tenantIdForNewLogs = data?.[0]?.tenant_id || process.env.DEFAULT_TENANT_ID;
+        const tenantIdForNewLogs = data?.[0]?.tenant_id || oldBooking?.tenant_id || tenantId;
 
         if (!tenantIdForNewLogs) {
           throw new Error('Missing tenant_id for new session logs inside updateBooking');
@@ -194,7 +216,7 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         }
       }
 
-      const syncResult = await syncBookingProgress(id);
+      const syncResult = await syncBookingProgress(id, tenantId);
       if (syncResult.error) {
         throw new Error(syncResult.error);
       }
@@ -203,7 +225,8 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
         await supabase
           .from('bookings')
           .update(oldBooking)
-          .eq('id', id);
+          .eq('id', id)
+          .eq('tenant_id', tenantId);
       }
       return {
         error: syncErr instanceof Error
@@ -213,7 +236,12 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
     }
   }
 
-  const { data: bookingData } = await supabase.from('bookings').select('customer_id').eq('id', id).single();
+  const { data: bookingData } = await supabase
+    .from('bookings')
+    .select('customer_id')
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .single();
   const revalPaths = [
     '/dashboard/bookings',
     '/dashboard/customers'
@@ -226,14 +254,16 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
   return { data };
 }
 
-export async function syncBookingProgress(bookingId: string) {
+export async function syncBookingProgress(bookingId: string, tenantId?: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const scopedTenantId = tenantId || await requireCurrentTenantId();
   
   const { count, error: countError } = await supabase
     .from('session_logs')
     .select('*', { count: 'exact', head: true })
     .eq('booking_id', bookingId)
+    .eq('tenant_id', scopedTenantId)
     .eq('status', 'completed');
 
   if (countError) return { error: countError.message };
@@ -242,6 +272,7 @@ export async function syncBookingProgress(bookingId: string) {
     .from('bookings')
     .select('completed_sessions')
     .eq('id', bookingId)
+    .eq('tenant_id', scopedTenantId)
     .single();
 
   if (fetchError) return { error: fetchError.message };
@@ -251,7 +282,8 @@ export async function syncBookingProgress(bookingId: string) {
     const { error: updateError } = await supabase
       .from('bookings')
       .update({ completed_sessions: count })
-      .eq('id', bookingId);
+      .eq('id', bookingId)
+      .eq('tenant_id', scopedTenantId);
     
     if (updateError) return { error: updateError.message };
     return { synced: true, newCount: count };

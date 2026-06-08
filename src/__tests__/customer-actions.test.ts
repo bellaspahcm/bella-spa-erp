@@ -1,9 +1,12 @@
 import {
   addLoyaltyPoints,
+  createCustomer,
+  deleteCustomer,
   getCustomerBookingByToken,
   getCustomerById,
   getCustomers,
   submitCustomerRating,
+  updateCustomer,
 } from '../services/customer-actions';
 
 jest.mock('server-only', () => ({}), { virtual: true });
@@ -16,6 +19,7 @@ jest.mock('../lib/revalidate', () => ({
 const mockFrom = jest.fn();
 const mockRpc = jest.fn();
 const mockGetCurrentUser = jest.fn();
+const mockRecordAuditLog = jest.fn();
 
 jest.mock('../lib/supabase-server', () => ({
   createClient: jest.fn(() => Promise.resolve({
@@ -28,18 +32,39 @@ jest.mock('../services/user-actions', () => ({
   getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
 }));
 
+jest.mock('../services/audit-actions', () => ({
+  recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
+}));
+
+jest.mock('../lib/subscription', () => ({
+  checkSubscriptionLimit: jest.fn().mockResolvedValue({ isBlocked: false }),
+}));
+
 class MockQueryBuilder {
   public updateSpy = jest.fn().mockReturnThis();
+  public insertSpy = jest.fn().mockReturnThis();
+  public deleteSpy = jest.fn().mockReturnThis();
+  public filters: Array<{ column: string; value: unknown }> = [];
 
   constructor(private data: any = null, private error: any = null) {}
 
   select() { return this; }
   order() { return this; }
   limit() { return this; }
-  eq() { return this; }
+  eq(column: string, value: unknown) {
+    this.filters.push({ column, value });
+    return this;
+  }
   maybeSingle() { return this; }
   single() { return this; }
-  insert() { return this; }
+  insert(...args: any[]) {
+    this.insertSpy(...args);
+    return this;
+  }
+  delete(...args: any[]) {
+    this.deleteSpy(...args);
+    return this;
+  }
   update(...args: any[]) {
     this.updateSpy(...args);
     return this;
@@ -55,6 +80,91 @@ describe('customer actions fail-fast behavior', () => {
     jest.clearAllMocks();
     mockGetCurrentUser.mockResolvedValue({ id: 'customer-1', role: 'customer', tenant_id: 'tenant-1' });
     mockRpc.mockResolvedValue({ data: null, error: null });
+    mockRecordAuditLog.mockResolvedValue({ success: true });
+  });
+
+  it('scopes customer list queries to the current tenant', async () => {
+    const listQuery = new MockQueryBuilder([{ id: 'cust-1', tenant_id: 'tenant-1' }]);
+    mockFrom.mockReturnValue(listQuery);
+
+    await expect(getCustomers()).resolves.toEqual([{ id: 'cust-1', tenant_id: 'tenant-1' }]);
+
+    expect(listQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+  });
+
+  it('scopes customer detail queries to the current tenant', async () => {
+    const detailQuery = new MockQueryBuilder({ id: 'cust-1', tenant_id: 'tenant-1' });
+    mockFrom.mockReturnValue(detailQuery);
+
+    await expect(getCustomerById('cust-1')).resolves.toEqual({ id: 'cust-1', tenant_id: 'tenant-1' });
+
+    expect(detailQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'id', value: 'cust-1' },
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+  });
+
+  it('creates customers under the current tenant instead of trusting client tenant input', async () => {
+    const createQuery = new MockQueryBuilder([{ id: 'cust-1', tenant_id: 'tenant-1' }]);
+    mockFrom.mockReturnValue(createQuery);
+
+    const result = await createCustomer({
+      name: 'Customer A',
+      phone: '0900000000',
+      tenant_id: 'tenant-2',
+    });
+
+    expect(result.data).toEqual({ id: 'cust-1', tenant_id: 'tenant-1' });
+    expect(createQuery.insertSpy).toHaveBeenCalledWith([expect.objectContaining({
+      name_mother: 'Customer A',
+      phone: '0900000000',
+      tenant_id: 'tenant-1',
+    })]);
+  });
+
+  it('scopes customer updates and strips client tenant changes', async () => {
+    const oldCustomerQuery = new MockQueryBuilder({ id: 'cust-1', tenant_id: 'tenant-1', address: 'Old' });
+    const updateQuery = new MockQueryBuilder([{ id: 'cust-1', tenant_id: 'tenant-1', name_mother: 'New' }]);
+    mockFrom
+      .mockReturnValueOnce(oldCustomerQuery)
+      .mockReturnValueOnce(updateQuery);
+
+    const result = await updateCustomer('cust-1', {
+      name_mother: 'New',
+      tenant_id: 'tenant-2',
+    });
+
+    expect(result.data).toEqual({ id: 'cust-1', tenant_id: 'tenant-1', name_mother: 'New' });
+    expect(oldCustomerQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'id', value: 'cust-1' },
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+    expect(updateQuery.updateSpy).toHaveBeenCalledWith({ name_mother: 'New' });
+    expect(updateQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'id', value: 'cust-1' },
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+  });
+
+  it('scopes customer deletes to the current tenant', async () => {
+    const oldCustomerQuery = new MockQueryBuilder({ id: 'cust-1', tenant_id: 'tenant-1' });
+    const deleteQuery = new MockQueryBuilder(null, null);
+    mockFrom
+      .mockReturnValueOnce(oldCustomerQuery)
+      .mockReturnValueOnce(deleteQuery);
+
+    await expect(deleteCustomer('cust-1')).resolves.toEqual({ success: true, error: null });
+
+    expect(oldCustomerQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'id', value: 'cust-1' },
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+    expect(deleteQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'id', value: 'cust-1' },
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
   });
 
   it('propagates customer list query failures', async () => {
