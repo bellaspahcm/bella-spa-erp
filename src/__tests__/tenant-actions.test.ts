@@ -271,11 +271,10 @@ describe('tenant settings actions', () => {
     );
   });
 
-  it('normalizes and saves tenant white-label module settings with audit', async () => {
+  it('normalizes and saves tenant white-label display settings with audit', async () => {
     const oldTenant = tenantRow();
     const updatedTenant = tenantRow({
       logo_url: 'https://cdn.bella.vn/new-logo.png',
-      enabled_modules: { babycare: true, beauty_spa: true },
       brand_theme: {
         brandName: 'Bella Premium',
         logoUrl: 'https://cdn.bella.vn/new-logo.png',
@@ -292,7 +291,6 @@ describe('tenant settings actions', () => {
 
     const result = await saveTenantSettings({
       logo_url: '  https://cdn.bella.vn/new-logo.png  ',
-      enabled_modules: { babycare: true, beauty_spa: true },
       brand_theme: {
         brandName: '  Bella Premium  ',
         logoUrl: 'https://cdn.bella.vn/new-logo.png',
@@ -309,7 +307,6 @@ describe('tenant settings actions', () => {
       operation: 'update',
       payload: expect.objectContaining({
         logo_url: 'https://cdn.bella.vn/new-logo.png',
-        enabled_modules: { babycare: true, beauty_spa: true },
         brand_theme: {
           brandName: 'Bella Premium',
           logoUrl: 'https://cdn.bella.vn/new-logo.png',
@@ -329,6 +326,49 @@ describe('tenant settings actions', () => {
       new_data: updatedTenant,
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+  });
+
+  it('blocks tenant admins from changing industry modules before database side effects', async () => {
+    const result = await saveTenantSettings({
+      enabled_modules: { babycare: false, beauty_spa: true },
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Module ngành được cấu hình khi setup tenant, admin tenant không thể tự chuyển đổi.',
+    });
+    expect(queryCalls).toHaveLength(0);
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('allows super admin setup to lock a tenant to Beauty Spa only', async () => {
+    mockGetCurrentUser.mockResolvedValueOnce({
+      id: 'super-admin-1',
+      tenant_id: 'tenant-1',
+      role: 'super_admin',
+    });
+    const oldTenant = tenantRow();
+    const updatedTenant = tenantRow({
+      enabled_modules: { babycare: false, beauty_spa: true },
+    });
+    scriptedResults = [
+      { data: oldTenant, error: null },
+      { data: [updatedTenant], error: null },
+    ];
+
+    const result = await saveTenantSettings({
+      enabled_modules: { babycare: false, beauty_spa: true },
+    });
+
+    expect(result.success).toBe(true);
+    expect(queryCalls[1]).toEqual(expect.objectContaining({
+      table: 'tenants',
+      operation: 'update',
+      payload: expect.objectContaining({
+        enabled_modules: { babycare: false, beauty_spa: true },
+      }),
+    }));
   });
 
   it('blocks non-admin users from saving tenant settings before side effects', async () => {

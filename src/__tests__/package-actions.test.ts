@@ -9,6 +9,24 @@ import type { Database } from '../types/database.types';
 
 jest.mock('server-only', () => ({}), { virtual: true });
 
+const mockGetAuthorizedTenantUser = jest.fn(() => Promise.resolve({
+  ok: true,
+  user: {
+    id: 'admin-1',
+    email: 'admin@example.com',
+    full_name: 'Admin',
+    role: 'admin',
+    tenant_id: 'tenant-1',
+    avatar_url: null,
+  },
+  tenantId: 'tenant-1',
+  error: null,
+  reason: null,
+}));
+jest.mock('../services/auth-guards', () => ({
+  getAuthorizedTenantUser: (options: unknown) => mockGetAuthorizedTenantUser(options),
+}));
+
 const mockRecordAuditLog = jest.fn((payload: unknown) => {
   void payload;
   return Promise.resolve({ success: true });
@@ -33,7 +51,7 @@ type DbOperation = {
   table: string;
   method: DbOperationMethod;
   payload?: unknown;
-  filters: Array<{ column: string; value: unknown }>;
+  filters: Array<{ column: string; value: unknown; operator?: 'eq' | 'in' }>;
 };
 
 const operations: DbOperation[] = [];
@@ -78,7 +96,12 @@ class MockQueryBuilder {
   }
 
   eq(column: string, value: unknown): this {
-    this.operation?.filters.push({ column, value });
+    this.operation?.filters.push({ column, value, operator: 'eq' });
+    return this;
+  }
+
+  in(column: string, value: unknown[]): this {
+    this.operation?.filters.push({ column, value, operator: 'in' });
     return this;
   }
 
@@ -109,6 +132,10 @@ jest.mock('../lib/supabase-server', () => ({
 
 function queueResult(data: unknown, error: QueryError | null = null) {
   queryResults.push({ data, error });
+}
+
+function queueTenantModules(modules: unknown = { babycare: true, beauty_spa: false }) {
+  queueResult({ enabled_modules: modules });
 }
 
 function findOperation(method: DbOperationMethod, predicate?: (operation: DbOperation) => boolean) {
@@ -156,7 +183,36 @@ describe('package actions transaction safety', () => {
     jest.clearAllMocks();
     operations.length = 0;
     queryResults = [];
+    mockGetAuthorizedTenantUser.mockResolvedValue({
+      ok: true,
+      user: {
+        id: 'admin-1',
+        email: 'admin@example.com',
+        full_name: 'Admin',
+        role: 'admin',
+        tenant_id: 'tenant-1',
+        avatar_url: null,
+      },
+      tenantId: 'tenant-1',
+      error: null,
+      reason: null,
+    });
     mockRecordAuditLog.mockResolvedValue({ success: true });
+  });
+
+  it('lists packages scoped to the authenticated tenant and enabled modules only', async () => {
+    const tenantPackage = createPackageRow();
+    queueTenantModules({ babycare: true, beauty_spa: false });
+    queueResult([tenantPackage]);
+
+    const result = await getPackages();
+
+    expect(result).toEqual([tenantPackage]);
+    const selectOperation = findOperation('select', operation => operation.table === 'packages');
+    expect(selectOperation?.filters).toEqual(expect.arrayContaining([
+      expect.objectContaining({ column: 'tenant_id', value: 'tenant-1' }),
+      expect.objectContaining({ column: 'module_key', value: ['babycare'], operator: 'in' }),
+    ]));
   });
 
   it('creates package with a typed payload and records audit log', async () => {
@@ -168,6 +224,7 @@ describe('package actions transaction safety', () => {
       ktv_commission: '150.000',
       details: ['Massage body'],
     };
+    queueTenantModules({ babycare: true, beauty_spa: false });
     queueResult([insertedPackage]);
 
     const result = await createPackage(input);
@@ -176,9 +233,11 @@ describe('package actions transaction safety', () => {
     const insertOperation = findOperation('insert');
     expect(insertOperation?.payload).toEqual([expect.objectContaining<Partial<PackageInsert>>({
       name: 'VIP',
+      tenant_id: 'tenant-1',
       price: 1000000,
       total_sessions: 10,
       ktv_commission: 150000,
+      module_key: 'babycare',
       status: 'active',
     })]);
     expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
@@ -189,9 +248,80 @@ describe('package actions transaction safety', () => {
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/services');
   });
 
+  it('defaults new packages to Beauty Spa for beauty-only tenants', async () => {
+    const insertedPackage = createPackageRow({ module_key: 'beauty_spa' });
+    queueTenantModules({ babycare: false, beauty_spa: true });
+    queueResult([insertedPackage]);
+
+    const result = await createPackage({
+      name: 'Facial Signature',
+      price: 1000000,
+      sessions: 10,
+    });
+
+    expect(result.data?.module_key).toBe('beauty_spa');
+    const insertOperation = findOperation('insert', operation => operation.table === 'packages');
+    expect(insertOperation?.payload).toEqual([expect.objectContaining<Partial<PackageInsert>>({
+      tenant_id: 'tenant-1',
+      module_key: 'beauty_spa',
+    })]);
+  });
+
+  it('rejects creating Babycare packages for beauty-only tenants', async () => {
+    queueTenantModules({ babycare: false, beauty_spa: true });
+
+    const result = await createPackage({
+      name: 'Babycare should be blocked',
+      module_key: 'babycare',
+    });
+
+    expect(result.error).toContain('Admin HQ');
+    expect(findOperation('insert', operation => operation.table === 'packages')).toBeUndefined();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('rejects attempts to create a package for another tenant', async () => {
+    const result = await createPackage({
+      name: 'Cross tenant package',
+      tenant_id: 'tenant-2',
+    });
+
+    expect(result.error).toBe('Không thể thao tác gói dịch vụ ngoài đơn vị kinh doanh hiện tại.');
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('rejects updating packages to a module that HQ did not enable', async () => {
+    const oldPackage = createPackageRow({ module_key: 'beauty_spa' });
+    queueTenantModules({ babycare: false, beauty_spa: true });
+    queueResult(oldPackage);
+
+    const result = await updatePackage('pkg-1', {
+      module_key: 'babycare',
+      name: 'Blocked module switch',
+    });
+
+    expect(result.error).toContain('Admin HQ');
+    expect(findOperation('update', operation => operation.table === 'packages')).toBeUndefined();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('rejects deleting packages outside the HQ enabled module scope', async () => {
+    const oldPackage = createPackageRow({ module_key: 'babycare' });
+    queueTenantModules({ babycare: false, beauty_spa: true });
+    queueResult(oldPackage);
+
+    const result = await deletePackage('pkg-1');
+
+    expect(result.error).toContain('Admin HQ');
+    expect(findOperation('delete', operation => operation.table === 'packages')).toBeUndefined();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
   it('rolls back inserted package when audit logging fails', async () => {
     const insertedPackage = createPackageRow();
     mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+    queueTenantModules({ babycare: true, beauty_spa: false });
     queueResult([insertedPackage]);
     queueResult(null);
 
@@ -204,6 +334,7 @@ describe('package actions transaction safety', () => {
     expect(result.error).toBe('Audit write failed');
     const rollbackDelete = findOperation('delete', operation => (
       operation.filters.some(filter => filter.column === 'id' && filter.value === 'pkg-1')
+      && operation.filters.some(filter => filter.column === 'tenant_id' && filter.value === 'tenant-1')
     ));
     expect(rollbackDelete).toBeDefined();
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
@@ -212,6 +343,7 @@ describe('package actions transaction safety', () => {
   it('returns rollback failure when create audit rollback delete fails', async () => {
     const insertedPackage = createPackageRow();
     mockRecordAuditLog.mockRejectedValue(new Error('Audit write failed'));
+    queueTenantModules({ babycare: true, beauty_spa: false });
     queueResult([insertedPackage]);
     queueResult(null, { message: 'rollback delete failed' });
 
@@ -226,6 +358,7 @@ describe('package actions transaction safety', () => {
   });
 
   it('propagates package query failures instead of returning an empty list', async () => {
+    queueTenantModules({ babycare: true, beauty_spa: false });
     queueResult(null, { message: 'package query failed' });
 
     await expect(getPackages()).rejects.toThrow('Failed to fetch packages: package query failed');
@@ -235,6 +368,7 @@ describe('package actions transaction safety', () => {
     const oldPackage = createPackageRow();
     const updatedPackage = createPackageRow({ name: 'VIP Updated', price: 1200000 });
     mockRecordAuditLog.mockRejectedValue(new Error('Audit update failed'));
+    queueTenantModules({ babycare: true, beauty_spa: false });
     queueResult(oldPackage);
     queueResult([updatedPackage]);
     queueResult(null);
@@ -248,6 +382,7 @@ describe('package actions transaction safety', () => {
     const rollbackUpdate = findOperation('update', operation => (
       operation.payload === oldPackage
       && operation.filters.some(filter => filter.column === 'id' && filter.value === 'pkg-1')
+      && operation.filters.some(filter => filter.column === 'tenant_id' && filter.value === 'tenant-1')
     ));
     expect(rollbackUpdate).toBeDefined();
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
@@ -255,6 +390,7 @@ describe('package actions transaction safety', () => {
 
   it('returns update DB failures without writing audit log', async () => {
     const oldPackage = createPackageRow();
+    queueTenantModules({ babycare: true, beauty_spa: false });
     queueResult(oldPackage);
     queueResult(null, { message: 'update failed' });
 
@@ -264,12 +400,29 @@ describe('package actions transaction safety', () => {
     });
 
     expect(result.error).toBe('update failed');
+    const oldPackageSelect = findOperation('select', operation => operation.table === 'packages');
+    expect(oldPackageSelect?.filters).toEqual(expect.arrayContaining([
+      expect.objectContaining({ column: 'id', value: 'pkg-1' }),
+      expect.objectContaining({ column: 'tenant_id', value: 'tenant-1' }),
+    ]));
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+  });
+
+  it('rejects attempts to update a package for another tenant before querying', async () => {
+    const result = await updatePackage('pkg-1', {
+      name: 'Cross tenant update',
+      tenant_id: 'tenant-2',
+    });
+
+    expect(result.error).toBe('Không thể thao tác gói dịch vụ ngoài đơn vị kinh doanh hiện tại.');
+    expect(mockFrom).not.toHaveBeenCalled();
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
   });
 
   it('rolls back deleted package when delete audit logging fails', async () => {
     const oldPackage = createPackageRow();
     mockRecordAuditLog.mockRejectedValue(new Error('Audit delete failed'));
+    queueTenantModules({ babycare: true, beauty_spa: false });
     queueResult(oldPackage);
     queueResult(null);
     queueResult(null);
@@ -287,6 +440,7 @@ describe('package actions transaction safety', () => {
   it('returns rollback failure when delete audit rollback insert fails', async () => {
     const oldPackage = createPackageRow();
     mockRecordAuditLog.mockRejectedValue(new Error('Audit delete failed'));
+    queueTenantModules({ babycare: true, beauty_spa: false });
     queueResult(oldPackage);
     queueResult(null);
     queueResult(null, { message: 'rollback insert failed' });
@@ -295,5 +449,21 @@ describe('package actions transaction safety', () => {
 
     expect(result.error).toContain('Audit delete failed');
     expect(result.error).toContain('Rollback failed: rollback insert failed');
+  });
+
+  it('deletes packages with authenticated tenant scope', async () => {
+    const oldPackage = createPackageRow();
+    queueTenantModules({ babycare: true, beauty_spa: false });
+    queueResult(oldPackage);
+    queueResult(null);
+
+    const result = await deletePackage('pkg-1');
+
+    expect(result.success).toBe(true);
+    const deleteOperation = findOperation('delete');
+    expect(deleteOperation?.filters).toEqual(expect.arrayContaining([
+      expect.objectContaining({ column: 'id', value: 'pkg-1' }),
+      expect.objectContaining({ column: 'tenant_id', value: 'tenant-1' }),
+    ]));
   });
 });

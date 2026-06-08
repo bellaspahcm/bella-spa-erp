@@ -66,6 +66,17 @@ export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
   };
 }
 
+export function normalizeEnabledModulesForSave(value: unknown): TenantEnabledModules {
+  const modules = normalizeEnabledModules(value);
+  if (modules.babycare || modules.beauty_spa) return modules;
+  return DEFAULT_ENABLED_MODULES;
+}
+
+export function getDefaultTenantModuleKey(value: unknown): TenantModuleKey {
+  const modules = normalizeEnabledModulesForSave(value);
+  return modules.babycare ? 'babycare' : 'beauty_spa';
+}
+
 export function normalizeTenantBrandTheme(value: unknown): TenantBrandTheme {
   const source = isPlainRecord(value) ? value : {};
 
@@ -87,7 +98,7 @@ export function isTenantModuleEnabled(
 }
 
 export function toTenantModuleJson(value: unknown): Json {
-  return normalizeEnabledModules(value) as unknown as Json;
+  return normalizeEnabledModulesForSave(value) as unknown as Json;
 }
 
 export function toTenantBrandThemeJson(value: unknown): Json {

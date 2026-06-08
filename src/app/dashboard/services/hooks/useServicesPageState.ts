@@ -20,7 +20,11 @@ import {
   updateBookingResource,
 } from '@/services/booking-resource-actions';
 import { getTenantSettings } from '@/services/tenant-actions';
-import { normalizeEnabledModules } from '@/lib/business-rules/tenant-modules';
+import {
+  getDefaultTenantModuleKey,
+  normalizeEnabledModules,
+  type TenantEnabledModules,
+} from '@/lib/business-rules/tenant-modules';
 
 import { createBlankBookingResourceForm, createBlankServiceForm, PAGE_SIZE } from '../constants';
 import type {
@@ -147,6 +151,7 @@ export function useServicesPageState() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [materialRows, setMaterialRows] = useState<MaterialRow[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [enabledModules, setEnabledModules] = useState<TenantEnabledModules>(() => normalizeEnabledModules(null));
   const [isBeautySpaEnabled, setIsBeautySpaEnabled] = useState(false);
   const [bookingResources, setBookingResources] = useState<BookingResource[]>([]);
   const [loadingResources, setLoadingResources] = useState(false);
@@ -203,10 +208,13 @@ export function useServicesPageState() {
   const setResourceLocationNote = (locationNote: string) => setResourceForm(prev => ({ ...prev, locationNote }));
 
   const resetForm = useCallback(() => {
-    setForm(createBlankServiceForm());
+    setForm({
+      ...createBlankServiceForm(),
+      moduleKey: getDefaultTenantModuleKey(enabledModules),
+    });
     setSelectedService(null);
     setMaterialRows([]);
-  }, []);
+  }, [enabledModules]);
 
   const resetResourceForm = useCallback(() => {
     setResourceForm(createBlankBookingResourceForm());
@@ -239,16 +247,26 @@ export function useServicesPageState() {
   const loadTenantModuleConfig = useCallback(async () => {
     try {
       const tenant = await getTenantSettings();
-      const beautySpaEnabled = normalizeEnabledModules(tenant?.enabled_modules).beauty_spa;
+      const modules = normalizeEnabledModules(tenant?.enabled_modules);
+      const beautySpaEnabled = modules.beauty_spa;
+      const defaultModuleKey = getDefaultTenantModuleKey(modules);
+      setEnabledModules(modules);
       setIsBeautySpaEnabled(beautySpaEnabled);
       if (!beautySpaEnabled) setModuleFilter('all');
-      return beautySpaEnabled;
+      setForm((current) => (
+        modules[current.moduleKey]
+          ? current
+          : { ...current, moduleKey: defaultModuleKey }
+      ));
+      return modules;
     } catch (error) {
       console.error('Load tenant module config error:', error);
       toast.error(getErrorMessage(error, 'Không thể tải cấu hình module'));
+      const fallbackModules = normalizeEnabledModules(null);
+      setEnabledModules(fallbackModules);
       setIsBeautySpaEnabled(false);
       setModuleFilter('all');
-      return false;
+      return fallbackModules;
     }
   }, []);
 
@@ -273,8 +291,8 @@ export function useServicesPageState() {
 
   const refreshData = useCallback(async () => {
     const loadModuleScopedResources = async () => {
-      const beautySpaEnabled = await loadTenantModuleConfig();
-      if (beautySpaEnabled) {
+      const modules = await loadTenantModuleConfig();
+      if (modules.beauty_spa) {
         await loadBookingResources();
         return;
       }
@@ -479,6 +497,11 @@ export function useServicesPageState() {
   };
 
   const syncDefaultPackages = async () => {
+    if (!enabledModules.babycare) {
+      toast.error('Gói mặc định Bella Mother & Baby chỉ dùng cho tenant đã bật module mẹ và bé.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const tenantId = await getTenantId();
@@ -514,6 +537,9 @@ export function useServicesPageState() {
 
     try {
       const tenantId = await getTenantId();
+      const selectedModuleKey = enabledModules[form.moduleKey]
+        ? form.moduleKey
+        : getDefaultTenantModuleKey(enabledModules);
       const dbData: PackageActionInput = {
         name: form.name,
         price: parseMoneyInput(form.price),
@@ -524,18 +550,18 @@ export function useServicesPageState() {
         ktv_commission: parseMoneyInput(form.ktvCommission),
         status: form.status,
         tenant_id: tenantId,
-        module_key: isBeautySpaEnabled ? form.moduleKey : 'babycare',
+        module_key: selectedModuleKey,
         service_kind: form.serviceKind,
         service_category: form.serviceCategory,
         default_duration_minutes: parseIntegerInput(
           form.defaultDurationMinutes || form.duration,
           { min: 1, max: 1440, fallback: parseIntegerInput(form.duration, { min: 1, max: 1440, fallback: 90 }) },
         ),
-        requires_resource: isBeautySpaEnabled && form.moduleKey === 'beauty_spa' ? form.requiresResource : false,
-        default_resource_type: isBeautySpaEnabled && form.moduleKey === 'beauty_spa' && form.requiresResource
+        requires_resource: selectedModuleKey === 'beauty_spa' ? form.requiresResource : false,
+        default_resource_type: selectedModuleKey === 'beauty_spa' && form.requiresResource
           ? form.defaultResourceType
           : null,
-        before_after_required: isBeautySpaEnabled && form.moduleKey === 'beauty_spa' ? form.beforeAfterRequired : false,
+        before_after_required: selectedModuleKey === 'beauty_spa' ? form.beforeAfterRequired : false,
         care_note_template: form.careNoteTemplate,
       };
 
@@ -594,7 +620,8 @@ export function useServicesPageState() {
     .filter(service => {
       const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase());
       const normalizedModuleKey = service.module_key === 'beauty_spa' ? 'beauty_spa' : 'babycare';
-      const matchesModule = !isBeautySpaEnabled || moduleFilter === 'all' || normalizedModuleKey === moduleFilter;
+      const matchesEnabledModule = enabledModules[normalizedModuleKey];
+      const matchesModule = matchesEnabledModule && (moduleFilter === 'all' || normalizedModuleKey === moduleFilter);
       const matchesStatus = statusFilter === 'all' || service.status === statusFilter;
 
       return matchesSearch && matchesModule && matchesStatus;
@@ -603,7 +630,7 @@ export function useServicesPageState() {
       if (a.status === 'active' && b.status !== 'active') return -1;
       if (a.status !== 'active' && b.status === 'active') return 1;
       return a.name.localeCompare(b.name);
-    }), [isBeautySpaEnabled, moduleFilter, searchQuery, services, statusFilter]);
+    }), [enabledModules, moduleFilter, searchQuery, services, statusFilter]);
 
   const totalPages = Math.ceil(filteredServices.length / PAGE_SIZE) || 1;
   const paginatedServices = filteredServices.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -660,6 +687,7 @@ export function useServicesPageState() {
     setBeforeAfterRequired,
     careNoteTemplate: form.careNoteTemplate,
     setCareNoteTemplate,
+    enabledModules,
     isBeautySpaEnabled,
     bookingResources,
     loadingResources,
