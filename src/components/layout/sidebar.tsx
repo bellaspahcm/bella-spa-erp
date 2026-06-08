@@ -85,6 +85,7 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Sparkles,        label: 'Dịch vụ',            href: '/dashboard/services' },
 
   { type: 'header', label: 'Tài chính & Đối soát' },
+  { icon: Megaphone,       label: 'Meta Ads',           href: '/dashboard/marketing' },
   { icon: DollarSign,      label: 'Tài chính',           href: '/dashboard/finance' },
   { icon: ShieldAlert,     label: 'Đối soát Tài chính',  href: '/dashboard/finance/reconciliation' },
   { icon: Scale,           label: 'Đối soát Lương (AI)', href: '/dashboard/ai-copilot/salary-reconciliation' },
