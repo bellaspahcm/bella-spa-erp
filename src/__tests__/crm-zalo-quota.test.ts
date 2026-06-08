@@ -38,9 +38,11 @@ type TableQueues = Record<string, MockQueryBuilder[]>;
 const callOrder: string[] = [];
 const insertPayloads: Array<{ table: string; payload: unknown }> = [];
 const updatePayloads: Array<{ table: string; payload: unknown }> = [];
+const queryCalls: Array<{ table: string; filters: Array<{ column: string; value: unknown }> }> = [];
 
 class MockQueryBuilder {
   public table = '';
+  private filters: Array<{ column: string; value: unknown }> = [];
 
   constructor(
     private data: unknown = null,
@@ -48,7 +50,10 @@ class MockQueryBuilder {
   ) {}
 
   select() { return this; }
-  eq() { return this; }
+  eq(column: string, value: unknown) {
+    this.filters.push({ column, value });
+    return this;
+  }
   not() { return this; }
   order() { return this; }
   limit() { return this; }
@@ -67,6 +72,7 @@ class MockQueryBuilder {
   }
 
   then(onfulfilled: (value: { data: unknown; error: { message: string } | null }) => unknown) {
+    queryCalls.push({ table: this.table, filters: [...this.filters] });
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
   }
 }
@@ -99,6 +105,7 @@ describe('CRM/Zalo quota hardening', () => {
     callOrder.length = 0;
     insertPayloads.length = 0;
     updatePayloads.length = 0;
+    queryCalls.length = 0;
 
     mockGetCurrentUser.mockResolvedValue({
       id: 'admin-1',
@@ -175,6 +182,15 @@ describe('CRM/Zalo quota hardening', () => {
 
     expect(result.success).toBe(true);
     expect(callOrder.indexOf('sms:increment')).toBeLessThan(callOrder.indexOf('zalo:fetch'));
+    expect(queryCalls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'customers',
+        filters: expect.arrayContaining([
+          { column: 'id', value: 'customer-1' },
+          { column: 'tenant_id', value: 'tenant-1' },
+        ]),
+      }),
+    ]));
     expect(insertPayloads).toHaveLength(1);
     expect(mockRecordAuditLog).toHaveBeenCalledTimes(1);
   });
@@ -213,6 +229,15 @@ describe('CRM/Zalo quota hardening', () => {
     expect(result).toEqual({ error: 'quota counter unavailable' });
     expect(callOrder).toEqual(['sms:increment']);
     expect(global.fetch).not.toHaveBeenCalled();
+    expect(queryCalls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'session_logs',
+        filters: expect.arrayContaining([
+          { column: 'id', value: 'session-1' },
+          { column: 'tenant_id', value: 'tenant-1' },
+        ]),
+      }),
+    ]));
     expect(updatePayloads).toHaveLength(0);
     expect(insertPayloads).toHaveLength(0);
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
@@ -263,6 +288,15 @@ describe('CRM/Zalo quota hardening', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(mockIncrementSmsCount).toHaveBeenCalledTimes(1);
     expect(mockRecordAuditLog).toHaveBeenCalledTimes(1);
+    expect(queryCalls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'session_logs',
+        filters: expect.arrayContaining([
+          { column: 'id', value: 'session-1' },
+          { column: 'tenant_id', value: 'tenant-1' },
+        ]),
+      }),
+    ]));
 
   });
 });

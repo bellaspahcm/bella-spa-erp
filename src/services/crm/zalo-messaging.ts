@@ -109,6 +109,7 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
         )
       `)
       .eq('id', sessionLogId)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (fetchErr || !session) {
@@ -177,7 +178,8 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
         zalo_reminder_sent: true,
         zalo_reminder_time: new Date().toISOString()
       })
-      .eq('id', sessionLogId);
+      .eq('id', sessionLogId)
+      .eq('tenant_id', tenantId);
 
     if (updateErr) {
       return { error: 'Lỗi cập nhật trạng thái nhắc lịch: ' + updateErr.message };
