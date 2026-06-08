@@ -1625,6 +1625,8 @@ export type Database = {
           is_active: boolean
           last_synced_at: string | null
           tenant_id: string
+          token_last_four: string | null
+          token_updated_at: string | null
           timezone_name: string | null
           updated_at: string
         }
@@ -1637,6 +1639,8 @@ export type Database = {
           is_active?: boolean
           last_synced_at?: string | null
           tenant_id: string
+          token_last_four?: string | null
+          token_updated_at?: string | null
           timezone_name?: string | null
           updated_at?: string
         }
@@ -1649,6 +1653,8 @@ export type Database = {
           is_active?: boolean
           last_synced_at?: string | null
           tenant_id?: string
+          token_last_four?: string | null
+          token_updated_at?: string | null
           timezone_name?: string | null
           updated_at?: string
         }
@@ -1662,6 +1668,58 @@ export type Database = {
           },
           {
             foreignKeyName: "marketing_meta_ad_accounts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_meta_ad_account_tokens: {
+        Row: {
+          access_token_encrypted: string
+          created_at: string
+          id: string
+          meta_ad_account_id: string
+          tenant_id: string
+          token_last_four: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token_encrypted: string
+          created_at?: string
+          id?: string
+          meta_ad_account_id: string
+          tenant_id: string
+          token_last_four?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token_encrypted?: string
+          created_at?: string
+          id?: string
+          meta_ad_account_id?: string
+          tenant_id?: string
+          token_last_four?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_meta_ad_account_tokens_meta_ad_account_id_fkey"
+            columns: ["meta_ad_account_id"]
+            isOneToOne: true
+            referencedRelation: "marketing_meta_ad_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_meta_ad_account_tokens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliation_health_today"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "marketing_meta_ad_account_tokens_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
