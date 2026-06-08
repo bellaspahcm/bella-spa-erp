@@ -53,6 +53,36 @@ export default function ServicesPage() {
     setKtvCommission,
     status,
     setStatus,
+    moduleKey,
+    setModuleKey,
+    serviceKind,
+    setServiceKind,
+    serviceCategory,
+    setServiceCategory,
+    defaultDurationMinutes,
+    setDefaultDurationMinutes,
+    requiresResource,
+    setRequiresResource,
+    defaultResourceType,
+    setDefaultResourceType,
+    beforeAfterRequired,
+    setBeforeAfterRequired,
+    careNoteTemplate,
+    setCareNoteTemplate,
+    isBeautySpaEnabled,
+    bookingResources,
+    loadingResources,
+    resourceForm,
+    setResourceName,
+    setResourceType,
+    setResourceStatus,
+    setResourceCapacity,
+    setResourceLocationNote,
+    isSavingResource,
+    editBookingResource,
+    saveBookingResource,
+    removeBookingResource,
+    resetResourceForm,
     inventoryItems,
     materialRows,
     loadingMaterials,
@@ -74,6 +104,26 @@ export default function ServicesPage() {
     handlePageChange,
     refreshData,
   } = useServicesPageState();
+
+  const resourceTypeLabels = {
+    bed: 'Giường',
+    room: 'Phòng',
+    machine: 'Máy',
+    chair: 'Ghế',
+    other: 'Khác',
+  };
+  const resourceStatusLabels = {
+    available: 'Sẵn sàng',
+    in_use: 'Đang dùng',
+    maintenance: 'Bảo trì',
+    inactive: 'Ngưng dùng',
+  };
+  const serviceKindLabels = {
+    single_service: 'Dịch vụ lẻ',
+    treatment_package: 'Liệu trình / gói buổi',
+    retail_product: 'Sản phẩm bán lẻ',
+    consultation: 'Tư vấn',
+  };
 
   usePageRefresh(refreshData);
 
@@ -129,6 +179,176 @@ export default function ServicesPage() {
         </div>
       </div>
 
+      {isBeautySpaEnabled && (
+        <section className="mb-6 rounded-[2rem] border border-rose-100 bg-white p-4 shadow-sm md:mb-8 md:p-6">
+          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Database className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-slate-900">Tài nguyên đặt lịch Beauty Spa</h2>
+                <p className="text-sm font-semibold text-slate-500">
+                  Quản lý giường, phòng, máy hoặc ghế dùng khi triển khai lịch hẹn Beauty Spa.
+                </p>
+              </div>
+            </div>
+            {loadingResources && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-4 py-2 text-xs font-black text-slate-400">
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                Đang tải
+              </span>
+            )}
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="grid gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                  Tên tài nguyên
+                </label>
+                <input
+                  value={resourceForm.name}
+                  onChange={(event) => setResourceName(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-100 bg-white px-5 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-rose-300 focus:ring-4 focus:ring-rose-50"
+                  placeholder="VD: Giường Facial 01"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                  Loại
+                </label>
+                <PremiumSelect
+                  value={resourceForm.resourceType}
+                  onChange={(value) => setResourceType(value as keyof typeof resourceTypeLabels)}
+                  options={Object.entries(resourceTypeLabels).map(([value, label]) => ({ value, label }))}
+                  placeholder="Chọn loại"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                  Trạng thái
+                </label>
+                <PremiumSelect
+                  value={resourceForm.status}
+                  onChange={(value) => setResourceStatus(value as keyof typeof resourceStatusLabels)}
+                  options={Object.entries(resourceStatusLabels).map(([value, label]) => ({ value, label }))}
+                  placeholder="Chọn trạng thái"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                  Sức chứa
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={resourceForm.capacity}
+                  onChange={(event) => setResourceCapacity(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-100 bg-white px-5 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-rose-300 focus:ring-4 focus:ring-rose-50"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                  Ghi chú vị trí
+                </label>
+                <input
+                  value={resourceForm.locationNote}
+                  onChange={(event) => setResourceLocationNote(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-100 bg-white px-5 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-rose-300 focus:ring-4 focus:ring-rose-50"
+                  placeholder="VD: Tầng 2"
+                />
+              </div>
+              <div className="flex flex-col gap-2 md:col-span-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={saveBookingResource}
+                  disabled={isSavingResource || !resourceForm.name.trim()}
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-white shadow-lg shadow-rose-200 transition hover:bg-rose-600 disabled:opacity-50"
+                >
+                  {isSavingResource && <RefreshCw className="h-4 w-4 animate-spin" />}
+                  {resourceForm.id ? 'Cập nhật tài nguyên' : 'Thêm tài nguyên'}
+                </button>
+                {resourceForm.id && (
+                  <button
+                    type="button"
+                    onClick={resetResourceForm}
+                    className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-500 transition hover:text-slate-800"
+                  >
+                    Hủy sửa
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-100 bg-white">
+              <table className="min-w-[680px] w-full text-left">
+                <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <tr>
+                    <th className="px-5 py-3">Tài nguyên</th>
+                    <th className="px-5 py-3">Loại</th>
+                    <th className="px-5 py-3">Trạng thái</th>
+                    <th className="px-5 py-3">Sức chứa</th>
+                    <th className="px-5 py-3 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm font-bold text-slate-700">
+                  {bookingResources.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-10 text-center text-xs font-bold italic text-slate-400">
+                        Chưa có giường/phòng/máy nào. Thêm tài nguyên đầu tiên để chuẩn bị pilot Beauty Spa.
+                      </td>
+                    </tr>
+                  ) : bookingResources.map((resource) => (
+                    <tr key={resource.id}>
+                      <td className="px-5 py-4">
+                        <div className="text-slate-900">{resource.name}</div>
+                        {resource.location_note && (
+                          <div className="mt-1 text-xs text-slate-400">{resource.location_note}</div>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">{resourceTypeLabels[resource.resource_type as keyof typeof resourceTypeLabels] || 'Khác'}</td>
+                      <td className="px-5 py-4">
+                        <span className={cn(
+                          'rounded-full px-3 py-1 text-[10px] font-black uppercase',
+                          resource.status === 'available'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : resource.status === 'maintenance'
+                              ? 'bg-amber-50 text-amber-600'
+                              : 'bg-slate-100 text-slate-500',
+                        )}>
+                          {resourceStatusLabels[resource.status as keyof typeof resourceStatusLabels] || resource.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">{resource.capacity}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => editBookingResource(resource)}
+                            className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-black text-slate-500 transition hover:text-primary"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeBookingResource(resource.id)}
+                            className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-black text-rose-500 transition hover:bg-rose-100"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Services Grid */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
         {paginatedServices.map((service, idx) => (
@@ -166,6 +386,11 @@ export default function ServicesPage() {
                     )}>
                       {service.status === 'active' ? 'Đang hoạt động' : 'Tạm ngưng / Nháp'}
                     </span>
+                    {service.module_key === 'beauty_spa' && (
+                      <span className="rounded-full border border-fuchsia-100 bg-fuchsia-50 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-fuchsia-600">
+                        Beauty Spa
+                      </span>
+                    )}
                   </div>
                   <div className="flex min-w-0 items-center gap-2 text-lg font-black text-primary">
                     <DollarSign className="w-4 h-4" />
@@ -209,6 +434,28 @@ export default function ServicesPage() {
                   <Clock className="h-4 w-4 shrink-0 text-primary" />
                   <span className="break-words">Thời lượng: {service.duration}</span>
                 </div>
+                {service.module_key === 'beauty_spa' && (
+                  <div className="flex flex-wrap gap-2 text-xs font-black">
+                    <span className="rounded-xl bg-fuchsia-50 px-3 py-1.5 text-fuchsia-600">
+                      {serviceKindLabels[service.service_kind as keyof typeof serviceKindLabels] || 'Liệu trình'}
+                    </span>
+                    {service.service_category && (
+                      <span className="rounded-xl bg-slate-50 px-3 py-1.5 text-slate-500">
+                        {service.service_category}
+                      </span>
+                    )}
+                    {service.requires_resource && (
+                      <span className="rounded-xl bg-amber-50 px-3 py-1.5 text-amber-600">
+                        Cần {resourceTypeLabels[service.default_resource_type as keyof typeof resourceTypeLabels] || 'tài nguyên'}
+                      </span>
+                    )}
+                    {service.before_after_required && (
+                      <span className="rounded-xl bg-sky-50 px-3 py-1.5 text-sky-600">
+                        Ảnh trước/sau
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Chi tiết dịch vụ</p>
                   <div className="flex flex-wrap gap-2">
@@ -405,6 +652,151 @@ export default function ServicesPage() {
                       placeholder="VD: Massage body, Chăm sóc da mặt, Xông hơi" 
                     />
                   </div>
+
+                  {isBeautySpaEnabled && (
+                    <div className="space-y-4 rounded-2xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50/60 to-rose-50/50 p-4 sm:p-6">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                          <Sparkles className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900">Cấu hình Beauty Spa</h4>
+                          <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-slate-500">
+                            Chỉ dùng cho dịch vụ beauty. Gói Bella Mother & Baby giữ cấu hình mặc định.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                            Module
+                          </label>
+                          <PremiumSelect
+                            value={moduleKey}
+                            onChange={(value) => setModuleKey(value === 'beauty_spa' ? 'beauty_spa' : 'babycare')}
+                            options={[
+                              { value: 'babycare', label: 'Bella Mother & Baby' },
+                              { value: 'beauty_spa', label: 'Beauty Spa' },
+                            ]}
+                            placeholder="Chọn module"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                            Loại dịch vụ
+                          </label>
+                          <PremiumSelect
+                            value={serviceKind}
+                            onChange={(value) => setServiceKind(value as keyof typeof serviceKindLabels)}
+                            options={Object.entries(serviceKindLabels).map(([value, label]) => ({ value, label }))}
+                            placeholder="Chọn loại dịch vụ"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                            Nhóm dịch vụ
+                          </label>
+                          <input
+                            value={serviceCategory}
+                            onChange={(event) => setServiceCategory(event.target.value)}
+                            className="w-full rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
+                            placeholder="VD: facial, body, laser"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                            Thời lượng chuẩn (phút)
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={1440}
+                            value={defaultDurationMinutes}
+                            onChange={(event) => setDefaultDurationMinutes(event.target.value)}
+                            className="w-full rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div className="rounded-2xl bg-white p-4">
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-black text-slate-800">Cần giường/phòng/máy</p>
+                              <p className="mt-1 text-xs font-bold text-slate-400">Dùng khi lên lịch Beauty Spa sau này.</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setRequiresResource(!requiresResource)}
+                              disabled={moduleKey !== 'beauty_spa'}
+                              className={cn(
+                                'relative inline-flex h-6 w-11 shrink-0 rounded-full transition disabled:opacity-40',
+                                requiresResource && moduleKey === 'beauty_spa' ? 'bg-primary' : 'bg-slate-300',
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition',
+                                  requiresResource && moduleKey === 'beauty_spa' ? 'translate-x-5' : 'translate-x-0.5',
+                                )}
+                              />
+                            </button>
+                          </div>
+                          {requiresResource && moduleKey === 'beauty_spa' && (
+                            <div className="mt-3">
+                              <PremiumSelect
+                                value={defaultResourceType}
+                                onChange={(value) => setDefaultResourceType(value as keyof typeof resourceTypeLabels)}
+                                options={Object.entries(resourceTypeLabels).map(([value, label]) => ({ value, label }))}
+                                placeholder="Tài nguyên mặc định"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="rounded-2xl bg-white p-4">
+                          <div className="flex items-center justify-between gap-4">
+                            <div>
+                              <p className="text-sm font-black text-slate-800">Cần ảnh trước/sau</p>
+                              <p className="mt-1 text-xs font-bold text-slate-400">Đánh dấu dịch vụ cần theo dõi kết quả.</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setBeforeAfterRequired(!beforeAfterRequired)}
+                              disabled={moduleKey !== 'beauty_spa'}
+                              className={cn(
+                                'relative inline-flex h-6 w-11 shrink-0 rounded-full transition disabled:opacity-40',
+                                beforeAfterRequired && moduleKey === 'beauty_spa' ? 'bg-primary' : 'bg-slate-300',
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow transition',
+                                  beforeAfterRequired && moduleKey === 'beauty_spa' ? 'translate-x-5' : 'translate-x-0.5',
+                                )}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
+                          Mẫu ghi chú chăm sóc
+                        </label>
+                        <textarea
+                          value={careNoteTemplate}
+                          onChange={(event) => setCareNoteTemplate(event.target.value)}
+                          className="h-20 w-full resize-none rounded-2xl border-none bg-white px-5 py-4 text-sm font-bold text-slate-700 outline-none transition focus:ring-4 focus:ring-primary/10"
+                          placeholder="VD: Tình trạng da, phản ứng sau buổi, lưu ý lần hẹn tiếp theo..."
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex flex-col gap-3 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">

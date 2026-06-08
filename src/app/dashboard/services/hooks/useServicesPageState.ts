@@ -13,11 +13,23 @@ import {
   updatePackage,
   type PackageActionInput,
 } from '@/services/package-actions';
+import {
+  createBookingResource,
+  deleteBookingResource,
+  getBookingResources,
+  updateBookingResource,
+} from '@/services/booking-resource-actions';
+import { getTenantSettings } from '@/services/tenant-actions';
+import { normalizeEnabledModules } from '@/lib/business-rules/tenant-modules';
 
-import { createBlankServiceForm, PAGE_SIZE } from '../constants';
+import { createBlankBookingResourceForm, createBlankServiceForm, PAGE_SIZE } from '../constants';
 import type {
+  BookingResource,
+  BookingResourceFormState,
   InventoryItem,
   MaterialRow,
+  ResourceStatus,
+  ResourceType,
   ServiceModalMode,
   ServicePackage,
   ServiceStatus,
@@ -133,6 +145,11 @@ export function useServicesPageState() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [materialRows, setMaterialRows] = useState<MaterialRow[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [isBeautySpaEnabled, setIsBeautySpaEnabled] = useState(false);
+  const [bookingResources, setBookingResources] = useState<BookingResource[]>([]);
+  const [loadingResources, setLoadingResources] = useState(false);
+  const [resourceForm, setResourceForm] = useState<BookingResourceFormState>(createBlankBookingResourceForm);
+  const [isSavingResource, setIsSavingResource] = useState(false);
 
   const updateSearchQuery = (value: string) => {
     setSearchQuery(value);
@@ -157,11 +174,35 @@ export function useServicesPageState() {
       status: typeof status === 'function' ? status(prev.status) : status,
     }));
   };
+  const setModuleKey = (moduleKey: 'babycare' | 'beauty_spa') => setForm(prev => ({ ...prev, moduleKey }));
+  const setServiceKind = (serviceKind: 'single_service' | 'treatment_package' | 'retail_product' | 'consultation') => {
+    setForm(prev => ({ ...prev, serviceKind }));
+  };
+  const setServiceCategory = (serviceCategory: string) => setForm(prev => ({ ...prev, serviceCategory }));
+  const setDefaultDurationMinutes = (defaultDurationMinutes: string) => {
+    setForm(prev => ({ ...prev, defaultDurationMinutes }));
+  };
+  const setRequiresResource = (requiresResource: boolean) => setForm(prev => ({ ...prev, requiresResource }));
+  const setDefaultResourceType = (defaultResourceType: ResourceType) => setForm(prev => ({ ...prev, defaultResourceType }));
+  const setBeforeAfterRequired = (beforeAfterRequired: boolean) => {
+    setForm(prev => ({ ...prev, beforeAfterRequired }));
+  };
+  const setCareNoteTemplate = (careNoteTemplate: string) => setForm(prev => ({ ...prev, careNoteTemplate }));
+
+  const setResourceName = (name: string) => setResourceForm(prev => ({ ...prev, name }));
+  const setResourceType = (resourceType: ResourceType) => setResourceForm(prev => ({ ...prev, resourceType }));
+  const setResourceStatus = (status: ResourceStatus) => setResourceForm(prev => ({ ...prev, status }));
+  const setResourceCapacity = (capacity: string) => setResourceForm(prev => ({ ...prev, capacity }));
+  const setResourceLocationNote = (locationNote: string) => setResourceForm(prev => ({ ...prev, locationNote }));
 
   const resetForm = useCallback(() => {
     setForm(createBlankServiceForm());
     setSelectedService(null);
     setMaterialRows([]);
+  }, []);
+
+  const resetResourceForm = useCallback(() => {
+    setResourceForm(createBlankBookingResourceForm());
   }, []);
 
   const loadData = useCallback(async () => {
@@ -188,9 +229,39 @@ export function useServicesPageState() {
     }
   }, []);
 
+  const loadTenantModuleConfig = useCallback(async () => {
+    try {
+      const tenant = await getTenantSettings();
+      setIsBeautySpaEnabled(normalizeEnabledModules(tenant?.enabled_modules).beauty_spa);
+    } catch (error) {
+      console.error('Load tenant module config error:', error);
+      toast.error(getErrorMessage(error, 'Không thể tải cấu hình module'));
+      setIsBeautySpaEnabled(false);
+    }
+  }, []);
+
+  const loadBookingResources = useCallback(async () => {
+    setLoadingResources(true);
+    try {
+      const result = await getBookingResources();
+      if (!result.success) {
+        toast.error(result.error);
+        setBookingResources([]);
+        return;
+      }
+      setBookingResources(result.data);
+    } catch (error) {
+      console.error('Load booking resources error:', error);
+      toast.error(getErrorMessage(error, 'Không thể tải tài nguyên đặt lịch'));
+      setBookingResources([]);
+    } finally {
+      setLoadingResources(false);
+    }
+  }, []);
+
   const refreshData = useCallback(async () => {
-    await Promise.all([loadData(), loadInventoryItems()]);
-  }, [loadData, loadInventoryItems]);
+    await Promise.all([loadData(), loadInventoryItems(), loadTenantModuleConfig(), loadBookingResources()]);
+  }, [loadBookingResources, loadData, loadInventoryItems, loadTenantModuleConfig]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -218,6 +289,23 @@ export function useServicesPageState() {
       details: Array.isArray(service.details) ? service.details.join(', ') : (service.details || ''),
       ktvCommission: formatMoneyInput(service.ktv_commission ?? 150000),
       status: service.status === 'active' ? 'active' : 'inactive',
+      moduleKey: service.module_key === 'beauty_spa' ? 'beauty_spa' : 'babycare',
+      serviceKind: (
+        service.service_kind === 'single_service'
+        || service.service_kind === 'retail_product'
+        || service.service_kind === 'consultation'
+      ) ? service.service_kind : 'treatment_package',
+      serviceCategory: service.service_category || '',
+      defaultDurationMinutes: String(parseIntegerInput(service.default_duration_minutes, { min: 1, max: 1440, fallback: 90 })),
+      requiresResource: service.requires_resource === true,
+      defaultResourceType: (
+        service.default_resource_type === 'room'
+        || service.default_resource_type === 'machine'
+        || service.default_resource_type === 'chair'
+        || service.default_resource_type === 'other'
+      ) ? service.default_resource_type : 'bed',
+      beforeAfterRequired: service.before_after_required === true,
+      careNoteTemplate: service.care_note_template || '',
     });
     setMaterialRows([]);
     setIsModalOpen(true);
@@ -250,6 +338,72 @@ export function useServicesPageState() {
 
   const removeMaterialRow = (idx: number) => {
     setMaterialRows(prev => prev.filter((_, index) => index !== idx));
+  };
+
+  const editBookingResource = (resource: BookingResource) => {
+    setResourceForm({
+      id: resource.id,
+      name: resource.name,
+      resourceType: (
+        resource.resource_type === 'room'
+        || resource.resource_type === 'machine'
+        || resource.resource_type === 'chair'
+        || resource.resource_type === 'other'
+      ) ? resource.resource_type : 'bed',
+      status: (
+        resource.status === 'in_use'
+        || resource.status === 'maintenance'
+        || resource.status === 'inactive'
+      ) ? resource.status : 'available',
+      capacity: String(parseIntegerInput(resource.capacity, { min: 1, max: 20, fallback: 1 })),
+      locationNote: resource.location_note || '',
+    });
+  };
+
+  const saveBookingResource = async () => {
+    setIsSavingResource(true);
+    try {
+      const payload = {
+        name: resourceForm.name,
+        resource_type: resourceForm.resourceType,
+        status: resourceForm.status,
+        capacity: resourceForm.capacity,
+        location_note: resourceForm.locationNote,
+      };
+      const result = resourceForm.id
+        ? await updateBookingResource(resourceForm.id, payload)
+        : await createBookingResource(payload);
+
+      if (!result.success) throw new Error(result.error);
+
+      toast.success(resourceForm.id ? 'Đã cập nhật tài nguyên đặt lịch' : 'Đã thêm tài nguyên đặt lịch');
+      resetResourceForm();
+      await loadBookingResources();
+    } catch (error) {
+      console.error('Save booking resource error:', error);
+      toast.error(getErrorMessage(error, 'Không thể lưu tài nguyên đặt lịch'));
+    } finally {
+      setIsSavingResource(false);
+    }
+  };
+
+  const removeBookingResource = async (resourceId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa tài nguyên đặt lịch này?')) return;
+
+    setLoadingResources(true);
+    try {
+      const result = await deleteBookingResource(resourceId);
+      if (!result.success) throw new Error(result.error);
+
+      toast.success('Đã xóa tài nguyên đặt lịch');
+      await loadBookingResources();
+      if (resourceForm.id === resourceId) resetResourceForm();
+    } catch (error) {
+      console.error('Delete booking resource error:', error);
+      toast.error(getErrorMessage(error, 'Không thể xóa tài nguyên đặt lịch'));
+    } finally {
+      setLoadingResources(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -348,6 +502,19 @@ export function useServicesPageState() {
         ktv_commission: parseMoneyInput(form.ktvCommission),
         status: form.status,
         tenant_id: tenantId,
+        module_key: isBeautySpaEnabled ? form.moduleKey : 'babycare',
+        service_kind: form.serviceKind,
+        service_category: form.serviceCategory,
+        default_duration_minutes: parseIntegerInput(
+          form.defaultDurationMinutes || form.duration,
+          { min: 1, max: 1440, fallback: parseIntegerInput(form.duration, { min: 1, max: 1440, fallback: 90 }) },
+        ),
+        requires_resource: isBeautySpaEnabled && form.moduleKey === 'beauty_spa' ? form.requiresResource : false,
+        default_resource_type: isBeautySpaEnabled && form.moduleKey === 'beauty_spa' && form.requiresResource
+          ? form.defaultResourceType
+          : null,
+        before_after_required: isBeautySpaEnabled && form.moduleKey === 'beauty_spa' ? form.beforeAfterRequired : false,
+        care_note_template: form.careNoteTemplate,
       };
 
       let packageId: string | null = null;
@@ -450,6 +617,36 @@ export function useServicesPageState() {
     setKtvCommission,
     status: form.status,
     setStatus,
+    moduleKey: form.moduleKey,
+    setModuleKey,
+    serviceKind: form.serviceKind,
+    setServiceKind,
+    serviceCategory: form.serviceCategory,
+    setServiceCategory,
+    defaultDurationMinutes: form.defaultDurationMinutes,
+    setDefaultDurationMinutes,
+    requiresResource: form.requiresResource,
+    setRequiresResource,
+    defaultResourceType: form.defaultResourceType,
+    setDefaultResourceType,
+    beforeAfterRequired: form.beforeAfterRequired,
+    setBeforeAfterRequired,
+    careNoteTemplate: form.careNoteTemplate,
+    setCareNoteTemplate,
+    isBeautySpaEnabled,
+    bookingResources,
+    loadingResources,
+    resourceForm,
+    setResourceName,
+    setResourceType,
+    setResourceStatus,
+    setResourceCapacity,
+    setResourceLocationNote,
+    isSavingResource,
+    editBookingResource,
+    saveBookingResource,
+    removeBookingResource,
+    resetResourceForm,
     isSubmitting,
     inventoryItems,
     materialRows,
