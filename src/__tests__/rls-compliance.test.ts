@@ -97,10 +97,14 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
       ];
       
       mockSelect.mockImplementation(() => ({
-        order: jest.fn().mockResolvedValue({ data: mockBookings, error: null }),
+        eq: mockEq,
       }));
+      mockEq.mockReturnValue({
+        order: jest.fn().mockResolvedValue({ data: mockBookings, error: null }),
+      });
 
       const bookings = await getBookings();
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-a');
       expect(bookings).toHaveLength(2);
       bookings.forEach((b: any) => {
         expect(b.tenant_id).toBe('tenant-a');
@@ -121,10 +125,14 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
       // If we attempt to query bookings, we should simulate the DB RLS policy filter.
       // For any records where tenant_id != 'tenant-b', the database returns 0 rows.
       mockSelect.mockImplementation(() => ({
-        order: jest.fn().mockResolvedValue({ data: [], error: null }), // Empty because RLS filters out Tenant A
+        eq: mockEq,
       }));
+      mockEq.mockReturnValue({
+        order: jest.fn().mockResolvedValue({ data: [], error: null }), // Empty because RLS filters out Tenant A
+      });
 
       const bookings = await getBookings();
+      expect(mockEq).toHaveBeenCalledWith('tenant_id', 'tenant-b');
       expect(bookings).toHaveLength(0);
     });
 
@@ -138,11 +146,14 @@ describe('Row-Level Security (RLS) & Tenant Isolation Compliance Suite', () => {
       });
 
       mockSelect.mockImplementation(() => ({
+        eq: mockEq,
+      }));
+      mockEq.mockReturnValue({
         order: jest.fn().mockResolvedValue({
           data: null,
           error: { message: 'RLS policy lookup failed' },
         }),
-      }));
+      });
 
       await expect(getBookings()).rejects.toThrow('Failed to fetch bookings: RLS policy lookup failed');
     });

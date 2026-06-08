@@ -43,6 +43,13 @@ type RatingSession = Pick<
   bookings?: Pick<BookingRow, 'customer_id'> | null;
 };
 
+const CUSTOMER_TENANT_ACCESS_ERROR = 'Không xác định được đơn vị kinh doanh của người dùng hiện tại.';
+
+async function getCurrentTenantId() {
+  const currentUser = await getCurrentUser();
+  return currentUser?.tenant_id || null;
+}
+
 /**
  * Truy xuất thông tin booking qua Share Token (Dành cho khách hàng)
  */
@@ -309,9 +316,15 @@ export async function addLoyaltyPoints(customerId: string, amount: number) {
  */
 export async function getCustomers() {
   const supabase = await createClient();
+  const tenantId = await getCurrentTenantId();
+  if (!tenantId) {
+    throw new Error(CUSTOMER_TENANT_ACCESS_ERROR);
+  }
+
   const { data, error } = await supabase
     .from('customers')
     .select('*')
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
   
   if (error) {
@@ -325,10 +338,16 @@ export async function getCustomers() {
  */
 export async function getCustomerById(id: string) {
   const supabase = await createClient();
+  const tenantId = await getCurrentTenantId();
+  if (!tenantId) {
+    throw new Error(CUSTOMER_TENANT_ACCESS_ERROR);
+  }
+
   const { data, error } = await supabase
     .from('customers')
     .select('*')
     .eq('id', id)
+    .eq('tenant_id', tenantId)
     .maybeSingle();
   
   if (error) {
@@ -344,24 +363,21 @@ export async function createCustomer(customerData: CustomerCreateInput) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
   const { name, ...customerPayload } = customerData;
+  if (!currentUser?.tenant_id) {
+    return { data: null, error: CUSTOMER_TENANT_ACCESS_ERROR, warning: null };
+  }
+
   const payload: CustomerInsert = {
     ...customerPayload,
     name_mother: customerData.name_mother || name || '',
     phone: customerData.phone || '',
-    tenant_id: customerData.tenant_id || currentUser?.tenant_id || ''
+    tenant_id: currentUser.tenant_id
   };
 
-  if (currentUser?.tenant_id) {
-    const { checkSubscriptionLimit } = await import('@/lib/subscription');
-    const customerLimit = await checkSubscriptionLimit(currentUser.tenant_id, 'customer');
-    if (customerLimit.isBlocked) {
-      return { data: null, error: 'Vượt quá giới hạn khách hàng của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.', warning: null };
-    }
-    payload.tenant_id = currentUser.tenant_id;
-  }
-
-  if (!payload.tenant_id) {
-    return { data: null, error: 'Không xác định được chi nhánh của khách hàng.', warning: null };
+  const { checkSubscriptionLimit } = await import('@/lib/subscription');
+  const customerLimit = await checkSubscriptionLimit(currentUser.tenant_id, 'customer');
+  if (customerLimit.isBlocked) {
+    return { data: null, error: 'Vượt quá giới hạn khách hàng của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.', warning: null };
   }
 
   // Tự động geocode lấy tọa độ nếu địa chỉ được nhập và admin không truyền sẵn tọa độ
@@ -396,7 +412,8 @@ export async function createCustomer(customerData: CustomerCreateInput) {
       await supabase
         .from('customers')
         .delete()
-        .eq('id', data[0].id);
+        .eq('id', data[0].id)
+        .eq('tenant_id', currentUser.tenant_id);
       return {
         data: null,
         error: auditErr instanceof Error ? auditErr.message : 'Failed to record createCustomer audit log',
@@ -414,7 +431,14 @@ export async function createCustomer(customerData: CustomerCreateInput) {
  */
 export async function updateCustomer(id: string, customerData: CustomerUpdate) {
   const supabase = await createClient();
-  const payload: CustomerUpdate = { ...customerData };
+  const tenantId = await getCurrentTenantId();
+  if (!tenantId) {
+    return { data: null, error: CUSTOMER_TENANT_ACCESS_ERROR, warning: null };
+  }
+
+  const { tenant_id: _ignoredTenantId, ...scopedCustomerData } = customerData;
+  void _ignoredTenantId;
+  const payload: CustomerUpdate = { ...scopedCustomerData };
   
   // Fetch existing customer before update for audit trail
   let oldCustomer = null;
@@ -423,6 +447,7 @@ export async function updateCustomer(id: string, customerData: CustomerUpdate) {
       .from('customers')
       .select('*')
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .single();
     if (existingError) {
       return { data: null, error: existingError.message, warning: null };
@@ -450,6 +475,7 @@ export async function updateCustomer(id: string, customerData: CustomerUpdate) {
     .from('customers')
     .update(payload)
     .eq('id', id)
+    .eq('tenant_id', tenantId)
     .select();
   
   if (error) {
@@ -472,7 +498,8 @@ export async function updateCustomer(id: string, customerData: CustomerUpdate) {
         await supabase
           .from('customers')
           .update(oldCustomer)
-          .eq('id', id);
+          .eq('id', id)
+          .eq('tenant_id', tenantId);
       }
       return {
         data: null,
@@ -494,6 +521,10 @@ export async function updateCustomer(id: string, customerData: CustomerUpdate) {
  */
 export async function deleteCustomer(id: string) {
   const supabase = await createClient();
+  const tenantId = await getCurrentTenantId();
+  if (!tenantId) {
+    return { success: false, error: CUSTOMER_TENANT_ACCESS_ERROR };
+  }
 
   // Fetch existing customer before delete for audit trail
   let oldCustomer = null;
@@ -502,6 +533,7 @@ export async function deleteCustomer(id: string) {
       .from('customers')
       .select('*')
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .single();
     if (existingError) {
       return { success: false, error: existingError.message };
@@ -517,7 +549,8 @@ export async function deleteCustomer(id: string) {
   const { error } = await supabase
     .from('customers')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
   
   if (error) {
     console.error('Error deleting customer:', error);

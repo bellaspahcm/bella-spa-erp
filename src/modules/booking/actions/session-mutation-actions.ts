@@ -4,17 +4,35 @@ import type { Database } from '@/types/database.types';
 
 type SessionLogInsert = Database['public']['Tables']['session_logs']['Insert'];
 
+const SESSION_TENANT_ACCESS_ERROR = 'Không xác định được đơn vị kinh doanh của người dùng hiện tại.';
+
+function getCurrentTenantId(currentUser: { tenant_id?: string | null } | null | undefined) {
+  return currentUser?.tenant_id || null;
+}
+
 export async function saveSessionNote(sessionId: string, note: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
+  const tenantId = getCurrentTenantId(currentUser);
+  if (!tenantId) {
+    return { error: SESSION_TENANT_ACCESS_ERROR };
+  }
 
-  const { data: existingLog } = await supabase
+  const { data: existingLog, error: existingLogError } = await supabase
     .from('session_logs')
     .select('*')
     .eq('id', sessionId)
+    .eq('tenant_id', tenantId)
     .single();
+
+  if (existingLogError) {
+    return { error: existingLogError.message };
+  }
+  if (!existingLog) {
+    return { error: 'Session log not found' };
+  }
 
   if (currentUser?.role?.toLowerCase() !== 'admin' && !['scheduled', 'in_progress'].includes(existingLog?.status ?? '')) {
     return { error: 'Unauthorized' };
@@ -23,7 +41,8 @@ export async function saveSessionNote(sessionId: string, note: string) {
   const { error } = await supabase
     .from('session_logs')
     .update({ notes: note })
-    .eq('id', sessionId);
+    .eq('id', sessionId)
+    .eq('tenant_id', tenantId);
 
   if (error) {
     console.error('Error saving session note:', error);
@@ -34,6 +53,7 @@ export async function saveSessionNote(sessionId: string, note: string) {
     .from('session_logs')
     .select('booking_id')
     .eq('id', sessionId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (logData?.booking_id) {
@@ -41,6 +61,7 @@ export async function saveSessionNote(sessionId: string, note: string) {
       .from('bookings')
       .select('customer_id')
       .eq('id', logData.booking_id)
+      .eq('tenant_id', tenantId)
       .single();
 
     const revalPaths = ['/dashboard/sessions', '/dashboard/customers'];
@@ -66,7 +87,8 @@ export async function saveSessionNote(sessionId: string, note: string) {
     await supabase
       .from('session_logs')
       .update({ notes: existingLog?.notes || null })
-      .eq('id', sessionId);
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId);
     return {
       error: auditErr instanceof Error ? auditErr.message : 'Failed to record saveSessionNote audit log'
     };
@@ -78,11 +100,18 @@ export async function saveSessionNote(sessionId: string, note: string) {
 export async function addExtraSession(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const { getCurrentUser } = await import('@/services/user-actions');
+  const currentUser = await getCurrentUser();
+  const tenantId = getCurrentTenantId(currentUser);
+  if (!tenantId) {
+    return { error: SESSION_TENANT_ACCESS_ERROR };
+  }
   
   const { data: booking, error: fetchError } = await supabase
     .from('bookings')
     .select('*')
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (fetchError || !booking) return { error: fetchError?.message || 'Không tìm thấy booking' };
@@ -93,7 +122,8 @@ export async function addExtraSession(bookingId: string) {
   const { error: updateBookingError } = await supabase
     .from('bookings')
     .update({ total_sessions: newTotal })
-    .eq('id', bookingId);
+    .eq('id', bookingId)
+    .eq('tenant_id', tenantId);
 
   if (updateBookingError) {
     return { error: updateBookingError.message };
@@ -116,7 +146,8 @@ export async function addExtraSession(bookingId: string) {
     await supabase
       .from('bookings')
       .update({ total_sessions: previousTotal })
-      .eq('id', bookingId);
+      .eq('id', bookingId)
+      .eq('tenant_id', tenantId);
     return { error: insertSessionError.message };
   }
 
@@ -133,11 +164,13 @@ export async function addExtraSession(bookingId: string) {
     await supabase
       .from('session_logs')
       .delete()
-      .eq('id', insertedSession.id);
+      .eq('id', insertedSession.id)
+      .eq('tenant_id', tenantId);
     await supabase
       .from('bookings')
       .update({ total_sessions: previousTotal })
-      .eq('id', bookingId);
+      .eq('id', bookingId)
+      .eq('tenant_id', tenantId);
 
     return {
       error: auditErr instanceof Error ? auditErr.message : 'Failed to record addExtraSession audit log'
@@ -148,6 +181,7 @@ export async function addExtraSession(bookingId: string) {
     .from('bookings')
     .select('customer_id')
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .single();
 
   const revalPaths = ['/dashboard/sessions'];

@@ -40,12 +40,14 @@ function withRollbackFailure(error: unknown, rollbackError: string) {
 async function rollbackRevenueConfirmation(
   supabase: SupabaseClient,
   id: string,
+  tenantId: string,
   payload: RevenueUpdate,
 ) {
   const { error } = await supabase
     .from('revenue')
     .update(payload)
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
 
   return error?.message || '';
 }
@@ -53,12 +55,14 @@ async function rollbackRevenueConfirmation(
 async function rollbackExpenseConfirmation(
   supabase: SupabaseClient,
   id: string,
+  tenantId: string,
   payload: ExpenseUpdate,
 ) {
   const { error } = await supabase
     .from('expenses')
     .update(payload)
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
 
   return error?.message || '';
 }
@@ -66,12 +70,14 @@ async function rollbackExpenseConfirmation(
 async function rollbackSalaryRecord(
   supabase: SupabaseClient,
   id: string,
+  tenantId: string,
   payload: SalaryRecordUpdate,
 ) {
   const { error } = await supabase
     .from('salary_records')
     .update(payload)
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
 
   return error?.message || '';
 }
@@ -109,6 +115,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
 
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const tenantId = await resolveTenantId();
 
   const today = getLocalDateString();
 
@@ -117,6 +124,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       .from('revenue')
       .select('revenue_type, amount, payment_method, booking_id, notes, tenant_id, status, received_date, business_event_type, accounting_review_status, accounting_metadata')
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (existingRevError) {
@@ -159,6 +167,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       .from('revenue')
       .update(revenueUpdatePayload)
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .select('*')
       .single();
 
@@ -184,7 +193,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
         );
         assertOutboxEnqueued(enqueued, 'REFUND_ISSUED');
       } catch (outboxError) {
-        const rollbackError = await rollbackRevenueConfirmation(supabase, id, revenueRollbackPayload);
+        const rollbackError = await rollbackRevenueConfirmation(supabase, id, tenantId, revenueRollbackPayload);
         throw new Error(withRollbackFailure(outboxError, rollbackError));
       }
     } else if (updatedRev && updatedRev.tenant_id && isPackageSaleRevenueType(updatedRev.revenue_type)) {
@@ -202,7 +211,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
         );
         assertOutboxEnqueued(enqueued, 'PACKAGE_SALE');
       } catch (outboxError) {
-        const rollbackError = await rollbackRevenueConfirmation(supabase, id, revenueRollbackPayload);
+        const rollbackError = await rollbackRevenueConfirmation(supabase, id, tenantId, revenueRollbackPayload);
         throw new Error(withRollbackFailure(outboxError, rollbackError));
       }
     }
@@ -211,6 +220,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       .from('expenses')
       .select('category, amount, description, tenant_id, status, expense_date, business_event_type, accounting_review_status, accounting_metadata')
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (existingExpenseError) {
@@ -252,6 +262,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
       .from('expenses')
       .update(expenseUpdatePayload)
       .eq('id', id)
+      .eq('tenant_id', tenantId)
       .select('*')
       .single();
 
@@ -275,10 +286,11 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
             .from('salary_records')
             .select('status, paid_date, paid_method, business_event_type, accounting_review_status, accounting_metadata')
             .eq('id', salaryRecordId)
+            .eq('tenant_id', tenantId)
             .single();
 
           if (salaryRecordFetchError) {
-            const rollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
+            const rollbackError = await rollbackExpenseConfirmation(supabase, id, tenantId, expenseRollbackPayload);
             throw new Error(withRollbackFailure(salaryRecordFetchError, rollbackError));
           }
 
@@ -313,11 +325,12 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
           const { error: salaryRecordUpdateError } = await supabase
             .from('salary_records')
             .update(salaryRecordUpdatePayload)
-            .eq('id', salaryRecordId);
+            .eq('id', salaryRecordId)
+            .eq('tenant_id', tenantId);
 
           if (salaryRecordUpdateError) {
             console.error('[confirmTransaction] Failed to update salary record status:', salaryRecordUpdateError);
-            const rollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
+            const rollbackError = await rollbackExpenseConfirmation(supabase, id, tenantId, expenseRollbackPayload);
             throw new Error(withRollbackFailure(salaryRecordUpdateError, rollbackError));
           }
 
@@ -336,8 +349,8 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
             );
             assertOutboxEnqueued(enqueued, 'SALARY_PAID');
           } catch (outboxError) {
-            const salaryRollbackError = await rollbackSalaryRecord(supabase, salaryRecordId, salaryRecordRollbackPayload);
-            const expenseRollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
+            const salaryRollbackError = await rollbackSalaryRecord(supabase, salaryRecordId, tenantId, salaryRecordRollbackPayload);
+            const expenseRollbackError = await rollbackExpenseConfirmation(supabase, id, tenantId, expenseRollbackPayload);
             const rollbackError = [salaryRollbackError, expenseRollbackError].filter(Boolean).join('; ');
             throw new Error(withRollbackFailure(outboxError, rollbackError));
           }
@@ -361,7 +374,7 @@ export async function confirmTransaction(id: string, type: 'revenue' | 'expense'
         );
         assertOutboxEnqueued(enqueued, 'EXPENSE_RECORDED');
       } catch (outboxError) {
-        const rollbackError = await rollbackExpenseConfirmation(supabase, id, expenseRollbackPayload);
+        const rollbackError = await rollbackExpenseConfirmation(supabase, id, tenantId, expenseRollbackPayload);
         throw new Error(withRollbackFailure(outboxError, rollbackError));
       }
     }
