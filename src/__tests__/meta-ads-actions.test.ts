@@ -3,9 +3,19 @@ import { readFileSync } from 'fs';
 jest.mock('server-only', () => ({}), { virtual: true });
 
 const mockGetCurrentUser = jest.fn();
+const mockRevalidatePath = jest.fn();
+const mockEnqueueWithAutoClient = jest.fn();
+
+jest.mock('next/cache', () => ({
+  revalidatePath: (path: string) => mockRevalidatePath(path),
+}));
 
 jest.mock('@/services/user-actions', () => ({
   getCurrentUser: () => mockGetCurrentUser(),
+}));
+
+jest.mock('@/lib/accounting-outbox', () => ({
+  enqueueWithAutoClient: (...args: unknown[]) => mockEnqueueWithAutoClient(...args),
 }));
 
 type QueryResult = {
@@ -118,6 +128,7 @@ class QueryBuilder implements PromiseLike<QueryResult> {
 
 const mockSupabase = {
   from: jest.fn((table: string) => new QueryBuilder(table)),
+  rpc: jest.fn(() => Promise.resolve({ data: null, error: null })),
 };
 
 jest.mock('@/lib/supabase-server', () => ({
@@ -127,6 +138,7 @@ jest.mock('@/lib/supabase-server', () => ({
 import {
   deleteUnusedMetaAdAccountConnection,
   getMetaAdsDailyInsights,
+  recognizeMetaAdsSpendAsExpense,
   saveMetaAdAccountConnection,
   syncMetaAdsInsights,
 } from '@/services/marketing/meta-ads';
@@ -143,6 +155,8 @@ describe('Meta Ads Phase 1 actions', () => {
     delete process.env.META_MARKETING_API_VERSION;
     delete process.env.DB_ENCRYPTION_KEY;
     global.fetch = mockFetch as unknown as typeof fetch;
+    mockSupabase.rpc.mockResolvedValue({ data: null, error: null });
+    mockEnqueueWithAutoClient.mockResolvedValue(true);
     mockGetCurrentUser.mockResolvedValue({
       id: 'admin-1',
       tenant_id: 'tenant-1',
@@ -512,6 +526,184 @@ describe('Meta Ads Phase 1 actions', () => {
     const requestedUrl = new URL(mockFetch.mock.calls[0][0]);
     expect(requestedUrl.searchParams.get('access_token')).toBe('stored-account-token');
     expect(requestedUrl.searchParams.get('access_token')).not.toBe('legacy-env-token');
+  });
+
+  it('recognizes synced Meta Ads spend as an approved marketing expense and accounting outbox event', async () => {
+    scriptedResults = [
+      {
+        data: {
+          id: 'connection-1',
+          ad_account_id: 'act_123',
+          account_name: 'Bella Ads',
+          currency: 'VND',
+          is_active: true,
+        },
+        error: null,
+      },
+      {
+        data: [
+          { id: 'insight-1', spend: 100000, date_start: '2026-06-01' },
+          { id: 'insight-2', spend: 50000, date_start: '2026-06-02' },
+        ],
+        error: null,
+      },
+      { data: [], error: null },
+      { data: { id: 'expense-1' }, error: null },
+    ];
+
+    const result = await recognizeMetaAdsSpendAsExpense({
+      adAccountId: '123',
+      dateFrom: '2026-06-01',
+      dateTo: '2026-06-07',
+    });
+
+    expect(result).toEqual({
+      success: true,
+      data: {
+        expenseId: 'expense-1',
+        amount: 150000,
+        rowsCount: 2,
+      },
+    });
+    expect(mockSupabase.rpc).toHaveBeenCalledWith('ensure_open_period', {
+      p_tenant_id: 'tenant-1',
+      p_date: '2026-06-07',
+    });
+
+    const insertCall = queryCalls.find(
+      (call) => call.table === 'expenses' && call.operation === 'insert',
+    );
+    expect(insertCall?.payload).toEqual(expect.objectContaining({
+      tenant_id: 'tenant-1',
+      amount: 150000,
+      category: 'marketing',
+      status: 'approved',
+      submitted_by_id: 'admin-1',
+      approved_by_id: 'admin-1',
+      business_event_type: 'EXPENSE_MARKETING',
+      accounting_metadata: expect.objectContaining({
+        source: 'meta_ads',
+        ad_account_id: 'act_123',
+        meta_ad_account_id: 'connection-1',
+        amount: 150000,
+        date_from: '2026-06-01',
+        date_to: '2026-06-07',
+        rows_count: 2,
+      }),
+    }));
+    expect(mockEnqueueWithAutoClient).toHaveBeenCalledWith(
+      mockSupabase,
+      expect.objectContaining({
+        eventType: 'EXPENSE_RECORDED',
+        referenceType: 'EXPENSE',
+        referenceId: 'expense-1',
+        payload: expect.objectContaining({
+          amount: 150000,
+          category: 'marketing',
+          branchId: 'tenant-1',
+        }),
+      }),
+      '[recognizeMetaAdsSpendAsExpense]',
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/marketing');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/finance');
+  });
+
+  it('does not create a duplicate marketing expense for the same Meta Ads account and date range', async () => {
+    scriptedResults = [
+      {
+        data: {
+          id: 'connection-1',
+          ad_account_id: 'act_123',
+          account_name: 'Bella Ads',
+          currency: 'VND',
+          is_active: true,
+        },
+        error: null,
+      },
+      {
+        data: [{ id: 'insight-1', spend: 100000, date_start: '2026-06-01' }],
+        error: null,
+      },
+      {
+        data: [
+          {
+            id: 'expense-1',
+            amount: 100000,
+            status: 'approved',
+            expense_date: '2026-06-07',
+            accounting_metadata: {
+              source: 'meta_ads',
+              ad_account_id: 'act_123',
+              date_from: '2026-06-01',
+              date_to: '2026-06-07',
+            },
+          },
+        ],
+        error: null,
+      },
+    ];
+
+    const result = await recognizeMetaAdsSpendAsExpense({
+      adAccountId: 'act_123',
+      dateFrom: '2026-06-01',
+      dateTo: '2026-06-07',
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Chi phi Meta Ads cho tai khoan va khoang ngay nay da duoc ghi nhan vao Finance.',
+    });
+    expect(queryCalls.some((call) => call.table === 'expenses' && call.operation === 'insert')).toBe(false);
+    expect(mockSupabase.rpc).not.toHaveBeenCalled();
+    expect(mockEnqueueWithAutoClient).not.toHaveBeenCalled();
+  });
+
+  it('rolls back the inserted expense if the accounting outbox event fails', async () => {
+    mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('outbox down'));
+    scriptedResults = [
+      {
+        data: {
+          id: 'connection-1',
+          ad_account_id: 'act_123',
+          account_name: 'Bella Ads',
+          currency: 'VND',
+          is_active: true,
+        },
+        error: null,
+      },
+      {
+        data: [{ id: 'insight-1', spend: 100000, date_start: '2026-06-01' }],
+        error: null,
+      },
+      { data: [], error: null },
+      { data: { id: 'expense-1' }, error: null },
+      { data: null, error: null },
+    ];
+
+    const result = await recognizeMetaAdsSpendAsExpense({
+      adAccountId: 'act_123',
+      dateFrom: '2026-06-01',
+      dateTo: '2026-06-07',
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: '[recognizeMetaAdsSpendAsExpense] outbox down',
+    });
+    expect(queryCalls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        table: 'expenses',
+        operation: 'insert',
+      }),
+      expect.objectContaining({
+        table: 'expenses',
+        operation: 'delete',
+        filters: expect.arrayContaining([
+          { method: 'eq', column: 'id', value: 'expense-1' },
+        ]),
+      }),
+    ]));
   });
 
   it('allows accountants to read tenant-scoped Meta Ads insights only', async () => {

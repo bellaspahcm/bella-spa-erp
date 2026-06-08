@@ -48,6 +48,9 @@ describe('Meta Ads UI integration', () => {
     expect(dashboardSource).toContain('PremiumSelect');
     expect(dashboardSource).toContain('overflow-x-auto');
     expect(dashboardSource).toContain('min-w-[1280px]');
+    expect(dashboardSource).toContain('recognizeMetaAdsSpendAsExpense');
+    expect(dashboardSource).toContain('Ghi nhận chi phí');
+    expect(dashboardSource).toContain('isRecognizingExpense');
     expect(dashboardSource).not.toContain('sticky');
   });
 
