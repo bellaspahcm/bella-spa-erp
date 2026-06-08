@@ -43,6 +43,8 @@ describe('Meta Ads UI integration', () => {
     expect(settingsTabSource).not.toContain('<select');
     expect(settingsTabSource).toContain('type="password"');
     expect(settingsTabSource).toContain('token_last_four');
+    expect(settingsTabSource).toContain('deleteUnusedMetaAdAccountConnection');
+    expect(settingsTabSource).toContain('Trash2');
     expect(dashboardSource).toContain('PremiumSelect');
     expect(dashboardSource).toContain('overflow-x-auto');
     expect(dashboardSource).toContain('min-w-[1280px]');

@@ -52,6 +52,10 @@ type SaveMetaAdAccountInput = {
   accessToken?: string | null;
 };
 
+type DeleteMetaAdAccountInput = {
+  adAccountId: string;
+};
+
 type SyncMetaAdsInsightsInput = {
   adAccountId: string;
   dateFrom: string;
@@ -457,6 +461,64 @@ export async function getMetaAdAccountConnections(): Promise<ActionResult<MetaAd
   }
 
   return { success: true, data: (data || []) as unknown as MetaAdAccountConnection[] };
+}
+
+export async function deleteUnusedMetaAdAccountConnection(
+  input: DeleteMetaAdAccountInput,
+): Promise<ActionResult<{ adAccountId: string }>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: META_ADS_MANAGE_ROLES,
+    errorMessage: 'Chi admin moi duoc xoa cau hinh Meta Ads.',
+  });
+  if (!auth.ok) return actionError(auth.error);
+
+  const adAccountId = normalizeAdAccountId(input.adAccountId);
+  if (!adAccountId) {
+    return actionError('Meta ad account id phai co dang act_123 hoac 123.');
+  }
+
+  const supabase = await createClient();
+  const { data: account, error: accountError } = await supabase
+    .from('marketing_meta_ad_accounts')
+    .select('id,ad_account_id,last_synced_at')
+    .eq('tenant_id', auth.tenantId)
+    .eq('ad_account_id', adAccountId)
+    .maybeSingle();
+
+  if (accountError) {
+    return actionError(`[deleteUnusedMetaAdAccountConnection] Khong the kiem tra tai khoan Meta Ads: ${accountError.message}`);
+  }
+
+  const accountRow = account as Pick<MetaAdAccountRow, 'id' | 'ad_account_id' | 'last_synced_at'> | null;
+  if (!accountRow) {
+    return actionError('Tai khoan Meta Ads nay khong ton tai trong chi nhanh hien tai.');
+  }
+
+  if (accountRow.last_synced_at) {
+    return actionError('Tai khoan Meta Ads da tung dong bo du lieu nen khong xoa truc tiep de tranh mat dau bao cao.');
+  }
+
+  const { error: tokenDeleteError } = await supabase
+    .from('marketing_meta_ad_account_tokens')
+    .delete()
+    .eq('tenant_id', auth.tenantId)
+    .eq('meta_ad_account_id', accountRow.id);
+
+  if (tokenDeleteError) {
+    return actionError(`[deleteUnusedMetaAdAccountConnection] Khong the xoa Meta token: ${tokenDeleteError.message}`);
+  }
+
+  const { error: accountDeleteError } = await supabase
+    .from('marketing_meta_ad_accounts')
+    .delete()
+    .eq('tenant_id', auth.tenantId)
+    .eq('id', accountRow.id);
+
+  if (accountDeleteError) {
+    return actionError(`[deleteUnusedMetaAdAccountConnection] Khong the xoa cau hinh Meta Ads: ${accountDeleteError.message}`);
+  }
+
+  return { success: true, data: { adAccountId: accountRow.ad_account_id } };
 }
 
 export async function getMetaAdsDailyInsights(
