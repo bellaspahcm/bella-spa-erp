@@ -80,6 +80,82 @@ async function getSupabaseWithTenant() {
 
 type SupabaseClient = Awaited<ReturnType<typeof getSupabaseWithTenant>>['supabase'];
 
+const INVENTORY_TENANT_ACCESS_ERROR = 'Chưa đăng nhập';
+
+async function assertPackageBelongsToTenant(
+  supabase: SupabaseClient,
+  packageId: string,
+  tenantId: string,
+) {
+  const { data, error } = await supabase
+    .from('packages')
+    .select('id')
+    .eq('id', packageId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (error) {
+    return { success: false as const, error: `Lỗi kiểm tra gói dịch vụ: ${error.message}` };
+  }
+  if (!data) {
+    return { success: false as const, error: 'Không tìm thấy gói dịch vụ trong đơn vị kinh doanh hiện tại' };
+  }
+  return { success: true as const };
+}
+
+async function assertInventoryItemsBelongToTenant(
+  supabase: SupabaseClient,
+  itemIds: string[],
+  tenantId: string,
+) {
+  const uniqueItemIds = Array.from(new Set(itemIds.filter(Boolean)));
+  if (uniqueItemIds.length === 0) return { success: true as const };
+
+  const { data, error } = await supabase
+    .from('inventory_items')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .in('id', uniqueItemIds);
+
+  if (error) {
+    return { success: false as const, error: `Lỗi kiểm tra vật tư: ${error.message}` };
+  }
+
+  const foundIds = new Set((data || []).map((item) => item.id));
+  const missingIds = uniqueItemIds.filter((itemId) => !foundIds.has(itemId));
+  if (missingIds.length > 0) {
+    return {
+      success: false as const,
+      error: `Có vật tư không thuộc đơn vị kinh doanh hiện tại: ${missingIds.join(', ')}`,
+    };
+  }
+
+  return { success: true as const };
+}
+
+async function assertSessionLogBelongsToTenant(
+  supabase: SupabaseClient,
+  sessionLogId: string | null | undefined,
+  tenantId: string,
+) {
+  if (!sessionLogId) return { success: true as const };
+
+  const { data, error } = await supabase
+    .from('session_logs')
+    .select('id')
+    .eq('id', sessionLogId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle();
+
+  if (error) {
+    return { success: false as const, error: `Lỗi kiểm tra buổi dịch vụ: ${error.message}` };
+  }
+  if (!data) {
+    return { success: false as const, error: 'Buổi dịch vụ không thuộc đơn vị kinh doanh hiện tại' };
+  }
+  return { success: true as const };
+}
+
 async function deleteInventoryItemById(
   supabase: SupabaseClient,
   itemId: string,
@@ -98,11 +174,13 @@ async function deleteInventoryItemById(
 
 export async function getInventoryItems() {
   const { supabase, tenantId } = await getSupabaseWithTenant();
+  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
 
-  let query = supabase.from('inventory_items').select('*').order('name');
-  if (tenantId) query = query.eq('tenant_id', tenantId);
-
-  const { data, error } = await query;
+  const { data, error } = await supabase
+    .from('inventory_items')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('name');
   if (error) {
     throw new Error(`Failed to fetch inventory items: ${error.message}`);
   }
@@ -111,19 +189,17 @@ export async function getInventoryItems() {
 
 export async function getInventoryLogs(limit = 50) {
   const { supabase, tenantId } = await getSupabaseWithTenant();
+  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
 
-  let query = supabase
+  const { data, error } = await supabase
     .from('inventory_logs')
     .select(`
       id, change_amount, reason, notes, created_at,
       inventory_items!inventory_logs_item_id_fkey(name, unit)
     `)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .limit(limit);
-
-  if (tenantId) query = query.eq('tenant_id', tenantId);
-
-  const { data, error } = await query;
   if (error) {
     throw new Error(`Failed to fetch inventory logs: ${error.message}`);
   }
@@ -132,23 +208,21 @@ export async function getInventoryLogs(limit = 50) {
 
 export async function getInventoryLogsByDateRange(dateFrom: string, dateTo: string) {
   const { supabase, tenantId } = await getSupabaseWithTenant();
+  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
 
   // dateTo: extend to end of day
   const dateToEnd = dateTo + 'T23:59:59';
 
-  let query = supabase
+  const { data, error } = await supabase
     .from('inventory_logs')
     .select(`
       id, change_amount, reason, notes, created_at,
       inventory_items!inventory_logs_item_id_fkey(name, unit)
     `)
+    .eq('tenant_id', tenantId)
     .gte('created_at', dateFrom)
     .lte('created_at', dateToEnd)
     .order('created_at', { ascending: false });
-
-  if (tenantId) query = query.eq('tenant_id', tenantId);
-
-  const { data, error } = await query;
   if (error) {
     throw new Error(`Failed to fetch inventory logs by date range: ${error.message}`);
   }
@@ -157,14 +231,12 @@ export async function getInventoryLogsByDateRange(dateFrom: string, dateTo: stri
 
 export async function getInventorySummary() {
   const { supabase, tenantId } = await getSupabaseWithTenant();
+  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
 
-  let query = supabase
+  const { data, error } = await supabase
     .from('inventory_items')
-    .select('stock_level, min_stock_level, price_per_unit');
-
-  if (tenantId) query = query.eq('tenant_id', tenantId);
-
-  const { data, error } = await query;
+    .select('stock_level, min_stock_level, price_per_unit')
+    .eq('tenant_id', tenantId);
   if (error) {
     throw new Error(`Failed to fetch inventory summary: ${error.message}`);
   }
@@ -173,18 +245,16 @@ export async function getInventorySummary() {
 
 export async function getPackageMaterials(packageId: string) {
   const { supabase, tenantId } = await getSupabaseWithTenant();
+  if (!tenantId) throw new Error(INVENTORY_TENANT_ACCESS_ERROR);
 
-  let query = supabase
+  const { data, error } = await supabase
     .from('package_materials')
     .select(`
       id, quantity_per_session, item_id,
       inventory_items!package_materials_item_id_fkey(id, name, unit, stock_level, price_per_unit)
     `)
-    .eq('package_id', packageId);
-
-  if (tenantId) query = query.eq('tenant_id', tenantId);
-
-  const { data, error } = await query;
+    .eq('package_id', packageId)
+    .eq('tenant_id', tenantId);
   if (error) {
     throw new Error(`Failed to fetch package materials for package ${packageId}: ${error.message}`);
   }
@@ -208,6 +278,21 @@ export async function upsertPackageMaterials(
     const { supabase, tenantId } = await getSupabaseWithTenant();
     if (!tenantId) return { success: false, error: 'Chưa đăng nhập' };
     if (!packageId) return { success: false, error: 'Thiếu mã gói' };
+
+    const packageScope = await assertPackageBelongsToTenant(supabase, packageId, tenantId);
+    if (!packageScope.success) {
+      return { success: false, error: packageScope.error };
+    }
+
+    const normalizedRows = normalizePackageMaterialRows(rows);
+    const itemScope = await assertInventoryItemsBelongToTenant(
+      supabase,
+      normalizedRows.map((row) => row.item_id),
+      tenantId,
+    );
+    if (!itemScope.success) {
+      return { success: false, error: itemScope.error };
+    }
 
     const { data: existingRows, error: existingError } = await supabase
       .from('package_materials')
@@ -233,7 +318,7 @@ export async function upsertPackageMaterials(
     }
 
     // 2. Lọc các dòng hợp lệ (item_id không rỗng, quantity > 0)
-    const validRows: PackageMaterialInsert[] = normalizePackageMaterialRows(rows)
+    const validRows: PackageMaterialInsert[] = normalizedRows
       .map(r => ({
         tenant_id: tenantId,
         package_id: packageId,
@@ -823,6 +908,9 @@ export async function consumeInventory(
     if (!itemId || !Number.isFinite(numericAmount) || numericAmount <= 0) {
       return { success: false, error: 'Số lượng tiêu hao không hợp lệ' };
     }
+
+    const sessionScope = await assertSessionLogBelongsToTenant(supabase, sessionLogId, tenantId);
+    if (!sessionScope.success) return { success: false, error: sessionScope.error };
 
     const { data: item, error: fetchError } = await supabase
       .from('inventory_items')

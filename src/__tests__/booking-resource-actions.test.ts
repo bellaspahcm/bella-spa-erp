@@ -213,6 +213,7 @@ describe('booking resource actions', () => {
     expect(operations.some((operation) => (
       operation.method === 'delete'
       && operation.filters.some((filter) => filter.column === 'id' && filter.value === 'resource-1')
+      && operation.filters.some((filter) => filter.column === 'tenant_id' && filter.value === 'tenant-1')
     ))).toBe(true);
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
   });

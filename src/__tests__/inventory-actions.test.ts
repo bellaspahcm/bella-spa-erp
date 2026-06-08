@@ -49,6 +49,8 @@ class MockQueryBuilder {
   eq() { return this; }
   gte() { return this; }
   lte() { return this; }
+  in() { return this; }
+  maybeSingle() { return this; }
 
   then(onfulfilled: any) {
     return Promise.resolve({ data: this.data, error: this.error }).then(onfulfilled);
@@ -104,6 +106,7 @@ class ScriptedQueryBuilder {
   lte() { return this; }
   in() { return this; }
   single() { return this; }
+  maybeSingle() { return this; }
 
   then(onfulfilled: any) {
     const next = this.scripts.shift();
@@ -218,6 +221,7 @@ describe('inventory write action side effects', () => {
 
   it('rolls back consumption stock update when inventory log insert fails', async () => {
     const calls = installScriptedSupabase([
+      { table: 'session_logs', op: 'select', data: { id: 'session-1' } },
       { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 5 } },
       { table: 'inventory_items', op: 'update' },
       { table: 'inventory_logs', op: 'insert', error: { message: 'log insert failed' } },
@@ -241,6 +245,20 @@ describe('inventory write action side effects', () => {
       session_log_id: 'session-1',
       tenant_id: 'tenant-1',
     });
+  });
+
+  it('blocks inventory consumption for sessions outside the current tenant', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'session_logs', op: 'select', data: null },
+    ]);
+
+    const result = await consumeInventory('item-1', 2, 'session-other');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Buổi dịch vụ không thuộc đơn vị kinh doanh hiện tại',
+    });
+    expect(calls).toEqual([{ table: 'session_logs', op: 'select' }]);
   });
 
   it('creates an item and writes an initial inventory log when opening stock is positive', async () => {
@@ -555,6 +573,8 @@ describe('inventory write action side effects', () => {
 
   it('replaces package materials by deleting old rows and inserting valid new rows', async () => {
     const calls = installScriptedSupabase([
+      { table: 'packages', op: 'select', data: { id: 'pkg-1' } },
+      { table: 'inventory_items', op: 'select', data: [{ id: 'item-1' }, { id: 'item-3' }] },
       { table: 'package_materials', op: 'select', data: [] },
       { table: 'package_materials', op: 'delete' },
       { table: 'package_materials', op: 'insert' },
@@ -590,6 +610,7 @@ describe('inventory write action side effects', () => {
 
   it('deletes old package materials without inserting when replacement rows are empty', async () => {
     const calls = installScriptedSupabase([
+      { table: 'packages', op: 'select', data: { id: 'pkg-1' } },
       { table: 'package_materials', op: 'select', data: [] },
       { table: 'package_materials', op: 'delete' },
     ]);
@@ -604,8 +625,44 @@ describe('inventory write action side effects', () => {
     expect(calls.some(c => c.table === 'package_materials' && c.op === 'insert')).toBe(false);
   });
 
+  it('rejects package materials when the package is outside the current tenant', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'packages', op: 'select', data: null },
+    ]);
+
+    const result = await upsertPackageMaterials('pkg-other', [
+      { item_id: 'item-1', quantity_per_session: 2 },
+    ]);
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Không tìm thấy gói dịch vụ trong đơn vị kinh doanh hiện tại',
+    });
+    expect(calls).toEqual([{ table: 'packages', op: 'select' }]);
+  });
+
+  it('rejects package materials when an inventory item is outside the current tenant', async () => {
+    const calls = installScriptedSupabase([
+      { table: 'packages', op: 'select', data: { id: 'pkg-1' } },
+      { table: 'inventory_items', op: 'select', data: [{ id: 'item-1' }] },
+    ]);
+
+    const result = await upsertPackageMaterials('pkg-1', [
+      { item_id: 'item-1', quantity_per_session: 2 },
+      { item_id: 'item-other', quantity_per_session: 1 },
+    ]);
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Có vật tư không thuộc đơn vị kinh doanh hiện tại: item-other',
+    });
+    expect(calls.some(c => c.table === 'package_materials')).toBe(false);
+  });
+
   it('does not insert replacement package materials when delete fails', async () => {
     const calls = installScriptedSupabase([
+      { table: 'packages', op: 'select', data: { id: 'pkg-1' } },
+      { table: 'inventory_items', op: 'select', data: [{ id: 'item-1' }] },
       { table: 'package_materials', op: 'select', data: [] },
       { table: 'package_materials', op: 'delete', error: { message: 'delete failed' } },
     ]);
@@ -633,6 +690,8 @@ describe('inventory write action side effects', () => {
       },
     ];
     const calls = installScriptedSupabase([
+      { table: 'packages', op: 'select', data: { id: 'pkg-1' } },
+      { table: 'inventory_items', op: 'select', data: [{ id: 'item-new' }] },
       { table: 'package_materials', op: 'select', data: oldRows },
       { table: 'package_materials', op: 'delete' },
       { table: 'package_materials', op: 'insert', error: { message: 'insert failed' } },
@@ -673,6 +732,8 @@ describe('inventory write action side effects', () => {
       },
     ];
     installScriptedSupabase([
+      { table: 'packages', op: 'select', data: { id: 'pkg-1' } },
+      { table: 'inventory_items', op: 'select', data: [{ id: 'item-new' }] },
       { table: 'package_materials', op: 'select', data: oldRows },
       { table: 'package_materials', op: 'delete' },
       { table: 'package_materials', op: 'insert', error: { message: 'insert failed' } },
@@ -711,6 +772,7 @@ describe('inventory write action side effects', () => {
           { quantity_per_session: 2, inventory_items: { id: 'item-1', price_per_unit: 0 } },
         ],
       },
+      { table: 'session_logs', op: 'select', data: { id: 'session-1' } },
       { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 10 } },
       { table: 'inventory_items', op: 'update' },
       { table: 'inventory_logs', op: 'insert' },
@@ -745,9 +807,11 @@ describe('inventory write action side effects', () => {
           { quantity_per_session: 1.5, inventory_items: { id: 'item-2', price_per_unit: 2000 } },
         ],
       },
+      { table: 'session_logs', op: 'select', data: { id: 'session-1' } },
       { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 10 } },
       { table: 'inventory_items', op: 'update' },
       { table: 'inventory_logs', op: 'insert' },
+      { table: 'session_logs', op: 'select', data: { id: 'session-1' } },
       { table: 'inventory_items', op: 'select', data: { name: 'Oil', stock_level: 5 } },
       { table: 'inventory_items', op: 'update' },
       { table: 'inventory_logs', op: 'insert' },
@@ -843,9 +907,11 @@ describe('inventory write action side effects', () => {
           { quantity_per_session: 9, inventory_items: { id: 'item-2', price_per_unit: 2000 } },
         ],
       },
+      { table: 'session_logs', op: 'select', data: { id: 'session-1' } },
       { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 10 } },
       { table: 'inventory_items', op: 'update' },
       { table: 'inventory_logs', op: 'insert' },
+      { table: 'session_logs', op: 'select', data: { id: 'session-1' } },
       { table: 'inventory_items', op: 'select', data: { name: 'Oil', stock_level: 5 } },
       { table: 'inventory_logs', op: 'select', data: [{ id: 'log-1', item_id: 'item-1', change_amount: -2 }] },
       { table: 'inventory_items', op: 'select', data: { stock_level: 8 } },
@@ -877,6 +943,7 @@ describe('inventory write action side effects', () => {
           { quantity_per_session: 2, inventory_items: { id: 'item-1', price_per_unit: 1000 } },
         ],
       },
+      { table: 'session_logs', op: 'select', data: { id: 'session-1' } },
       { table: 'inventory_items', op: 'select', data: { name: 'Gel', stock_level: 10 } },
       { table: 'inventory_items', op: 'update' },
       { table: 'inventory_logs', op: 'insert' },
