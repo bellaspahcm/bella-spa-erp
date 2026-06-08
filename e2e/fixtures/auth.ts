@@ -7,8 +7,10 @@
  * Mỗi spec import { test } từ file này thay vì `@playwright/test`.
  */
 
-import { test as base, type Page } from "@playwright/test";
+import { test as base, type Browser, type BrowserContextOptions, type Page, type WorkerInfo } from "@playwright/test";
 import { getAnyAdminUser, hasSupabaseAdminEnv, loadE2eEnv } from "../helpers/supabase-admin";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 type AdminCredentials = {
   email: string;
@@ -18,8 +20,13 @@ type AdminCredentials = {
 type Fixtures = {
   /** A page that is already authenticated as an admin user (HQ tenant). */
   adminPage: Page;
+};
+
+type WorkerFixtures = {
   /** Cached admin email used for login (for assertions/UI checks). */
   adminEmail: string;
+  /** Storage state created once per Playwright worker to avoid repeated admin logins. */
+  adminStorageStatePath: string;
 };
 
 function readEnv(name: string): string {
@@ -51,6 +58,33 @@ export function getConfiguredAdminCredentials(): AdminCredentials | null {
 
 export function canAuthenticateAdminPage(): boolean {
   return Boolean(getConfiguredAdminCredentials()) || (isLocalE2eBaseUrl() && hasSupabaseAdminEnv());
+}
+
+function getVercelProtectionHeaders(): Record<string, string> | undefined {
+  const secret = readEnv("E2E_VERCEL_AUTOMATION_BYPASS_SECRET") || readEnv("VERCEL_AUTOMATION_BYPASS_SECRET");
+  return secret
+    ? {
+        "x-vercel-protection-bypass": secret,
+        "x-vercel-set-bypass-cookie": "true",
+      }
+    : undefined;
+}
+
+function getE2eContextOptions(): BrowserContextOptions {
+  loadE2eEnv();
+
+  return {
+    baseURL: getE2eBaseUrl(),
+    extraHTTPHeaders: getVercelProtectionHeaders(),
+    locale: "vi-VN",
+    timezoneId: "Asia/Ho_Chi_Minh",
+    viewport: { width: 1440, height: 900 },
+  };
+}
+
+function getStorageStatePath(workerInfo: WorkerInfo): string {
+  const projectName = workerInfo.project.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+  return join(tmpdir(), `bella-spa-e2e-admin-${projectName}-${workerInfo.workerIndex}.json`);
 }
 
 async function loginWithConfiguredCredentials(page: Page, credentials: AdminCredentials): Promise<void> {
@@ -97,8 +131,42 @@ async function loginWithLocalDevBypass(page: Page): Promise<void> {
   await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
 }
 
-export const test = base.extend<Fixtures>({
-  adminEmail: async ({}, use) => {
+async function createAdminStorageState(browser: Browser, workerInfo: WorkerInfo): Promise<string> {
+  const storageStatePath = getStorageStatePath(workerInfo);
+  const context = await browser.newContext(getE2eContextOptions());
+  const page = await context.newPage();
+  page.setDefaultTimeout(15_000);
+  page.setDefaultNavigationTimeout(30_000);
+
+  try {
+    const credentials = getConfiguredAdminCredentials();
+    if (credentials) {
+      await loginWithConfiguredCredentials(page, credentials);
+    } else {
+      if (!isLocalE2eBaseUrl()) {
+        throw new Error(
+          "Non-local E2E_BASE_URL requires E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD. Refusing to use dev mock auth outside localhost.",
+        );
+      }
+
+      if (!hasSupabaseAdminEnv()) {
+        throw new Error(
+          "Local dev-bypass E2E requires NEXT_PUBLIC_SUPABASE_URL plus SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY.",
+        );
+      }
+
+      await loginWithLocalDevBypass(page);
+    }
+
+    await context.storageState({ path: storageStatePath });
+    return storageStatePath;
+  } finally {
+    await context.close();
+  }
+}
+
+export const test = base.extend<Fixtures, WorkerFixtures>({
+  adminEmail: [async ({}, use) => {
     const credentials = getConfiguredAdminCredentials();
     if (credentials) {
       await use(credentials.email);
@@ -107,31 +175,18 @@ export const test = base.extend<Fixtures>({
 
     const admin = await getAnyAdminUser();
     await use(admin.email);
+  }, { scope: "worker" }],
+
+  adminStorageStatePath: [async ({ browser }, use, workerInfo) => {
+    await use(await createAdminStorageState(browser, workerInfo));
+  }, { scope: "worker" }],
+
+  storageState: async ({ adminStorageStatePath }, use) => {
+    await use(adminStorageStatePath);
   },
 
   adminPage: async ({ page }, use) => {
-    const credentials = getConfiguredAdminCredentials();
-    if (credentials) {
-      await loginWithConfiguredCredentials(page, credentials);
-      await use(page);
-      return;
-    }
-
-    if (!isLocalE2eBaseUrl()) {
-      throw new Error(
-        "Non-local E2E_BASE_URL requires E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD. Refusing to use dev mock auth outside localhost.",
-      );
-    }
-
-    if (!hasSupabaseAdminEnv()) {
-      throw new Error(
-        "Local dev-bypass E2E requires NEXT_PUBLIC_SUPABASE_URL plus SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY.",
-      );
-    }
-
-    await loginWithLocalDevBypass(page);
     await use(page);
-    // No teardown -- Playwright closes the context after each test.
   },
 });
 
