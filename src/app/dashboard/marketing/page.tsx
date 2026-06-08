@@ -11,6 +11,7 @@ import {
   Megaphone,
   MousePointerClick,
   RefreshCw,
+  ReceiptText,
   Target,
   Wallet,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { usePageRefresh } from "@/hooks/usePageRefresh";
 import {
   getMetaAdAccountConnections,
   getMetaAdsDailyInsights,
+  recognizeMetaAdsSpendAsExpense,
   syncMetaAdsInsights,
 } from "@/services/marketing/meta-ads";
 import { cn, formatCurrency, getLocalDateString } from "@/lib/utils";
@@ -105,6 +107,7 @@ export default function MarketingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isRecognizingExpense, setIsRecognizingExpense] = useState(false);
 
   const accountOptions = useMemo(
     () => [
@@ -116,6 +119,12 @@ export default function MarketingPage() {
     ],
     [connections],
   );
+
+  const expenseAccountId = useMemo(() => {
+    if (selectedAccountId && selectedAccountId !== "all") return selectedAccountId;
+    if (connections.length === 1) return connections[0].ad_account_id;
+    return "";
+  }, [connections, selectedAccountId]);
 
   const loadData = useCallback(async () => {
     setIsRefreshing(true);
@@ -220,6 +229,44 @@ export default function MarketingPage() {
       cpl: leads > 0 ? spend / leads : 0,
     };
   }, [insights]);
+
+  async function handleRecognizeExpense() {
+    if (!expenseAccountId) {
+      toast.error("Chọn một tài khoản quảng cáo cụ thể trước khi ghi nhận chi phí");
+      return;
+    }
+
+    if (summary.spend <= 0) {
+      toast.error("Chưa có chi phí Meta Ads đã đồng bộ trong khoảng ngày này");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Ghi nhận ${formatCurrency(summary.spend)}đ chi phí Meta Ads vào P&L cho khoảng ${dateFrom} - ${dateTo}?`,
+    );
+    if (!confirmed) return;
+
+    setIsRecognizingExpense(true);
+    try {
+      const result = await recognizeMetaAdsSpendAsExpense({
+        adAccountId: expenseAccountId,
+        dateFrom,
+        dateTo,
+      });
+
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(`Đã ghi nhận ${formatCurrency(result.data.amount)}đ chi phí Meta Ads vào Finance`);
+    } catch (error) {
+      console.error("Meta Ads expense recognition failed", error);
+      toast.error("Không thể ghi nhận chi phí Meta Ads");
+    } finally {
+      setIsRecognizingExpense(false);
+    }
+  }
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-4 sm:p-6 md:p-10">
@@ -327,6 +374,41 @@ export default function MarketingPage() {
           icon={Target}
           accent="bg-emerald-50 text-emerald-600"
         />
+      </section>
+
+      <section className="mb-8 rounded-[2rem] border border-rose-100 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-primary">
+              <ReceiptText className="h-6 w-6" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-950">Ghi nhận chi phí vào P&L</h2>
+              <p className="mt-1 max-w-2xl text-sm font-semibold text-slate-500">
+                Chỉ ghi nhận sau khi dữ liệu đã đồng bộ và đang xem một tài khoản cụ thể trong cùng tháng kế toán.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="rounded-2xl bg-slate-50 px-5 py-3 text-left sm:text-right">
+              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Chi phí đã sync</p>
+              <p className="mt-1 text-xl font-black text-slate-950">{formatCurrency(summary.spend)}đ</p>
+            </div>
+            <button
+              onClick={handleRecognizeExpense}
+              disabled={isRecognizingExpense || !expenseAccountId || summary.spend <= 0}
+              className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black uppercase tracking-wider text-white shadow-xl shadow-rose-100 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+            >
+              {isRecognizingExpense ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ReceiptText className="h-4 w-4" />
+              )}
+              Ghi nhận chi phí
+            </button>
+          </div>
+        </div>
       </section>
 
       <section className="rounded-[2rem] border border-rose-100 bg-white shadow-sm">

@@ -1,9 +1,17 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
 import type { Database, Json } from '@/types/database.types';
 import { getAuthorizedTenantUser } from '@/services/auth-guards';
 import { decrypt, encrypt } from '@/lib/crypto';
+import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
+import { inferBusinessEventType } from '@/services/accounting/template-rules';
+import { resolveReviewStatus } from '@/services/finance/transaction-review';
+import {
+  assertOutboxEnqueued,
+  buildExpenseRecordedOutboxEvent,
+} from '@/lib/business-rules/accounting-outbox';
 
 type MetaAdAccountRow = Database['public']['Tables']['marketing_meta_ad_accounts']['Row'];
 type MetaAdAccountInsert = Database['public']['Tables']['marketing_meta_ad_accounts']['Insert'];
@@ -18,6 +26,8 @@ type MetaAdsInsightDailyInsert =
   Database['public']['Tables']['marketing_meta_ads_insights_daily']['Insert'];
 type MetaAdsSyncRunInsert = Database['public']['Tables']['marketing_meta_ads_sync_runs']['Insert'];
 type MetaAdsSyncRunUpdate = Database['public']['Tables']['marketing_meta_ads_sync_runs']['Update'];
+type ExpenseInsert = Database['public']['Tables']['expenses']['Insert'];
+type ExpenseRow = Database['public']['Tables']['expenses']['Row'];
 
 const META_ADS_MANAGE_ROLES = ['admin', 'super_admin'] as const;
 const META_ADS_READ_ROLES = ['admin', 'super_admin', 'accountant'] as const;
@@ -66,6 +76,12 @@ type GetMetaAdsInsightsInput = {
   dateFrom: string;
   dateTo: string;
   adAccountId?: string | null;
+};
+
+type RecognizeMetaAdsSpendInput = {
+  adAccountId: string;
+  dateFrom: string;
+  dateTo: string;
 };
 
 type MetaAdAccountConnection = Pick<
@@ -127,6 +143,20 @@ function actionError<T>(error: string): ActionResult<T> {
   return { success: false, error };
 }
 
+function getErrorMessage(error: unknown, fallback = 'Loi he thong') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  return fallback;
+}
+
+function withRollbackFailure(error: unknown, rollbackError: string) {
+  const message = getErrorMessage(error);
+  return rollbackError ? `${message}; rollback failed: ${rollbackError}` : message;
+}
+
 function normalizeNullableText(value: string | null | undefined) {
   const normalized = value?.trim();
   return normalized ? normalized : null;
@@ -185,6 +215,34 @@ function toInteger(value: string | number | null | undefined) {
 
 function toJson(value: unknown): Json {
   return JSON.parse(JSON.stringify(value ?? null)) as Json;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isSameMetaAdsExpenseMetadata(
+  metadata: Json | null | undefined,
+  input: RecognizeMetaAdsSpendInput & { normalizedAdAccountId: string },
+) {
+  if (!isPlainRecord(metadata)) return false;
+
+  return (
+    metadata.source === 'meta_ads' &&
+    metadata.ad_account_id === input.normalizedAdAccountId &&
+    metadata.date_from === input.dateFrom &&
+    metadata.date_to === input.dateTo
+  );
+}
+
+async function deleteInsertedExpense(expenseId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('expenses')
+    .delete()
+    .eq('id', expenseId);
+
+  return error?.message || '';
 }
 
 async function getStoredMetaAccessToken(params: {
@@ -556,6 +614,183 @@ export async function getMetaAdsDailyInsights(
   }
 
   return { success: true, data: data || [] };
+}
+
+export async function recognizeMetaAdsSpendAsExpense(
+  input: RecognizeMetaAdsSpendInput,
+): Promise<ActionResult<{ expenseId: string; amount: number; rowsCount: number }>> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: META_ADS_MANAGE_ROLES,
+    errorMessage: 'Chi admin moi duoc ghi nhan chi phi Meta Ads.',
+  });
+  if (!auth.ok) return actionError(auth.error);
+
+  const adAccountId = normalizeAdAccountId(input.adAccountId);
+  if (!adAccountId) {
+    return actionError('Meta ad account id phai co dang act_123 hoac 123.');
+  }
+
+  const dateValidation = validateDateRange(input.dateFrom, input.dateTo);
+  if (!dateValidation.ok) return actionError(dateValidation.error);
+
+  if (input.dateFrom.slice(0, 7) !== input.dateTo.slice(0, 7)) {
+    return actionError('Khoang ghi nhan chi phi Meta Ads phai nam trong cung mot thang ke toan.');
+  }
+
+  const supabase = await createClient();
+  const { data: connection, error: connectionError } = await supabase
+    .from('marketing_meta_ad_accounts')
+    .select('id,ad_account_id,account_name,currency,is_active')
+    .eq('tenant_id', auth.tenantId)
+    .eq('ad_account_id', adAccountId)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (connectionError) {
+    return actionError(`[recognizeMetaAdsSpendAsExpense] Khong the kiem tra cau hinh Meta Ads: ${connectionError.message}`);
+  }
+
+  const account = connection as Pick<
+    MetaAdAccountRow,
+    'id' | 'ad_account_id' | 'account_name' | 'currency' | 'is_active'
+  > | null;
+  if (!account) {
+    return actionError('Ad account nay chua duoc cau hinh hoac da tam dung cho chi nhanh hien tai.');
+  }
+
+  if (account.currency && account.currency !== 'VND') {
+    return actionError('Hien chi ghi nhan chi phi Meta Ads bang VND vao P&L.');
+  }
+
+  const { data: insights, error: insightsError } = await supabase
+    .from('marketing_meta_ads_insights_daily')
+    .select('id,spend,date_start')
+    .eq('tenant_id', auth.tenantId)
+    .eq('ad_account_id', adAccountId)
+    .gte('date_start', input.dateFrom)
+    .lte('date_start', input.dateTo);
+
+  if (insightsError) {
+    return actionError(`[recognizeMetaAdsSpendAsExpense] Khong the tong hop insight Meta Ads: ${insightsError.message}`);
+  }
+
+  const insightRows = (insights || []) as Pick<MetaAdsInsightDailyRow, 'id' | 'spend' | 'date_start'>[];
+  const totalSpend = Math.round(
+    insightRows.reduce((sum, row) => sum + toNumber(row.spend), 0),
+  );
+
+  if (totalSpend <= 0) {
+    return actionError('Chua co chi phi Meta Ads da dong bo trong khoang ngay nay.');
+  }
+
+  const { data: existingExpenses, error: existingExpenseError } = await supabase
+    .from('expenses')
+    .select('id,amount,status,expense_date,accounting_metadata')
+    .eq('tenant_id', auth.tenantId)
+    .eq('category', 'marketing')
+    .gte('expense_date', input.dateFrom)
+    .lte('expense_date', input.dateTo);
+
+  if (existingExpenseError) {
+    return actionError(`[recognizeMetaAdsSpendAsExpense] Khong the kiem tra chi phi Meta Ads da ghi nhan: ${existingExpenseError.message}`);
+  }
+
+  const duplicatedExpense = ((existingExpenses || []) as Pick<
+    ExpenseRow,
+    'id' | 'amount' | 'status' | 'expense_date' | 'accounting_metadata'
+  >[]).find((expense) => isSameMetaAdsExpenseMetadata(expense.accounting_metadata, {
+    ...input,
+    normalizedAdAccountId: adAccountId,
+  }));
+
+  if (duplicatedExpense) {
+    return actionError('Chi phi Meta Ads cho tai khoan va khoang ngay nay da duoc ghi nhan vao Finance.');
+  }
+
+  try {
+    await assertOpenAccountingPeriod(supabase, {
+      tenantId: auth.tenantId,
+      date: input.dateTo,
+      context: 'Record Meta Ads expense',
+    });
+  } catch (error) {
+    return actionError(`[recognizeMetaAdsSpendAsExpense] ${getErrorMessage(error)}`);
+  }
+
+  const description = `Chi phi Meta Ads ${account.account_name || adAccountId} (${input.dateFrom} - ${input.dateTo})`;
+  const businessEventType = inferBusinessEventType({
+    sourceTable: 'expenses',
+    category: 'marketing',
+  });
+  const accountingPayload = {
+    source: 'meta_ads',
+    ad_account_id: adAccountId,
+    meta_ad_account_id: account.id,
+    account_name: account.account_name,
+    amount: totalSpend,
+    payment_method: 'bank_transfer',
+    expense_date: input.dateTo,
+    date_from: input.dateFrom,
+    date_to: input.dateTo,
+    rows_count: insightRows.length,
+    description,
+  };
+  const expensePayload: ExpenseInsert = {
+    tenant_id: auth.tenantId,
+    amount: totalSpend,
+    category: 'marketing',
+    description,
+    expense_date: input.dateTo,
+    status: 'approved',
+    submitted_by_id: auth.user.id,
+    approved_by_id: auth.user.id,
+    business_event_type: businessEventType,
+    accounting_review_status: resolveReviewStatus(businessEventType, accountingPayload),
+    accounting_metadata: toJson(accountingPayload),
+  };
+
+  const { data: insertedExpense, error: insertError } = await supabase
+    .from('expenses')
+    .insert(expensePayload)
+    .select('id')
+    .single();
+
+  const expense = insertedExpense as Pick<ExpenseRow, 'id'> | null;
+  if (insertError || !expense?.id) {
+    return actionError(`[recognizeMetaAdsSpendAsExpense] Khong the ghi nhan chi phi Meta Ads: ${insertError?.message || 'missing expense id'}`);
+  }
+
+  try {
+    const { enqueueWithAutoClient } = await import('@/lib/accounting-outbox');
+    const enqueued = await enqueueWithAutoClient(
+      supabase,
+      buildExpenseRecordedOutboxEvent({
+        tenantId: auth.tenantId,
+        expenseId: expense.id,
+        amount: totalSpend,
+        category: 'marketing',
+        paymentMethod: 'bank_transfer',
+        description,
+      }),
+      '[recognizeMetaAdsSpendAsExpense]',
+    );
+    assertOutboxEnqueued(enqueued, 'EXPENSE_RECORDED');
+  } catch (error) {
+    const rollbackError = await deleteInsertedExpense(expense.id);
+    return actionError(`[recognizeMetaAdsSpendAsExpense] ${withRollbackFailure(error, rollbackError)}`);
+  }
+
+  revalidatePath('/dashboard/marketing');
+  revalidatePath('/dashboard/finance');
+
+  return {
+    success: true,
+    data: {
+      expenseId: expense.id,
+      amount: totalSpend,
+      rowsCount: insightRows.length,
+    },
+  };
 }
 
 export async function syncMetaAdsInsights(
