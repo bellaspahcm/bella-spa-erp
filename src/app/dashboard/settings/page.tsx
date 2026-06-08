@@ -19,6 +19,7 @@ import {
   Receipt,
   KeyRound,
   Calculator,
+  Megaphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getTenantSettings, saveTenantSettings } from "@/services/tenant-actions";
@@ -37,11 +38,13 @@ import HqBillingTab from "./components/HqBillingTab";
 import SecurityTab from "./components/SecurityTab";
 import AccountingConfigTab from "./components/AccountingConfigTab";
 import PromotionsTab from "./components/PromotionsTab";
+import MetaAdsSettingsTab from "./components/MetaAdsSettingsTab";
 
 const TABS = [
   { id: "general", label: "Thông tin chung", icon: Store },
   { id: "subscription", label: "Gói dịch vụ (SaaS)", icon: CreditCard },
   { id: "hq-billing", label: "Hóa đơn HQ (Royalty)", icon: Receipt },
+  { id: "meta-ads", label: "Meta Ads", icon: Megaphone },
   { id: "salary", label: "Lương & Thưởng", icon: Coins },
   { id: "accounting", label: "Chế độ Kế toán", icon: Calculator },
   { id: "staff", label: "Nhân sự & Quyền", icon: Shield },
@@ -251,6 +254,10 @@ function SettingsContent() {
 
               {activeTab === "hq-billing" && (
                 <HqBillingTab />
+              )}
+
+              {activeTab === "meta-ads" && (
+                <MetaAdsSettingsTab />
               )}
 
               {activeTab === "salary" && (
