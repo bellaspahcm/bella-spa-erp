@@ -197,6 +197,23 @@ async function expectMobileRefreshButtonFitsViewport(page: Page, routeName: stri
   expect(box.height, `${routeName} refresh button should keep a tappable height`).toBeGreaterThanOrEqual(36);
 }
 
+async function closeMobileOverlayIfPresent(page: Page) {
+  await page.keyboard.press("Escape").catch(() => {});
+
+  const backdrop = page.locator(".fixed.inset-0").first();
+  const isBackdropVisible = await backdrop.isVisible({ timeout: 500 }).catch(() => false);
+  if (isBackdropVisible) {
+    await backdrop.click({ position: { x: 4, y: 4 }, timeout: 2_000 }).catch(async () => {
+      await page.evaluate(() => {
+        const overlay = document.querySelector<HTMLElement>(".fixed.inset-0");
+        overlay?.click();
+      });
+    });
+  }
+
+  await backdrop.waitFor({ state: "hidden", timeout: 2_000 }).catch(() => {});
+}
+
 test.describe("Mobile soft refresh", () => {
   test.setTimeout(120_000);
 
@@ -266,8 +283,7 @@ test.describe("Mobile soft refresh", () => {
         await expect(searchInput).toHaveValue("soft-refresh-probe");
       }
 
-      await adminPage.keyboard.press("Escape").catch(() => {});
-      await adminPage.locator(".fixed.inset-0").first().waitFor({ state: "detached", timeout: 1_000 }).catch(() => {});
+      await closeMobileOverlayIfPresent(adminPage);
 
       await adminPage.getByRole("button", { name: /làm mới dữ liệu|lam moi du lieu/i }).first().click();
       await adminPage.waitForTimeout(1_000);
