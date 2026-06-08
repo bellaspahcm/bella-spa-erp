@@ -22,6 +22,7 @@ type TenantSupabaseClient = Awaited<ReturnType<typeof createClient>>;
 const TENANT_SETTINGS_ADMIN_ROLES = ['admin', 'super_admin'] as const;
 const TENANT_SETTINGS_TENANT_ERROR = 'Không xác định được chi nhánh của người dùng';
 const TENANT_SETTINGS_FORBIDDEN_ERROR = 'Không có quyền cập nhật cấu hình chi nhánh.';
+const TENANT_MODULE_CONFIG_FORBIDDEN_ERROR = 'Module ngành được cấu hình khi setup tenant, admin tenant không thể tự chuyển đổi.';
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định') {
   if (error instanceof Error) return error.message || fallback;
@@ -151,6 +152,9 @@ export async function saveTenantSettings(settings: {
       error: auth.reason === 'FORBIDDEN' ? TENANT_SETTINGS_FORBIDDEN_ERROR : auth.error,
     };
   }
+  if (settings.enabled_modules !== undefined && auth.user.role !== 'super_admin') {
+    return { success: false, error: TENANT_MODULE_CONFIG_FORBIDDEN_ERROR };
+  }
 
   const supabase = await createClient();
   const tenantId = auth.tenantId;
@@ -170,7 +174,9 @@ export async function saveTenantSettings(settings: {
     if (settings.email !== undefined) updatePayload.email = settings.email;
     if (settings.address !== undefined) updatePayload.address = settings.address;
     if (settings.logo_url !== undefined) updatePayload.logo_url = settings.logo_url.trim();
-    if (settings.enabled_modules !== undefined) updatePayload.enabled_modules = toTenantModuleJson(settings.enabled_modules);
+    if (settings.enabled_modules !== undefined) {
+      updatePayload.enabled_modules = toTenantModuleJson(settings.enabled_modules);
+    }
     if (settings.brand_theme !== undefined) updatePayload.brand_theme = toTenantBrandThemeJson(settings.brand_theme);
     if (settings.qr_bank_code !== undefined) updatePayload.qr_bank_code = settings.qr_bank_code;
     if (settings.qr_account_number !== undefined) updatePayload.qr_account_number = settings.qr_account_number;

@@ -71,6 +71,7 @@ export default function ServicesPage() {
     setBeforeAfterRequired,
     careNoteTemplate,
     setCareNoteTemplate,
+    enabledModules,
     isBeautySpaEnabled,
     bookingResources,
     loadingResources,
@@ -126,6 +127,18 @@ export default function ServicesPage() {
     retail_product: 'Sản phẩm bán lẻ',
     consultation: 'Tư vấn',
   };
+  const enabledModuleOptions = [
+    ...(enabledModules.babycare
+      ? [{ value: 'babycare', label: 'Bella Mother & Baby' }]
+      : []),
+    ...(enabledModules.beauty_spa
+      ? [{ value: 'beauty_spa', label: 'Beauty Spa' }]
+      : []),
+  ];
+  const showModuleFilter = enabledModuleOptions.length > 1;
+  const currentModuleLabel = enabledModuleOptions.find(option => option.value === moduleKey)?.label
+    || enabledModuleOptions[0]?.label
+    || 'Module chưa cấu hình';
 
   usePageRefresh(refreshData);
 
@@ -138,13 +151,15 @@ export default function ServicesPage() {
           <p className="text-slate-500 font-medium mt-1">Thiết lập bảng giá và các chương trình ưu đãi</p>
         </div>
         <div className="bella-toolbar flex flex-col gap-3 sm:flex-row">
-          <button 
-            onClick={syncDefaultPackages}
-            title="Đồng bộ các gói dịch vụ mặc định của Bella Spa từ Landing Page thành các bản nháp trong ERP"
-            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:px-6"
-          >
-            <span>Đồng bộ gói mặc định</span>
-          </button>
+          {enabledModules.babycare && (
+            <button
+              onClick={syncDefaultPackages}
+              title="Đồng bộ các gói dịch vụ mặc định của Bella Spa từ Landing Page thành các bản nháp trong ERP"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-700 transition-all hover:bg-slate-50 active:scale-95 sm:px-6"
+            >
+              <span>Đồng bộ gói mặc định</span>
+            </button>
+          )}
           <button 
             onClick={openAddModal}
             className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 font-bold text-white shadow-xl shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 dark:shadow-none sm:px-6"
@@ -179,7 +194,7 @@ export default function ServicesPage() {
             placeholder="Lọc trạng thái..."
           />
         </div>
-        {isBeautySpaEnabled && (
+        {showModuleFilter && (
           <div className="w-full flex-shrink-0 lg:w-72">
             <PremiumSelect
               value={moduleFilter}
@@ -688,15 +703,18 @@ export default function ServicesPage() {
                           <label className="ml-1 text-xs font-black uppercase tracking-widest text-slate-400">
                             Module
                           </label>
-                          <PremiumSelect
-                            value={moduleKey}
-                            onChange={(value) => setModuleKey(value === 'beauty_spa' ? 'beauty_spa' : 'babycare')}
-                            options={[
-                              { value: 'babycare', label: 'Bella Mother & Baby' },
-                              { value: 'beauty_spa', label: 'Beauty Spa' },
-                            ]}
-                            placeholder="Chọn module"
-                          />
+                          {enabledModuleOptions.length > 1 ? (
+                            <PremiumSelect
+                              value={moduleKey}
+                              onChange={(value) => setModuleKey(value === 'beauty_spa' ? 'beauty_spa' : 'babycare')}
+                              options={enabledModuleOptions}
+                              placeholder="Chọn module"
+                            />
+                          ) : (
+                            <div className="flex min-h-14 items-center rounded-2xl bg-white px-5 py-4 text-sm font-black text-slate-800 shadow-sm">
+                              {currentModuleLabel}
+                            </div>
+                          )}
                         </div>
 
                         <div className="space-y-2">

@@ -88,14 +88,6 @@ export default function AppearanceTab() {
     setBrandTheme((current) => ({ ...current, ...patch }));
   };
 
-  const toggleBeautySpaModule = () => {
-    setEnabledModules((current) => ({
-      ...current,
-      babycare: true,
-      beauty_spa: !current.beauty_spa,
-    }));
-  };
-
   async function handleSaveTenantConfig() {
     setIsSavingTenantConfig(true);
     try {
@@ -103,15 +95,10 @@ export default function AppearanceTab() {
         ...brandTheme,
         logoUrl,
       });
-      const nextModules = normalizeEnabledModules({
-        ...enabledModules,
-        babycare: true,
-      });
 
       const result = await saveTenantSettings({
         logo_url: logoUrl,
         brand_theme: nextBrandTheme,
-        enabled_modules: nextModules,
       });
 
       if (!result.success) {
@@ -121,8 +108,7 @@ export default function AppearanceTab() {
 
       setBrandTheme(nextBrandTheme);
       setLogoUrl(nextBrandTheme.logoUrl);
-      setEnabledModules(nextModules);
-      toast.success('Đã lưu nhận diện thương hiệu và module');
+      toast.success('Đã lưu nhận diện thương hiệu');
     } catch (error) {
       console.error('Tenant display config save failed', error);
       toast.error('Không thể lưu cấu hình giao diện chi nhánh');
@@ -340,26 +326,38 @@ export default function AppearanceTab() {
               </div>
 
               <div className="space-y-3">
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-5 py-4">
+                <div
+                  className={cn(
+                    'w-full rounded-2xl border px-5 py-4 text-left',
+                    enabledModules.babycare
+                      ? 'border-emerald-100 bg-emerald-50 text-slate-900 shadow-sm'
+                      : 'border-slate-100 bg-slate-50 text-slate-400',
+                  )}
+                >
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <p className="text-sm font-black text-slate-900">Bella Mother & Baby</p>
-                      <p className="text-xs font-bold text-slate-500">Module đang vận hành hiện tại</p>
+                      <p className="text-xs font-bold text-slate-500">
+                        Bật riêng cho tenant vận hành chăm sóc mẹ và bé.
+                      </p>
                     </div>
-                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase text-emerald-700">
-                      Đang bật
+                    <span className={cn(
+                      'rounded-full px-3 py-1 text-[10px] font-black uppercase',
+                      enabledModules.babycare
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-slate-200 text-slate-500',
+                    )}>
+                      {enabledModules.babycare ? 'Đang bật' : 'Đang tắt'}
                     </span>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={toggleBeautySpaModule}
+                <div
                   className={cn(
-                    'w-full rounded-2xl border px-5 py-4 text-left transition active:scale-[0.99]',
+                    'w-full rounded-2xl border px-5 py-4 text-left',
                     enabledModules.beauty_spa
                       ? 'border-primary bg-primary text-white shadow-lg shadow-pink-200/60'
-                      : 'border-slate-100 bg-slate-50 text-slate-900 hover:border-rose-200 hover:bg-white',
+                      : 'border-slate-100 bg-slate-50 text-slate-400',
                   )}
                 >
                   <div className="flex items-center justify-between gap-4">
@@ -378,11 +376,12 @@ export default function AppearanceTab() {
                       {enabledModules.beauty_spa ? 'Đang bật' : 'Đang tắt'}
                     </span>
                   </div>
-                </button>
+                </div>
               </div>
 
               <p className="text-xs font-bold leading-relaxed text-slate-500">
-                Phase 1 chỉ lưu cấu hình và quyền sử dụng module. Các luồng vận hành Bella hiện tại vẫn giữ nguyên.
+                Module ngành được cấu hình khi setup tenant. Admin của từng spa chỉ quản lý vận hành trong
+                ngành đã được cấp, không thể tự chuyển đổi giữa Bella Mother & Baby và Beauty Spa.
               </p>
             </div>
           </div>

@@ -18,8 +18,10 @@ import {
   isSidebarItemAllowed,
 } from '@/lib/business-rules/permissions';
 import {
+  getDefaultTenantModuleKey,
   isTenantModuleEnabled,
   normalizeEnabledModules,
+  normalizeEnabledModulesForSave,
   normalizeTenantBrandTheme,
 } from '@/lib/business-rules/tenant-modules';
 
@@ -131,6 +133,24 @@ describe('platform rule engines', () => {
       babycare: false,
       beauty_spa: true,
     });
+    expect(normalizeEnabledModulesForSave({
+      babycare: false,
+      beauty_spa: true,
+    })).toEqual({
+      babycare: false,
+      beauty_spa: true,
+    });
+    expect(normalizeEnabledModulesForSave({
+      babycare: false,
+      beauty_spa: false,
+    })).toEqual({
+      babycare: true,
+      beauty_spa: false,
+    });
+    expect(getDefaultTenantModuleKey({
+      babycare: false,
+      beauty_spa: true,
+    })).toBe('beauty_spa');
     expect(isTenantModuleEnabled({ beauty_spa: true }, 'beauty_spa')).toBe(true);
 
     expect(normalizeTenantBrandTheme({

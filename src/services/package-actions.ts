@@ -6,11 +6,20 @@ import {
   buildServicePackagePayload,
   buildServicePackageUpdatePayload,
 } from '@/lib/business-rules/service-package';
+import {
+  TENANT_MODULE_KEYS,
+  getDefaultTenantModuleKey,
+  normalizeEnabledModulesForSave,
+  type TenantEnabledModules,
+  type TenantModuleKey,
+} from '@/lib/business-rules/tenant-modules';
+import { getAuthorizedTenantUser } from './auth-guards';
 import type { Database, Json } from '@/types/database.types';
 
 type PackageRow = Database['public']['Tables']['packages']['Row'];
 type PackageInsert = Database['public']['Tables']['packages']['Insert'];
 type PackageUpdate = Database['public']['Tables']['packages']['Update'];
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 export type PackageActionInput = {
   name: string;
@@ -44,8 +53,46 @@ type DeletePackageResult = {
   error?: string;
 };
 
+const PACKAGE_READ_ROLES = ['admin', 'super_admin', 'admin_staff', 'hr', 'accountant'] as const;
+const PACKAGE_MANAGE_ROLES = ['admin', 'super_admin', 'admin_staff'] as const;
+const PACKAGE_MODULE_SCOPE_ERROR = 'Gói dịch vụ không thuộc module ngành được Admin HQ cấp cho tenant này.';
+const PACKAGE_MODULE_SETUP_ERROR = 'Không thể tải cấu hình module ngành của đơn vị kinh doanh.';
+
+type PackageTenantModuleScope = {
+  enabledModules: TenantEnabledModules;
+  enabledModuleKeys: TenantModuleKey[];
+  defaultModuleKey: TenantModuleKey;
+};
+
+type TenantModuleScopeResult =
+  | { success: true; scope: PackageTenantModuleScope }
+  | { success: false; error: string };
+
+type PackageModuleResult =
+  | { success: true; moduleKey: TenantModuleKey }
+  | { success: false; error: string };
+const PACKAGE_AUTH_ERROR = 'Không có quyền quản lý gói dịch vụ.';
+
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+function isTenantModuleKey(value: unknown): value is TenantModuleKey {
+  return typeof value === 'string' && TENANT_MODULE_KEYS.includes(value as TenantModuleKey);
+}
+
+function getEnabledModuleKeys(enabledModules: TenantEnabledModules) {
+  return TENANT_MODULE_KEYS.filter(moduleKey => enabledModules[moduleKey]);
+}
+
+function normalizeTenantId(value: string | null | undefined) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function assertClientTenantScope(inputTenantId: string | null | undefined, authTenantId: string) {
+  const normalizedInputTenantId = normalizeTenantId(inputTenantId);
+  if (!normalizedInputTenantId || normalizedInputTenantId === authTenantId) return null;
+  return 'Không thể thao tác gói dịch vụ ngoài đơn vị kinh doanh hiện tại.';
 }
 
 function buildPackageInsert(packageData: PackageActionInput): PackageInsert {
@@ -54,6 +101,50 @@ function buildPackageInsert(packageData: PackageActionInput): PackageInsert {
 
 function buildPackageUpdate(packageData: Partial<PackageActionInput>): PackageUpdate {
   return buildServicePackageUpdatePayload(packageData);
+}
+
+async function getTenantModuleScope(
+  supabase: SupabaseClient,
+  tenantId: string,
+): Promise<TenantModuleScopeResult> {
+  const { data, error } = await supabase
+    .from('tenants')
+    .select('enabled_modules')
+    .eq('id', tenantId)
+    .single();
+
+  if (error) {
+    return { success: false, error: `${PACKAGE_MODULE_SETUP_ERROR}: ${error.message}` };
+  }
+  if (!data) {
+    return { success: false, error: PACKAGE_MODULE_SETUP_ERROR };
+  }
+
+  const enabledModules = normalizeEnabledModulesForSave(data.enabled_modules);
+  return {
+    success: true,
+    scope: {
+      enabledModules,
+      enabledModuleKeys: getEnabledModuleKeys(enabledModules),
+      defaultModuleKey: getDefaultTenantModuleKey(enabledModules),
+    },
+  };
+}
+
+function resolvePackageModuleForTenant(
+  requestedModuleKey: string | null | undefined,
+  scope: PackageTenantModuleScope,
+): PackageModuleResult {
+  const normalizedRequestedModule = requestedModuleKey?.trim().toLowerCase();
+  const moduleKey = isTenantModuleKey(normalizedRequestedModule)
+    ? normalizedRequestedModule
+    : scope.defaultModuleKey;
+
+  if (!scope.enabledModules[moduleKey]) {
+    return { success: false, error: PACKAGE_MODULE_SCOPE_ERROR };
+  }
+
+  return { success: true, moduleKey };
 }
 
 function toAuditJson(value: PackageRow | PackageInsert | PackageUpdate): Json {
@@ -79,11 +170,13 @@ async function recordPackageAudit(payload: {
 async function rollbackCreatePackage(
   supabase: Awaited<ReturnType<typeof createClient>>,
   insertedId: string,
+  tenantId: string,
 ) {
   const { error } = await supabase
     .from('packages')
     .delete()
-    .eq('id', insertedId);
+    .eq('id', insertedId)
+    .eq('tenant_id', tenantId);
 
   return error?.message || null;
 }
@@ -92,12 +185,14 @@ async function rollbackUpdatePackage(
   supabase: Awaited<ReturnType<typeof createClient>>,
   packageId: string,
   oldPackage: PackageRow,
+  tenantId: string,
 ) {
   const restorePayload: PackageUpdate = oldPackage;
   const { error } = await supabase
     .from('packages')
     .update(restorePayload)
-    .eq('id', packageId);
+    .eq('id', packageId)
+    .eq('tenant_id', tenantId);
 
   return error?.message || null;
 }
@@ -120,10 +215,25 @@ function withRollbackError(error: unknown, fallback: string, rollbackError: stri
 }
 
 export async function getPackages(): Promise<PackageRow[]> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: PACKAGE_READ_ROLES,
+    errorMessage: PACKAGE_AUTH_ERROR,
+  });
+  if (!auth.ok) {
+    throw new Error(auth.error);
+  }
+
   const supabase = await createClient();
+  const moduleScope = await getTenantModuleScope(supabase, auth.tenantId);
+  if (!moduleScope.success) {
+    throw new Error(moduleScope.error);
+  }
+
   const { data, error } = await supabase
     .from('packages')
     .select('*')
+    .eq('tenant_id', auth.tenantId)
+    .in('module_key', moduleScope.scope.enabledModuleKeys)
     .order('name', { ascending: true });
 
   if (error) {
@@ -133,8 +243,35 @@ export async function getPackages(): Promise<PackageRow[]> {
 }
 
 export async function createPackage(packageData: PackageActionInput): Promise<PackageActionResult> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: PACKAGE_MANAGE_ROLES,
+    errorMessage: PACKAGE_AUTH_ERROR,
+  });
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const tenantScopeError = assertClientTenantScope(packageData.tenant_id, auth.tenantId);
+  if (tenantScopeError) {
+    return { error: tenantScopeError };
+  }
+
   const supabase = await createClient();
-  const dbData = buildPackageInsert(packageData);
+  const moduleScope = await getTenantModuleScope(supabase, auth.tenantId);
+  if (!moduleScope.success) {
+    return { error: moduleScope.error };
+  }
+
+  const scopedModule = resolvePackageModuleForTenant(packageData.module_key, moduleScope.scope);
+  if (!scopedModule.success) {
+    return { error: scopedModule.error };
+  }
+
+  const dbData = buildPackageInsert({
+    ...packageData,
+    tenant_id: auth.tenantId,
+    module_key: scopedModule.moduleKey,
+  });
 
   const { data, error } = await supabase
     .from('packages')
@@ -154,7 +291,7 @@ export async function createPackage(packageData: PackageActionInput): Promise<Pa
         new_data: toAuditJson(insertedPackage),
       });
     } catch (auditError) {
-      const rollbackError = await rollbackCreatePackage(supabase, insertedPackage.id);
+      const rollbackError = await rollbackCreatePackage(supabase, insertedPackage.id, auth.tenantId);
       return {
         error: withRollbackError(auditError, 'Failed to record createPackage audit log', rollbackError),
       };
@@ -169,12 +306,30 @@ export async function updatePackage(
   id: string,
   packageData: Partial<PackageActionInput>,
 ): Promise<PackageActionResult> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: PACKAGE_MANAGE_ROLES,
+    errorMessage: PACKAGE_AUTH_ERROR,
+  });
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
+  const tenantScopeError = assertClientTenantScope(packageData.tenant_id, auth.tenantId);
+  if (tenantScopeError) {
+    return { error: tenantScopeError };
+  }
+
   const supabase = await createClient();
+  const moduleScope = await getTenantModuleScope(supabase, auth.tenantId);
+  if (!moduleScope.success) {
+    return { error: moduleScope.error };
+  }
 
   const { data: oldPackage, error: existingError } = await supabase
     .from('packages')
     .select('*')
     .eq('id', id)
+    .eq('tenant_id', auth.tenantId)
     .single();
 
   if (existingError) {
@@ -184,11 +339,31 @@ export async function updatePackage(
     return { error: 'Package not found' };
   }
 
-  const dbData = buildPackageUpdate(packageData);
+  const currentModule = resolvePackageModuleForTenant(oldPackage.module_key, moduleScope.scope);
+  if (!currentModule.success) {
+    return { error: currentModule.error };
+  }
+
+  const nextModule = packageData.module_key === undefined
+    ? currentModule
+    : resolvePackageModuleForTenant(packageData.module_key, moduleScope.scope);
+  if (!nextModule.success) {
+    return { error: nextModule.error };
+  }
+
+  const dbData = buildPackageUpdate({
+    ...packageData,
+    tenant_id: undefined,
+  });
+  if (packageData.module_key !== undefined) {
+    dbData.module_key = nextModule.moduleKey;
+  }
+
   const { data, error } = await supabase
     .from('packages')
     .update(dbData)
     .eq('id', id)
+    .eq('tenant_id', auth.tenantId)
     .select();
 
   if (error) {
@@ -205,7 +380,7 @@ export async function updatePackage(
         new_data: toAuditJson(dbData),
       });
     } catch (auditError) {
-      const rollbackError = await rollbackUpdatePackage(supabase, id, oldPackage);
+      const rollbackError = await rollbackUpdatePackage(supabase, id, oldPackage, auth.tenantId);
       return {
         error: withRollbackError(auditError, 'Failed to record updatePackage audit log', rollbackError),
       };
@@ -217,12 +392,25 @@ export async function updatePackage(
 }
 
 export async function deletePackage(id: string): Promise<DeletePackageResult> {
+  const auth = await getAuthorizedTenantUser({
+    allowedRoles: PACKAGE_MANAGE_ROLES,
+    errorMessage: PACKAGE_AUTH_ERROR,
+  });
+  if (!auth.ok) {
+    return { error: auth.error };
+  }
+
   const supabase = await createClient();
+  const moduleScope = await getTenantModuleScope(supabase, auth.tenantId);
+  if (!moduleScope.success) {
+    return { error: moduleScope.error };
+  }
 
   const { data: oldPackage, error: existingError } = await supabase
     .from('packages')
     .select('*')
     .eq('id', id)
+    .eq('tenant_id', auth.tenantId)
     .single();
 
   if (existingError) {
@@ -232,10 +420,16 @@ export async function deletePackage(id: string): Promise<DeletePackageResult> {
     return { error: 'Package not found' };
   }
 
+  const currentModule = resolvePackageModuleForTenant(oldPackage.module_key, moduleScope.scope);
+  if (!currentModule.success) {
+    return { error: currentModule.error };
+  }
+
   const { error } = await supabase
     .from('packages')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', auth.tenantId);
 
   if (error) {
     return { error: error.message };
