@@ -171,6 +171,20 @@ describe('Meta Ads Phase 1 actions', () => {
     expect(sql).toContain("lower(u.role) IN ('admin', 'super_admin')");
   });
 
+  it('grants delete permissions for unused Meta Ads account cleanup', () => {
+    const sql = readFileSync(
+      'supabase/migrations/20260608103000_grant_meta_ads_delete_permissions.sql',
+      'utf8',
+    );
+
+    expect(sql).toContain(
+      'GRANT DELETE ON public.marketing_meta_ad_account_tokens TO authenticated, service_role;',
+    );
+    expect(sql).toContain(
+      'GRANT DELETE ON public.marketing_meta_ad_accounts TO authenticated, service_role;',
+    );
+  });
+
   it('blocks non-admin users before saving ad account mappings', async () => {
     mockGetCurrentUser.mockResolvedValueOnce({
       id: 'ktv-1',
