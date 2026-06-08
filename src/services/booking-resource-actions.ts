@@ -44,11 +44,13 @@ function toAuditJson(value: BookingResourceRow | BookingResourceInsert | Booking
 async function rollbackCreateResource(
   supabase: Awaited<ReturnType<typeof createClient>>,
   resourceId: string,
+  tenantId: string,
 ) {
   const { error } = await supabase
     .from('booking_resources')
     .delete()
-    .eq('id', resourceId);
+    .eq('id', resourceId)
+    .eq('tenant_id', tenantId);
 
   return error?.message || null;
 }
@@ -57,12 +59,14 @@ async function rollbackUpdateResource(
   supabase: Awaited<ReturnType<typeof createClient>>,
   resourceId: string,
   oldResource: BookingResourceRow,
+  tenantId: string,
 ) {
   const restorePayload: BookingResourceUpdate = oldResource;
   const { error } = await supabase
     .from('booking_resources')
     .update(restorePayload)
-    .eq('id', resourceId);
+    .eq('id', resourceId)
+    .eq('tenant_id', tenantId);
 
   return error?.message || null;
 }
@@ -147,7 +151,7 @@ export async function createBookingResource(
       new_data: toAuditJson(data),
     });
   } catch (auditError) {
-    const rollbackError = await rollbackCreateResource(supabase, data.id);
+    const rollbackError = await rollbackCreateResource(supabase, data.id, auth.tenantId);
     return {
       success: false,
       error: withRollbackError(auditError, 'Failed to record createBookingResource audit log', rollbackError),
@@ -218,7 +222,7 @@ export async function updateBookingResource(
       new_data: toAuditJson(data),
     });
   } catch (auditError) {
-    const rollbackError = await rollbackUpdateResource(supabase, resourceId, oldResource);
+    const rollbackError = await rollbackUpdateResource(supabase, resourceId, oldResource, auth.tenantId);
     return {
       success: false,
       error: withRollbackError(auditError, 'Failed to record updateBookingResource audit log', rollbackError),
