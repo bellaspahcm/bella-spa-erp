@@ -11,8 +11,10 @@ import {
   RefreshCw,
   Save,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
 import {
+  deleteUnusedMetaAdAccountConnection,
   getMetaAdAccountConnections,
   saveMetaAdAccountConnection,
   syncMetaAdsInsights,
@@ -56,6 +58,7 @@ export default function MetaAdsSettingsTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
 
   const loadConnections = useCallback(async () => {
     setIsLoading(true);
@@ -139,6 +142,41 @@ export default function MetaAdsSettingsTab() {
       toast.error("Không thể đồng bộ Meta Ads");
     } finally {
       setIsSyncing(false);
+    }
+  }
+
+  async function handleDelete(connection: MetaAdAccountConnection) {
+    if (connection.last_synced_at) {
+      toast.error("Tài khoản đã từng đồng bộ nên không xóa trực tiếp");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Xóa tài khoản ${connection.account_name || connection.ad_account_id}? Token đã lưu cũng sẽ bị xóa.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingAccountId(connection.ad_account_id);
+    try {
+      const result = await deleteUnusedMetaAdAccountConnection({
+        adAccountId: connection.ad_account_id,
+      });
+
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("Đã xóa tài khoản Meta Ads chưa sử dụng");
+      if (selectedAccountId === connection.ad_account_id) {
+        setSelectedAccountId("");
+      }
+      await loadConnections();
+    } catch (error) {
+      console.error("Meta Ads delete failed", error);
+      toast.error("Không thể xóa tài khoản Meta Ads");
+    } finally {
+      setDeletingAccountId(null);
     }
   }
 
@@ -322,7 +360,7 @@ export default function MetaAdsSettingsTab() {
           </div>
         ) : (
           <div className="overflow-x-auto custom-scrollbar">
-            <table className="min-w-[900px] w-full text-left">
+            <table className="min-w-[1040px] w-full text-left">
               <thead>
                 <tr className="bg-slate-50 text-[11px] font-black uppercase tracking-widest text-slate-400">
                   <th className="px-5 py-4">Tài khoản</th>
@@ -331,6 +369,7 @@ export default function MetaAdsSettingsTab() {
                   <th className="px-5 py-4">Token</th>
                   <th className="px-5 py-4">Lần sync gần nhất</th>
                   <th className="px-5 py-4 text-right">Trạng thái</th>
+                  <th className="px-5 py-4 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -357,6 +396,21 @@ export default function MetaAdsSettingsTab() {
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         {connection.is_active ? "Đang dùng" : "Tạm dừng"}
                       </span>
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <button
+                        onClick={() => handleDelete(connection)}
+                        disabled={!!connection.last_synced_at || deletingAccountId === connection.ad_account_id}
+                        title={connection.last_synced_at ? "Tài khoản đã có dữ liệu đồng bộ" : "Xóa tài khoản chưa sử dụng"}
+                        className="inline-flex items-center justify-center gap-2 rounded-full border border-rose-100 bg-white px-3 py-2 text-xs font-black text-rose-600 shadow-sm transition hover:border-rose-200 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {deletingAccountId === connection.ad_account_id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                        Xóa
+                      </button>
                     </td>
                   </tr>
                 ))}

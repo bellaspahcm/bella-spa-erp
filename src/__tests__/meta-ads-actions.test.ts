@@ -13,7 +13,7 @@ type QueryResult = {
   error: { message: string } | null;
 };
 
-type QueryOperation = 'select' | 'insert' | 'upsert' | 'update';
+type QueryOperation = 'select' | 'insert' | 'upsert' | 'update' | 'delete';
 type QueryCall = {
   table: string;
   operation: QueryOperation;
@@ -58,6 +58,11 @@ class QueryBuilder implements PromiseLike<QueryResult> {
   update(payload: unknown) {
     this.operation = 'update';
     this.payload = payload;
+    return this;
+  }
+
+  delete() {
+    this.operation = 'delete';
     return this;
   }
 
@@ -120,6 +125,7 @@ jest.mock('@/lib/supabase-server', () => ({
 }));
 
 import {
+  deleteUnusedMetaAdAccountConnection,
   getMetaAdsDailyInsights,
   saveMetaAdAccountConnection,
   syncMetaAdsInsights,
@@ -314,6 +320,72 @@ describe('Meta Ads Phase 1 actions', () => {
     }));
     expect(JSON.stringify(tokenUpsert?.payload)).not.toContain('secret-meta-token-abc123');
     expect(JSON.stringify(tokenUpsert?.payload)).toContain('access_token_encrypted');
+  });
+
+  it('deletes only unused Meta ad account mappings and their stored token', async () => {
+    scriptedResults = [
+      {
+        data: { id: 'connection-1', ad_account_id: 'act_123', last_synced_at: null },
+        error: null,
+      },
+      { data: null, error: null },
+      { data: null, error: null },
+    ];
+
+    const result = await deleteUnusedMetaAdAccountConnection({ adAccountId: '123' });
+
+    expect(result).toEqual({ success: true, data: { adAccountId: 'act_123' } });
+    expect(queryCalls).toEqual([
+      expect.objectContaining({
+        table: 'marketing_meta_ad_accounts',
+        operation: 'select',
+        filters: expect.arrayContaining([
+          { method: 'eq', column: 'tenant_id', value: 'tenant-1' },
+          { method: 'eq', column: 'ad_account_id', value: 'act_123' },
+        ]),
+      }),
+      expect.objectContaining({
+        table: 'marketing_meta_ad_account_tokens',
+        operation: 'delete',
+        filters: expect.arrayContaining([
+          { method: 'eq', column: 'tenant_id', value: 'tenant-1' },
+          { method: 'eq', column: 'meta_ad_account_id', value: 'connection-1' },
+        ]),
+      }),
+      expect.objectContaining({
+        table: 'marketing_meta_ad_accounts',
+        operation: 'delete',
+        filters: expect.arrayContaining([
+          { method: 'eq', column: 'tenant_id', value: 'tenant-1' },
+          { method: 'eq', column: 'id', value: 'connection-1' },
+        ]),
+      }),
+    ]);
+  });
+
+  it('refuses to delete Meta ad accounts that already synced data', async () => {
+    scriptedResults = [
+      {
+        data: {
+          id: 'connection-1',
+          ad_account_id: 'act_123',
+          last_synced_at: '2026-06-08T02:00:00.000Z',
+        },
+        error: null,
+      },
+    ];
+
+    const result = await deleteUnusedMetaAdAccountConnection({ adAccountId: 'act_123' });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Tai khoan Meta Ads da tung dong bo du lieu nen khong xoa truc tiep de tranh mat dau bao cao.',
+    });
+    expect(queryCalls).toHaveLength(1);
+    expect(queryCalls[0]).toEqual(expect.objectContaining({
+      table: 'marketing_meta_ad_accounts',
+      operation: 'select',
+    }));
   });
 
   it('syncs daily ad insights without persisting the Meta API token', async () => {
