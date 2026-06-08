@@ -85,6 +85,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Responsive visual smoke
+        timeout-minutes: 20
         run: npm run e2e:visual
         env:
           E2E_VISUAL_EXPECTED_TESTS: "52"
