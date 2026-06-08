@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import type { Database, Json } from '@/types/database.types';
 import { getAuthorizedTenantUser } from '@/services/auth-guards';
 import { decrypt, encrypt } from '@/lib/crypto';
@@ -28,6 +29,7 @@ type MetaAdsSyncRunInsert = Database['public']['Tables']['marketing_meta_ads_syn
 type MetaAdsSyncRunUpdate = Database['public']['Tables']['marketing_meta_ads_sync_runs']['Update'];
 type ExpenseInsert = Database['public']['Tables']['expenses']['Insert'];
 type ExpenseRow = Database['public']['Tables']['expenses']['Row'];
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const META_ADS_MANAGE_ROLES = ['admin', 'super_admin'] as const;
 const META_ADS_READ_ROLES = ['admin', 'super_admin', 'accountant'] as const;
@@ -143,6 +145,24 @@ function actionError<T>(error: string): ActionResult<T> {
   return { success: false, error };
 }
 
+async function createMetaAdsDataClient(): Promise<SupabaseServerClient> {
+  if (process.env.NODE_ENV === 'test') {
+    return createClient();
+  }
+
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+
+  if (!url || !serviceKey) {
+    return createClient();
+  }
+
+  const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+  return createAdminClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  }) as unknown as SupabaseServerClient;
+}
+
 function getErrorMessage(error: unknown, fallback = 'Loi he thong') {
   if (error instanceof Error) return error.message;
   if (typeof error === 'object' && error && 'message' in error) {
@@ -236,7 +256,7 @@ function isSameMetaAdsExpenseMetadata(
 }
 
 async function deleteInsertedExpense(expenseId: string) {
-  const supabase = await createClient();
+  const supabase = await createMetaAdsDataClient();
   const { error } = await supabase
     .from('expenses')
     .delete()
@@ -249,7 +269,7 @@ async function getStoredMetaAccessToken(params: {
   tenantId: string;
   metaAdAccountId: string;
 }) {
-  const supabase = await createClient();
+  const supabase = await createMetaAdsDataClient();
   const { data, error } = await supabase
     .from('marketing_meta_ad_account_tokens')
     .select('access_token_encrypted')
@@ -397,7 +417,7 @@ function mapInsightToInsert(
 }
 
 async function updateSyncRun(runId: string, payload: MetaAdsSyncRunUpdate) {
-  const supabase = await createClient();
+  const supabase = await createMetaAdsDataClient();
   const { error } = await supabase
     .from('marketing_meta_ads_sync_runs')
     .update(payload)
@@ -446,7 +466,7 @@ export async function saveMetaAdAccountConnection(
     updated_at: now,
   };
 
-  const supabase = await createClient();
+  const supabase = await createMetaAdsDataClient();
   const { data, error } = await supabase
     .from('marketing_meta_ad_accounts')
     .upsert(payload, { onConflict: 'tenant_id,ad_account_id' })
@@ -507,7 +527,7 @@ export async function getMetaAdAccountConnections(): Promise<ActionResult<MetaAd
   });
   if (!auth.ok) return actionError(auth.error);
 
-  const supabase = await createClient();
+  const supabase = await createMetaAdsDataClient();
   const { data, error } = await supabase
     .from('marketing_meta_ad_accounts')
     .select(META_AD_ACCOUNT_SAFE_SELECT)
@@ -535,7 +555,7 @@ export async function deleteUnusedMetaAdAccountConnection(
     return actionError('Meta ad account id phai co dang act_123 hoac 123.');
   }
 
-  const supabase = await createClient();
+  const supabase = await createMetaAdsDataClient();
   const { data: account, error: accountError } = await supabase
     .from('marketing_meta_ad_accounts')
     .select('id,ad_account_id,last_synced_at')
@@ -596,7 +616,7 @@ export async function getMetaAdsDailyInsights(
     return actionError('Meta ad account id phai co dang act_123 hoac 123.');
   }
 
-  const supabase = await createClient();
+  const supabase = await createMetaAdsDataClient();
   let query = supabase
     .from('marketing_meta_ads_insights_daily')
     .select('*')
@@ -637,7 +657,7 @@ export async function recognizeMetaAdsSpendAsExpense(
     return actionError('Khoang ghi nhan chi phi Meta Ads phai nam trong cung mot thang ke toan.');
   }
 
-  const supabase = await createClient();
+  const supabase = await createMetaAdsDataClient();
   const { data: connection, error: connectionError } = await supabase
     .from('marketing_meta_ad_accounts')
     .select('id,ad_account_id,account_name,currency,is_active')
@@ -810,7 +830,7 @@ export async function syncMetaAdsInsights(
   const dateValidation = validateDateRange(input.dateFrom, input.dateTo);
   if (!dateValidation.ok) return actionError(dateValidation.error);
 
-  const supabase = await createClient();
+  const supabase = await createMetaAdsDataClient();
   const { data: connection, error: connectionError } = await supabase
     .from('marketing_meta_ad_accounts')
     .select('id,tenant_id,ad_account_id,is_active')

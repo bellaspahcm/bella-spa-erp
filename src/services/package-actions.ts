@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import {
   buildServicePackagePayload,
@@ -75,6 +76,24 @@ const PACKAGE_AUTH_ERROR = 'Không có quyền quản lý gói dịch vụ.';
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+async function createPackageDataClient(): Promise<SupabaseClient> {
+  if (process.env.NODE_ENV === 'test') {
+    return createClient();
+  }
+
+  const url = getSupabaseAdminUrl();
+  const serviceKey = getSupabaseAdminKey();
+
+  if (!url || !serviceKey) {
+    return createClient();
+  }
+
+  const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+  return createAdminClient<Database>(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  }) as unknown as SupabaseClient;
 }
 
 function isTenantModuleKey(value: unknown): value is TenantModuleKey {
@@ -223,7 +242,7 @@ export async function getPackages(): Promise<PackageRow[]> {
     throw new Error(auth.error);
   }
 
-  const supabase = await createClient();
+  const supabase = await createPackageDataClient();
   const moduleScope = await getTenantModuleScope(supabase, auth.tenantId);
   if (!moduleScope.success) {
     throw new Error(moduleScope.error);
@@ -256,7 +275,7 @@ export async function createPackage(packageData: PackageActionInput): Promise<Pa
     return { error: tenantScopeError };
   }
 
-  const supabase = await createClient();
+  const supabase = await createPackageDataClient();
   const moduleScope = await getTenantModuleScope(supabase, auth.tenantId);
   if (!moduleScope.success) {
     return { error: moduleScope.error };
@@ -319,7 +338,7 @@ export async function updatePackage(
     return { error: tenantScopeError };
   }
 
-  const supabase = await createClient();
+  const supabase = await createPackageDataClient();
   const moduleScope = await getTenantModuleScope(supabase, auth.tenantId);
   if (!moduleScope.success) {
     return { error: moduleScope.error };
@@ -400,7 +419,7 @@ export async function deletePackage(id: string): Promise<DeletePackageResult> {
     return { error: auth.error };
   }
 
-  const supabase = await createClient();
+  const supabase = await createPackageDataClient();
   const moduleScope = await getTenantModuleScope(supabase, auth.tenantId);
   if (!moduleScope.success) {
     return { error: moduleScope.error };
