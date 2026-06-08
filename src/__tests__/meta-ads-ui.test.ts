@@ -26,6 +26,12 @@ describe('Meta Ads UI integration', () => {
     expect(settingsSource).toContain('MetaAdsSettingsTab');
     expect(settingsSource).toContain('meta-ads');
     expect(sidebarSource).toContain("href: '/dashboard/marketing'");
+    expect(sidebarSource.indexOf("href: '/dashboard/crm'")).toBeLessThan(
+      sidebarSource.indexOf("href: '/dashboard/marketing'"),
+    );
+    expect(sidebarSource.indexOf("href: '/dashboard/marketing'")).toBeLessThan(
+      sidebarSource.indexOf("href: '/dashboard/services'"),
+    );
     expect(permissionsSource).toContain("'Meta Ads': 'marketing_ads'");
   });
 
@@ -35,9 +41,19 @@ describe('Meta Ads UI integration', () => {
 
     expect(settingsTabSource).toContain('PremiumSelect');
     expect(settingsTabSource).not.toContain('<select');
+    expect(settingsTabSource).toContain('type="password"');
+    expect(settingsTabSource).toContain('token_last_four');
     expect(dashboardSource).toContain('PremiumSelect');
     expect(dashboardSource).toContain('overflow-x-auto');
     expect(dashboardSource).toContain('min-w-[1280px]');
     expect(dashboardSource).not.toContain('sticky');
+  });
+
+  it('does not expose encrypted Meta tokens through read-facing selects', () => {
+    const serviceSource = read('src/services/marketing/meta-ads.ts');
+
+    expect(serviceSource).toContain('META_AD_ACCOUNT_SAFE_SELECT');
+    expect(serviceSource).toContain('access_token_encrypted');
+    expect(serviceSource).not.toContain(".from('marketing_meta_ad_accounts')\n    .select('*')");
   });
 });

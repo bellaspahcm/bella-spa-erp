@@ -159,29 +159,41 @@ export default function MarketingPage() {
   usePageRefresh(loadData);
 
   async function handleSync() {
-    const syncAccountId = selectedAccountId && selectedAccountId !== "all"
-      ? selectedAccountId
-      : connections[0]?.ad_account_id;
+    const syncAccountIds = selectedAccountId && selectedAccountId !== "all"
+      ? [selectedAccountId]
+      : connections.map((connection) => connection.ad_account_id);
 
-    if (!syncAccountId) {
+    if (syncAccountIds.length === 0) {
       toast.error("Chưa có tài khoản quảng cáo để đồng bộ");
       return;
     }
 
     setIsSyncing(true);
     try {
-      const result = await syncMetaAdsInsights({
-        adAccountId: syncAccountId,
-        dateFrom,
-        dateTo,
-      });
+      let rowsSynced = 0;
+      const failedAccounts: string[] = [];
 
-      if (!result.success) {
-        toast.error(result.error);
-        return;
+      for (const syncAccountId of syncAccountIds) {
+        const result = await syncMetaAdsInsights({
+          adAccountId: syncAccountId,
+          dateFrom,
+          dateTo,
+        });
+
+        if (!result.success) {
+          failedAccounts.push(syncAccountId);
+          continue;
+        }
+
+        rowsSynced += result.data.rowsSynced;
       }
 
-      toast.success(`Đã đồng bộ ${result.data.rowsSynced} dòng insight`);
+      if (failedAccounts.length > 0) {
+        toast.error(`Có ${failedAccounts.length} tài khoản chưa đồng bộ được`);
+      }
+      if (rowsSynced > 0 || failedAccounts.length === 0) {
+        toast.success(`Đã đồng bộ ${rowsSynced} dòng insight`);
+      }
       await loadData();
     } catch (error) {
       console.error("Meta Ads sync failed", error);

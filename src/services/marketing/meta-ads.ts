@@ -3,10 +3,15 @@
 import { createClient } from '@/lib/supabase-server';
 import type { Database, Json } from '@/types/database.types';
 import { getAuthorizedTenantUser } from '@/services/auth-guards';
+import { decrypt, encrypt } from '@/lib/crypto';
 
 type MetaAdAccountRow = Database['public']['Tables']['marketing_meta_ad_accounts']['Row'];
 type MetaAdAccountInsert = Database['public']['Tables']['marketing_meta_ad_accounts']['Insert'];
 type MetaAdAccountUpdate = Database['public']['Tables']['marketing_meta_ad_accounts']['Update'];
+type MetaAdAccountTokenInsert =
+  Database['public']['Tables']['marketing_meta_ad_account_tokens']['Insert'];
+type MetaAdAccountTokenRow =
+  Database['public']['Tables']['marketing_meta_ad_account_tokens']['Row'];
 type MetaAdsInsightDailyRow =
   Database['public']['Tables']['marketing_meta_ads_insights_daily']['Row'];
 type MetaAdsInsightDailyInsert =
@@ -19,6 +24,20 @@ const META_ADS_READ_ROLES = ['admin', 'super_admin', 'accountant'] as const;
 const DEFAULT_META_API_VERSION = 'v24.0';
 const MAX_SYNC_DAYS = 31;
 const MAX_PAGES_PER_SYNC = 10;
+const META_AD_ACCOUNT_SAFE_SELECT = [
+  'id',
+  'tenant_id',
+  'ad_account_id',
+  'account_name',
+  'currency',
+  'timezone_name',
+  'is_active',
+  'last_synced_at',
+  'token_last_four',
+  'token_updated_at',
+  'created_at',
+  'updated_at',
+].join(',');
 
 type ActionResult<T> =
   | { success: true; data: T }
@@ -30,6 +49,7 @@ type SaveMetaAdAccountInput = {
   currency?: string | null;
   timezoneName?: string | null;
   isActive?: boolean;
+  accessToken?: string | null;
 };
 
 type SyncMetaAdsInsightsInput = {
@@ -43,6 +63,22 @@ type GetMetaAdsInsightsInput = {
   dateTo: string;
   adAccountId?: string | null;
 };
+
+type MetaAdAccountConnection = Pick<
+  MetaAdAccountRow,
+  | 'id'
+  | 'tenant_id'
+  | 'ad_account_id'
+  | 'account_name'
+  | 'currency'
+  | 'timezone_name'
+  | 'is_active'
+  | 'last_synced_at'
+  | 'token_last_four'
+  | 'token_updated_at'
+  | 'created_at'
+  | 'updated_at'
+>;
 
 type MetaGraphAction = {
   action_type?: string;
@@ -99,6 +135,11 @@ function normalizeAdAccountId(value: string) {
   return null;
 }
 
+function getTokenLastFour(value: string) {
+  const trimmed = value.trim();
+  return trimmed.slice(-4) || null;
+}
+
 function parseIsoDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const parsed = new Date(`${value}T00:00:00.000Z`);
@@ -142,18 +183,59 @@ function toJson(value: unknown): Json {
   return JSON.parse(JSON.stringify(value ?? null)) as Json;
 }
 
-function buildMetaInsightsUrl(input: SyncMetaAdsInsightsInput & { normalizedAdAccountId: string }) {
+async function getStoredMetaAccessToken(params: {
+  tenantId: string;
+  metaAdAccountId: string;
+}) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('marketing_meta_ad_account_tokens')
+    .select('access_token_encrypted')
+    .eq('tenant_id', params.tenantId)
+    .eq('meta_ad_account_id', params.metaAdAccountId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`[getStoredMetaAccessToken] Khong the tai Meta token: ${error.message}`);
+  }
+
+  const tokenRow = data as Pick<MetaAdAccountTokenRow, 'access_token_encrypted'> | null;
+  if (!tokenRow?.access_token_encrypted) {
+    return null;
+  }
+
+  const decrypted = decrypt(tokenRow.access_token_encrypted).trim();
+  if (!decrypted || decrypted === tokenRow.access_token_encrypted) {
+    throw new Error('Khong the giai ma Meta access token. Kiem tra DB_ENCRYPTION_KEY tren server.');
+  }
+
+  return decrypted;
+}
+
+async function resolveMetaAccessToken(params: {
+  tenantId: string;
+  metaAdAccountId: string;
+}) {
+  const storedToken = await getStoredMetaAccessToken(params);
+  if (storedToken) return storedToken;
+
+  const envToken = process.env.META_MARKETING_ACCESS_TOKEN?.trim();
+  if (envToken) return envToken;
+
+  throw new Error(
+    'Chua co Meta access token cho tai khoan nay. Vui long cap nhat token trong Cai dat > Meta Ads.',
+  );
+}
+
+function buildMetaInsightsUrl(
+  input: SyncMetaAdsInsightsInput & { normalizedAdAccountId: string; accessToken: string },
+) {
   const version = (process.env.META_MARKETING_API_VERSION || DEFAULT_META_API_VERSION)
     .trim()
     .replace(/^\/+/, '');
 
   if (!/^v[0-9]+(\.[0-9]+)?$/.test(version)) {
     throw new Error('META_MARKETING_API_VERSION khong hop le.');
-  }
-
-  const accessToken = process.env.META_MARKETING_ACCESS_TOKEN?.trim();
-  if (!accessToken) {
-    throw new Error('Thieu META_MARKETING_ACCESS_TOKEN trong server secrets.');
   }
 
   const url = new URL(
@@ -188,12 +270,14 @@ function buildMetaInsightsUrl(input: SyncMetaAdsInsightsInput & { normalizedAdAc
       'actions',
     ].join(','),
   );
-  url.searchParams.set('access_token', accessToken);
+  url.searchParams.set('access_token', input.accessToken);
 
   return url.toString();
 }
 
-async function fetchMetaInsights(input: SyncMetaAdsInsightsInput & { normalizedAdAccountId: string }) {
+async function fetchMetaInsights(
+  input: SyncMetaAdsInsightsInput & { normalizedAdAccountId: string; accessToken: string },
+) {
   const insights: MetaGraphInsight[] = [];
   let nextUrl: string | null = buildMetaInsightsUrl(input);
 
@@ -264,7 +348,7 @@ async function updateSyncRun(runId: string, payload: MetaAdsSyncRunUpdate) {
 
 export async function saveMetaAdAccountConnection(
   input: SaveMetaAdAccountInput,
-): Promise<ActionResult<MetaAdAccountRow>> {
+): Promise<ActionResult<MetaAdAccountConnection>> {
   const auth = await getAuthorizedTenantUser({
     allowedRoles: META_ADS_MANAGE_ROLES,
     errorMessage: 'Chi admin moi duoc cau hinh Meta Ads.',
@@ -277,6 +361,19 @@ export async function saveMetaAdAccountConnection(
   }
 
   const now = new Date().toISOString();
+  const accessToken = normalizeNullableText(input.accessToken);
+  const tokenLastFour = accessToken ? getTokenLastFour(accessToken) : null;
+  let encryptedAccessToken: string | null = null;
+
+  if (accessToken) {
+    try {
+      encryptedAccessToken = encrypt(accessToken);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Khong the ma hoa Meta access token.';
+      return actionError(`[saveMetaAdAccountConnection] ${message}`);
+    }
+  }
+
   const payload: MetaAdAccountInsert = {
     tenant_id: auth.tenantId,
     ad_account_id: adAccountId,
@@ -291,17 +388,57 @@ export async function saveMetaAdAccountConnection(
   const { data, error } = await supabase
     .from('marketing_meta_ad_accounts')
     .upsert(payload, { onConflict: 'tenant_id,ad_account_id' })
-    .select('*')
+    .select(META_AD_ACCOUNT_SAFE_SELECT)
     .single();
 
   if (error) {
     return actionError(`[saveMetaAdAccountConnection] Khong the luu cau hinh Meta Ads: ${error.message}`);
   }
 
-  return { success: true, data };
+  let safeData = data as unknown as MetaAdAccountConnection;
+
+  if (encryptedAccessToken) {
+    const tokenPayload: MetaAdAccountTokenInsert = {
+      tenant_id: auth.tenantId,
+      meta_ad_account_id: safeData.id,
+      access_token_encrypted: encryptedAccessToken,
+      token_last_four: tokenLastFour,
+      updated_at: now,
+    };
+
+    const { error: tokenError } = await supabase
+      .from('marketing_meta_ad_account_tokens')
+      .upsert(tokenPayload, { onConflict: 'meta_ad_account_id' });
+
+    if (tokenError) {
+      return actionError(`[saveMetaAdAccountConnection] Khong the luu Meta access token: ${tokenError.message}`);
+    }
+
+    const tokenMetadata: MetaAdAccountUpdate = {
+      token_last_four: tokenLastFour,
+      token_updated_at: now,
+      updated_at: now,
+    };
+    const { data: refreshedAccount, error: tokenMetadataError } = await supabase
+      .from('marketing_meta_ad_accounts')
+      .update(tokenMetadata)
+      .eq('id', safeData.id)
+      .select(META_AD_ACCOUNT_SAFE_SELECT)
+      .single();
+
+    if (tokenMetadataError) {
+      return actionError(
+        `[saveMetaAdAccountConnection] Khong the cap nhat trang thai Meta token: ${tokenMetadataError.message}`,
+      );
+    }
+
+    safeData = refreshedAccount as unknown as MetaAdAccountConnection;
+  }
+
+  return { success: true, data: safeData };
 }
 
-export async function getMetaAdAccountConnections(): Promise<ActionResult<MetaAdAccountRow[]>> {
+export async function getMetaAdAccountConnections(): Promise<ActionResult<MetaAdAccountConnection[]>> {
   const auth = await getAuthorizedTenantUser({
     allowedRoles: META_ADS_READ_ROLES,
     errorMessage: 'Ban khong co quyen xem Meta Ads.',
@@ -311,7 +448,7 @@ export async function getMetaAdAccountConnections(): Promise<ActionResult<MetaAd
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('marketing_meta_ad_accounts')
-    .select('*')
+    .select(META_AD_ACCOUNT_SAFE_SELECT)
     .eq('tenant_id', auth.tenantId)
     .order('created_at', { ascending: false });
 
@@ -319,7 +456,7 @@ export async function getMetaAdAccountConnections(): Promise<ActionResult<MetaAd
     return actionError(`[getMetaAdAccountConnections] Khong the tai cau hinh Meta Ads: ${error.message}`);
   }
 
-  return { success: true, data: data || [] };
+  return { success: true, data: (data || []) as unknown as MetaAdAccountConnection[] };
 }
 
 export async function getMetaAdsDailyInsights(
@@ -416,9 +553,15 @@ export async function syncMetaAdsInsights(
   }
 
   try {
+    const accessToken = await resolveMetaAccessToken({
+      tenantId: auth.tenantId,
+      metaAdAccountId: connection.id,
+    });
+
     const insights = await fetchMetaInsights({
       ...input,
       normalizedAdAccountId: adAccountId,
+      accessToken,
     });
 
     const syncedAt = new Date().toISOString();

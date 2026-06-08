@@ -124,6 +124,7 @@ import {
   saveMetaAdAccountConnection,
   syncMetaAdsInsights,
 } from '@/services/marketing/meta-ads';
+import { encrypt } from '@/lib/crypto';
 
 const mockFetch = jest.fn();
 
@@ -134,6 +135,7 @@ describe('Meta Ads Phase 1 actions', () => {
     scriptedResults = [];
     delete process.env.META_MARKETING_ACCESS_TOKEN;
     delete process.env.META_MARKETING_API_VERSION;
+    delete process.env.DB_ENCRYPTION_KEY;
     global.fetch = mockFetch as unknown as typeof fetch;
     mockGetCurrentUser.mockResolvedValue({
       id: 'admin-1',
@@ -150,6 +152,17 @@ describe('Meta Ads Phase 1 actions', () => {
 
     expect(sql).not.toMatch(/access_token/i);
     expect(sql).not.toMatch(/token_encrypted/i);
+  });
+
+  it('stores Meta tokens in a separate admin-only table migration', () => {
+    const sql = readFileSync(
+      'supabase/migrations/20260608100000_add_meta_ads_account_tokens.sql',
+      'utf8',
+    );
+
+    expect(sql).toContain('marketing_meta_ad_account_tokens');
+    expect(sql).toContain('access_token_encrypted TEXT NOT NULL');
+    expect(sql).toContain("lower(u.role) IN ('admin', 'super_admin')");
   });
 
   it('blocks non-admin users before saving ad account mappings', async () => {
@@ -177,6 +190,7 @@ describe('Meta Ads Phase 1 actions', () => {
       },
       { data: { id: 'run-1' }, error: null },
       { data: null, error: null },
+      { data: null, error: null },
     ];
 
     const result = await syncMetaAdsInsights({
@@ -187,7 +201,7 @@ describe('Meta Ads Phase 1 actions', () => {
 
     expect(result).toEqual({
       success: false,
-      error: 'Thieu META_MARKETING_ACCESS_TOKEN trong server secrets.',
+      error: 'Chua co Meta access token cho tai khoan nay. Vui long cap nhat token trong Cai dat > Meta Ads.',
     });
     expect(mockFetch).not.toHaveBeenCalled();
     expect(queryCalls).toEqual([
@@ -210,15 +224,96 @@ describe('Meta Ads Phase 1 actions', () => {
         }),
       }),
       expect.objectContaining({
+        table: 'marketing_meta_ad_account_tokens',
+        operation: 'select',
+        filters: expect.arrayContaining([
+          { method: 'eq', column: 'tenant_id', value: 'tenant-1' },
+          { method: 'eq', column: 'meta_ad_account_id', value: 'connection-1' },
+        ]),
+      }),
+      expect.objectContaining({
         table: 'marketing_meta_ads_sync_runs',
         operation: 'update',
         payload: expect.objectContaining({
           status: 'failed',
           rows_synced: 0,
-          error_message: 'Thieu META_MARKETING_ACCESS_TOKEN trong server secrets.',
+          error_message: 'Chua co Meta access token cho tai khoan nay. Vui long cap nhat token trong Cai dat > Meta Ads.',
         }),
       }),
     ]);
+  });
+
+  it('saves a per-account Meta token encrypted and returns only safe metadata', async () => {
+    process.env.DB_ENCRYPTION_KEY = 'test-db-encryption-key';
+    scriptedResults = [
+      {
+        data: {
+          id: 'connection-1',
+          tenant_id: 'tenant-1',
+          ad_account_id: 'act_123',
+          account_name: 'Bella Ads',
+          currency: 'VND',
+          timezone_name: 'Asia/Ho_Chi_Minh',
+          is_active: true,
+          last_synced_at: null,
+          token_last_four: null,
+          token_updated_at: null,
+          created_at: '2026-06-08T00:00:00.000Z',
+          updated_at: '2026-06-08T00:00:00.000Z',
+        },
+        error: null,
+      },
+      { data: null, error: null },
+      {
+        data: {
+          id: 'connection-1',
+          tenant_id: 'tenant-1',
+          ad_account_id: 'act_123',
+          account_name: 'Bella Ads',
+          currency: 'VND',
+          timezone_name: 'Asia/Ho_Chi_Minh',
+          is_active: true,
+          last_synced_at: null,
+          token_last_four: 'c123',
+          token_updated_at: '2026-06-08T00:00:00.000Z',
+          created_at: '2026-06-08T00:00:00.000Z',
+          updated_at: '2026-06-08T00:00:00.000Z',
+        },
+        error: null,
+      },
+    ];
+
+    const result = await saveMetaAdAccountConnection({
+      adAccountId: '123',
+      accountName: 'Bella Ads',
+      currency: 'VND',
+      timezoneName: 'Asia/Ho_Chi_Minh',
+      accessToken: 'secret-meta-token-abc123',
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.token_last_four).toBe('c123');
+      expect(JSON.stringify(result.data)).not.toContain('secret-meta-token-abc123');
+      expect(JSON.stringify(result.data)).not.toContain('access_token_encrypted');
+    }
+
+    const accountUpsert = queryCalls.find(
+      (call) => call.table === 'marketing_meta_ad_accounts' && call.operation === 'upsert',
+    );
+    expect(accountUpsert?.selectColumns).not.toContain('access_token_encrypted');
+    expect(JSON.stringify(accountUpsert?.payload)).not.toContain('secret-meta-token-abc123');
+
+    const tokenUpsert = queryCalls.find(
+      (call) => call.table === 'marketing_meta_ad_account_tokens' && call.operation === 'upsert',
+    );
+    expect(tokenUpsert?.payload).toEqual(expect.objectContaining({
+      tenant_id: 'tenant-1',
+      meta_ad_account_id: 'connection-1',
+      token_last_four: 'c123',
+    }));
+    expect(JSON.stringify(tokenUpsert?.payload)).not.toContain('secret-meta-token-abc123');
+    expect(JSON.stringify(tokenUpsert?.payload)).toContain('access_token_encrypted');
   });
 
   it('syncs daily ad insights without persisting the Meta API token', async () => {
@@ -230,6 +325,7 @@ describe('Meta Ads Phase 1 actions', () => {
         error: null,
       },
       { data: { id: 'run-1' }, error: null },
+      { data: null, error: null },
       { data: null, error: null },
       { data: null, error: null },
       { data: null, error: null },
@@ -295,6 +391,41 @@ describe('Meta Ads Phase 1 actions', () => {
       }),
     ]);
     expect(JSON.stringify(upsertCall?.payload)).not.toContain('secret-meta-token');
+  });
+
+  it('prefers the encrypted per-account Meta token over the legacy env token', async () => {
+    process.env.DB_ENCRYPTION_KEY = 'test-db-encryption-key';
+    process.env.META_MARKETING_ACCESS_TOKEN = 'legacy-env-token';
+    process.env.META_MARKETING_API_VERSION = 'v24.0';
+    scriptedResults = [
+      {
+        data: { id: 'connection-1', tenant_id: 'tenant-1', ad_account_id: 'act_123', is_active: true },
+        error: null,
+      },
+      { data: { id: 'run-1' }, error: null },
+      {
+        data: { access_token_encrypted: encrypt('stored-account-token') },
+        error: null,
+      },
+      { data: null, error: null },
+      { data: null, error: null },
+    ];
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ data: [] }),
+      status: 200,
+    });
+
+    const result = await syncMetaAdsInsights({
+      adAccountId: 'act_123',
+      dateFrom: '2026-06-01',
+      dateTo: '2026-06-01',
+    });
+
+    expect(result).toEqual({ success: true, data: { rowsSynced: 0, runId: 'run-1' } });
+    const requestedUrl = new URL(mockFetch.mock.calls[0][0]);
+    expect(requestedUrl.searchParams.get('access_token')).toBe('stored-account-token');
+    expect(requestedUrl.searchParams.get('access_token')).not.toBe('legacy-env-token');
   });
 
   it('allows accountants to read tenant-scoped Meta Ads insights only', async () => {

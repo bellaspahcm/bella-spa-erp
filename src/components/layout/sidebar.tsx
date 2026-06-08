@@ -82,10 +82,10 @@ const menuItems: SidebarMenuItem[] = [
   { icon: Flower2,         label: 'Thẻ liệu trình',     href: '/dashboard/sessions' },
   { icon: MessageSquare,   label: 'Tin nhắn',           href: '/dashboard/chat' },
   { icon: Megaphone,       label: 'CRM & Zalo',         href: '/dashboard/crm' },
+  { icon: Megaphone,       label: 'Meta Ads',           href: '/dashboard/marketing' },
   { icon: Sparkles,        label: 'Dịch vụ',            href: '/dashboard/services' },
 
   { type: 'header', label: 'Tài chính & Đối soát' },
-  { icon: Megaphone,       label: 'Meta Ads',           href: '/dashboard/marketing' },
   { icon: DollarSign,      label: 'Tài chính',           href: '/dashboard/finance' },
   { icon: ShieldAlert,     label: 'Đối soát Tài chính',  href: '/dashboard/finance/reconciliation' },
   { icon: Scale,           label: 'Đối soát Lương (AI)', href: '/dashboard/ai-copilot/salary-reconciliation' },

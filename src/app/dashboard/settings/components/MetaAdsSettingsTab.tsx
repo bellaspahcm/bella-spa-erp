@@ -49,6 +49,7 @@ export default function MetaAdsSettingsTab() {
   const [accountName, setAccountName] = useState("");
   const [currency, setCurrency] = useState("VND");
   const [timezoneName, setTimezoneName] = useState("Asia/Ho_Chi_Minh");
+  const [accessToken, setAccessToken] = useState("");
   const [dateFrom, setDateFrom] = useState(defaultRange.dateFrom);
   const [dateTo, setDateTo] = useState(defaultRange.dateTo);
   const [selectedAccountId, setSelectedAccountId] = useState("");
@@ -89,6 +90,7 @@ export default function MetaAdsSettingsTab() {
         accountName,
         currency,
         timezoneName,
+        accessToken,
       });
 
       if (!result.success) {
@@ -99,6 +101,7 @@ export default function MetaAdsSettingsTab() {
       toast.success("Đã lưu cấu hình Meta Ads");
       setAdAccountId("");
       setAccountName("");
+      setAccessToken("");
       setSelectedAccountId(result.data.ad_account_id);
       await loadConnections();
     } catch (error) {
@@ -216,11 +219,25 @@ export default function MetaAdsSettingsTab() {
                 className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
               />
             </label>
+
+            <label className="space-y-2 md:col-span-2">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">
+                Meta Access Token
+              </span>
+              <input
+                type="password"
+                value={accessToken}
+                onChange={(event) => setAccessToken(event.target.value)}
+                autoComplete="new-password"
+                placeholder="Dán token mới nếu cần cập nhật tài khoản này"
+                className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
+              />
+            </label>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-bold leading-relaxed text-slate-500">
-              Access token được đọc từ server secret, không lưu trong database ERP.
+              Token được mã hóa trên server và chỉ hiển thị trạng thái đã lưu, không trả token thật ra giao diện.
             </p>
             <button
               onClick={handleSave}
@@ -305,12 +322,13 @@ export default function MetaAdsSettingsTab() {
           </div>
         ) : (
           <div className="overflow-x-auto custom-scrollbar">
-            <table className="min-w-[760px] w-full text-left">
+            <table className="min-w-[900px] w-full text-left">
               <thead>
                 <tr className="bg-slate-50 text-[11px] font-black uppercase tracking-widest text-slate-400">
                   <th className="px-5 py-4">Tài khoản</th>
                   <th className="px-5 py-4">ID</th>
                   <th className="px-5 py-4">Tiền tệ</th>
+                  <th className="px-5 py-4">Token</th>
                   <th className="px-5 py-4">Lần sync gần nhất</th>
                   <th className="px-5 py-4 text-right">Trạng thái</th>
                 </tr>
@@ -323,6 +341,11 @@ export default function MetaAdsSettingsTab() {
                     </td>
                     <td className="px-5 py-4 font-mono whitespace-nowrap">{connection.ad_account_id}</td>
                     <td className="px-5 py-4 whitespace-nowrap">{connection.currency || "VND"}</td>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      {connection.token_last_four
+                        ? `Đã lưu ••••${connection.token_last_four}`
+                        : "Chưa có token riêng"}
+                    </td>
                     <td className="px-5 py-4 whitespace-nowrap">{formatDateTime(connection.last_synced_at)}</td>
                     <td className="px-5 py-4 text-right">
                       <span className={cn(
