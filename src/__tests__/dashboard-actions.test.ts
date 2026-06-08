@@ -9,6 +9,7 @@ jest.mock('server-only', () => ({}), { virtual: true });
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
 const mockRpc = jest.fn();
+const queryFilters: Array<{ column: string; value: unknown }> = [];
 
 jest.mock('../services/user-actions', () => ({
   getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
@@ -29,7 +30,10 @@ class MockQueryBuilder {
   ) {}
 
   select() { return this; }
-  eq() { return this; }
+  eq(column?: string, value?: unknown) {
+    if (column) queryFilters.push({ column, value });
+    return this;
+  }
   gte() { return this; }
   lt() { return this; }
   not() { return this; }
@@ -44,6 +48,7 @@ class MockQueryBuilder {
 describe('dashboard read actions', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    queryFilters.length = 0;
     mockGetCurrentUser.mockResolvedValue({
       id: 'admin-1',
       role: 'admin',
@@ -58,6 +63,9 @@ describe('dashboard read actions', () => {
     await expect(getDashboardStats()).rejects.toThrow(
       'Failed to fetch dashboard customer count: customer count failed'
     );
+    expect(queryFilters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
   });
 
   it('propagates monthly performance query failures instead of returning an empty chart', async () => {
@@ -66,6 +74,9 @@ describe('dashboard read actions', () => {
     await expect(getMonthlyPerformance()).rejects.toThrow(
       'Failed to fetch monthly dashboard revenue: monthly revenue failed'
     );
+    expect(queryFilters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
   });
 
   it('propagates important alert query failures instead of returning an empty alert list', async () => {
@@ -74,5 +85,23 @@ describe('dashboard read actions', () => {
     await expect(getImportantAlerts()).rejects.toThrow(
       'Failed to fetch completed session alerts: completed alert failed'
     );
+    expect(queryFilters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+  });
+
+  it('requires a tenant before loading dashboard data', async () => {
+    mockGetCurrentUser.mockResolvedValueOnce({ id: 'admin-1', role: 'admin', tenant_id: null });
+    await expect(getDashboardStats()).rejects.toThrow('Không xác định được đơn vị kinh doanh cho dashboard');
+
+    mockGetCurrentUser.mockResolvedValueOnce({ id: 'admin-1', role: 'admin', tenant_id: null });
+    await expect(getMonthlyPerformance()).rejects.toThrow('Không xác định được đơn vị kinh doanh cho dashboard');
+
+    mockGetCurrentUser.mockResolvedValueOnce({ id: 'admin-1', role: 'admin', tenant_id: null });
+    await expect(getImportantAlerts()).rejects.toThrow('Không xác định được đơn vị kinh doanh cho dashboard');
+
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(queryFilters).toEqual([]);
   });
 });
