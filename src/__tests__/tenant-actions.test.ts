@@ -96,6 +96,12 @@ import { createClient as createSupabaseJsClient } from '@supabase/supabase-js';
 import { getTenantSettings, saveTenantSettings } from '@/services/tenant-actions';
 
 const mockCreateSupabaseJsClient = jest.mocked(createSupabaseJsClient);
+const originalSupabaseEnv = {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+  SUPABASE_URL: process.env.SUPABASE_URL,
+};
 
 const mockAdminSupabase = {
   from: jest.fn((table: string) => new QueryBuilder(table)),
@@ -138,7 +144,9 @@ describe('tenant settings actions', () => {
     queryCalls.length = 0;
     scriptedResults = [];
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    delete process.env.SUPABASE_SECRET_KEY;
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_URL;
     mockGetCurrentUser.mockResolvedValue({
       id: 'admin-1',
       tenant_id: 'tenant-1',
@@ -148,6 +156,16 @@ describe('tenant settings actions', () => {
       mockAdminSupabase as unknown as ReturnType<typeof createSupabaseJsClient>,
     );
     mockRecordAuditLog.mockResolvedValue({ success: true });
+  });
+
+  afterAll(() => {
+    for (const [key, value] of Object.entries(originalSupabaseEnv)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
   });
 
   it('returns null without querying when current user has no tenant id', async () => {

@@ -98,6 +98,7 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
       .from('customers')
       .select('*')
       .eq('id', customerId)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (fetchErr || !customer) {
