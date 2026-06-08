@@ -51,7 +51,7 @@ const TABS = [
   { id: "permissions", label: "Phân quyền", icon: Lock },
   { id: "security", label: "Bảo mật & Mật khẩu", icon: KeyRound },
   { id: "notifications", label: "Thông báo", icon: Bell },
-  { id: "appearance", label: "Giao diện", icon: Palette },
+  { id: "appearance", label: "Giao diện & Module", icon: Palette },
   { id: "promotions", label: "Khuyến mãi", icon: Sparkles },
 ] as const;
 

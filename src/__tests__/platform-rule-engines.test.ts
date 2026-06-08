@@ -17,6 +17,11 @@ import {
   isManualPermittedByRole,
   isSidebarItemAllowed,
 } from '@/lib/business-rules/permissions';
+import {
+  isTenantModuleEnabled,
+  normalizeEnabledModules,
+  normalizeTenantBrandTheme,
+} from '@/lib/business-rules/tenant-modules';
 
 describe('platform rule engines', () => {
   it('builds subscription limits and usage state from entitlements', () => {
@@ -111,5 +116,37 @@ describe('platform rule engines', () => {
     expect(isManualPermittedByRole('hr', 'ktv')).toBe(true);
     expect(isManualPermittedByRole('admin_staff', 'admin')).toBe(false);
     expect(isManualPermittedByRole('super_admin', 'admin')).toBe(false);
+  });
+
+  it('normalizes tenant module and white-label display rules', () => {
+    expect(normalizeEnabledModules(null)).toEqual({
+      babycare: true,
+      beauty_spa: false,
+    });
+    expect(normalizeEnabledModules({
+      babycare: false,
+      beauty_spa: true,
+      unknown_module: true,
+    })).toEqual({
+      babycare: false,
+      beauty_spa: true,
+    });
+    expect(isTenantModuleEnabled({ beauty_spa: true }, 'beauty_spa')).toBe(true);
+
+    expect(normalizeTenantBrandTheme({
+      brandName: '  Beauty Spa Premium  ',
+      logoUrl: 'https://cdn.example.com/logo.png',
+      primaryColor: '#aabbcc',
+      accentColor: 'rose',
+      portalDisplayName: 'Portal khách hàng',
+      invoiceDisplayName: 'Beauty Invoice',
+    })).toEqual({
+      brandName: 'Beauty Spa Premium',
+      logoUrl: 'https://cdn.example.com/logo.png',
+      primaryColor: '#AABBCC',
+      accentColor: '#F8A5C2',
+      portalDisplayName: 'Portal khách hàng',
+      invoiceDisplayName: 'Beauty Invoice',
+    });
   });
 });
