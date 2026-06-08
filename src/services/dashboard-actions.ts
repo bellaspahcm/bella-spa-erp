@@ -109,6 +109,15 @@ function monthRange(monthStart: string) {
 
 // ─── getDashboardStats ────────────────────────────────────────────────────────
 // Replaces missing RPC: get_dashboard_summary
+const DASHBOARD_TENANT_ACCESS_ERROR = 'Không xác định được đơn vị kinh doanh cho dashboard';
+
+function requireDashboardTenant(currentUser: { tenant_id?: string | null } | null | undefined) {
+  if (!currentUser?.tenant_id) {
+    throw new Error(DASHBOARD_TENANT_ACCESS_ERROR);
+  }
+  return currentUser.tenant_id;
+}
+
 interface RevenueStatRow {
   amount: number | null;
 }
@@ -118,12 +127,7 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     const { createClient } = await import('@/lib/supabase-server');
     const supabase = await createClient();
     const currentUser = await getCurrentUser();
-    const tenantId = currentUser?.tenant_id;
-
-    // Warn but do NOT throw — fall back to unfiltered query if tenantId missing
-    if (!tenantId) {
-      console.warn('[getDashboardStats] No tenantId — querying without tenant filter');
-    }
+    const tenantId = requireDashboardTenant(currentUser);
 
     const today = todayDate || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
     
@@ -135,27 +139,17 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
     const monthStart = startDate || (today.substring(0, 7) + '-01');
     const { end: monthEnd, prevStart } = monthRange(monthStart);
 
-    // Build queries — add tenant filter only when available (Supabase builder is immutable)
-    let custQ    = supabase.from('customers').select('id', { count: 'exact', head: true });
-    let prevCustQ = supabase.from('customers').select('id', { count: 'exact', head: true }).lt('created_at', monthStart);
-    let revQ     = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', monthStart).lt('received_date', monthEnd);
-    let prevRevQ = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', prevStart).lt('received_date', monthStart);
-    let todayBookingsQ = supabase.from('session_logs').select('id', { count: 'exact', head: true }).eq('assigned_date', today);
-    let yesterdayBookingsQ = supabase.from('session_logs').select('id', { count: 'exact', head: true }).eq('assigned_date', yesterday);
-
-    if (tenantId) {
-      custQ    = custQ.eq('tenant_id', tenantId);
-      prevCustQ = prevCustQ.eq('tenant_id', tenantId);
-      revQ     = revQ.eq('tenant_id', tenantId);
-      prevRevQ = prevRevQ.eq('tenant_id', tenantId);
-      todayBookingsQ = todayBookingsQ.eq('tenant_id', tenantId);
-      yesterdayBookingsQ = yesterdayBookingsQ.eq('tenant_id', tenantId);
-    }
+    const custQ = supabase.from('customers').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId);
+    const prevCustQ = supabase.from('customers').select('id', { count: 'exact', head: true }).lt('created_at', monthStart).eq('tenant_id', tenantId);
+    const revQ = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', monthStart).lt('received_date', monthEnd).eq('tenant_id', tenantId);
+    const prevRevQ = supabase.from('revenue').select('amount').eq('status', 'confirmed').gte('received_date', prevStart).lt('received_date', monthStart).eq('tenant_id', tenantId);
+    const todayBookingsQ = supabase.from('session_logs').select('id', { count: 'exact', head: true }).eq('assigned_date', today).eq('tenant_id', tenantId);
+    const yesterdayBookingsQ = supabase.from('session_logs').select('id', { count: 'exact', head: true }).eq('assigned_date', yesterday).eq('tenant_id', tenantId);
 
     // Composite blended rating via RPC (60% customer + 40% discipline).
     // Run alongside other queries so we don't add round-trip latency.
-    const curMonthRpc  = tenantId ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: monthStart }) : Promise.resolve({ data: [] as KtvLeaderboardRow[] });
-    const prevMonthRpc = tenantId ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: prevStart })  : Promise.resolve({ data: [] as KtvLeaderboardRow[] });
+    const curMonthRpc = supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: monthStart });
+    const prevMonthRpc = supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: prevStart });
 
     const [custRes, prevCustRes, revRes, prevRevRes, todayBookingsRes, yesterdayBookingsRes, curRpcRes, prevRpcRes] = await Promise.all([
       custQ, prevCustQ, revQ, prevRevQ, todayBookingsQ, yesterdayBookingsQ, curMonthRpc, prevMonthRpc
@@ -295,7 +289,7 @@ export async function getMonthlyPerformance() {
     const { createClient } = await import('@/lib/supabase-server');
     const supabase = await createClient();
     const currentUser = await getCurrentUser();
-    const tenantId = currentUser?.tenant_id;
+    const tenantId = requireDashboardTenant(currentUser);
 
     // Build last 6 months
     const now = new Date();
@@ -314,28 +308,17 @@ export async function getMonthlyPerformance() {
     // The RPC returns the blended composite rating (60% customer + 40%
     // discipline) per KTV. We average across KTVs (excluding NULL =
     // KTVs with no activity) to get the month's headline rating.
-    const monthlyRpcCalls = months.map(mo =>
-      tenantId
-        ? supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: mo.start })
-        : Promise.resolve({ data: [] as KtvLeaderboardRow[] })
-    );
+    const monthlyRpcCalls = months.map((mo) => (
+      supabase.rpc('get_ktv_leaderboard', { p_tenant_id: tenantId, p_month: mo.start })
+    ));
 
     const [revData, expData, customerData, ...monthlyRpcResults] = await Promise.all([
-      (() => {
-        const q = supabase.from('revenue').select('amount, received_date')
-          .eq('status', 'confirmed').gte('received_date', rangeStart).lt('received_date', rangeEnd);
-        return tenantId ? q.eq('tenant_id', tenantId) : q;
-      })(),
-      (() => {
-        const q = supabase.from('expenses').select('amount, expense_date')
-          .gte('expense_date', rangeStart).lt('expense_date', rangeEnd);
-        return tenantId ? q.eq('tenant_id', tenantId) : q;
-      })(),
-      (() => {
-        const q = supabase.from('customers').select('id, created_at')
-          .gte('created_at', rangeStart).lt('created_at', rangeEnd);
-        return tenantId ? q.eq('tenant_id', tenantId) : q;
-      })(),
+      supabase.from('revenue').select('amount, received_date')
+        .eq('status', 'confirmed').gte('received_date', rangeStart).lt('received_date', rangeEnd).eq('tenant_id', tenantId),
+      supabase.from('expenses').select('amount, expense_date')
+        .gte('expense_date', rangeStart).lt('expense_date', rangeEnd).eq('tenant_id', tenantId),
+      supabase.from('customers').select('id, created_at')
+        .gte('created_at', rangeStart).lt('created_at', rangeEnd).eq('tenant_id', tenantId),
       ...monthlyRpcCalls
     ]);
 
@@ -403,14 +386,14 @@ export async function getImportantAlerts() {
     const { getPendingLeaveRequests } = await import('@/services/attendance-actions');
     const supabase = await createClient();
     const currentUser = await getCurrentUser();
-    const tenantId = currentUser?.tenant_id;
+    const tenantId = requireDashboardTenant(currentUser);
 
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
     const alerts: DashboardAlert[] = [];
 
     // 1. Fetch completed sessions (KTV checkout) - sorted by date then end_time DESC with nulls last
-    let completedQ = supabase.from('session_logs')
+    const completedQ = supabase.from('session_logs')
       .select(`
         id, 
         end_time, 
@@ -431,10 +414,10 @@ export async function getImportantAlerts() {
         )
       `)
       .eq('status', 'completed')
+      .eq('tenant_id', tenantId)
       .order('completed_date', { ascending: false })
       .order('end_time', { ascending: false, nullsFirst: false })
       .limit(30);
-    if (tenantId) completedQ = completedQ.eq('tenant_id', tenantId);
     const { data: completedSessions, error: completedSessionsError } = await completedQ;
     if (completedSessionsError) {
       throw new Error(`Failed to fetch completed session alerts: ${completedSessionsError.message}`);
@@ -516,7 +499,7 @@ export async function getImportantAlerts() {
     }
 
     // 2. Overdue sessions (past date, not completed)
-    let overdueQ = supabase.from('session_logs')
+    const overdueQ = supabase.from('session_logs')
       .select(`
         id, 
         assigned_date, 
@@ -529,10 +512,10 @@ export async function getImportantAlerts() {
           )
         )
       `)
+      .eq('tenant_id', tenantId)
       .lt('assigned_date', today)
       .not('status', 'eq', 'completed')
       .limit(20);
-    if (tenantId) overdueQ = overdueQ.eq('tenant_id', tenantId);
     const { data: overdue, error: overdueError } = await overdueQ;
     if (overdueError) {
       throw new Error(`Failed to fetch overdue session alerts: ${overdueError.message}`);
@@ -554,11 +537,11 @@ export async function getImportantAlerts() {
     }
 
     // 3. Bookings nearing completion (< 3 sessions left)
-    let bookingQ = supabase.from('bookings')
+    const bookingQ = supabase.from('bookings')
       .select('id, package_name, completed_sessions, total_sessions, customers!bookings_customer_id_fkey(name_mother)')
       .eq('status', 'in_progress')
+      .eq('tenant_id', tenantId)
       .limit(20);
-    if (tenantId) bookingQ = bookingQ.eq('tenant_id', tenantId);
     const { data: nearEnd, error: nearEndError } = await bookingQ;
     if (nearEndError) {
       throw new Error(`Failed to fetch near-end booking alerts: ${nearEndError.message}`);
@@ -605,12 +588,12 @@ export async function getImportantAlerts() {
     // 5. App Notifications (e.g. online bookings)
     try {
       if (currentUser?.role === 'admin' || currentUser?.role === 'admin_staff') {
-        let notifQ = supabase.from('app_notifications')
+        const notifQ = supabase.from('app_notifications')
           .select('*')
           .eq('is_read', false)
+          .eq('tenant_id', tenantId)
           .order('created_at', { ascending: false })
           .limit(20);
-        if (tenantId) notifQ = notifQ.eq('tenant_id', tenantId);
         
         const { data: appNotifs, error: appNotifsError } = await notifQ;
         if (appNotifsError) {
