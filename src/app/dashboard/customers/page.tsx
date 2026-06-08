@@ -32,11 +32,23 @@ X
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { createCustomer,deleteCustomer,updateCustomer } from '@/services/customer-actions';
 import type { Database } from '@/types/database.types';
+import {
+  isActiveCareBooking,
+  selectCustomerDisplayBooking,
+} from './customer-list-rules';
 
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
 type CustomerBookingSummary = Pick<
   Database['public']['Tables']['bookings']['Row'],
-  'deposit_amount' | 'package_name' | 'full_price' | 'discount_percent' | 'created_at' | 'is_in_care' | 'status'
+  | 'deposit_amount'
+  | 'package_name'
+  | 'full_price'
+  | 'discount_percent'
+  | 'created_at'
+  | 'is_in_care'
+  | 'status'
+  | 'total_sessions'
+  | 'completed_sessions'
 > & {
   revenue?: PaymentRevenueLike[] | null;
 };
@@ -50,6 +62,9 @@ type CustomerListItem = CustomerRow & {
 type CustomerActionResult =
   | Awaited<ReturnType<typeof createCustomer>>
   | Awaited<ReturnType<typeof updateCustomer>>;
+
+const ALL_STATUS_FILTER = 'Tất cả trạng thái';
+const ACTIVE_CARE_PACKAGE_FILTER = 'Đang có gói liệu trình';
 
 function getErrorMessage(error: unknown, fallback = 'Có lỗi xảy ra') {
   return error instanceof Error ? error.message : fallback;
@@ -66,7 +81,7 @@ export default function CustomersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
+  const [statusFilter, setStatusFilter] = useState(ALL_STATUS_FILTER);
 
   // Edit states
   const [isEditMode, setIsEditMode] = useState(false);
@@ -94,33 +109,30 @@ export default function CustomersPage() {
       const supabase = createBrowserClient();
       const { data, error } = await supabase
         .from('customers')
-        .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care, status, revenue(amount, status, revenue_type))')
+        .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care, status, total_sessions, completed_sessions, revenue(amount, status, revenue_type))')
         .order('name_mother', { ascending: true });
       if (error) throw error;
       
       const enrichedCustomers = ((data || []) as CustomerListItem[]).map((c) => {
-        // Lấy booking mới nhất (nếu có)
-        const latestBooking = c.bookings && c.bookings.length > 0 
-          ? [...c.bookings].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())[0]
-          : null;
-        const latestPaymentState = latestBooking
+        const displayBooking = selectCustomerDisplayBooking(c.bookings);
+        const displayPaymentState = displayBooking
           ? calculateBookingPaymentState({
-              fullPrice: latestBooking.full_price,
-              discountPercent: latestBooking.discount_percent,
-              depositAmount: latestBooking.deposit_amount,
-              bookingStatus: latestBooking.status,
-              revenues: latestBooking.revenue,
+              fullPrice: displayBooking.full_price,
+              discountPercent: displayBooking.discount_percent,
+              depositAmount: displayBooking.deposit_amount,
+              bookingStatus: displayBooking.status,
+              revenues: displayBooking.revenue,
             })
           : null;
-        const latestDepositAmount: number | '' = latestPaymentState?.totalPaid ?? '';
-        const latestPackageName = latestBooking?.package_name || '';
+        const displayDepositAmount: number | '' = displayPaymentState?.totalPaid ?? '';
+        const displayPackageName = displayBooking?.package_name || '';
           
         return {
           ...c,
-          deposit_amount: latestDepositAmount,
-          package_name: latestPackageName,
-          is_in_care: latestBooking?.is_in_care || false,
-          is_fully_paid: latestPaymentState ? !latestPaymentState.hasOutstandingDebt : false
+          deposit_amount: displayDepositAmount,
+          package_name: displayPackageName,
+          is_in_care: isActiveCareBooking(displayBooking),
+          is_fully_paid: displayPaymentState ? !displayPaymentState.hasOutstandingDebt : false
         };
       });
       
@@ -255,12 +267,19 @@ export default function CustomersPage() {
     setActiveMenuId(activeMenuId === id ? null : id);
   };
 
-  const statusOptions = ['Tất cả trạng thái', 'Đang chăm sóc', 'Chờ sinh', 'Tiềm năng', 'Đã kết thúc'];
+  const statusOptions = [
+    ALL_STATUS_FILTER,
+    ACTIVE_CARE_PACKAGE_FILTER,
+    'Đang chăm sóc',
+    'Chờ sinh',
+    'Tiềm năng',
+    'Đã kết thúc',
+  ];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [monthFilter, setMonthFilter]  = useState('all');
   const [yearFilter,  setYearFilter]   = useState(String(new Date().getFullYear()));
-  const [sortBy, setSortBy] = useState('date_desc');
+  const [sortBy, setSortBy] = useState('active_package_desc');
 
   const currentYear = new Date().getFullYear();
   const monthOptions = [
@@ -269,6 +288,7 @@ export default function CustomersPage() {
   ];
   const yearOptions = Array.from({length:4}, (_,i) => String(currentYear - i));
   const sortOptions = [
+    { value: 'active_package_desc', label: 'Gói đang hoạt động trước' },
     { value: 'date_desc', label: 'Ngày tạo mới nhất' },
     { value: 'date_asc', label: 'Ngày tạo cũ nhất' },
     { value: 'name_asc', label: 'Tên A-Z' },
@@ -290,12 +310,14 @@ export default function CustomersPage() {
         customer.address,
         customer.notes,
         customer.zalo_oa_id,
+        customer.package_name,
         customer.gender_baby === 'boy' ? 'bé trai' : customer.gender_baby === 'girl' ? 'bé gái' : '',
       ].some(f => (f || '').toLowerCase().includes(q));
 
       let matchesStatus = true;
-      if (statusFilter !== 'Tất cả trạng thái') {
-        if (statusFilter === 'Đang chăm sóc') matchesStatus = customer.status === 'active';
+      if (statusFilter !== ALL_STATUS_FILTER) {
+        if (statusFilter === ACTIVE_CARE_PACKAGE_FILTER) matchesStatus = customer.is_in_care === true;
+        else if (statusFilter === 'Đang chăm sóc') matchesStatus = customer.status === 'active';
         else if (statusFilter === 'Chờ sinh')  matchesStatus = customer.status === 'deposit';
         else if (statusFilter === 'Tiềm năng') matchesStatus = customer.status === 'lead';
         else if (statusFilter === 'Đã kết thúc') matchesStatus = customer.status === 'paid';
@@ -310,7 +332,11 @@ export default function CustomersPage() {
     });
 
     result.sort((a, b) => {
-      if (sortBy === 'name_asc') {
+      if (sortBy === 'active_package_desc') {
+        const activeDiff = Number(b.is_in_care) - Number(a.is_in_care);
+        if (activeDiff !== 0) return activeDiff;
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      } else if (sortBy === 'name_asc') {
         return (a.name_mother || '').localeCompare(b.name_mother || '');
       } else if (sortBy === 'name_desc') {
         return (b.name_mother || '').localeCompare(a.name_mother || '');
