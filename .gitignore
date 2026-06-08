@@ -12,6 +12,14 @@
 /test-execution-report.html
 /docs/bella_spa_evaluation_report.html
 
+# local/generated planning reports (do not commit by default)
+/.codex/
+/ai_new_project_blueprint.html
+/docs/beauty_spa_commercialization_plan.html
+/docs/beauty_spa_owner_sales_plan.html
+/docs/bella_erp_executive_audit_*.html
+/docs/bella_erp_overall_optimization_report_*.html
+
 # playwright / e2e
 /playwright-report/
 /playwright-results.json
