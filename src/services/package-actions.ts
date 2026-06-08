@@ -24,6 +24,14 @@ export type PackageActionInput = {
   status?: string | null;
   tenant_id?: string | null;
   session_multiplier?: number | string | null;
+  module_key?: string | null;
+  service_kind?: string | null;
+  service_category?: string | null;
+  default_duration_minutes?: number | string | null;
+  requires_resource?: boolean | null;
+  default_resource_type?: string | null;
+  before_after_required?: boolean | null;
+  care_note_template?: string | null;
 };
 
 type PackageActionResult = {

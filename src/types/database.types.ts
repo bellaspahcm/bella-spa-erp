@@ -675,6 +675,63 @@ export type Database = {
           },
         ]
       }
+      booking_resources: {
+        Row: {
+          branch_tenant_id: string | null
+          capacity: number
+          created_at: string
+          id: string
+          location_note: string | null
+          metadata: Json
+          name: string
+          resource_type: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_tenant_id?: string | null
+          capacity?: number
+          created_at?: string
+          id?: string
+          location_note?: string | null
+          metadata?: Json
+          name: string
+          resource_type?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_tenant_id?: string | null
+          capacity?: number
+          created_at?: string
+          id?: string
+          location_note?: string | null
+          metadata?: Json
+          name?: string
+          resource_type?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_resources_branch_tenant_id_fkey"
+            columns: ["branch_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_resources_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           assigned_ktv_id: string | null
@@ -2039,7 +2096,11 @@ export type Database = {
       packages: {
         Row: {
           allowed_franchise_override: boolean | null
+          before_after_required: boolean
+          care_note_template: string | null
           created_at: string | null
+          default_duration_minutes: number
+          default_resource_type: string | null
           description: string | null
           details: string[] | null
           duration: string | null
@@ -2047,11 +2108,15 @@ export type Database = {
           id: string
           is_hq_template: boolean | null
           ktv_commission: number | null
+          module_key: string
           name: string
           offer: string | null
           price: number | null
           price_cap: number | null
           price_floor: number | null
+          requires_resource: boolean
+          service_category: string | null
+          service_kind: string
           session_multiplier: number | null
           status: string | null
           template_id: string | null
@@ -2061,7 +2126,11 @@ export type Database = {
         }
         Insert: {
           allowed_franchise_override?: boolean | null
+          before_after_required?: boolean
+          care_note_template?: string | null
           created_at?: string | null
+          default_duration_minutes?: number
+          default_resource_type?: string | null
           description?: string | null
           details?: string[] | null
           duration?: string | null
@@ -2069,11 +2138,15 @@ export type Database = {
           id?: string
           is_hq_template?: boolean | null
           ktv_commission?: number | null
+          module_key?: string
           name: string
           offer?: string | null
           price?: number | null
           price_cap?: number | null
           price_floor?: number | null
+          requires_resource?: boolean
+          service_category?: string | null
+          service_kind?: string
           session_multiplier?: number | null
           status?: string | null
           template_id?: string | null
@@ -2083,7 +2156,11 @@ export type Database = {
         }
         Update: {
           allowed_franchise_override?: boolean | null
+          before_after_required?: boolean
+          care_note_template?: string | null
           created_at?: string | null
+          default_duration_minutes?: number
+          default_resource_type?: string | null
           description?: string | null
           details?: string[] | null
           duration?: string | null
@@ -2091,11 +2168,15 @@ export type Database = {
           id?: string
           is_hq_template?: boolean | null
           ktv_commission?: number | null
+          module_key?: string
           name?: string
           offer?: string | null
           price?: number | null
           price_cap?: number | null
           price_floor?: number | null
+          requires_resource?: boolean
+          service_category?: string | null
+          service_kind?: string
           session_multiplier?: number | null
           status?: string | null
           template_id?: string | null
@@ -3087,14 +3168,17 @@ export type Database = {
         Row: {
           accounting_mode: string | null
           address: string | null
+          brand_theme: Json | null
           contact_name: string | null
           contact_phone: string | null
           created_at: string | null
           email: string | null
+          enabled_modules: Json | null
           franchise_agreement_date: string | null
           gps_threshold_m: number | null
           id: string
           internal_clearing_rate: number | null
+          logo_url: string | null
           name: string
           parent_tenant_id: string | null
           qr_account_name: string | null
@@ -3125,14 +3209,17 @@ export type Database = {
         Insert: {
           accounting_mode?: string | null
           address?: string | null
+          brand_theme?: Json | null
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string | null
           email?: string | null
+          enabled_modules?: Json | null
           franchise_agreement_date?: string | null
           gps_threshold_m?: number | null
           id?: string
           internal_clearing_rate?: number | null
+          logo_url?: string | null
           name: string
           parent_tenant_id?: string | null
           qr_account_name?: string | null
@@ -3163,14 +3250,17 @@ export type Database = {
         Update: {
           accounting_mode?: string | null
           address?: string | null
+          brand_theme?: Json | null
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string | null
           email?: string | null
+          enabled_modules?: Json | null
           franchise_agreement_date?: string | null
           gps_threshold_m?: number | null
           id?: string
           internal_clearing_rate?: number | null
+          logo_url?: string | null
           name?: string
           parent_tenant_id?: string | null
           qr_account_name?: string | null

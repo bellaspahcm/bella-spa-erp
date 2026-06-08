@@ -108,6 +108,16 @@ function tenantRow(overrides: Record<string, unknown> = {}) {
     contact_phone: '0900000000',
     email: 'old@bella.vn',
     address: 'Old address',
+    logo_url: 'https://old.bella.vn/logo.png',
+    enabled_modules: { babycare: true, beauty_spa: false },
+    brand_theme: {
+      brandName: 'Bella Old',
+      logoUrl: 'https://old.bella.vn/logo.png',
+      primaryColor: '#A91555',
+      accentColor: '#F8A5C2',
+      portalDisplayName: 'Bella Portal',
+      invoiceDisplayName: 'Bella Invoice',
+    },
     qr_bank_code: 'OLD',
     qr_account_number: '111',
     qr_account_name: 'Old Account',
@@ -261,6 +271,66 @@ describe('tenant settings actions', () => {
     );
   });
 
+  it('normalizes and saves tenant white-label module settings with audit', async () => {
+    const oldTenant = tenantRow();
+    const updatedTenant = tenantRow({
+      logo_url: 'https://cdn.bella.vn/new-logo.png',
+      enabled_modules: { babycare: true, beauty_spa: true },
+      brand_theme: {
+        brandName: 'Bella Premium',
+        logoUrl: 'https://cdn.bella.vn/new-logo.png',
+        primaryColor: '#AABBCC',
+        accentColor: '#F8A5C2',
+        portalDisplayName: 'Bella Client Portal',
+        invoiceDisplayName: 'Bella Premium Invoice',
+      },
+    });
+    scriptedResults = [
+      { data: oldTenant, error: null },
+      { data: [updatedTenant], error: null },
+    ];
+
+    const result = await saveTenantSettings({
+      logo_url: '  https://cdn.bella.vn/new-logo.png  ',
+      enabled_modules: { babycare: true, beauty_spa: true },
+      brand_theme: {
+        brandName: '  Bella Premium  ',
+        logoUrl: 'https://cdn.bella.vn/new-logo.png',
+        primaryColor: '#aabbcc',
+        accentColor: 'pink',
+        portalDisplayName: 'Bella Client Portal',
+        invoiceDisplayName: 'Bella Premium Invoice',
+      },
+    });
+
+    expect(result.success).toBe(true);
+    expect(queryCalls[1]).toEqual(expect.objectContaining({
+      table: 'tenants',
+      operation: 'update',
+      payload: expect.objectContaining({
+        logo_url: 'https://cdn.bella.vn/new-logo.png',
+        enabled_modules: { babycare: true, beauty_spa: true },
+        brand_theme: {
+          brandName: 'Bella Premium',
+          logoUrl: 'https://cdn.bella.vn/new-logo.png',
+          primaryColor: '#AABBCC',
+          accentColor: '#F8A5C2',
+          portalDisplayName: 'Bella Client Portal',
+          invoiceDisplayName: 'Bella Premium Invoice',
+        },
+        updated_at: expect.any(String),
+      }),
+    }));
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'tenants',
+      record_id: 'tenant-1',
+      old_data: oldTenant,
+      new_data: updatedTenant,
+    });
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+  });
+
   it('blocks non-admin users from saving tenant settings before side effects', async () => {
     mockGetCurrentUser.mockResolvedValueOnce({
       id: 'staff-1',
@@ -339,6 +409,16 @@ describe('tenant settings actions', () => {
         contact_phone: '0900000000',
         email: 'old@bella.vn',
         address: 'Old address',
+        logo_url: 'https://old.bella.vn/logo.png',
+        enabled_modules: { babycare: true, beauty_spa: false },
+        brand_theme: {
+          brandName: 'Bella Old',
+          logoUrl: 'https://old.bella.vn/logo.png',
+          primaryColor: '#A91555',
+          accentColor: '#F8A5C2',
+          portalDisplayName: 'Bella Portal',
+          invoiceDisplayName: 'Bella Invoice',
+        },
         qr_bank_code: 'OLD',
         qr_account_number: '111',
         qr_account_name: 'Old Account',

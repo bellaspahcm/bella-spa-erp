@@ -1,4 +1,5 @@
 import type { Json } from './database.types';
+import type { TenantBrandTheme, TenantEnabledModules } from '@/lib/business-rules/tenant-modules';
 
 export interface KtvSalaryRecord {
   id: string;
@@ -73,6 +74,9 @@ export interface TenantGeneralSettings {
   phone: string;
   email: string;
   address: string;
+  logo_url?: string;
+  enabled_modules?: TenantEnabledModules;
+  brand_theme?: TenantBrandTheme;
   qr_bank_code: string;
   qr_account_number: string;
   qr_account_name: string;

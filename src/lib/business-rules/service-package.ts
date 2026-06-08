@@ -1,8 +1,14 @@
 import { parseDecimalInput, parseIntegerInput, parseMoneyInput } from '@/lib/utils';
+import {
+  normalizeOptionalBookingResourceType,
+  type BookingResourceType,
+} from '@/lib/business-rules/booking-resource';
+import { TENANT_MODULE_KEYS, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 type NumericLike = number | string | null | undefined;
 
 export type ServicePackageDetailsInput = string[] | string | null | undefined;
+export type ServicePackageKind = 'single_service' | 'treatment_package' | 'retail_product' | 'consultation';
 
 export type ServicePackageInput = {
   name?: string | null;
@@ -16,6 +22,14 @@ export type ServicePackageInput = {
   status?: string | null;
   tenant_id?: string | null;
   session_multiplier?: NumericLike;
+  module_key?: string | null;
+  service_kind?: string | null;
+  service_category?: string | null;
+  default_duration_minutes?: NumericLike;
+  requires_resource?: boolean | null;
+  default_resource_type?: string | null;
+  before_after_required?: boolean | null;
+  care_note_template?: string | null;
 };
 
 export type HqPackageTemplateRuleInput = ServicePackageInput & {
@@ -38,6 +52,14 @@ export type ServicePackageRulePayload = {
   status: string;
   tenant_id?: string;
   session_multiplier?: number;
+  module_key: TenantModuleKey;
+  service_kind: ServicePackageKind;
+  service_category: string | null;
+  default_duration_minutes: number;
+  requires_resource: boolean;
+  default_resource_type: BookingResourceType | null;
+  before_after_required: boolean;
+  care_note_template: string | null;
 };
 
 export type HqPackageTemplateRulePayload = ServicePackageRulePayload & {
@@ -55,6 +77,12 @@ export type ServicePackageRuleResult<T> =
 const DEFAULT_DURATION = '90 phút/buổi';
 const DEFAULT_TOTAL_SESSIONS = 10;
 const DEFAULT_KTV_COMMISSION = 150000;
+const SERVICE_PACKAGE_KIND_KEYS: ServicePackageKind[] = [
+  'single_service',
+  'treatment_package',
+  'retail_product',
+  'consultation',
+];
 
 function normalizeText(value: unknown, fallback = '') {
   const text = String(value ?? '').trim();
@@ -87,6 +115,29 @@ export function normalizePackageSessionCount(value: NumericLike, fallback = DEFA
 
 export function normalizePackageSessionMultiplier(value: NumericLike, fallback = 1) {
   return parseDecimalInput(value, { min: 0.01, max: 10, fallback });
+}
+
+export function normalizePackageModuleKey(value: string | null | undefined): TenantModuleKey {
+  const normalized = value?.trim().toLowerCase();
+  return TENANT_MODULE_KEYS.includes(normalized as TenantModuleKey)
+    ? normalized as TenantModuleKey
+    : 'babycare';
+}
+
+export function normalizeServicePackageKind(value: string | null | undefined): ServicePackageKind {
+  const normalized = value?.trim().toLowerCase();
+  return SERVICE_PACKAGE_KIND_KEYS.includes(normalized as ServicePackageKind)
+    ? normalized as ServicePackageKind
+    : 'treatment_package';
+}
+
+export function normalizeDefaultDurationMinutes(value: NumericLike, fallback = 90) {
+  return parseIntegerInput(value, { min: 1, max: 1440, fallback });
+}
+
+function normalizeNullableText(value: unknown) {
+  const text = normalizeText(value);
+  return text || null;
 }
 
 function normalizeNullableMoney(value: NumericLike) {
@@ -127,6 +178,16 @@ export function buildServicePackagePayload(input: ServicePackageInput): ServiceP
     offer: input.offer || '',
     ktv_commission: normalizePackageMoney(input.ktv_commission, DEFAULT_KTV_COMMISSION),
     status: normalizeText(input.status, 'active'),
+    module_key: normalizePackageModuleKey(input.module_key),
+    service_kind: normalizeServicePackageKind(input.service_kind),
+    service_category: normalizeNullableText(input.service_category),
+    default_duration_minutes: normalizeDefaultDurationMinutes(input.default_duration_minutes),
+    requires_resource: input.requires_resource === true,
+    default_resource_type: input.requires_resource === true
+      ? normalizeOptionalBookingResourceType(input.default_resource_type) ?? 'bed'
+      : normalizeOptionalBookingResourceType(input.default_resource_type),
+    before_after_required: input.before_after_required === true,
+    care_note_template: normalizeNullableText(input.care_note_template),
   };
 
   if (input.tenant_id) {
@@ -135,6 +196,20 @@ export function buildServicePackagePayload(input: ServicePackageInput): ServiceP
   if (input.session_multiplier !== undefined) {
     payload.session_multiplier = normalizePackageSessionMultiplier(input.session_multiplier);
   }
+  if (input.module_key !== undefined) payload.module_key = normalizePackageModuleKey(input.module_key);
+  if (input.service_kind !== undefined) payload.service_kind = normalizeServicePackageKind(input.service_kind);
+  if (input.service_category !== undefined) payload.service_category = normalizeNullableText(input.service_category);
+  if (input.default_duration_minutes !== undefined) {
+    payload.default_duration_minutes = normalizeDefaultDurationMinutes(input.default_duration_minutes);
+  }
+  if (input.requires_resource !== undefined) payload.requires_resource = input.requires_resource === true;
+  if (input.default_resource_type !== undefined) {
+    payload.default_resource_type = normalizeOptionalBookingResourceType(input.default_resource_type);
+  }
+  if (input.before_after_required !== undefined) {
+    payload.before_after_required = input.before_after_required === true;
+  }
+  if (input.care_note_template !== undefined) payload.care_note_template = normalizeNullableText(input.care_note_template);
 
   return payload;
 }
@@ -200,6 +275,16 @@ export function buildTemplateDistributionBasePayload(template: HqPackageTemplate
     offer: template.offer || '',
     ktv_commission: normalizePackageMoney(template.ktv_commission, DEFAULT_KTV_COMMISSION),
     status: 'active',
+    module_key: normalizePackageModuleKey(template.module_key),
+    service_kind: normalizeServicePackageKind(template.service_kind),
+    service_category: normalizeNullableText(template.service_category),
+    default_duration_minutes: normalizeDefaultDurationMinutes(template.default_duration_minutes),
+    requires_resource: template.requires_resource === true,
+    default_resource_type: template.requires_resource === true
+      ? normalizeOptionalBookingResourceType(template.default_resource_type) ?? 'bed'
+      : normalizeOptionalBookingResourceType(template.default_resource_type),
+    before_after_required: template.before_after_required === true,
+    care_note_template: normalizeNullableText(template.care_note_template),
     is_hq_template: false,
     template_id: template.id || null,
     price_cap,

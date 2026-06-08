@@ -8,6 +8,12 @@ import { getCurrentUser } from './user-actions';
 import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';
 import type { Database, Json } from '@/types/database.types';
+import {
+  toTenantBrandThemeJson,
+  toTenantModuleJson,
+  type TenantBrandTheme,
+  type TenantEnabledModules,
+} from '@/lib/business-rules/tenant-modules';
 
 type TenantRow = Database['public']['Tables']['tenants']['Row'];
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
@@ -78,6 +84,9 @@ function mapTenantSettingsRollbackPayload(snapshot: TenantRow): TenantUpdate {
     contact_phone: snapshot.contact_phone,
     email: snapshot.email,
     address: snapshot.address,
+    logo_url: snapshot.logo_url,
+    enabled_modules: snapshot.enabled_modules,
+    brand_theme: snapshot.brand_theme,
     qr_bank_code: snapshot.qr_bank_code,
     qr_account_number: snapshot.qr_account_number,
     qr_account_name: snapshot.qr_account_name,
@@ -123,6 +132,9 @@ export async function saveTenantSettings(settings: {
   phone?: string;
   email?: string;
   address?: string;
+  logo_url?: string;
+  enabled_modules?: TenantEnabledModules;
+  brand_theme?: TenantBrandTheme;
   qr_bank_code?: string;
   qr_account_number?: string;
   qr_account_name?: string;
@@ -157,6 +169,9 @@ export async function saveTenantSettings(settings: {
     if (settings.phone !== undefined) updatePayload.contact_phone = settings.phone;
     if (settings.email !== undefined) updatePayload.email = settings.email;
     if (settings.address !== undefined) updatePayload.address = settings.address;
+    if (settings.logo_url !== undefined) updatePayload.logo_url = settings.logo_url.trim();
+    if (settings.enabled_modules !== undefined) updatePayload.enabled_modules = toTenantModuleJson(settings.enabled_modules);
+    if (settings.brand_theme !== undefined) updatePayload.brand_theme = toTenantBrandThemeJson(settings.brand_theme);
     if (settings.qr_bank_code !== undefined) updatePayload.qr_bank_code = settings.qr_bank_code;
     if (settings.qr_account_number !== undefined) updatePayload.qr_account_number = settings.qr_account_number;
     if (settings.qr_account_name !== undefined) updatePayload.qr_account_name = settings.qr_account_name;

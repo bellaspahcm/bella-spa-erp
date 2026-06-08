@@ -28,6 +28,47 @@ describe('service package business rules', () => {
     }));
   });
 
+  it('normalizes Beauty Spa service metadata without changing default babycare packages', () => {
+    const defaultPayload = buildServicePackagePayload({
+      name: 'Tắm bé',
+      price: 450000,
+    });
+
+    expect(defaultPayload).toEqual(expect.objectContaining({
+      module_key: 'babycare',
+      service_kind: 'treatment_package',
+      default_duration_minutes: 90,
+      requires_resource: false,
+      default_resource_type: null,
+      before_after_required: false,
+    }));
+
+    const beautyPayload = buildServicePackagePayload({
+      name: ' Facial Hydrate ',
+      price: '850.000',
+      module_key: 'beauty_spa',
+      service_kind: 'single_service',
+      service_category: ' facial ',
+      default_duration_minutes: '75',
+      requires_resource: true,
+      default_resource_type: 'room',
+      before_after_required: true,
+      care_note_template: 'Ghi chú tình trạng da trước/sau buổi.',
+    });
+
+    expect(beautyPayload).toEqual(expect.objectContaining({
+      name: 'Facial Hydrate',
+      module_key: 'beauty_spa',
+      service_kind: 'single_service',
+      service_category: 'facial',
+      default_duration_minutes: 75,
+      requires_resource: true,
+      default_resource_type: 'room',
+      before_after_required: true,
+      care_note_template: 'Ghi chú tình trạng da trước/sau buổi.',
+    }));
+  });
+
   it('rejects invalid HQ price bounds before database writes', () => {
     expect(validatePackagePriceBounds({
       price_floor: '1.200.000',
