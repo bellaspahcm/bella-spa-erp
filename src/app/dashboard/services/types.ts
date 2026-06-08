@@ -10,6 +10,7 @@ export type ServiceStatus = 'active' | 'inactive';
 export type ServiceStatusFilter = 'all' | ServiceStatus;
 export type ServiceModalMode = 'add' | 'edit';
 export type ServiceModuleKey = 'babycare' | 'beauty_spa';
+export type ServiceModuleFilter = 'all' | ServiceModuleKey;
 export type ServiceKind = 'single_service' | 'treatment_package' | 'retail_product' | 'consultation';
 export type ResourceType = 'bed' | 'room' | 'machine' | 'chair' | 'other';
 export type ResourceStatus = 'available' | 'in_use' | 'maintenance' | 'inactive';

@@ -37,6 +37,8 @@ export default function ServicesPage() {
     setSearchQuery,
     statusFilter,
     setStatusFilter,
+    moduleFilter,
+    setModuleFilter,
     name,
     setName,
     price,
@@ -177,6 +179,20 @@ export default function ServicesPage() {
             placeholder="Lọc trạng thái..."
           />
         </div>
+        {isBeautySpaEnabled && (
+          <div className="w-full flex-shrink-0 lg:w-72">
+            <PremiumSelect
+              value={moduleFilter}
+              options={[
+                { value: 'all', label: 'Tất cả module', icon: <Tag className="h-4 w-4 text-slate-400" /> },
+                { value: 'babycare', label: 'Bella Mother & Baby', icon: <CheckCircle2 className="h-4 w-4 text-emerald-500" /> },
+                { value: 'beauty_spa', label: 'Beauty Spa', icon: <Sparkles className="h-4 w-4 text-fuchsia-500" /> },
+              ]}
+              onChange={(val) => setModuleFilter(val as 'all' | 'babycare' | 'beauty_spa')}
+              placeholder="Lọc module..."
+            />
+          </div>
+        )}
       </div>
 
       {isBeautySpaEnabled && (
