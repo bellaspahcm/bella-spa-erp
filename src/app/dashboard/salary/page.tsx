@@ -23,7 +23,7 @@ import {
   checkAndAutoConfirm 
 } from '@/modules/hr-salary/actions/admin-salary-actions';
 import { getMonthlyAttendanceSummary } from '@/services/attendance-actions';
-import { exportSalaryToExcel, exportSessionMatrixToExcel } from '@/services/export-actions';
+import { exportSalaryToExcelResult, exportSessionMatrixToExcel } from '@/services/export-actions';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
@@ -51,6 +51,12 @@ import ConfirmModal from './components/ConfirmModal';
 
 function getCurrentMonthString() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).substring(0, 7);
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return 'Lỗi không xác định';
 }
 
 export default function SalaryPage() {
@@ -370,9 +376,26 @@ export default function SalaryPage() {
   };
 
   const handleExport = async (s: KtvSalaryRecord) => {
+    const toastId = toast.loading(`Đang tạo báo cáo cho ${s.name}...`);
     try {
-      const toastId = toast.loading(`Đang tạo báo cáo cho ${s.name}...`);
-      const base64 = await exportSalaryToExcel(s.id, s.name, `${getCurrentMonthString()}-01`);
+      const result = await exportSalaryToExcelResult(s.id, s.name, `${getCurrentMonthString()}-01`, {
+        ktvId: s.id,
+        baseSalary: s.baseSalary,
+        sessionBonus: s.sessionBonus,
+        ratingBonus: s.ratingBonus,
+        kpiBonus: s.kpiBonus,
+        deductions: s.deductions,
+        advances: s.advances,
+        totalSalary: s.totalSalary,
+        sessions: s.sessions,
+        status: s.status,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      const base64 = result.data;
       
       const blob = await (await fetch(`data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`)).blob();
       const url = window.URL.createObjectURL(blob);
@@ -387,7 +410,7 @@ export default function SalaryPage() {
       toast.success(`Đã xuất báo cáo thành công cho ${s.name}`, { id: toastId });
     } catch (error) {
       console.error('Export failed:', error);
-      toast.error('Lỗi khi xuất báo cáo Excel');
+      toast.error('Lỗi khi xuất báo cáo Excel: ' + getErrorMessage(error), { id: toastId });
     }
   };
 

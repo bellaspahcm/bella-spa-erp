@@ -35,6 +35,23 @@ type SalaryExportRecord = {
   status?: string | null;
 };
 
+export type SalaryExportSnapshot = {
+  ktvId: string;
+  baseSalary: number;
+  sessionBonus: number;
+  ratingBonus: number;
+  kpiBonus: number;
+  deductions: number;
+  advances: number;
+  totalSalary: number;
+  sessions: number;
+  status?: string | null;
+};
+
+export type SalaryExportResult =
+  | { success: true; data: string }
+  | { success: false; error: string };
+
 type SalaryExportPackage = {
   name: string | null;
   session_multiplier: number | null;
@@ -51,6 +68,38 @@ type PackageGroup = {
 function toFiniteNumber(value: unknown): number {
   const numericValue = Number(value || 0);
   return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
+function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+  }
+  if (typeof error === 'string') return error;
+  return fallback;
+}
+
+function snapshotToSalaryRecord(
+  ktvId: string,
+  ktvName: string,
+  snapshot?: SalaryExportSnapshot,
+): SalaryExportRecord | null {
+  if (!snapshot || snapshot.ktvId !== ktvId) return null;
+
+  return {
+    ktv_id: ktvId,
+    ktv_name: ktvName,
+    base_salary: snapshot.baseSalary,
+    session_bonus: snapshot.sessionBonus,
+    rating_bonus: snapshot.ratingBonus,
+    kpi_bonus: snapshot.kpiBonus,
+    deductions: snapshot.deductions,
+    advances: snapshot.advances,
+    total_salary: snapshot.totalSalary,
+    total_sessions: snapshot.sessions,
+    status: snapshot.status ?? 'draft',
+  };
 }
 
 export interface SessionMatrixRow {
@@ -73,7 +122,12 @@ export interface TrialBalanceExportRow {
 export type AccountingReportRecord = Record<string, string | number | null | undefined>;
 export type AccountingReportData = TrialBalanceExportRow[] | AccountingReportRecord;
 
-export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthYear?: string) {
+export async function exportSalaryToExcel(
+  ktvId: string,
+  ktvName: string,
+  monthYear?: string,
+  salarySnapshot?: SalaryExportSnapshot,
+) {
   try {
     const supabase = await createClient();
     const currentUser = await getCurrentUser();
@@ -165,7 +219,8 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
     });
 
     const salaryRecord = ((salaryRows || []) as SalaryExportRecord[])
-      .find((row) => row.ktv_id === ktvId) ?? null;
+      .find((row) => row.ktv_id === ktvId)
+      ?? snapshotToSalaryRecord(ktvId, ktvName, salarySnapshot);
 
     if (!salaryRecord) {
       throw new Error(`Salary sheet row not found for KTV ${ktvId} in ${salaryMonthYear}`);
@@ -229,6 +284,20 @@ export async function exportSalaryToExcel(ktvId: string, ktvName: string, monthY
   } catch (error) {
     console.error('Export error:', error);
     throw error;
+  }
+}
+
+export async function exportSalaryToExcelResult(
+  ktvId: string,
+  ktvName: string,
+  monthYear?: string,
+  salarySnapshot?: SalaryExportSnapshot,
+): Promise<SalaryExportResult> {
+  try {
+    const data = await exportSalaryToExcel(ktvId, ktvName, monthYear, salarySnapshot);
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error, 'Lỗi xuất báo cáo Excel') };
   }
 }
 

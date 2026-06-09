@@ -63,9 +63,9 @@ export function HqBranchRegistrationModal({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="bg-white dark:bg-[#1C1B19] rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-[#3E3A35] w-full max-w-3xl max-h-[90vh] overflow-y-auto text-left"
+        className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white text-left shadow-2xl dark:border-[#3E3A35] dark:bg-[#1C1B19]"
       >
-        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 px-8 py-6 text-white flex justify-between items-center sticky top-0 z-10">
+        <div className="flex shrink-0 items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950 px-8 py-6 text-white">
           <div>
             <span className="text-[9px] bg-primary/20 text-rose-300 font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-primary/20">
               HQ TENANT ONBOARDING
@@ -82,7 +82,7 @@ export function HqBranchRegistrationModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-6 [scrollbar-gutter:stable] sm:p-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               type="button"

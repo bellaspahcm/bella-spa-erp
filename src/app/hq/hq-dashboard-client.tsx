@@ -23,7 +23,7 @@ import {
   InterBranchClearingRecord
 } from '@/services/clearing-actions';
 import {
-  getInventoryTransferOrders,
+  getInventoryTransferOrdersResult,
   approveAndShipTransfer,
   cancelTransferOrder,
   InventoryTransferOrder
@@ -257,8 +257,13 @@ export default function HqDashboardClient({
   const loadTransferData = async () => {
     setLoadingTransfers(true);
     try {
-      const data = await getInventoryTransferOrders();
-      setTransferOrders(data);
+      const result = await getInventoryTransferOrdersResult();
+      if (!result.success) {
+        setTransferOrders([]);
+        toast.error('KhÃ´ng thá»ƒ táº£i danh sÃ¡ch chuyá»ƒn kho: ' + result.error);
+        return;
+      }
+      setTransferOrders(result.data);
     } catch (err) {
       toast.error('Không thể tải danh sách chuyển kho: ' + getErrorMessage(err));
     } finally {

@@ -402,6 +402,40 @@ describe("exportSalaryToExcel", () => {
 
     consoleError.mockRestore();
   });
+
+  it("uses the displayed salary snapshot when the central sheet has no KTV row", async () => {
+    const sessionQuery = mockSessionQuery({ data: [], error: null });
+    const packagesQuery = mockPackagesQuery([]);
+    const rpc = mockSalarySheetRpc([{ ktv_id: "ktv-other", total_salary: 1 }]);
+    const from = jest.fn((table: string) => {
+      if (table === "session_logs") return sessionQuery;
+      if (table === "packages") return packagesQuery;
+      throw new Error(`Unexpected table ${table}`);
+    });
+    mockCreateClient.mockResolvedValueOnce({ from, rpc });
+
+    const workbook = workbookFromBase64(
+      await exportSalaryToExcel("ktv-1", "KTV A", "2026-05-01", {
+        ktvId: "ktv-1",
+        baseSalary: 992_308,
+        sessionBonus: 0,
+        ratingBonus: 0,
+        kpiBonus: 0,
+        deductions: 150_000,
+        advances: 0,
+        totalSalary: 842_308,
+        sessions: 0,
+        status: "draft",
+      }),
+    );
+    const rows = rowsFromSheet(workbook, "Bang Luong Chi Tiet");
+
+    expect(rows.some((row) => String(row[4]).includes("842.308"))).toBe(true);
+    expect(rows.find((row) => String(row[0]).startsWith("2."))?.[2]).toBe("0 buổi");
+    expect(rpc).toHaveBeenCalledWith("calculate_ktv_salary_sheet", {
+      p_month_year: "2026-05-01",
+    });
+  });
 });
 
 beforeEach(() => {
