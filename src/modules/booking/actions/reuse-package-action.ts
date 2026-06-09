@@ -2,6 +2,7 @@
 
 import { getLocalDateString } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { validateBookingPackageScope } from './create-booking-helpers';
 import type { createClient } from '@/lib/supabase-server';
 import type { Database } from '@/types/database.types';
 
@@ -22,6 +23,11 @@ export async function reusePackage(bookingId: string) {
 
   if (fetchError || !original) {
     return { error: 'Không tìm thấy gói cũ: ' + fetchError?.message };
+  }
+
+  const packageScopeResult = await validateBookingPackageScope(supabase, original.tenant_id, original.package_id);
+  if ('error' in packageScopeResult) {
+    return { error: packageScopeResult.error };
   }
 
   const bookingData: BookingInsert = {

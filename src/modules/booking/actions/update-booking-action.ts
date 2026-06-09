@@ -2,6 +2,7 @@
 
 import { sanitizeTime } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { validateBookingPackageScope } from './create-booking-helpers';
 import type { Database } from '@/types/database.types';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -34,6 +35,9 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
   if (updatePayload.preferred_time !== undefined) {
     updatePayload.preferred_time = sanitizeTime(updatePayload.preferred_time);
   }
+  if (updatePayload.package_id === '') {
+    updatePayload.package_id = null;
+  }
   
   let oldBooking: BookingRow | null = null;
   try {
@@ -51,6 +55,13 @@ export async function updateBooking(id: string, payload: BookingUpdate) {
     return {
       error: err instanceof Error ? err.message : 'Failed to fetch old booking for audit trail'
     };
+  }
+
+  if (updatePayload.package_id !== undefined) {
+    const packageScopeResult = await validateBookingPackageScope(supabase, tenantId, updatePayload.package_id);
+    if ('error' in packageScopeResult) {
+      return { error: packageScopeResult.error };
+    }
   }
 
   const { data, error } = await supabase

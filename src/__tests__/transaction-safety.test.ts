@@ -130,6 +130,26 @@ class MockQueryBuilder {
         error: null
       });
     }
+    if (this.table === 'packages') {
+      return Promise.resolve({
+        data: {
+          id: 'pkg-1',
+          tenant_id: 'tenant-a',
+          module_key: 'babycare',
+          name: 'Goi VIP'
+        },
+        error: null
+      });
+    }
+    if (this.table === 'tenants') {
+      return Promise.resolve({
+        data: {
+          id: 'tenant-a',
+          enabled_modules: { babycare: true, beauty_spa: false }
+        },
+        error: null
+      });
+    }
     return Promise.resolve({ data: null, error: { message: 'Row not found' } });
   }
 

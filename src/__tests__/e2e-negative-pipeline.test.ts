@@ -18,10 +18,12 @@ interface MockStore {
   users: any[];
   salary_records: any[];
   session_reviews: any[];
+  tenants: any[];
+  packages: any[];
 }
 
 let mockStore: MockStore = {
-  bookings: [], session_logs: [], revenue: [], expenses: [], users: [], salary_records: [], session_reviews: [],
+  bookings: [], session_logs: [], revenue: [], expenses: [], users: [], salary_records: [], session_reviews: [], tenants: [], packages: [],
 };
 
 function resetMockStore() {
@@ -32,6 +34,12 @@ function resetMockStore() {
       { id: 'admin-1', email: 'admin@bellaspa.vn', role: 'admin', tenant_id: 'tenant-a', full_name: 'Admin Bella' },
     ],
     salary_records: [], session_reviews: [],
+    tenants: [
+      { id: 'tenant-a', enabled_modules: { babycare: true, beauty_spa: false } },
+    ],
+    packages: [
+      { id: 'pkg-1', tenant_id: 'tenant-a', module_key: 'babycare', name: 'Goi Triet Long' },
+    ],
   };
 }
 
@@ -144,7 +152,15 @@ jest.mock('@/lib/accounting-outbox', () => ({ enqueueWithAutoClient: jest.fn().m
 jest.mock('@/lib/utils', () => ({ 
   resolvePackageName: jest.fn().mockReturnValue('Gói Dịch Vụ'), 
   getLocalDateString: jest.fn().mockReturnValue('2026-05-26'),
-  sanitizeTime: jest.fn().mockReturnValue('10:00')
+  sanitizeTime: jest.fn().mockReturnValue('10:00'),
+  parsePercentInput: jest.fn((value, options = {}) => {
+    const fallback = options.fallback ?? 0;
+    const min = options.min ?? 0;
+    const max = options.max ?? 100;
+    const numeric = value === null || value === undefined || value === '' ? fallback : Number(value);
+    const normalized = Number.isFinite(numeric) ? numeric : fallback;
+    return Math.min(max, Math.max(min, normalized));
+  })
 }));
 jest.mock('@/modules/booking/actions/commission-actions', () => ({ resolveKtvCommission: jest.fn().mockResolvedValue(100000) }));
 
