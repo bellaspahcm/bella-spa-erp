@@ -126,7 +126,7 @@ export function KtvCheckoutConfirmModal({
                       <div className="font-black text-sm text-slate-800 truncate">{session.bookings?.customers?.name_mother}</div>
                       <div className="text-xs text-rose-500 font-bold mt-0.5 flex items-center gap-1">
                         <Baby className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Bé: {session.bookings?.customers?.name_baby || 'Chưa sinh/Chưa có'}</span>
+                        <span className="truncate">Hồ sơ: {session.bookings?.customers?.name_baby || 'Chưa cập nhật'}</span>
                       </div>
                     </div>
                     <span className="bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 ml-2">
@@ -172,7 +172,7 @@ export function KtvCheckoutConfirmModal({
                     <textarea
                       value={ktvCheckoutNote}
                       onChange={(event) => onKtvCheckoutNoteChange(event.target.value)}
-                      placeholder="Nhập lý do vì sao buổi chăm sóc kết thúc sớm (ví dụ: Bé quấy khóc, Khách yêu cầu dừng sớm...)"
+                      placeholder="Nhập lý do vì sao buổi chăm sóc kết thúc sớm (ví dụ: khách yêu cầu dừng sớm, phát sinh vấn đề trong dịch vụ...)"
                       disabled={isActionLoading !== null}
                       className="w-full border border-rose-200 focus:ring-rose-500 rounded-2xl p-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:border-transparent transition-all min-h-[80px] resize-none"
                     />
@@ -186,7 +186,7 @@ export function KtvCheckoutConfirmModal({
                   <textarea
                     value={checkoutNotes}
                     onChange={(event) => onCheckoutNotesChange(event.target.value)}
-                    placeholder="Nhập tình trạng của bé, sữa bé uống, lưu ý cho buổi sau..."
+                    placeholder="Nhập tình trạng khách hàng, kỹ thuật đã thực hiện và lưu ý cho buổi sau..."
                     disabled={isActionLoading !== null}
                     className="w-full border border-slate-200 rounded-2xl p-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all min-h-[80px] resize-none"
                   />

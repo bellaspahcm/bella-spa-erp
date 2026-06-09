@@ -4,9 +4,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Briefcase, ChevronDown, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import {
+  getTenantSpecialtyOptions,
+  type TenantSpecialtyKey,
+} from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { cn } from '@/lib/utils';
 
-export type KtvSpecialty = 'all' | 'combo' | 'baby' | 'pregnancy' | 'lactation';
+export type KtvSpecialty = TenantSpecialtyKey;
 
 type SpecialtyOption = {
   id: KtvSpecialty;
@@ -17,17 +22,31 @@ type SpecialtyOption = {
 type BookingsSpecialtyFilterProps = {
   value: KtvSpecialty;
   isOpen: boolean;
+  moduleKey: TenantModuleKey;
   onOpenChange: (isOpen: boolean) => void;
   onValueChange: (value: KtvSpecialty) => void;
 };
 
-const specialties: SpecialtyOption[] = [
-  { id: 'all', label: 'Tất cả KTV', icon: <Users className="w-4 h-4" /> },
-  { id: 'combo', label: 'Combo Mẹ Bé', icon: <Briefcase className="w-4 h-4 text-rose-400" /> },
-  { id: 'baby', label: 'Tắm Bé', icon: <Briefcase className="w-4 h-4 text-purple-400" /> },
-  { id: 'pregnancy', label: 'Massage Bầu', icon: <Briefcase className="w-4 h-4 text-indigo-400" /> },
-  { id: 'lactation', label: 'Thông tia sữa/Kích sữa', icon: <Briefcase className="w-4 h-4 text-emerald-400" /> },
-];
+const specialtyIconClass: Record<KtvSpecialty, string> = {
+  all: '',
+  combo: 'text-rose-400',
+  baby: 'text-purple-400',
+  pregnancy: 'text-indigo-400',
+  lactation: 'text-emerald-400',
+  facial: 'text-rose-400',
+  body: 'text-purple-400',
+  laser: 'text-indigo-400',
+  relaxation: 'text-emerald-400',
+};
+
+function buildSpecialties(moduleKey: TenantModuleKey): SpecialtyOption[] {
+  return getTenantSpecialtyOptions(moduleKey).map((specialty) => ({
+    ...specialty,
+    icon: specialty.id === 'all'
+      ? <Users className="w-4 h-4" />
+      : <Briefcase className={cn('w-4 h-4', specialtyIconClass[specialty.id])} />,
+  }));
+}
 
 function scrollTimelineBody(left: number) {
   const body = document.getElementById('timeline-body');
@@ -37,9 +56,11 @@ function scrollTimelineBody(left: number) {
 export function BookingsSpecialtyFilter({
   value,
   isOpen,
+  moduleKey,
   onOpenChange,
   onValueChange,
 }: BookingsSpecialtyFilterProps) {
+  const specialties = buildSpecialties(moduleKey);
   const currentSpec = specialties.find((specialty) => specialty.id === value) || specialties[0];
 
   return (

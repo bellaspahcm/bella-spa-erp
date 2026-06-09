@@ -9,6 +9,12 @@ import { toast } from 'sonner';
 
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { calculateBookingPaymentState, type PaymentRevenueLike } from '@/lib/business-rules/payment';
+import {
+  getCustomerGenderPresentation,
+  getCustomerSecondarySummary,
+  getTenantModulePresentation,
+} from '@/lib/business-rules/tenant-module-presentation';
+import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { cn,getLocalDateString } from '@/lib/utils';
 
 import {
@@ -31,6 +37,7 @@ X
 
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { createCustomer,deleteCustomer,updateCustomer } from '@/services/customer-actions';
+import { getTenantSettings } from '@/services/tenant-actions';
 import type { Database } from '@/types/database.types';
 import {
   isActiveCareBooking,
@@ -79,9 +86,14 @@ export default function CustomersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState(ALL_STATUS_FILTER);
+  const customerLabels = useMemo(
+    () => getTenantModulePresentation(tenantModuleKey),
+    [tenantModuleKey]
+  );
 
   // Edit states
   const [isEditMode, setIsEditMode] = useState(false);
@@ -145,11 +157,26 @@ export default function CustomersPage() {
     }
   }, []);
 
-  useEffect(() => {
-    loadCustomers();
-  }, [loadCustomers]);
+  const loadTenantModuleConfig = useCallback(async () => {
+    try {
+      const tenant = await getTenantSettings();
+      setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
+    } catch (error) {
+      console.error('Error loading tenant module config:', error);
+      toast.error('Không thể tải cấu hình phân hệ');
+      setTenantModuleKey('babycare');
+    }
+  }, []);
 
-  usePageRefresh(loadCustomers);
+  const refreshCustomersPage = useCallback(async () => {
+    await Promise.all([loadCustomers(), loadTenantModuleConfig()]);
+  }, [loadCustomers, loadTenantModuleConfig]);
+
+  useEffect(() => {
+    void refreshCustomersPage();
+  }, [refreshCustomersPage]);
+
+  usePageRefresh(refreshCustomersPage);
 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -267,11 +294,12 @@ export default function CustomersPage() {
     setActiveMenuId(activeMenuId === id ? null : id);
   };
 
+  const depositStatusFilterLabel = tenantModuleKey === 'beauty_spa' ? 'Đã đặt cọc' : 'Chờ sinh';
   const statusOptions = [
     ALL_STATUS_FILTER,
     ACTIVE_CARE_PACKAGE_FILTER,
     'Đang chăm sóc',
-    'Chờ sinh',
+    depositStatusFilterLabel,
     'Tiềm năng',
     'Đã kết thúc',
   ];
@@ -311,14 +339,14 @@ export default function CustomersPage() {
         customer.notes,
         customer.zalo_oa_id,
         customer.package_name,
-        customer.gender_baby === 'boy' ? 'bé trai' : customer.gender_baby === 'girl' ? 'bé gái' : '',
+        getCustomerGenderPresentation(customer.gender_baby, tenantModuleKey).label,
       ].some(f => (f || '').toLowerCase().includes(q));
 
       let matchesStatus = true;
       if (statusFilter !== ALL_STATUS_FILTER) {
         if (statusFilter === ACTIVE_CARE_PACKAGE_FILTER) matchesStatus = customer.is_in_care === true;
         else if (statusFilter === 'Đang chăm sóc') matchesStatus = customer.status === 'active';
-        else if (statusFilter === 'Chờ sinh')  matchesStatus = customer.status === 'deposit';
+        else if (statusFilter === depositStatusFilterLabel)  matchesStatus = customer.status === 'deposit';
         else if (statusFilter === 'Tiềm năng') matchesStatus = customer.status === 'lead';
         else if (statusFilter === 'Đã kết thúc') matchesStatus = customer.status === 'paid';
       }
@@ -348,7 +376,7 @@ export default function CustomersPage() {
     });
 
     return result;
-  }, [customers, searchQuery, statusFilter, monthFilter, yearFilter, sortBy]);
+  }, [customers, searchQuery, statusFilter, monthFilter, yearFilter, sortBy, tenantModuleKey, depositStatusFilterLabel]);
 
   const totalPages = Math.ceil(filteredCustomers.length / pageSize);
   const paginatedCustomers = filteredCustomers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -383,7 +411,7 @@ export default function CustomersPage() {
       <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Khách hàng</h1>
-          <p className="text-slate-500 font-medium mt-1">Quản lý hồ sơ mẹ và bé</p>
+          <p className="text-slate-500 font-medium mt-1">{customerLabels.customerListSubtitle}</p>
         </div>
         <div className="bella-toolbar flex flex-col gap-3 sm:flex-row sm:items-center">
           <PremiumExportButton />
@@ -404,7 +432,7 @@ export default function CustomersPage() {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-rose-500 transition-colors w-5 h-5" />
           <input
             type="text"
-            placeholder="Tìm tên mẹ, tên bé, SĐT, ngày sinh, gói, địa chỉ..."
+            placeholder={customerLabels.customerSearchPlaceholder}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none font-medium text-slate-700 text-sm"
@@ -484,7 +512,7 @@ export default function CustomersPage() {
                 )}
                 {customer.status === 'deposit' && (
                   <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-wider border border-amber-100">
-                    Chờ sinh (Đã cọc)
+                    {customerLabels.depositStatusLabel}
                   </span>
                 )}
 
@@ -497,7 +525,7 @@ export default function CustomersPage() {
                     onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
                   >
                     <Sparkles className="w-3 h-3" />
-                    Đang có gói liệu trình
+                    {customerLabels.activeCareBadge}
                   </motion.div>
                 )}
 
@@ -509,16 +537,22 @@ export default function CustomersPage() {
                 </div>
                 <div className="flex min-w-0 items-center gap-2">
                   <Baby className="w-4 h-4 shrink-0 text-slate-400" />
-                  <span className="break-words">{customer.status === 'deposit' ? `Dự sinh: ${customer.dob_expected}` : `Bé: ${customer.name_baby}`}</span>
+                  <span className="break-words">
+                    {getCustomerSecondarySummary({
+                      moduleKey: tenantModuleKey,
+                      status: customer.status,
+                      secondaryName: customer.name_baby,
+                      expectedDate: customer.dob_expected,
+                    })}
+                  </span>
                   {customer.gender_baby && (
                     <span className={cn(
                       "ml-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase",
-                      customer.gender_baby === 'boy' ? "bg-blue-50 text-blue-500" : 
-                      customer.gender_baby === 'girl' ? "bg-rose-50 text-rose-500" : 
+                      getCustomerGenderPresentation(customer.gender_baby, tenantModuleKey).tone === 'blue' ? "bg-blue-50 text-blue-500" :
+                      getCustomerGenderPresentation(customer.gender_baby, tenantModuleKey).tone === 'rose' ? "bg-rose-50 text-rose-500" :
                       "bg-slate-50 text-slate-500"
                     )}>
-                      {customer.gender_baby === 'boy' ? "Bé Trai" : 
-                       customer.gender_baby === 'girl' ? "Bé Gái" : "N/A"}
+                      {getCustomerGenderPresentation(customer.gender_baby, tenantModuleKey).label}
                     </span>
                   )}
                 </div>
@@ -698,7 +732,7 @@ export default function CustomersPage() {
                     </div>
                     <div className="min-w-0">
                       <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{isEditMode ? 'Cập nhật thông tin' : 'Thêm khách hàng mới'}</h2>
-                      <p className="text-slate-500 font-medium">{isEditMode ? 'Chỉnh sửa hồ sơ mẹ và bé' : 'Nhập thông tin cơ bản của mẹ và bé'}</p>
+                      <p className="text-slate-500 font-medium">{isEditMode ? customerLabels.editDescription : customerLabels.createDescription}</p>
                     </div>
                   </div>
                   <button 
@@ -712,7 +746,7 @@ export default function CustomersPage() {
                 <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
                   <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Họ tên Mẹ</label>
+                      <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.primaryNameLabel}</label>
                       <input 
                         type="text" 
                         name="name_mother"
@@ -720,7 +754,7 @@ export default function CustomersPage() {
                         value={formData.name_mother}
                         onChange={handleInputChange}
                         className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none" 
-                        placeholder="VD: Nguyễn Thu Thủy" 
+                        placeholder={customerLabels.primaryNamePlaceholder}
                       />
                     </div>
                     <div className="space-y-2">
@@ -736,22 +770,22 @@ export default function CustomersPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Họ tên Bé / Tên thân mật</label>
+                      <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryNameLabel}</label>
                       <input 
                         type="text" 
                         name="name_baby"
                         value={formData.name_baby}
                         onChange={handleInputChange}
                         className="w-full px-5 py-3.5 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-rose-500/20 outline-none transition-all" 
-                        placeholder="VD: Gia Bảo" 
+                        placeholder={customerLabels.secondaryNamePlaceholder}
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Ngày sinh Bé / Dự sinh</label>
+                      <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryDateLabel}</label>
                         <input 
                           type="date" 
                           name="dob_expected"
-                          min={today}
+                          min={tenantModuleKey === 'babycare' ? today : undefined}
                           max="9999-12-31"
                           value={formData.dob_expected}
                           onChange={handleInputChange}
@@ -759,13 +793,9 @@ export default function CustomersPage() {
                         />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 ml-1">Giới tính của Bé</label>
+                      <label className="text-sm font-bold text-slate-700 ml-1">{customerLabels.secondaryGenderLabel}</label>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        {[
-                          { id: 'boy', label: 'Bé Trai', color: 'bg-blue-50 text-blue-600 border-blue-100' },
-                          { id: 'girl', label: 'Bé Gái', color: 'bg-rose-50 text-rose-600 border-rose-100' },
-                          { id: 'unknown', label: 'Chưa biết', color: 'bg-slate-50 text-slate-500 border-slate-100' }
-                        ].map(g => (
+                        {customerLabels.genderOptions.map(g => (
                           <button
                             key={g.id}
                             type="button"

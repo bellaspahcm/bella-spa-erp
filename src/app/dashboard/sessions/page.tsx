@@ -444,7 +444,7 @@ function SessionsContent() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm tên mẹ, tên bé, SĐT, tên KTV, tên gói..."
+            placeholder="Tìm tên khách, hồ sơ, SĐT, tên KTV, tên gói..."
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-sm"
           />
         </div>

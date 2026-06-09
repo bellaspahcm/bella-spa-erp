@@ -5,21 +5,24 @@ import type { Database } from '@/types/database.types';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
+type PackageRow = Database['public']['Tables']['packages']['Row'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 
 type SessionLogWithKtv = SessionLogRow & {
   ktv?: { id: string; full_name: string | null } | null;
 };
 
+type PackageRef = Pick<PackageRow, 'name' | 'module_key' | 'service_category'>;
+
 type BookingWithSessionDetails = BookingRow & {
   customers?: Pick<CustomerRow, 'id' | 'name_mother' | 'name_baby' | 'phone' | 'dob_expected'> | null;
   assigned_ktv?: { id: string; full_name: string | null } | null;
-  packages?: { name: string | null } | null;
+  packages?: PackageRef | null;
   session_logs?: SessionLogWithKtv[];
 };
 
 type CalendarBooking = BookingRow & {
-  packages?: { name: string | null } | null;
+  packages?: PackageRef | null;
   customers?: Pick<CustomerRow, 'id' | 'name_mother' | 'name_baby' | 'address'> | null;
   assigned_ktv?: { id: string; full_name: string | null } | null;
 };
@@ -69,7 +72,7 @@ export async function getSessionsWithDetails() {
       preferred_time,
       customers(id, name_mother, name_baby, phone, dob_expected),
       assigned_ktv:users!bookings_assigned_ktv_id_fkey(id, full_name),
-      packages!bookings_package_id_fkey(name),
+      packages!bookings_package_id_fkey(name, module_key, service_category),
       session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, start_time, end_time, status, notes, rating, rating_comment, completed_by_ktv_id, ktv:users!session_logs_completed_by_ktv_id_fkey(id, full_name), duration_warning_type, ktv_checkout_note, standard_duration, actual_duration, time_deviation)
     `)
     .order('created_at', { ascending: false });
@@ -151,7 +154,7 @@ export async function getCalendarSessions() {
       bookings (
         *,
         preferred_time,
-        packages!bookings_package_id_fkey (name),
+        packages!bookings_package_id_fkey (name, module_key, service_category),
         customers (
           id,
           name_mother,

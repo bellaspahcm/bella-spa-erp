@@ -3,6 +3,12 @@
 import { useRef } from 'react';
 import { Clock, Loader2, Plus } from 'lucide-react';
 
+import {
+  formatBookingCustomerLabel,
+  getKtvFallbackSpecialtyByName,
+  getPackageSpecialty,
+} from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { KtvSpecialty } from './BookingsSpecialtyFilter';
 
 export type TimelineSession = {
@@ -29,6 +35,8 @@ export type TimelineSession = {
     } | null;
     packages?: {
       name?: string | null;
+      module_key?: string | null;
+      service_category?: string | null;
     } | null;
     package_name?: string | null;
   } | null;
@@ -46,33 +54,20 @@ type BookingsTimelineGridProps = {
   ktvs: KtvColumn[];
   selectedDate: Date;
   ktvSpecialty: KtvSpecialty;
+  tenantModuleKey: TenantModuleKey;
   isSyncing: boolean;
   isSameDay: (d1: Date | string, d2: Date | string) => boolean;
   onSessionSelect: (session: TimelineSession) => void;
   onEmptySlotClick: (hour: number) => void;
 };
 
-function getSessionCategory(session: TimelineSession): KtvSpecialty {
-  const nameLower = (
-    session.bookings?.packages?.name ||
-    session.bookings?.package_name ||
-    ''
-  ).toLowerCase();
-
-  if (nameLower.includes('combo') || nameLower.includes('home-care') || nameLower.includes('signature')) {
-    return 'combo';
-  }
-  if (nameLower.includes('bé') || nameLower.includes('tắm') || nameLower.includes('hydrotherapy') || nameLower.includes('con yêu')) {
-    return 'baby';
-  }
-  if (nameLower.includes('bầu') || nameLower.includes('thai')) {
-    return 'pregnancy';
-  }
-  if (nameLower.includes('sữa') || nameLower.includes('thông') || nameLower.includes('kích')) {
-    return 'lactation';
-  }
-
-  return 'combo';
+function getSessionCategory(session: TimelineSession, tenantModuleKey: TenantModuleKey): KtvSpecialty {
+  return getPackageSpecialty({
+    tenantModuleKey,
+    packageModuleKey: session.bookings?.packages?.module_key,
+    serviceCategory: session.bookings?.packages?.service_category,
+    packageName: session.bookings?.packages?.name || session.bookings?.package_name,
+  });
 }
 
 function getSessionHourBlock(timeStr?: string | null) {
@@ -87,6 +82,7 @@ export function BookingsTimelineGrid({
   ktvs,
   selectedDate,
   ktvSpecialty,
+  tenantModuleKey,
   isSyncing,
   isSameDay,
   onSessionSelect,
@@ -101,14 +97,10 @@ export function BookingsTimelineGrid({
     });
 
     if (ktvSessions.length > 0) {
-      return getSessionCategory(ktvSessions[0]);
+      return getSessionCategory(ktvSessions[0], tenantModuleKey);
     }
 
-    const name = (ktv.full_name || '').toLowerCase();
-    if (name.includes('hoa') || name.includes('hà') || name.includes('ha')) return 'combo';
-    if (name.includes('tuyết') || name.includes('tuyet') || name.includes('thanh') || name.includes('bella')) return 'baby';
-    if (name.includes('mai')) return 'pregnancy';
-    return 'lactation';
+    return getKtvFallbackSpecialtyByName(ktv.full_name, tenantModuleKey);
   };
 
   const filteredKtvs = ktvs.filter((ktv) => ktvSpecialty === 'all' || getKtvSpecialty(ktv) === ktvSpecialty);
@@ -249,11 +241,18 @@ export function BookingsTimelineGrid({
                                   </span>
                                 </div>
                                 <h4 className="font-extrabold text-slate-800 text-xs truncate">
-                                  Mẹ {session.bookings?.customers?.name_mother || 'Khách hàng'}
+                                  {formatBookingCustomerLabel({
+                                    moduleKey: tenantModuleKey,
+                                    primaryName: session.bookings?.customers?.name_mother,
+                                  })}
                                 </h4>
                                 {session.bookings?.customers?.name_baby && (
                                   <p className="text-[9px] font-bold text-rose-400 truncate">
-                                    Bé: {session.bookings?.customers?.name_baby}
+                                    {formatBookingCustomerLabel({
+                                      moduleKey: tenantModuleKey,
+                                      primaryName: '',
+                                      secondaryName: session.bookings.customers.name_baby,
+                                    }).replace(/^.* - /, '')}
                                   </p>
                                 )}
                                 <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">

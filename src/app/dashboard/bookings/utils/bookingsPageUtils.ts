@@ -1,5 +1,7 @@
 import type { BookingModalData } from '../components/BookingDayDetailModal';
 import type { TimelineSession } from '../components/BookingsTimelineGrid';
+import { formatBookingCustomerLabel } from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 export function getMonthDays(date: Date) {
   const year = date.getFullYear();
@@ -40,12 +42,17 @@ function toLocalDateKey(d: Date | string) {
 export function buildSessionModalData(
   session: TimelineSession,
   overrides: Partial<BookingModalData> = {},
+  tenantModuleKey: TenantModuleKey = 'babycare',
 ): BookingModalData {
   return {
     id: session.id,
     date: new Date(session.assigned_date),
     dateString: session.assigned_date,
-    customer: `Mẹ: ${session.bookings?.customers?.name_mother || 'Khách hàng'}${session.bookings?.customers?.name_baby ? ` - Bé: ${session.bookings?.customers?.name_baby}` : ''}`,
+    customer: formatBookingCustomerLabel({
+      moduleKey: tenantModuleKey,
+      primaryName: session.bookings?.customers?.name_mother,
+      secondaryName: session.bookings?.customers?.name_baby,
+    }),
     package: session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình',
     time: session.assigned_time || '09:00 - 11:00',
     ktv: session.bookings?.assigned_ktv?.full_name || 'Chưa phân công',

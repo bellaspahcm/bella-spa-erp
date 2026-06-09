@@ -105,7 +105,7 @@ export function KtvSessionSections({
                       <div className="text-xl font-black text-white">{customer?.name_mother}</div>
                       <p className="text-xs text-rose-300 font-bold mt-1.5 flex items-center gap-1.5">
                         <Baby className="w-4 h-4 shrink-0 text-rose-300" />
-                        <span>Bé: {customer?.name_baby || 'Chưa sinh/Chưa có'}</span>
+                        <span>Hồ sơ: {customer?.name_baby || 'Chưa cập nhật'}</span>
                       </p>
                     </div>
                     <div className="flex flex-col items-end">
@@ -202,7 +202,7 @@ export function KtvSessionSections({
                       {customer?.name_baby && (
                         <p className="text-[11px] text-rose-500 font-bold mt-0.5 flex items-center gap-1">
                           <Baby className="w-3.5 h-3.5 shrink-0" />
-                          <span>Bé: {customer.name_baby}</span>
+                          <span>Hồ sơ: {customer.name_baby}</span>
                         </p>
                       )}
                     </div>

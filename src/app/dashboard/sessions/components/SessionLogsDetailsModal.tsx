@@ -370,7 +370,7 @@ export function SessionLogsDetailsModal({
             </div>
             <div className="min-w-0">
               <h2 className="text-lg md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-tight break-words">
-                Thẻ liệu trình: Mẹ {activeBooking.customers?.name_mother} {activeBooking.customers?.name_baby ? `& Bé ${activeBooking.customers.name_baby}` : ''}
+                Thẻ liệu trình: Khách {activeBooking.customers?.name_mother} {activeBooking.customers?.name_baby ? `- Hồ sơ ${activeBooking.customers.name_baby}` : ''}
               </h2>
               <p className="mt-2 md:mt-0 text-slate-500 font-bold uppercase text-[9px] md:text-[10px] tracking-[0.16em] md:tracking-[0.2em] flex flex-wrap items-center gap-x-2 gap-y-1 md:gap-3">
                 <span className="text-primary">{activeBooking.package_name}</span>
@@ -489,7 +489,7 @@ export function SessionLogsDetailsModal({
                       <div>
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Nội dung & Tiến độ buổi tập</label>
                         <textarea 
-                          placeholder="Hôm nay mẹ và bé thế nào? Các bước kỹ thuật đã thực hiện, lưu ý cho buổi sau..."
+                          placeholder="Hôm nay khách hàng thế nào? Các bước kỹ thuật đã thực hiện, lưu ý cho buổi sau..."
                           value={currentNote}
                           onChange={(e) => setCurrentNote(e.target.value)}
                           disabled={!selectedSessionLog || (userRole !== 'admin' && !['scheduled', 'in_progress'].includes(selectedSessionLog.status))}
@@ -794,7 +794,7 @@ export function SessionLogsDetailsModal({
 
                 {(activeBooking.completed_sessions || 0) >= (activeBooking.total_sessions || 21) && (
                    <button 
-                    onClick={() => handleReusePackage(activeBooking.id, `Mẹ ${activeBooking.customers?.name_mother || ''}${activeBooking.customers?.name_baby ? ` & Bé ${activeBooking.customers.name_baby}` : ''}` || 'Khách hàng')}
+                    onClick={() => handleReusePackage(activeBooking.id, `Khách ${activeBooking.customers?.name_mother || ''}${activeBooking.customers?.name_baby ? ` - Hồ sơ ${activeBooking.customers.name_baby}` : ''}` || 'Khách hàng')}
                     disabled={isReusingId === activeBooking.id}
                     className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[9px] shadow-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all relative z-10"
                   >

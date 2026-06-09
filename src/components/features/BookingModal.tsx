@@ -8,9 +8,12 @@ import {
   normalizeDiscountPercent,
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
+import { getTenantModulePresentation } from '@/lib/business-rules/tenant-module-presentation';
+import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { cn,formatMoneyInput,formatNumberWithSeparator,getLocalDateString,parseIntegerInput,parseMoneyInput } from '@/lib/utils';
-import { createBooking,getBookingDetailsWithPayment,getDraftBooking } from '@/modules/booking/actions/lifecycle-actions';
+import { createBooking,getBookingDetailsWithPayment,getDraftBooking,getPackages as getScopedPackages } from '@/modules/booking/actions/lifecycle-actions';
+import { getTenantSettings } from '@/services/tenant-actions';
 import type { Database } from '@/types/database.types';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
@@ -61,6 +64,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerRow | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
+  const customerLabels = getTenantModulePresentation(tenantModuleKey);
 
   // VietQR deposit states
   const [showQrModal, setShowQrModal] = useState(false);
@@ -99,17 +104,22 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
   async function fetchPackages() {
     try {
-      const supabase = createBrowserClient();
-      const { data, error } = await supabase
-        .from('packages')
-        .select('*')
-        .eq('status', 'active')
-        .order('name', { ascending: true });
-        
-      if (error) throw error;
+      const data = await getScopedPackages();
       setPackages(data || []);
     } catch (error) {
       console.error('Error fetching packages:', error);
+      toast.error('Không thể tải gói dịch vụ theo phân hệ');
+    }
+  }
+
+  async function fetchTenantModuleConfig() {
+    try {
+      const tenant = await getTenantSettings();
+      setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
+    } catch (error) {
+      console.error('Error fetching tenant module config:', error);
+      toast.error('Không thể tải cấu hình phân hệ');
+      setTenantModuleKey('babycare');
     }
   }
 
@@ -165,6 +175,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       setSearchQuery('');
       setNewCustomer({ name_mother: '', phone: '', address: '' });
       setDiscountPercent('');
+      fetchTenantModuleConfig();
       fetchCustomers();
       fetchKtvs();
       fetchPackages();
@@ -461,7 +472,7 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors w-5 h-5" />
                       <input 
                         type="text" 
-                        placeholder="Tìm theo tên mẹ hoặc số điện thoại..." 
+                        placeholder={`Tìm theo ${customerLabels.primaryNameLabel.toLowerCase()} hoặc số điện thoại...`}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
@@ -517,11 +528,11 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
                   <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <User className="w-4 h-4" /> Tên mẹ
+                        <User className="w-4 h-4" /> {customerLabels.primaryNameLabel}
                       </label>
                       <input 
                         type="text" 
-                        placeholder="Nhập tên mẹ..." 
+                        placeholder={customerLabels.primaryNamePlaceholder}
                         value={newCustomer.name_mother}
                         onChange={(e) => setNewCustomer({...newCustomer, name_mother: e.target.value})}
                         className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:border-primary outline-none font-bold"

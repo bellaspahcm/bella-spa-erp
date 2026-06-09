@@ -524,8 +524,8 @@ export default function DashboardPage() {
                             <div className="flex flex-col mb-2 md:mb-4">
                               <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Khách hàng</span>
                               <h3 className="font-bold text-sm md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
-                                Mẹ: {customerName}
-                                {babyName && <span className="text-rose-400 font-medium ml-1.5 text-xs md:text-base">- Bé: {babyName}</span>}
+                                Khách: {customerName}
+                                {babyName && <span className="text-rose-400 font-medium ml-1.5 text-xs md:text-base">- Hồ sơ: {babyName}</span>}
                               </h3>
                             </div>
                               <div className="mt-1 flex items-center gap-2 md:gap-3">

@@ -79,7 +79,7 @@ export function SessionCard({
 
   const handleReuseClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const customerLabel = `Mẹ ${booking.customers?.name_mother || ''}${booking.customers?.name_baby ? ` & Bé ${booking.customers.name_baby}` : ''}`;
+    const customerLabel = `Khách ${booking.customers?.name_mother || ''}${booking.customers?.name_baby ? ` - Hồ sơ ${booking.customers.name_baby}` : ''}`;
     await onReusePackage(booking.id, customerLabel);
   };
 
@@ -103,7 +103,7 @@ export function SessionCard({
       <div className="flex-1 min-w-0 relative z-10">
         <div className="flex flex-wrap items-center gap-3 mb-2">
           <h3 className="max-w-full break-words text-lg font-black tracking-tight text-slate-900 uppercase sm:text-xl">
-            Mẹ {booking.customers?.name_mother} {booking.customers?.name_baby ? `& Bé ${booking.customers.name_baby}` : ''}
+            Khách {booking.customers?.name_mother} {booking.customers?.name_baby ? `- Hồ sơ ${booking.customers.name_baby}` : ''}
           </h3>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="max-w-full break-words rounded-lg border border-primary/10 bg-rose-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-primary">
@@ -117,7 +117,7 @@ export function SessionCard({
             "px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border",
             isFullyCompleted ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-primary/5 text-primary border-primary/10'
           )}>
-            {isFullyCompleted ? 'Hoàn thành' : 'Đang chăm sóc'}
+            {isFullyCompleted ? 'Hoàn thành' : 'Đang thực hiện'}
           </span>
           {/* Badge cảnh báo chưa phân KTV */}
           {!hasKtv && !isFullyCompleted && (

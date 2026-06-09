@@ -249,7 +249,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess }: TransactionModa
                     { value: '', label: 'Chọn khách hàng...' },
                     ...bookings.map((b) => ({
                       value: b.id,
-                      label: `Mẹ ${b.customers?.name_mother} - ${b.package_name || 'Gói dịch vụ'}`,
+                      label: `Khách ${b.customers?.name_mother || 'Khách hàng'} - ${b.package_name || 'Gói dịch vụ'}`,
                       icon: <User className="w-4 h-4" />
                     }))
                   ]}

@@ -1,0 +1,255 @@
+import {
+  getDefaultTenantModuleKey,
+  type TenantModuleKey,
+} from '@/lib/business-rules/tenant-modules';
+
+export type TenantSpecialtyKey =
+  | 'all'
+  | 'combo'
+  | 'baby'
+  | 'pregnancy'
+  | 'lactation'
+  | 'facial'
+  | 'body'
+  | 'laser'
+  | 'relaxation';
+
+export type GenderTone = 'blue' | 'rose' | 'slate';
+
+type GenderOption = {
+  id: string;
+  label: string;
+  tone: GenderTone;
+};
+
+type CustomerPresentation = {
+  customerListSubtitle: string;
+  customerSearchPlaceholder: string;
+  editDescription: string;
+  createDescription: string;
+  primaryNameLabel: string;
+  primaryNamePlaceholder: string;
+  secondaryNameLabel: string;
+  secondaryNamePlaceholder: string;
+  secondaryDateLabel: string;
+  secondaryGenderLabel: string;
+  secondaryInfoTitle: string;
+  secondaryInfoNameLabel: string;
+  secondaryInfoDateLabel: string;
+  activeCareBadge: string;
+  activeStatusLabel: string;
+  depositStatusLabel: string;
+  leadStatusLabel: string;
+  customerPrefix: string;
+  secondaryPrefix: string;
+  secondaryFallback: string;
+  locationLatitudeLabel: string;
+  locationLongitudeLabel: string;
+  genderOptions: GenderOption[];
+};
+
+type SpecialtyOption = {
+  id: TenantSpecialtyKey;
+  label: string;
+};
+
+const BABYCARE_CUSTOMER_PRESENTATION: CustomerPresentation = {
+  customerListSubtitle: 'Quản lý hồ sơ mẹ và bé',
+  customerSearchPlaceholder: 'Tìm tên mẹ, tên bé, SĐT, ngày sinh, gói, địa chỉ...',
+  editDescription: 'Chỉnh sửa hồ sơ mẹ và bé',
+  createDescription: 'Nhập thông tin cơ bản của mẹ và bé',
+  primaryNameLabel: 'Họ tên mẹ',
+  primaryNamePlaceholder: 'VD: Nguyễn Thu Thủy',
+  secondaryNameLabel: 'Họ tên bé / tên thân mật',
+  secondaryNamePlaceholder: 'VD: Gia Bảo',
+  secondaryDateLabel: 'Ngày sinh bé / dự sinh',
+  secondaryGenderLabel: 'Giới tính của bé',
+  secondaryInfoTitle: 'Thông tin bé',
+  secondaryInfoNameLabel: 'Tên của bé',
+  secondaryInfoDateLabel: 'Ngày sinh / Dự sinh',
+  activeCareBadge: 'Đang có gói liệu trình',
+  activeStatusLabel: 'Đang chăm sóc',
+  depositStatusLabel: 'Chờ sinh (Đã cọc)',
+  leadStatusLabel: 'Khách mới (Lead)',
+  customerPrefix: 'Mẹ',
+  secondaryPrefix: 'Bé',
+  secondaryFallback: 'Chưa có',
+  locationLatitudeLabel: 'Vĩ độ nhà khách (Latitude)',
+  locationLongitudeLabel: 'Kinh độ nhà khách (Longitude)',
+  genderOptions: [
+    { id: 'boy', label: 'Bé trai', tone: 'blue' },
+    { id: 'girl', label: 'Bé gái', tone: 'rose' },
+    { id: 'unknown', label: 'Chưa biết', tone: 'slate' },
+  ],
+};
+
+const BEAUTY_SPA_CUSTOMER_PRESENTATION: CustomerPresentation = {
+  customerListSubtitle: 'Quản lý hồ sơ khách hàng Beauty Spa',
+  customerSearchPlaceholder: 'Tìm tên khách, SĐT, ngày sinh, liệu trình, địa chỉ...',
+  editDescription: 'Chỉnh sửa hồ sơ khách hàng Beauty Spa',
+  createDescription: 'Nhập thông tin cơ bản của khách hàng Beauty Spa',
+  primaryNameLabel: 'Họ tên khách hàng',
+  primaryNamePlaceholder: 'VD: Nguyễn Linh Chi',
+  secondaryNameLabel: 'Nhóm khách / ghi chú hồ sơ',
+  secondaryNamePlaceholder: 'VD: Khách facial VIP',
+  secondaryDateLabel: 'Ngày sinh khách hàng',
+  secondaryGenderLabel: 'Giới tính khách hàng',
+  secondaryInfoTitle: 'Thông tin khách hàng',
+  secondaryInfoNameLabel: 'Nhóm / ghi chú hồ sơ',
+  secondaryInfoDateLabel: 'Ngày sinh',
+  activeCareBadge: 'Đang có liệu trình/dịch vụ',
+  activeStatusLabel: 'Đang sử dụng dịch vụ',
+  depositStatusLabel: 'Đã đặt cọc',
+  leadStatusLabel: 'Khách tiềm năng',
+  customerPrefix: 'Khách',
+  secondaryPrefix: 'Hồ sơ',
+  secondaryFallback: 'Chưa phân nhóm',
+  locationLatitudeLabel: 'Vĩ độ địa chỉ khách (Latitude)',
+  locationLongitudeLabel: 'Kinh độ địa chỉ khách (Longitude)',
+  genderOptions: [
+    { id: 'boy', label: 'Nam', tone: 'blue' },
+    { id: 'girl', label: 'Nữ', tone: 'rose' },
+    { id: 'unknown', label: 'Khác / chưa rõ', tone: 'slate' },
+  ],
+};
+
+const BABYCARE_SPECIALTIES: SpecialtyOption[] = [
+  { id: 'all', label: 'Tất cả KTV' },
+  { id: 'combo', label: 'Combo mẹ & bé' },
+  { id: 'baby', label: 'Tắm bé' },
+  { id: 'pregnancy', label: 'Massage bầu' },
+  { id: 'lactation', label: 'Thông tia sữa/Kích sữa' },
+];
+
+const BEAUTY_SPA_SPECIALTIES: SpecialtyOption[] = [
+  { id: 'all', label: 'Tất cả KTV' },
+  { id: 'facial', label: 'Facial / chăm sóc da' },
+  { id: 'body', label: 'Body / spa trị liệu' },
+  { id: 'laser', label: 'Công nghệ cao' },
+  { id: 'relaxation', label: 'Thư giãn / dưỡng sinh' },
+];
+
+export function getTenantModulePresentation(moduleKey: TenantModuleKey): CustomerPresentation {
+  return moduleKey === 'beauty_spa'
+    ? BEAUTY_SPA_CUSTOMER_PRESENTATION
+    : BABYCARE_CUSTOMER_PRESENTATION;
+}
+
+export function getTenantPresentationFromModules(enabledModules: unknown): CustomerPresentation {
+  return getTenantModulePresentation(getDefaultTenantModuleKey(enabledModules));
+}
+
+export function getTenantSpecialtyOptions(moduleKey: TenantModuleKey): SpecialtyOption[] {
+  return moduleKey === 'beauty_spa' ? BEAUTY_SPA_SPECIALTIES : BABYCARE_SPECIALTIES;
+}
+
+function normalizeText(value: unknown) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+export function getCustomerGenderPresentation(
+  gender: unknown,
+  moduleKey: TenantModuleKey,
+): GenderOption {
+  const labels = getTenantModulePresentation(moduleKey);
+  const normalized = normalizeText(gender);
+
+  if (['boy', 'male', 'nam', 'bé trai', 'be trai'].includes(normalized)) {
+    return labels.genderOptions[0];
+  }
+
+  if (['girl', 'female', 'nữ', 'nu', 'bé gái', 'be gai'].includes(normalized)) {
+    return labels.genderOptions[1];
+  }
+
+  return labels.genderOptions[2];
+}
+
+export function formatBookingCustomerLabel(input: {
+  moduleKey: TenantModuleKey;
+  primaryName?: string | null;
+  secondaryName?: string | null;
+}) {
+  const labels = getTenantModulePresentation(input.moduleKey);
+  const primaryName = input.primaryName || 'Khách hàng';
+  const secondaryName = input.secondaryName || '';
+  return `${labels.customerPrefix}: ${primaryName}${secondaryName ? ` - ${labels.secondaryPrefix}: ${secondaryName}` : ''}`;
+}
+
+export function getCustomerSecondarySummary(input: {
+  moduleKey: TenantModuleKey;
+  status?: string | null;
+  secondaryName?: string | null;
+  expectedDate?: string | null;
+}) {
+  const labels = getTenantModulePresentation(input.moduleKey);
+
+  if (input.moduleKey === 'babycare' && input.status === 'deposit') {
+    return `Dự sinh: ${input.expectedDate || 'Chưa cập nhật'}`;
+  }
+
+  return `${labels.secondaryPrefix}: ${input.secondaryName || labels.secondaryFallback}`;
+}
+
+export function getPackageSpecialty(input: {
+  tenantModuleKey: TenantModuleKey;
+  packageModuleKey?: string | null;
+  serviceCategory?: string | null;
+  packageName?: string | null;
+}): TenantSpecialtyKey {
+  const moduleKey = input.packageModuleKey === 'beauty_spa' ? 'beauty_spa' : input.tenantModuleKey;
+  const category = normalizeText(input.serviceCategory);
+  const name = normalizeText(input.packageName);
+
+  if (moduleKey === 'beauty_spa') {
+    if (category.includes('facial') || name.includes('facial') || name.includes('da mặt')) return 'facial';
+    if (
+      category.includes('laser') ||
+      category.includes('technology') ||
+      name.includes('laser') ||
+      name.includes('triệt') ||
+      name.includes('diode') ||
+      name.includes('công nghệ')
+    ) return 'laser';
+    if (
+      category.includes('body') ||
+      name.includes('body') ||
+      name.includes('massage') ||
+      name.includes('giảm béo')
+    ) return 'body';
+    if (
+      category.includes('relax') ||
+      category.includes('relaxation') ||
+      name.includes('gội') ||
+      name.includes('dưỡng sinh') ||
+      name.includes('thư giãn')
+    ) return 'relaxation';
+    return 'facial';
+  }
+
+  if (name.includes('combo') || name.includes('home-care') || name.includes('signature')) return 'combo';
+  if (name.includes('bé') || name.includes('tắm') || name.includes('hydrotherapy') || name.includes('con yêu')) return 'baby';
+  if (name.includes('bầu') || name.includes('thai')) return 'pregnancy';
+  if (name.includes('sữa') || name.includes('thông') || name.includes('kích')) return 'lactation';
+  return 'combo';
+}
+
+export function getKtvFallbackSpecialtyByName(
+  fullName: string | null | undefined,
+  moduleKey: TenantModuleKey,
+): TenantSpecialtyKey {
+  const name = normalizeText(fullName);
+
+  if (moduleKey === 'beauty_spa') {
+    if (name.includes('facial') || name.includes('da')) return 'facial';
+    if (name.includes('body') || name.includes('massage')) return 'body';
+    if (name.includes('laser') || name.includes('triệt')) return 'laser';
+    if (name.includes('gội') || name.includes('dưỡng') || name.includes('relax')) return 'relaxation';
+    return 'facial';
+  }
+
+  if (name.includes('hoa') || name.includes('hà') || name.includes('ha')) return 'combo';
+  if (name.includes('tuyết') || name.includes('tuyet') || name.includes('thanh') || name.includes('bella')) return 'baby';
+  if (name.includes('mai')) return 'pregnancy';
+  return 'lactation';
+}

@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Phone, MapPin, Loader2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { createCustomer } from '@/services/customer-actions';
+import { getTenantSettings } from '@/services/tenant-actions';
+import { getTenantModulePresentation } from '@/lib/business-rules/tenant-module-presentation';
+import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/types/database.types';
 
@@ -18,12 +21,31 @@ interface QuickAddCustomerModalProps {
 
 export function QuickAddCustomerModal({ isOpen, onClose, onSuccess }: QuickAddCustomerModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
+  const customerLabels = getTenantModulePresentation(tenantModuleKey);
   const [formData, setFormData] = useState({
     name_mother: '',
     phone: '',
     address: '',
     notes: ''
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const loadTenantModule = async () => {
+      try {
+        const tenant = await getTenantSettings();
+        setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
+      } catch (error) {
+        console.error('Error loading tenant module config:', error);
+        toast.error('Không thể tải cấu hình phân hệ');
+        setTenantModuleKey('babycare');
+      }
+    };
+
+    void loadTenantModule();
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,12 +121,12 @@ export function QuickAddCustomerModal({ isOpen, onClose, onSuccess }: QuickAddCu
             <div className="p-8 space-y-5">
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <User className="w-4 h-4" /> Tên mẹ
+                  <User className="w-4 h-4" /> {customerLabels.primaryNameLabel}
                 </label>
                 <input 
                   type="text" 
                   required
-                  placeholder="Nhập tên mẹ..." 
+                  placeholder={customerLabels.primaryNamePlaceholder}
                   value={formData.name_mother}
                   onChange={(e) => setFormData({...formData, name_mother: e.target.value})}
                   className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold"
