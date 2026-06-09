@@ -59,6 +59,10 @@ function getErrorMessage(error: unknown) {
   return 'Lỗi không xác định';
 }
 
+function getSalaryActionKey(action: 'approve' | 'publish' | 'confirm' | 'finalize', ktvId: string) {
+  return `${action}:${ktvId}`;
+}
+
 export default function SalaryPage() {
   const [ktvSalaries, setKtvSalaries] = useState<KtvSalaryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +73,7 @@ export default function SalaryPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [matrixData, setMatrixData] = useState<KtvSessionMatrix | null>(null);
   const [isExportingMatrix, setIsExportingMatrix] = useState(false);
+  const [activeSalaryAction, setActiveSalaryAction] = useState<string | null>(null);
   const [attendanceData, setAttendanceData] = useState<KtvAttendanceSummary[]>([]);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [hasLoadedAttendance, setHasLoadedAttendance] = useState(false);
@@ -221,12 +226,18 @@ export default function SalaryPage() {
       message: `Bạn có chắc chắn muốn phê duyệt bảng lương tháng này cho kỹ thuật viên ${name}? Bảng lương sau khi duyệt sẽ chuyển sang trạng thái đã phê duyệt.`,
       confirmText: 'Phê duyệt',
       onConfirm: async () => {
-        const result = await approveSalary(id);
-        if (result.success) {
-          toast.success('Đã phê duyệt lương thành công');
-          setKtvSalaries(prev => prev.map(s => s.id === id ? { ...s, status: 'approved' } : s));
-        } else {
-          toast.error(result.error || 'Lỗi khi phê duyệt lương');
+        const actionKey = getSalaryActionKey('approve', id);
+        setActiveSalaryAction(actionKey);
+        try {
+          const result = await approveSalary(id);
+          if (result.success) {
+            toast.success('Đã phê duyệt lương thành công');
+            setKtvSalaries(prev => prev.map(s => s.id === id ? { ...s, status: 'approved' } : s));
+          } else {
+            toast.error(result.error || 'Lỗi khi phê duyệt lương');
+          }
+        } finally {
+          setActiveSalaryAction(null);
         }
       }
     });
@@ -328,14 +339,24 @@ export default function SalaryPage() {
   };
 
   const handlePublishOne = async (ktvId: string, ktvName: string) => {
-    const res = await publishSalaryRecord(ktvId);
-    if (res.success) {
-      toast.success(`Đã gửi đối soát cho ${ktvName}`);
-      const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
-      setKtvSalaries(salary || []);
-      setMatrixData(matrix || null);
-    } else {
-      toast.error('Lỗi: ' + res.error);
+    const actionKey = getSalaryActionKey('publish', ktvId);
+    if (activeSalaryAction) return;
+
+    setActiveSalaryAction(actionKey);
+    try {
+      const res = await publishSalaryRecord(ktvId);
+      if (res.success) {
+        toast.success(`Đã gửi đối soát cho ${ktvName}`);
+        const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
+        setKtvSalaries(salary || []);
+        setMatrixData(matrix || null);
+      } else {
+        toast.error('Lỗi: ' + res.error);
+      }
+    } catch (error) {
+      toast.error('Lỗi: ' + getErrorMessage(error));
+    } finally {
+      setActiveSalaryAction(null);
     }
   };
 
@@ -345,14 +366,20 @@ export default function SalaryPage() {
       message: `Bạn có chắc chắn muốn thay mặt Kỹ thuật viên ${ktvName} để xác nhận bảng đối soát này không?`,
       confirmText: 'Xác nhận thay',
       onConfirm: async () => {
-        const res = await adminConfirmOnBehalf(ktvId);
-        if (res.success) {
-          toast.success(`Đã xác nhận thay cho ${ktvName}`);
-          const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
-          setKtvSalaries(salary || []);
-          setMatrixData(matrix || null);
-        } else {
-          toast.error('Lỗi: ' + res.error);
+        const actionKey = getSalaryActionKey('confirm', ktvId);
+        setActiveSalaryAction(actionKey);
+        try {
+          const res = await adminConfirmOnBehalf(ktvId);
+          if (res.success) {
+            toast.success(`Đã xác nhận thay cho ${ktvName}`);
+            const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
+            setKtvSalaries(salary || []);
+            setMatrixData(matrix || null);
+          } else {
+            toast.error('Lỗi: ' + res.error);
+          }
+        } finally {
+          setActiveSalaryAction(null);
         }
       }
     });
@@ -364,13 +391,19 @@ export default function SalaryPage() {
       message: `Bạn có chắc chắn muốn khóa và chốt sổ bảng lương của kỹ thuật viên ${ktvName}? Sau khi chốt sổ, các thông tin này sẽ không thể sửa đổi.`,
       confirmText: 'Chốt sổ',
       onConfirm: async () => {
-        const res = await finalizeSalaryRecord(ktvId);
-        if (res.success) {
-          toast.success(`Đã chốt sổ lương cho ${ktvName}`);
-          const data = await getSalaryData();
-          setKtvSalaries(data || []);
-        } else {
-          toast.error(res.error || 'Lỗi khi chốt sổ');
+        const actionKey = getSalaryActionKey('finalize', ktvId);
+        setActiveSalaryAction(actionKey);
+        try {
+          const res = await finalizeSalaryRecord(ktvId);
+          if (res.success) {
+            toast.success(`Đã chốt sổ lương cho ${ktvName}`);
+            const data = await getSalaryData();
+            setKtvSalaries(data || []);
+          } else {
+            toast.error(res.error || 'Lỗi khi chốt sổ');
+          }
+        } finally {
+          setActiveSalaryAction(null);
         }
       }
     });
@@ -564,6 +597,7 @@ export default function SalaryPage() {
             <SalaryTable
               filteredSalaries={filteredSalaries}
               currentUser={currentUser}
+              activeSalaryAction={activeSalaryAction}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               openEditModal={openEditModal}
@@ -598,6 +632,7 @@ export default function SalaryPage() {
               searchQuery={searchQuery}
               ktvSalaries={ktvSalaries}
               isExportingMatrix={isExportingMatrix}
+              activeSalaryAction={activeSalaryAction}
               handleExportMatrix={handleExportMatrix}
               handleFinalizeOne={handleFinalizeOne}
               handleConfirmOnBehalf={handleConfirmOnBehalf}

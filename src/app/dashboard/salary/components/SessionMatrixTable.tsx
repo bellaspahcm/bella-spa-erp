@@ -10,6 +10,7 @@ interface SessionMatrixTableProps {
   searchQuery: string;
   ktvSalaries: KtvSalaryRecord[];
   isExportingMatrix: boolean;
+  activeSalaryAction: string | null;
   handleExportMatrix: () => Promise<void>;
   handleFinalizeOne: (id: string, name: string) => void;
   handleConfirmOnBehalf: (id: string, name: string) => void;
@@ -26,6 +27,7 @@ export default function SessionMatrixTable({
   searchQuery,
   ktvSalaries,
   isExportingMatrix,
+  activeSalaryAction,
   handleExportMatrix,
   handleFinalizeOne,
   handleConfirmOnBehalf,
@@ -173,15 +175,19 @@ export default function SessionMatrixTable({
                     {(() => {
                       const salaryRow = ktvSalaries.find((s) => s.id === ktv.id);
                       const st = salaryRow?.status;
+                      const isActionBlocked = activeSalaryAction !== null;
+                      const actionButtonClassName =
+                        'flex items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 disabled:pointer-events-none';
                       if (st === 'finalized' || st === 'approved') return <span className="text-slate-300 text-[10px]">Hoàn tất</span>;
                       if (st === 'confirmed') {
                         return (
                           <button
                             onClick={() => handleFinalizeOne(ktv.id, ktv.name)}
-                            className="flex items-center gap-1 px-3 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                            disabled={isActionBlocked}
+                            className={`${actionButtonClassName} bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white`}
                           >
                             <Lock className="w-3 h-3" />
-                            Chốt sổ
+                            {activeSalaryAction === `finalize:${ktv.id}` ? 'Đang xử lý' : 'Chốt sổ'}
                           </button>
                         );
                       }
@@ -189,10 +195,11 @@ export default function SessionMatrixTable({
                         return (
                           <button
                             onClick={() => handleConfirmOnBehalf(ktv.id, ktv.name)}
-                            className="flex items-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                            disabled={isActionBlocked}
+                            className={`${actionButtonClassName} bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white`}
                           >
                             <UserCheck className="w-3 h-3" />
-                            Xác nhận thay
+                            {activeSalaryAction === `confirm:${ktv.id}` ? 'Đang xử lý' : 'Xác nhận thay'}
                           </button>
                         );
                       }
@@ -200,20 +207,22 @@ export default function SessionMatrixTable({
                         return (
                           <button
                             onClick={() => handlePublishOne(ktv.id, ktv.name)}
-                            className="flex items-center gap-1 px-3 py-2 bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                            disabled={isActionBlocked}
+                            className={`${actionButtonClassName} bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white`}
                           >
                             <Send className="w-3 h-3" />
-                            Gửi lại
+                            {activeSalaryAction === `publish:${ktv.id}` ? 'Đang xử lý' : 'Gửi lại'}
                           </button>
                         );
                       }
                       return (
                         <button
                           onClick={() => handlePublishOne(ktv.id, ktv.name)}
-                          className="flex items-center gap-1 px-3 py-2 bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                          disabled={isActionBlocked}
+                          className={`${actionButtonClassName} bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white`}
                         >
                           <Send className="w-3 h-3" />
-                          Gửi đối soát
+                          {activeSalaryAction === `publish:${ktv.id}` ? 'Đang xử lý' : 'Gửi đối soát'}
                         </button>
                       );
                     })()}

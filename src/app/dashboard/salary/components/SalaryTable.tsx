@@ -17,6 +17,7 @@ interface SalaryTableProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   currentUser: CurrentUser | null;
+  activeSalaryAction: string | null;
   openEditModal: (s: KtvSalaryRecord) => void;
   handleApprove: (id: string, name: string) => void;
   handleExport: (s: KtvSalaryRecord) => void;
@@ -27,6 +28,7 @@ export default function SalaryTable({
   searchQuery,
   setSearchQuery,
   currentUser,
+  activeSalaryAction,
   openEditModal,
   handleApprove,
   handleExport,
@@ -77,8 +79,12 @@ export default function SalaryTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {filteredSalaries.map((s, index) => (
-              <motion.tr 
+            {filteredSalaries.map((s, index) => {
+              const isApproving = activeSalaryAction === `approve:${s.id}`;
+              const isActionBlocked = activeSalaryAction !== null;
+
+              return (
+              <motion.tr
                 key={s.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -166,8 +172,9 @@ export default function SalaryTable({
                       </button>
                       <button 
                         onClick={() => handleApprove(s.id, s.name)}
-                        className="p-3 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all shadow-sm"
-                        title="Phê duyệt"
+                        disabled={isActionBlocked}
+                        className="p-3 bg-primary/10 text-primary hover:bg-primary hover:text-white rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+                        title={isApproving ? 'Đang phê duyệt' : 'Phê duyệt'}
                       >
                         <CheckCircle2 className="w-5 h-5" />
                       </button>
@@ -191,7 +198,8 @@ export default function SalaryTable({
                   )}
                 </td>
               </motion.tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
