@@ -135,6 +135,7 @@ export interface HqTenantRecord {
   subscription_expires_at?: string | null;
   parent_tenant_id?: string | null;
   franchise_agreement_date?: string | null;
+  enabled_modules?: TenantEnabledModules | Json | null;
 }
 
 export interface HqAuditLogRecord {

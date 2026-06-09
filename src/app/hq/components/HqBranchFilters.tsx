@@ -4,23 +4,28 @@ import { Search } from 'lucide-react';
 
 type BranchTypeFilter = 'all' | 'direct' | 'franchise';
 type BranchStatusFilter = 'all' | 'active' | 'suspended';
+type BranchModuleFilter = 'all' | 'babycare' | 'beauty_spa';
 
 interface HqBranchFiltersProps {
   searchTerm: string;
   typeFilter: BranchTypeFilter;
   statusFilter: BranchStatusFilter;
+  moduleFilter: BranchModuleFilter;
   onSearchTermChange: (value: string) => void;
   onTypeFilterChange: (value: BranchTypeFilter) => void;
   onStatusFilterChange: (value: BranchStatusFilter) => void;
+  onModuleFilterChange: (value: BranchModuleFilter) => void;
 }
 
 export function HqBranchFilters({
   searchTerm,
   typeFilter,
   statusFilter,
+  moduleFilter,
   onSearchTermChange,
   onTypeFilterChange,
   onStatusFilterChange,
+  onModuleFilterChange,
 }: HqBranchFiltersProps) {
   return (
     <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-6 flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-4 text-left">
@@ -37,7 +42,7 @@ export function HqBranchFilters({
         />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center w-full xl:w-auto">
+      <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center w-full xl:w-auto">
         <div className="flex flex-col gap-1 flex-1 sm:flex-initial">
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Phân loại mô hình</span>
           <div className="flex bg-slate-50 border border-slate-200/50 rounded-xl p-1 shrink-0">
@@ -52,6 +57,29 @@ export function HqBranchFilters({
                 className={`px-4 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
                   typeFilter === btn.value
                     ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1 flex-1 sm:flex-initial">
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Ngành kinh doanh</span>
+          <div className="flex bg-slate-50 border border-slate-200/50 rounded-xl p-1 shrink-0">
+            {([
+              { label: 'Tất cả', value: 'all' },
+              { label: 'Mẹ & Bé', value: 'babycare' },
+              { label: 'Beauty', value: 'beauty_spa' },
+            ] as const).map((btn) => (
+              <button
+                key={btn.value}
+                onClick={() => onModuleFilterChange(btn.value)}
+                className={`px-4 py-1.5 rounded-lg font-black text-[10px] uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
+                  moduleFilter === btn.value
+                    ? 'bg-fuchsia-700 text-white shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -88,4 +116,4 @@ export function HqBranchFilters({
   );
 }
 
-export type { BranchStatusFilter, BranchTypeFilter };
+export type { BranchModuleFilter, BranchStatusFilter, BranchTypeFilter };

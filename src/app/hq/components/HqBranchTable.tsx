@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import { Lock, MapPin, Phone, Plus, RefreshCw, Unlock } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { getDefaultTenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { HqTenantRecord } from '@/types/domain';
 
 interface HqBranchTableProps {
@@ -12,6 +13,21 @@ interface HqBranchTableProps {
   onOpenBranchRegistration: () => void;
   getTierBadge: (tier?: string | null) => ReactNode;
   getExpirationInfo: (expiryStr?: string | null, tier?: string | null) => ReactNode;
+}
+
+function getTenantBusinessModuleBadge(tenant: HqTenantRecord) {
+  const moduleKey = getDefaultTenantModuleKey(tenant.enabled_modules);
+  if (moduleKey === 'beauty_spa') {
+    return {
+      label: 'Beauty Spa',
+      className: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100',
+    };
+  }
+
+  return {
+    label: 'Mother & Baby',
+    className: 'bg-sky-50 text-sky-700 border-sky-100',
+  };
 }
 
 export function HqBranchTable({
@@ -67,6 +83,7 @@ export function HqBranchTable({
                       {tenants.map((t) => {
                         const isHeadquarter = t.name === 'Bella Spa Headquarter';
                         const isFranchise = t.franchise_agreement_date !== null || t.royalty_type !== null;
+                        const businessModuleBadge = getTenantBusinessModuleBadge(t);
                         return (
                           <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                             {/* Spa Name & Logo Initial */}
@@ -109,6 +126,9 @@ export function HqBranchTable({
                                     Trực thuộc
                                   </span>
                                 )}
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border select-none ${businessModuleBadge.className}`}>
+                                  {businessModuleBadge.label}
+                                </span>
                                 <div className="mt-1 flex flex-col items-start gap-0.5">
                                   {getTierBadge(t.subscription_tier)}
                                   {getExpirationInfo(t.subscription_expires_at, t.subscription_tier)}
