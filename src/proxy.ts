@@ -121,13 +121,6 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-// Next.js still recognizes the `middleware` export name as a deprecated alias.
-export async function middleware(request: NextRequest) {
-  return proxy(request);
-}
-
-export default proxy;
-
 export const config = {
   // Chỉ chạy trên các route được bảo vệ
   // Loại trừ trang Portal (/portal/[token]) của khách hàng vì truy cập qua magic links token.
