@@ -1,13 +1,13 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
-import { type SupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { getCurrentUser } from './user-actions';
 import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import type { Database } from '@/types/database.types';
+import { processSessionCompletion } from '@/modules/booking/actions/session-completion-engine';
 
-type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
+type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 
 interface SessionLogWithBooking {
   id: string;
@@ -85,24 +85,6 @@ interface ProcessedSession extends Omit<SessionLogWithInnerBooking, 'bookings'> 
   bookings: (Omit<InnerBooking, 'packages'> & { package_name: string }) | null;
 }
 
-type InventoryConsumeResult = {
-  success?: boolean;
-  bypassed?: boolean;
-  processed?: number;
-  totalCost?: number;
-  error?: string;
-};
-
-type InventoryRollbackResult = {
-  success: boolean;
-  error?: string;
-};
-
-type BookingRollbackSnapshot = {
-  bookingId: string;
-  payload: BookingUpdate;
-};
-
 function getErrorMessage(error: unknown, fallback = 'Loi he thong') {
   if (error instanceof Error) return error.message;
   if (typeof error === 'object' && error && 'message' in error) {
@@ -110,11 +92,6 @@ function getErrorMessage(error: unknown, fallback = 'Loi he thong') {
     if (typeof message === 'string') return message;
   }
   return fallback;
-}
-
-function hasInventoryConsumptionSideEffects(result: InventoryConsumeResult) {
-  if (result.bypassed) return false;
-  return Number(result.processed || 0) > 0 || Number(result.totalCost || 0) > 0;
 }
 
 interface SessionLogCommission {
@@ -524,11 +501,14 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   const { data: session, error: sessionFetchError } = await supabase
     .from('session_logs')
     .select(`
-      booking_id, 
+      booking_id,
+      session_number,
+      tenant_id,
       start_time,
       status,
       end_time,
       completed_date,
+      completed_by_ktv_id,
       notes,
       standard_duration,
       actual_duration,
@@ -539,6 +519,7 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
       checkout_lon,
       bookings (
         package_id,
+        status,
         packages (
           duration
         )
@@ -549,8 +530,13 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
 
   if (sessionFetchError) return { success: false, error: sessionFetchError.message };
   if (!session) return { success: false, error: 'Session not found' };
+  if (!session.booking_id) return { success: false, error: 'Session is missing booking reference' };
+  if (session.status === 'completed') return { success: false, error: 'Session already completed' };
 
   const bookingsData = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
+  if (bookingsData?.status === 'cancelled') {
+    return { success: false, error: 'Khong the hoan thanh buoi cham soc cho booking da huy.' };
+  }
 
   // Tính toán thời lượng quy định và thực tế
   let standardDuration = 60; // Mặc định là 60 phút
@@ -585,15 +571,18 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
   }
 
   // 2. Cập nhật session log
-  const sessionUpdatePayload = {
+  const completedDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(endTime);
+
+  const sessionUpdatePayload: SessionLogUpdate = {
     status: 'completed',
     end_time: endTime.toISOString(),
-    completed_date: new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Ho_Chi_Minh',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(endTime),
+    completed_date: completedDate,
+    completed_by_ktv_id: user.id,
     notes: notes,
     standard_duration: standardDuration,
     actual_duration: actualDuration,
@@ -602,52 +591,36 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
     ktv_checkout_note: ktvCheckoutNote
   };
 
-  const untypedSupabase = supabase as unknown as SupabaseClient;
-  const { error: sessionError } = await untypedSupabase
+  const { error: sessionError } = await supabase
     .from('session_logs')
     .update(sessionUpdatePayload)
     .eq('id', sessionId);
 
-  if (sessionError) return { success: false, error: 'Failed to complete session' };
+  if (sessionError) return { success: false, error: 'Failed to complete session: ' + sessionError.message };
 
   const checkoutWarnings: string[] = [];
-  let shouldRollbackInventoryConsumption = false;
-  let rollbackInventoryConsumptionForSession:
-    | ((targetSessionId: string) => Promise<InventoryRollbackResult>)
-    | null = null;
-  let bookingRollbackSnapshot: BookingRollbackSnapshot | null = null;
+  const tenantId = user.tenant_id || session.tenant_id;
+  const completionResult = await processSessionCompletion(
+    supabase,
+    sessionId,
+    session.booking_id,
+    tenantId,
+    user.id,
+    completedDate,
+    bookingsData?.package_id,
+    session,
+    user
+  );
 
-  const rollbackCompletedSession = async (reason: string) => {
+  if (completionResult.error) {
     const rollbackFailures: string[] = [];
-
-    if (shouldRollbackInventoryConsumption && rollbackInventoryConsumptionForSession) {
-      try {
-        const inventoryRollback = await rollbackInventoryConsumptionForSession(sessionId);
-        if (!inventoryRollback.success) {
-          rollbackFailures.push(`failed to roll back inventory consumption: ${inventoryRollback.error || 'unknown error'}`);
-        }
-      } catch (rollbackErr: unknown) {
-        rollbackFailures.push(`failed to roll back inventory consumption: ${getErrorMessage(rollbackErr)}`);
-      }
-    }
-
-    if (bookingRollbackSnapshot) {
-      const { error: bookingRollbackError } = await supabase
-        .from('bookings')
-        .update(bookingRollbackSnapshot.payload)
-        .eq('id', bookingRollbackSnapshot.bookingId);
-
-      if (bookingRollbackError) {
-        rollbackFailures.push(`failed to roll back booking: ${bookingRollbackError.message}`);
-      }
-    }
-
-    const { error: rollbackError } = await untypedSupabase
+    const { error: rollbackError } = await supabase
       .from('session_logs')
       .update({
         status: session.status,
         end_time: session.end_time,
         completed_date: session.completed_date,
+        completed_by_ktv_id: session.completed_by_ktv_id,
         notes: session.notes,
         standard_duration: session.standard_duration,
         actual_duration: session.actual_duration,
@@ -663,100 +636,30 @@ export async function completeKTVSession(sessionId: string, notes: string = '', 
       rollbackFailures.push(`failed to roll back completed session: ${rollbackError.message}`);
     }
 
+    if (tenantId) {
+      try {
+        const { recalculateAndSaveSalaryRecord } = await import('@/modules/hr-salary/actions/admin-salary-actions');
+        const monthYear = `${completedDate.substring(0, 7)}-01`;
+        await recalculateAndSaveSalaryRecord(supabase, user.id, monthYear, tenantId);
+      } catch (salaryRollbackError) {
+        rollbackFailures.push(`rollback salary failed: ${getErrorMessage(salaryRollbackError)}`);
+      }
+    }
+
     return {
       success: false,
-      error: rollbackFailures.length > 0 ? `${reason}; ${rollbackFailures.join('; ')}` : reason,
+      error: rollbackFailures.length > 0 ? `${completionResult.error}; ${rollbackFailures.join('; ')}` : completionResult.error,
     };
-  };
+  }
 
   if (lat !== undefined && lon !== undefined) {
-    const { error: checkoutGpsError } = await untypedSupabase
+    const { error: checkoutGpsError } = await supabase
       .from('session_logs')
       .update({ checkout_lat: lat, checkout_lon: lon })
       .eq('id', sessionId);
 
     if (checkoutGpsError) {
       checkoutWarnings.push(`checkout GPS was not saved: ${checkoutGpsError.message}`);
-    }
-  }
-
-  // 2.5 Tự động trừ kho vật tư tiêu hao nếu có định mức
-  const packageId = bookingsData?.package_id;
-  if (packageId) {
-    try {
-      const { autoConsumeForSession, rollbackInventoryConsumption } = await import('./inventory-actions');
-      rollbackInventoryConsumptionForSession = rollbackInventoryConsumption;
-      const consumeResult: InventoryConsumeResult = await autoConsumeForSession(packageId, sessionId);
-      
-      if (consumeResult && consumeResult.success === false) {
-        return rollbackCompletedSession(consumeResult.error || 'Kho khong du nguyen lieu de thuc hien ca dich vu nay.');
-      }
-      shouldRollbackInventoryConsumption = hasInventoryConsumptionSideEffects(consumeResult);
-      console.log(`[completeKTVSession] Successfully auto-consumed materials for package ${packageId} and session ${sessionId}`);
-    } catch (consumeErr: unknown) {
-      console.error('[completeKTVSession] Error in autoConsumeForSession:', consumeErr);
-      return rollbackCompletedSession(getErrorMessage(consumeErr, 'Loi he thong khi kiem tra kho vat tu.'));
-    }
-  }
-
-  // 3. Re-calculate actual completed sessions to avoid race conditions
-  const { count, error: countError } = await supabase
-    .from('session_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('booking_id', session.booking_id)
-    .eq('status', 'completed');
-
-  if (countError) {
-    return rollbackCompletedSession(`Failed to count completed sessions: ${countError.message}`);
-  }
-
-  const { data: booking, error: bookingFetchError } = await supabase
-    .from('bookings')
-    .select('total_sessions, status, is_in_care, updated_at')
-    .eq('id', session.booking_id)
-    .single();
-
-  if (bookingFetchError) {
-    return rollbackCompletedSession(`Failed to fetch booking after completing session: ${bookingFetchError.message}`);
-  }
-
-  if (booking) {
-    const actualCompletedCount = count || 0;
-    const isFinished = actualCompletedCount >= (booking.total_sessions || 0);
-    const { error: bookingError } = await supabase
-      .from('bookings')
-      .update({ 
-        status: isFinished ? 'completed' : 'in_progress',
-        is_in_care: !isFinished,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', session.booking_id);
-
-    if (bookingError) {
-      return rollbackCompletedSession(`Failed to update booking after completing session: ${bookingError.message}`);
-    }
-
-    bookingRollbackSnapshot = {
-      bookingId: session.booking_id,
-      payload: {
-        status: booking.status,
-        is_in_care: booking.is_in_care,
-        updated_at: booking.updated_at,
-      },
-    };
-
-    if (isFinished) {
-      // Clean up any remaining scheduled logs that exceed the total sessions
-      const { error: cleanupError } = await supabase
-        .from('session_logs')
-        .delete()
-        .eq('booking_id', session.booking_id)
-        .gt('session_number', booking.total_sessions)
-        .eq('status', 'scheduled');
-
-      if (cleanupError) {
-        return rollbackCompletedSession(`Failed to clean up extra scheduled sessions after completing booking: ${cleanupError.message}`);
-      }
     }
   }
 
