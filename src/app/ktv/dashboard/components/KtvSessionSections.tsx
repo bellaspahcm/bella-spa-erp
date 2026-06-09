@@ -1,7 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Baby, CheckCircle2, MapPin, Phone, Play } from 'lucide-react';
+import { Baby, CheckCircle2, MapPin, Phone, Play, UserRound } from 'lucide-react';
+
+import { getTenantModulePresentation } from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 export type KtvDashboardSession = {
   id: string;
@@ -30,6 +33,7 @@ type KtvSessionSectionsProps = {
   activeSessions: KtvDashboardSession[];
   upcomingSessions: KtvDashboardSession[];
   currentUserId?: string | null;
+  tenantModuleKey: TenantModuleKey;
   isActionLoading: string | null;
   onOpenCheckout: (session: KtvDashboardSession) => void;
   onOpenCheckin: (session: KtvDashboardSession) => void;
@@ -59,10 +63,14 @@ export function KtvSessionSections({
   activeSessions,
   upcomingSessions,
   currentUserId,
+  tenantModuleKey,
   isActionLoading,
   onOpenCheckout,
   onOpenCheckin,
 }: KtvSessionSectionsProps) {
+  const customerLabels = getTenantModulePresentation(tenantModuleKey);
+  const SecondaryIcon = tenantModuleKey === 'beauty_spa' ? UserRound : Baby;
+
   return (
     <div className="px-6 mt-8 space-y-8">
       <section>
@@ -104,8 +112,8 @@ export function KtvSessionSections({
                       </div>
                       <div className="text-xl font-black text-white">{customer?.name_mother}</div>
                       <p className="text-xs text-rose-300 font-bold mt-1.5 flex items-center gap-1.5">
-                        <Baby className="w-4 h-4 shrink-0 text-rose-300" />
-                        <span>Hồ sơ: {customer?.name_baby || 'Chưa cập nhật'}</span>
+                        <SecondaryIcon className="w-4 h-4 shrink-0 text-rose-300" />
+                        <span>{customerLabels.secondaryPrefix}: {customer?.name_baby || customerLabels.secondaryFallback}</span>
                       </p>
                     </div>
                     <div className="flex flex-col items-end">
@@ -201,8 +209,8 @@ export function KtvSessionSections({
                       <h4 className="text-base font-black text-slate-800">{customer?.name_mother}</h4>
                       {customer?.name_baby && (
                         <p className="text-[11px] text-rose-500 font-bold mt-0.5 flex items-center gap-1">
-                          <Baby className="w-3.5 h-3.5 shrink-0" />
-                          <span>Hồ sơ: {customer.name_baby}</span>
+                          <SecondaryIcon className="w-3.5 h-3.5 shrink-0" />
+                          <span>{customerLabels.secondaryPrefix}: {customer.name_baby}</span>
                         </p>
                       )}
                     </div>

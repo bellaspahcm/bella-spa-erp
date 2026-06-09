@@ -5,8 +5,10 @@ import { RevenueChart } from '@/components/features/dashboard/RevenueChart';
 import { StatsGrid } from '@/components/features/dashboard/StatsGrid';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import { createClient } from '@/lib/supabase-client';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { getTenantModulePresentation } from '@/lib/business-rules/tenant-module-presentation';
+import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 import { completeSession,saveSessionNote } from '@/modules/booking/actions/session-actions';
 import {
@@ -121,6 +123,19 @@ export default function DashboardPage() {
   const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
   const [notifSearch, setNotifSearch] = useState('');
   const [notifTab, setNotifTab] = useState('all');
+  const { tenantModuleKey } = useTenantModuleKey();
+  const effectiveTenantModuleKey = tenantModuleKey ?? 'beauty_spa';
+  const customerLabels = getTenantModulePresentation(effectiveTenantModuleKey);
+  const businessLabel = tenantModuleKey === null
+    ? 'Spa'
+    : tenantModuleKey === 'beauty_spa'
+      ? 'Beauty Spa'
+      : 'Bella Spa';
+  const todayScheduleSubtitle = tenantModuleKey === null
+    ? 'Lịch dịch vụ hôm nay'
+    : tenantModuleKey === 'beauty_spa'
+    ? 'Lịch dịch vụ & liệu trình hôm nay'
+    : 'Lịch trình liệu trình trực tuyến';
 
   useEffect(() => {
     async function checkRole() {
@@ -278,7 +293,7 @@ export default function DashboardPage() {
           <h1 className="text-4xl font-bold text-foreground tracking-tight uppercase">Dashboard</h1>
           <p className="text-muted-foreground font-semibold mt-1 flex items-center gap-2 justify-center md:justify-start">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-            Chào buổi sáng, Bella Spa {userRole === 'admin' ? 'admin' : 'KTV'}!
+            Chào buổi sáng, {businessLabel} {userRole === 'admin' ? 'admin' : 'KTV'}!
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 w-full md:w-auto">
@@ -441,7 +456,7 @@ export default function DashboardPage() {
                 <h2 className="text-3xl md:text-4xl font-black text-foreground uppercase tracking-tighter">Sắp tới trong hôm nay</h2>
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Lịch trình liệu trình trực tuyến
+                  {todayScheduleSubtitle}
                 </p>
               </div>
             </div>
@@ -499,8 +514,9 @@ export default function DashboardPage() {
               if (filteredSessions.length > 0) {
                 return filteredSessions.map((session) => {
                   const booking = Array.isArray(session.bookings) ? session.bookings[0] : session.bookings;
-                  const customerName = booking?.customers?.name_mother || 'Khách hàng';
-                  const babyName = booking?.customers?.name_baby;
+                  const customerName = booking?.customers?.name_mother || customerLabels.customerPrefix;
+                  const secondaryName = booking?.customers?.name_baby;
+                  const babyName = secondaryName;
                   const technicianName = booking?.assigned_ktv?.full_name || 'Chưa phân công';
                   
                   return (

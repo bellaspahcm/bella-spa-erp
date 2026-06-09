@@ -1,10 +1,12 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 type BookingsTimelineDateRibbonProps = {
   selectedDate: Date;
   today: Date;
+  moduleKey?: TenantModuleKey | null;
   onSelectedDateChange: (date: Date) => void;
 };
 
@@ -35,9 +37,15 @@ function isSameDay(d1: Date, d2: Date) {
 export function BookingsTimelineDateRibbon({
   selectedDate,
   today,
+  moduleKey,
   onSelectedDateChange,
 }: BookingsTimelineDateRibbonProps) {
   const weekDays = getDaysOfWeek(selectedDate);
+  const coordinatorLabel = moduleKey == null
+    ? 'Spa Coordinator'
+    : moduleKey === 'beauty_spa'
+      ? 'Beauty Spa Coordinator'
+      : 'Bella Spa Coordinator';
 
   const moveDate = (days: number) => {
     const next = new Date(selectedDate);
@@ -69,7 +77,7 @@ export function BookingsTimelineDateRibbon({
             {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'full' }).format(selectedDate)}
           </h2>
           <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">
-            Bella Spa Coordinator
+            {coordinatorLabel}
           </span>
         </div>
       </div>

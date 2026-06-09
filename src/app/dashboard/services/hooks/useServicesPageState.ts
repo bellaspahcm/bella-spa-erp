@@ -506,7 +506,7 @@ export function useServicesPageState() {
 
   const syncDefaultPackages = async () => {
     if (!enabledModules.babycare) {
-      toast.error('Gói mặc định Bella Mother & Baby chỉ dùng cho tenant đã bật module mẹ và bé.');
+      toast.error('Gói mặc định này chỉ dùng cho tenant đã bật đúng module ngành tương ứng.');
       return;
     }
 

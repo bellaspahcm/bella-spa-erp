@@ -19,6 +19,7 @@ import { getCurrentUser } from '@/services/user-actions';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
+import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { KtvAttendanceCard, type KtvTodayAttendance } from './components/KtvAttendanceCard';
 import { KtvBottomNav } from './components/KtvBottomNav';
@@ -31,6 +32,7 @@ import { KtvNotificationDetailModal } from './components/KtvNotificationDetailMo
 import { KtvOfflineSyncBanner } from './components/KtvOfflineSyncBanner';
 import { KtvProfileDrawer, type KtvOfflineAction, type KtvProfileUser } from './components/KtvProfileDrawer';
 import { KtvSessionSections, type KtvDashboardSession } from './components/KtvSessionSections';
+import { getTenantSettings } from '@/services/tenant-actions';
 
 type KtvUser = NonNullable<KtvProfileUser> & {
   id: string;
@@ -74,6 +76,7 @@ export default function KTVDashboard() {
   const [checkoutSession, setCheckoutSession] = useState<KtvDashboardSession | null>(null);
   const [checkoutNotes, setCheckoutNotes] = useState<string>('');
   const [checkinSession, setCheckinSession] = useState<KtvDashboardSession | null>(null);
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('beauty_spa');
   
   // Attendance States
   const [todayAttendance, setTodayAttendance] = useState<KtvTodayAttendance>(null);
@@ -274,15 +277,17 @@ export default function KTVDashboard() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [u, active, upcoming] = await Promise.all([
+      const [u, active, upcoming, tenant] = await Promise.all([
         getCurrentUser(),
         getKTVActiveSessions(),
-        getKTVUpcomingSessions()
+        getKTVUpcomingSessions(),
+        getTenantSettings(),
       ]);
       
       setUser(u as KtvUser | null);
       setActiveSessions(active);
       setUpcomingSessions(upcoming);
+      setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
       
       if (u) {
         const now = new Date();
@@ -507,6 +512,7 @@ export default function KTVDashboard() {
         activeSessions={activeSessions}
         upcomingSessions={upcomingSessions}
         currentUserId={user?.id}
+        tenantModuleKey={tenantModuleKey}
         isActionLoading={isActionLoading}
         onOpenCheckout={(session) => {
           setCheckoutSession(session);

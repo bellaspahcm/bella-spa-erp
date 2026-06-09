@@ -21,7 +21,7 @@ export function CrmRemindersTab({
       <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
         <div>
           <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Danh sách lịch hẹn nhắc nhở Zalo</h3>
-          <p className="text-xs text-slate-400 font-medium">Buổi chăm sóc mẹ & bé hôm nay và ngày mai</p>
+          <p className="text-xs text-slate-400 font-medium">Ca dịch vụ hôm nay và ngày mai</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
@@ -34,7 +34,7 @@ export function CrmRemindersTab({
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
               <th className="py-4 px-6">Mã booking</th>
-              <th className="py-4 px-6">Mẹ & bé</th>
+              <th className="py-4 px-6">Khách hàng</th>
               <th className="py-4 px-6">KTV phụ trách</th>
               <th className="py-4 px-6">Thời gian hẹn</th>
               <th className="py-4 px-6">Địa chỉ</th>
@@ -46,7 +46,7 @@ export function CrmRemindersTab({
             {upcomingSessions.length === 0 ? (
               <tr>
                 <td colSpan={7} className="text-center py-12 text-slate-400 font-medium italic">
-                  {loadError ? 'Không thể tải danh sách lịch nhắc hẹn.' : 'Không tìm thấy buổi chăm sóc nào hôm nay và ngày mai.'}
+                  {loadError ? 'Không thể tải danh sách lịch nhắc hẹn.' : 'Không tìm thấy ca dịch vụ nào hôm nay và ngày mai.'}
                 </td>
               </tr>
             ) : (
@@ -66,7 +66,7 @@ export function CrmRemindersTab({
                       <div className="flex flex-col">
                         <span className="font-black text-sm text-slate-800">{customer?.name_mother || 'Khách hàng'}</span>
                         <span className="text-[11px] text-slate-400 font-bold">
-                          Bé: {customer?.name_baby || 'Chưa ghi nhận'} • SĐT: {customer?.phone || 'N/A'}
+                          Hồ sơ: {customer?.name_baby || 'Chưa ghi nhận'} • SĐT: {customer?.phone || 'N/A'}
                         </span>
                       </div>
                     </td>

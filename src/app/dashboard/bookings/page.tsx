@@ -42,6 +42,8 @@ function BookingsContent() {
     sessions,
     allBookings,
     isSyncing,
+    isTenantModuleLoading,
+    tenantModuleError,
     ktvs,
     sessionHistory,
     tenantModuleKey,
@@ -84,9 +86,10 @@ function BookingsContent() {
 
   const monthDays = getMonthDays(currentMonth);
   const today = new Date();
+  const resolvedTenantModuleKey = tenantModuleKey ?? 'beauty_spa';
 
   useEffect(() => {
-    if (!getTenantSpecialtyOptions(tenantModuleKey).some((option) => option.id === ktvSpecialty)) {
+    if (tenantModuleKey && !getTenantSpecialtyOptions(tenantModuleKey).some((option) => option.id === ktvSpecialty)) {
       setKtvSpecialty('all');
     }
   }, [ktvSpecialty, tenantModuleKey]);
@@ -139,11 +142,11 @@ function BookingsContent() {
             <BookingsDayTimelineList
               sessions={sessions}
               selectedDate={selectedDate}
-              tenantModuleKey={tenantModuleKey}
+              tenantModuleKey={resolvedTenantModuleKey}
               isSyncing={isSyncing}
               isSameDay={isSameDay}
               onSessionSelect={(session) => {
-                setModalData(buildSessionModalData(session, {}, tenantModuleKey));
+                setModalData(buildSessionModalData(session, {}, resolvedTenantModuleKey));
                 setShowDetailModal(true);
                 void fetchSessionHistory(session.booking_id);
               }}
@@ -156,14 +159,14 @@ function BookingsContent() {
 
                 setModalData(buildSessionModalData(session, {
                   customer: formatBookingCustomerLabel({
-                    moduleKey: tenantModuleKey,
+                    moduleKey: resolvedTenantModuleKey,
                     primaryName: session.bookings?.customers?.name_mother,
                     secondaryName: session.bookings?.customers?.name_baby,
                   }),
                   time: session.assigned_time || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
                   contractDetail: session.notes || '',
                   status: session.status === 'scheduled' ? 'in_progress' : session.status || undefined,
-                }, tenantModuleKey));
+                }, resolvedTenantModuleKey));
                 setShowDetailModal(true);
                 void fetchSessionHistory(session.booking_id);
               }}
@@ -182,27 +185,34 @@ function BookingsContent() {
             <BookingsTimelineDateRibbon
               selectedDate={selectedDate}
               today={today}
+              moduleKey={tenantModuleKey}
               onSelectedDateChange={setSelectedDate}
             />
 
-            <BookingsSpecialtyFilter
-              value={ktvSpecialty}
-              moduleKey={tenantModuleKey}
-              isOpen={isSpecialtyDropdownOpen}
-              onOpenChange={setIsSpecialtyDropdownOpen}
-              onValueChange={setKtvSpecialty}
-            />
+            {tenantModuleKey ? (
+              <BookingsSpecialtyFilter
+                value={ktvSpecialty}
+                moduleKey={tenantModuleKey}
+                isOpen={isSpecialtyDropdownOpen}
+                onOpenChange={setIsSpecialtyDropdownOpen}
+                onValueChange={setKtvSpecialty}
+              />
+            ) : (
+              <div className="mb-4 rounded-2xl border border-slate-200/70 bg-white px-5 py-4 text-xs font-black uppercase tracking-wider text-slate-400 shadow-sm">
+                {isTenantModuleLoading ? 'Đang tải nhóm dịch vụ...' : tenantModuleError || 'Chưa xác định được phân hệ dịch vụ'}
+              </div>
+            )}
 
             <BookingsTimelineGrid
               sessions={sessions}
               ktvs={ktvs}
               selectedDate={selectedDate}
               ktvSpecialty={ktvSpecialty}
-              tenantModuleKey={tenantModuleKey}
+              tenantModuleKey={resolvedTenantModuleKey}
               isSyncing={isSyncing}
               isSameDay={isSameDay}
               onSessionSelect={(session) => {
-                setModalData(buildSessionModalData(session, {}, tenantModuleKey));
+                setModalData(buildSessionModalData(session, {}, resolvedTenantModuleKey));
                 setShowDetailModal(true);
                 void fetchSessionHistory(session.booking_id);
               }}

@@ -338,7 +338,7 @@ export default function AppearanceTab() {
                     <div>
                       <p className="text-sm font-black text-slate-900">Bella Mother & Baby</p>
                       <p className="text-xs font-bold text-slate-500">
-                        Bật riêng cho tenant vận hành chăm sóc mẹ và bé.
+                        Bật riêng cho tenant vận hành theo mô hình Mother & Baby.
                       </p>
                     </div>
                     <span className={cn(
@@ -381,7 +381,7 @@ export default function AppearanceTab() {
 
               <p className="text-xs font-bold leading-relaxed text-slate-500">
                 Module ngành được cấu hình khi setup tenant. Admin của từng spa chỉ quản lý vận hành trong
-                ngành đã được cấp, không thể tự chuyển đổi giữa Bella Mother & Baby và Beauty Spa.
+                ngành đã được cấp, không thể tự chuyển đổi giữa các mô hình kinh doanh khác nhau.
               </p>
             </div>
           </div>

@@ -16,6 +16,9 @@ XCircle
 import { useEffect,useRef,useState } from "react";
 import { toast,Toaster } from "sonner";
 
+import { useTenantModuleKey } from "@/hooks/useTenantModuleKey";
+import type { TenantModuleKey } from "@/lib/business-rules/tenant-modules";
+
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -43,11 +46,24 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function getAiWelcomeMessage(moduleKey: TenantModuleKey | null) {
+  if (moduleKey === "beauty_spa") {
+    return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành cho Beauty Spa. Tôi có thể hỗ trợ theo dõi lịch dịch vụ, hồ sơ khách hàng, doanh thu, chấm công & lương KTV, CRM/Zalo, Meta Ads và các điểm bất thường cần xử lý trong ngày. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
+  }
+
+  if (moduleKey === "babycare") {
+    return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành cho Bella Spa. Tôi có thể hỗ trợ phân tích tài chính, lịch chăm sóc, chấm công & lương KTV, đối soát dòng tiền, CRM/Zalo và các quyết định cải tiến trong ngày. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
+  }
+
+  return "Xin chào Ban điều hành! Tôi là AI COO - trợ lý vận hành của hệ thống. Tôi có thể hỗ trợ phân tích lịch dịch vụ, hồ sơ khách hàng, tài chính, nhân sự KTV, CRM/Zalo và các điểm bất thường cần xử lý. Anh/chị cần tôi kiểm tra mảng nào hôm nay?";
+}
+
 export default function AICopilotClient() {
+  const { tenantModuleKey } = useTenantModuleKey();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Xin chào Tổng Giám Đốc! Tôi là AI COO - Thư ký điều phối vận hành tổng của Bella Spa. Tôi ở đây để hỗ trợ anh phân tích các chỉ số tài chính (Thông tư 133), chấm công & lương KTV, đối soát dòng tiền và đề xuất các quyết định cải tiến chiến lược tối ưu. Anh cần tôi kiểm tra mảng nào hôm nay?"
+      content: getAiWelcomeMessage(null)
     }
   ]);
   const [input, setInput] = useState("");
@@ -60,6 +76,13 @@ export default function AICopilotClient() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    setMessages((current) => {
+      if (current.length !== 1 || current[0]?.role !== "assistant") return current;
+      return [{ ...current[0], content: getAiWelcomeMessage(tenantModuleKey) }];
+    });
+  }, [tenantModuleKey]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,7 +189,7 @@ export default function AICopilotClient() {
           </div>
           <div>
             <h1 className="text-xl font-black bg-gradient-to-r from-primary via-accent to-rose-500 bg-clip-text text-transparent uppercase tracking-wider">AI COO Copilot</h1>
-            <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-widest mt-0.5">Mức A • Trợ lý điều hành Tổng Giám Đốc</p>
+            <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-widest mt-0.5">Mức A • Trợ lý điều hành chi nhánh</p>
           </div>
         </div>
 
@@ -272,7 +295,7 @@ export default function AICopilotClient() {
             <h3 className="text-sm font-black bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent uppercase tracking-widest flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" /> Bảng Duyệt Hành Động (Mức A)
             </h3>
-            <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider mt-1">Các quyết định khẩn cấp cần Tổng Giám Đốc xác nhận</p>
+            <p className="text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider mt-1">Các quyết định khẩn cấp cần Ban điều hành xác nhận</p>
           </div>
 
           {/* List of draft actions */}

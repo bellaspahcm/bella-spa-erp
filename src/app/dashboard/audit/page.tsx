@@ -142,13 +142,13 @@ const FIELD_TRANSLATIONS: Record<string, string> = {
   notes_customer: "Yêu cầu của khách",
 
   // Customers table new fields
-  name_mother: "Tên mẹ",
-  name_baby: "Tên bé",
-  dob_baby: "Ngày sinh bé",
+  name_mother: "Tên khách hàng",
+  name_baby: "Hồ sơ / dịch vụ",
+  dob_baby: "Ngày sinh / hồ sơ",
   dob_expected: "Ngày dự sinh",
   referrer_id: "Người giới thiệu",
   zalo_oa_id: "Zalo OA ID",
-  gender_baby: "Giới tính bé",
+  gender_baby: "Phân loại hồ sơ",
   loyalty_points: "Điểm tích lũy",
 
   // Bookings table new fields
