@@ -1,4 +1,5 @@
 const {
+  DEFAULT_DATA_ACCESS_CHECKS,
   buildTableReadUrl,
   checkTableReadAccess,
   getSupabaseCredentials,
@@ -7,6 +8,17 @@ const {
 } = require('../../scripts/check-supabase-data-access.cjs');
 
 describe('Supabase data access smoke check script', () => {
+  it('includes inventory transfer orders in default table checks', () => {
+    expect(DEFAULT_DATA_ACCESS_CHECKS).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          table: 'inventory_transfer_orders',
+          reason: expect.stringContaining('transfer orders'),
+        }),
+      ])
+    );
+  });
+
   it('resolves Supabase URL and service role credentials', () => {
     const credentials = getSupabaseCredentials({
       SUPABASE_URL: 'https://bella.supabase.co',

@@ -58,14 +58,14 @@ export function HqBranchRegistrationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 bg-slate-900/60 backdrop-blur-sm sm:p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white text-left shadow-2xl dark:border-[#3E3A35] dark:bg-[#1C1B19]"
+        className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white text-left shadow-2xl dark:border-[#3E3A35] dark:bg-[#1C1B19] sm:max-h-[calc(100dvh-2rem)]"
       >
-        <div className="flex shrink-0 items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950 px-8 py-6 text-white">
+        <div className="flex shrink-0 items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950 px-5 py-5 text-white sm:px-8 sm:py-6">
           <div>
             <span className="text-[9px] bg-primary/20 text-rose-300 font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-primary/20">
               HQ TENANT ONBOARDING
@@ -82,7 +82,7 @@ export function HqBranchRegistrationModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain p-6 [scrollbar-gutter:stable] sm:p-8">
+        <form onSubmit={handleSubmit} className="m-2 min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain rounded-[2rem] p-4 pr-3 custom-scrollbar [scrollbar-gutter:stable] sm:m-3 sm:p-6 sm:pr-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               type="button"
