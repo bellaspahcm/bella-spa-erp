@@ -212,6 +212,7 @@ export function SessionLogsDetailsModal({
   }, [selectedSessionLog]);
 
   const handleSaveFullUpdate = async (forcedStatus?: string) => {
+    if (isSavingNote) return;
     if (!selectedSessionLog || !activeBooking) return;
     
     const finalStatus = (forcedStatus || selectedStatus) as 'scheduled' | 'completed' | 'cancelled' | 'in_progress';
@@ -264,6 +265,7 @@ export function SessionLogsDetailsModal({
   };
 
   const handleStatusChange = async (newStatus: 'scheduled' | 'cancelled') => {
+    if (isSavingNote) return;
     if (!selectedSessionLog || !activeBooking) return;
     if (userRole !== 'admin') return;
 
@@ -294,7 +296,7 @@ export function SessionLogsDetailsModal({
   };
 
   const handleReusePackage = async (bookingId: string, customerName: string) => {
-    if (!bookingId) return;
+    if (!bookingId || isReusingId) return;
 
     const confirm = window.confirm(`Bạn có chắc chắn muốn tái sử dụng gói dịch vụ nhanh cho khách hàng ${customerName}?`);
     if (!confirm) return;
@@ -320,6 +322,7 @@ export function SessionLogsDetailsModal({
   };
 
   const handleAddExtraSession = async (bookingId: string) => {
+    if (isSyncing) return;
     if (!window.confirm('Bạn có muốn thêm một buổi tập bổ sung vào gói này không?')) return;
     
     setIsSyncing(true);
@@ -770,10 +773,11 @@ export function SessionLogsDetailsModal({
                     {userRole === 'admin' && (
                       <button 
                         onClick={() => handleAddExtraSession(activeBooking.id)}
-                        className="absolute top-1 right-1 p-1 bg-white/80 rounded-lg text-primary hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm"
-                        title="Thêm buổi bổ sung"
+                        disabled={isSyncing}
+                        className="absolute top-1 right-1 p-1 bg-white/80 rounded-lg text-primary hover:bg-primary hover:text-white transition-all opacity-0 group-hover:opacity-100 shadow-sm disabled:cursor-not-allowed disabled:opacity-100 disabled:hover:bg-white/80 disabled:hover:text-primary"
+                        title={isSyncing ? "Đang thêm buổi bổ sung" : "Thêm buổi bổ sung"}
                       >
-                        <PlusCircle className="w-3.5 h-3.5" />
+                        {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlusCircle className="w-3.5 h-3.5" />}
                       </button>
                     )}
                   </div>
