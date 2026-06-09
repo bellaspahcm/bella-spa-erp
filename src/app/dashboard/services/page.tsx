@@ -72,6 +72,7 @@ export default function ServicesPage() {
     careNoteTemplate,
     setCareNoteTemplate,
     enabledModules,
+    hasLoadedTenantModules,
     isBeautySpaEnabled,
     bookingResources,
     loadingResources,
@@ -135,7 +136,8 @@ export default function ServicesPage() {
       ? [{ value: 'beauty_spa', label: 'Beauty Spa' }]
       : []),
   ];
-  const showModuleFilter = enabledModuleOptions.length > 1;
+  const canManageServices = hasLoadedTenantModules && enabledModuleOptions.length > 0;
+  const showModuleFilter = hasLoadedTenantModules && enabledModuleOptions.length > 1;
   const currentModuleLabel = enabledModuleOptions.find(option => option.value === moduleKey)?.label
     || enabledModuleOptions[0]?.label
     || 'Module chưa cấu hình';
@@ -151,7 +153,7 @@ export default function ServicesPage() {
           <p className="text-slate-500 font-medium mt-1">Thiết lập bảng giá và các chương trình ưu đãi</p>
         </div>
         <div className="bella-toolbar flex flex-col gap-3 sm:flex-row">
-          {enabledModules.babycare && (
+          {hasLoadedTenantModules && enabledModules.babycare && (
             <button
               onClick={syncDefaultPackages}
               title="Đồng bộ các gói dịch vụ mặc định của Bella Spa từ Landing Page thành các bản nháp trong ERP"
@@ -162,7 +164,9 @@ export default function ServicesPage() {
           )}
           <button 
             onClick={openAddModal}
-            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 font-bold text-white shadow-xl shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 dark:shadow-none sm:px-6"
+            disabled={!canManageServices}
+            title={canManageServices ? undefined : 'Dang tai cau hinh nganh kinh doanh'}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 font-bold text-white shadow-xl shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none dark:shadow-none sm:px-6"
           >
             <Plus className="w-5 h-5" />
             <span>Thêm dịch vụ mới</span>
