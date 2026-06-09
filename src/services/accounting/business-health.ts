@@ -1429,7 +1429,7 @@ async function enqueueMissingSalaryPaidAccounting(salaryRecordId: string): Promi
     amount: totalSalary,
     paymentMethod,
     description: currentSalary.notes ||
-      `Health repair: thanh toán lương kỳ ${currentSalary.month_year} cho KTV ${currentSalary.ktv_id}`,
+      `Đối soát bổ sung: thanh toán lương kỳ ${currentSalary.month_year} cho KTV ${currentSalary.ktv_id}`,
     ktvId: currentSalary.ktv_id,
   });
 
@@ -1554,7 +1554,7 @@ async function enqueueMissingPackageSaleAccounting(revenueId: string): Promise<s
     revenueId: currentRevenue.id,
     totalAmount,
     description: currentRevenue.notes ||
-      `Health repair: ghi nhận ${currentRevenue.revenue_type || 'thanh toán gói'} cho booking ${currentBooking.booking_number}`,
+      `Đối soát bổ sung: ghi nhận ${currentRevenue.revenue_type || 'thanh toán gói'} cho booking ${currentBooking.booking_number}`,
   });
 
   await recordAuditLog({
@@ -1752,7 +1752,7 @@ async function enqueueMissingInventoryConsumedAccounting(sessionLogId: string): 
     tenantId,
     sessionLogId: currentSession.id,
     amount: consumption.totalCost,
-    description: `Health repair: vật tư tiêu hao ca ${currentSession.session_number || currentSession.id} - ${currentBooking.package_name || 'Gói dịch vụ'}`,
+    description: `Đối soát bổ sung: vật tư tiêu hao ca ${currentSession.session_number || currentSession.id} - ${currentBooking.package_name || 'Gói dịch vụ'}`,
   });
 
   await recordAuditLog({
@@ -1890,7 +1890,7 @@ async function enqueueMissingSessionDoneAccounting(sessionLogId: string): Promis
     deferredRevenueAmount: revenueRecognition.deferredRevenueAmount,
     receivableAmount: revenueRecognition.receivableAmount,
     commissionAmount,
-    description: `Health repair: hoàn thành buổi ${currentSession.session_number || '--'}/${totalSessions} - ${currentBooking.package_name || 'Gói dịch vụ'}`,
+    description: `Đối soát bổ sung: hoàn thành buổi ${currentSession.session_number || '--'}/${totalSessions} - ${currentBooking.package_name || 'Gói dịch vụ'}`,
   });
 
   await recordAuditLog({
