@@ -55,14 +55,19 @@ function cleanColor(value: unknown, fallback: string) {
 
 export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
   const source = isPlainRecord(value) ? value : {};
+  const hasExplicitModuleConfig = TENANT_MODULE_KEYS.some((moduleKey) => typeof source[moduleKey] === 'boolean');
+
+  if (!hasExplicitModuleConfig) {
+    return DEFAULT_ENABLED_MODULES;
+  }
 
   return {
     babycare: typeof source.babycare === 'boolean'
       ? source.babycare
-      : DEFAULT_ENABLED_MODULES.babycare,
+      : false,
     beauty_spa: typeof source.beauty_spa === 'boolean'
       ? source.beauty_spa
-      : DEFAULT_ENABLED_MODULES.beauty_spa,
+      : false,
   };
 }
 

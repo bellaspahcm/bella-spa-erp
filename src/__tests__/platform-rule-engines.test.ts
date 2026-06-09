@@ -133,6 +133,18 @@ describe('platform rule engines', () => {
       babycare: false,
       beauty_spa: true,
     });
+    expect(normalizeEnabledModules({
+      beauty_spa: true,
+    })).toEqual({
+      babycare: false,
+      beauty_spa: true,
+    });
+    expect(normalizeEnabledModules({
+      babycare: true,
+    })).toEqual({
+      babycare: true,
+      beauty_spa: false,
+    });
     expect(normalizeEnabledModulesForSave({
       babycare: false,
       beauty_spa: true,
