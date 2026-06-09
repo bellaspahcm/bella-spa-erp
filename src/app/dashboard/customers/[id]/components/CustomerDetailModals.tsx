@@ -2,7 +2,7 @@
 
 import { cn, formatMoneyInput, parseIntegerInput, parseMoneyInput, parsePercentInput } from '@/lib/utils';
 import {
-  getTenantModulePresentation,
+  getTenantModulePresentationOrNeutral,
 } from '@/lib/business-rules/tenant-module-presentation';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { geocodeAddress } from '@/services/customer-actions';
@@ -28,10 +28,10 @@ export function EditCustomerModal({
   isSubmitting: boolean;
   data: EditCustomerData;
   setData: ModalStateSetter<EditCustomerData>;
-  tenantModuleKey: TenantModuleKey;
+  tenantModuleKey: TenantModuleKey | null;
 }) {
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const customerLabels = getTenantModulePresentation(tenantModuleKey);
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
 
   if (!isOpen) return null;
 

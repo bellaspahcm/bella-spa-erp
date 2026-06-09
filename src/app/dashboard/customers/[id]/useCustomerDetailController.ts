@@ -5,7 +5,7 @@ import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { calculateBookingPaymentState, normalizeDiscountPercent } from '@/lib/business-rules/payment';
 import {
   getCustomerGenderPresentation,
-  getTenantModulePresentation,
+  getTenantModulePresentationOrNeutral,
 } from '@/lib/business-rules/tenant-module-presentation';
 import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
@@ -27,10 +27,10 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định')
 function toCustomerDetailRecord(
   data: Awaited<ReturnType<typeof getCustomerById>>,
   bookings: CustomerDetailBooking[],
-  moduleKey: TenantModuleKey,
+  moduleKey: TenantModuleKey | null,
 ): CustomerDetailRecord | null {
   if (!data) return null;
-  const labels = getTenantModulePresentation(moduleKey);
+  const labels = getTenantModulePresentationOrNeutral(moduleKey);
   const gender = getCustomerGenderPresentation(data.gender_baby, moduleKey);
 
   return {
@@ -92,7 +92,7 @@ export function useCustomerDetailController() {
     status: 'confirmed',
   });
   const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
-  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(null);
   const [isExportingQuotation, setIsExportingQuotation] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
