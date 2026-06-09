@@ -59,6 +59,7 @@ export function useInventoryPageState() {
   const [requestQty, setRequestQty] = useState(0);
   const [requestNotes, setRequestNotes] = useState('');
   const [submittingOrder, setSubmittingOrder] = useState(false);
+  const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
 
   const now = new Date();
   const [logMonth, setLogMonth] = useState(now.getMonth());
@@ -188,6 +189,8 @@ export function useInventoryPageState() {
   }, [activeTab, fetchReconciliation]);
 
   const handleSaveReconciliation = useCallback(async () => {
+    if (reconSaving) return;
+
     const entries = reconRows
       .filter(r => r.actual !== '' && r.actual !== null && r.actual !== undefined)
       .map(r => ({
@@ -224,7 +227,7 @@ export function useInventoryPageState() {
     } finally {
       setReconSaving(false);
     }
-  }, [fetchData, fetchReconciliation, reconMonth, reconRows, reconYear]);
+  }, [fetchData, fetchReconciliation, reconMonth, reconRows, reconSaving, reconYear]);
 
   const updateReconRow = useCallback((idx: number, patch: Partial<ReconRow>) => {
     setReconRows(prev => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
@@ -254,6 +257,7 @@ export function useInventoryPageState() {
   );
 
   const handleRestock = async () => {
+    if (submitting) return;
     if (!restockTarget || restockAmt <= 0) return;
 
     setSubmitting(true);
@@ -278,6 +282,7 @@ export function useInventoryPageState() {
   };
 
   const handleAddItem = async () => {
+    if (submitting) return;
     if (!newItem.name || !newItem.unit) {
       toast.error('Nhập tên và đơn vị');
       return;
@@ -333,6 +338,8 @@ export function useInventoryPageState() {
   }, []);
 
   const submitTransferOrder = useCallback(async () => {
+    if (submittingOrder) return;
+
     if (requestCart.length === 0) {
       toast.error('Vui lòng thêm ít nhất một vật tư vào yêu cầu');
       return;
@@ -355,10 +362,12 @@ export function useInventoryPageState() {
     } finally {
       setSubmittingOrder(false);
     }
-  }, [fetchData, fetchOrders, requestCart, requestNotes]);
+  }, [fetchData, fetchOrders, requestCart, requestNotes, submittingOrder]);
 
   const handleConfirmReceipt = useCallback(async (orderId: string) => {
+    if (processingOrderId) return;
     if (!confirm('Bạn có chắc chắn xác nhận đã nhận đủ hàng và cộng kho vật tư?')) return;
+    setProcessingOrderId(orderId);
     try {
       const res = await confirmTransferReceipt(orderId);
       if (res.success) {
@@ -370,11 +379,15 @@ export function useInventoryPageState() {
     } catch (error) {
       console.error('[handleConfirmReceipt]', error);
       toast.error(getErrorMessage(error, 'Lỗi hệ thống'));
+    } finally {
+      setProcessingOrderId(null);
     }
-  }, [fetchData, fetchOrders]);
+  }, [fetchData, fetchOrders, processingOrderId]);
 
   const handleCancelOrder = useCallback(async (orderId: string) => {
+    if (processingOrderId) return;
     if (!confirm('Bạn có chắc chắn muốn hủy yêu cầu cấp vật tư này?')) return;
+    setProcessingOrderId(orderId);
     try {
       const res = await cancelTransferOrder(orderId, 'Chi nhánh chủ động hủy yêu cầu');
       if (res.success) {
@@ -386,8 +399,10 @@ export function useInventoryPageState() {
     } catch (error) {
       console.error('[handleCancelOrder]', error);
       toast.error(getErrorMessage(error, 'Lỗi hệ thống'));
+    } finally {
+      setProcessingOrderId(null);
     }
-  }, [fetchOrders]);
+  }, [fetchOrders, processingOrderId]);
 
   return {
     activeTab,
@@ -411,6 +426,7 @@ export function useInventoryPageState() {
     requestNotes,
     setRequestNotes,
     submittingOrder,
+    processingOrderId,
     logMonth,
     setLogMonth,
     logYear,

@@ -37,6 +37,7 @@ export function HqTransferCancelModal({
           </div>
           <button
             onClick={onClose}
+            disabled={submitting}
             className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all text-white"
           >
             <X size={16} />
@@ -61,6 +62,7 @@ export function HqTransferCancelModal({
             <button
               type="button"
               onClick={onClose}
+              disabled={submitting}
               className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 cursor-pointer"
             >
               Quay lại

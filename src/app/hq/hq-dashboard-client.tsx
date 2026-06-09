@@ -312,6 +312,7 @@ export default function HqDashboardClient({
   ]);
 
   const handleOpenShipModal = (order: InventoryTransferOrder) => {
+    if (submittingTransferAction) return;
     setSelectedTransfer(order);
     setShippingCarrier('Giao Hàng Nhanh (GHN)');
     setTrackingNumber('');
@@ -319,6 +320,7 @@ export default function HqDashboardClient({
   };
 
   const handleOpenCancelModal = (order: InventoryTransferOrder) => {
+    if (submittingTransferAction) return;
     setSelectedTransfer(order);
     setRefusingReason('');
     setShowCancelModal(true);
@@ -326,6 +328,7 @@ export default function HqDashboardClient({
 
   const handleApproveAndShip = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingTransferAction) return;
     if (!selectedTransfer) return;
     if (!shippingCarrier.trim() || !trackingNumber.trim()) {
       toast.error('Vui lòng nhập đầy đủ thông tin đơn vị vận chuyển và mã vận đơn');
@@ -352,6 +355,7 @@ export default function HqDashboardClient({
 
   const handleCancelOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submittingTransferAction) return;
     if (!selectedTransfer) return;
 
     setSubmittingTransferAction(true);
@@ -1054,6 +1058,7 @@ export default function HqDashboardClient({
           trackingNumber={trackingNumber}
           submitting={submittingTransferAction}
           onClose={() => {
+            if (submittingTransferAction) return;
             setShowShipModal(false);
             setSelectedTransfer(null);
           }}
@@ -1067,6 +1072,7 @@ export default function HqDashboardClient({
           refusingReason={refusingReason}
           submitting={submittingTransferAction}
           onClose={() => {
+            if (submittingTransferAction) return;
             setShowCancelModal(false);
             setSelectedTransfer(null);
           }}
