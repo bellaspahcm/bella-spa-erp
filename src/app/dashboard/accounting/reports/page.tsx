@@ -15,7 +15,7 @@ import {
   getAccounts
 } from '@/services/accounting-actions';
 import {
-  exportAccountingReportToExcel,
+  exportAccountingReportToExcelResult,
   type AccountingReportData,
   type AccountingReportRecord,
   type TrialBalanceExportRow,
@@ -154,11 +154,16 @@ export default function AccountingReportsPage() {
         return;
       }
 
-      const base64 = await exportAccountingReportToExcel(
+      const result = await exportAccountingReportToExcelResult(
         activeTab as ExportableReportType,
         reportData,
         dateString
       );
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      const base64 = result.data;
       
       // Force download via trigger
       const link = document.createElement('a');
@@ -170,7 +175,7 @@ export default function AccountingReportsPage() {
       toast.success('Báo cáo Excel đã được xuất thành công!');
     } catch (err: unknown) {
       console.error('Excel export failed:', err);
-      toast.error('Gặp lỗi khi xuất tệp tin Excel.');
+      toast.error(`Gặp lỗi khi xuất tệp tin Excel: ${getErrorMessage(err, 'Vui lòng kiểm tra dữ liệu báo cáo và thử lại.')}`);
     } finally {
       setRefreshing(false);
     }
