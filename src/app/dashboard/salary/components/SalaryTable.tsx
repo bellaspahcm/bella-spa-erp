@@ -7,6 +7,7 @@ AlertCircle,
 CheckCircle2,
 Download,
 Filter,
+Loader2,
 Search,
 ShieldCheck,
 Star
@@ -18,6 +19,7 @@ interface SalaryTableProps {
   setSearchQuery: (query: string) => void;
   currentUser: CurrentUser | null;
   activeSalaryAction: string | null;
+  activeSalaryExportId: string | null;
   openEditModal: (s: KtvSalaryRecord) => void;
   handleApprove: (id: string, name: string) => void;
   handleExport: (s: KtvSalaryRecord) => void;
@@ -29,6 +31,7 @@ export default function SalaryTable({
   setSearchQuery,
   currentUser,
   activeSalaryAction,
+  activeSalaryExportId,
   openEditModal,
   handleApprove,
   handleExport,
@@ -82,6 +85,8 @@ export default function SalaryTable({
             {filteredSalaries.map((s, index) => {
               const isApproving = activeSalaryAction === `approve:${s.id}`;
               const isActionBlocked = activeSalaryAction !== null;
+              const isExporting = activeSalaryExportId === s.id;
+              const isExportBlocked = activeSalaryExportId !== null;
 
               return (
               <motion.tr
@@ -180,20 +185,22 @@ export default function SalaryTable({
                       </button>
                       <button 
                         onClick={() => handleExport(s)}
-                        className="p-3 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm"
-                        title="Xuất báo cáo chi tiết"
+                        disabled={isExportBlocked}
+                        className="p-3 bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm disabled:opacity-50 disabled:pointer-events-none"
+                        title={isExporting ? 'Đang xuất báo cáo' : 'Xuất báo cáo chi tiết'}
                       >
-                        <Download className="w-5 h-5" />
+                        {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
                       </button>
                     </div>
                   )}
                   {!isNotKtv && (
                     <button 
                       onClick={() => handleExport(s)}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all font-bold text-xs"
+                      disabled={isExportBlocked}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all font-bold text-xs disabled:opacity-50 disabled:pointer-events-none"
                     >
-                      <Download className="w-4 h-4" />
-                      Xuất báo cáo
+                      {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                      {isExporting ? 'Đang xuất' : 'Xuất báo cáo'}
                     </button>
                   )}
                 </td>

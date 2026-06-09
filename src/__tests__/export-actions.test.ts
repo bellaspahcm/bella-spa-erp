@@ -58,8 +58,22 @@ function mockPackagesQuery(data: Record<string, unknown>[] | null = [], error: E
   return query;
 }
 
-function mockSalarySheetRpc(data: Record<string, unknown>[] | null, error: Error | null = null) {
-  return jest.fn().mockResolvedValue({ data, error });
+function mockSalarySheetRpc(
+  data: Record<string, unknown>[] | null,
+  error: Error | null = null,
+  tenantContextError: Error | null = null,
+) {
+  return jest.fn((rpcName: string) => {
+    if (rpcName === "set_session_tenant") {
+      return Promise.resolve({ data: null, error: tenantContextError });
+    }
+
+    if (rpcName === "calculate_ktv_salary_sheet") {
+      return Promise.resolve({ data, error });
+    }
+
+    return Promise.resolve({ data: null, error: new Error(`Unexpected RPC ${rpcName}`) });
+  });
 }
 
 describe("exportSessionMatrixToExcel", () => {
@@ -365,6 +379,9 @@ describe("exportSalaryToExcel", () => {
     expect(from).toHaveBeenCalledWith("session_logs");
     expect(from).not.toHaveBeenCalledWith("salary_records");
     expect(from).toHaveBeenCalledWith("packages");
+    expect(rpc).toHaveBeenCalledWith("set_session_tenant", {
+      p_tenant_id: "tenant-1",
+    });
     expect(rpc).toHaveBeenCalledWith("calculate_ktv_salary_sheet", {
       p_month_year: "2026-05-01",
     });
@@ -387,6 +404,39 @@ describe("exportSalaryToExcel", () => {
       exportSalaryToExcel("ktv-1", "KTV A", "2026-05-01"),
     ).rejects.toThrow("session query failed");
     expect(rpc).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
+  });
+
+  it("propagates tenant context failures before loading salary sheet data", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    const sessionQuery = mockSessionQuery({
+      data: [
+        {
+          bookings: {
+            package_name: "VIP Package",
+            ktv_commission: 200_000,
+            customers: { name_mother: "Customer A" },
+          },
+        },
+      ],
+      error: null,
+    });
+    const rpc = mockSalarySheetRpc(null, null, new Error("tenant context failed"));
+    const from = jest.fn((table: string) => {
+      if (table === "session_logs") return sessionQuery;
+      throw new Error(`Unexpected table ${table}`);
+    });
+    mockCreateClient.mockResolvedValueOnce({ from, rpc });
+
+    await expect(
+      exportSalaryToExcel("ktv-1", "KTV A", "2026-05-01"),
+    ).rejects.toThrow("tenant context failed");
+    expect(rpc).toHaveBeenCalledWith("set_session_tenant", {
+      p_tenant_id: "tenant-1",
+    });
+    expect(rpc).not.toHaveBeenCalledWith("calculate_ktv_salary_sheet", expect.anything());
+    expect(from).not.toHaveBeenCalledWith("packages");
 
     consoleError.mockRestore();
   });
@@ -468,6 +518,9 @@ describe("exportSalaryToExcel", () => {
 
     expect(rows.some((row) => String(row[4]).includes("842.308"))).toBe(true);
     expect(rows.find((row) => String(row[0]).startsWith("2."))?.[2]).toBe("0 buổi");
+    expect(rpc).toHaveBeenCalledWith("set_session_tenant", {
+      p_tenant_id: "tenant-1",
+    });
     expect(rpc).toHaveBeenCalledWith("calculate_ktv_salary_sheet", {
       p_month_year: "2026-05-01",
     });

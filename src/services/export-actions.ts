@@ -155,6 +155,14 @@ export async function exportSalaryToExcel(
 
     // 2. Fetch central salary sheet components. This RPC preserves saved
     // non-draft salary records and recalculates drafts through the salary engine.
+    const { error: tenantContextError } = await supabase.rpc('set_session_tenant', {
+      p_tenant_id: tenantId,
+    });
+
+    if (tenantContextError) {
+      throw new Error(`Failed to set salary export tenant context: ${tenantContextError.message}`);
+    }
+
     const { data: salaryRows, error: salarySheetError } = await supabase.rpc('calculate_ktv_salary_sheet', {
       p_month_year: salaryMonthYear,
     });
