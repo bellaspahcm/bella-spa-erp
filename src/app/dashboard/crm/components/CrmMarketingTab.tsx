@@ -28,7 +28,7 @@ export function CrmMarketingTab({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 bg-white rounded-[2.5rem] shadow-xl shadow-slate-100/50 border border-slate-100/80 overflow-hidden">
         <div className="p-6 border-b border-slate-50">
-          <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Kỷ niệm sinh nhật của bé trong tháng</h3>
+          <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Kỷ niệm sinh nhật khách hàng trong tháng</h3>
           <p className="text-xs text-slate-400 font-medium">Chiến dịch gửi tin nhắn chúc mừng & voucher tự động</p>
         </div>
 
@@ -36,9 +36,9 @@ export function CrmMarketingTab({
           <table className="bella-data-table min-w-[64rem] text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                <th className="py-4 px-6">Tên mẹ & bé</th>
-                <th className="py-4 px-6">Ngày sinh của bé</th>
-                <th className="py-4 px-6">Tuổi của bé</th>
+                <th className="py-4 px-6">Khách hàng & hồ sơ</th>
+                <th className="py-4 px-6">Ngày sinh</th>
+                <th className="py-4 px-6">Tuổi</th>
                 <th className="py-4 px-6">Khoảng cách</th>
                 <th className="py-4 px-6 text-center">Gửi chúc mừng</th>
               </tr>
@@ -47,7 +47,7 @@ export function CrmMarketingTab({
               {birthdayCustomers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-slate-400 font-medium italic">
-                    {loadError ? 'Không thể tải danh sách sinh nhật trong tháng.' : 'Không tìm thấy bé nào có sinh nhật trong tháng này.'}
+                    {loadError ? 'Không thể tải danh sách sinh nhật trong tháng.' : 'Không tìm thấy khách hàng nào có sinh nhật trong tháng này.'}
                   </td>
                 </tr>
               ) : (
@@ -55,8 +55,8 @@ export function CrmMarketingTab({
                   <tr key={customer.id} className="border-b border-slate-100/70 hover:bg-slate-50/30 transition-colors">
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
-                        <span className="font-black text-sm text-slate-800">{customer.name_baby || 'Bé cưng'}</span>
-                        <span className="text-[11px] text-slate-400 font-bold">Mẹ: {customer.name_mother} • SĐT: {customer.phone}</span>
+                        <span className="font-black text-sm text-slate-800">{customer.name_mother || 'Khách hàng'}</span>
+                        <span className="text-[11px] text-slate-400 font-bold">Hồ sơ: {customer.name_baby || 'Chưa ghi nhận'} • SĐT: {customer.phone}</span>
                       </div>
                     </td>
                     <td className="py-4 px-6">
@@ -76,7 +76,7 @@ export function CrmMarketingTab({
                     </td>
                     <td className="py-4 px-6 text-center">
                       <button
-                        onClick={() => onSendBirthday(customer.id, customer.name_baby || 'bé')}
+                        onClick={() => onSendBirthday(customer.id, customer.name_mother || customer.name_baby || 'khách hàng')}
                         disabled={actionLoading === customer.id}
                         className="px-4 py-2 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-rose-100 dark:shadow-none hover:shadow-lg transition-all flex items-center gap-1.5 mx-auto disabled:opacity-50"
                       >
@@ -147,11 +147,11 @@ export function CrmMarketingTab({
             <p className="text-[11px] text-slate-400 font-medium">Tiếp cận nhóm khách hàng mục tiêu để tối ưu chuyển đổi</p>
           </div>
           <div className="space-y-4 text-xs font-medium text-slate-300">
-            <p>ERP phân nhóm khách hàng dựa trên dữ liệu sản phụ khoa và tuổi của bé.</p>
+            <p>ERP phân nhóm khách hàng dựa trên dữ liệu hồ sơ, lịch sử dịch vụ và độ tuổi.</p>
             <div className="space-y-2.5">
-              <Segment label="Mẹ bầu sắp sinh" count="12 khách hàng" />
-              <Segment label="Bé sơ sinh" count="18 khách hàng" />
-              <Segment label="Bé thôi nôi" count="9 khách hàng" />
+              <Segment label="Khách hàng mới" count="12 khách hàng" />
+              <Segment label="Khách đang dùng dịch vụ" count="18 khách hàng" />
+              <Segment label="Khách cần chăm sóc lại" count="9 khách hàng" />
             </div>
           </div>
         </div>

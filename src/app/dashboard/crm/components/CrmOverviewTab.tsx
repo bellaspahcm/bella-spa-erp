@@ -41,14 +41,14 @@ export function CrmOverviewTab({
           <StatCard
             label="Sinh nhật hôm nay"
             value={stats.totalBirthdaysToday}
-            helper="Bé sinh ngày này"
+            helper="Khách hàng sinh ngày này"
             icon={<Gift className="w-6 h-6" />}
             colorClass="text-rose-400 bg-pink-50"
           />
           <StatCard
             label="Sinh nhật trong tháng"
             value={stats.totalBirthdaysMonth}
-            helper="Tặng mã BELLA_BABY_1ST"
+            helper="Tặng mã khuyến mãi sinh nhật"
             icon={<Calendar className="w-6 h-6" />}
             colorClass="text-slate-500 bg-slate-50"
           />
@@ -62,11 +62,11 @@ export function CrmOverviewTab({
           </h3>
           <div className="space-y-4 text-sm text-slate-600 font-medium">
             <p>
-              Bella Spa ERP đồng bộ với Zalo OA và Zalo Notification Service để nhắc lịch chăm sóc mẹ & bé.
-              Khi bật tự động, hệ thống quét các buổi chăm sóc sắp diễn ra và gửi ZNS theo mốc 2.5 giờ trước lịch hẹn.
+              Bella Spa ERP đồng bộ với Zalo OA và Zalo Notification Service để nhắc lịch dịch vụ cho khách hàng.
+              Khi bật tự động, hệ thống quét các ca dịch vụ sắp diễn ra và gửi ZNS theo mốc 2.5 giờ trước lịch hẹn.
             </p>
             <ul className="list-disc pl-5 space-y-2 text-slate-500">
-              <li>Quét `session_logs` có trạng thái `scheduled` trong ngày.</li>
+              <li>Quét các lịch dịch vụ có trạng thái chờ thực hiện trong ngày.</li>
               <li>Đối chiếu thời gian hẹn theo múi giờ Việt Nam.</li>
               <li>Gửi mẫu ZNS qua Zalo OA và đánh dấu đã gửi để tránh trùng lặp.</li>
             </ul>

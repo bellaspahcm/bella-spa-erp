@@ -103,13 +103,13 @@ function detectRouting(lowerCommand: string): string {
 
 function getStrategicRecommendations(routedTo: string): string[] {
   if (routedTo === "chro") return [
-    "Ban hành quy chế thắt chặt bán kính nhận ca tắm bé (< 5km) cho KTV chi nhánh để tối ưu chi phí di chuyển.",
+    "Ban hành quy chế thắt chặt bán kính nhận ca dịch vụ (< 5km) cho KTV chi nhánh để tối ưu chi phí di chuyển.",
     "Yêu cầu KTV Lead tổ chức buổi chấn chỉnh ý thức tổ chức kỷ luật và quy trình Check-in GPS đúng vị trí nhà khách.",
     "Kích hoạt tính năng gửi tin nhắn nhắc nhở giải trình tự động qua Telegram/Zalo OA cho các KTV có bất thường cao nhất."
   ];
   if (routedTo === "cfo") return [
     "Định kỳ chạy đối soát quỹ đối chiếu với báo cáo doanh thu để kiểm tra sai lệch quỹ kế toán trước ngày 5 hàng tháng.",
-    "Thắt chặt kiểm soát các chi phí vận hành biến động (dầu massage, khăn tắm bé hao hụt) của chi nhánh có biên lợi nhuận thấp.",
+    "Thắt chặt kiểm soát các chi phí vận hành biến động (dầu massage, khăn sạch, vật tư trị liệu hao hụt) của chi nhánh có biên lợi nhuận thấp.",
     "Rà soát lại việc ghi nhận sổ cái cho các khoản chiết khấu dịch vụ của các combo cao cấp."
   ];
   if (routedTo === "cpo") return [
@@ -273,8 +273,8 @@ export async function runCOOOrchestrator(
 
       const actionType = routedTo === 'chro' ? 'attendance_warning' : routedTo === 'cpo' ? 'inventory_restock' : routedTo === 'cmo' ? 'customer_apology' : routedTo === 'franchise' ? 'royalty_payment_reminder' : 'reconciliation_audit';
 
-      const prompt = `Bạn là AI COO (Thư ký điều phối vận hành kiêm Trợ lý cấp cao của Tổng Giám Đốc/CEO) của hệ thống Spa cao cấp Bella Spa.
-Nhiệm vụ của bạn là nhận câu lệnh ngôn ngữ tự nhiên của Tổng Giám Đốc, kết hợp với bộ dữ liệu thô vừa truy xuất từ hệ thống ERP chi nhánh để viết báo cáo tóm tắt phân tích sâu sắc, chính xác số liệu và đề xuất các quyết định thực tế.
+      const prompt = `Bạn là AI COO (trợ lý điều phối vận hành cấp cao) của hệ thống ERP spa.
+Nhiệm vụ của bạn là nhận câu lệnh ngôn ngữ tự nhiên của Ban điều hành, kết hợp với bộ dữ liệu thô vừa truy xuất từ hệ thống ERP chi nhánh để viết báo cáo tóm tắt phân tích sâu sắc, chính xác số liệu và đề xuất các quyết định thực tế.
 
 CÔNG THỨC & NGUYÊN TẮC PHÂN TÍCH NGHIỆP VỤ BẮT BUỘC:
 1. Nguyên tắc Đánh giá CSAT:
@@ -294,7 +294,7 @@ CÔNG THỨC & NGUYÊN TẮC PHÂN TÍCH NGHIỆP VỤ BẮT BUỘC:
    - Nếu một trường là null hoặc không có dữ liệu, hãy báo cáo "Chưa có dữ liệu" thay vì đặt giả định.
 
 Thông tin ngữ cảnh:
-- Câu lệnh của Tổng Giám Đốc: "${command}"
+- Câu lệnh của Ban điều hành: "${command}"
 - Bộ trợ lý chuyên môn đang phân tích: ${assistantName}
 - Kỳ báo cáo: ${formattedDate}
 - Dữ liệu thô từ Hệ thống ERP chi nhánh:
@@ -303,7 +303,7 @@ ${JSON.stringify(subAgentResponse.data, null, 2)}
 Yêu cầu định dạng phản hồi:
 Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa mã markdown \`\`\`json hay bất kỳ chữ nào ngoài JSON) có cấu trúc chính xác như sau:
 {
-  "executiveSummary": "Đoạn văn tóm tắt điều hành (khoảng 3-4 câu) bằng tiếng Việt cực kỳ chuyên nghiệp gửi đến Tổng Giám Đốc. Hãy phân tích trực tiếp các con số thực tế trong dữ liệu thô (ví dụ: chỉ rõ nhân sự KTV nào vi phạm GPS hay đi muộn ca tắm bé, mặt hàng tồn kho nào dưới hạn mức tối thiểu, điểm CSAT trung bình và các nhận xét tiêu cực của khách hàng, hoặc tình trạng thanh toán hóa đơn nhượng quyền). Xưng hô lịch sự 'Tổng Giám Đốc' hoặc 'CEO' và dùng từ ngữ của một COO thực thụ.",
+  "executiveSummary": "Đoạn văn tóm tắt điều hành (khoảng 3-4 câu) bằng tiếng Việt chuyên nghiệp gửi đến Ban điều hành. Hãy phân tích trực tiếp các con số thực tế trong dữ liệu thô (ví dụ: chỉ rõ nhân sự KTV nào vi phạm GPS hoặc đi muộn ca dịch vụ, mặt hàng tồn kho nào dưới hạn mức tối thiểu, điểm CSAT trung bình và các nhận xét tiêu cực của khách hàng, hoặc tình trạng thanh toán hóa đơn nhượng quyền). Xưng hô lịch sự với Ban điều hành và dùng từ ngữ của một COO thực thụ.",
   "anomaliesFound": [
     "Mô tả bất thường 1 phát hiện từ số liệu (ví dụ: 'Mặt hàng Dầu Massage chỉ còn tồn 2 chai')",
     "Mô tả bất thường 2 phát hiện từ số liệu..."
@@ -359,7 +359,7 @@ Bạn phải trả về DUY NHẤT một chuỗi JSON hợp lệ (không chứa 
   return {
     status: "success",
     timestamp: new Date().toISOString(),
-    sender: "AI COO Agent (Thư ký Tổng giám đốc)",
+    sender: "AI COO Agent (Trợ lý điều hành)",
     recipient: `CEO ${user.full_name}`,
     period: `Tháng ${activeDate.getMonth() + 1}/${activeDate.getFullYear()}`,
     routedAgent: routedTo,

@@ -106,7 +106,7 @@ export async function runCHROAgent(
     draftProposals: anomalies.map((a) => ({
       type: "attendance_warning",
       recipient: a.name,
-      reason: `${a.late > 0 ? `Đi muộn ${a.late} ca. ` : ''}${a.gpsAnomaly > 0 ? `Lệch định vị GPS ${a.gpsAnomaly} ca tắm bé. ` : ''}${a.deductions > 0 ? `Bị phạt vi phạm ${a.deductions.toLocaleString('vi-VN')}đ.` : ''}`,
+      reason: `${a.late > 0 ? `Đi muộn ${a.late} ca. ` : ''}${a.gpsAnomaly > 0 ? `Lệch định vị GPS ${a.gpsAnomaly} ca dịch vụ. ` : ''}${a.deductions > 0 ? `Bị phạt vi phạm ${a.deductions.toLocaleString('vi-VN')}đ.` : ''}`,
       draftMessage: `[Thông báo hệ thống] Kính gửi KTV ${a.name}, bộ phận nhân sự Bella Spa phát hiện bạn có ${a.late > 0 ? `${a.late} ca đi muộn` : ''}${a.gpsAnomaly > 0 ? ` và ${a.gpsAnomaly} ca lệch định vị GPS` : ''} trong kỳ tính công này. Số tiền phạt vi phạm dự kiến là ${a.deductions.toLocaleString('vi-VN')}đ. Vui lòng gửi giải trình phản hồi trong vòng 24h.`
     }))
   };

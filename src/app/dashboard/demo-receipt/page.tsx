@@ -9,16 +9,16 @@ export default function DemoReceiptPage() {
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Mock data based on the provided image
+  // Mock data for previewing a generic spa receipt.
   const mockData: ReceiptData = {
-    customerName: "Mẹ Leo",
-    phone: "0975040295",
-    address: "Tòa BE7 Vinhomes Grand Park",
-    serviceNote: "Tắm bé (Bắt đầu gói từ 27/5/2026)",
+    customerName: "Khách Beauty Demo",
+    phone: "0908669901",
+    address: "Quận 1, TP. Hồ Chí Minh",
+    serviceNote: "Facial cấp ẩm chuyên sâu (Bắt đầu gói từ 10/6/2026)",
     items: [
       {
         id: 1,
-        name: "Tắm bé",
+        name: "Facial cấp ẩm chuyên sâu",
         sessions: 30,
         unitPrice: 150000,
         total: 4500000,
