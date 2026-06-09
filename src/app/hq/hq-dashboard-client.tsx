@@ -33,6 +33,7 @@ import { formatMoneyInput, parseIntegerInput, parseMoneyInput } from '@/lib/util
 import { toast } from 'sonner';
 import { HqDashboardStats, HqTenantRecord, CurrentUser, HqAuditLogRecord, HqPackageTemplate } from '@/types/domain';
 import { getHqAuditLogs, getAuditTables, getAuditUsers } from '@/services/audit-actions';
+import { getDefaultTenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { 
   getHqPackageTemplates, 
   createHqPackageTemplate, 
@@ -103,6 +104,7 @@ export default function HqDashboardClient({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'direct' | 'franchise'>('all');
+  const [moduleFilter, setModuleFilter] = useState<'all' | 'babycare' | 'beauty_spa'>('all');
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showBranchRegistrationModal, setShowBranchRegistrationModal] = useState(false);
@@ -737,8 +739,10 @@ export default function HqDashboardClient({
     const matchType = typeFilter === 'all' || 
                       (typeFilter === 'direct' && !isFranchise) || 
                       (typeFilter === 'franchise' && isFranchise);
-                      
-    return matchSearch && matchStatus && matchType;
+    const tenantModule = getDefaultTenantModuleKey(t.enabled_modules);
+    const matchModule = moduleFilter === 'all' || tenantModule === moduleFilter;
+
+    return matchSearch && matchStatus && matchType && matchModule;
   });
 
   const getTierBadge = (tier?: string | null) => {
@@ -846,9 +850,11 @@ export default function HqDashboardClient({
               searchTerm={searchTerm}
               typeFilter={typeFilter}
               statusFilter={statusFilter}
+              moduleFilter={moduleFilter}
               onSearchTermChange={setSearchTerm}
               onTypeFilterChange={setTypeFilter}
               onStatusFilterChange={setStatusFilter}
+              onModuleFilterChange={setModuleFilter}
             />
 
             <HqBranchTable

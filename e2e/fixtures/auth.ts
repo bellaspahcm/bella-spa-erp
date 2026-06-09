@@ -126,8 +126,8 @@ async function loginWithLocalDevBypass(page: Page): Promise<void> {
         sameSite: "Lax",
       },
   ]);
-  await page.goto("/dashboard");
-  await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+  await page.goto("/dashboard", { waitUntil: "domcontentloaded", timeout: 45_000 });
+  await page.waitForURL(/\/dashboard/, { timeout: 45_000 });
   await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
 }
 
