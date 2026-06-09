@@ -11,6 +11,7 @@ const DEFAULT_DATA_ACCESS_CHECKS = [
   { table: 'accounting_outbox', reason: 'accounting event delivery safety' },
   { table: 'accounting_review_queue', reason: 'manual accounting review workflow' },
   { table: 'inter_branch_clearing_records', reason: 'inter-branch clearing reconciliation' },
+  { table: 'inventory_transfer_orders', reason: 'HQ internal supply and transfer orders' },
   { table: 'subscription_invoices', reason: 'settings SaaS billing and renewal history' },
   { table: 'franchise_royalty_invoices', reason: 'settings HQ royalty billing history' },
 ];
