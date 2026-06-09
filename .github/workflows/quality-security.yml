@@ -100,6 +100,7 @@ jobs:
           E2E_VISUAL_SMOKE_SCOPE: core
           E2E_VISUAL_EXPECTED_TESTS: "30"
           E2E_NAVIGATION_TIMEOUT_MS: "60000"
+          E2E_NEXT_DEV_BUNDLER: "webpack"
           E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}

@@ -56,6 +56,7 @@ const IS_CI = !!process.env.CI;
 const REUSE_EXISTING_SERVER = process.env.E2E_REUSE_SERVER
   ? process.env.E2E_REUSE_SERVER !== "0"
   : !IS_CI;
+const DEV_SERVER_BUNDLER_ARGS = process.env.E2E_NEXT_DEV_BUNDLER === "webpack" ? " --webpack" : "";
 const VERCEL_PROTECTION_BYPASS_SECRET =
   process.env.E2E_VERCEL_AUTOMATION_BYPASS_SECRET ?? process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "";
 const VERCEL_PROTECTION_HEADERS = VERCEL_PROTECTION_BYPASS_SECRET
@@ -122,7 +123,7 @@ export default defineConfig({
   // Auto-start dev server on the same port used by baseURL.
   webServer: SHOULD_START_DEV_SERVER
     ? {
-        command: `npm run dev -- --port ${PORT}`,
+        command: `npm run dev --${DEV_SERVER_BUNDLER_ARGS} --port ${PORT}`,
         url: BASE_URL,
         reuseExistingServer: REUSE_EXISTING_SERVER,
         timeout: 180_000,
