@@ -149,6 +149,26 @@ function normalizeVietnamese(value: string) {
     .replace(/Ä/g, "D");
 }
 
+async function waitForRouteContent(page: Page, route: SoftRefreshRoute, phase: string) {
+  const body = page.locator("body");
+  let normalizedText = "";
+
+  await expect
+    .poll(
+      async () => {
+        normalizedText = normalizeVietnamese(await body.innerText({ timeout: 5_000 }).catch(() => ""));
+        return normalizedText;
+      },
+      {
+        message: `${route.name} should finish rendering expected page content ${phase}`,
+        timeout: 30_000,
+      },
+    )
+    .toMatch(route.content);
+
+  return normalizedText;
+}
+
 const isVisualSmokeRunner = process.env.E2E_VISUAL_SMOKE_RUNNER === "1";
 const navigationTimeoutMs = Number(process.env.E2E_NAVIGATION_TIMEOUT_MS || 60_000);
 const hasExplicitE2eTarget = Boolean(
@@ -278,8 +298,7 @@ test.describe("Mobile soft refresh", () => {
       const routePattern = new RegExp(route.path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
       await expect(adminPage).toHaveURL(routePattern);
 
-      const normalizedText = normalizeVietnamese(await adminPage.locator("body").innerText());
-      expect(normalizedText, `${route.name} should render expected page content`).toMatch(route.content);
+      const normalizedText = await waitForRouteContent(adminPage, route, "before soft refresh");
       for (const pattern of appErrorPatterns) {
         expect(normalizedText, `${route.name} should not show ${pattern}`).not.toMatch(pattern);
       }
@@ -307,7 +326,6 @@ test.describe("Mobile soft refresh", () => {
       await closeMobileOverlayIfPresent(adminPage);
 
       await adminPage.getByRole("button", { name: /làm mới dữ liệu|lam moi du lieu/i }).first().click();
-      await adminPage.waitForTimeout(1_000);
 
       await expect(adminPage).toHaveURL(urlBefore);
       await expect
@@ -324,7 +342,7 @@ test.describe("Mobile soft refresh", () => {
       await expectNoDocumentHorizontalOverflow(adminPage, route.name, "after soft refresh");
       await expectMobileRefreshButtonFitsViewport(adminPage, route.name);
 
-      const refreshedText = normalizeVietnamese(await adminPage.locator("body").innerText());
+      const refreshedText = await waitForRouteContent(adminPage, route, "after soft refresh");
       for (const pattern of appErrorPatterns) {
         expect(refreshedText, `${route.name} should not show ${pattern} after soft refresh`).not.toMatch(pattern);
       }
