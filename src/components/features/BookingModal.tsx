@@ -276,6 +276,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     const isCustomerSelected = mode === 'new' 
       ? (newCustomer.name_mother && newCustomer.phone)
       : selectedCustomer;

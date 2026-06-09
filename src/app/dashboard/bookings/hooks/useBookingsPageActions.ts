@@ -89,6 +89,7 @@ export function useBookingsPageActions({
   };
 
   const handleUpdatePlan = async () => {
+    if (isUpdating) return;
     if (!modalData) return;
 
     setIsUpdating(true);
@@ -142,6 +143,8 @@ export function useBookingsPageActions({
 
   const handleCreateScheduleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isUpdating) return;
+
     setIsUpdating(true);
 
     const formData = new FormData(event.currentTarget);

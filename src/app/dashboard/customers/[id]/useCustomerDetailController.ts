@@ -258,6 +258,7 @@ export function useCustomerDetailController() {
   }, [editData, id, loadData]);
 
   const handleSaveBooking = useCallback(async () => {
+    if (isSavingBooking) return;
     if (!activeBooking) return;
 
     setIsSavingBooking(true);
@@ -284,9 +285,10 @@ export function useCustomerDetailController() {
     } finally {
       setIsSavingBooking(false);
     }
-  }, [activeBooking, editBookingData, loadData]);
+  }, [activeBooking, editBookingData, isSavingBooking, loadData]);
 
   const handleReusePackage = useCallback(async (bookingId: string) => {
+    if (isReusing) return;
     if (!bookingId || !customer) return;
     const confirmed = window.confirm(`Bạn có chắc chắn muốn tái sử dụng gói dịch vụ nhanh cho khách hàng ${customer.name_mother}?`);
     if (!confirmed) return;
@@ -306,7 +308,7 @@ export function useCustomerDetailController() {
     } finally {
       setIsReusing(false);
     }
-  }, [customer, loadData]);
+  }, [customer, isReusing, loadData]);
 
   const handleReuseActivePackage = useCallback(() => {
     if (!activeBooking) return;
