@@ -51,6 +51,11 @@ const getErrorMessage = (error: unknown, fallback: string) => (
   error instanceof Error ? error.message : fallback
 );
 
+const EMPTY_ENABLED_MODULES: TenantEnabledModules = {
+  babycare: false,
+  beauty_spa: false,
+};
+
 const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
   {
     name: 'Gói Bầu Thư Giãn Bella',
@@ -151,7 +156,8 @@ export function useServicesPageState() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [materialRows, setMaterialRows] = useState<MaterialRow[]>([]);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
-  const [enabledModules, setEnabledModules] = useState<TenantEnabledModules>(() => normalizeEnabledModules(null));
+  const [enabledModules, setEnabledModules] = useState<TenantEnabledModules>(EMPTY_ENABLED_MODULES);
+  const [hasLoadedTenantModules, setHasLoadedTenantModules] = useState(false);
   const [isBeautySpaEnabled, setIsBeautySpaEnabled] = useState(false);
   const [bookingResources, setBookingResources] = useState<BookingResource[]>([]);
   const [loadingResources, setLoadingResources] = useState(false);
@@ -169,7 +175,8 @@ export function useServicesPageState() {
   };
 
   const updateModuleFilter = (value: ServiceModuleFilter) => {
-    setModuleFilter(value);
+    const safeValue = value === 'all' || enabledModules[value] ? value : 'all';
+    setModuleFilter(safeValue);
     setCurrentPage(1);
   };
 
@@ -252,6 +259,7 @@ export function useServicesPageState() {
       const defaultModuleKey = getDefaultTenantModuleKey(modules);
       setEnabledModules(modules);
       setIsBeautySpaEnabled(beautySpaEnabled);
+      setHasLoadedTenantModules(true);
       if (!beautySpaEnabled) setModuleFilter('all');
       setForm((current) => (
         modules[current.moduleKey]
@@ -262,11 +270,11 @@ export function useServicesPageState() {
     } catch (error) {
       console.error('Load tenant module config error:', error);
       toast.error(getErrorMessage(error, 'Không thể tải cấu hình module'));
-      const fallbackModules = normalizeEnabledModules(null);
-      setEnabledModules(fallbackModules);
+      setEnabledModules(EMPTY_ENABLED_MODULES);
       setIsBeautySpaEnabled(false);
+      setHasLoadedTenantModules(true);
       setModuleFilter('all');
-      return fallbackModules;
+      return EMPTY_ENABLED_MODULES;
     }
   }, []);
 
@@ -688,6 +696,7 @@ export function useServicesPageState() {
     careNoteTemplate: form.careNoteTemplate,
     setCareNoteTemplate,
     enabledModules,
+    hasLoadedTenantModules,
     isBeautySpaEnabled,
     bookingResources,
     loadingResources,
