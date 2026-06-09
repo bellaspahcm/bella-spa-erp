@@ -2,8 +2,10 @@ import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase-server";
 import {
   exportAccountingReportToExcel,
+  exportAccountingReportToExcelResult,
   exportSalaryToExcel,
   exportSessionMatrixToExcel,
+  exportSessionMatrixToExcelResult,
   type AccountingReportRecord,
   type TrialBalanceExportRow,
 } from "@/services/export-actions";
@@ -96,6 +98,21 @@ describe("exportSessionMatrixToExcel", () => {
     const rows = rowsFromSheet(workbookFromBase64(base64), "Doi Soat Buoi Lam");
     expect(rows.find((row) => row[0] === "KTV A")).toEqual(["KTV A", 2, 0, 2]);
     expect(rows.find((row) => row[0] === "KTV B")).toEqual(["KTV B", 0, 1, 1]);
+  });
+
+  it("returns an explicit failure result when matrix workbook generation fails", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await exportSessionMatrixToExcelResult(
+      undefined as unknown as Parameters<typeof exportSessionMatrixToExcelResult>[0],
+      [],
+    );
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("forEach");
+    }
+    consoleError.mockRestore();
   });
 });
 
@@ -270,6 +287,25 @@ describe("exportAccountingReportToExcel", () => {
     expect(rows.filter((row) => row[1] === "30").at(-1)?.[2]).toBe(-4_000_000);
     expect(rows.filter((row) => row[1] === "40").at(-1)?.[2]).toBe(2_500_000);
     expect(rows.find((row) => row[1] === "70")?.[2]).toBe(17_400_000);
+  });
+
+  it("returns an explicit failure result when accounting workbook generation fails", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    const invalidCashFlow = {};
+    Object.defineProperty(invalidCashFlow, "net_cash_operating", {
+      get() {
+        throw new Error("accounting data failed");
+      },
+    });
+
+    const result = await exportAccountingReportToExcelResult(
+      "cash_flow",
+      invalidCashFlow as AccountingReportRecord,
+      "2026-05-31",
+    );
+
+    expect(result).toEqual({ success: false, error: "accounting data failed" });
+    consoleError.mockRestore();
   });
 });
 

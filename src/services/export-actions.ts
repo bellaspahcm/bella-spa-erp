@@ -48,9 +48,11 @@ export type SalaryExportSnapshot = {
   status?: string | null;
 };
 
-export type SalaryExportResult =
+export type ExcelExportResult =
   | { success: true; data: string }
   | { success: false; error: string };
+
+export type SalaryExportResult = ExcelExportResult;
 
 type SalaryExportPackage = {
   name: string | null;
@@ -344,6 +346,18 @@ export async function exportSessionMatrixToExcel(data: SessionMatrixRow[], packa
   }
 }
 
+export async function exportSessionMatrixToExcelResult(
+  data: SessionMatrixRow[],
+  packageNames: string[],
+): Promise<ExcelExportResult> {
+  try {
+    const result = await exportSessionMatrixToExcel(data, packageNames);
+    return { success: true, data: result };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error, 'Lỗi xuất bảng đối soát Excel') };
+  }
+}
+
 /**
  * Export Accounting Reports (Trial Balance, Income Statement, Balance Sheet) to Excel (Thông tư 133)
  */
@@ -589,6 +603,19 @@ export async function exportAccountingReportToExcel(
   } catch (error) {
     console.error('Export accounting report error:', error);
     throw error;
+  }
+}
+
+export async function exportAccountingReportToExcelResult(
+  reportType: 'trial_balance' | 'income_statement' | 'balance_sheet' | 'cash_flow',
+  data: AccountingReportData,
+  dateStr: string,
+): Promise<ExcelExportResult> {
+  try {
+    const result = await exportAccountingReportToExcel(reportType, data, dateStr);
+    return { success: true, data: result };
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error, 'Lỗi xuất báo cáo kế toán Excel') };
   }
 }
 

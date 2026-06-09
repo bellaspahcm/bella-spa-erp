@@ -23,7 +23,7 @@ import {
   checkAndAutoConfirm 
 } from '@/modules/hr-salary/actions/admin-salary-actions';
 import { getMonthlyAttendanceSummary } from '@/services/attendance-actions';
-import { exportSalaryToExcelResult, exportSessionMatrixToExcel } from '@/services/export-actions';
+import { exportSalaryToExcelResult, exportSessionMatrixToExcelResult } from '@/services/export-actions';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/services/user-actions';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
@@ -419,7 +419,12 @@ export default function SalaryPage() {
     setIsExportingMatrix(true);
     const toastId = toast.loading('Đang chuẩn bị bảng đối soát số buổi...');
     try {
-      const base64 = await exportSessionMatrixToExcel(matrixData.ktvs, matrixData.packageNames);
+      const result = await exportSessionMatrixToExcelResult(matrixData.ktvs, matrixData.packageNames);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      const base64 = result.data;
       const blob = await (await fetch(`data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`)).blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -432,7 +437,7 @@ export default function SalaryPage() {
       toast.success('Đã xuất bảng đối soát thành công', { id: toastId });
     } catch (error) {
       console.error('Matrix export failed:', error);
-      toast.error('Lỗi khi xuất bảng đối soát', { id: toastId });
+      toast.error('Lỗi khi xuất bảng đối soát: ' + getErrorMessage(error), { id: toastId });
     } finally {
       setIsExportingMatrix(false);
     }
