@@ -150,6 +150,7 @@ function normalizeVietnamese(value: string) {
 }
 
 const isVisualSmokeRunner = process.env.E2E_VISUAL_SMOKE_RUNNER === "1";
+const navigationTimeoutMs = Number(process.env.E2E_NAVIGATION_TIMEOUT_MS || 60_000);
 const hasExplicitE2eTarget = Boolean(
   process.env.E2E_BASE_URL ||
   process.env.E2E_PORT ||
@@ -265,7 +266,10 @@ test.describe("Mobile soft refresh", () => {
         });
       }
 
-      const response = await adminPage.goto(route.path, { waitUntil: "domcontentloaded" });
+      const response = await adminPage.goto(route.path, {
+        waitUntil: "domcontentloaded",
+        timeout: navigationTimeoutMs,
+      });
       await adminPage.waitForLoadState("load", { timeout: 8_000 }).catch(() => {});
       await adminPage.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => {});
 
