@@ -45,6 +45,21 @@ type MarkOutboxCompletedRpcClient = {
   ) => Promise<{ error: { message: string } | null }>;
 };
 
+function formatJournalDisplayDescription(description: string | null) {
+  if (!description) return description;
+
+  return description
+    .replace(/Health repair:/gi, 'Đối soát bổ sung:')
+    .replace(/hoan thanh buoi/gi, 'hoàn thành buổi');
+}
+
+function withDisplayDescription<T extends { description: string | null }>(row: T): T {
+  return {
+    ...row,
+    description: formatJournalDisplayDescription(row.description),
+  };
+}
+
 export type OutboxEventWithDiagnostics = OutboxRow & {
   age_minutes: number;
   is_stale: boolean;
@@ -93,7 +108,7 @@ export async function getJournalEntries(filters?: {
   const { data, error } = await query.order('entry_date', { ascending: false }).order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(withDisplayDescription);
 }
 
 export async function getJournalEntryDetails(entryId: string) {
@@ -115,7 +130,7 @@ export async function getJournalEntryDetails(entryId: string) {
     .single();
 
   if (error) throw error;
-  return data;
+  return withDisplayDescription(data);
 }
 
 export async function reverseJournalEntry(entryId: string, reason: string) {
