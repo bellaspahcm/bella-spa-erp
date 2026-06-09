@@ -124,6 +124,23 @@ const softRefreshRoutes: SoftRefreshRoute[] = [
   },
 ];
 
+const coreSoftRefreshRouteNames = new Set([
+  "dashboard",
+  "customers",
+  "services",
+  "finance",
+  "finance-reconciliation",
+  "accounting-journals",
+  "accounting-reports",
+  "salary",
+  "settings",
+  "customer-profile",
+]);
+
+const scopedSoftRefreshRoutes = process.env.E2E_VISUAL_SMOKE_SCOPE === "core"
+  ? softRefreshRoutes.filter((route) => coreSoftRefreshRouteNames.has(route.name))
+  : softRefreshRoutes;
+
 function normalizeVietnamese(value: string) {
   return value
     .normalize("NFD")
@@ -227,7 +244,7 @@ test.describe("Mobile soft refresh", () => {
     "Requires E2E admin credentials or localhost Supabase admin env.",
   );
 
-  for (const route of softRefreshRoutes) {
+  for (const route of scopedSoftRefreshRoutes) {
     test(`${route.name} refreshes without hard page reload`, async ({ adminPage }) => {
       await adminPage.setViewportSize({ width: 390, height: 844 });
       await adminPage
