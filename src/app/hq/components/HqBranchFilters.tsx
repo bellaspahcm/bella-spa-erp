@@ -28,7 +28,8 @@ export function HqBranchFilters({
   onModuleFilterChange,
 }: HqBranchFiltersProps) {
   return (
-    <section className="grid grid-cols-1 gap-5 overflow-hidden rounded-[2.5rem] border border-slate-100 bg-white p-5 text-left shadow-sm sm:p-6 xl:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.55fr)] xl:items-center">
+    <section className="rounded-[2.5rem] border border-slate-100 bg-white p-5 text-left shadow-sm sm:p-6">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(18rem,0.85fr)_minmax(0,1.65fr)] xl:items-center">
       <div className="group relative w-full min-w-0">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
           <Search size={18} />
@@ -42,10 +43,11 @@ export function HqBranchFilters({
         />
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-        <div className="flex flex-col gap-1 flex-1 sm:flex-initial">
+      <div className="min-w-0 overflow-x-auto pb-1 custom-scrollbar">
+        <div className="grid w-max min-w-full grid-cols-[max-content_max-content_max-content] gap-5">
+        <div className="flex min-w-max flex-col gap-1">
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Phân loại mô hình</span>
-          <div className="flex min-w-0 overflow-x-auto rounded-xl border border-slate-200/50 bg-slate-50 p-1 [scrollbar-width:none]">
+          <div className="flex rounded-xl border border-slate-200/50 bg-slate-50 p-1">
             {([
               { label: 'Tất cả', value: 'all' },
               { label: 'Trực thuộc', value: 'direct' },
@@ -66,9 +68,9 @@ export function HqBranchFilters({
           </div>
         </div>
 
-        <div className="flex flex-col gap-1 flex-1 sm:flex-initial">
+        <div className="flex min-w-max flex-col gap-1">
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Ngành kinh doanh</span>
-          <div className="flex min-w-0 overflow-x-auto rounded-xl border border-slate-200/50 bg-slate-50 p-1 [scrollbar-width:none]">
+          <div className="flex rounded-xl border border-slate-200/50 bg-slate-50 p-1">
             {([
               { label: 'Tất cả', value: 'all' },
               { label: 'Mẹ & Bé', value: 'babycare' },
@@ -89,9 +91,9 @@ export function HqBranchFilters({
           </div>
         </div>
 
-        <div className="flex flex-col gap-1 flex-1 sm:flex-initial">
+        <div className="flex min-w-max flex-col gap-1">
           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-1">Trạng thái vận hành</span>
-          <div className="flex min-w-0 overflow-x-auto rounded-xl border border-slate-200/50 bg-slate-50 p-1 [scrollbar-width:none]">
+          <div className="flex rounded-xl border border-slate-200/50 bg-slate-50 p-1">
             {([
               { label: 'Tất cả', value: 'all' },
               { label: 'Hoạt động', value: 'active' },
@@ -111,6 +113,8 @@ export function HqBranchFilters({
             ))}
           </div>
         </div>
+      </div>
+      </div>
       </div>
     </section>
   );
