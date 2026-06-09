@@ -170,6 +170,8 @@ async function expectDateInputsFitMobile(page: Page, routeName: string) {
 }
 
 async function expectFinanceTransactionCellsDoNotBleed(page: Page) {
+  await page.locator("table").first().waitFor({ state: "visible", timeout: 30_000 });
+
   const result = await page.evaluate(() => {
     const table = Array.from(document.querySelectorAll("table")).find((candidate) =>
       candidate.textContent?.includes("Chi tiết nghiệp vụ"),
@@ -205,6 +207,8 @@ async function expectFinanceTransactionCellsDoNotBleed(page: Page) {
 }
 
 async function expectFinanceTransactionColumnPolish(page: Page) {
+  await page.locator("table").first().waitFor({ state: "visible", timeout: 30_000 });
+
   const result = await page.evaluate(() => {
     const table = Array.from(document.querySelectorAll("table")).find((candidate) =>
       /chi\s*ti/i.test((candidate.textContent ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")),
@@ -254,6 +258,8 @@ async function expectFinanceTransactionColumnPolish(page: Page) {
 }
 
 async function expectAccountingReportsTablePolish(page: Page) {
+  await page.locator("table").first().waitFor({ state: "visible", timeout: 30_000 });
+
   const result = await page.evaluate(() => {
     const table = document.querySelector("table") as HTMLTableElement | null;
     const firstHeaderRow = table?.querySelector("thead tr");
