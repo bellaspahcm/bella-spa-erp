@@ -31,6 +31,16 @@ type MonthlyPnL = FinanceDashboardSnapshot['monthlyPnl'];
 type ServicePerformanceRow = FinanceDashboardSnapshot['servicePerformance'][number];
 type SortableTransactionKey = keyof MappedTransaction;
 
+function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  if (typeof error === 'string' && error.trim()) return error;
+  return fallback;
+}
+
 const tableWrapperClassName =
   'w-full overflow-x-auto overscroll-x-contain custom-scrollbar shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.42)]';
 const stickyBodyCellClassName =
@@ -111,7 +121,7 @@ export default function FinancePage() {
       }
     } catch (error) {
       console.error('Error fetching finance data:', error);
-      toast.error('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');
+      toast.error(getErrorMessage(error, 'Không thể tải dữ liệu tài chính. Vui lòng thử lại.'));
     } finally {
       setIsRefreshing(false);
       setIsLoading(false);
@@ -147,7 +157,7 @@ export default function FinancePage() {
       fetchData();
     } catch (error) {
       console.error('Confirm error:', error);
-      toast.error('Lỗi khi xác nhận giao dịch. Vui lòng kiểm tra lại quyền truy cập hoặc kết nối mạng.');
+      toast.error(getErrorMessage(error, 'Lỗi khi xác nhận giao dịch. Vui lòng kiểm tra lại quyền truy cập hoặc kết nối mạng.'));
     } finally {
       setIsConfirmingId(null);
     }

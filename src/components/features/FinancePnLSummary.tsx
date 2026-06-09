@@ -62,7 +62,13 @@ const monthCloseLinks = [
 ];
 
 function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Không thể kiểm tra preflight khóa tháng.';
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) return message;
+  }
+  if (typeof error === 'string' && error.trim()) return error;
+  return 'Không thể kiểm tra preflight khóa tháng.';
 }
 
 function formatChecksForConfirmation(checks: AccountingHealthCheck[]) {
@@ -221,7 +227,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
       }
     } catch (error) {
       console.error('Lock error:', error);
-      toast.error('Lỗi khi chốt sổ tháng.');
+      toast.error(`Lỗi khi chốt sổ tháng: ${getErrorMessage(error)}`);
     } finally {
       setIsLocking(false);
     }
@@ -243,7 +249,7 @@ export function FinancePnLSummary({ pnl, performance, selectedMonth, onMonthChan
       }
     } catch (error) {
       console.error('Unlock error:', error);
-      toast.error('Lỗi khi mở khóa sổ tháng.');
+      toast.error(`Lỗi khi mở khóa sổ tháng: ${getErrorMessage(error)}`);
     } finally {
       setIsUnlocking(false);
     }
