@@ -13,6 +13,8 @@ type InventoryItemUpdate = Database['public']['Tables']['inventory_items']['Upda
 type InventoryLogInsert = Database['public']['Tables']['inventory_logs']['Insert'];
 type InventoryTransferOrderInsert = Database['public']['Tables']['inventory_transfer_orders']['Insert'];
 type InventoryTransferOrderUpdate = Database['public']['Tables']['inventory_transfer_orders']['Update'];
+type InventoryTransferOrderRow = Database['public']['Tables']['inventory_transfer_orders']['Row'];
+type TenantNameRow = Pick<Database['public']['Tables']['tenants']['Row'], 'id' | 'name'>;
 type TransferLogReason = 'transfer_receipt' | 'transfer_shipment';
 
 type TransferInventoryMutation = {
@@ -153,6 +155,72 @@ export interface InventoryTransferOrder {
   } | null;
 }
 
+export type InventoryTransferOrdersResult =
+  | { success: true; data: InventoryTransferOrder[] }
+  | { success: false; error: string };
+
+const transferStatuses = new Set<InventoryTransferOrder['status']>([
+  'pending',
+  'approved',
+  'shipped',
+  'completed',
+  'cancelled',
+]);
+
+function normalizeTransferStatus(status: string): InventoryTransferOrder['status'] {
+  if (transferStatuses.has(status as InventoryTransferOrder['status'])) {
+    return status as InventoryTransferOrder['status'];
+  }
+
+  throw new Error(`Trạng thái chuyển kho không hợp lệ: ${status}`);
+}
+
+function normalizeTransferItems(items: Json): TransferOrderItem[] {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+
+      const rawItem = item as Record<string, unknown>;
+      const qty = Number(rawItem.qty ?? 0);
+
+      return {
+        name: String(rawItem.name ?? ''),
+        sku: String(rawItem.sku ?? ''),
+        qty: Number.isFinite(qty) ? qty : 0,
+        unit: String(rawItem.unit ?? ''),
+      };
+    })
+    .filter((item): item is TransferOrderItem => item !== null);
+}
+
+function mapTransferOrderRow(
+  row: InventoryTransferOrderRow,
+  tenantsById: Map<string, TenantNameRow>,
+): InventoryTransferOrder {
+  const requester = tenantsById.get(row.requester_tenant_id);
+
+  return {
+    id: row.id,
+    order_number: row.order_number,
+    requester_tenant_id: row.requester_tenant_id,
+    status: normalizeTransferStatus(row.status),
+    items: normalizeTransferItems(row.items),
+    shipping_carrier: row.shipping_carrier,
+    tracking_number: row.tracking_number,
+    notes: row.notes,
+    rejection_reason: row.rejection_reason,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    approved_at: row.approved_at,
+    shipped_at: row.shipped_at,
+    completed_at: row.completed_at,
+    cancelled_at: row.cancelled_at,
+    requester: requester ? { id: requester.id, name: requester.name } : null,
+  };
+}
+
 /**
  * Chi nhánh tạo yêu cầu cung ứng vật tư gửi lên HQ.
  */
@@ -208,27 +276,24 @@ export async function createInventoryRequest(items: TransferOrderItem[], notes?:
  * HQ Admin: xem được toàn bộ của tất cả chi nhánh.
  * Branch Admin: chỉ xem được của chi nhánh mình.
  */
-export async function getInventoryTransferOrders(tenantId?: string): Promise<InventoryTransferOrder[]> {
+export async function getInventoryTransferOrdersResult(tenantId?: string): Promise<InventoryTransferOrdersResult> {
   try {
     const supabase = await createClient();
     const user = await getCurrentUser();
-    if (!user) return [];
+    if (!user) return { success: true, data: [] };
 
     const authResult = await checkHqAuth();
 
     let query = supabase
       .from('inventory_transfer_orders')
-      .select(`
-        *,
-        requester:requester_tenant_id (id, name)
-      `);
+      .select('*');
 
     if (authResult.authorized) {
       if (tenantId) {
         query = query.eq('requester_tenant_id', tenantId);
       }
     } else {
-      if (!user.tenant_id) return [];
+      if (!user.tenant_id) return { success: true, data: [] };
       query = query.eq('requester_tenant_id', user.tenant_id);
     }
 
@@ -236,14 +301,48 @@ export async function getInventoryTransferOrders(tenantId?: string): Promise<Inv
 
     if (error) {
       console.error('[getInventoryTransferOrders] error:', error);
-      throw error;
+      return { success: false, error: 'Lỗi tải danh sách chuyển kho: ' + error.message };
     }
 
-    return (data || []) as unknown as InventoryTransferOrder[];
+    const rows = (data || []) as InventoryTransferOrderRow[];
+    const requesterIds = new Set(rows.map((row) => row.requester_tenant_id));
+    let tenantsById = new Map<string, TenantNameRow>();
+
+    if (requesterIds.size > 0) {
+      const { data: tenantRows, error: tenantError } = await supabase
+        .from('tenants')
+        .select('id, name');
+
+      if (tenantError) {
+        console.error('[getInventoryTransferOrders] tenants error:', tenantError);
+        return { success: false, error: 'Lỗi tải tên chi nhánh chuyển kho: ' + tenantError.message };
+      }
+
+      tenantsById = new Map(
+        ((tenantRows || []) as TenantNameRow[])
+          .filter((tenant) => requesterIds.has(tenant.id))
+          .map((tenant) => [tenant.id, tenant]),
+      );
+    }
+
+    return {
+      success: true,
+      data: rows.map((row) => mapTransferOrderRow(row, tenantsById)),
+    };
   } catch (e) {
     console.error('[getInventoryTransferOrders] Exception:', e);
-    throw e;
+    return { success: false, error: getErrorMessage(e, 'Lỗi tải danh sách chuyển kho') };
   }
+}
+
+export async function getInventoryTransferOrders(tenantId?: string): Promise<InventoryTransferOrder[]> {
+  const result = await getInventoryTransferOrdersResult(tenantId);
+
+  if (!result.success) {
+    throw new Error(result.error);
+  }
+
+  return result.data;
 }
 
 /**

@@ -20,6 +20,7 @@ import {
   setTenantQuotaOverride,
   updateTenantSubscriptionPlan,
 } from '@/services/hq-subscription-actions';
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 
 type HqSubscriptionOverview = Awaited<ReturnType<typeof getHqSubscriptionOverview>>;
 type SubscriptionPlan = HqSubscriptionOverview['plans'][number];
@@ -40,6 +41,9 @@ const defaultOverview: HqSubscriptionOverview = {
   overrides: [],
   usageCounters: [],
 };
+
+const selectButtonClassName =
+  'flex min-h-12 w-full min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-left text-sm font-bold text-slate-900 outline-none transition-all hover:border-primary/30 hover:bg-white focus:ring-4 focus:ring-primary/10 disabled:opacity-50 dark:border-[#3E3A35] dark:bg-[#11100F] dark:text-[#EFE9E1]';
 
 const featureLabels: Record<string, string> = {
   ktv: 'KTV',
@@ -360,37 +364,33 @@ export function HqSubscriptionQuotaConsole({
 
           <label className="block space-y-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Chi nhánh</span>
-            <select
+            <PremiumSelect
               value={selectedTenantId}
-              onChange={(event) => handleTenantSelection(event.target.value)}
+              onChange={handleTenantSelection}
               disabled={!hasActiveTenants}
-              className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
-            >
-              {!hasActiveTenants ? (
-                <option value="">Chưa có chi nhánh</option>
-              ) : null}
-              {activeTenants.map((tenant) => (
-                <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
-              ))}
-            </select>
+              options={
+                hasActiveTenants
+                  ? activeTenants.map((tenant) => ({ value: tenant.id, label: tenant.name }))
+                  : [{ value: '', label: 'Chưa có chi nhánh' }]
+              }
+              buttonClassName={selectButtonClassName}
+            />
           </label>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block space-y-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gói</span>
-              <select
+              <PremiumSelect
                 value={selectedPlanCode}
-                onChange={(event) => setSelectedPlanCode(event.target.value)}
+                onChange={setSelectedPlanCode}
                 disabled={!hasPlans}
-                className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
-              >
-                {!hasPlans ? (
-                  <option value="">Chưa có gói</option>
-                ) : null}
-                {overview.plans.map((plan) => (
-                  <option key={plan.plan_code} value={plan.plan_code}>{plan.display_name}</option>
-                ))}
-              </select>
+                options={
+                  hasPlans
+                    ? overview.plans.map((plan) => ({ value: plan.plan_code, label: plan.display_name }))
+                    : [{ value: '', label: 'Chưa có gói' }]
+                }
+                buttonClassName={selectButtonClassName}
+              />
             </label>
             <label className="block space-y-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hạn gói</span>
@@ -427,31 +427,30 @@ export function HqSubscriptionQuotaConsole({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <label className="block space-y-2 md:col-span-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Chi nhánh</span>
-              <select
+              <PremiumSelect
                 value={overrideTenantId}
-                onChange={(event) => setOverrideTenantId(event.target.value)}
+                onChange={setOverrideTenantId}
                 disabled={!hasActiveTenants}
-                className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
-              >
-                {!hasActiveTenants ? (
-                  <option value="">Chưa có chi nhánh</option>
-                ) : null}
-                {activeTenants.map((tenant) => (
-                  <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
-                ))}
-              </select>
+                options={
+                  hasActiveTenants
+                    ? activeTenants.map((tenant) => ({ value: tenant.id, label: tenant.name }))
+                    : [{ value: '', label: 'Chưa có chi nhánh' }]
+                }
+                buttonClassName={selectButtonClassName}
+              />
             </label>
             <label className="block space-y-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tính năng</span>
-              <select
+              <PremiumSelect
                 value={overrideFeatureKey}
-                onChange={(event) => setOverrideFeatureKey(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
-              >
-                <option value="sms">Zalo/SMS</option>
-                <option value="ktv">KTV</option>
-                <option value="customer">Khách hàng</option>
-              </select>
+                onChange={setOverrideFeatureKey}
+                options={[
+                  { value: 'sms', label: 'Zalo/SMS' },
+                  { value: 'ktv', label: 'KTV' },
+                  { value: 'customer', label: 'Khách hàng' },
+                ]}
+                buttonClassName={selectButtonClassName}
+              />
             </label>
           </div>
 
@@ -469,27 +468,29 @@ export function HqSubscriptionQuotaConsole({
             </label>
             <label className="block space-y-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Đơn vị</span>
-              <select
+              <PremiumSelect
                 value={overrideUnit}
-                onChange={(event) => setOverrideUnit(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
-              >
-                <option value="message">Tin</option>
-                <option value="count">Lượt</option>
-              </select>
+                onChange={setOverrideUnit}
+                options={[
+                  { value: 'message', label: 'Tin' },
+                  { value: 'count', label: 'Lượt' },
+                ]}
+                buttonClassName={selectButtonClassName}
+              />
             </label>
             <label className="block space-y-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Chu kỳ</span>
-              <select
+              <PremiumSelect
                 value={overrideResetPeriod}
-                onChange={(event) => setOverrideResetPeriod(event.target.value)}
-                className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
-              >
-                <option value="none">Không đặt lại</option>
-                <option value="daily">Hàng ngày</option>
-                <option value="monthly">Hàng tháng</option>
-                <option value="yearly">Hàng năm</option>
-              </select>
+                onChange={setOverrideResetPeriod}
+                options={[
+                  { value: 'none', label: 'Không đặt lại' },
+                  { value: 'daily', label: 'Hàng ngày' },
+                  { value: 'monthly', label: 'Hàng tháng' },
+                  { value: 'yearly', label: 'Hàng năm' },
+                ]}
+                buttonClassName={selectButtonClassName}
+              />
             </label>
             <label className="block space-y-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hết hạn</span>

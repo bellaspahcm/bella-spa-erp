@@ -1,3 +1,4 @@
+import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import type { HqTenantRecord } from '@/types/domain';
 
 type TransferFilterStatus = 'all' | 'pending' | 'shipped' | 'completed' | 'cancelled';
@@ -10,6 +11,17 @@ interface HqTransferFiltersProps {
   onFilterBranchChange: (value: string) => void;
 }
 
+const selectButtonClassName =
+  'flex min-h-11 w-full min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-xs font-bold text-slate-700 outline-none transition-all hover:border-primary/30 hover:bg-white focus:ring-4 focus:ring-primary/10 disabled:opacity-50';
+
+const statusOptions: Array<{ value: TransferFilterStatus; label: string }> = [
+  { value: 'all', label: 'Tất cả trạng thái' },
+  { value: 'pending', label: 'Chờ duyệt cấp hàng' },
+  { value: 'shipped', label: 'Đang vận chuyển' },
+  { value: 'completed', label: 'Đã nhận hàng' },
+  { value: 'cancelled', label: 'Đã từ chối / hủy đơn' },
+];
+
 export function HqTransferFilters({
   tenants,
   filterStatus,
@@ -17,54 +29,40 @@ export function HqTransferFilters({
   onFilterStatusChange,
   onFilterBranchChange,
 }: HqTransferFiltersProps) {
+  const branchOptions = [
+    { value: 'all', label: 'Tất cả chi nhánh' },
+    ...tenants
+      .filter((tenant) => tenant.name !== 'Bella Spa Headquarter')
+      .map((tenant) => ({ value: tenant.id, label: tenant.name })),
+  ];
+
   return (
-    <>
-      {/* Filters and Search for Transfers */}
-      <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-      <div className="flex gap-4 w-full md:max-w-xl">
-        {/* Status Filter */}
-        <div className="flex-1">
-          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Trạng thái đơn</label>
-          <select
+    <section className="grid grid-cols-1 gap-4 rounded-[2.5rem] border border-slate-100 bg-white p-5 text-left shadow-sm sm:p-6 lg:grid-cols-[minmax(0,36rem)_auto] lg:items-end">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="min-w-0 space-y-1.5">
+          <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Trạng thái đơn</span>
+          <PremiumSelect
             value={filterStatus}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === 'pending' || v === 'shipped' || v === 'completed' || v === 'cancelled' || v === 'all') {
-                onFilterStatusChange(v);
-              }
-            }}
-            className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-xs font-bold text-slate-700"
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="pending">Chờ duyệt cấp hàng</option>
-            <option value="shipped">Đang vận chuyển</option>
-            <option value="completed">Đã nhận hàng (Hoàn tất)</option>
-            <option value="cancelled">Đã từ chối / Hủy đơn</option>
-          </select>
+            onChange={(value) => onFilterStatusChange(value as TransferFilterStatus)}
+            options={statusOptions}
+            buttonClassName={selectButtonClassName}
+          />
         </div>
 
-        {/* Branch Filter */}
-        <div className="flex-1">
-          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Chi nhánh yêu cầu</label>
-          <select
+        <div className="min-w-0 space-y-1.5">
+          <span className="block text-[9px] font-black uppercase tracking-widest text-slate-400">Chi nhánh yêu cầu</span>
+          <PremiumSelect
             value={filterBranch}
-            onChange={(e) => onFilterBranchChange(e.target.value)}
-            className="block w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-xs font-bold text-slate-700"
-          >
-            <option value="all">Tất cả chi nhánh</option>
-            {tenants
-              .filter(t => t.name !== 'Bella Spa Headquarter')
-              .map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-          </select>
+            onChange={onFilterBranchChange}
+            options={branchOptions}
+            buttonClassName={selectButtonClassName}
+          />
         </div>
       </div>
 
-      <span className="text-[10px] bg-slate-100 text-slate-500 px-3 py-1.5 rounded-full font-black uppercase tracking-wider">
+      <span className="inline-flex min-h-9 items-center justify-center rounded-full bg-slate-100 px-4 py-2 text-center text-[10px] font-black uppercase tracking-wider text-slate-500">
         Tổng bộ điều phối kho vận
       </span>
-      </section>
-    </>
+    </section>
   );
 }

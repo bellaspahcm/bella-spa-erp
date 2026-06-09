@@ -7,7 +7,7 @@ import { getSupabase } from '@/lib/supabase-client';
 import { getLocalDateString } from '@/lib/utils';
 import {
   createInventoryRequest,
-  getInventoryTransferOrders,
+  getInventoryTransferOrdersResult,
   confirmTransferReceipt,
   cancelTransferOrder,
   type InventoryTransferOrder,
@@ -111,8 +111,13 @@ export function useInventoryPageState() {
   const fetchOrders = useCallback(async () => {
     setLoadingOrders(true);
     try {
-      const fetched = await getInventoryTransferOrders();
-      setOrders(fetched);
+      const result = await getInventoryTransferOrdersResult();
+      if (!result.success) {
+        setOrders([]);
+        toast.error(result.error || 'Lá»—i táº£i danh sÃ¡ch yÃªu cáº§u cáº¥p váº­t tÆ°');
+        return;
+      }
+      setOrders(result.data);
     } catch (error) {
       console.error('[fetchOrders]', error);
       toast.error(getErrorMessage(error, 'Lỗi tải danh sách yêu cầu cấp vật tư'));
