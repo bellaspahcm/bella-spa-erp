@@ -8,13 +8,13 @@ import { useCallback,useEffect,useMemo,useState } from 'react';
 import { toast } from 'sonner';
 
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { calculateBookingPaymentState, type PaymentRevenueLike } from '@/lib/business-rules/payment';
 import {
   getCustomerGenderPresentation,
   getCustomerSecondarySummary,
-  getTenantModulePresentation,
+  getTenantModulePresentationOrNeutral,
 } from '@/lib/business-rules/tenant-module-presentation';
-import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { cn,getLocalDateString } from '@/lib/utils';
 
 import {
@@ -37,7 +37,6 @@ X
 
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { createCustomer,deleteCustomer,updateCustomer } from '@/services/customer-actions';
-import { getTenantSettings } from '@/services/tenant-actions';
 import type { Database } from '@/types/database.types';
 import {
   isActiveCareBooking,
@@ -86,14 +85,15 @@ export default function CustomersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
+  const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState(ALL_STATUS_FILTER);
   const customerLabels = useMemo(
-    () => getTenantModulePresentation(tenantModuleKey),
+    () => getTenantModulePresentationOrNeutral(tenantModuleKey),
     [tenantModuleKey]
   );
+  const SecondaryInfoIcon = tenantModuleKey === 'babycare' ? Baby : Sparkles;
 
   // Edit states
   const [isEditMode, setIsEditMode] = useState(false);
@@ -157,20 +157,9 @@ export default function CustomersPage() {
     }
   }, []);
 
-  const loadTenantModuleConfig = useCallback(async () => {
-    try {
-      const tenant = await getTenantSettings();
-      setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
-    } catch (error) {
-      console.error('Error loading tenant module config:', error);
-      toast.error('Không thể tải cấu hình phân hệ');
-      setTenantModuleKey('babycare');
-    }
-  }, []);
-
   const refreshCustomersPage = useCallback(async () => {
-    await Promise.all([loadCustomers(), loadTenantModuleConfig()]);
-  }, [loadCustomers, loadTenantModuleConfig]);
+    await Promise.all([loadCustomers(), refreshTenantModuleKey()]);
+  }, [loadCustomers, refreshTenantModuleKey]);
 
   useEffect(() => {
     void refreshCustomersPage();
@@ -294,7 +283,7 @@ export default function CustomersPage() {
     setActiveMenuId(activeMenuId === id ? null : id);
   };
 
-  const depositStatusFilterLabel = tenantModuleKey === 'beauty_spa' ? 'Đã đặt cọc' : 'Chờ sinh';
+  const depositStatusFilterLabel = tenantModuleKey === 'babycare' ? 'Chờ sinh' : 'Đã đặt cọc';
   const statusOptions = [
     ALL_STATUS_FILTER,
     ACTIVE_CARE_PACKAGE_FILTER,
@@ -536,7 +525,7 @@ export default function CustomersPage() {
                   <span className="break-all">{customer.phone}</span>
                 </div>
                 <div className="flex min-w-0 items-center gap-2">
-                  <Baby className="w-4 h-4 shrink-0 text-slate-400" />
+                  <SecondaryInfoIcon className="w-4 h-4 shrink-0 text-slate-400" />
                   <span className="break-words">
                     {getCustomerSecondarySummary({
                       moduleKey: tenantModuleKey,

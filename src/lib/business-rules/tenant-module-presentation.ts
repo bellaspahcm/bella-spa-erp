@@ -113,6 +113,36 @@ const BEAUTY_SPA_CUSTOMER_PRESENTATION: CustomerPresentation = {
   ],
 };
 
+const NEUTRAL_CUSTOMER_PRESENTATION: CustomerPresentation = {
+  customerListSubtitle: 'Quản lý hồ sơ khách hàng',
+  customerSearchPlaceholder: 'Tìm tên khách, SĐT, ngày sinh, dịch vụ, địa chỉ...',
+  editDescription: 'Chỉnh sửa hồ sơ khách hàng',
+  createDescription: 'Nhập thông tin cơ bản của khách hàng',
+  primaryNameLabel: 'Họ tên khách hàng',
+  primaryNamePlaceholder: 'VD: Nguyễn Linh Chi',
+  secondaryNameLabel: 'Nhóm khách / ghi chú hồ sơ',
+  secondaryNamePlaceholder: 'VD: Khách VIP',
+  secondaryDateLabel: 'Ngày sinh khách hàng',
+  secondaryGenderLabel: 'Giới tính khách hàng',
+  secondaryInfoTitle: 'Thông tin khách hàng',
+  secondaryInfoNameLabel: 'Nhóm / ghi chú hồ sơ',
+  secondaryInfoDateLabel: 'Ngày sinh',
+  activeCareBadge: 'Đang có liệu trình/dịch vụ',
+  activeStatusLabel: 'Đang sử dụng dịch vụ',
+  depositStatusLabel: 'Đã đặt cọc',
+  leadStatusLabel: 'Khách tiềm năng',
+  customerPrefix: 'Khách',
+  secondaryPrefix: 'Hồ sơ',
+  secondaryFallback: 'Chưa phân nhóm',
+  locationLatitudeLabel: 'Vĩ độ địa chỉ khách (Latitude)',
+  locationLongitudeLabel: 'Kinh độ địa chỉ khách (Longitude)',
+  genderOptions: [
+    { id: 'boy', label: 'Nam', tone: 'blue' },
+    { id: 'girl', label: 'Nữ', tone: 'rose' },
+    { id: 'unknown', label: 'Khác / chưa rõ', tone: 'slate' },
+  ],
+};
+
 const BABYCARE_SPECIALTIES: SpecialtyOption[] = [
   { id: 'all', label: 'Tất cả KTV' },
   { id: 'combo', label: 'Combo mẹ & bé' },
@@ -135,6 +165,16 @@ export function getTenantModulePresentation(moduleKey: TenantModuleKey): Custome
     : BABYCARE_CUSTOMER_PRESENTATION;
 }
 
+export function getTenantModulePresentationOrNeutral(
+  moduleKey: TenantModuleKey | null | undefined,
+): CustomerPresentation {
+  if (moduleKey === 'beauty_spa' || moduleKey === 'babycare') {
+    return getTenantModulePresentation(moduleKey);
+  }
+
+  return NEUTRAL_CUSTOMER_PRESENTATION;
+}
+
 export function getTenantPresentationFromModules(enabledModules: unknown): CustomerPresentation {
   return getTenantModulePresentation(getDefaultTenantModuleKey(enabledModules));
 }
@@ -149,9 +189,9 @@ function normalizeText(value: unknown) {
 
 export function getCustomerGenderPresentation(
   gender: unknown,
-  moduleKey: TenantModuleKey,
+  moduleKey: TenantModuleKey | null | undefined,
 ): GenderOption {
-  const labels = getTenantModulePresentation(moduleKey);
+  const labels = getTenantModulePresentationOrNeutral(moduleKey);
   const normalized = normalizeText(gender);
 
   if (['boy', 'male', 'nam', 'bé trai', 'be trai'].includes(normalized)) {
@@ -177,12 +217,12 @@ export function formatBookingCustomerLabel(input: {
 }
 
 export function getCustomerSecondarySummary(input: {
-  moduleKey: TenantModuleKey;
+  moduleKey: TenantModuleKey | null | undefined;
   status?: string | null;
   secondaryName?: string | null;
   expectedDate?: string | null;
 }) {
-  const labels = getTenantModulePresentation(input.moduleKey);
+  const labels = getTenantModulePresentationOrNeutral(input.moduleKey);
 
   if (input.moduleKey === 'babycare' && input.status === 'deposit') {
     return `Dự sinh: ${input.expectedDate || 'Chưa cập nhật'}`;

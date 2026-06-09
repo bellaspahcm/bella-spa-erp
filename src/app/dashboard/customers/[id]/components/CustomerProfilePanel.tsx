@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { Baby, Heart, MapPin, Phone, PlusCircle, Sparkles, TrendingUp } from 'lucide-react';
-import { getTenantModulePresentation } from '@/lib/business-rules/tenant-module-presentation';
+import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { CustomerDetailRecord } from '../types';
 
@@ -14,13 +14,13 @@ export function CustomerProfilePanel({
   onOpenBooking,
 }: {
   customer: CustomerDetailRecord;
-  tenantModuleKey: TenantModuleKey;
+  tenantModuleKey: TenantModuleKey | null;
   userRole: 'admin' | 'ktv';
   onEditCustomer: () => void;
   onOpenBooking: () => void;
 }) {
-  const customerLabels = getTenantModulePresentation(tenantModuleKey);
-  const SecondaryIcon = tenantModuleKey === 'beauty_spa' ? Sparkles : Baby;
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+  const SecondaryIcon = tenantModuleKey === 'babycare' ? Baby : Sparkles;
 
   return (
         <div className="space-y-6 xl:col-span-1 xl:space-y-8">

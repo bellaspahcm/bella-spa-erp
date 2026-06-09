@@ -2,18 +2,17 @@
 
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import {
   calculateBookingPaymentState,
   calculatePaymentRequest,
   normalizeDiscountPercent,
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
-import { getTenantModulePresentation } from '@/lib/business-rules/tenant-module-presentation';
-import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
+import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { cn,formatMoneyInput,formatNumberWithSeparator,getLocalDateString,parseIntegerInput,parseMoneyInput } from '@/lib/utils';
 import { createBooking,getBookingDetailsWithPayment,getDraftBooking,getPackages as getScopedPackages } from '@/modules/booking/actions/lifecycle-actions';
-import { getTenantSettings } from '@/services/tenant-actions';
 import type { Database } from '@/types/database.types';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
@@ -64,8 +63,8 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerRow | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
-  const customerLabels = getTenantModulePresentation(tenantModuleKey);
+  const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
 
   // VietQR deposit states
   const [showQrModal, setShowQrModal] = useState(false);
@@ -109,17 +108,6 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
     } catch (error) {
       console.error('Error fetching packages:', error);
       toast.error('Không thể tải gói dịch vụ theo phân hệ');
-    }
-  }
-
-  async function fetchTenantModuleConfig() {
-    try {
-      const tenant = await getTenantSettings();
-      setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
-    } catch (error) {
-      console.error('Error fetching tenant module config:', error);
-      toast.error('Không thể tải cấu hình phân hệ');
-      setTenantModuleKey('babycare');
     }
   }
 
@@ -175,12 +163,12 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
       setSearchQuery('');
       setNewCustomer({ name_mother: '', phone: '', address: '' });
       setDiscountPercent('');
-      fetchTenantModuleConfig();
+      void refreshTenantModuleKey();
       fetchCustomers();
       fetchKtvs();
       fetchPackages();
     }
-  }, [isOpen, preselectedCustomer]);
+  }, [isOpen, preselectedCustomer, refreshTenantModuleKey]);
 
   // Load draft booking when customer is selected
   useEffect(() => {

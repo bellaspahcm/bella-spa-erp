@@ -30,6 +30,10 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  getDefaultTenantModuleKey,
+  normalizeTenantBrandTheme,
+} from '@/lib/business-rules/tenant-modules';
 
 import { getCurrentUser } from '@/services/user-actions';
 import { getTenantSettings } from '@/services/tenant-actions';
@@ -55,6 +59,79 @@ type MenuLink = {
 };
 
 type SidebarMenuItem = MenuHeader | MenuLink;
+type TenantBrandDisplay = {
+  displayName: string;
+  logoUrl: string;
+  subtitle: string;
+};
+type CachedTenantBrandDisplay = TenantBrandDisplay & {
+  tenantId: string;
+};
+
+const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
+  displayName: 'Spa ERP',
+  logoUrl: '/FullLogo_Transparent_NoBuffer.png',
+  subtitle: 'Management System',
+};
+const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v1';
+
+function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay {
+  if (!value || typeof value !== 'object') return false;
+  const source = value as Record<string, unknown>;
+  return (
+    typeof source.tenantId === 'string' &&
+    typeof source.displayName === 'string' &&
+    typeof source.logoUrl === 'string' &&
+    typeof source.subtitle === 'string'
+  );
+}
+
+function readCachedTenantBrand(tenantId: string | null | undefined): TenantBrandDisplay | null {
+  if (!tenantId || typeof window === 'undefined') return null;
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(SIDEBAR_BRAND_CACHE_KEY) || 'null');
+    if (!isTenantBrandDisplay(parsed) || parsed.tenantId !== tenantId) return null;
+    return {
+      displayName: parsed.displayName,
+      logoUrl: getSafeLogoUrl(parsed.logoUrl),
+      subtitle: parsed.subtitle,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedTenantBrand(tenantId: string | null | undefined, brand: TenantBrandDisplay) {
+  if (!tenantId || typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(SIDEBAR_BRAND_CACHE_KEY, JSON.stringify({
+      tenantId,
+      ...brand,
+    }));
+  } catch {
+    // Cache is only a visual optimization; ignore storage failures.
+  }
+}
+
+function getSafeLogoUrl(logoUrl: string) {
+  return logoUrl.startsWith('/') ? logoUrl : DEFAULT_SIDEBAR_BRAND.logoUrl;
+}
+
+function resolveTenantBrandDisplay(settings: Awaited<ReturnType<typeof getTenantSettings>>): TenantBrandDisplay {
+  if (!settings) return DEFAULT_SIDEBAR_BRAND;
+
+  const theme = normalizeTenantBrandTheme(settings.brand_theme);
+  const moduleKey = getDefaultTenantModuleKey(settings.enabled_modules);
+  const displayName = theme.brandName || theme.portalDisplayName || (moduleKey === 'beauty_spa' ? 'Beauty Spa' : 'Bella Spa');
+
+  return {
+    displayName,
+    logoUrl: getSafeLogoUrl(settings.logo_url || theme.logoUrl || DEFAULT_SIDEBAR_BRAND.logoUrl),
+    subtitle: moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' : DEFAULT_SIDEBAR_BRAND.subtitle,
+  };
+}
 
 function isMenuHeader(item: SidebarMenuItem): item is MenuHeader {
   return item.type === 'header';
@@ -112,6 +189,7 @@ export function Sidebar() {
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
+  const [tenantBrand, setTenantBrand] = useState<TenantBrandDisplay>(DEFAULT_SIDEBAR_BRAND);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isMobileRefreshing, setIsMobileRefreshing] = useState(false);
 
@@ -119,16 +197,27 @@ export function Sidebar() {
     const fetchData = async () => {
       const userData = await getCurrentUser();
       setUser(userData);
+
+      const cachedBrand = readCachedTenantBrand(userData?.tenant_id);
+      if (cachedBrand) {
+        setTenantBrand(cachedBrand);
+      }
+
+      let settings: Awaited<ReturnType<typeof getTenantSettings>> = null;
+      try {
+        settings = await getTenantSettings();
+        const resolvedBrand = resolveTenantBrandDisplay(settings);
+        setTenantBrand(resolvedBrand);
+        writeCachedTenantBrand(userData?.tenant_id, resolvedBrand);
+      } catch (error) {
+        console.error("Failed to load tenant branding", error);
+        if (!cachedBrand) setTenantBrand(DEFAULT_SIDEBAR_BRAND);
+      }
       
       if (userData?.role && userData.role !== 'admin' && userData.role !== 'customer') {
-        try {
-          const settings = await getTenantSettings();
-          if (settings?.role_permissions) {
-            const perms = settings.role_permissions as Record<string, RolePermissions | undefined> | null;
-            setRolePermissions(perms?.[userData.role] || null);
-          }
-        } catch (error) {
-          console.error("Failed to load permissions", error);
+        if (settings?.role_permissions) {
+          const perms = settings.role_permissions as Record<string, RolePermissions | undefined> | null;
+          setRolePermissions(perms?.[userData.role] || null);
         }
       }
     };
@@ -250,13 +339,15 @@ export function Sidebar() {
         
         <div className="flex items-center gap-2">
           <Image
-            src="/FullLogo_Transparent_NoBuffer.png"
-            alt="Bella Spa"
+            src={tenantBrand.logoUrl}
+            alt={tenantBrand.displayName}
             width={28}
             height={28}
             className="w-7 h-7 object-contain"
           />
-          <span className="font-handwriting text-2xl text-[#BE185D] dark:text-[#A67D44] leading-none mt-1">Bella Spa</span>
+          <span className="max-w-[9rem] truncate font-handwriting text-2xl text-[#BE185D] dark:text-[#A67D44] leading-none mt-1">
+            {tenantBrand.displayName}
+          </span>
         </div>
 
         <div className="flex w-20 items-center justify-end gap-2">
@@ -304,16 +395,20 @@ export function Sidebar() {
             <div className="relative mb-4">
               <div className="absolute inset-0 bg-primary/20 dark:bg-[#A67D44]/15 blur-2xl rounded-full scale-75 group-hover:scale-110 transition-transform duration-500" />
               <Image
-                src="/FullLogo_Transparent_NoBuffer.png"
-                alt="Bella Spa"
+                src={tenantBrand.logoUrl}
+                alt={tenantBrand.displayName}
                 width={96}
                 height={96}
                 className="w-24 h-24 object-contain relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500"
               />
             </div>
             <div className="text-center">
-              <h2 className="text-[3.2rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm text-[#BE185D] dark:text-[#A67D44]">Bella Spa</h2>
-              <span className="text-[10px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-1">Management System</span>
+              <h2 className="max-w-64 truncate text-[3.2rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm text-[#BE185D] dark:text-[#A67D44]">
+                {tenantBrand.displayName}
+              </h2>
+              <span className="text-[10px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-1">
+                {tenantBrand.subtitle}
+              </span>
             </div>
           </Link>
 
@@ -397,7 +492,7 @@ export function Sidebar() {
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-[#11100F] rounded-full" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-extrabold text-[#4C243B] dark:text-[#EFE9E1] truncate leading-tight">{user?.full_name || 'Admin Bella Spa'}</p>
+                <p className="text-[13px] font-extrabold text-[#4C243B] dark:text-[#EFE9E1] truncate leading-tight">{user?.full_name || 'Admin Spa'}</p>
                 <p className="text-[9px] text-[#BE185D] dark:text-[#A67D44] font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
               </div>
             </div>
