@@ -1,6 +1,10 @@
 'use client';
 
 import { cn, formatMoneyInput, parseIntegerInput, parseMoneyInput, parsePercentInput } from '@/lib/utils';
+import {
+  getTenantModulePresentation,
+} from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { geocodeAddress } from '@/services/customer-actions';
 import { motion } from 'framer-motion';
 import { AlertCircle, Camera, CheckCircle2, CreditCard as CreditCardIcon, DollarSign as DollarIcon, FileText, Image as ImageIcon, Loader2, PlusCircle, Sparkles, User } from 'lucide-react';
@@ -16,6 +20,7 @@ export function EditCustomerModal({
   isSubmitting,
   data,
   setData,
+  tenantModuleKey,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -23,8 +28,10 @@ export function EditCustomerModal({
   isSubmitting: boolean;
   data: EditCustomerData;
   setData: ModalStateSetter<EditCustomerData>;
+  tenantModuleKey: TenantModuleKey;
 }) {
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const customerLabels = getTenantModulePresentation(tenantModuleKey);
 
   if (!isOpen) return null;
 
@@ -75,7 +82,7 @@ export function EditCustomerModal({
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Cập nhật thông tin</h2>
-              <p className="text-xs text-slate-500 font-bold italic">Chỉnh sửa hồ sơ mẹ và bé</p>
+              <p className="text-xs text-slate-500 font-bold italic">{customerLabels.editDescription}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-3 hover:bg-rose-50 rounded-2xl text-slate-400 hover:text-rose-500 transition-all">
@@ -86,7 +93,7 @@ export function EditCustomerModal({
         <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Họ tên Mẹ</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{customerLabels.primaryNameLabel}</label>
               <input
                 type="text"
                 value={data.name_mother}
@@ -104,7 +111,7 @@ export function EditCustomerModal({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Họ tên Bé</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{customerLabels.secondaryNameLabel}</label>
               <input
                 type="text"
                 value={data.name_baby}
@@ -113,7 +120,7 @@ export function EditCustomerModal({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ngày sinh Bé / Dự sinh</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{customerLabels.secondaryDateLabel}</label>
               <input
                 type="date"
                 value={data.dob_baby || data.dob_expected || ''}
@@ -124,13 +131,9 @@ export function EditCustomerModal({
           </div>
 
           <div className="space-y-3">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Giới tính của Bé</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{customerLabels.secondaryGenderLabel}</label>
             <div className="grid grid-cols-3 gap-4">
-              {[
-                { id: 'boy', label: 'Bé Trai', color: 'blue' },
-                { id: 'girl', label: 'Bé Gái', color: 'rose' },
-                { id: 'unknown', label: 'Chưa biết', color: 'slate' }
-              ].map(g => (
+              {customerLabels.genderOptions.map(g => (
                 <button
                   key={g.id}
                   type="button"
@@ -179,7 +182,7 @@ export function EditCustomerModal({
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Vĩ độ nhà khách (Latitude)</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{customerLabels.locationLatitudeLabel}</label>
               <input
                 type="number"
                 step="any"
@@ -190,7 +193,7 @@ export function EditCustomerModal({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Kinh độ nhà khách (Longitude)</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{customerLabels.locationLongitudeLabel}</label>
               <input
                 type="number"
                 step="any"

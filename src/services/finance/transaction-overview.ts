@@ -50,7 +50,7 @@ export async function getFinancialOverview() {
   const mappedRevenues: MappedTransaction[] = revenueData.map((r) => {
     const customer = r.bookings?.customers;
     const customerName = customer
-      ? `Mẹ ${customer.name_mother}${customer.name_baby ? ` & Bé ${customer.name_baby}` : ''}`
+      ? `Khách ${customer.name_mother}${customer.name_baby ? ` - Hồ sơ ${customer.name_baby}` : ''}`
       : 'Khách hàng';
     const packageName = r.bookings?.package_name || 'Dịch vụ';
 

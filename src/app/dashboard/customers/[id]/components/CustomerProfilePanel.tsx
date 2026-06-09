@@ -1,20 +1,27 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Baby, Heart, MapPin, Phone, PlusCircle, TrendingUp } from 'lucide-react';
+import { Baby, Heart, MapPin, Phone, PlusCircle, Sparkles, TrendingUp } from 'lucide-react';
+import { getTenantModulePresentation } from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { CustomerDetailRecord } from '../types';
 
 export function CustomerProfilePanel({
   customer,
+  tenantModuleKey,
   userRole,
   onEditCustomer,
   onOpenBooking,
 }: {
   customer: CustomerDetailRecord;
+  tenantModuleKey: TenantModuleKey;
   userRole: 'admin' | 'ktv';
   onEditCustomer: () => void;
   onOpenBooking: () => void;
 }) {
+  const customerLabels = getTenantModulePresentation(tenantModuleKey);
+  const SecondaryIcon = tenantModuleKey === 'beauty_spa' ? Sparkles : Baby;
+
   return (
         <div className="space-y-6 xl:col-span-1 xl:space-y-8">
           <div className="relative overflow-hidden rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-8 xl:rounded-[3rem]">
@@ -34,10 +41,10 @@ export function CustomerProfilePanel({
                   'bg-slate-50 text-slate-500'
                 )}>
                   {customer.is_fully_paid ? 'Đã thanh toán thành công' :
-                  (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? 'Đang chăm sóc' :
+                  (customer.status === 'active' || customer.status === 'booked' || customer.status === 'in_progress') ? customerLabels.activeStatusLabel :
                   customer.status === 'completed' ? 'Đã hoàn tất' :
-                  customer.status === 'deposit_pending' ? 'Chờ sinh (Đã cọc)' :
-                  'Khách mới (Lead)'}
+                  customer.status === 'deposit_pending' ? customerLabels.depositStatusLabel :
+                  customerLabels.leadStatusLabel}
                 </span>
               )}
 
@@ -87,16 +94,16 @@ export function CustomerProfilePanel({
 
           <div className="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-8 xl:rounded-[3rem]">
             <h3 className="text-lg font-black text-slate-900 mb-6 flex items-center gap-3">
-              <Baby className="text-primary w-6 h-6" />
-              Thông tin Bé
+              <SecondaryIcon className="text-primary w-6 h-6" />
+              {customerLabels.secondaryInfoTitle}
             </h3>
             <div className="space-y-4">
               <div className="flex flex-col gap-1 rounded-2xl border border-rose-100/50 bg-rose-50/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-sm font-bold text-slate-500">Tên của bé</span>
+                <span className="text-sm font-bold text-slate-500">{customerLabels.secondaryInfoNameLabel}</span>
                 <span className="break-words font-black text-slate-900">{customer.baby.name}</span>
               </div>
               <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-sm font-bold text-slate-500">Ngày sinh / Dự sinh</span>
+                <span className="text-sm font-bold text-slate-500">{customerLabels.secondaryInfoDateLabel}</span>
                 <span className="break-words font-black text-slate-900">{customer.baby.dob}</span>
               </div>
               <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">

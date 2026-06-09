@@ -3,11 +3,17 @@
 import { motion } from 'framer-motion';
 import { Calendar as CalendarIcon, Clock, LayoutGrid, Loader2, QrCode } from 'lucide-react';
 
+import {
+  formatBookingCustomerLabel,
+  getTenantModulePresentation,
+} from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { TimelineSession } from './BookingsTimelineGrid';
 
 type BookingsDayTimelineListProps = {
   sessions: TimelineSession[];
   selectedDate: Date;
+  tenantModuleKey: TenantModuleKey;
   isSyncing: boolean;
   isSameDay: (d1: Date | string, d2: Date | string) => boolean;
   onSessionSelect: (session: TimelineSession) => void;
@@ -18,12 +24,14 @@ type BookingsDayTimelineListProps = {
 export function BookingsDayTimelineList({
   sessions,
   selectedDate,
+  tenantModuleKey,
   isSyncing,
   isSameDay,
   onSessionSelect,
   onQrClick,
   onCareClick,
 }: BookingsDayTimelineListProps) {
+  const customerLabels = getTenantModulePresentation(tenantModuleKey);
   const daySessions = sessions
     .filter((session) => isSameDay(new Date(session.assigned_date || 0), selectedDate))
     .sort((a, b) => new Date(b.assigned_date).getTime() - new Date(a.assigned_date).getTime());
@@ -84,11 +92,14 @@ export function BookingsDayTimelineList({
                 </div>
 
                 <h3 className="mb-2 break-words text-lg font-extrabold text-slate-900 sm:text-xl">
-                  Mẹ: {session.bookings?.customers?.name_mother}
+                  {formatBookingCustomerLabel({
+                    moduleKey: tenantModuleKey,
+                    primaryName: session.bookings?.customers?.name_mother,
+                  })}
                   {session.bookings?.customers?.name_baby && (
                     <span className="ml-0 block font-medium text-rose-400 sm:ml-2 sm:inline">
                       {' '}
-                      - Bé: {session.bookings.customers.name_baby}
+                      - {customerLabels.secondaryPrefix}: {session.bookings.customers.name_baby}
                     </span>
                   )}
                 </h3>

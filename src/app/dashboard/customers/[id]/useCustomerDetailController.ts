@@ -3,10 +3,16 @@
 import type { ReceiptData } from '@/components/common/PaymentReceiptTemplate';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { calculateBookingPaymentState, normalizeDiscountPercent } from '@/lib/business-rules/payment';
+import {
+  getCustomerGenderPresentation,
+  getTenantModulePresentation,
+} from '@/lib/business-rules/tenant-module-presentation';
+import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
 import { parseIntegerInput, parseMoneyInput } from '@/lib/utils';
 import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
 import { getCustomerById, updateCustomer } from '@/services/customer-actions';
+import { getTenantSettings } from '@/services/tenant-actions';
 import { getCurrentUser, getUsers } from '@/services/user-actions';
 import { toPng } from 'html-to-image';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -20,21 +26,19 @@ function getErrorMessage(error: unknown, fallback = 'Lỗi không xác định')
 
 function toCustomerDetailRecord(
   data: Awaited<ReturnType<typeof getCustomerById>>,
-  bookings: CustomerDetailBooking[]
+  bookings: CustomerDetailBooking[],
+  moduleKey: TenantModuleKey,
 ): CustomerDetailRecord | null {
   if (!data) return null;
+  const labels = getTenantModulePresentation(moduleKey);
+  const gender = getCustomerGenderPresentation(data.gender_baby, moduleKey);
 
   return {
     ...data,
     baby: {
-      name: data.name_baby || 'Chưa có',
+      name: data.name_baby || labels.secondaryFallback,
       dob: data.dob_baby || data.dob_expected || 'Chưa cập nhật',
-      gender:
-        data.gender_baby === 'boy'
-          ? 'Bé Trai'
-          : data.gender_baby === 'girl'
-            ? 'Bé Gái'
-            : 'Chưa xác định',
+      gender: gender.label,
     },
     sessions: (data as { sessions?: unknown[] }).sessions || [],
     allBookings: bookings || [],
@@ -88,6 +92,7 @@ export function useCustomerDetailController() {
     status: 'confirmed',
   });
   const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
   const [isExportingQuotation, setIsExportingQuotation] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
@@ -123,9 +128,12 @@ export function useCustomerDetailController() {
     if (!id) return;
 
     try {
+      const tenant = await getTenantSettings();
+      const nextTenantModuleKey = getDefaultTenantModuleKey(tenant?.enabled_modules);
+      setTenantModuleKey(nextTenantModuleKey);
       const data = await getCustomerById(id);
       const bookings = (await getBookingsByCustomerId(id)) as CustomerDetailBooking[];
-      const customerRecord = toCustomerDetailRecord(data, bookings);
+      const customerRecord = toCustomerDetailRecord(data, bookings, nextTenantModuleKey);
 
       if (customerRecord) {
         setCustomer(customerRecord);
@@ -566,6 +574,7 @@ export function useCustomerDetailController() {
     setPaymentData,
     setPaymentFile,
     sortedSessions,
+    tenantModuleKey,
     userRole,
   };
 }

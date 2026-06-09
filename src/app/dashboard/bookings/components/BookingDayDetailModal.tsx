@@ -283,7 +283,7 @@ export function BookingDayDetailModal({
                     </div>
                     <textarea
                       className="w-full h-32 p-5 bg-slate-50 rounded-[24px] border-none focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 placeholder:text-slate-300 resize-none transition-all text-sm shadow-inner"
-                      placeholder="Mẹ và bé hôm nay thế nào? Ghi chú các kỹ thuật đã thực hiện để lần sau nắm thông tin..."
+                      placeholder="Khách hàng hôm nay thế nào? Ghi chú các kỹ thuật đã thực hiện để lần sau nắm thông tin..."
                       value={modalData.contractDetail}
                       onChange={(event) => updateModalData({ contractDetail: event.target.value })}
                     />

@@ -74,6 +74,7 @@ export default function CustomerDetailPage() {
     setPaymentData,
     setPaymentFile,
     sortedSessions,
+    tenantModuleKey,
     userRole,
   } = useCustomerDetailController();
 
@@ -108,6 +109,7 @@ export default function CustomerDetailPage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3 xl:gap-8">
         <CustomerProfilePanel
           customer={customer}
+          tenantModuleKey={tenantModuleKey}
           userRole={userRole}
           onEditCustomer={handleOpenEditCustomer}
           onOpenBooking={() => setIsBookingModalOpen(true)}
@@ -176,6 +178,7 @@ export default function CustomerDetailPage() {
         isSubmitting={isUpdatingCustomer}
         data={editData}
         setData={setEditData}
+        tenantModuleKey={tenantModuleKey}
       />
 
       <BookingPaymentModal

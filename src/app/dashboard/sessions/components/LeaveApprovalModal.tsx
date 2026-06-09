@@ -323,7 +323,7 @@ export function LeaveApprovalModal({ isOpen, onClose, onSuccess, userRole }: Lea
                                     <div className="flex justify-between items-start">
                                       <div>
                                         <p className="text-xs font-black text-slate-800">
-                                          Mẹ {session.bookings?.customers?.full_name || 'Khách hàng'}
+                                          Khách {session.bookings?.customers?.full_name || 'Khách hàng'}
                                         </p>
                                         <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">
                                           {session.bookings?.package_name || 'Liệu trình'} - Buổi {session.session_number}

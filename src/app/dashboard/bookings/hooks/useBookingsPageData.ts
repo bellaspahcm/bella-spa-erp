@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { createClient } from '@/lib/supabase-client';
+import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { getCalendarSessions } from '@/modules/booking/actions/session-actions';
 import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
+import { getTenantSettings } from '@/services/tenant-actions';
 import { getUsers } from '@/services/user-actions';
 
 import type { KtvOption, SessionHistoryItem } from '../components/BookingDayDetailModal';
@@ -18,6 +20,7 @@ export function useBookingsPageData() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [ktvs, setKtvs] = useState<KtvOption[]>([]);
   const [sessionHistory, setSessionHistory] = useState<SessionHistoryItem[]>([]);
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
 
   const fetchAllBookings = useCallback(async () => {
     try {
@@ -58,9 +61,20 @@ export function useBookingsPageData() {
     setSessionHistory(data || []);
   }, []);
 
+  const fetchTenantModuleKey = useCallback(async () => {
+    try {
+      const tenant = await getTenantSettings();
+      setTenantModuleKey(getDefaultTenantModuleKey(tenant?.enabled_modules));
+    } catch (error) {
+      console.error('Error fetching tenant module config:', error);
+      toast.error('Không thể tải cấu hình phân hệ');
+      setTenantModuleKey('babycare');
+    }
+  }, []);
+
   const refreshBookingsPage = useCallback(async () => {
-    await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs()]);
-  }, [fetchAllBookings, fetchKtvs, fetchSessions]);
+    await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs(), fetchTenantModuleKey()]);
+  }, [fetchAllBookings, fetchKtvs, fetchSessions, fetchTenantModuleKey]);
 
   useEffect(() => {
     const initializeBookingsPage = async () => {
@@ -92,6 +106,7 @@ export function useBookingsPageData() {
     isSyncing,
     ktvs,
     sessionHistory,
+    tenantModuleKey,
     fetchSessions,
     fetchAllBookings,
     fetchSessionHistory,

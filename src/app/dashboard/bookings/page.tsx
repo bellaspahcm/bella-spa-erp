@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getLocalDateString } from '@/lib/utils';
+import { formatBookingCustomerLabel, getTenantSpecialtyOptions } from '@/lib/business-rules/tenant-module-presentation';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 
 import VietQRPaymentModal from '@/components/features/VietQRPaymentModal';
@@ -43,6 +44,7 @@ function BookingsContent() {
     isSyncing,
     ktvs,
     sessionHistory,
+    tenantModuleKey,
     fetchSessions,
     fetchAllBookings,
     fetchSessionHistory,
@@ -82,6 +84,12 @@ function BookingsContent() {
 
   const monthDays = getMonthDays(currentMonth);
   const today = new Date();
+
+  useEffect(() => {
+    if (!getTenantSpecialtyOptions(tenantModuleKey).some((option) => option.id === ktvSpecialty)) {
+      setKtvSpecialty('all');
+    }
+  }, [ktvSpecialty, tenantModuleKey]);
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">
@@ -131,10 +139,11 @@ function BookingsContent() {
             <BookingsDayTimelineList
               sessions={sessions}
               selectedDate={selectedDate}
+              tenantModuleKey={tenantModuleKey}
               isSyncing={isSyncing}
               isSameDay={isSameDay}
               onSessionSelect={(session) => {
-                setModalData(buildSessionModalData(session));
+                setModalData(buildSessionModalData(session, {}, tenantModuleKey));
                 setShowDetailModal(true);
                 void fetchSessionHistory(session.booking_id);
               }}
@@ -146,11 +155,15 @@ function BookingsContent() {
                 }
 
                 setModalData(buildSessionModalData(session, {
-                  customer: session.bookings?.customers?.name_mother || 'Khách hàng',
+                  customer: formatBookingCustomerLabel({
+                    moduleKey: tenantModuleKey,
+                    primaryName: session.bookings?.customers?.name_mother,
+                    secondaryName: session.bookings?.customers?.name_baby,
+                  }),
                   time: session.assigned_time || new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
                   contractDetail: session.notes || '',
                   status: session.status === 'scheduled' ? 'in_progress' : session.status || undefined,
-                }));
+                }, tenantModuleKey));
                 setShowDetailModal(true);
                 void fetchSessionHistory(session.booking_id);
               }}
@@ -174,6 +187,7 @@ function BookingsContent() {
 
             <BookingsSpecialtyFilter
               value={ktvSpecialty}
+              moduleKey={tenantModuleKey}
               isOpen={isSpecialtyDropdownOpen}
               onOpenChange={setIsSpecialtyDropdownOpen}
               onValueChange={setKtvSpecialty}
@@ -184,10 +198,11 @@ function BookingsContent() {
               ktvs={ktvs}
               selectedDate={selectedDate}
               ktvSpecialty={ktvSpecialty}
+              tenantModuleKey={tenantModuleKey}
               isSyncing={isSyncing}
               isSameDay={isSameDay}
               onSessionSelect={(session) => {
-                setModalData(buildSessionModalData(session));
+                setModalData(buildSessionModalData(session, {}, tenantModuleKey));
                 setShowDetailModal(true);
                 void fetchSessionHistory(session.booking_id);
               }}

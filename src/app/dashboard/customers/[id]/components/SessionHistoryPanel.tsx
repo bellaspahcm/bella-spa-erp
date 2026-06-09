@@ -70,7 +70,7 @@ export function SessionHistoryPanel({
                     </div>
                     <div>
                       <p className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em] mb-1">Liệu trình đã hoàn tất</p>
-                      <h4 className="text-xl font-black text-slate-900">Mẹ đã xong gói liệu trình</h4>
+                      <h4 className="text-xl font-black text-slate-900">Khách hàng đã hoàn tất gói liệu trình</h4>
                     </div>
                   </div>
                   <button
