@@ -21,11 +21,16 @@ jest.mock('server-only', () => ({}), { virtual: true });
 // Setup global spies and mocks
 const mockRpc = jest.fn();
 const mockFrom = jest.fn();
+const mockCheckHqAuth = jest.fn();
 jest.mock('@/lib/supabase-server', () => ({
   createClient: () => Promise.resolve({
     rpc: mockRpc,
     from: mockFrom,
   }),
+}));
+
+jest.mock('@/services/hq-actions', () => ({
+  checkHqAuth: () => mockCheckHqAuth(),
 }));
 
 jest.mock('@supabase/supabase-js', () => ({
@@ -84,6 +89,10 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     mockDeleteUser.mockResolvedValue({ error: null });
     mockRecordAuditLog.mockResolvedValue({ success: true });
     mockSafeRevalidatePath.mockResolvedValue(undefined);
+    mockCheckHqAuth.mockResolvedValue({
+      authorized: true,
+      user: { id: 'hq-admin-1', role: 'admin', tenant_id: 'hq-tenant' },
+    });
     mockCreateSupabaseJsClient.mockReturnValue({
       auth: {
         admin: {
@@ -149,6 +158,69 @@ describe('Branch Onboarding System (Owned vs Franchise)', () => {
     expect(mockRecordAuditLog.mock.invocationCallOrder[0]).toBeLessThan(
       mockSafeRevalidatePath.mock.invocationCallOrder[0],
     );
+    expect(mockCheckHqAuth).not.toHaveBeenCalled();
+  });
+
+  it('should block Beauty Spa onboarding outside Admin HQ before auth and database writes', async () => {
+    mockCheckHqAuth.mockResolvedValueOnce({
+      authorized: false,
+      error: 'Trang này chỉ dành cho quản trị viên Bella Spa Headquarter.',
+    });
+
+    const result = await registerNewTenant({
+      spaName: 'Beauty Spa External',
+      contactPhone: '0912345678',
+      address: '123 Beauty',
+      email: 'beauty@external.vn',
+      adminName: 'Beauty Admin',
+      adminEmail: 'beauty.admin@external.vn',
+      adminPassword: 'Password123!',
+      branchType: 'owned',
+      businessModule: 'beauty_spa',
+    });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Chỉ Admin HQ mới được setup tenant Beauty Spa.',
+    });
+    expect(mockCheckHqAuth).toHaveBeenCalledTimes(1);
+    expect(mockCreateUser).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockFrom).not.toHaveBeenCalled();
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('should allow Admin HQ to onboard a Beauty Spa tenant locked to Beauty Spa only', async () => {
+    const result = await registerNewTenant({
+      spaName: 'Beauty Spa Premium',
+      contactPhone: '0912345678',
+      address: '123 Beauty',
+      email: 'beauty@spa.vn',
+      adminName: 'Beauty Admin',
+      adminEmail: 'beauty.admin@spa.vn',
+      adminPassword: 'Password123!',
+      branchType: 'owned',
+      businessModule: 'beauty_spa',
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockCheckHqAuth).toHaveBeenCalledTimes(1);
+    expect(mockFrom).toHaveBeenCalledWith('tenants');
+    expect(tenantQueryMock.updateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      enabled_modules: { babycare: false, beauty_spa: true },
+    }));
+    expect(tenantQueryMock.updateSpy).not.toHaveBeenCalledWith(expect.objectContaining({
+      enabled_modules: expect.objectContaining({ babycare: true }),
+    }));
+    expect(tenantQueryMock.eqSpy).toHaveBeenCalledWith('id', 'mock-tenant-id-123');
+    expect(mockRecordAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      new_data: expect.objectContaining({
+        business_module: 'beauty_spa',
+        enabled_modules: { babycare: false, beauty_spa: true },
+      }),
+    }));
+    expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard');
   });
 
   it('should successfully onboard a Franchise branch and update agreement date and royalty type', async () => {
