@@ -1,5 +1,6 @@
 const {
   calculateBookingPaymentState,
+  checkBookingPackageScope,
   checkBookingFinancialIntegrity,
   checkCrossModuleSideEffects,
   checkInventory,
@@ -23,6 +24,7 @@ const emptyDataset = {
   journalEntries: [],
   journalLines: [],
   accountingOutbox: [],
+  tenants: [],
 };
 
 describe('business invariant check script', () => {
@@ -157,6 +159,58 @@ describe('business invariant check script', () => {
         revenueIds: ['revenue-1'],
         missingLedgerCount: 1,
       }),
+    ]);
+  });
+
+  it('flags booking packages outside tenant and Admin HQ module scope', () => {
+    const result = checkBookingPackageScope({
+      ...emptyDataset,
+      tenants: [
+        { id: 'tenant-beauty', enabled_modules: { babycare: false, beauty_spa: true } },
+        { id: 'tenant-babycare', enabled_modules: { babycare: true, beauty_spa: false } },
+      ],
+      packages: [
+        { id: 'pkg-beauty', tenant_id: 'tenant-beauty', module_key: 'beauty_spa', name: 'Facial Signature' },
+        { id: 'pkg-babycare', tenant_id: 'tenant-beauty', module_key: 'babycare', name: 'Tam be' },
+        { id: 'pkg-other-tenant', tenant_id: 'tenant-babycare', module_key: 'babycare', name: 'Other tenant package' },
+      ],
+      bookings: [
+        {
+          id: 'booking-ok',
+          booking_number: 'B-OK',
+          tenant_id: 'tenant-beauty',
+          package_id: 'pkg-beauty',
+          package_name: 'Facial Signature',
+        },
+        {
+          id: 'booking-disabled-module',
+          booking_number: 'B-DISABLED',
+          tenant_id: 'tenant-beauty',
+          package_id: 'pkg-babycare',
+          package_name: 'Tam be',
+        },
+        {
+          id: 'booking-other-tenant',
+          booking_number: 'B-TENANT',
+          tenant_id: 'tenant-beauty',
+          package_id: 'pkg-other-tenant',
+          package_name: 'Other tenant package',
+        },
+        {
+          id: 'booking-missing-package',
+          booking_number: 'B-MISSING',
+          tenant_id: 'tenant-beauty',
+          package_id: 'pkg-missing',
+          package_name: 'Missing package',
+        },
+      ],
+    });
+
+    expect(result.criticalCount).toBe(3);
+    expect(result.findings.map((finding: { code: string }) => finding.code)).toEqual([
+      'booking_package_module_disabled',
+      'booking_package_tenant_mismatch',
+      'booking_package_missing_package',
     ]);
   });
 

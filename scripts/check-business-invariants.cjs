@@ -5,6 +5,11 @@ const SESSION_TOLERANCE = 0.01;
 const DEFAULT_MAX_ROWS = 20000;
 const STALE_OUTBOX_WARNING_HOURS = 24;
 const OPEN_PAYMENT_STATUSES = new Set(['deposit_pending', 'deposit', 'inquiry']);
+const TENANT_MODULE_KEYS = ['babycare', 'beauty_spa'];
+const DEFAULT_ENABLED_MODULES = {
+  babycare: true,
+  beauty_spa: false,
+};
 
 const SOURCE_ACCOUNTING_CHECKS = [
   {
@@ -35,6 +40,31 @@ function trimTrailingSlash(value) {
 
 function normalize(value) {
   return String(value ?? '').trim().toLowerCase();
+}
+
+function isPlainRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function normalizePackageModuleKey(value) {
+  const normalized = normalize(value);
+  return TENANT_MODULE_KEYS.includes(normalized) ? normalized : 'babycare';
+}
+
+function normalizeEnabledModulesForSave(value) {
+  const source = isPlainRecord(value) ? value : {};
+  const hasExplicitModuleConfig = TENANT_MODULE_KEYS.some((moduleKey) => typeof source[moduleKey] === 'boolean');
+
+  if (!hasExplicitModuleConfig) {
+    return DEFAULT_ENABLED_MODULES;
+  }
+
+  const modules = {
+    babycare: typeof source.babycare === 'boolean' ? source.babycare : false,
+    beauty_spa: typeof source.beauty_spa === 'boolean' ? source.beauty_spa : false,
+  };
+
+  return modules.babycare || modules.beauty_spa ? modules : DEFAULT_ENABLED_MODULES;
 }
 
 function asFiniteNumber(value, fallback = 0) {
@@ -198,6 +228,7 @@ async function loadBusinessDataset({
     journalEntries,
     journalLines,
     accountingOutbox,
+    tenants,
   ] = await Promise.all([
     fetchTableRows({
       ...common,
@@ -226,7 +257,7 @@ async function loadBusinessDataset({
     fetchTableRows({
       ...common,
       table: 'packages',
-      select: 'id,name,tenant_id,session_multiplier,total_sessions',
+      select: 'id,name,tenant_id,module_key,session_multiplier,total_sessions',
     }),
     fetchTableRows({
       ...common,
@@ -259,6 +290,11 @@ async function loadBusinessDataset({
       table: 'accounting_outbox',
       select: 'id,tenant_id,event_type,reference_type,reference_id,status,retry_count,max_retries,last_error,created_at',
     }),
+    fetchTableRows({
+      ...common,
+      table: 'tenants',
+      select: 'id,enabled_modules',
+    }),
   ]);
 
   return {
@@ -273,6 +309,7 @@ async function loadBusinessDataset({
     journalEntries,
     journalLines,
     accountingOutbox,
+    tenants,
   };
 }
 
@@ -378,6 +415,59 @@ function calculatePortalPaymentRequest(input) {
     effectiveTab,
     amountToPay,
   };
+}
+
+function checkBookingPackageScope(dataset) {
+  const findings = [];
+  const packagesById = indexBy(dataset.packages || [], 'id');
+  const tenantsById = indexBy(dataset.tenants || [], 'id');
+
+  (dataset.bookings || []).forEach((booking) => {
+    if (!booking.package_id) return;
+
+    const pkg = packagesById.get(booking.package_id);
+    const baseDetails = {
+      recordId: booking.id,
+      bookingId: booking.id,
+      bookingNumber: booking.booking_number,
+      packageId: booking.package_id,
+      packageName: booking.package_name,
+      bookingTenantId: booking.tenant_id,
+      sourceTable: 'bookings',
+    };
+
+    if (!pkg) {
+      addFinding(findings, CRITICAL, 'booking_package_missing_package', 'Booking package_id must reference an existing package.', baseDetails);
+      return;
+    }
+
+    if (pkg.tenant_id !== booking.tenant_id) {
+      addFinding(findings, CRITICAL, 'booking_package_tenant_mismatch', 'Booking package must belong to the same tenant as the booking.', {
+        ...baseDetails,
+        packageTenantId: pkg.tenant_id,
+      });
+      return;
+    }
+
+    const tenant = tenantsById.get(booking.tenant_id);
+    if (!tenant) {
+      addFinding(findings, CRITICAL, 'booking_package_missing_tenant', 'Booking tenant must exist before validating package module scope.', baseDetails);
+      return;
+    }
+
+    const packageModuleKey = normalizePackageModuleKey(pkg.module_key);
+    const enabledModules = normalizeEnabledModulesForSave(tenant.enabled_modules);
+
+    if (!enabledModules[packageModuleKey]) {
+      addFinding(findings, CRITICAL, 'booking_package_module_disabled', 'Booking package module must be enabled for this tenant by Admin HQ.', {
+        ...baseDetails,
+        packageModuleKey,
+        enabledModules,
+      });
+    }
+  });
+
+  return createResult('booking_package_scope', findings);
 }
 
 function checkPaymentBookingRevenue(dataset) {
@@ -1067,6 +1157,7 @@ function runBusinessInvariantChecksOnDataset(dataset, options = {}) {
   };
 
   return [
+    checkBookingPackageScope(dataset),
     checkPaymentBookingRevenue(dataset),
     checkBookingFinancialIntegrity(dataset),
     checkLedger(dataset, context),
@@ -1210,6 +1301,7 @@ module.exports = {
   buildRestUrl,
   calculateBookingPaymentState,
   checkAccountingReadiness,
+  checkBookingPackageScope,
   checkBookingFinancialIntegrity,
   checkCrossModuleSideEffects,
   checkInventory,
