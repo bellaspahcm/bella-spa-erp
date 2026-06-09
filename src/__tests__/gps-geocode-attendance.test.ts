@@ -65,6 +65,11 @@ jest.mock('../services/audit-actions', () => ({
   recordAuditLog: (...args: any[]) => mockRecordAuditLog(...args),
 }));
 
+const mockProcessSessionCompletion = jest.fn();
+jest.mock('../modules/booking/actions/session-completion-engine', () => ({
+  processSessionCompletion: (...args: any[]) => mockProcessSessionCompletion(...args),
+}));
+
 import { geocodeAddress, createCustomer, updateCustomer } from '../services/customer-actions';
 import { startSession, completeKTVSession } from '../services/ktv-actions';
 
@@ -73,6 +78,7 @@ describe('GPS Geocoding & Customer Geolocation Capture Tests', () => {
     jest.clearAllMocks();
     global.fetch = jest.fn();
     mockRecordAuditLog.mockResolvedValue({ success: true });
+    mockProcessSessionCompletion.mockResolvedValue({ success: true });
   });
 
   describe('geocodeAddress', () => {
