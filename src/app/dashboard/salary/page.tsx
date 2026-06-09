@@ -63,6 +63,40 @@ function getSalaryActionKey(action: 'approve' | 'publish' | 'confirm' | 'finaliz
   return `${action}:${ktvId}`;
 }
 
+const EXCEL_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+function base64ToExcelBlob(base64: string) {
+  if (!base64) {
+    throw new Error('Máy chủ không trả về dữ liệu Excel');
+  }
+
+  try {
+    const binary = window.atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new Blob([bytes], { type: EXCEL_MIME_TYPE });
+  } catch {
+    throw new Error('Dữ liệu Excel trả về không hợp lệ');
+  }
+}
+
+function downloadExcelBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+
+  try {
+    a.click();
+  } finally {
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }
+}
+
 export default function SalaryPage() {
   const [ktvSalaries, setKtvSalaries] = useState<KtvSalaryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,6 +107,7 @@ export default function SalaryPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [matrixData, setMatrixData] = useState<KtvSessionMatrix | null>(null);
   const [isExportingMatrix, setIsExportingMatrix] = useState(false);
+  const [activeSalaryExportId, setActiveSalaryExportId] = useState<string | null>(null);
   const [activeSalaryAction, setActiveSalaryAction] = useState<string | null>(null);
   const [attendanceData, setAttendanceData] = useState<KtvAttendanceSummary[]>([]);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
@@ -410,6 +445,9 @@ export default function SalaryPage() {
   };
 
   const handleExport = async (s: KtvSalaryRecord) => {
+    if (activeSalaryExportId) return;
+
+    setActiveSalaryExportId(s.id);
     const toastId = toast.loading(`Đang tạo báo cáo cho ${s.name}...`);
     try {
       const result = await exportSalaryToExcelResult(s.id, s.name, `${getCurrentMonthString()}-01`, {
@@ -429,27 +467,23 @@ export default function SalaryPage() {
         throw new Error(result.error);
       }
 
-      const base64 = result.data;
-      
-      const blob = await (await fetch(`data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`)).blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Bao_cao_luong_${s.name.replace(/\s+/g, '_')}_${currentMonthYear.replace('/', '_')}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const blob = base64ToExcelBlob(result.data);
+      downloadExcelBlob(
+        blob,
+        `Bao_cao_luong_${s.name.replace(/\s+/g, '_')}_${currentMonthYear.replace('/', '_')}.xlsx`,
+      );
       
       toast.success(`Đã xuất báo cáo thành công cho ${s.name}`, { id: toastId });
     } catch (error) {
       console.error('Export failed:', error);
       toast.error('Lỗi khi xuất báo cáo Excel: ' + getErrorMessage(error), { id: toastId });
+    } finally {
+      setActiveSalaryExportId(null);
     }
   };
 
   const handleExportMatrix = async () => {
-    if (!matrixData) return;
+    if (!matrixData || isExportingMatrix) return;
     setIsExportingMatrix(true);
     const toastId = toast.loading('Đang chuẩn bị bảng đối soát số buổi...');
     try {
@@ -458,16 +492,11 @@ export default function SalaryPage() {
         throw new Error(result.error);
       }
 
-      const base64 = result.data;
-      const blob = await (await fetch(`data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`)).blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Bang_doi_soat_buoi_lam_KTV_${currentMonthYear.replace('/', '_')}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const blob = base64ToExcelBlob(result.data);
+      downloadExcelBlob(
+        blob,
+        `Bang_doi_soat_buoi_lam_KTV_${currentMonthYear.replace('/', '_')}.xlsx`,
+      );
       toast.success('Đã xuất bảng đối soát thành công', { id: toastId });
     } catch (error) {
       console.error('Matrix export failed:', error);
@@ -598,6 +627,7 @@ export default function SalaryPage() {
               filteredSalaries={filteredSalaries}
               currentUser={currentUser}
               activeSalaryAction={activeSalaryAction}
+              activeSalaryExportId={activeSalaryExportId}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               openEditModal={openEditModal}
