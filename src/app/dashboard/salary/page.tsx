@@ -119,6 +119,7 @@ export default function SalaryPage() {
           await options.onConfirm();
         } catch (error) {
           console.error(error);
+          toast.error(getErrorMessage(error));
         } finally {
           setConfirmModal(prev => ({ ...prev, isOpen: false, isLoading: false }));
         }
@@ -225,7 +226,7 @@ export default function SalaryPage() {
           toast.success('Đã phê duyệt lương thành công');
           setKtvSalaries(prev => prev.map(s => s.id === id ? { ...s, status: 'approved' } : s));
         } else {
-          toast.error('Lỗi khi phê duyệt lương');
+          toast.error(result.error || 'Lỗi khi phê duyệt lương');
         }
       }
     });

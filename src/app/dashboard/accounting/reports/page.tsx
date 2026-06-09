@@ -113,7 +113,7 @@ export default function AccountingReportsPage() {
       }
     } catch (err: unknown) {
       console.error('Error fetching report data:', err);
-      toast.error('Không thể tải dữ liệu báo cáo tài chính.');
+      toast.error(getErrorMessage(err, 'Không thể tải dữ liệu báo cáo tài chính.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
