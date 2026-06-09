@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Building2, Mail, MapPin, Phone, RefreshCw, ShieldCheck, User, X } from 'lucide-react';
+import { Building2, Mail, MapPin, Phone, RefreshCw, ShieldCheck, Sparkles, User, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 export type HqBranchRegistrationInput = {
@@ -13,6 +13,7 @@ export type HqBranchRegistrationInput = {
   adminEmail: string;
   adminPassword: string;
   branchType: 'owned' | 'franchise';
+  businessModule: 'babycare' | 'beauty_spa';
 };
 
 interface HqBranchRegistrationModalProps {
@@ -31,6 +32,7 @@ const emptyForm: HqBranchRegistrationInput = {
   adminEmail: '',
   adminPassword: '',
   branchType: 'owned',
+  businessModule: 'babycare',
 };
 
 export function HqBranchRegistrationModal({
@@ -106,6 +108,36 @@ export function HqBranchRegistrationModal({
               <ShieldCheck size={15} />
               Nhượng quyền
             </button>
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ngành kinh doanh *</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => updateField('businessModule', 'babycare')}
+                className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                  form.businessModule === 'babycare'
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <Building2 size={15} />
+                Mother & Baby
+              </button>
+              <button
+                type="button"
+                onClick={() => updateField('businessModule', 'beauty_spa')}
+                className={`rounded-2xl border px-4 py-3 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                  form.businessModule === 'beauty_spa'
+                    ? 'border-primary bg-primary/5 text-primary'
+                    : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <Sparkles size={15} />
+                Beauty Spa
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

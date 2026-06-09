@@ -3,6 +3,12 @@
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import {
+  toTenantModuleJson,
+  type TenantEnabledModules,
+  type TenantModuleKey,
+} from '@/lib/business-rules/tenant-modules';
+import { checkHqAuth } from './hq-actions';
 import type { Database } from '@/types/database.types';
 
 type AuthUser = { id: string };
@@ -14,6 +20,9 @@ type AdminAuthClient = {
   };
 };
 type TenantUpdate = Database['public']['Tables']['tenants']['Update'];
+type RegisterTenantBusinessModule = TenantModuleKey;
+
+const BEAUTY_SPA_HQ_ONLY_ERROR = 'Chỉ Admin HQ mới được setup tenant Beauty Spa.';
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Lỗi không xác định xảy ra';
@@ -44,6 +53,24 @@ export interface RegisterTenantInput {
   adminEmail: string;
   adminPassword?: string;
   branchType?: 'owned' | 'franchise';
+  businessModule?: RegisterTenantBusinessModule;
+}
+
+function normalizeBusinessModule(value: unknown): RegisterTenantBusinessModule {
+  return value === 'beauty_spa' ? 'beauty_spa' : 'babycare';
+}
+
+function getEnabledModulesForBusinessModule(moduleKey: RegisterTenantBusinessModule): TenantEnabledModules {
+  return moduleKey === 'beauty_spa'
+    ? { babycare: false, beauty_spa: true }
+    : { babycare: true, beauty_spa: false };
+}
+
+async function assertBusinessModuleSetupAllowed(moduleKey: RegisterTenantBusinessModule) {
+  if (moduleKey === 'babycare') return null;
+
+  const hqAuth = await checkHqAuth();
+  return hqAuth.authorized ? null : BEAUTY_SPA_HQ_ONLY_ERROR;
 }
 
 /**
@@ -57,6 +84,11 @@ export async function registerNewTenant(input: RegisterTenantInput) {
     // 1. Validate parameters
     if (!input.spaName || !input.adminName || !input.adminEmail) {
       return { success: false, error: 'Vui lòng điền đầy đủ các thông tin bắt buộc.' };
+    }
+    const businessModule = normalizeBusinessModule(input.businessModule);
+    const businessModuleAuthError = await assertBusinessModuleSetupAllowed(businessModule);
+    if (businessModuleAuthError) {
+      return { success: false, error: businessModuleAuthError };
     }
 
     // 2. Auth SignUp
@@ -171,21 +203,31 @@ export async function registerNewTenant(input: RegisterTenantInput) {
       return { success: false, error: `${rpcError.message}${rollbackNote}` };
     }
 
-    // 3.1. Update franchise agreement details if Nhượng quyền (Franchise) is chosen
+    // 3.1. Update HQ-managed tenant setup fields after the base onboarding RPC.
+    const postOnboardingUpdate: TenantUpdate = {};
+    if (businessModule === 'beauty_spa') {
+      postOnboardingUpdate.enabled_modules = toTenantModuleJson(
+        getEnabledModulesForBusinessModule(businessModule),
+      );
+    }
     if (input.branchType === 'franchise') {
       const today = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
-      const franchiseUpdate: TenantUpdate = {
-        franchise_agreement_date: today,
-        royalty_type: 'percentage'
-      };
+      postOnboardingUpdate.franchise_agreement_date = today;
+      postOnboardingUpdate.royalty_type = 'percentage';
+    }
+
+    if (Object.keys(postOnboardingUpdate).length > 0) {
       const { error: updateError } = await supabase
         .from('tenants')
-        .update(franchiseUpdate)
+        .update(postOnboardingUpdate)
         .eq('id', tenantId as string);
 
       if (updateError) {
-        console.error('[registerNewTenant] Post-onboarding franchise update failed:', updateError.message);
-        return { success: false, error: `Lỗi cập nhật cấu hình nhượng quyền: ${updateError.message}` };
+        console.error('[registerNewTenant] Post-onboarding tenant setup update failed:', updateError.message);
+        const setupLabel = input.branchType === 'franchise'
+          ? 'cấu hình nhượng quyền'
+          : 'module ngành Beauty Spa';
+        return { success: false, error: `Lỗi cập nhật ${setupLabel}: ${updateError.message}` };
       }
     }
  
@@ -201,7 +243,9 @@ export async function registerNewTenant(input: RegisterTenantInput) {
           name: input.spaName,
           contact_phone: input.contactPhone,
           address: input.address,
-          email: input.email
+          email: input.email,
+          business_module: businessModule,
+          enabled_modules: getEnabledModulesForBusinessModule(businessModule),
         }
       });
     } catch (auditErr) {
