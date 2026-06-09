@@ -36,6 +36,7 @@ export default function InventoryPage() {
     requestNotes,
     setRequestNotes,
     submittingOrder,
+    processingOrderId,
     logMonth,
     setLogMonth,
     logYear,
@@ -108,6 +109,7 @@ export default function InventoryPage() {
             <InventoryTransferOrdersPanel
               orders={orders}
               loadingOrders={loadingOrders}
+              processingOrderId={processingOrderId}
               onCreateRequest={() => {
                 setRequestCart([]);
                 setSelectedItemIndex(-1);

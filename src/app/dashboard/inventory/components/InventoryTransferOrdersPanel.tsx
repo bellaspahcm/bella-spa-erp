@@ -6,6 +6,7 @@ import type { InventoryTransferOrder } from '@/services/inventory-transfer-actio
 type InventoryTransferOrdersPanelProps = {
   orders: InventoryTransferOrder[];
   loadingOrders: boolean;
+  processingOrderId: string | null;
   onCreateRequest: () => void;
   onCancelOrder: (orderId: string) => void;
   onConfirmReceipt: (orderId: string) => void;
@@ -22,6 +23,7 @@ const STATUS_LABELS: Record<InventoryTransferOrder['status'], string> = {
 export function InventoryTransferOrdersPanel({
   orders,
   loadingOrders,
+  processingOrderId,
   onCreateRequest,
   onCancelOrder,
   onConfirmReceipt,
@@ -66,7 +68,9 @@ export function InventoryTransferOrdersPanel({
                   Không có lệnh chuyển kho nào.
                 </td>
               </tr>
-            ) : orders.map(ord => (
+            ) : orders.map(ord => {
+              const isProcessingOrder = processingOrderId === ord.id;
+              return (
               <tr key={ord.id} className="hover:bg-slate-50/20 transition-all text-xs font-bold text-slate-600">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="font-mono font-black text-slate-800">{ord.order_number}</span>
@@ -112,13 +116,22 @@ export function InventoryTransferOrdersPanel({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex gap-2 whitespace-nowrap">
                     {ord.status === 'pending' && (
-                      <button onClick={() => onCancelOrder(ord.id)} className="text-rose-500 hover:text-rose-700 transition-colors uppercase tracking-widest text-[9px] font-black whitespace-nowrap">
-                        Hủy đơn
+                      <button
+                        onClick={() => onCancelOrder(ord.id)}
+                        disabled={Boolean(processingOrderId)}
+                        className="text-rose-500 hover:text-rose-700 transition-colors uppercase tracking-widest text-[9px] font-black whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isProcessingOrder ? 'Đang hủy...' : 'Hủy đơn'}
                       </button>
                     )}
                     {ord.status === 'shipped' && (
-                      <button onClick={() => onConfirmReceipt(ord.id)} className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl transition-all shadow-md text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
-                        <CheckCircle2 className="w-3 h-3 shrink-0" /> Đã Nhận
+                      <button
+                        onClick={() => onConfirmReceipt(ord.id)}
+                        disabled={Boolean(processingOrderId)}
+                        className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 py-1.5 rounded-xl transition-all shadow-md text-[9px] font-black uppercase tracking-wider whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isProcessingOrder ? <RefreshCw className="w-3 h-3 shrink-0 animate-spin" /> : <CheckCircle2 className="w-3 h-3 shrink-0" />}
+                        {isProcessingOrder ? 'Đang nhận' : 'Đã Nhận'}
                       </button>
                     )}
                     {ord.status === 'completed' && (
@@ -134,7 +147,8 @@ export function InventoryTransferOrdersPanel({
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
