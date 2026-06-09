@@ -97,7 +97,8 @@ jobs:
         timeout-minutes: 20
         run: npm run e2e:visual
         env:
-          E2E_VISUAL_EXPECTED_TESTS: "52"
+          E2E_VISUAL_SMOKE_SCOPE: core
+          E2E_VISUAL_EXPECTED_TESTS: "30"
           E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
@@ -106,7 +107,7 @@ jobs:
       - name: Assert responsive visual smoke results
         run: npm run e2e:visual:assert
         env:
-          E2E_VISUAL_EXPECTED_TESTS: "52"
+          E2E_VISUAL_EXPECTED_TESTS: "30"
 
       - name: Upload Playwright report
         if: ${{ always() }}

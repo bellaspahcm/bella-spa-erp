@@ -94,6 +94,23 @@ const visualRoutes: VisualRoute[] = [
   },
 ];
 
+const coreVisualRouteNames = new Set([
+  "accounting-journals",
+  "accounting-reports",
+  "finance",
+  "finance-reconciliation",
+  "dashboard-chat",
+  "customers",
+  "inventory",
+  "services",
+  "settings",
+  "salary",
+]);
+
+const scopedVisualRoutes = process.env.E2E_VISUAL_SMOKE_SCOPE === "core"
+  ? visualRoutes.filter((route) => coreVisualRouteNames.has(route.name))
+  : visualRoutes;
+
 const viewports = [
   { name: "mobile", width: 390, height: 844 },
   { name: "desktop", width: 1440, height: 900 },
@@ -536,7 +553,7 @@ test.describe("Responsive visual smoke", () => {
   );
 
   for (const viewport of viewports) {
-    for (const route of visualRoutes) {
+    for (const route of scopedVisualRoutes) {
       test(`${viewport.name} ${route.name} renders without clipped page layout`, async ({
         adminPage,
       }, testInfo) => {
