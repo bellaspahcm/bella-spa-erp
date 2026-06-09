@@ -93,6 +93,7 @@ interface MockStore {
   franchise_royalty_invoices: any[];
   inter_branch_clearing_records: any[];
   tenants: any[];
+  packages: any[];
 }
 
 let mockStore: MockStore = {
@@ -105,7 +106,8 @@ let mockStore: MockStore = {
   session_reviews: [],
   franchise_royalty_invoices: [],
   inter_branch_clearing_records: [],
-  tenants: []
+  tenants: [],
+  packages: [],
 };
 
 function resetMockStore() {
@@ -124,6 +126,9 @@ function resetMockStore() {
     inter_branch_clearing_records: [],
     tenants: [
       { id: 'tenant-a', name: 'Bella Spa Branch A', royalty_type: 'percentage', royalty_rate: 10, internal_clearing_rate: 150000 }
+    ],
+    packages: [
+      { id: 'pkg-123', tenant_id: 'tenant-a', module_key: 'babycare', name: 'Gói Chăm Sóc Bầu VIP' }
     ]
   };
 }

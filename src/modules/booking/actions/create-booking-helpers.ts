@@ -2,6 +2,8 @@ import { resolvePackageName, getLocalDateString } from '@/lib/utils';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { buildPackageSaleOutboxEvent } from '@/lib/business-rules/accounting-outbox';
 import { normalizeDiscountPercent } from '@/lib/business-rules/payment';
+import { normalizePackageModuleKey } from '@/lib/business-rules/service-package';
+import { normalizeEnabledModulesForSave } from '@/lib/business-rules/tenant-modules';
 import { assertOpenAccountingPeriod } from '@/services/accounting/period-guards';
 import { buildRevenueAccountingMetadata, inferBusinessEventType } from '@/services/accounting/template-rules';
 import { resolveAccountingReviewStatus } from './accounting-review';
@@ -18,6 +20,8 @@ type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
 type SessionLogInsert = Database['public']['Tables']['session_logs']['Insert'];
 type RevenueInsert = Database['public']['Tables']['revenue']['Insert'];
+type PackageScopeRow = Pick<Database['public']['Tables']['packages']['Row'], 'id' | 'tenant_id' | 'module_key' | 'name'>;
+type TenantModuleScopeRow = Pick<Database['public']['Tables']['tenants']['Row'], 'enabled_modules'>;
 type ValidatedBookingData = z.infer<typeof bookingSchema>;
 type ActionError = { error: string };
 type ActionSuccess = { success: true };
@@ -25,6 +29,56 @@ type ActionSuccess = { success: true };
 type CreateBookingFormData = {
   newCustomer?: Omit<CustomerInsert, 'tenant_id'> & Partial<Pick<CustomerInsert, 'tenant_id'>>;
 };
+
+const BOOKING_PACKAGE_TENANT_ERROR = 'Gói dịch vụ không thuộc đơn vị kinh doanh hiện tại.';
+const BOOKING_PACKAGE_MODULE_ERROR = 'Gói dịch vụ không thuộc ngành kinh doanh được Admin HQ cấp cho spa này.';
+const BOOKING_PACKAGE_LOOKUP_ERROR = 'Không thể xác thực gói dịch vụ của booking.';
+
+export async function validateBookingPackageScope(
+  supabase: SupabaseServerClient,
+  tenantId: string,
+  packageId: string | null | undefined,
+): Promise<ActionSuccess | ActionError> {
+  const normalizedPackageId = typeof packageId === 'string' ? packageId.trim() : '';
+  if (!normalizedPackageId) {
+    return { success: true };
+  }
+
+  const { data: packageRow, error: packageError } = await supabase
+    .from('packages')
+    .select('id, tenant_id, module_key, name')
+    .eq('id', normalizedPackageId)
+    .single<PackageScopeRow>();
+
+  if (packageError || !packageRow) {
+    return {
+      error: `${BOOKING_PACKAGE_LOOKUP_ERROR} ${packageError?.message || 'Không tìm thấy gói dịch vụ.'}`,
+    };
+  }
+
+  if (packageRow.tenant_id !== tenantId) {
+    return { error: BOOKING_PACKAGE_TENANT_ERROR };
+  }
+
+  const { data: tenantRow, error: tenantError } = await supabase
+    .from('tenants')
+    .select('enabled_modules')
+    .eq('id', tenantId)
+    .single<TenantModuleScopeRow>();
+
+  if (tenantError || !tenantRow) {
+    return {
+      error: `${BOOKING_PACKAGE_LOOKUP_ERROR} ${tenantError?.message || 'Không tìm thấy cấu hình tenant.'}`,
+    };
+  }
+
+  const enabledModules = normalizeEnabledModulesForSave(tenantRow.enabled_modules);
+  const packageModuleKey = normalizePackageModuleKey(packageRow.module_key);
+
+  return enabledModules[packageModuleKey]
+    ? { success: true }
+    : { error: BOOKING_PACKAGE_MODULE_ERROR };
+}
 
 export async function enforceCreateBookingRateLimit(): Promise<ActionSuccess | ActionError> {
   try {

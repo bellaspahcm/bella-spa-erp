@@ -14,6 +14,7 @@ import {
   recordBookingDepositRevenue,
   resolveBookingTenant,
   upsertBookingRecord,
+  validateBookingPackageScope,
 } from './create-booking-helpers';
 
 type CreateBookingInput = z.input<typeof bookingSchema> & {
@@ -52,6 +53,11 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
     return { error: tenantResult.error };
   }
   const tenantId = tenantResult.tenantId;
+
+  const packageScopeResult = await validateBookingPackageScope(supabase, tenantId, validatedData.package_id);
+  if ('error' in packageScopeResult) {
+    return { error: packageScopeResult.error };
+  }
 
   const customerResult = await createCustomerForBookingIfNeeded(supabase, validatedData, formData, tenantId);
   if ('error' in customerResult) {

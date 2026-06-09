@@ -2,8 +2,8 @@
  * End-to-End Spa Business Pipeline Integration Tests.
  *
  * This test suite simulates the entire business lifecycle for Bella Spa ERP:
- * 1. Guest creates booking (deposit_pending, record initial deposit in revenue).
- * 2. Admin records remaining payment to confirm and transition status to 'booked'.
+ * 1. Guest creates booking with confirmed deposit (booked, record initial deposit in revenue).
+ * 2. Admin records remaining payment while booking remains ready for service.
  * 3. KTV checks in / checks out & completes sessions (increments sessions completed, auto-creates session reviews).
  * 4. System aggregates monthly P&L dynamically calculating commissions, rating bonuses, and operating expenses.
  * 5. Admin locks the month, protecting all financial records and salary records from further updates.
@@ -28,6 +28,7 @@ interface MockStore {
   franchise_royalty_invoices: any[];
   inter_branch_clearing_records: any[];
   tenants: any[];
+  packages: any[];
 }
 
 let mockStore: MockStore = {
@@ -41,6 +42,7 @@ let mockStore: MockStore = {
   franchise_royalty_invoices: [],
   inter_branch_clearing_records: [],
   tenants: [],
+  packages: [],
 };
 
 function resetMockStore() {
@@ -72,6 +74,9 @@ function resetMockStore() {
     inter_branch_clearing_records: [],
     tenants: [
       { id: 'tenant-a', name: 'Bella Spa Branch A', royalty_type: 'percentage', royalty_rate: 10, internal_clearing_rate: 150000 },
+    ],
+    packages: [
+      { id: 'pkg-123', tenant_id: 'tenant-a', module_key: 'babycare', name: 'Gói Chăm Sóc Bầu VIP' },
     ],
   };
 }
@@ -521,7 +526,7 @@ describe('End-to-End Business Pipeline Integration Suite', () => {
     expect(createResult.data).toBeDefined();
 
     const createdBooking = createResult.data!;
-    expect(createdBooking.status).toBe('deposit_pending'); // Since it is only partially paid
+    expect(createdBooking.status).toBe('booked'); // Deposit is confirmed, remaining balance is tracked separately
     expect(createdBooking.deposit_amount).toBe(1000000);
     expect(createdBooking.ktv_commission).toBe(150000); // Standard commission auto-resolved
 
@@ -562,7 +567,7 @@ describe('End-to-End Business Pipeline Integration Suite', () => {
     expect(paymentResult.error).toBeUndefined();
     expect(paymentResult.success).toBe(true);
 
-    // Verify booking transitioned status to 'booked' and full price has been collected
+    // Verify booking remains ready for service and full price has been collected
     const activeBooking = mockStore.bookings.find(b => b.id === createdBooking.id);
     expect(activeBooking.status).toBe('booked');
     expect(activeBooking.deposit_amount).toBe(5000000); // Fully paid

@@ -3,6 +3,7 @@
 import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
 import type { OnlineBookingFormData } from './online-booking-types';
+import { validateBookingPackageScope } from './create-booking-helpers';
 
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
 type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
@@ -43,6 +44,11 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
       console.error('[submitOnlineBooking] No tenant found in database!');
       return { error: 'Hệ thống chưa được cấu hình. Vui lòng liên hệ trực tiếp qua hotline.' };
     }
+  }
+
+  const packageScopeResult = await validateBookingPackageScope(supabase, tenantId, formData.package_id);
+  if ('error' in packageScopeResult) {
+    return { error: packageScopeResult.error };
   }
 
   // 2. Look up existing customer by phone
