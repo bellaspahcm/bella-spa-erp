@@ -314,6 +314,7 @@ export function useCustomerDetailController() {
   }, [activeBooking, handleReusePackage]);
 
   const handleRecordPayment = useCallback(async () => {
+    if (isRecordingPayment) return;
     if (!activeBooking) return;
     if (paymentData.amount <= 0) {
       toast.error('Vui lòng nhập số tiền hợp lệ');
@@ -366,7 +367,7 @@ export function useCustomerDetailController() {
     } finally {
       setIsRecordingPayment(false);
     }
-  }, [activeBooking, id, loadData, paymentData, paymentFile]);
+  }, [activeBooking, id, isRecordingPayment, loadData, paymentData, paymentFile]);
 
   const receiptData = useMemo<ReceiptData | null>(() => {
     if (!customer || !activeBooking) return null;
@@ -436,12 +437,13 @@ export function useCustomerDetailController() {
   }, [loadData]);
 
   const handlePayRemaining = useCallback((amount: number) => {
+    if (isRecordingPayment) return;
     setPaymentData((prev) => ({
       ...prev,
       amount,
     }));
     setIsPaymentModalOpen(true);
-  }, []);
+  }, [isRecordingPayment]);
 
   const handleOpenZalo = useCallback(() => {
     if (!customer) return;
