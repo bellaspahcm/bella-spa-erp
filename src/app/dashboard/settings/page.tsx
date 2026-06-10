@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getTenantSettings, saveTenantSettings } from "@/services/tenant-actions";
+import { resolveTenantBrandIdentity } from "@/lib/business-rules/tenant-modules";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
 import { cn } from "@/lib/utils";
 import { TenantGeneralSettings } from "@/types/domain";
@@ -72,6 +73,7 @@ function SettingsContent() {
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [settingsBrandName, setSettingsBrandName] = useState("Spa ERP");
 
   const [generalSettings, setGeneralSettings] = useState<TenantGeneralSettings>({
     name: "",
@@ -95,6 +97,14 @@ function SettingsContent() {
     try {
       const data = await getTenantSettings();
       if (data) {
+        const brand = resolveTenantBrandIdentity({
+          enabledModules: data.enabled_modules,
+          brandTheme: data.brand_theme,
+          logoUrl: data.logo_url,
+          tenantName: data.name,
+          surface: "app",
+        });
+        setSettingsBrandName(brand.displayName);
         const sc = (data.salary_config ?? {}) as Record<string, unknown>;
         setGeneralSettings({
           name: data.name || "",
@@ -181,7 +191,7 @@ function SettingsContent() {
           </h1>
           <p className="text-muted-foreground font-semibold mt-1 flex items-center gap-2">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-            Cấu hình hệ thống Bella Spa
+            Cấu hình hệ thống {settingsBrandName}
           </p>
         </div>
         {(activeTab === "general" || activeTab === "salary") && (

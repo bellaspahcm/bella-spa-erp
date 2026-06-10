@@ -4,7 +4,57 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
 import { getCurrentUser } from '@/services/user-actions';
+import { getTenantSettings } from '@/services/tenant-actions';
+import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
 import { Loader2 } from 'lucide-react';
+
+const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
+
+async function applyDashboardTenantBrandRuntime() {
+  const tenant = await getTenantSettings();
+  if (!tenant || typeof document === 'undefined') return;
+
+  const brand = resolveTenantBrandIdentity({
+    enabledModules: tenant.enabled_modules,
+    brandTheme: tenant.brand_theme,
+    logoUrl: tenant.logo_url,
+    tenantName: tenant.name,
+    surface: 'app',
+  });
+  const root = document.documentElement;
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+
+  root.dataset.tenantModule = brand.moduleKey;
+  root.dataset.tenantBrandButton = brand.buttonStyle;
+  root.dataset.tenantBrandMenu = brand.menuStyle;
+  root.dataset.tenantBrandRadius = brand.radiusStyle;
+
+  if (brand.isBeautySpa) {
+    root.style.setProperty('--primary', brand.primaryColor);
+    root.style.setProperty('--primary-hover', brand.primaryHoverColor);
+    root.style.setProperty('--accent', brand.accentColor);
+    root.style.setProperty('--ring', brand.primaryColor);
+    themeMeta?.setAttribute('content', brand.primaryColor);
+  } else {
+    root.style.setProperty('--primary', '#9D174D');
+    root.style.setProperty('--primary-hover', '#831843');
+    root.style.setProperty('--accent', '#BE185D');
+    root.style.setProperty('--ring', '#9D174D');
+    themeMeta?.setAttribute('content', '#FF85A2');
+  }
+
+  try {
+    window.sessionStorage.setItem(
+      RUNTIME_BRAND_CACHE_KEY,
+      JSON.stringify({
+        tenantId: tenant.id,
+        ...brand,
+      }),
+    );
+  } catch {
+    // Runtime cache only prevents first-paint theme flashes.
+  }
+}
 
 export default function DashboardLayout({
   children,
@@ -32,6 +82,7 @@ export default function DashboardLayout({
           router.replace('/ktv/dashboard');
           return;
         }
+        await applyDashboardTenantBrandRuntime();
         setIsAuthorized(true);
       } catch (err) {
         console.error('[DashboardLayout] Auth check failed:', err);

@@ -145,7 +145,7 @@ export function BookingsMonthCalendar({
                 <span
                   className={`flex items-center justify-center w-8 h-8 text-sm font-bold rounded-xl transition-all ${
                     isSelected
-                      ? 'bg-rose-50 text-white shadow-lg shadow-rose-200 dark:shadow-none'
+                      ? 'beauty-calendar-day-active bg-rose-500 text-white shadow-lg shadow-rose-200 dark:shadow-none'
                       : dateIsToday
                         ? 'bg-rose-50 text-rose-500 border border-rose-100'
                         : 'text-slate-600 group-hover:text-slate-900'

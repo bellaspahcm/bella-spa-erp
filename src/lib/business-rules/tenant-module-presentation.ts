@@ -85,7 +85,7 @@ const BABYCARE_CUSTOMER_PRESENTATION: CustomerPresentation = {
 
 const BEAUTY_SPA_CUSTOMER_PRESENTATION: CustomerPresentation = {
   customerListSubtitle: 'Quản lý hồ sơ khách hàng Beauty Spa',
-  customerSearchPlaceholder: 'Tìm tên khách, SĐT, ngày sinh, liệu trình, địa chỉ...',
+  customerSearchPlaceholder: 'Tìm khách, SĐT, liệu trình...',
   editDescription: 'Chỉnh sửa hồ sơ khách hàng Beauty Spa',
   createDescription: 'Nhập thông tin cơ bản của khách hàng Beauty Spa',
   primaryNameLabel: 'Họ tên khách hàng',
