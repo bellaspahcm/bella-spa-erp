@@ -41,8 +41,8 @@ function toLocalDateKey(d: Date | string) {
 
 export function buildSessionModalData(
   session: TimelineSession,
-  overrides: Partial<BookingModalData> = {},
-  tenantModuleKey: TenantModuleKey = 'babycare',
+  overrides: Partial<BookingModalData>,
+  tenantModuleKey: TenantModuleKey,
 ): BookingModalData {
   return {
     id: session.id,

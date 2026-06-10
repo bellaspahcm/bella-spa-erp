@@ -1,6 +1,7 @@
 'use server';
 
 import { resolvePackageName } from '@/lib/utils';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { getPackages as getTenantPackages } from '@/services/package-actions';
 import type { Database } from '@/types/database.types';
 
@@ -44,8 +45,7 @@ export async function getPackages() {
 }
 
 export async function getBookings() {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const tenantId = await requireCurrentTenantId();
   const { data, error } = await supabase
     .from('bookings')
@@ -70,8 +70,7 @@ export async function getBookings() {
 }
 
 export async function getBookingsByCustomerId(customerId: string) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const tenantId = await requireCurrentTenantId();
   const { data, error } = await supabase
     .from('bookings')
@@ -108,8 +107,7 @@ export async function getBookingsByCustomerId(customerId: string) {
 }
 
 export async function getDraftBooking(customerId: string) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const tenantId = await requireCurrentTenantId();
   
   const { data, error } = await supabase
