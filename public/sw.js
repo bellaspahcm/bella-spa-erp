@@ -1,4 +1,8 @@
-const CACHE_NAME = 'bella-spa-erp-v1';
+const CACHE_NAME = 'bella-spa-erp-v2';
+const IS_LOCAL_DEV =
+  self.location.hostname === 'localhost' ||
+  self.location.hostname === '127.0.0.1' ||
+  self.location.hostname === '::1';
 const PRECACHE_ASSETS = [
   '/',
   '/manifest.json',
@@ -11,6 +15,11 @@ const PRECACHE_ASSETS = [
 
 // Install Event - Precache static assets
 self.addEventListener('install', (event) => {
+  if (IS_LOCAL_DEV) {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
+
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[Service Worker] Precaching static assets...');
@@ -21,6 +30,15 @@ self.addEventListener('install', (event) => {
 
 // Activate Event - Clean up old caches
 self.addEventListener('activate', (event) => {
+  if (IS_LOCAL_DEV) {
+    event.waitUntil(
+      caches.keys()
+        .then((cacheNames) => Promise.all(cacheNames.map((cache) => caches.delete(cache))))
+        .then(() => self.clients.claim())
+    );
+    return;
+  }
+
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -37,6 +55,10 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event - Dynamic caching strategy
 self.addEventListener('fetch', (event) => {
+  if (IS_LOCAL_DEV) {
+    return;
+  }
+
   const { request } = event;
   const url = new URL(request.url);
 

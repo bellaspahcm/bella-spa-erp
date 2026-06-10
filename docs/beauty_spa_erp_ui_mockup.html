@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jade Wellness ERP - Beauty Spa Interface Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --emerald: #074E44;
+      --emerald-2: #0A6357;
+      --navy: #0B2240;
+      --navy-2: #143560;
+      --gold: #C8A97A;
+      --gold-2: #D9BE99;
+      --teal: #6BBFB5;
+      --ivory: #F8F6F2;
+      --card: #FFFFFF;
+      --ink: #1A2535;
+      --muted: #56657A;
+      --soft: #8E9EAE;
+      --line: rgba(200, 169, 122, .25);
+      --line-strong: rgba(200, 169, 122, .48);
+      --serif: "Playfair Display", Georgia, serif;
+      --script: "Corinthia", cursive;
+      --sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --shadow-soft: 0 14px 42px rgba(10, 40, 30, .08);
+      --shadow-deep: 0 28px 80px rgba(10, 30, 50, .14);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 50% 45% at 8% 4%, rgba(7, 78, 68, .075), transparent 60%),
+        radial-gradient(ellipse 55% 50% at 98% 88%, rgba(11, 34, 64, .06), transparent 62%),
+        var(--ivory);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    img { display: block; max-width: 100%; object-fit: cover; }
+
+    .canvas {
+      min-height: 100vh;
+      padding: 26px;
+    }
+
+    .erp-shell {
+      display: grid;
+      grid-template-columns: 292px minmax(0, 1fr);
+      min-height: calc(100vh - 52px);
+      max-width: 1680px;
+      margin: 0 auto;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      background: rgba(255, 255, 255, .48);
+      box-shadow: var(--shadow-deep);
+      backdrop-filter: blur(18px);
+    }
+
+    .sidebar {
+      position: relative;
+      padding: 30px 24px;
+      color: #fff;
+      background:
+        linear-gradient(155deg, rgba(7, 78, 68, .98), rgba(11, 34, 64, .98)),
+        var(--emerald);
+    }
+
+    .sidebar::after {
+      content: "";
+      position: absolute;
+      inset: 16px;
+      pointer-events: none;
+      border: 1px solid rgba(217, 190, 153, .18);
+      border-radius: 26px;
+    }
+
+    .brand {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 8px 30px;
+      border-bottom: 1px solid rgba(217, 190, 153, .22);
+    }
+
+    .mark {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 1px solid rgba(217, 190, 153, .58);
+      border-radius: 17px;
+      color: var(--gold-2);
+      background: rgba(255, 255, 255, .08);
+      box-shadow: 0 16px 32px rgba(0, 0, 0, .18);
+      font: 700 18px var(--serif);
+      letter-spacing: -.02em;
+    }
+
+    .brand-script {
+      display: block;
+      margin-bottom: -2px;
+      color: #fff;
+      font: 700 33px var(--script);
+      line-height: .8;
+    }
+
+    .brand-sub {
+      color: var(--gold-2);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 2.8px;
+      text-transform: uppercase;
+    }
+
+    .nav-section {
+      position: relative;
+      z-index: 1;
+      margin-top: 28px;
+    }
+
+    .nav-title {
+      margin: 0 0 13px;
+      color: rgba(217, 190, 153, .72);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-height: 48px;
+      margin-bottom: 9px;
+      padding: 0 15px;
+      border: 1px solid transparent;
+      border-radius: 18px;
+      color: rgba(255, 255, 255, .72);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-item.active {
+      color: #fff;
+      border-color: rgba(217, 190, 153, .35);
+      background: rgba(255, 255, 255, .12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
+    }
+
+    .nav-dot {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      color: var(--gold-2);
+      background: rgba(255, 255, 255, .08);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .04em;
+    }
+
+    .sidebar-card {
+      position: relative;
+      z-index: 1;
+      margin-top: 34px;
+      padding: 20px;
+      border: 1px solid rgba(217, 190, 153, .26);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .sidebar-card .small {
+      color: rgba(255, 255, 255, .58);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+    }
+
+    .sidebar-card strong {
+      display: block;
+      margin-top: 8px;
+      color: #fff;
+      font: 500 23px var(--serif);
+      line-height: 1.15;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 30px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.74), rgba(248,246,242,.88)),
+        var(--ivory);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 22px;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding: 6px 13px;
+      border: 1px solid rgba(200, 169, 122, .32);
+      border-radius: 99px;
+      color: var(--gold);
+      background: rgba(200, 169, 122, .1);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--navy);
+      font: 500 clamp(32px, 3.1vw, 48px) var(--serif);
+      letter-spacing: -.03em;
+      line-height: 1.05;
+    }
+
+    .lead {
+      margin: 10px 0 0;
+      max-width: 710px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 1.7;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search {
+      width: min(360px, 30vw);
+      min-height: 52px;
+      padding: 0 20px;
+      border: 1px solid rgba(200, 169, 122, .3);
+      border-radius: 99px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, .8);
+      box-shadow: var(--shadow-soft);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .button {
+      min-height: 52px;
+      padding: 0 24px;
+      border: 1px solid rgba(200, 169, 122, .55);
+      border-radius: 99px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--emerald), var(--emerald-2));
+      box-shadow: 0 12px 28px rgba(7, 78, 68, .2);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1.3px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .stat {
+      min-height: 150px;
+      padding: 25px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .84);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .stat.featured {
+      color: #fff;
+      border-color: rgba(200, 169, 122, .42);
+      background:
+        linear-gradient(140deg, rgba(7, 78, 68, .97), rgba(11, 34, 64, .96)),
+        var(--emerald);
+    }
+
+    .stat-label {
+      color: var(--soft);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .featured .stat-label { color: rgba(217, 190, 153, .8); }
+
+    .stat-value {
+      margin-top: 16px;
+      color: var(--navy);
+      font: 600 32px var(--serif);
+      line-height: 1;
+    }
+
+    .featured .stat-value { color: #fff; }
+
+    .stat-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .featured .stat-note { color: rgba(255, 255, 255, .74); }
+
+    .spark {
+      width: 100%;
+      height: 7px;
+      margin-top: 22px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(11, 34, 64, .06);
+    }
+
+    .spark span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--gold), var(--teal));
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(360px, .8fr);
+      gap: 22px;
+    }
+
+    .panel {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 32px;
+      background: rgba(255, 255, 255, .86);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 24px 26px;
+      border-bottom: 1px solid rgba(200, 169, 122, .18);
+    }
+
+    .panel-title {
+      margin: 0;
+      color: var(--navy);
+      font: 600 23px var(--serif);
+      letter-spacing: -.015em;
+    }
+
+    .panel-sub {
+      margin-top: 4px;
+      color: var(--soft);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 14px;
+      border: 1px solid rgba(200, 169, 122, .32);
+      border-radius: 99px;
+      color: var(--emerald);
+      background: rgba(200, 169, 122, .11);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .timeline {
+      padding: 8px 26px 26px;
+    }
+
+    .appointment {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr) 150px;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 0;
+      border-bottom: 1px solid rgba(200, 169, 122, .16);
+    }
+
+    .appointment:last-child { border-bottom: 0; }
+
+    .time {
+      display: grid;
+      place-items: center;
+      min-height: 58px;
+      border: 1px solid rgba(200, 169, 122, .28);
+      border-radius: 18px;
+      color: var(--navy);
+      background: rgba(248, 246, 242, .9);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .client {
+      min-width: 0;
+    }
+
+    .client-name {
+      margin: 0;
+      color: var(--ink);
+      font-size: 16px;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .client-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 10px;
+      border-radius: 99px;
+      color: var(--emerald);
+      background: rgba(107, 191, 181, .14);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+    }
+
+    .progress {
+      text-align: right;
+    }
+
+    .progress strong {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--emerald);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .bar {
+      height: 7px;
+      overflow: hidden;
+      border-radius: 99px;
+      background: rgba(11, 34, 64, .07);
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--emerald), var(--gold));
+    }
+
+    .right-stack {
+      display: grid;
+      gap: 22px;
+    }
+
+    .photo-card {
+      position: relative;
+      min-height: 270px;
+      overflow: hidden;
+      border-radius: 32px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .photo-card img {
+      width: 100%;
+      height: 100%;
+      min-height: 270px;
+    }
+
+    .photo-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 28%, rgba(11, 34, 64, .78));
+    }
+
+    .photo-copy {
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      bottom: 22px;
+      z-index: 1;
+      color: #fff;
+    }
+
+    .photo-copy span {
+      color: var(--gold-2);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .photo-copy h3 {
+      margin: 8px 0 0;
+      font: 500 25px var(--serif);
+      line-height: 1.13;
+    }
+
+    .rooms {
+      padding: 24px;
+    }
+
+    .room-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 15px;
+      align-items: center;
+      padding: 17px 0;
+      border-bottom: 1px solid rgba(200, 169, 122, .15);
+    }
+
+    .room-row:last-child { border-bottom: 0; }
+
+    .room-name {
+      margin: 0 0 5px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .room-desc {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .room-status {
+      min-width: 88px;
+      padding: 9px 10px;
+      border: 1px solid rgba(7, 78, 68, .14);
+      border-radius: 99px;
+      color: var(--emerald);
+      background: rgba(7, 78, 68, .06);
+      text-align: center;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .service-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .service {
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr);
+      gap: 16px;
+      align-items: center;
+      min-height: 112px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, .86);
+      box-shadow: 0 12px 32px rgba(10, 40, 30, .055);
+    }
+
+    .service img {
+      width: 82px;
+      height: 82px;
+      border-radius: 22px;
+      border: 2px solid #fff;
+      box-shadow: 0 10px 24px rgba(10, 40, 30, .1);
+    }
+
+    .service-label {
+      color: var(--gold);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .service h4 {
+      margin: 5px 0 6px;
+      color: var(--navy);
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .service p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .mobile-preview {
+      max-width: 420px;
+      margin: 28px auto 0;
+      display: none;
+      border: 1px solid var(--line-strong);
+      border-radius: 38px;
+      background: #fff;
+      box-shadow: var(--shadow-deep);
+      overflow: hidden;
+    }
+
+    .mobile-top {
+      padding: 24px 22px;
+      color: #fff;
+      background: linear-gradient(140deg, var(--emerald), var(--navy));
+    }
+
+    .mobile-top .script {
+      display: block;
+      color: var(--gold-2);
+      font: 700 34px var(--script);
+      line-height: .8;
+    }
+
+    .mobile-top h2 {
+      margin: 8px 0 0;
+      font: 500 27px var(--serif);
+      line-height: 1.05;
+    }
+
+    .mobile-body {
+      padding: 18px;
+      background: var(--ivory);
+    }
+
+    .mobile-card {
+      margin-bottom: 13px;
+      padding: 16px;
+      border: 1px solid rgba(200, 169, 122, .24);
+      border-radius: 24px;
+      background: #fff;
+    }
+
+    .mobile-card strong {
+      display: block;
+      color: var(--ink);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .mobile-card span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 1180px) {
+      .erp-shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .topbar { grid-template-columns: 1fr; }
+      .top-actions { justify-content: space-between; }
+      .search { width: 100%; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid { grid-template-columns: 1fr; }
+      .service-strip { grid-template-columns: 1fr; }
+      .mobile-preview { display: block; }
+    }
+
+    @media (max-width: 720px) {
+      .canvas { padding: 0; }
+      .erp-shell {
+        min-height: 100vh;
+        border: 0;
+        border-radius: 0;
+      }
+      .main { padding: 22px 16px 38px; }
+      .top-actions { flex-direction: column; align-items: stretch; }
+      .button, .search { width: 100%; }
+      .stats { grid-template-columns: 1fr; }
+      .appointment {
+        grid-template-columns: 72px minmax(0, 1fr);
+      }
+      .progress {
+        grid-column: 1 / -1;
+        text-align: left;
+      }
+      .panel-head { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <main class="canvas">
+    <section class="erp-shell" aria-label="Jade Wellness Beauty Spa ERP mockup">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="mark">JW</div>
+          <div>
+            <span class="brand-script">Jade Wellness</span>
+            <span class="brand-sub">Luxury Spa ERP</span>
+          </div>
+        </div>
+
+        <nav class="nav-section">
+          <p class="nav-title">Tổng quan</p>
+          <div class="nav-item active"><span class="nav-dot">01</span> Bảng điều hành</div>
+          <div class="nav-item"><span class="nav-dot">AI</span> Trợ lý vận hành</div>
+        </nav>
+
+        <nav class="nav-section">
+          <p class="nav-title">Khách hàng & dịch vụ</p>
+          <div class="nav-item"><span class="nav-dot">KH</span> Khách hàng</div>
+          <div class="nav-item"><span class="nav-dot">LH</span> Lịch hẹn</div>
+          <div class="nav-item"><span class="nav-dot">LT</span> Thẻ liệu trình</div>
+          <div class="nav-item"><span class="nav-dot">DV</span> Dịch vụ spa</div>
+        </nav>
+
+        <nav class="nav-section">
+          <p class="nav-title">Vận hành</p>
+          <div class="nav-item"><span class="nav-dot">GB</span> Phòng & giường</div>
+          <div class="nav-item"><span class="nav-dot">NV</span> Chuyên viên</div>
+          <div class="nav-item"><span class="nav-dot">TC</span> Tài chính</div>
+        </nav>
+
+        <div class="sidebar-card">
+          <span class="small">Gói đang nổi bật</span>
+          <strong>Facial cấp ẩm chuyên sâu</strong>
+        </div>
+      </aside>
+
+      <section class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Beauty spa command center</span>
+            <h1>Điều hành một ngày spa thật mềm mại, chính xác và sang trọng.</h1>
+            <p class="lead">Giao diện riêng cho Beauty Spa ưu tiên lịch hẹn, phòng trị liệu, liệu trình đang hoạt động, doanh thu dịch vụ và trải nghiệm khách hàng cao cấp.</p>
+          </div>
+          <div class="top-actions">
+            <div class="search">Tìm khách, liệu trình, chuyên viên...</div>
+            <button class="button">Tạo lịch hẹn</button>
+          </div>
+        </header>
+
+        <section class="stats" aria-label="Chỉ số vận hành">
+          <article class="stat featured">
+            <div class="stat-label">Doanh thu hôm nay</div>
+            <div class="stat-value">18.6M</div>
+            <div class="stat-note">Vượt 12% so với mục tiêu ngày</div>
+            <div class="spark"><span style="width: 72%"></span></div>
+          </article>
+          <article class="stat">
+            <div class="stat-label">Lịch hẹn còn lại</div>
+            <div class="stat-value">24</div>
+            <div class="stat-note">6 khách VIP cần chăm sóc riêng</div>
+            <div class="spark"><span style="width: 58%"></span></div>
+          </article>
+          <article class="stat">
+            <div class="stat-label">Phòng đang dùng</div>
+            <div class="stat-value">7/10</div>
+            <div class="stat-note">Phòng Jade Suite kín đến 17:30</div>
+            <div class="spark"><span style="width: 70%"></span></div>
+          </article>
+          <article class="stat">
+            <div class="stat-label">Liệu trình mở</div>
+            <div class="stat-value">89</div>
+            <div class="stat-note">11 liệu trình cần nhắc lịch tuần này</div>
+            <div class="spark"><span style="width: 47%"></span></div>
+          </article>
+        </section>
+
+        <section class="grid">
+          <div>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2 class="panel-title">Lịch hẹn trị liệu hôm nay</h2>
+                  <div class="panel-sub">Ưu tiên khách VIP, phòng và tiến độ liệu trình</div>
+                </div>
+                <span class="pill">Thứ tư, 10/06</span>
+              </div>
+              <div class="timeline">
+                <article class="appointment">
+                  <div class="time">09:00</div>
+                  <div class="client">
+                    <h3 class="client-name">Chị Linh Nguyễn</h3>
+                    <div class="client-meta">
+                      <span class="tag">VIP</span>
+                      <span>Facial cấp ẩm chuyên sâu</span>
+                      <span>Phòng Jade 02</span>
+                    </div>
+                  </div>
+                  <div class="progress">
+                    <strong>3 / 6 buổi</strong>
+                    <div class="bar"><span style="width: 50%"></span></div>
+                  </div>
+                </article>
+
+                <article class="appointment">
+                  <div class="time">10:30</div>
+                  <div class="client">
+                    <h3 class="client-name">Chị Mai Trần</h3>
+                    <div class="client-meta">
+                      <span class="tag">Đang đến</span>
+                      <span>Triệt lông Diode</span>
+                      <span>Phòng Silk 01</span>
+                    </div>
+                  </div>
+                  <div class="progress">
+                    <strong>1 / 8 buổi</strong>
+                    <div class="bar"><span style="width: 13%"></span></div>
+                  </div>
+                </article>
+
+                <article class="appointment">
+                  <div class="time">13:30</div>
+                  <div class="client">
+                    <h3 class="client-name">Chị An Lê</h3>
+                    <div class="client-meta">
+                      <span class="tag">Cần tư vấn</span>
+                      <span>Body detox đá nóng</span>
+                      <span>Phòng Emerald 03</span>
+                    </div>
+                  </div>
+                  <div class="progress">
+                    <strong>Buổi lẻ</strong>
+                    <div class="bar"><span style="width: 100%"></span></div>
+                  </div>
+                </article>
+
+                <article class="appointment">
+                  <div class="time">15:00</div>
+                  <div class="client">
+                    <h3 class="client-name">Chị Ngọc Phạm</h3>
+                    <div class="client-meta">
+                      <span class="tag">Tái hẹn</span>
+                      <span>Peel sáng da phục hồi</span>
+                      <span>Phòng Jade 01</span>
+                    </div>
+                  </div>
+                  <div class="progress">
+                    <strong>5 / 10 buổi</strong>
+                    <div class="bar"><span style="width: 50%"></span></div>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <section class="service-strip" aria-label="Dịch vụ nổi bật">
+              <article class="service">
+                <img src="../public/spa_facial.png" alt="Facial treatment" />
+                <div>
+                  <span class="service-label">Best seller</span>
+                  <h4>Facial cấp ẩm chuyên sâu</h4>
+                  <p>Biên lợi nhuận cao, lịch đặt đều trong tuần.</p>
+                </div>
+              </article>
+              <article class="service">
+                <img src="../public/spa_stone.png" alt="Stone spa" />
+                <div>
+                  <span class="service-label">Signature</span>
+                  <h4>Body detox đá nóng</h4>
+                  <p>Tỷ lệ tái đặt tốt, phù hợp gói hội viên.</p>
+                </div>
+              </article>
+              <article class="service">
+                <img src="../public/spa_lounge.png" alt="Spa suite" />
+                <div>
+                  <span class="service-label">VIP suite</span>
+                  <h4>Liệu trình phòng riêng</h4>
+                  <p>Cần điều phối phòng, chuyên viên và hậu cần.</p>
+                </div>
+              </article>
+            </section>
+          </div>
+
+          <aside class="right-stack">
+            <article class="photo-card">
+              <img src="../public/spa_lounge.png" alt="Jade Wellness private suite" />
+              <div class="photo-copy">
+                <span>Không gian trị liệu</span>
+                <h3>Jade Suite đang giữ tỷ lệ đặt phòng cao nhất hôm nay.</h3>
+              </div>
+            </article>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2 class="panel-title">Phòng & giường</h2>
+                  <div class="panel-sub">Trạng thái vận hành theo thời gian thực</div>
+                </div>
+              </div>
+              <div class="rooms">
+                <div class="room-row">
+                  <div>
+                    <p class="room-name">Jade 01</p>
+                    <div class="room-desc">Peel sáng da, kết thúc lúc 16:15</div>
+                  </div>
+                  <span class="room-status">Đang dùng</span>
+                </div>
+                <div class="room-row">
+                  <div>
+                    <p class="room-name">Silk 02</p>
+                    <div class="room-desc">Trống, đã khử khuẩn sẵn sàng</div>
+                  </div>
+                  <span class="room-status">Sẵn sàng</span>
+                </div>
+                <div class="room-row">
+                  <div>
+                    <p class="room-name">Emerald 03</p>
+                    <div class="room-desc">Body detox, cần chuẩn bị đá nóng</div>
+                  </div>
+                  <span class="room-status">Chuẩn bị</span>
+                </div>
+              </div>
+            </section>
+          </aside>
+        </section>
+
+        <section class="mobile-preview" aria-label="Mobile preview">
+          <div class="mobile-top">
+            <span class="script">Jade Wellness</span>
+            <h2>Lịch hẹn của chuyên viên</h2>
+          </div>
+          <div class="mobile-body">
+            <div class="mobile-card">
+              <strong>09:00 - Chị Linh Nguyễn</strong>
+              <span>Facial cấp ẩm - Jade 02 - 3/6 buổi</span>
+            </div>
+            <div class="mobile-card">
+              <strong>10:30 - Chị Mai Trần</strong>
+              <span>Triệt lông Diode - Silk 01 - 1/8 buổi</span>
+            </div>
+            <div class="mobile-card">
+              <strong>15:00 - Chị Ngọc Phạm</strong>
+              <span>Peel sáng da - Jade 01 - 5/10 buổi</span>
+            </div>
+          </div>
+        </section>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

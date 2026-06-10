@@ -104,6 +104,15 @@ describe('dashboard tenant isolation source guards', () => {
     );
   });
 
+  it('keeps Beauty Spa visual theme scoped behind the tenant module marker', () => {
+    const sidebarSource = readSource('src/components/layout/sidebar.tsx');
+    const globalStyles = readSource('src/app/globals.css');
+
+    expect(sidebarSource).toContain('isBeautySpaShell && "beauty-erp-sidebar"');
+    expect(globalStyles).toContain('html[data-tenant-module="beauty_spa"] .beauty-erp-sidebar');
+    expect(globalStyles).not.toMatch(/(^|\n)\s*\.beauty-erp-/);
+  });
+
   it('keeps first-run onboarding copy tenant-brand aware', () => {
     const dashboardSource = readSource('src/app/dashboard/page.tsx');
     const onboardingSource = readSource('src/components/features/dashboard/OnboardingTour.tsx');

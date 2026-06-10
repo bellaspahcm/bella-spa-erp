@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>L'Émeraude Luxury Spa — Trị Liệu Thượng Lưu</title>
+  <meta name="description" content="Trải nghiệm liệu trình spa sang trọng bậc nhất tại TP.HCM. L'Émeraude — tinh hoa thảo mộc Thụy Sĩ và công nghệ tái tạo da thế hệ mới." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Corinthia:wght@400;700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══ RESET ══════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body { font-family: 'Inter', sans-serif; background: #F8F6F2; color: #1a2535; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; }
+    button { font-family: inherit; background: none; border: none; cursor: pointer; }
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+    /* ═══ TOKENS ═════════════════════════════════════════════════════════ */
+    :root {
+      --em:   #074E44;
+      --em2:  #0A6357;
+      --sap:  #0B2240;
+      --sap2: #143560;
+      --gold: #C8A97A;
+      --gold2:#D9BE99;
+      --teal: #6BBFB5;
+      --bg:   #F8F6F2;
+      --card: #FFFFFF;
+      --txt:  #1a2535;
+      --sub:  #56657A;
+      --hint: #8E9EAE;
+      --bdr:  rgba(200,169,122,.22);
+      --bdr2: rgba(200,169,122,.48);
+      --serif: 'Playfair Display', Georgia, serif;
+      --hand:  'Corinthia', cursive;
+      --sh1:   0 4px 20px rgba(10,40,30,.05);
+      --sh2:   0 16px 48px rgba(10,40,30,.09);
+      --sh3:   0 32px 80px rgba(10,30,50,.12);
+    }
+
+    /* ═══ SCROLLBAR ══════════════════════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 99px; }
+
+    /* ═══ KEYFRAMES ══════════════════════════════════════════════════════ */
+    @keyframes float  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes shimmer{ 0%{background-position:-200% center} 100%{background-position:200% center} }
+
+    /* ═══ NAVBAR ═════════════════════════════════════════════════════════ */
+    #nav {
+      position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
+      padding: 22px 0; transition: all .4s ease;
+    }
+    #nav.scrolled {
+      background: rgba(248,246,242,.92);
+      backdrop-filter: blur(20px);
+      padding: 14px 0;
+      box-shadow: 0 2px 20px rgba(10,40,30,.06);
+      border-bottom: 1px solid var(--bdr);
+    }
+    .nav-w { max-width: 1240px; margin: 0 auto; padding: 0 36px; display: flex; align-items: center; gap: 0; }
+    .logo { display: flex; align-items: center; gap: 13px; }
+    .logo-mark {
+      width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+      background: linear-gradient(140deg, var(--em) 0%, var(--sap) 100%);
+      border: 1px solid rgba(200,169,122,.5);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 18px rgba(7,78,68,.22);
+    }
+    .logo-text .t1 { font-family: var(--serif); font-size: 20px; font-weight: 700; color: var(--em); letter-spacing: .8px; line-height: 1.1; }
+    .logo-text .t2 { font-size: 8.5px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 3.5px; }
+    .nav-links { display: flex; gap: 38px; margin: 0 auto; }
+    .nav-links a { font-size: 13px; font-weight: 500; color: var(--sub); letter-spacing: .3px; transition: color .25s; }
+    .nav-links a:hover { color: var(--em); }
+    .nav-cta {
+      padding: 12px 26px; border-radius: 99px; font-size: 11.5px; font-weight: 700;
+      letter-spacing: 1.8px; text-transform: uppercase;
+      background: linear-gradient(135deg, var(--em), var(--em2));
+      color: #fff; border: 1px solid rgba(200,169,122,.6);
+      box-shadow: 0 6px 20px rgba(7,78,68,.2); transition: all .35s;
+    }
+    .nav-cta:hover { background: linear-gradient(135deg, var(--sap), var(--sap2)); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(11,34,64,.2); }
+
+    /* ═══ HERO ═══════════════════════════════════════════════════════════ */
+    #hero {
+      min-height: 100vh;
+      padding: 150px 36px 80px;
+      display: flex; align-items: center;
+      background: radial-gradient(ellipse 80% 60% at 5% 5%, rgba(7,78,68,.055) 0%, transparent 60%),
+                  radial-gradient(ellipse 60% 50% at 95% 90%, rgba(11,34,64,.045) 0%, transparent 60%), #F8F6F2;
+    }
+    .hero-w { max-width: 1240px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+
+    /* ── Left: Text ── */
+    .hero-text { }
+    .hero-label {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(200,169,122,.1); border: 1px solid rgba(200,169,122,.3);
+      border-radius: 99px; padding: 6px 16px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;
+      color: var(--gold); margin-bottom: 28px;
+      animation: fadeUp .6s .1s both;
+    }
+    .hero-label span { width: 5px; height: 5px; background: var(--gold); border-radius: 50%; }
+    .hero-eyebrow {
+      font-family: var(--hand); font-size: 54px; color: var(--gold);
+      line-height: .9; display: block; margin-bottom: 14px;
+      animation: fadeUp .7s .15s both;
+    }
+    .hero-h1 {
+      font-family: var(--serif); font-size: clamp(34px, 3.8vw, 52px);
+      font-weight: 400; color: var(--sap); line-height: 1.18;
+      margin-bottom: 26px; animation: fadeUp .7s .2s both;
+    }
+    .hero-h1 em { color: var(--em); font-style: italic; }
+    .hero-desc {
+      font-size: 15px; font-weight: 300; line-height: 1.85;
+      color: var(--sub); max-width: 500px;
+      margin-bottom: 40px; animation: fadeUp .7s .25s both;
+    }
+    .hero-actions { display: flex; align-items: center; gap: 22px; animation: fadeUp .7s .3s both; flex-wrap: wrap; }
+    .btn-pri {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 15px 30px; border-radius: 99px; font-size: 12px;
+      font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+      background: linear-gradient(135deg, var(--em), var(--em2));
+      color: #fff; border: 1px solid rgba(200,169,122,.6);
+      box-shadow: 0 8px 24px rgba(7,78,68,.22); transition: all .4s;
+      white-space: nowrap;
+    }
+    .btn-pri:hover { background: linear-gradient(135deg, var(--sap), var(--sap2)); transform: translateY(-3px); box-shadow: 0 16px 40px rgba(11,34,64,.22); }
+    .btn-sec {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 600; color: var(--sap); letter-spacing: .5px;
+      padding: 6px 0; border-bottom: 1.5px solid var(--gold);
+      transition: all .3s;
+    }
+    .btn-sec:hover { color: var(--em); }
+
+    /* Metrics */
+    .hero-metrics {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      gap: 0; margin-top: 52px; padding-top: 36px;
+      border-top: 1px solid var(--bdr);
+      animation: fadeUp .7s .35s both;
+    }
+    .metric { padding: 0 24px; }
+    .metric:first-child { padding-left: 0; }
+    .metric + .metric { border-left: 1px solid var(--bdr); }
+    .metric-val { font-family: var(--serif); font-size: 30px; font-weight: 500; color: var(--em); line-height: 1; margin-bottom: 6px; }
+    .metric-lab { font-size: 10.5px; font-weight: 600; color: var(--hint); text-transform: uppercase; letter-spacing: 1.2px; }
+
+    /* ── Right: Visual Collage ── */
+    .hero-visual { position: relative; height: 560px; }
+
+    /* Main image — large, left */
+    .vi-main {
+      position: absolute;
+      top: 0; left: 0; width: 65%; height: 76%;
+      border-radius: 24px; overflow: hidden;
+      box-shadow: var(--sh3);
+      border: 3px solid #fff;
+    }
+    .vi-main img { transition: transform .7s ease; }
+    .vi-main:hover img { transform: scale(1.04); }
+
+    /* Bottom-right image */
+    .vi-br {
+      position: absolute;
+      bottom: 0; right: 0; width: 50%; height: 52%;
+      border-radius: 22px; overflow: hidden;
+      box-shadow: var(--sh2);
+      border: 3px solid #fff;
+    }
+    .vi-br img { transition: transform .7s ease; }
+    .vi-br:hover img { transform: scale(1.05); }
+
+    /* Bottom-left image — small overlap */
+    .vi-bl {
+      position: absolute;
+      bottom: 8%; left: 28%; width: 40%; height: 36%;
+      border-radius: 20px; overflow: hidden;
+      box-shadow: var(--sh2);
+      border: 3px solid #fff;
+      z-index: 3;
+    }
+    .vi-bl img { transition: transform .7s ease; }
+    .vi-bl:hover img { transform: scale(1.05); }
+
+    /* Floating badge */
+    .vi-badge {
+      position: absolute; top: 7%; right: 5%; z-index: 10;
+      background: #fff; border: 1.5px solid rgba(200,169,122,.45);
+      padding: 14px 18px; border-radius: 18px; text-align: center;
+      box-shadow: 0 12px 32px rgba(0,0,0,.08);
+      animation: float 5s ease-in-out infinite;
+    }
+    .vi-badge .stars { color: var(--gold); font-size: 13px; letter-spacing: 2px; margin-bottom: 4px; }
+    .vi-badge .award { font-size: 8.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: var(--sap); line-height: 1.5; }
+
+    /* Image label overlay */
+    .img-label {
+      position: absolute; bottom: 14px; left: 14px; z-index: 5;
+      background: rgba(11,34,64,.75); backdrop-filter: blur(8px);
+      border: 1px solid rgba(200,169,122,.35);
+      padding: 6px 12px; border-radius: 8px;
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: rgba(255,255,255,.9);
+    }
+
+    /* ═══ DIVIDER ════════════════════════════════════════════════════════ */
+    .divider {
+      height: 1px; max-width: 1240px; margin: 0 auto;
+      background: linear-gradient(90deg, transparent, var(--bdr2) 40%, var(--bdr2) 60%, transparent);
+    }
+
+    /* ═══ SECTION HEADER ═════════════════════════════════════════════════ */
+    .sec-head { text-align: center; margin-bottom: 56px; }
+    .sec-chip {
+      display: inline-block; background: rgba(7,78,68,.07); border: 1px solid rgba(7,78,68,.15);
+      border-radius: 99px; padding: 5px 16px; margin-bottom: 14px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--em);
+    }
+    .sec-script { font-family: var(--hand); font-size: 44px; color: var(--gold); line-height: .95; display: block; margin-bottom: 10px; }
+    .sec-h2 { font-family: var(--serif); font-size: clamp(26px, 3vw, 36px); font-weight: 400; color: var(--sap); line-height: 1.2; }
+    .sec-h2 em { color: var(--em); font-style: italic; }
+    .sec-sub { margin-top: 14px; font-size: 15px; font-weight: 300; color: var(--sub); max-width: 520px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+
+    /* ═══ PHILOSOPHY ═════════════════════════════════════════════════════ */
+    #philosophy { padding: 100px 36px; background: var(--card); }
+    .phil-w { max-width: 1240px; margin: 0 auto; }
+    .bento { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .bcard {
+      background: var(--bg); border: 1px solid var(--bdr);
+      border-radius: 24px; padding: 40px;
+      transition: all .4s cubic-bezier(.16,1,.3,1); cursor: default;
+    }
+    .bcard:hover { background: #fff; transform: translateY(-6px); border-color: rgba(200,169,122,.5); box-shadow: var(--sh2); }
+    .bcard-ico {
+      width: 58px; height: 58px; border-radius: 16px;
+      background: rgba(7,78,68,.06); border: 1px solid transparent;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 26px; font-size: 22px; color: var(--em);
+      transition: all .35s;
+    }
+    .bcard:hover .bcard-ico { background: var(--em); color: var(--gold); border-color: var(--gold); }
+    .bcard h3 { font-family: var(--serif); font-size: 20px; font-weight: 500; color: var(--sap); margin-bottom: 12px; }
+    .bcard p  { font-size: 14px; font-weight: 300; color: var(--sub); line-height: 1.78; }
+
+    /* ═══ SERVICES ═══════════════════════════════════════════════════════ */
+    #services { padding: 100px 36px; }
+    .svc-w { max-width: 1240px; margin: 0 auto; }
+    .tabs { display: flex; justify-content: center; gap: 12px; margin-bottom: 48px; flex-wrap: wrap; }
+    .tab {
+      padding: 12px 24px; border-radius: 99px; font-size: 12.5px; font-weight: 600;
+      color: var(--sub); background: var(--card); border: 1px solid var(--bdr);
+      cursor: pointer; transition: all .3s; letter-spacing: .3px;
+    }
+    .tab:hover { border-color: rgba(200,169,122,.5); color: var(--em); }
+    .tab.active { background: var(--em); color: #fff; border-color: transparent; box-shadow: 0 8px 20px rgba(7,78,68,.15); }
+    .panel { display: none; grid-template-columns: repeat(3,1fr); gap: 24px; }
+    .panel.on { display: grid; }
+    .scard {
+      background: var(--card); border: 1px solid var(--bdr);
+      border-radius: 22px; overflow: hidden;
+      box-shadow: var(--sh1); transition: all .45s cubic-bezier(.16,1,.3,1);
+    }
+    .scard:hover { transform: translateY(-8px); box-shadow: var(--sh3); border-color: rgba(200,169,122,.45); }
+    .scard-img { height: 210px; position: relative; overflow: hidden; background: #e8ede9; }
+    .scard-img img { transition: transform .6s ease; }
+    .scard:hover .scard-img img { transform: scale(1.06); }
+    .scard-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 45%, rgba(7,78,68,.4) 100%); z-index: 1; }
+    .scard-tag {
+      position: absolute; top: 14px; right: 14px; z-index: 2;
+      background: rgba(248,246,242,.94); border: 1px solid var(--gold);
+      padding: 5px 11px; border-radius: 99px;
+      font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--em);
+    }
+    .scard-body { padding: 26px; }
+    .scard-meta { display: flex; justify-content: space-between; margin-bottom: 9px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gold); }
+    .scard-name { font-family: var(--serif); font-size: 18px; font-weight: 400; color: var(--sap); margin-bottom: 9px; line-height: 1.35; }
+    .scard-desc { font-size: 13px; font-weight: 300; color: var(--sub); line-height: 1.7; margin-bottom: 22px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .scard-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 18px; border-top: 1px solid var(--bdr); }
+    .scard-price { font-family: var(--serif); font-size: 18px; font-weight: 600; color: var(--em); }
+    .scard-plus {
+      width: 38px; height: 38px; border-radius: 50%; font-size: 20px; line-height: 1;
+      border: 1px solid rgba(200,169,122,.4); color: var(--em);
+      display: flex; align-items: center; justify-content: center;
+      transition: all .3s; cursor: pointer;
+    }
+    .scard:hover .scard-plus { background: var(--em); color: #fff; transform: rotate(45deg); border-color: transparent; }
+
+    /* ═══ WIZARD ═════════════════════════════════════════════════════════ */
+    #wizard {
+      margin: 0 36px 80px; padding: 72px 48px;
+      background: linear-gradient(135deg, var(--sap) 0%, #0d2d50 100%);
+      border-radius: 36px; position: relative; overflow: hidden;
+      border: 1px solid rgba(200,169,122,.2);
+    }
+    .wiz-glow { position: absolute; top: -40%; right: -15%; width: 75%; height: 140%; background: radial-gradient(circle, rgba(7,78,68,.22) 0%, transparent 65%); pointer-events: none; }
+    .wiz-w { max-width: 780px; margin: 0 auto; position: relative; z-index: 2; }
+    .wiz-head { text-align: center; margin-bottom: 44px; }
+    .wiz-eye  { font-family: var(--hand); font-size: 42px; color: var(--gold); display: block; line-height: .9; margin-bottom: 10px; }
+    .wiz-h2   { font-family: var(--serif); font-size: 30px; color: #fff; font-weight: 400; margin-bottom: 10px; }
+    .wiz-h2 em { color: var(--teal); }
+    .wiz-sub  { font-size: 14px; font-weight: 300; color: rgba(255,255,255,.55); }
+    .wiz-box  { background: rgba(255,255,255,.04); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,.08); border-radius: 26px; padding: 38px; }
+    .wiz-q    { font-family: var(--serif); font-size: 20px; color: var(--gold); text-align: center; margin-bottom: 26px; font-weight: 400; }
+    .wiz-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+    .wiz-opt  { background: rgba(255,255,255,.04); border: 1.5px solid rgba(255,255,255,.1); border-radius: 18px; padding: 20px; color: #fff; cursor: pointer; text-align: left; transition: all .3s; }
+    .wiz-opt:hover  { background: rgba(7,78,68,.25); border-color: rgba(200,169,122,.45); }
+    .wiz-opt.on     { background: rgba(7,78,68,.42); border-color: var(--gold); box-shadow: 0 0 20px rgba(200,169,122,.15); }
+    .wiz-opt h4 { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+    .wiz-opt p  { font-size: 12px; font-weight: 300; color: rgba(255,255,255,.55); line-height: 1.6; }
+    .wiz-ctrl { display: flex; align-items: center; gap: 20px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.07); }
+    .wbtn { padding: 12px 26px; border-radius: 99px; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all .3s; white-space: nowrap; }
+    .wbtn-prev { border: 1px solid rgba(255,255,255,.2); color: #fff; }
+    .wbtn-prev:disabled { opacity: .25; cursor: not-allowed; }
+    .wbtn-next { background: var(--em); border: 1px solid rgba(200,169,122,.6); color: #fff; box-shadow: 0 6px 18px rgba(7,78,68,.25); }
+    .wbtn-next:disabled { opacity: .25; cursor: not-allowed; background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.12); box-shadow: none; }
+    .wiz-bar-wrap { flex: 1; height: 3px; background: rgba(255,255,255,.1); border-radius: 2px; overflow: hidden; }
+    .wiz-bar { height: 100%; background: linear-gradient(90deg, var(--gold), var(--teal)); border-radius: 2px; transition: width .4s; }
+    /* Result */
+    .wiz-res { text-align: center; padding: 16px 0; }
+    .wiz-res-ico { font-size: 46px; margin-bottom: 16px; }
+    .wiz-res h4 { font-family: var(--serif); font-size: 24px; color: #fff; margin-bottom: 10px; }
+    .wiz-res p  { font-size: 13.5px; font-weight: 300; color: rgba(255,255,255,.58); max-width: 440px; margin: 0 auto 26px; line-height: 1.7; }
+    .wiz-rec { background: rgba(200,169,122,.1); border: 1px solid rgba(200,169,122,.5); border-radius: 20px; padding: 24px; max-width: 440px; margin: 0 auto 26px; text-align: left; }
+    .wiz-rec-lbl { font-size: 9px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 7px; }
+    .wiz-rec-name { font-family: var(--serif); font-size: 18px; color: #fff; margin-bottom: 7px; line-height: 1.35; }
+    .wiz-rec-price { font-size: 13px; font-weight: 700; color: var(--gold); }
+    .wiz-res-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .wiz-book { padding: 13px 26px; border-radius: 99px; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; background: linear-gradient(135deg, var(--em), var(--em2)); color: #fff; border: 1px solid rgba(200,169,122,.6); cursor: pointer; transition: all .35s; }
+    .wiz-book:hover { background: linear-gradient(135deg, var(--sap), var(--sap2)); transform: translateY(-2px); }
+    .wiz-redo { padding: 13px 22px; border-radius: 99px; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,.2); color: #fff; cursor: pointer; transition: all .3s; }
+    .wiz-redo:hover { background: rgba(255,255,255,.06); }
+
+    /* ═══ BOOKING ════════════════════════════════════════════════════════ */
+    #booking { padding: 100px 36px; background: var(--card); }
+    .book-w { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: .9fr 1.1fr; gap: 72px; align-items: start; }
+    .book-info-label { font-size: 10px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 14px; }
+    .book-h2 { font-family: var(--serif); font-size: clamp(26px, 3vw, 38px); font-weight: 400; color: var(--sap); line-height: 1.22; margin-bottom: 18px; }
+    .book-h2 em { color: var(--em); }
+    .book-desc { font-size: 14.5px; font-weight: 300; color: var(--sub); line-height: 1.8; margin-bottom: 40px; }
+    .cinfo { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 24px; }
+    .cinfo-ico { width: 48px; height: 48px; border-radius: 14px; background: var(--bg); border: 1px solid var(--bdr); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; box-shadow: var(--sh1); }
+    .cinfo-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); display: block; margin-bottom: 3px; }
+    .cinfo-val { font-size: 14.5px; font-weight: 600; color: var(--sap); line-height: 1.45; }
+    .form-card {
+      background: var(--card); border: 1.5px solid rgba(200,169,122,.28);
+      border-radius: 30px; padding: 42px; position: relative;
+      box-shadow: 0 20px 60px rgba(7,78,68,.08);
+    }
+    .form-accent { position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, var(--em), var(--gold), var(--sap)); border-radius: 30px 30px 0 0; }
+    .form-title { font-family: var(--serif); font-size: 21px; font-weight: 400; color: var(--sap); margin-bottom: 26px; padding-bottom: 16px; border-bottom: 1px solid var(--bdr); }
+    .fg label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--sap); margin-bottom: 7px; }
+    .fg input, .fg select, .fg textarea {
+      width: 100%; padding: 13px 16px; border-radius: 12px;
+      border: 1.5px solid rgba(200,169,122,.2); background: var(--bg);
+      font-size: 13.5px; font-weight: 400; color: var(--txt);
+      transition: all .3s; outline: none; appearance: none;
+    }
+    .fg input:focus, .fg select:focus, .fg textarea:focus {
+      background: #fff; border-color: var(--em); box-shadow: 0 0 0 3px rgba(7,78,68,.07);
+    }
+    .fg textarea { resize: none; }
+    .frow { display: grid; gap: 18px; margin-bottom: 18px; }
+    .frow-2 { grid-template-columns: 1fr 1fr; }
+    .fsubmit {
+      width: 100%; margin-top: 6px; padding: 17px; border-radius: 14px;
+      font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
+      background: linear-gradient(135deg, var(--em), var(--em2));
+      color: #fff; border: 1px solid rgba(200,169,122,.6);
+      box-shadow: 0 8px 24px rgba(7,78,68,.2); cursor: pointer; transition: all .4s;
+    }
+    .fsubmit:hover { background: linear-gradient(135deg, var(--sap), var(--sap2)); transform: translateY(-2px); box-shadow: 0 14px 36px rgba(11,34,64,.2); }
+    .fsuccess { display: none; text-align: center; padding: 36px 0; }
+    .fsuccess-ico { font-size: 50px; margin-bottom: 16px; }
+    .fsuccess h3 { font-family: var(--serif); font-size: 24px; color: var(--sap); margin-bottom: 10px; }
+    .fsuccess p  { font-size: 14px; font-weight: 300; color: var(--sub); margin-bottom: 26px; line-height: 1.7; }
+
+    /* ═══ FOOTER ═════════════════════════════════════════════════════════ */
+    #footer { background: var(--sap); color: rgba(255,255,255,.58); padding: 72px 36px 36px; }
+    .foot-w { max-width: 1240px; margin: 0 auto; }
+    .foot-grid { display: grid; grid-template-columns: 1.4fr .6fr .6fr .6fr; gap: 48px; margin-bottom: 56px; }
+    .foot-brand .fn { font-family: var(--serif); font-size: 20px; color: #fff; letter-spacing: .8px; }
+    .foot-brand .fs { font-size: 8.5px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 3.5px; }
+    .foot-brand p   { font-size: 13px; font-weight: 300; line-height: 1.8; margin-top: 16px; }
+    .foot-col h4 { font-family: var(--serif); font-size: 17px; color: #fff; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1.5px solid rgba(200,169,122,.5); display: inline-block; }
+    .foot-col ul { list-style: none; }
+    .foot-col li { margin-bottom: 13px; }
+    .foot-col a  { color: rgba(255,255,255,.55); font-size: 13px; font-weight: 300; transition: all .3s; display: inline-block; }
+    .foot-col a:hover { color: var(--gold); transform: translateX(4px); }
+    .foot-bot { border-top: 1px solid rgba(255,255,255,.08); padding-top: 26px; display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: rgba(255,255,255,.35); flex-wrap: wrap; gap: 10px; }
+    .foot-bot strong { color: var(--gold); }
+
+    /* ═══ SCROLL TOP ═════════════════════════════════════════════════════ */
+    #top-btn {
+      position: fixed; bottom: 28px; right: 28px; z-index: 200;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--em), var(--em2));
+      border: 1px solid rgba(200,169,122,.6); color: #fff; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 22px rgba(7,78,68,.25); cursor: pointer;
+      opacity: 0; pointer-events: none; transition: all .4s;
+      transform: translateY(10px);
+    }
+    #top-btn.on { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    #top-btn:hover { transform: translateY(-4px); }
+
+    /* ═══ RESPONSIVE ═════════════════════════════════════════════════════ */
+    @media (max-width: 1024px) {
+      .hero-w    { grid-template-columns: 1fr; }
+      .hero-visual { display: none; }
+      .hero-actions { justify-content: flex-start; }
+      .foot-grid { grid-template-columns: 1fr 1fr; }
+      .book-w    { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      #hero { padding: 130px 24px 70px; }
+      .bento { grid-template-columns: 1fr; }
+      .panel.on { grid-template-columns: 1fr; }
+      .wiz-opts { grid-template-columns: 1fr; }
+      #wizard { margin: 0 20px 60px; padding: 48px 24px; }
+      .wiz-box { padding: 26px; }
+      .form-card { padding: 28px; }
+      .frow-2 { grid-template-columns: 1fr; }
+      .foot-grid { grid-template-columns: 1fr; gap: 32px; }
+      #services, #philosophy, #booking { padding: 70px 24px; }
+    }
+    @media (max-width: 480px) {
+      .hero-h1 { font-size: 30px; }
+      .hero-metrics { grid-template-columns: 1fr; gap: 20px; }
+      .metric + .metric { border-left: none; border-top: 1px solid var(--bdr); padding-left: 0; padding-top: 20px; }
+      .metric { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAVBAR ──────────────────────────────────────────────────────────── -->
+<header id="nav">
+  <div class="nav-w">
+    <a href="#" class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="#C8A97A">
+          <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4C13.5,4 15,6.5 15,9C15,11.5 13.5,14 12,14C10.5,14 9,11.5 9,9C9,6.5 10.5,4 12,4M8.3,9.5C9.8,9.5 11,11.5 11,13.5C11,15.5 9.8,17.5 8.3,17.5C6.8,17.5 5.5,15.5 5.5,13.5C5.5,11.5 6.8,9.5 8.3,9.5M15.7,9.5C17.2,9.5 18.5,11.5 18.5,13.5C18.5,15.5 17.2,17.5 15.7,17.5C14.2,17.5 13,15.5 13,13.5C13,11.5 14.2,9.5 15.7,9.5Z"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="t1">L'Émeraude</div>
+        <div class="t2">Luxury Spa</div>
+      </div>
+    </a>
+
+    <nav class="nav-links">
+      <a href="#philosophy">Về Chúng Tôi</a>
+      <a href="#services">Liệu Trình</a>
+      <a href="#wizard">Tư Vấn VIP</a>
+    </nav>
+
+    <button class="nav-cta" onclick="scroll2('booking')">Đặt Lịch VIP</button>
+  </div>
+</header>
+
+<!-- ─── HERO ────────────────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-w">
+
+    <!-- Text -->
+    <div class="hero-text">
+      <div class="hero-label"><span></span>Luxury Spa & Wellness</div>
+      <span class="hero-eyebrow">Trải nghiệm thượng lưu</span>
+      <h1 class="hero-h1">
+        Khởi nguồn vẻ đẹp<br>
+        <em>tự nhiên & sang quý</em>
+      </h1>
+      <p class="hero-desc">
+        Hòa mình vào không gian trị liệu đỉnh cao tại L'Émeraude — nơi hội tụ tinh hoa thảo mộc quý hiếm, công nghệ phục hồi trẻ hóa da thế hệ mới và nghệ thuật chăm sóc cơ thể tinh xảo từ Thụy Sĩ.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-pri" onclick="scroll2('wizard')">
+          Nhận Tư Vấn Độc Quyền
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <a href="#services" class="btn-sec">
+          Xem bảng giá
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14" stroke-linecap="round"/></svg>
+        </a>
+      </div>
+
+      <div class="hero-metrics">
+        <div class="metric"><div class="metric-val">99.9%</div><div class="metric-lab">Hài lòng tuyệt đối</div></div>
+        <div class="metric"><div class="metric-val">40+</div><div class="metric-lab">Trị liệu viên VIP</div></div>
+        <div class="metric"><div class="metric-val">5 ★</div><div class="metric-lab">Suite cá nhân riêng</div></div>
+      </div>
+    </div>
+
+    <!-- Visual collage with real images -->
+    <div class="hero-visual">
+      <!-- Main: Facial treatment -->
+      <div class="vi-main">
+        <img src="spa_facial.png" alt="Facial treatment at L'Émeraude Luxury Spa" />
+        <div class="img-label">Facial Signature</div>
+      </div>
+
+      <!-- Bottom-right: Hot stone massage -->
+      <div class="vi-br">
+        <img src="spa_stone.png" alt="Hot stone massage therapy" />
+        <div class="img-label">Hot Stone Therapy</div>
+      </div>
+
+      <!-- Center-overlap: Spa lounge -->
+      <div class="vi-bl">
+        <img src="spa_lounge.png" alt="L'Émeraude Spa private suite" />
+        <div class="img-label">Private Suite</div>
+      </div>
+
+      <!-- Floating badge -->
+      <div class="vi-badge">
+        <div class="stars">★ ★ ★ ★ ★</div>
+        <div class="award">Luxury Award<br>2026</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ─── PHILOSOPHY ──────────────────────────────────────────────────────── -->
+<section id="philosophy">
+  <div class="phil-w">
+    <div class="sec-head">
+      <div class="sec-chip">Triết Lý Phục Vụ</div>
+      <span class="sec-script">Dịch Vụ Tận Tâm</span>
+      <h2 class="sec-h2">Trải Nghiệm <em>L'Émeraude</em></h2>
+      <p class="sec-sub">Mỗi liệu trình là một tác phẩm nghệ thuật được thiết kế riêng cho từng quý khách, không thể sao chép hay đại trà hóa.</p>
+    </div>
+    <div class="bento">
+      <div class="bcard"><div class="bcard-ico">◆</div><h3>Cá Nhân Hóa Trị Liệu</h3><p>Không có liệu trình đại trà. Mỗi khách hàng vào Suite Hoàng Gia đều được quét chuyên sâu cấu trúc cơ và da, bác sĩ pha chế tinh chất riêng phù hợp 100% cơ địa.</p></div>
+      <div class="bcard"><div class="bcard-ico">⬡</div><h3>Không Gian Private Tuyệt Đối</h3><p>Phòng cách âm chuẩn studio, ánh sáng điều chỉnh theo nhịp sinh học và hương ngải diệp kết hợp oải hương tươi, kích hoạt trạng thái phục hồi sâu sau 10 phút.</p></div>
+      <div class="bcard"><div class="bcard-ico">✦</div><h3>Thảo Dược Độc Quyền Thụy Sĩ</h3><p>100% dòng sản phẩm phục hồi da hữu cơ đạt tiêu chuẩn Bio-Suisse danh giá. Cam kết không chứa chất bảo quản nhân tạo hay hương liệu tổng hợp.</p></div>
+      <div class="bcard"><div class="bcard-ico">❋</div><h3>Trà Đạo Thượng Hạng Sau Trị Liệu</h3><p>Sau mỗi ca trị liệu, quý khách được phục vụ trà hoa cúc tuyết Tây Tạng và tổ yến chưng nhụy hoa nghệ tây — nghi thức bổ khí huyết đông y hiện đại.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SERVICES ─────────────────────────────────────────────────────────── -->
+<section id="services">
+  <div class="svc-w">
+    <div class="sec-head">
+      <div class="sec-chip">Danh Mục Liệu Trình</div>
+      <span class="sec-script">Tinh Hoa Trị Liệu</span>
+      <h2 class="sec-h2">Liệu Trình <em>L'Émeraude</em></h2>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('facial',this)">Chăm Sóc Mặt</button>
+      <button class="tab" onclick="switchTab('body',this)">Cơ Thể & Massage</button>
+      <button class="tab" onclick="switchTab('tech',this)">Công Nghệ Cao</button>
+    </div>
+
+    <!-- Facial -->
+    <div id="p-facial" class="panel on">
+      <div class="scard">
+        <div class="scard-img"><img src="spa_facial.png" alt="Saffron facial treatment"/><div class="scard-overlay"></div><span class="scard-tag">Best Seller</span></div>
+        <div class="scard-body"><div class="scard-meta"><span>⏱ 75 Phút</span><span>Premium Suite</span></div><h3 class="scard-name">Trị Liệu Trắng Sáng Nhụy Hoa Nghệ Tây</h3><p class="scard-desc">Massage thư giãn chuyên sâu kết hợp đắp mặt nạ Saffron organic nhập khẩu Trung Đông giúp giảm hắc sắc tố, dưỡng ẩm sâu.</p><div class="scard-foot"><span class="scard-price">1.950.000 đ</span><button class="scard-plus" onclick="bookSvc('Trị Liệu Trắng Sáng Nhụy Hoa Nghệ Tây')">+</button></div></div>
+      </div>
+      <div class="scard">
+        <div class="scard-img"><img src="spa_lounge.png" alt="Bio-Suisse facial"/><div class="scard-overlay"></div><span class="scard-tag">Luxury VIP</span></div>
+        <div class="scard-body"><div class="scard-meta"><span>⏱ 90 Phút</span><span>Premium Suite</span></div><h3 class="scard-name">Phục Hồi Tế Bào Tươi Bio-Suisse</h3><p class="scard-desc">Công nghệ khóa ẩm tế bào thực vật từ dãy Alps Thụy Sĩ. Thích hợp cho da tổn thương do Treatment nặng hoặc laser.</p><div class="scard-foot"><span class="scard-price">2.500.000 đ</span><button class="scard-plus" onclick="bookSvc('Phục Hồi Tế Bào Tươi Bio-Suisse')">+</button></div></div>
+      </div>
+      <div class="scard">
+        <div class="scard-img"><img src="spa_facial.png" alt="Glass skin treatment"/><div class="scard-overlay"></div><span class="scard-tag">Khuyên Dùng</span></div>
+        <div class="scard-body"><div class="scard-meta"><span>⏱ 60 Phút</span><span>Premium Suite</span></div><h3 class="scard-name">Căng Bóng Da Thủy Tinh Glass-Skin</h3><p class="scard-desc">Đẩy tinh chất Hyaluronic siêu vi điểm giúp da căng mướt óng ánh tựa pha lê ngay sau buổi đầu tiên.</p><div class="scard-foot"><span class="scard-price">1.600.000 đ</span><button class="scard-plus" onclick="bookSvc('Căng Bóng Da Thủy Tinh Glass-Skin')">+</button></div></div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div id="p-body" class="panel">
+      <div class="scard">
+        <div class="scard-img"><img src="spa_stone.png" alt="Hot jade stone massage"/><div class="scard-overlay"></div><span class="scard-tag">Signature</span></div>
+        <div class="scard-body"><div class="scard-meta"><span>⏱ 90 Phút</span><span>Premium Suite</span></div><h3 class="scard-name">Trị Liệu Đá Nóng Lục Bảo Ngọc Bích</h3><p class="scard-desc">Sử dụng ngọc bích nóng tự nhiên để chườm dọc huyệt đạo vai gáy, kết hợp tinh dầu tùng thông đẩy lùi mệt mỏi.</p><div class="scard-foot"><span class="scard-price">1.800.000 đ</span><button class="scard-plus" onclick="bookSvc('Trị Liệu Đá Nóng Lục Bảo Ngọc Bích')">+</button></div></div>
+      </div>
+      <div class="scard">
+        <div class="scard-img"><img src="spa_stone.png" alt="Swedish massage"/><div class="scard-overlay"></div><span class="scard-tag">Relaxing</span></div>
+        <div class="scard-body"><div class="scard-meta"><span>⏱ 75 Phút</span><span>Premium Suite</span></div><h3 class="scard-name">Massage Trị Liệu Hoàng Gia Thụy Điển</h3><p class="scard-desc">Kỹ thuật miết ấn cơ sâu nhẹ nhàng kích thích tuần hoàn máu toàn thân, loại bỏ Acid Lactic tồn đọng gây mỏi mệt.</p><div class="scard-foot"><span class="scard-price">1.450.000 đ</span><button class="scard-plus" onclick="bookSvc('Massage Trị Liệu Hoàng Gia Thụy Điển')">+</button></div></div>
+      </div>
+      <div class="scard">
+        <div class="scard-img"><img src="spa_lounge.png" alt="Volcanic mud detox"/><div class="scard-overlay"></div><span class="scard-tag">Deep Detox</span></div>
+        <div class="scard-body"><div class="scard-meta"><span>⏱ 105 Phút</span><span>VIP Suite</span></div><h3 class="scard-name">Thải Độc Hệ Bạch Huyết Đất Sét Núi Lửa</h3><p class="scard-desc">Ủ ấm bùn khoáng nóng và quấn thảo dược lạnh Thụy Sĩ giúp đào thải mỡ thừa, độc tố tích tụ lâu ngày.</p><div class="scard-foot"><span class="scard-price">2.200.000 đ</span><button class="scard-plus" onclick="bookSvc('Thải Độc Hệ Bạch Huyết Đất Sét Núi Lửa')">+</button></div></div>
+      </div>
+    </div>
+
+    <!-- Tech -->
+    <div id="p-tech" class="panel">
+      <div class="scard">
+        <div class="scard-img"><img src="spa_facial.png" alt="Ultimate combo treatment"/><div class="scard-overlay"></div><span class="scard-tag">Premium Combo</span></div>
+        <div class="scard-body"><div class="scard-meta"><span>⏱ 120 Phút</span><span>VIP Suite</span></div><h3 class="scard-name">Combo Trẻ Hóa Nâng Cơ Ultimate</h3><p class="scard-desc">Kết hợp nâng cơ tầng sâu, truyền vitamin tươi Thụy Sĩ và đắp mặt nạ vàng 24K tại Suite đơn đặc biệt.</p><div class="scard-foot"><span class="scard-price">3.900.000 đ</span><button class="scard-plus" onclick="bookSvc('Combo Trẻ Hóa Nâng Cơ Ultimate')">+</button></div></div>
+      </div>
+      <div class="scard">
+        <div class="scard-img"><img src="spa_lounge.png" alt="HIFU Laser Lift"/><div class="scard-overlay"></div><span class="scard-tag">High Tech</span></div>
+        <div class="scard-body"><div class="scard-meta"><span>⏱ 90 Phút</span><span>VIP Suite</span></div><h3 class="scard-name">Trẻ Hóa Hifu Laser Lift 4D</h3><p class="scard-desc">Sóng siêu âm hội tụ kích hoạt sản sinh Elastin dưới lớp cân cơ, thu gọn viền hàm tức thì không xâm lấn.</p><div class="scard-foot"><span class="scard-price">3.200.000 đ</span><button class="scard-plus" onclick="bookSvc('Trẻ Hóa Hifu Laser Lift 4D')">+</button></div></div>
+      </div>
+      <div class="scard">
+        <div class="scard-img"><img src="spa_stone.png" alt="Cryo Glow treatment"/><div class="scard-overlay"></div><span class="scard-tag">New Tech</span></div>
+        <div class="scard-body"><div class="scard-meta"><span>⏱ 60 Phút</span><span>VIP Suite</span></div><h3 class="scard-name">Thanh Tẩy Băng Tuyết Cryo-Glow</h3><p class="scard-desc">Liệu pháp đóng băng lạnh sâu se khít lỗ chân lông tức thì, ức chế tuyến bã nhờn, da mịn màng óng ánh.</p><div class="scard-foot"><span class="scard-price">2.000.000 đ</span><button class="scard-plus" onclick="bookSvc('Thanh Tẩy Băng Tuyết Cryo-Glow')">+</button></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WIZARD ──────────────────────────────────────────────────────────── -->
+<div id="wizard">
+  <div class="wiz-glow"></div>
+  <div class="wiz-w">
+    <div class="wiz-head">
+      <span class="wiz-eye">Trợ Lý Thiết Kế Liệu Trình</span>
+      <h2 class="wiz-h2">Khảo Sát <em>Cá Nhân Hóa</em></h2>
+      <p class="wiz-sub">Trả lời 3 câu hỏi — AI của L'Émeraude sẽ thiết lập chương trình phục hồi tối ưu riêng cho bạn.</p>
+    </div>
+    <div class="wiz-box" id="wiz-box"></div>
+  </div>
+</div>
+
+<!-- ─── BOOKING ─────────────────────────────────────────────────────────── -->
+<section id="booking">
+  <div class="book-w">
+    <!-- Info -->
+    <div>
+      <div class="book-info-label">✦ Đặt Lịch Trải Nghiệm</div>
+      <h2 class="book-h2">Kiến Tạo Khoảnh Khắc <em>Thăng Hoa</em></h2>
+      <p class="book-desc">Quý khách điền thông tin đăng ký bên dưới. Trợ lý Suite sẽ liên hệ trong vòng 10 phút để xác nhận và chuẩn bị chu đáo nhất.</p>
+      <div class="cinfo"><div class="cinfo-ico">📞</div><div><span class="cinfo-lbl">Hotline VIP 24/7</span><div class="cinfo-val">0868 999 555</div></div></div>
+      <div class="cinfo"><div class="cinfo-ico">⏰</div><div><span class="cinfo-lbl">Giờ Phục Vụ</span><div class="cinfo-val">08:30 – 21:30 mỗi ngày</div></div></div>
+      <div class="cinfo"><div class="cinfo-ico">📍</div><div><span class="cinfo-lbl">Cơ Sở Chính</span><div class="cinfo-val">Villa L-08, Vinhomes Golden River, Quận 1, TP.HCM</div></div></div>
+    </div>
+
+    <!-- Form -->
+    <div class="form-card">
+      <div class="form-accent"></div>
+      <div id="form-wrap">
+        <h3 class="form-title">📅 Yêu Cầu Giữ Chỗ Suite VIP</h3>
+        <form onsubmit="doSubmit(event)">
+          <div class="frow frow-2">
+            <div class="fg"><label>Họ và tên *</label><input id="fn" type="text" required placeholder="Quý bà / Quý ông..." /></div>
+            <div class="fg"><label>Điện thoại *</label><input id="fp" type="tel" required placeholder="0987 xxx xxx" /></div>
+          </div>
+          <div class="frow frow-2">
+            <div class="fg">
+              <label>Liệu trình *</label>
+              <select id="fs" required>
+                <option value="">-- Chọn liệu trình --</option>
+                <optgroup label="Chăm Sóc Mặt">
+                  <option>Trị Liệu Trắng Sáng Nhụy Hoa Nghệ Tây (1.950.000đ)</option>
+                  <option>Phục Hồi Tế Bào Tươi Bio-Suisse (2.500.000đ)</option>
+                  <option>Căng Bóng Da Thủy Tinh Glass-Skin (1.600.000đ)</option>
+                </optgroup>
+                <optgroup label="Cơ Thể & Massage">
+                  <option>Trị Liệu Đá Nóng Lục Bảo Ngọc Bích (1.800.000đ)</option>
+                  <option>Massage Trị Liệu Hoàng Gia Thụy Điển (1.450.000đ)</option>
+                  <option>Thải Độc Hệ Bạch Huyết Đất Sét Núi Lửa (2.200.000đ)</option>
+                </optgroup>
+                <optgroup label="Công Nghệ Cao">
+                  <option>Combo Trẻ Hóa Nâng Cơ Ultimate (3.900.000đ)</option>
+                  <option>Trẻ Hóa Hifu Laser Lift 4D (3.200.000đ)</option>
+                  <option>Thanh Tẩy Băng Tuyết Cryo-Glow (2.000.000đ)</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="fg"><label>Ngày hẹn *</label><input id="fd" type="date" required /></div>
+          </div>
+          <div class="frow">
+            <div class="fg">
+              <label>Suite phòng</label>
+              <select id="fr">
+                <option>Suite Tiêu Chuẩn — Cá nhân, yên tĩnh</option>
+                <option>Royal VIP Suite (+500k) — Bồn hoa hồng & cách âm đặc biệt</option>
+                <option>Couple Suite — Dành cho 2 người</option>
+              </select>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fg"><label>Yêu cầu đặc biệt</label><textarea id="fno" rows="3" placeholder="Ví dụ: Trà tổ yến sau liệu trình; nhạc thiền; trị liệu viên tay nghề 5+ năm..."></textarea></div>
+          </div>
+          <button type="submit" class="fsubmit" id="fsub">Gửi Đăng Ký Giữ Chỗ Suite</button>
+        </form>
+      </div>
+      <div class="fsuccess" id="fsuccess">
+        <div class="fsuccess-ico">✅</div>
+        <h3>Đặt Lịch Thành Công!</h3>
+        <p>L'Émeraude đã nhận đăng ký Suite của quý khách.<br>Trợ lý VIP sẽ gọi điện xác nhận trong vài phút!</p>
+        <button class="btn-pri" onclick="doReset()" style="padding:12px 28px;border-radius:99px">Đặt Lịch Mới</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ───────────────────────────────────────────────────────────── -->
+<footer id="footer">
+  <div class="foot-w">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid rgba(200,169,122,.45);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="#C8A97A"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4C13.5,4 15,6.5 15,9C15,11.5 13.5,14 12,14C10.5,14 9,11.5 9,9C9,6.5 10.5,4 12,4"/></svg>
+          </div>
+          <div><div class="fn">L'Émeraude</div><div class="fs">Luxury Spa</div></div>
+        </div>
+        <p>Hệ thống Spa Trị Liệu & Làm Đẹp chuẩn Y Khoa Thụy Sĩ dành cho giới tinh hoa. Vận hành trên nền tảng <strong style="color:#C8A97A">Bella ERP</strong>.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Về Chúng Tôi</h4>
+        <ul>
+          <li><a href="#">Triết Lý Vận Hành</a></li>
+          <li><a href="#">Hệ Thống Trị Liệu</a></li>
+          <li><a href="#">Đội Ngũ Bác Sĩ</a></li>
+          <li><a href="#">Bảo Mật Thông Tin</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Phân Hệ VIP</h4>
+        <ul>
+          <li><a href="#">Thiết Kế Liệu Trình</a></li>
+          <li><a href="#">Đăng Ký Thành Viên</a></li>
+          <li><a href="#">Ưu Đãi Đặc Quyền</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h4>Chi Nhánh</h4>
+        <ul>
+          <li><a href="#">Q1 — Vinhomes Golden River</a></li>
+          <li><a href="#">Q7 — Phú Mỹ Hưng</a></li>
+          <li><a href="#">Hà Nội — Tây Hồ Tây</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bot">
+      <span>&copy; 2026 L'Émeraude Spa & Clinic. Bảo lưu toàn quyền. Đối tác của <strong>Bella ERP</strong>.</span>
+      <span>Phân hệ <strong>Beauty Spa</strong></span>
+    </div>
+  </div>
+</footer>
+
+<button id="top-btn" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- ─── JS ─────────────────────────────────────────────────────────────── -->
+<script>
+  /* Navbar scroll */
+  const nav = document.getElementById('nav');
+  const topBtn = document.getElementById('top-btn');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+    topBtn.classList.toggle('on', window.scrollY > 320);
+  });
+
+  function scroll2(id) { document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
+
+  /* Date default */
+  const tmr = new Date(); tmr.setDate(tmr.getDate()+1);
+  const iso = tmr.toISOString().split('T')[0];
+  document.getElementById('fd').value = iso;
+  document.getElementById('fd').min   = iso;
+
+  /* Service tabs */
+  function switchTab(key, btn) {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+    btn.classList.add('active');
+    document.getElementById('p-'+key).classList.add('on');
+  }
+
+  /* Book service */
+  function bookSvc(name) {
+    const s = document.getElementById('fs');
+    for (let o of s.options) { if (o.text.startsWith(name)) { s.value = o.value; break; } }
+    scroll2('booking');
+  }
+
+  /* Form */
+  function doSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('fsub');
+    btn.textContent = 'Đang kết nối bảo mật...';
+    btn.disabled = true;
+    setTimeout(() => {
+      document.getElementById('form-wrap').style.display = 'none';
+      document.getElementById('fsuccess').style.display = 'block';
+    }, 1200);
+  }
+  function doReset() {
+    document.getElementById('form-wrap').style.display = 'block';
+    document.getElementById('fsuccess').style.display = 'none';
+    document.getElementById('fsub').textContent = 'Gửi Đăng Ký Giữ Chỗ Suite';
+    document.getElementById('fsub').disabled = false;
+    document.getElementById('fd').value = iso;
+  }
+
+  /* ══════ WIZARD ══════ */
+  const STEPS = [
+    { q: 'Bước 1 / 3 — Mục tiêu hàng đầu của quý khách?',
+      opts: [
+        {v:'brighten', l:'Căng bóng & Trắng sáng',       d:'Phù hợp da sạm, xỉn màu và thiếu sức sống.'},
+        {v:'detox',    l:'Giảm đau cơ & Detox toàn thân', d:'Khôi phục năng lượng từ lõi cơ bắp sâu nhất.'},
+        {v:'antiage',  l:'Trẻ hóa & Nâng cơ mặt',        d:'Chống lão hóa chuyên sâu, kích thích collagen.'},
+        {v:'acne',     l:'Kiểm soát dầu & Trị mụn',      d:'Kháng khuẩn và phục hồi da nhạy cảm tổn thương.'},
+      ]},
+    { q: 'Bước 2 / 3 — Loại phòng Suite ưu thích?',
+      opts: [
+        {v:'royal',  l:'Royal Suite (Phòng Đơn VIP)',    d:'Cách âm 100%, bồn massage riêng tư cao cấp.'},
+        {v:'couple', l:'Couple Suite (Phòng Đôi)',       d:'Dành cho các cặp đôi hoặc mẹ và con gái.'},
+      ]},
+    { q: 'Bước 3 / 3 — Mức độ nhạy cảm của da?',
+      opts: [
+        {v:'sensitive', l:'Da nhạy cảm / Phụ nữ mang thai', d:'Thảo dược lạnh và massage cực nhẹ nhàng.'},
+        {v:'normal',    l:'Da và cơ địa bình thường',        d:'Tương thích mọi dưỡng chất và công nghệ.'},
+      ]},
+  ];
+  const RECS = {
+    brighten: {name:'Trị Liệu Trắng Sáng Nhụy Hoa Nghệ Tây', price:'1.950.000 đ · 75 phút'},
+    detox:    {name:'Trị Liệu Đá Nóng Lục Bảo Ngọc Bích',    price:'1.800.000 đ · 90 phút'},
+    antiage:  {name:'Combo Trẻ Hóa Nâng Cơ Ultimate',         price:'3.900.000 đ · 120 phút'},
+    acne:     {name:'Thanh Tẩy Băng Tuyết Cryo-Glow',         price:'2.000.000 đ · 60 phút'},
+  };
+  let wS = 0, wA = [null,null,null];
+
+  function drawWiz() {
+    const box = document.getElementById('wiz-box');
+    if (wS >= 3) { drawResult(); return; }
+    const st = STEPS[wS];
+    box.innerHTML = `
+      <p class="wiz-q">${st.q}</p>
+      <div class="wiz-opts">
+        ${st.opts.map(o=>`<button class="wiz-opt ${wA[wS]===o.v?'on':''}" onclick="pickW('${o.v}')"><h4>${o.l}</h4><p>${o.d}</p></button>`).join('')}
+      </div>
+      <div class="wiz-ctrl">
+        <button class="wbtn wbtn-prev" onclick="wPrev()" ${wS===0?'disabled':''}>← Quay Lại</button>
+        <div class="wiz-bar-wrap"><div class="wiz-bar" style="width:${((wS+1)/3)*100}%"></div></div>
+        <button class="wbtn wbtn-next" onclick="wNext()" ${!wA[wS]?'disabled':''}>
+          ${wS<2?'Tiếp Theo →':'Xem Kết Quả ✦'}
+        </button>
+      </div>`;
+  }
+  function pickW(v) { wA[wS]=v; drawWiz(); }
+  function wNext()  { if(wA[wS]) { wS++; drawWiz(); } }
+  function wPrev()  { if(wS>0)  { wS--; drawWiz(); } }
+  function drawResult() {
+    const r = RECS[wA[0]] || RECS.brighten;
+    document.getElementById('wiz-box').innerHTML = `
+      <div class="wiz-res">
+        <div class="wiz-res-ico">✅</div>
+        <h4>Phân Tích Liệu Trình Hoàn Tất!</h4>
+        <p>Dựa trên mong muốn của bạn, chuyên gia L'Émeraude đề xuất liệu trình độc quyền sau:</p>
+        <div class="wiz-rec">
+          <div class="wiz-rec-lbl">Liệu trình đề xuất</div>
+          <div class="wiz-rec-name">${r.name}</div>
+          <div class="wiz-rec-price">${r.price}</div>
+        </div>
+        <div class="wiz-res-actions">
+          <button class="wiz-book" onclick="bookSvc('${r.name}');wReset()">Đặt Liệu Trình Này Ngay</button>
+          <button class="wiz-redo" onclick="wReset()">Làm Lại Khảo Sát</button>
+        </div>
+      </div>`;
+  }
+  function wReset() { wS=0; wA=[null,null,null]; drawWiz(); }
+  drawWiz();
+</script>
+</body>
+</html>
