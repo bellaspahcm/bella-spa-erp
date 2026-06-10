@@ -9,17 +9,39 @@ import {
 class MockQueryBuilder {
   static errorsByTable: Record<string, { message: string } | null> = {};
   static dataByTable: Record<string, any[] | undefined> = {};
+  static calls: Array<{
+    table: string;
+    filters: Array<{ method: string; args: unknown[] }>;
+  }> = [];
+
+  private filters: Array<{ method: string; args: unknown[] }> = [];
 
   constructor(private table: string, private data: any) {}
 
   select() { return this; }
-  eq() { return this; }
-  gte() { return this; }
-  lt() { return this; }
-  not() { return this; }
+  eq(...args: unknown[]) {
+    this.filters.push({ method: 'eq', args });
+    return this;
+  }
+  gte(...args: unknown[]) {
+    this.filters.push({ method: 'gte', args });
+    return this;
+  }
+  lt(...args: unknown[]) {
+    this.filters.push({ method: 'lt', args });
+    return this;
+  }
+  not(...args: unknown[]) {
+    this.filters.push({ method: 'not', args });
+    return this;
+  }
   order() { return this; }
   
   then(onfulfilled: any) {
+    MockQueryBuilder.calls.push({
+      table: this.table,
+      filters: [...this.filters],
+    });
     return Promise.resolve(onfulfilled({
       data: this.data,
       error: MockQueryBuilder.errorsByTable[this.table] ?? null,
@@ -76,6 +98,7 @@ describe('getMonthlyPnL', () => {
   beforeEach(() => {
     MockQueryBuilder.errorsByTable = {};
     MockQueryBuilder.dataByTable = {};
+    MockQueryBuilder.calls = [];
   });
 
   it('should calculate P&L correctly based on confirmed revenues and expenses', async () => {
@@ -172,11 +195,43 @@ describe('getMonthlyPnL', () => {
     expect(result.total_operating_expenses).toBe(250000);
     expect(result.net_profit).toBe(2280000);
   });
+
+  it('scopes every P&L source query to the current tenant', async () => {
+    MockQueryBuilder.dataByTable = {
+      revenue: [
+        { amount: 1000000, status: 'confirmed', revenue_type: 'package_payment', received_date: '2026-05-10' },
+      ],
+      expenses: [
+        { amount: 250000, category: 'rent', expense_date: '2026-05-01', status: 'approved' },
+      ],
+      bookings: [],
+      session_logs: [],
+      users: [],
+      salary_records: [],
+      attendance: [],
+    };
+
+    await getMonthlyPnL('2026-05-01');
+
+    const filtersFor = (table: string) => MockQueryBuilder.calls
+      .filter((call) => call.table === table)
+      .flatMap((call) => call.filters);
+
+    expect(filtersFor('revenue')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+    expect(filtersFor('expenses')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+    expect(filtersFor('bookings')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+    expect(filtersFor('session_logs')).toContainEqual({ method: 'eq', args: ['bookings.tenant_id', 'tenant1'] });
+    expect(filtersFor('users')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+    expect(filtersFor('salary_records')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+    expect(filtersFor('attendance')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+  });
 });
 
 describe('getFinancialOverview', () => {
   beforeEach(() => {
     MockQueryBuilder.errorsByTable = {};
+    MockQueryBuilder.dataByTable = {};
+    MockQueryBuilder.calls = [];
   });
 
   it('propagates revenue query errors instead of returning partial totals', async () => {
@@ -194,11 +249,24 @@ describe('getFinancialOverview', () => {
       '[getFinancialOverview] expenses query failed: expenses overview failed'
     );
   });
+
+  it('scopes finance overview revenue and expense lists to the current tenant', async () => {
+    await getFinancialOverview();
+
+    const filtersFor = (table: string) => MockQueryBuilder.calls
+      .filter((call) => call.table === table)
+      .flatMap((call) => call.filters);
+
+    expect(filtersFor('revenue')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+    expect(filtersFor('expenses')).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+  });
 });
 
 describe('getServicePerformance', () => {
   beforeEach(() => {
     MockQueryBuilder.errorsByTable = {};
+    MockQueryBuilder.dataByTable = {};
+    MockQueryBuilder.calls = [];
   });
 
   it('propagates database query errors instead of returning an empty array', async () => {
@@ -208,12 +276,23 @@ describe('getServicePerformance', () => {
       '[getServicePerformance] bookings query failed: bookings query failed'
     );
   });
+
+  it('scopes service performance bookings to the current tenant', async () => {
+    await getServicePerformance();
+
+    const bookingFilters = MockQueryBuilder.calls
+      .filter((call) => call.table === 'bookings')
+      .flatMap((call) => call.filters);
+
+    expect(bookingFilters).toContainEqual({ method: 'eq', args: ['tenant_id', 'tenant1'] });
+  });
 });
 
 describe('getFinanceDashboardSnapshot', () => {
   beforeEach(() => {
     MockQueryBuilder.errorsByTable = {};
     MockQueryBuilder.dataByTable = {};
+    MockQueryBuilder.calls = [];
   });
 
   it('returns a complete safe snapshot when all finance sources load', async () => {
