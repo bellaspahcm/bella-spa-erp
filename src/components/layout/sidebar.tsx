@@ -93,6 +93,7 @@ const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
   isBeautySpa: false,
 };
 const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v2';
+const MOBILE_REFRESH_TIMEOUT_MS = 8_000;
 
 function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay {
   if (!value || typeof value !== 'object') return false;
@@ -299,7 +300,13 @@ export function Sidebar() {
     }
 
     try {
-      await refreshEvent.detail.done;
+      const refreshDone = refreshEvent.detail.done?.catch((error) => {
+        console.error('Mobile refresh failed', error);
+      }) ?? Promise.resolve();
+      await Promise.race([
+        refreshDone,
+        new Promise<void>((resolve) => window.setTimeout(resolve, MOBILE_REFRESH_TIMEOUT_MS)),
+      ]);
     } finally {
       setIsMobileRefreshing(false);
     }
