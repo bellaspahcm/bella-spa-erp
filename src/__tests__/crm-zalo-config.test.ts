@@ -105,7 +105,7 @@ const mockSupabase = {
   from: jest.fn((table: string) => new QueryBuilder(table)),
 };
 
-import { getZaloConfig, getZaloZnsLogs } from '@/services/crm/zalo-config';
+import { getZaloConfig, getZaloZnsLogs, saveZaloConfig } from '@/services/crm/zalo-config';
 import { getOrRefreshZaloToken } from '@/services/crm/zalo-config';
 
 describe('CRM Zalo config read actions', () => {
@@ -126,7 +126,7 @@ describe('CRM Zalo config read actions', () => {
     jest.useRealTimers();
   });
 
-  it('returns decrypted Zalo config when the tenant query succeeds', async () => {
+  it('returns safe Zalo config without exposing decrypted credentials to the UI', async () => {
     scriptedResults = [
       {
         data: {
@@ -146,10 +146,10 @@ describe('CRM Zalo config read actions', () => {
 
     await expect(getZaloConfig()).resolves.toEqual({
       zalo_app_id: 'app-1',
-      zalo_secret_key: 'decrypted:secret-key',
+      zalo_secret_key: '',
       zalo_oa_id: 'oa-1',
-      zalo_access_token: 'decrypted:access-token',
-      zalo_refresh_token: 'decrypted:refresh-token',
+      zalo_access_token: '',
+      zalo_refresh_token: '',
       zalo_token_expires_at: '2026-06-03T00:00:00.000Z',
       zalo_template_reminder_id: 'reminder-template',
       zalo_template_birthday_id: 'birthday-template',
@@ -162,9 +162,10 @@ describe('CRM Zalo config read actions', () => {
         filters: [{ method: 'eq', args: ['id', 'tenant-1'] }],
       }),
     ]);
-    expect(mockDecrypt).toHaveBeenCalledWith('secret-key');
-    expect(mockDecrypt).toHaveBeenCalledWith('access-token');
-    expect(mockDecrypt).toHaveBeenCalledWith('refresh-token');
+    expect(queryCalls[0].selectColumns || '').not.toContain('zalo_secret_key');
+    expect(queryCalls[0].selectColumns || '').not.toContain('zalo_access_token');
+    expect(queryCalls[0].selectColumns || '').not.toContain('zalo_refresh_token');
+    expect(mockDecrypt).not.toHaveBeenCalled();
   });
 
   it('uses the first tenant Zalo config row when Supabase returns an array result', async () => {
@@ -200,10 +201,10 @@ describe('CRM Zalo config read actions', () => {
 
     await expect(getZaloConfig()).resolves.toEqual({
       zalo_app_id: 'active-app',
-      zalo_secret_key: 'decrypted:active-secret',
+      zalo_secret_key: '',
       zalo_oa_id: 'active-oa',
-      zalo_access_token: 'decrypted:active-access',
-      zalo_refresh_token: 'decrypted:active-refresh',
+      zalo_access_token: '',
+      zalo_refresh_token: '',
       zalo_token_expires_at: '2026-06-03T00:00:00.000Z',
       zalo_template_reminder_id: 'active-reminder-template',
       zalo_template_birthday_id: 'active-birthday-template',
@@ -215,6 +216,36 @@ describe('CRM Zalo config read actions', () => {
       filters: [{ method: 'eq', args: ['id', 'tenant-1'] }],
       limitCount: 1,
     }));
+  });
+
+  it('preserves existing Zalo credentials when the settings form submits blank credential fields', async () => {
+    scriptedResults = [
+      { data: null, error: null },
+    ];
+
+    await expect(saveZaloConfig({
+      zalo_app_id: 'app-1',
+      zalo_secret_key: '',
+      zalo_oa_id: 'oa-1',
+      zalo_access_token: '',
+      zalo_refresh_token: '',
+      zalo_template_reminder_id: 'reminder-template',
+      zalo_template_birthday_id: 'birthday-template',
+      zalo_auto_scan: true,
+    })).resolves.toEqual({ success: true });
+
+    expect(queryCalls[0]).toEqual(expect.objectContaining({
+      table: 'tenants',
+      operation: 'update',
+      filters: [{ method: 'eq', args: ['id', 'tenant-1'] }],
+    }));
+    expect(queryCalls[0].payload).toEqual({
+      zalo_app_id: 'app-1',
+      zalo_oa_id: 'oa-1',
+      zalo_template_reminder_id: 'reminder-template',
+      zalo_template_birthday_id: 'birthday-template',
+      zalo_auto_scan: true,
+    });
   });
 
   it('returns blank fields only when the tenant config row loads successfully with null fields', async () => {

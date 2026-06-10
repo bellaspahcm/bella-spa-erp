@@ -304,6 +304,16 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 - Commit: xem git history cua thay doi `fix: neutralize ktv module fallback`.
 - Rui ro con lai: Cac man hinh KTV khac can tiep tuc audit neu co state module hard-code Babycare.
 
+### 2026-06-10 - Zalo credential read-facing config tra token that
+
+- Module/tenant: CRM/Zalo, moi tenant.
+- Man hinh/luong: Trang CRM cau hinh Zalo OA.
+- Dau hieu: Action doc cau hinh Zalo tra secret/access/refresh token da giai ma ve UI.
+- Nguyen nhan goc: Read-facing config dung lai du lieu credential server-side thay vi chi tra metadata an toan.
+- Cach sua: `getZaloConfig` khong select/khong decrypt credential; cac truong credential tra rong cho UI. `saveZaloConfig` bo qua credential rong de bam luu cau hinh khac khong xoa token cu.
+- Test/guard da them: `src/__tests__/crm-zalo-config.test.ts` kiem tra UI khong nhan credential that va submit credential rong khong overwrite token.
+- Rui ro con lai: Khi them kenh tich hop moi, phai tach read-facing config va server credential resolver ngay tu dau.
+
 ## Quy Tac Cho AI Agent Tuong Lai
 
 Khi user yeu cau "them phan he nganh moi", "mo rong Beauty", "lam module nganh X", hoac "white-label cho spa/clinic/academy":
