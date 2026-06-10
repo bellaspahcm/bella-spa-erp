@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import BookingPageClient from './BookingPageClient';
-import { getPackages } from '@/modules/booking/actions/lifecycle-actions';
+import { getPublicBabycareBookingPackages } from '@/modules/booking/actions/public-booking-packages';
 
 export const metadata: Metadata = {
   title: 'Đặt Lịch Hẹn Trực Tuyến | Bella Spa Mẹ & Bé',
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BookPage() {
-  const packages = await getPackages();
+  const { packages, error: packageLoadError } = await getPublicBabycareBookingPackages();
 
-  return <BookingPageClient packages={packages} />;
+  return <BookingPageClient packages={packages} packageLoadError={packageLoadError} />;
 }

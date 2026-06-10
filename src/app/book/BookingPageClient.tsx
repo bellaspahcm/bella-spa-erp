@@ -21,6 +21,7 @@ interface Package {
 
 interface BookingPageClientProps {
   packages: Package[];
+  packageLoadError?: string | null;
 }
 
 /* =========================================================
@@ -253,7 +254,7 @@ function SuccessScreen({ bookingNumber }: { bookingNumber: string }) {
 /* =========================================================
    Main Component
    ========================================================= */
-export default function BookingPageClient({ packages }: BookingPageClientProps) {
+export default function BookingPageClient({ packages, packageLoadError = null }: BookingPageClientProps) {
   const [isPending, startTransition] = useTransition();
   const [successBookingNumber, setSuccessBookingNumber] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -413,6 +414,15 @@ export default function BookingPageClient({ packages }: BookingPageClientProps) 
                   <p className="text-xs" style={{ color: '#64748B' }}>Không bắt buộc — bạn có thể bỏ qua và tư vấn sau</p>
                 </div>
               </div>
+
+              {packageLoadError && (
+                <div
+                  className="mb-4 rounded-2xl border px-4 py-3 text-sm"
+                  style={{ background: '#FFF1F2', borderColor: '#FECDD3', color: '#9F1239' }}
+                >
+                  {packageLoadError}
+                </div>
+              )}
 
               {packages.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

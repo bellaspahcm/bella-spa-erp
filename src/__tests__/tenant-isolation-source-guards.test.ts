@@ -60,4 +60,13 @@ describe('dashboard tenant isolation source guards', () => {
       /export async function getUsers\(\)[\s\S]{0,500}\.from\('users'\)[\s\S]{0,260}\.eq\('tenant_id', tenantId\)/,
     );
   });
+
+  it('keeps public online booking off first-tenant fallback and tenant-scopes rollbacks', () => {
+    const source = readSource('src/modules/booking/actions/online-booking-action.ts');
+
+    expect(source).toContain('resolvePublicBabycareTenantId');
+    expect(source).not.toMatch(/\.from\('tenants'\)[\s\S]{0,120}\.limit\(1\)[\s\S]{0,80}\.single\(/);
+    expect(source).toMatch(/\.from\('customers'\)[\s\S]{0,140}\.delete\(\)[\s\S]{0,140}\.eq\('tenant_id', tenantId\)/);
+    expect(source).toMatch(/\.from\('bookings'\)[\s\S]{0,140}\.delete\(\)[\s\S]{0,140}\.eq\('tenant_id', tenantId\)/);
+  });
 });

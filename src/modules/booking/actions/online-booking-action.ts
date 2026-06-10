@@ -4,6 +4,7 @@ import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
 import type { OnlineBookingFormData } from './online-booking-types';
 import { validateBookingPackageScope } from './create-booking-helpers';
+import { resolvePublicBabycareTenantId } from './public-booking-tenant';
 
 type CustomerInsert = Database['public']['Tables']['customers']['Insert'];
 type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
@@ -31,20 +32,11 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
   }
 
   const phone = formData.phone.trim();
-  let tenantId: string | null = process.env.DEFAULT_TENANT_ID ?? null;
-
-  if (!tenantId) {
-    const { data: tenantData, error: tenantError } = await supabase.from('tenants').select('id').limit(1).single();
-    if (tenantError) {
-      return { error: `Không thể tải cấu hình chi nhánh mặc định: ${tenantError.message}` };
-    }
-    if (tenantData) {
-      tenantId = tenantData.id;
-    } else {
-      console.error('[submitOnlineBooking] No tenant found in database!');
-      return { error: 'Hệ thống chưa được cấu hình. Vui lòng liên hệ trực tiếp qua hotline.' };
-    }
+  const tenantResult = await resolvePublicBabycareTenantId(supabase);
+  if (tenantResult.tenantId === null) {
+    return { error: tenantResult.error };
   }
+  const tenantId = tenantResult.tenantId;
 
   const packageScopeResult = await validateBookingPackageScope(supabase, tenantId, formData.package_id);
   if ('error' in packageScopeResult) {
@@ -114,7 +106,8 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
       await supabase
         .from('customers')
         .delete()
-        .eq('id', customerId);
+        .eq('id', customerId)
+        .eq('tenant_id', tenantId);
       return {
         error: auditErr instanceof Error
           ? auditErr.message
@@ -152,7 +145,8 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
       await supabase
         .from('customers')
         .delete()
-        .eq('id', createdCustomerId);
+        .eq('id', createdCustomerId)
+        .eq('tenant_id', tenantId);
     }
     return { error: 'Không thể đặt lịch. Vui lòng thử lại hoặc liên hệ hotline.' };
   }
@@ -161,13 +155,15 @@ export async function submitOnlineBooking(formData: OnlineBookingFormData): Prom
     await supabase
       .from('bookings')
       .delete()
-      .eq('id', booking.id);
+      .eq('id', booking.id)
+      .eq('tenant_id', tenantId);
 
     if (createdCustomerId) {
       await supabase
         .from('customers')
         .delete()
-        .eq('id', createdCustomerId);
+        .eq('id', createdCustomerId)
+        .eq('tenant_id', tenantId);
     }
   };
 
