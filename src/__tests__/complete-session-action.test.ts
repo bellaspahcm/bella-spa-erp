@@ -37,6 +37,7 @@ function createCompleteSessionSupabaseMock(options: {
   const updateCalls: UpdateCall[] = [];
   const sessionLog = options.sessionLog ?? {
     id: 'session-1',
+    booking_id: 'booking-1',
     status: 'scheduled',
     session_number: 1,
     tenant_id: 'tenant-1',
@@ -49,6 +50,7 @@ function createCompleteSessionSupabaseMock(options: {
 
   class QueryBuilder {
     private selectColumns = '';
+    private filters: Array<[string, unknown]> = [];
 
     constructor(private table: string, private operation?: 'update', private payload?: unknown) {}
 
@@ -62,11 +64,21 @@ function createCompleteSessionSupabaseMock(options: {
     }
 
     eq(column: string, value: unknown) {
+      this.filters.push([column, value]);
+      return this;
+    }
+
+    private matchesFilters(row: Record<string, unknown> | null) {
+      if (!row) return false;
+      return this.filters.every(([column, value]) => row[column] === value);
+    }
+
+    then(onfulfilled: (value: { error: { message: string } | null }) => unknown) {
       if (this.operation === 'update') {
         updateCalls.push({
           table: this.table,
           payload: this.payload,
-          filters: [[column, value]],
+          filters: this.filters,
         });
 
         const isRollback =
@@ -77,21 +89,32 @@ function createCompleteSessionSupabaseMock(options: {
 
         return Promise.resolve({
           error: isRollback ? options.rollbackError ?? null : null,
-        });
+        }).then(onfulfilled);
       }
 
-      return this;
+      return Promise.resolve({ error: null }).then(onfulfilled);
     }
 
     single() {
       if (this.table === 'session_logs') {
-        return Promise.resolve({ data: sessionLog, error: null });
+        return Promise.resolve(
+          this.matchesFilters(sessionLog)
+            ? { data: sessionLog, error: null }
+            : { data: null, error: { message: 'session not found in tenant' } }
+        );
       }
 
       if (this.table === 'bookings') {
+        const scopedBooking = {
+          id: 'booking-1',
+          tenant_id: 'tenant-1',
+          ...booking,
+        };
         return Promise.resolve({
-          data: this.selectColumns.includes('assigned_ktv_id') ? booking : null,
-          error: null,
+          data: this.selectColumns.includes('assigned_ktv_id') && this.matchesFilters(scopedBooking)
+            ? scopedBooking
+            : null,
+          error: this.matchesFilters(scopedBooking) ? null : { message: 'booking not found in tenant' },
         });
       }
 
@@ -141,7 +164,10 @@ describe('completeSession wrapper rollback and revalidation', () => {
           completed_by_ktv_id: 'ktv-1',
           notes: 'Hoan thanh',
         }),
-        filters: [['id', 'session-1']],
+        filters: [
+          ['id', 'session-1'],
+          ['tenant_id', 'tenant-1'],
+        ],
       }),
       expect.objectContaining({
         table: 'session_logs',
@@ -150,7 +176,10 @@ describe('completeSession wrapper rollback and revalidation', () => {
           completed_date: null,
           completed_by_ktv_id: null,
         },
-        filters: [['id', 'session-1']],
+        filters: [
+          ['id', 'session-1'],
+          ['tenant_id', 'tenant-1'],
+        ],
       }),
     ]);
     expect(mockRecalculateAndSaveSalaryRecord).toHaveBeenCalledWith(
@@ -160,6 +189,25 @@ describe('completeSession wrapper rollback and revalidation', () => {
       'tenant-1'
     );
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('does not complete a session outside the current tenant', async () => {
+    const { supabase, updateCalls } = createCompleteSessionSupabaseMock({
+      sessionLog: {
+        id: 'session-1',
+        booking_id: 'booking-1',
+        status: 'scheduled',
+        session_number: 1,
+        tenant_id: 'tenant-2',
+      },
+    });
+    mockCreateClient.mockResolvedValue(supabase);
+
+    const result = await completeSession('session-1', 'booking-1', 'Hoan thanh');
+
+    expect(result).toEqual({ error: 'session not found in tenant' });
+    expect(updateCalls).toEqual([]);
+    expect(mockProcessSessionCompletion).not.toHaveBeenCalled();
   });
 
   it('returns an explicit error when session rollback fails', async () => {

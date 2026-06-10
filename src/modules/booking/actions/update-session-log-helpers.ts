@@ -74,6 +74,7 @@ export function isCompletingSession(safeUpdates: UpdateSessionLogInput, existing
 export async function applyCompletionDefaults(
   supabase: SupabaseServerClient,
   bookingId: string,
+  tenantId: string,
   safeUpdates: UpdateSessionLogInput,
   existingLog: SessionLogRow
 ) {
@@ -91,6 +92,7 @@ export async function applyCompletionDefaults(
       .from('bookings')
       .select('assigned_ktv_id')
       .eq('id', bookingId)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (error) {
@@ -114,11 +116,20 @@ export async function processCompletedSessionUpdate(params: {
   currentUser: CurrentUser;
 }) {
   const { supabase, sessionId, bookingId, safeUpdates, existingLog, currentUser } = params;
+  const tenantId = currentUser?.tenant_id || existingLog.tenant_id;
+  if (!tenantId) {
+    return { error: 'Không xác định được chi nhánh khi xử lý hoàn thành buổi.' };
+  }
+
+  if (!existingLog.booking_id || existingLog.booking_id !== bookingId) {
+    return { error: 'Buổi dịch vụ không thuộc booking hiện tại.' };
+  }
 
   const { data: bookingData, error: bookingError } = await supabase
     .from('bookings')
     .select('assigned_ktv_id, package_id')
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (bookingError) {
@@ -126,7 +137,6 @@ export async function processCompletedSessionUpdate(params: {
   }
 
   const today = getLocalDateString();
-  const tenantId = currentUser?.tenant_id || existingLog.tenant_id;
   const ktvId = safeUpdates.completed_by_ktv_id || bookingData?.assigned_ktv_id || null;
 
   const result = await processSessionCompletion(
@@ -150,7 +160,8 @@ export async function processCompletedSessionUpdate(params: {
         completed_date: existingLog.completed_date || null,
         completed_by_ktv_id: existingLog.completed_by_ktv_id || null,
       })
-      .eq('id', sessionId);
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId);
 
     if (rollbackError) {
       return { error: `${result.error}; rollback session failed: ${rollbackError.message}` };
@@ -174,12 +185,14 @@ export async function processCompletedSessionUpdate(params: {
 
 export async function syncBookingProgressAfterSessionUpdate(
   supabase: SupabaseServerClient,
-  bookingId: string
+  bookingId: string,
+  tenantId: string
 ) {
   const { count, error: countError } = await supabase
     .from('session_logs')
     .select('*', { count: 'exact', head: true })
     .eq('booking_id', bookingId)
+    .eq('tenant_id', tenantId)
     .eq('status', 'completed');
 
   if (countError) {
@@ -190,6 +203,7 @@ export async function syncBookingProgressAfterSessionUpdate(
     .from('bookings')
     .select('total_sessions, status, package_name')
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (bookingError) {
@@ -219,7 +233,8 @@ export async function syncBookingProgressAfterSessionUpdate(
   const { error: updateError } = await supabase
     .from('bookings')
     .update(bookingUpdates)
-    .eq('id', bookingId);
+    .eq('id', bookingId)
+    .eq('tenant_id', tenantId);
 
   if (updateError) {
     return { error: updateError.message };

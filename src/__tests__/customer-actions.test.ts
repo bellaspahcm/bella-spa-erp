@@ -94,6 +94,52 @@ describe('customer actions fail-fast behavior', () => {
     ]));
   });
 
+  it('filters nested bookings and revenue to the current tenant in customer lists', async () => {
+    const listQuery = new MockQueryBuilder([
+      {
+        id: 'cust-1',
+        tenant_id: 'tenant-1',
+        bookings: [
+          {
+            id: 'booking-1',
+            tenant_id: 'tenant-1',
+            package_name: 'Bella package',
+            revenue: [
+              { amount: 200000, status: 'confirmed', revenue_type: 'deposit', tenant_id: 'tenant-1' },
+              { amount: 999000, status: 'confirmed', revenue_type: 'deposit', tenant_id: 'tenant-2' },
+            ],
+          },
+          {
+            id: 'booking-2',
+            tenant_id: 'tenant-2',
+            package_name: 'Beauty package',
+            revenue: [
+              { amount: 300000, status: 'confirmed', revenue_type: 'deposit', tenant_id: 'tenant-2' },
+            ],
+          },
+        ],
+      },
+    ]);
+    mockFrom.mockReturnValue(listQuery);
+
+    await expect(getCustomers()).resolves.toEqual([
+      expect.objectContaining({
+        id: 'cust-1',
+        tenant_id: 'tenant-1',
+        bookings: [
+          expect.objectContaining({
+            id: 'booking-1',
+            tenant_id: 'tenant-1',
+            package_name: 'Bella package',
+            revenue: [
+              expect.objectContaining({ amount: 200000, tenant_id: 'tenant-1' }),
+            ],
+          }),
+        ],
+      }),
+    ]);
+  });
+
   it('scopes customer detail queries to the current tenant', async () => {
     const detailQuery = new MockQueryBuilder({ id: 'cust-1', tenant_id: 'tenant-1' });
     mockFrom.mockReturnValue(detailQuery);
@@ -225,5 +271,17 @@ describe('customer actions fail-fast behavior', () => {
       rating: null,
       rating_comment: null,
     });
+    expect(updateQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'id', value: 'session-1' },
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+    expect(reviewQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'session_log_id', value: 'session-1' },
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+    expect(rollbackQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'id', value: 'session-1' },
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
   });
 });

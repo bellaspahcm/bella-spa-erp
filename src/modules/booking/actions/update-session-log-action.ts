@@ -15,11 +15,17 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
   const supabase = await createClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id || null;
+
+  if (!tenantId) {
+    return { error: 'Không xác định được chi nhánh khi cập nhật buổi dịch vụ.' };
+  }
   
   const { data: existingLog, error: existingLogError } = await supabase
     .from('session_logs')
     .select('*')
     .eq('id', id)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (existingLogError || !existingLog) {
@@ -30,19 +36,16 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
     return { error: 'Bạn không có quyền thực hiện thao tác này (Unauthorized)' };
   }
 
-  const { data: logData, error: logError } = await supabase
-    .from('session_logs')
-    .select('booking_id')
-    .eq('id', id)
-    .single();
-
-  if (logError) return { error: logError.message };
-  const bookingId = logData.booking_id;
+  const bookingId = existingLog.booking_id;
+  if (!bookingId) {
+    return { error: 'Buổi dịch vụ chưa gắn với booking hợp lệ.' };
+  }
 
   const normalizedUpdates = normalizeSessionLogUpdate(payload);
   const completionDefaultsResult = await applyCompletionDefaults(
     supabase,
     bookingId,
+    tenantId,
     normalizedUpdates,
     existingLog
   );
@@ -57,6 +60,7 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
     .from('session_logs')
     .update(safeUpdates)
     .eq('id', id)
+    .eq('tenant_id', tenantId)
     .select();
 
   if (error) {
@@ -78,7 +82,8 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
       await supabase
         .from('session_logs')
         .update(existingLog)
-        .eq('id', id);
+        .eq('id', id)
+        .eq('tenant_id', tenantId);
       return {
         error: auditErr instanceof Error ? auditErr.message : 'Failed to record updateSessionLog audit log'
       };
@@ -99,7 +104,7 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
       return { error: result.error };
     }
   } else {
-    const progressResult = await syncBookingProgressAfterSessionUpdate(supabase, bookingId);
+    const progressResult = await syncBookingProgressAfterSessionUpdate(supabase, bookingId, tenantId);
     if (progressResult.error) {
       return { error: progressResult.error };
     }
@@ -109,6 +114,7 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
     .from('bookings')
     .select('customer_id')
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .single();
 
   const revalPaths = [

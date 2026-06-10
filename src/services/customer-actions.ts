@@ -56,6 +56,26 @@ type RatingSession = Pick<
   bookings?: Pick<BookingRow, 'customer_id'> | null;
 };
 
+type CustomerListRevenue = Pick<RevenueRow, 'amount' | 'status' | 'revenue_type' | 'tenant_id'>;
+type CustomerListBooking = Pick<
+  BookingRow,
+  | 'deposit_amount'
+  | 'package_name'
+  | 'full_price'
+  | 'discount_percent'
+  | 'created_at'
+  | 'is_in_care'
+  | 'status'
+  | 'total_sessions'
+  | 'completed_sessions'
+  | 'tenant_id'
+> & {
+  revenue?: CustomerListRevenue[] | null;
+};
+type CustomerListRow = CustomerRow & {
+  bookings?: CustomerListBooking[] | null;
+};
+
 const CUSTOMER_TENANT_ACCESS_ERROR = 'Không xác định được đơn vị kinh doanh của người dùng hiện tại.';
 
 async function getCurrentTenantId() {
@@ -216,6 +236,9 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
     throw new Error(`Failed to fetch session before customer rating: ${sessionError.message}`);
   }
   const ratingSession = session as RatingSession | null;
+  if (!ratingSession?.tenant_id) {
+    throw new Error('Failed to fetch session before customer rating: missing tenant scope');
+  }
 
   // 2. Cập nhật rating vào session_log (Legacy support & quick read)
   const { error: updateError } = await supabase
@@ -224,7 +247,8 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
       rating: rating,
       rating_comment: comment
     })
-    .eq('id', sessionId);
+    .eq('id', sessionId)
+    .eq('tenant_id', ratingSession.tenant_id);
 
   if (updateError) {
     throw new Error(`Failed to update session rating: ${updateError.message}`);
@@ -237,7 +261,8 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
         rating: ratingSession?.rating ?? null,
         rating_comment: ratingSession?.rating_comment ?? null
       })
-      .eq('id', sessionId);
+      .eq('id', sessionId)
+      .eq('tenant_id', ratingSession.tenant_id);
 
     if (rollbackError) {
       throw new Error(`${message}; failed to roll back session rating: ${rollbackError.message}`);
@@ -253,6 +278,7 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
       .from('session_reviews')
       .select('id')
       .eq('session_log_id', sessionId)
+      .eq('tenant_id', ratingSession.tenant_id)
       .maybeSingle();
 
     if (existingReviewError) {
@@ -273,7 +299,8 @@ export async function submitCustomerRating(sessionId: string, rating: number, co
       const { error: reviewError } = await supabase
         .from('session_reviews')
         .update(reviewPayload)
-        .eq('id', existingReview.id);
+        .eq('id', existingReview.id)
+        .eq('tenant_id', ratingSession.tenant_id);
       if (reviewError) {
         await rollbackSessionRating(`Failed to update session review: ${reviewError.message}`);
       }
@@ -340,14 +367,27 @@ export async function getCustomers() {
 
   const { data, error } = await supabase
     .from('customers')
-    .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care, status, total_sessions, completed_sessions, revenue(amount, status, revenue_type))')
+    .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care, status, total_sessions, completed_sessions, tenant_id, revenue(amount, status, revenue_type, tenant_id))')
     .eq('tenant_id', tenantId)
     .order('name_mother', { ascending: true });
   
   if (error) {
     throw new Error(`Failed to fetch customers: ${error.message}`);
   }
-  return data || [];
+  const customers = (data || []) as CustomerListRow[];
+  return customers.map((customer) => ({
+    ...customer,
+    bookings: Array.isArray(customer.bookings)
+      ? customer.bookings
+        .filter((booking) => booking.tenant_id === tenantId)
+        .map((booking) => ({
+          ...booking,
+          revenue: Array.isArray(booking.revenue)
+            ? booking.revenue.filter((revenue) => revenue.tenant_id === tenantId)
+            : booking.revenue,
+        }))
+      : customer.bookings,
+  }));
 }
 
 /**
