@@ -5,7 +5,8 @@
  * the Bella HQ admin dashboard does not render that marker on high-risk pages.
  */
 
-import { canAuthenticateAdminPage, expect, test } from "../fixtures/auth";
+import type { Browser, Page } from "@playwright/test";
+import { canAuthenticateAdminPage, expect, getE2eBaseUrl, isLocalE2eBaseUrl, test } from "../fixtures/auth";
 import { admin, hasSupabaseAdminEnv } from "../helpers/supabase-admin";
 import type { Database } from "../../src/types/database.types";
 
@@ -25,7 +26,8 @@ function normalizeVietnamese(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/đ/g, "d")
-    .replace(/Đ/g, "D");
+    .replace(/Đ/g, "D")
+    .toLowerCase();
 }
 
 function routeRegex(path: string) {
@@ -38,6 +40,53 @@ async function requireRow<T>(label: string, query: QueryResult<T>): Promise<T> {
     throw new Error(`${label} failed: ${error?.message ?? "no row returned"}`);
   }
   return data;
+}
+
+async function openMockUserPage(browser: Browser, email: string): Promise<Page> {
+  const context = await browser.newContext({
+    baseURL: getE2eBaseUrl(),
+    locale: "vi-VN",
+    timezoneId: "Asia/Ho_Chi_Minh",
+    viewport: { width: 1440, height: 900 },
+  });
+  await context.addCookies([
+    {
+      name: "mock_user_email",
+      value: email,
+      url: getE2eBaseUrl(),
+      sameSite: "Lax",
+    },
+  ]);
+
+  const page = await context.newPage();
+  page.setDefaultTimeout(15_000);
+  page.setDefaultNavigationTimeout(45_000);
+  return page;
+}
+
+async function assertRouteDoesNotLeak(
+  page: Page,
+  path: string,
+  expectedContent: RegExp,
+  forbiddenMarkers: string[],
+) {
+  const response = await page.goto(path, { waitUntil: "domcontentloaded" });
+  expect(response?.status() ?? 0, `${path} must not return HTTP errors`).toBeLessThan(400);
+  await expect(page, `${path} should stay on route`).toHaveURL(routeRegex(path));
+
+  const body = page.locator("body");
+  await expect
+    .poll(
+      async () => normalizeVietnamese(await body.innerText({ timeout: 5_000 }).catch(() => "")),
+      { message: `${path} should render expected content`, timeout: 25_000 },
+    )
+    .toMatch(expectedContent);
+  await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => {});
+
+  const bodyText = normalizeVietnamese(await body.innerText({ timeout: 10_000 }));
+  for (const marker of forbiddenMarkers) {
+    expect(bodyText, `${path} must not show "${marker}"`).not.toContain(normalizeVietnamese(marker));
+  }
 }
 
 async function cleanupTenantData(tenantId: string | null, ids: {
@@ -238,5 +287,75 @@ test.describe("Bella HQ tenant isolation smoke", () => {
     }
 
     if (testError) throw testError;
+  });
+
+  test("Bella and Beauty branch admins only render their own tenant records", async ({ browser }) => {
+    test.skip(
+      !isLocalE2eBaseUrl() || !hasSupabaseAdminEnv(),
+      "Dual-tenant UI smoke uses localhost-only mock_user_email auth plus Supabase service-role env.",
+    );
+
+    const bellaAdminEmail = "admin@bellaspa.vn";
+    const beautyAdminEmail = "admin.beauty.demo@bellaspa.test";
+    const bellaForbidden = [
+      "Khách Beauty Demo",
+      "Beauty Demo",
+      "Facial Cấp Ẩm Chuyên Sâu Demo",
+      "Triệt Lông Diode Demo",
+      "Gói Đầu Dưỡng Sinh Demo",
+      "BEAUTY_DEMO_FRANCHISE_TEST",
+    ];
+    const beautyForbidden = [
+      "Mẹ Leo",
+      "Mẹ Tiên",
+      "Bé Lu",
+      "Tắm Bé Chuẩn Y Khoa Tại Nhà",
+      "Gói Thông Tắc Tia Sữa",
+    ];
+    const branchRoutes = [
+      { path: "/dashboard", content: /dashboard|sap toi|tong quan/i },
+      { path: "/dashboard/customers", content: /khach hang/i },
+      { path: "/dashboard/sessions", content: /the lieu trinh|lieu trinh|sessions/i },
+      { path: "/dashboard/finance", content: /tai chinh|giao dich/i },
+    ];
+
+    const client = admin();
+    const { data: bellaUser, error: bellaUserError } = await client
+      .from("users")
+      .select("id, tenant_id")
+      .eq("email", bellaAdminEmail)
+      .single();
+    if (bellaUserError || !bellaUser) {
+      throw new Error(`Missing Bella admin smoke user: ${bellaUserError?.message ?? "no row"}`);
+    }
+
+    const { data: beautyUser, error: beautyUserError } = await client
+      .from("users")
+      .select("id, tenant_id")
+      .eq("email", beautyAdminEmail)
+      .single();
+    if (beautyUserError || !beautyUser) {
+      throw new Error(`Missing Beauty admin smoke user: ${beautyUserError?.message ?? "no row"}`);
+    }
+
+    expect(bellaUser.tenant_id, "Bella and Beauty admins must belong to different tenants").not.toBe(beautyUser.tenant_id);
+
+    const bellaPage = await openMockUserPage(browser, bellaAdminEmail);
+    try {
+      for (const route of branchRoutes) {
+        await assertRouteDoesNotLeak(bellaPage, route.path, route.content, bellaForbidden);
+      }
+    } finally {
+      await bellaPage.context().close();
+    }
+
+    const beautyPage = await openMockUserPage(browser, beautyAdminEmail);
+    try {
+      for (const route of branchRoutes) {
+        await assertRouteDoesNotLeak(beautyPage, route.path, route.content, beautyForbidden);
+      }
+    } finally {
+      await beautyPage.context().close();
+    }
   });
 });
