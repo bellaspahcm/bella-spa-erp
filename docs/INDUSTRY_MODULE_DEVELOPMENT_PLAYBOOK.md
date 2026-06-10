@@ -12,6 +12,10 @@ Moi phan he nganh moi phai duoc phat trien theo vong doi trong tai lieu nay. Kho
 - user cua module moi co duoc thay doi module hay khong
 - bang du lieu nao dung chung core, bang nao la rieng cua nganh
 - moi query/runtime action co filter tenant/module dung chua
+- webhook/worker/sync co chong trung lap khi retry khong
+- action nhieu buoc co transaction hoac rollback/fail-closed khong
+- nghiep vu tai chinh co di qua accounting outbox thay vi ghi thang so cai khong
+- token/API key tich hop co tach theo tenant va khong bi nuot loi khong
 - UI co con hard-code thuat ngu cua nganh cu khong
 - demo data co tao/xoa an toan khong
 - co regression test de chung minh Bella Spa hien tai khong bi anh huong khong
@@ -31,6 +35,7 @@ Quyet dinh chinh:
 - Beauty Spa admin khong duoc nhin du lieu Bella Spa.
 - Core duoc tai su dung, nhung ngon ngu hien thi va quy trinh nganh phai theo module.
 - Branding cua Beauty Spa phai doc tu tenant/brand config cua chinh spa do, khong hard-code Bella Spa.
+- Module key la quyen kinh doanh do HQ cap, khong phai feature flag ky thuat de tenant admin tu bat/tat.
 
 ## Lich Su Beauty Spa: Qua Trinh, Loi, Cach Sua
 
@@ -52,6 +57,10 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | UI mobile | Bang, filter ngay, dropdown, modal bi tran/cat noi dung | Tai su dung layout desktop hoac native select khong dong bo | Mobile-first visual smoke; table scroll trong box; dropdown dung component chung |
 | Finance leakage | Bao cao tai chinh Bella hien giao dich Beauty demo | Revenue/expenses demo hoac query finance thieu scope module/tenant | Finance read model bat buoc filter tenant; demo data repair; regression test |
 | Test blind spot | Co loi UI/data da sua thu cong nhung chua co guard | Test chua khoa dung invariant moi | Sau moi loi production/UI, them test guard nho nhat co the |
+| Retry duplicate | Webhook/cron/worker chay lai co nguy co nhan doi doanh thu/chi phi/but toan | Luong nhan event ngoai he thong thieu idempotency key hoac unique guard | Moi webhook/worker/sync phai co idempotency guard va test retry 2 lan |
+| Partial side effects | Action nhieu buoc loi giua chung nhung trang thai da bi cap nhat mot phan | Thieu transaction, snapshot rollback, hoac fail-closed contract | Multi-step write phai atomic hoac rollback ve snapshot khi bat ky buoc nao loi |
+| Direct ledger writes | Module nganh moi tu ghi `journal_entries`/`journal_lines` | Bo qua accounting outbox va worker TT133 | Phat sinh tai chinh phai day event qua accounting outbox, khong ghi so cai truc tiep |
+| Token silent failure | Token Zalo/Meta/Telegram/CRM loi nhung UI/action van coi nhu rong/null | Credential refresh/lookup nuot loi hoac fallback gia | Token tich hop phai tenant-scoped, encrypted/hidden va loi phai bao ro |
 
 ## Vong Doi Bat Buoc Cho Mot Phan He Nganh Moi
 
@@ -82,13 +91,18 @@ Bat buoc dinh nghia:
 - user role nao duoc thao tac
 - fallback khi tenant config chua load
 - han che module switching
+- feature flags nao chi la rollout ky thuat ben trong module
+- token/API keys tich hop nao thuoc tenant nao
 
 Nguyen tac:
 
 - Tenant nganh moi khong duoc mac dinh ve Babycare/Bella.
 - Neu module do la san pham thuong mai doc lap, chi HQ duoc cap module.
 - Tenant admin cua nganh moi chi quan ly trong tenant cua ho.
+- Tenant admin khong duoc tu bat/tat `module_key`; tenant admin chi duoc cau hinh feature/van hanh trong module da duoc HQ cap.
+- `module_key` quy dinh nganh doc thuong mai cua tenant; feature flag chi dung cho thu nghiem, rollout tung phan, hoac bat/tat tinh nang nho trong module.
 - Moi cache UI lien quan brand/module phai co key theo tenant.
+- Token/API key cho Zalo, Meta, Telegram, CRM, Viber hoac kenh tich hop tuong tu phai luu va doc theo tenant. Khong tra token that ra UI; refresh token khong duoc swallow error hoac tra fallback rong khi DB/API loi.
 
 ### Phase 2 - Schema, RLS, Grants, Seeds
 
@@ -96,17 +110,20 @@ Khi them bang/cot moi:
 
 - Co `tenant_id` neu la du lieu tenant.
 - Co `module_key` neu bang dung chung nhieu nganh.
+- Co cot/idempotency key hoac unique constraint cho event co the retry, vi du webhook transaction id, external event id, hoac `(tenant_id, reference_type, reference_id, event_type)`.
 - Co RLS policy dung `get_auth_tenant_id()` hoac guard tuong duong.
 - Revokes/grants ro cho anon/authenticated/service use case.
 - Co unique constraint theo tenant khi can.
 - Co migration test doc SQL neu behavior quan trong.
 - Co seed/demo script an toan neu can demo.
+- Co outbox/event schema neu nghiep vu nganh moi tao doanh thu, hoan tien, chi phi, luong, royalty, clearing hoac but toan ke toan.
 
 Can tranh:
 
 - Tao bang rieng cho moi nganh khi bang core co the mo rong bang `module_key`.
 - Dung service-role bypass ma khong filter tenant.
 - Insert demo finance/accounting truoc khi seed COA.
+- Ghi truc tiep vao `journal_entries` hoac `journal_lines` tu action nghiep vu nganh moi. Chi accounting worker/manual accounting flow duoc ghi so cai theo contract hien co.
 
 ### Phase 3 - Service Actions Va Rule Engines
 
@@ -119,6 +136,28 @@ Moi action doc/ghi du lieu phai:
 - Khong swallow database error.
 - Khong tao side effect ngoai transaction/rollback pattern.
 - Dung engine chung neu da ton tai: payment/booking/revenue/accounting/salary/inventory/session completion.
+
+Quy tac idempotency:
+
+- Moi webhook, CRM sync, ad sync, payment callback, cron worker, background worker hoac queue consumer co the retry phai co idempotency guard.
+- Phai luu mot ma dinh danh duy nhat cua event, vi du external transaction id, webhook id, job id, hoac `(tenant_id, event_type, reference_type, reference_id)`.
+- Truoc khi ghi doanh thu/chi phi/outbox/journal/inventory/salary, phai doc trang thai thuc te va tu choi ghi lap neu event da xu ly.
+- Test bat buoc mo phong cung event chay 2 lan va chung minh side effect chi duoc tao 1 lan.
+
+Quy tac rollback/fail-closed:
+
+- Action ghi nhieu bang phai dung transaction/RPC atomic khi co the.
+- Neu khong dung transaction duoc, phai chup snapshot truoc khi ghi va rollback thu cong ve snapshot neu bat ky side effect nao that bai.
+- Khi buoc phu loi, action phai tra loi ro rang hoac throw; khong duoc tiep tuc nhu thanh cong mot phan.
+- Nhung luong co tien, kho, luong, thang ke toan, royalty, clearing, booking status va accounting outbox mac dinh phai fail-closed.
+
+Quy tac accounting outbox:
+
+- Nghiep vu nganh moi khong duoc tu ghi thang vao `journal_entries`/`journal_lines`.
+- Moi phat sinh doanh thu, hoan tien, voucher/refund, chi phi, luong, hoa hong, royalty hoac bu tru lien chi nhanh phai dong goi thanh payload va dua vao accounting outbox.
+- Accounting worker la noi xu ly tuan tu mapping TT133 va tao but toan so cai.
+- Payload phai co `tenant_id`, `event_type`, `reference_type`, `reference_id`, amount/currency, metadata can thiet va idempotency key.
+- Test bat buoc assert ca outbox record lan but toan/side effect cuoi cung khi worker xu ly.
 
 Neu phat hien logic lap lai qua 2-3 noi va co rui ro sai tien/ton kho/luong/accounting, moi duoc gom thanh rule engine. Khong tao engine chi vi muon "cho dep".
 
@@ -170,6 +209,10 @@ Moi module moi can toi thieu cac nhom test:
 | Module isolation | Nganh moi khong dung goi/text/workflow cua Babycare neu khong duoc phep |
 | Package/service scope | Booking khong duoc dung package sai tenant/sai module |
 | Side effects | Payment, revenue, inventory, salary, accounting tao dung ban ghi phu |
+| Idempotency | Webhook/worker/sync retry 2 lan khong tao lap doanh thu/chi phi/outbox/but toan |
+| Rollback/fail-closed | Action nhieu buoc loi giua chung khong de lai trang thai nua chung |
+| Accounting outbox | Nghiep vu tai chinh nganh moi tao outbox dung contract, khong ghi so cai truc tiep |
+| Integration credentials | Token/API key tenant-scoped, khong leak ra UI, refresh/read loi phai fail ro |
 | RLS/grants | Bang moi khong bi permission denied trong luong hop le |
 | Demo lifecycle | Tao/xoa demo tenant sach, co marker |
 | UI smoke | Desktop/mobile khong overflow, F5 khong flash sai brand/module |
@@ -207,7 +250,12 @@ Mot phan he nganh moi chi duoc xem la xong khi:
 - Tenant nganh cu khong thay du lieu nganh moi.
 - Tenant nganh moi khong thay du lieu nganh cu.
 - F5 khong flash sai brand/module.
+- Module key do HQ cap, khong bi tenant admin tu doi thanh nganh khac.
 - Booking/payment/revenue/accounting/inventory/salary lien quan khong tao side effect sai.
+- Webhook/worker/sync lien quan co idempotency guard va test retry.
+- Multi-step action lien quan tien/kho/luong/accounting co transaction hoac rollback/fail-closed.
+- Phat sinh tai chinh di qua accounting outbox, khong ghi truc tiep vao so cai.
+- Token/API key tich hop tenant-scoped, khong leak ra UI va khong nuot loi refresh/read.
 - Demo tenant co the tao va xoa sach.
 - Test guard cho loi da sua da duoc commit.
 - `docs/implementation-artifacts/` co spec/handoff lien quan.
