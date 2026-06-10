@@ -86,7 +86,7 @@ function BookingsContent() {
 
   const monthDays = getMonthDays(currentMonth);
   const today = new Date();
-  const resolvedTenantModuleKey = tenantModuleKey ?? 'beauty_spa';
+  const resolvedTenantModuleKey = tenantModuleKey ?? 'babycare';
 
   useEffect(() => {
     if (tenantModuleKey && !getTenantSpecialtyOptions(tenantModuleKey).some((option) => option.id === ktvSpecialty)) {

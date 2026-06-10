@@ -125,7 +125,7 @@ export default function DashboardPage() {
   const [notifSearch, setNotifSearch] = useState('');
   const [notifTab, setNotifTab] = useState('all');
   const { tenantModuleKey } = useTenantModuleKey();
-  const effectiveTenantModuleKey = tenantModuleKey ?? 'beauty_spa';
+  const effectiveTenantModuleKey = tenantModuleKey ?? 'babycare';
   const customerLabels = getTenantModulePresentation(effectiveTenantModuleKey);
   const businessLabel = tenantModuleKey === null
     ? 'Spa'
