@@ -86,13 +86,48 @@ function BookingsContent() {
 
   const monthDays = getMonthDays(currentMonth);
   const today = new Date();
-  const resolvedTenantModuleKey = tenantModuleKey ?? 'babycare';
 
   useEffect(() => {
     if (tenantModuleKey && !getTenantSpecialtyOptions(tenantModuleKey).some((option) => option.id === ktvSpecialty)) {
       setKtvSpecialty('all');
     }
   }, [ktvSpecialty, tenantModuleKey]);
+
+  if (!tenantModuleKey) {
+    return (
+      <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">
+        <AnimatePresence>
+          {isSyncing && (
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-rose-400 to-primary origin-left z-50"
+              transition={{ duration: 0.5 }}
+            />
+          )}
+        </AnimatePresence>
+        <BookingsPageHeader
+          view={view}
+          onViewChange={setView}
+          onCreateClick={() => {
+            setCreateDate(getLocalDateString());
+            setShowCreateModal(true);
+          }}
+        />
+        <div className="rounded-[2rem] border border-slate-100 bg-white p-10 text-center shadow-sm">
+          <Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-black uppercase tracking-[0.16em] text-slate-500">
+            {isTenantModuleLoading
+              ? 'Đang tải phân hệ dịch vụ...'
+              : tenantModuleError || 'Chưa xác định được phân hệ dịch vụ của chi nhánh.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const resolvedTenantModuleKey = tenantModuleKey;
 
   return (
     <div className="flex-1 overflow-auto bg-background/30 p-3 sm:p-6 md:p-10 relative">

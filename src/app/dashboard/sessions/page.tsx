@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { LeaveApprovalModal } from './components/LeaveApprovalModal';
 import { SessionCard } from './components/SessionCard';
 import { SessionLogsDetailsModal } from './components/SessionLogsDetailsModal';
@@ -61,6 +62,14 @@ function SessionsContent() {
   const [sortFilter, setSortFilter] = useState('Ngày tạo mới nhất');
   const [userRole, setUserRole] = useState<'KTV' | 'admin' | ''>('');
   const [selectedBooking, setSelectedBooking] = useState<SessionBooking | null>(null);
+  const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
+  const sessionPageTitle = tenantModuleKey === 'beauty_spa' ? 'Liệu trình & dịch vụ' : 'Thẻ liệu trình';
+  const sessionPageSubtitle = tenantModuleKey === 'beauty_spa'
+    ? 'Quản lý tiến độ dịch vụ & ghi chú chăm sóc'
+    : 'Quản lý lộ trình & ghi chú chăm sóc';
+  const sessionSearchPlaceholder = tenantModuleKey === 'beauty_spa'
+    ? 'Tìm tên khách, hồ sơ, SĐT, kỹ thuật viên, dịch vụ...'
+    : 'Tìm tên khách, hồ sơ, SĐT, tên KTV, tên gói...';
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -141,11 +150,12 @@ function SessionsContent() {
   }, [loadPendingLeaves, loadSessions]);
 
   const handleSoftRefresh = useCallback(async () => {
-    await loadSessions();
-    if (userRole === 'admin') {
-      await loadPendingLeaves();
-    }
-  }, [loadPendingLeaves, loadSessions, userRole]);
+    await Promise.all([
+      loadSessions(),
+      refreshTenantModuleKey(),
+      userRole === 'admin' ? loadPendingLeaves() : Promise.resolve(),
+    ]);
+  }, [loadPendingLeaves, loadSessions, refreshTenantModuleKey, userRole]);
 
   usePageRefresh(handleSoftRefresh);
 
@@ -364,8 +374,8 @@ function SessionsContent() {
       {/* Header & Role Switcher */}
       <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 uppercase sm:text-3xl">Thẻ liệu trình</h1>
-          <p className="text-slate-500 font-bold mt-1 uppercase text-xs tracking-widest">Quản lý lộ trình & ghi chú chăm sóc</p>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 uppercase sm:text-3xl">{sessionPageTitle}</h1>
+          <p className="text-slate-500 font-bold mt-1 uppercase text-xs tracking-widest">{sessionPageSubtitle}</p>
         </div>
         
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
@@ -444,7 +454,7 @@ function SessionsContent() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm tên khách, hồ sơ, SĐT, tên KTV, tên gói..."
+            placeholder={sessionSearchPlaceholder}
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-700 text-sm"
           />
         </div>
@@ -505,6 +515,7 @@ function SessionsContent() {
                 booking={booking}
                 idx={idx}
                 userRole={userRole}
+                tenantModuleKey={tenantModuleKey}
                 updatingId={updatingId}
                 isReusingId={isReusingId}
                 onSelect={() => setSelectedBooking(booking)}
@@ -576,6 +587,7 @@ function SessionsContent() {
         onClose={handleCloseModal}
         onSuccess={loadSessions}
         userRole={userRole}
+        tenantModuleKey={tenantModuleKey}
       />
       
       {/* Leave Approval Panel */}

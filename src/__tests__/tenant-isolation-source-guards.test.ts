@@ -69,4 +69,26 @@ describe('dashboard tenant isolation source guards', () => {
     expect(source).toMatch(/\.from\('customers'\)[\s\S]{0,140}\.delete\(\)[\s\S]{0,140}\.eq\('tenant_id', tenantId\)/);
     expect(source).toMatch(/\.from\('bookings'\)[\s\S]{0,140}\.delete\(\)[\s\S]{0,140}\.eq\('tenant_id', tenantId\)/);
   });
+
+  it('does not fallback logged-in dashboard and booking views to babycare while tenant module is loading', () => {
+    const dashboardSource = readSource('src/app/dashboard/page.tsx');
+    const bookingsSource = readSource('src/app/dashboard/bookings/page.tsx');
+
+    expect(dashboardSource).not.toContain("tenantModuleKey ?? 'babycare'");
+    expect(bookingsSource).not.toContain("tenantModuleKey ?? 'babycare'");
+    expect(dashboardSource).toContain('getTenantModulePresentationOrNeutral');
+    expect(bookingsSource).toContain('Đang tải phân hệ dịch vụ');
+  });
+
+  it('passes tenant module context into session cards and details modal', () => {
+    const sessionsSource = readSource('src/app/dashboard/sessions/page.tsx');
+    const sessionCardSource = readSource('src/app/dashboard/sessions/components/SessionCard.tsx');
+    const sessionDetailsSource = readSource('src/app/dashboard/sessions/components/SessionLogsDetailsModal.tsx');
+
+    expect(sessionsSource).toContain('useTenantModuleKey');
+    expect(sessionsSource).toContain('tenantModuleKey={tenantModuleKey}');
+    expect(sessionCardSource).toContain('getTenantModulePresentationOrNeutral');
+    expect(sessionDetailsSource).toContain('getTenantModulePresentationOrNeutral');
+    expect(sessionDetailsSource).not.toContain('Thẻ liệu trình: Khách');
+  });
 });

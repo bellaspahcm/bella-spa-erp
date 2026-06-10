@@ -7,7 +7,7 @@ import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
-import { getTenantModulePresentation } from '@/lib/business-rules/tenant-module-presentation';
+import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 import { completeSession,saveSessionNote } from '@/modules/booking/actions/session-actions';
@@ -125,8 +125,7 @@ export default function DashboardPage() {
   const [notifSearch, setNotifSearch] = useState('');
   const [notifTab, setNotifTab] = useState('all');
   const { tenantModuleKey } = useTenantModuleKey();
-  const effectiveTenantModuleKey = tenantModuleKey ?? 'babycare';
-  const customerLabels = getTenantModulePresentation(effectiveTenantModuleKey);
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
   const businessLabel = tenantModuleKey === null
     ? 'Spa'
     : tenantModuleKey === 'beauty_spa'
