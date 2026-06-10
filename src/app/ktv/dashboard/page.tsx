@@ -76,7 +76,7 @@ export default function KTVDashboard() {
   const [checkoutSession, setCheckoutSession] = useState<KtvDashboardSession | null>(null);
   const [checkoutNotes, setCheckoutNotes] = useState<string>('');
   const [checkinSession, setCheckinSession] = useState<KtvDashboardSession | null>(null);
-  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(null);
   
   // Attendance States
   const [todayAttendance, setTodayAttendance] = useState<KtvTodayAttendance>(null);

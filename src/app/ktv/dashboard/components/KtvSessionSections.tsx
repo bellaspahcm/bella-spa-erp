@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Baby, CheckCircle2, MapPin, Phone, Play, UserRound } from 'lucide-react';
 
-import { getTenantModulePresentation } from '@/lib/business-rules/tenant-module-presentation';
+import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 export type KtvDashboardSession = {
@@ -33,7 +33,7 @@ type KtvSessionSectionsProps = {
   activeSessions: KtvDashboardSession[];
   upcomingSessions: KtvDashboardSession[];
   currentUserId?: string | null;
-  tenantModuleKey: TenantModuleKey;
+  tenantModuleKey: TenantModuleKey | null;
   isActionLoading: string | null;
   onOpenCheckout: (session: KtvDashboardSession) => void;
   onOpenCheckin: (session: KtvDashboardSession) => void;
@@ -68,8 +68,8 @@ export function KtvSessionSections({
   onOpenCheckout,
   onOpenCheckin,
 }: KtvSessionSectionsProps) {
-  const customerLabels = getTenantModulePresentation(tenantModuleKey);
-  const SecondaryIcon = tenantModuleKey === 'beauty_spa' ? UserRound : Baby;
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+  const SecondaryIcon = tenantModuleKey === 'babycare' ? Baby : UserRound;
 
   return (
     <div className="px-6 mt-8 space-y-8">

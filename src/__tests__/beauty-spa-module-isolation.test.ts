@@ -22,4 +22,16 @@ describe('beauty spa module isolation guards', () => {
     expect(servicesPageSource).toContain('{hasLoadedTenantModules && enabledModules.babycare && (');
     expect(servicesPageSource).toContain('disabled={!canManageServices}');
   });
+
+  it('does not let the KTV dashboard assume Babycare before tenant settings load', () => {
+    const ktvDashboardSource = readSource('src/app/ktv/dashboard/page.tsx');
+    const ktvSessionSectionsSource = readSource('src/app/ktv/dashboard/components/KtvSessionSections.tsx');
+
+    expect(ktvDashboardSource).toContain('useState<TenantModuleKey | null>(null)');
+    expect(ktvDashboardSource).not.toContain("useState<TenantModuleKey>('babycare')");
+
+    expect(ktvSessionSectionsSource).toContain('tenantModuleKey: TenantModuleKey | null');
+    expect(ktvSessionSectionsSource).toContain('getTenantModulePresentationOrNeutral(tenantModuleKey)');
+    expect(ktvSessionSectionsSource).toContain("tenantModuleKey === 'babycare' ? Baby : UserRound");
+  });
 });
