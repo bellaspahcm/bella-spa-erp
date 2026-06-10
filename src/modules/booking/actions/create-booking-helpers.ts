@@ -117,7 +117,7 @@ export async function createCustomerForBookingIfNeeded(
 
   const customerPayload: CustomerInsert = {
     ...formData.newCustomer,
-    tenant_id: formData.newCustomer.tenant_id || tenantId,
+    tenant_id: tenantId,
   };
 
   const { data: customer, error: customerError } = await supabase
@@ -153,12 +153,14 @@ export async function createCustomerForBookingIfNeeded(
 
 export async function findPendingBookingForCustomer(
   supabase: SupabaseServerClient,
-  customerId: string
+  customerId: string,
+  tenantId: string
 ): Promise<BookingRow | null> {
   const { data } = await supabase
     .from('bookings')
     .select('*')
     .eq('customer_id', customerId)
+    .eq('tenant_id', tenantId)
     .in('status', ['deposit_pending', 'lead'])
     .order('created_at', { ascending: false })
     .limit(1)

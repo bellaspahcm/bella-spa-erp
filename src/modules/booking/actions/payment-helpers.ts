@@ -63,12 +63,14 @@ export function buildManualPaymentIdempotencyKey(
 
 export async function getBookingPaymentSnapshot(
   supabase: SupabaseServerClient,
-  bookingId: string
+  bookingId: string,
+  tenantId: string
 ) {
   const { data: booking, error } = await supabase
     .from('bookings')
     .select('id, deposit_amount, full_price, status, tenant_id, discount_percent, revenue(amount, status, revenue_type)')
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (error || !booking) {
@@ -177,7 +179,8 @@ export async function recordBookingPaymentRpc(params: {
 export async function updateBookingShareToken(
   supabase: SupabaseServerClient,
   bookingId: string,
-  token: string
+  token: string,
+  tenantId: string
 ) {
   const tokenPayload: BookingUpdate = {
     share_token: token,
@@ -187,6 +190,7 @@ export async function updateBookingShareToken(
     .from('bookings')
     .update(tokenPayload)
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .select();
 
   if (error) {
@@ -198,7 +202,8 @@ export async function updateBookingShareToken(
 
 export async function fetchBookingDetailsWithPayment(
   supabase: SupabaseServerClient,
-  bookingId: string
+  bookingId: string,
+  tenantId: string
 ) {
   const { data, error } = await supabase
     .from('bookings')
@@ -216,6 +221,7 @@ export async function fetchBookingDetailsWithPayment(
       )
     `)
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .maybeSingle();
 
   if (error) {

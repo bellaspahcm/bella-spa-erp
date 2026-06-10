@@ -11,21 +11,34 @@ type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type BookingInsert = Database['public']['Tables']['bookings']['Insert'];
 type SessionLogInsert = Database['public']['Tables']['session_logs']['Insert'];
 
+const BOOKING_TENANT_ACCESS_ERROR = 'Khong xac dinh duoc don vi kinh doanh cua nguoi dung hien tai.';
+
+async function requireCurrentTenantId() {
+  const { getCurrentUser } = await import('@/services/user-actions');
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.tenant_id) {
+    throw new Error(BOOKING_TENANT_ACCESS_ERROR);
+  }
+  return currentUser.tenant_id;
+}
+
 export async function reusePackage(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const tenantId = await requireCurrentTenantId();
 
   const { data: original, error: fetchError } = await supabase
     .from('bookings')
     .select('*')
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (fetchError || !original) {
     return { error: 'Không tìm thấy gói cũ: ' + fetchError?.message };
   }
 
-  const packageScopeResult = await validateBookingPackageScope(supabase, original.tenant_id, original.package_id);
+  const packageScopeResult = await validateBookingPackageScope(supabase, tenantId, original.package_id);
   if ('error' in packageScopeResult) {
     return { error: packageScopeResult.error };
   }
@@ -40,7 +53,7 @@ export async function reusePackage(bookingId: string) {
     total_sessions: original.total_sessions,
     completed_sessions: 0,
     start_date: getLocalDateString(),
-    tenant_id: original.tenant_id,
+    tenant_id: tenantId,
   };
 
   if (original.package_name) {
@@ -63,15 +76,20 @@ export async function reusePackage(bookingId: string) {
         .select();
       
       if (retryError) return { error: 'Lỗi tạo gói mới: ' + retryError.message };
-      return finalizeReuse(retryBookingData?.[0], original.total_sessions, supabase);
+      return finalizeReuse(retryBookingData?.[0], original.total_sessions, supabase, tenantId);
     }
     return { error: 'Lỗi tạo gói mới: ' + createError.message };
   }
 
-  return finalizeReuse(newBooking, original.total_sessions, supabase);
+  return finalizeReuse(newBooking, original.total_sessions, supabase, tenantId);
 }
 
-async function finalizeReuse(newBooking: BookingRow | undefined, total: number | null, supabase: SupabaseServerClient) {
+async function finalizeReuse(
+  newBooking: BookingRow | undefined,
+  total: number | null,
+  supabase: SupabaseServerClient,
+  tenantId: string,
+) {
   if (!newBooking) {
     return { error: 'Không thể tạo gói mới: dữ liệu booking trả về rỗng.' };
   }
@@ -106,7 +124,8 @@ async function finalizeReuse(newBooking: BookingRow | undefined, total: number |
     await supabase
       .from('bookings')
       .delete()
-      .eq('id', newBooking.id);
+      .eq('id', newBooking.id)
+      .eq('tenant_id', tenantId);
     return { error: 'Đã tạo gói mới nhưng lỗi khởi tạo lịch trình: ' + sessionsError.message };
   }
 
@@ -122,11 +141,13 @@ async function finalizeReuse(newBooking: BookingRow | undefined, total: number |
     await supabase
       .from('session_logs')
       .delete()
-      .eq('booking_id', newBooking.id);
+      .eq('booking_id', newBooking.id)
+      .eq('tenant_id', tenantId);
     await supabase
       .from('bookings')
       .delete()
-      .eq('id', newBooking.id);
+      .eq('id', newBooking.id)
+      .eq('tenant_id', tenantId);
     return {
       error: auditErr instanceof Error
         ? auditErr.message

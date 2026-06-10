@@ -11,8 +11,17 @@ import {
   validateRemainingPaymentAmount,
 } from './payment-helpers';
 
+const BOOKING_TENANT_ACCESS_ERROR = 'Khong xac dinh duoc don vi kinh doanh cua nguoi dung hien tai.';
+
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function requireTenantId(currentUser: { tenant_id?: string | null } | null | undefined) {
+  if (!currentUser?.tenant_id) {
+    throw new Error(BOOKING_TENANT_ACCESS_ERROR);
+  }
+  return currentUser.tenant_id;
 }
 
 export async function recordRemainingPayment(params: RecordRemainingPaymentParams) {
@@ -22,7 +31,8 @@ export async function recordRemainingPayment(params: RecordRemainingPaymentParam
   const currentUser = await getCurrentUser();
 
   try {
-    const bookingResult = await getBookingPaymentSnapshot(supabase, params.booking_id);
+    const tenantId = requireTenantId(currentUser);
+    const bookingResult = await getBookingPaymentSnapshot(supabase, params.booking_id, tenantId);
     if ('error' in bookingResult) {
       throw new Error(bookingResult.error);
     }
@@ -37,7 +47,6 @@ export async function recordRemainingPayment(params: RecordRemainingPaymentParam
       throw new Error(periodResult.error);
     }
 
-    const tenantId = bookingResult.booking.tenant_id || currentUser?.tenant_id || null;
     const rpcResult = await recordBookingPaymentRpc({
       supabase,
       payment: params,
@@ -64,10 +73,18 @@ export async function recordRemainingPayment(params: RecordRemainingPaymentParam
 export async function generateShareToken(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const { getCurrentUser } = await import('@/services/user-actions');
+  const currentUser = await getCurrentUser();
+  let tenantId: string;
+  try {
+    tenantId = requireTenantId(currentUser);
+  } catch (error) {
+    return { error: getErrorMessage(error) };
+  }
   const crypto = await import('crypto');
 
   const token = crypto.randomUUID().split('-')[0] + crypto.randomUUID().split('-')[1];
-  const result = await updateBookingShareToken(supabase, bookingId, token);
+  const result = await updateBookingShareToken(supabase, bookingId, token, tenantId);
 
   if ('error' in result) {
     console.error('Error generating booking share link:', result.error);
@@ -87,7 +104,15 @@ export async function generateShareToken(bookingId: string) {
 export async function getBookingDetailsWithPayment(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
-  const result = await fetchBookingDetailsWithPayment(supabase, bookingId);
+  const { getCurrentUser } = await import('@/services/user-actions');
+  const currentUser = await getCurrentUser();
+  let tenantId: string;
+  try {
+    tenantId = requireTenantId(currentUser);
+  } catch (error) {
+    return { error: getErrorMessage(error) };
+  }
+  const result = await fetchBookingDetailsWithPayment(supabase, bookingId, tenantId);
 
   if ('error' in result) {
     console.error('Error fetching booking payment details:', result.error);
