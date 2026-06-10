@@ -45,6 +45,7 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | --- | --- | --- | --- |
 | Module setup | Beauty Spa bi xem nhu tuy chon co the bat/tat | Thiet ke ban dau gan voi module toggle thay vi quy trinh thuong mai HQ cap | HQ-only setup, Beauty admin khong duoc doi module nganh |
 | Tenant isolation | Dang nhap Admin Bella Spa van thay khach/demo Beauty | Query/UI read model co diem thieu scope tenant hoac demo data chua tach sach | Moi action doc du lieu phai filter `tenant_id`; them guard test session/dashboard/customer/finance |
+| Client direct query | Booking modal/list picker hien KTV/khach Beauty trong tai khoan Bella | UI query truc tiep tu browser vao `users`/`customers` thay vi qua server action tenant-scoped | Khong query client voi bang tenant-sensitive; dung server action co current tenant; them source guard |
 | Module isolation | Beauty tenant van hien text Me & Be, KTV, Combo Me Be | UI copy va filter bi hard-code theo Babycare | Dung module-aware copy, service category theo module, khong render babycare UI khi tenant chua load module |
 | Loading fallback | F5 hien Bella Spa mot luc roi moi chuyen Beauty Spa | Fallback mac dinh ve Bella/Babycare truoc khi tenant brand/module load xong | Non-Bella tenant khong fallback Bella; dung loading/neutral state den khi co tenant context |
 | Brand isolation | Sidebar/header/portal co nguy co dung logo/mau Bella | Branding doc tu default chung hoac cache khong gan tenant | Cache brand phai kem `tenantId`; fallback Beauty trung tinh, khong fallback Bella |
@@ -137,6 +138,14 @@ Moi action doc/ghi du lieu phai:
 - Khong tao side effect ngoai transaction/rollback pattern.
 - Dung engine chung neu da ton tai: payment/booking/revenue/accounting/salary/inventory/session completion.
 
+Quy tac client/data access:
+
+- UI/browser/client component khong duoc query truc tiep cac bang tenant-sensitive nhu `users`, `customers`, `bookings`, `session_logs`, `revenue`, `expenses`, `salary_records`, `attendance`, `inventory_items`, `packages` neu chua co tenant guard ro rang.
+- Picker/list UI nhu chon KTV, chon khach hang, chon booking, chon goi dich vu phai di qua server action tenant-scoped.
+- Server action dung cho list/read phai tu lay current tenant, fail closed neu thieu tenant, va khong tin `tenant_id` do client gui len.
+- Write action, rollback action va cleanup action phai filter `tenant_id` cung voi `id`; khong duoc update/delete chi bang `id`.
+- Neu phat hien UI/client direct query gay ro ri tenant, phai them regression test hoac source guard, vi du `tenant-isolation-source-guards.test.ts`, de khoa loi do khong quay lai.
+
 Quy tac idempotency:
 
 - Moi webhook, CRM sync, ad sync, payment callback, cron worker, background worker hoac queue consumer co the retry phai co idempotency guard.
@@ -169,6 +178,7 @@ Moi UI cua module moi phai:
 - Dung copy theo module, khong hard-code thuat ngu nganh cu.
 - Loading state khong hien tam du lieu/ngon ngu cua tenant khac.
 - Sidebar/header/portal/bao gia/hoa don doc brand theo tenant.
+- Picker/list tren UI phai lay du lieu qua action tenant-scoped, khong doc truc tiep bang tenant-sensitive tu browser.
 - Dropdown, table, modal dung component/pattern chung cua he thong.
 - Mobile phai check truoc khi coi xong.
 - Neu co giao dien rieng/brand rieng, phai render preview anh mau truoc khi code thay doi UI lon.
@@ -253,6 +263,8 @@ Mot phan he nganh moi chi duoc xem la xong khi:
 - F5 khong flash sai brand/module.
 - Module key do HQ cap, khong bi tenant admin tu doi thanh nganh khac.
 - Booking/payment/revenue/accounting/inventory/salary lien quan khong tao side effect sai.
+- UI khong con query truc tiep bang tenant-sensitive tu browser neu chua qua server action tenant-scoped.
+- Read/write/rollback tren bang tenant-scoped deu co `tenant_id` filter, khong chi filter bang `id`.
 - Webhook/worker/sync lien quan co idempotency guard va test retry.
 - Multi-step action lien quan tien/kho/luong/accounting co transaction hoac rollback/fail-closed.
 - Phat sinh tai chinh di qua accounting outbox, khong ghi truc tiep vao so cai.
@@ -292,6 +304,17 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 - Test/guard da them: `src/__tests__/session-read-actions.test.ts`, `src/__tests__/dashboard-actions.test.ts`, `src/__tests__/beauty-demo-tenant-script.test.ts`.
 - Commit: `ae973883` - `test: guard tenant scoped reads`.
 - Rui ro con lai: Can tiep tuc them guard theo tung man hinh neu phat hien read model nao con di truc tiep bo qua action tenant-scoped.
+
+### 2026-06-10 - Booking modal va staff actions dung du lieu khong scope tenant
+
+- Module/tenant: Bella Spa va Beauty Spa.
+- Man hinh/luong: Modal tao booking, danh sach chon KTV/khach hang, quan ly nhan su.
+- Dau hieu: Tai khoan Bella co nguy co nhin thay KTV/khach Beauty trong picker; action nhan su co nguy co thao tac theo `id` neu biet id cua tenant khac.
+- Nguyen nhan goc: UI query truc tiep tu browser vao `users`/`customers`; `getUsers` va mot so write/rollback action trong user management chua gan `tenant_id`.
+- Cach sua: Booking modal dung `getUsers`/`getCustomers` tenant-scoped; `getUsers`, update status/profile/base salary/delete user va rollback deu filter `tenant_id`.
+- Test/guard da them: `src/__tests__/tenant-isolation-source-guards.test.ts` khoa BookingModal khong query truc tiep `users`/`customers`; `src/__tests__/user-actions.test.ts` assert filter `tenant_id` cho update/delete/rollback.
+- Commit: pending.
+- Rui ro con lai: Tiep tuc audit tung client component neu con query truc tiep bang tenant-sensitive; chi cho phep neu do la auth/self profile lookup hoac co tenant guard ro rang.
 
 ### 2026-06-10 - KTV dashboard fallback Babycare truoc khi load tenant
 

@@ -206,6 +206,13 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
 export async function getUsers(): Promise<StaffRecord[]> {
   const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+
+  if (!tenantId) {
+    throw new Error('[getUsers] Missing tenantId for current user');
+  }
+
   const { data, error } = await supabase
     .from('users')
     .select(`
@@ -213,10 +220,11 @@ export async function getUsers(): Promise<StaffRecord[]> {
       session_logs(count),
       session_reviews(rating)
     `)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching users:', error);
+    throw new Error(`[getUsers] users query failed: ${error.message}`);
   }
 
   const processedData: StaffRecord[] = (data as unknown as UserWithLogsAndReviews[] || []).map((user) => {
@@ -259,11 +267,13 @@ async function rollbackUserUpdate(
   supabase: SupabaseClient,
   id: string,
   payload: UserUpdate,
+  tenantId: string,
 ) {
   const { error } = await supabase
     .from('users')
     .update(payload)
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
 
   return error?.message || '';
 }
@@ -374,11 +384,12 @@ async function rollbackBaseSalaryChange(
   supabase: SupabaseClient,
   id: string,
   previousBaseSalary: number | null,
+  tenantId: string,
   recalcTenantId?: string | null,
 ) {
   const userRollbackError = await rollbackUserUpdate(supabase, id, {
     base_salary: previousBaseSalary,
-  });
+  }, tenantId);
 
   let salaryRollbackError = '';
   if (!userRollbackError && recalcTenantId) {
@@ -397,10 +408,13 @@ async function rollbackBaseSalaryChange(
 
 export async function createUser(formData: CreateUserInput) {
   const currentUser = await getCurrentUser();
+  if (!currentUser?.tenant_id) {
+    return { error: 'Khong xac dinh duoc chi nhanh cua nguoi dung hien tai.' };
+  }
 
   const targetRole = formData.role || 'ktv';
 
-  if (targetRole === 'ktv' && currentUser?.tenant_id) {
+  if (targetRole === 'ktv') {
     const ktvLimit = await checkSubscriptionLimit(currentUser.tenant_id, 'ktv');
     if (ktvLimit.isBlocked) {
       return { error: 'Vượt quá giới hạn nhân sự kỹ thuật viên của gói dịch vụ hiện tại. Vui lòng nâng cấp gói cước.' };
@@ -470,7 +484,7 @@ export async function createUser(formData: CreateUserInput) {
     full_name: formData.full_name,
     role: targetRole,
     status: 'active',
-    tenant_id: currentUser?.tenant_id,
+    tenant_id: currentUser.tenant_id,
   };
 
   const { data, error } = await supabaseAdmin
@@ -519,11 +533,17 @@ export async function createUser(formData: CreateUserInput) {
 
 export async function updateUserStatus(id: string, status: 'active' | 'inactive') {
   const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    return { error: 'Khong xac dinh duoc chi nhanh cua nguoi dung hien tai.' };
+  }
 
   const { data: previousUser, error: snapshotError } = await supabase
     .from('users')
     .select('status')
     .eq('id', id)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (snapshotError || !previousUser) {
@@ -533,7 +553,8 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   const { error } = await supabase
     .from('users')
     .update({ status })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
 
   if (error) {
     console.error('Error updating user status:', error);
@@ -552,7 +573,7 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
   } catch (auditError: unknown) {
     const rollbackError = await rollbackUserUpdate(supabase, id, {
       status: previousUser.status,
-    });
+    }, tenantId);
     const rollbackNote = rollbackError ? `; rollback failed: ${rollbackError}` : '';
     return { error: `Failed to record user status audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
   }
@@ -563,11 +584,17 @@ export async function updateUserStatus(id: string, status: 'active' | 'inactive'
 
 export async function updateUser(id: string, formData: { full_name: string; role: string }) {
   const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    return { error: 'Khong xac dinh duoc chi nhanh cua nguoi dung hien tai.' };
+  }
 
   const { data: previousUser, error: snapshotError } = await supabase
     .from('users')
     .select('full_name, role')
     .eq('id', id)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (snapshotError || !previousUser) {
@@ -580,7 +607,8 @@ export async function updateUser(id: string, formData: { full_name: string; role
       full_name: formData.full_name,
       role: formData.role
     })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
 
   if (error) {
     console.error('Error updating user:', error);
@@ -600,7 +628,7 @@ export async function updateUser(id: string, formData: { full_name: string; role
     const rollbackError = await rollbackUserUpdate(supabase, id, {
       full_name: previousUser.full_name,
       role: previousUser.role,
-    });
+    }, tenantId);
     const rollbackNote = rollbackError ? `; rollback failed: ${rollbackError}` : '';
     return { error: `Failed to record user update audit log: ${getErrorMessage(auditError)}${rollbackNote}` };
   }
@@ -611,6 +639,11 @@ export async function updateUser(id: string, formData: { full_name: string; role
 
 export async function deleteUser(id: string) {
   const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    return { error: 'Khong xac dinh duoc chi nhanh cua nguoi dung hien tai.' };
+  }
 
   const {
     data: previousUser,
@@ -619,6 +652,7 @@ export async function deleteUser(id: string) {
     .from('users')
     .select('*')
     .eq('id', id)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (snapshotError || !previousUser) {
@@ -633,7 +667,8 @@ export async function deleteUser(id: string) {
   }: { data: StaffLeaveRow[] | null; error: { message?: string } | null } = await supabase
     .from('staff_leaves')
     .select('*')
-    .eq('user_id', id);
+    .eq('user_id', id)
+    .eq('tenant_id', tenantId);
 
   if (staffLeavesSnapshotError) {
     return { error: staffLeavesSnapshotError.message || 'Failed to snapshot staff leaves' };
@@ -644,7 +679,8 @@ export async function deleteUser(id: string) {
   const { error } = await supabase
     .from('users')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
 
   if (error) {
     console.error('Error deleting user:', error);
@@ -679,9 +715,14 @@ export async function deleteUser(id: string) {
 export async function updateBaseSalary(id: string, base_salary: number) {
   const supabase = await createClient();
   const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
 
   if (currentUser?.role !== 'admin' && currentUser?.role !== 'manager') {
     return { error: 'Quyền truy cập bị từ chối: Chỉ Admin hoặc Manager mới có quyền thay đổi lương cứng.' };
+  }
+
+  if (!tenantId) {
+    return { error: 'Khong xac dinh duoc chi nhanh cua nguoi dung hien tai.' };
   }
 
   const {
@@ -694,6 +735,7 @@ export async function updateBaseSalary(id: string, base_salary: number) {
     .from('users')
     .select('base_salary, role, tenant_id')
     .eq('id', id)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (snapshotError || !previousUser) {
@@ -703,14 +745,15 @@ export async function updateBaseSalary(id: string, base_salary: number) {
   const { error } = await supabase
     .from('users')
     .update({ base_salary })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
 
   if (error) {
     console.error('Error updating base salary:', error);
     return { error: error.message };
   }
 
-  const recalcTenantId = previousUser.role === 'ktv' ? previousUser.tenant_id : null;
+  const recalcTenantId = previousUser.role === 'ktv' ? tenantId : null;
 
   if (recalcTenantId) {
     try {
@@ -720,6 +763,7 @@ export async function updateBaseSalary(id: string, base_salary: number) {
         supabase,
         id,
         previousUser.base_salary,
+        tenantId,
         recalcTenantId,
       );
       return { error: `Failed to recalculate salary after base salary update: ${getErrorMessage(recalcError)}${rollbackNote}` };
@@ -740,6 +784,7 @@ export async function updateBaseSalary(id: string, base_salary: number) {
       supabase,
       id,
       previousUser.base_salary,
+      tenantId,
       recalcTenantId,
     );
     return { error: `Failed to record base salary audit log: ${getErrorMessage(auditError)}${rollbackNote}` };

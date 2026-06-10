@@ -57,6 +57,7 @@ type DbCall = {
   table: string;
   op: ScriptedResult['op'];
   payload?: any;
+  filters: Array<{ field: string; value: unknown }>;
 };
 
 class ScriptedQueryBuilder {
@@ -71,30 +72,33 @@ class ScriptedQueryBuilder {
   select() {
     if (!this.op) {
       this.op = 'select';
-      this.calls.push({ table: this.table, op: 'select' });
+      this.calls.push({ table: this.table, op: 'select', filters: [] });
     }
     return this;
   }
 
   update(payload: unknown) {
     this.op = 'update';
-    this.calls.push({ table: this.table, op: 'update', payload });
+    this.calls.push({ table: this.table, op: 'update', payload, filters: [] });
     return this;
   }
 
   insert(payload: unknown) {
     this.op = 'insert';
-    this.calls.push({ table: this.table, op: 'insert', payload });
+    this.calls.push({ table: this.table, op: 'insert', payload, filters: [] });
     return this;
   }
 
   delete() {
     this.op = 'delete';
-    this.calls.push({ table: this.table, op: 'delete' });
+    this.calls.push({ table: this.table, op: 'delete', filters: [] });
     return this;
   }
 
-  eq() { return this; }
+  eq(field: string, value: unknown) {
+    this.calls.at(-1)?.filters.push({ field, value });
+    return this;
+  }
   single() { return this.resolve(); }
 
   then(onfulfilled: (value: { data: any; error: any }) => unknown) {
@@ -175,6 +179,35 @@ describe('user update audit rollback', () => {
       },
       { table: 'tenants', op: 'select', data: { status: 'active', name: 'Bella Test' } },
     ]);
+  }
+
+  function currentUserScripts(): ScriptedResult[] {
+    return [
+      {
+        table: 'users',
+        op: 'select',
+        data: {
+          id: 'admin-1',
+          email: 'admin@bella.test',
+          full_name: 'Admin User',
+          role: 'admin',
+          tenant_id: 'tenant-1',
+          avatar_url: null,
+        },
+      },
+      { table: 'tenants', op: 'select', data: { status: 'active', name: 'Bella Test' } },
+    ];
+  }
+
+  function installTenantScopedSupabase(scripts: ScriptedResult[]) {
+    return installScriptedSupabase([
+      ...currentUserScripts(),
+      ...scripts,
+    ]);
+  }
+
+  function actionCalls(calls: DbCall[]) {
+    return calls.slice(2);
   }
 
   const createUserInput = {
@@ -372,7 +405,7 @@ describe('user update audit rollback', () => {
   });
 
   it('deletes user and records old audit data on success', async () => {
-    const calls = installScriptedSupabase([
+    const calls = installTenantScopedSupabase([
       { table: 'users', op: 'select', data: deletedUserSnapshot },
       { table: 'staff_leaves', op: 'select', data: [] },
       { table: 'users', op: 'delete' },
@@ -381,11 +414,23 @@ describe('user update audit rollback', () => {
     const result = await deleteUser('delete-user-1');
 
     expect(result).toEqual({ success: true });
-    expect(calls.map(c => `${c.table}.${c.op}`)).toEqual([
+    expect(actionCalls(calls).map(c => `${c.table}.${c.op}`)).toEqual([
       'users.select',
       'staff_leaves.select',
       'users.delete',
     ]);
+    expect(actionCalls(calls)[0].filters).toEqual(expect.arrayContaining([
+      { field: 'id', value: 'delete-user-1' },
+      { field: 'tenant_id', value: 'tenant-1' },
+    ]));
+    expect(actionCalls(calls)[1].filters).toEqual(expect.arrayContaining([
+      { field: 'user_id', value: 'delete-user-1' },
+      { field: 'tenant_id', value: 'tenant-1' },
+    ]));
+    expect(actionCalls(calls)[2].filters).toEqual(expect.arrayContaining([
+      { field: 'id', value: 'delete-user-1' },
+      { field: 'tenant_id', value: 'tenant-1' },
+    ]));
     expect(mockRecordAuditLog).toHaveBeenCalledWith({
       action: 'DELETE',
       table_name: 'users',
@@ -397,20 +442,20 @@ describe('user update audit rollback', () => {
   });
 
   it('does not delete user when delete snapshot fails', async () => {
-    const calls = installScriptedSupabase([
+    const calls = installTenantScopedSupabase([
       { table: 'users', op: 'select', error: { message: 'snapshot failed' } },
     ]);
 
     const result = await deleteUser('delete-user-1');
 
     expect(result.error).toContain('snapshot failed');
-    expect(calls.map(c => c.op)).toEqual(['select']);
+    expect(actionCalls(calls).map(c => c.op)).toEqual(['select']);
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
   });
 
   it('restores deleted user when delete audit logging fails', async () => {
-    const calls = installScriptedSupabase([
+    const calls = installTenantScopedSupabase([
       { table: 'users', op: 'select', data: deletedUserSnapshot },
       { table: 'staff_leaves', op: 'select', data: [deletedStaffLeaveSnapshot] },
       { table: 'users', op: 'delete' },
@@ -422,7 +467,7 @@ describe('user update audit rollback', () => {
     const result = await deleteUser('delete-user-1');
 
     expect(result.error).toContain('audit failed');
-    expect(calls.map(c => ({ table: c.table, op: c.op, payload: c.payload }))).toEqual([
+    expect(actionCalls(calls).map(c => ({ table: c.table, op: c.op, payload: c.payload }))).toEqual([
       { table: 'users', op: 'select', payload: undefined },
       { table: 'staff_leaves', op: 'select', payload: undefined },
       { table: 'users', op: 'delete', payload: undefined },
@@ -433,7 +478,7 @@ describe('user update audit rollback', () => {
   });
 
   it('reports restore failure when delete audit rollback fails', async () => {
-    const calls = installScriptedSupabase([
+    const calls = installTenantScopedSupabase([
       { table: 'users', op: 'select', data: deletedUserSnapshot },
       { table: 'staff_leaves', op: 'select', data: [deletedStaffLeaveSnapshot] },
       { table: 'users', op: 'delete' },
@@ -445,7 +490,7 @@ describe('user update audit rollback', () => {
 
     expect(result.error).toContain('audit failed');
     expect(result.error).toContain('restore failed: restore failed');
-    expect(calls.map(c => `${c.table}.${c.op}`)).toEqual([
+    expect(actionCalls(calls).map(c => `${c.table}.${c.op}`)).toEqual([
       'users.select',
       'staff_leaves.select',
       'users.delete',
@@ -454,7 +499,7 @@ describe('user update audit rollback', () => {
   });
 
   it('reports staff leave restore failure when delete audit rollback partially fails', async () => {
-    installScriptedSupabase([
+    installTenantScopedSupabase([
       { table: 'users', op: 'select', data: deletedUserSnapshot },
       { table: 'staff_leaves', op: 'select', data: [deletedStaffLeaveSnapshot] },
       { table: 'users', op: 'delete' },
@@ -566,6 +611,14 @@ describe('user update audit rollback', () => {
       { base_salary: 8000000 },
       { base_salary: 6000000 },
     ]);
+    expect(calls.filter(c => c.table === 'users' && c.op === 'update')[0].filters).toEqual(expect.arrayContaining([
+      { field: 'id', value: 'ktv-1' },
+      { field: 'tenant_id', value: 'tenant-1' },
+    ]));
+    expect(calls.filter(c => c.table === 'users' && c.op === 'update')[1].filters).toEqual(expect.arrayContaining([
+      { field: 'id', value: 'ktv-1' },
+      { field: 'tenant_id', value: 'tenant-1' },
+    ]));
     expect(mockRecordAuditLog).not.toHaveBeenCalled();
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
   });
@@ -603,7 +656,7 @@ describe('user update audit rollback', () => {
   });
 
   it('updates user status and records old/new audit data on success', async () => {
-    const calls = installScriptedSupabase([
+    const calls = installTenantScopedSupabase([
       { table: 'users', op: 'select', data: { status: 'active' } },
       { table: 'users', op: 'update' },
     ]);
@@ -614,6 +667,10 @@ describe('user update audit rollback', () => {
     expect(calls.filter(c => c.table === 'users' && c.op === 'update').map(c => c.payload)).toEqual([
       { status: 'inactive' },
     ]);
+    expect(calls.filter(c => c.table === 'users' && c.op === 'update')[0].filters).toEqual(expect.arrayContaining([
+      { field: 'id', value: 'user-1' },
+      { field: 'tenant_id', value: 'tenant-1' },
+    ]));
     expect(mockRecordAuditLog).toHaveBeenCalledWith({
       action: 'UPDATE',
       table_name: 'users',
@@ -625,7 +682,7 @@ describe('user update audit rollback', () => {
   });
 
   it('rolls back user status when audit logging fails', async () => {
-    const calls = installScriptedSupabase([
+    const calls = installTenantScopedSupabase([
       { table: 'users', op: 'select', data: { status: 'active' } },
       { table: 'users', op: 'update' },
       { table: 'users', op: 'update' },
@@ -639,11 +696,15 @@ describe('user update audit rollback', () => {
       { status: 'inactive' },
       { status: 'active' },
     ]);
+    expect(calls.filter(c => c.table === 'users' && c.op === 'update')[1].filters).toEqual(expect.arrayContaining([
+      { field: 'id', value: 'user-1' },
+      { field: 'tenant_id', value: 'tenant-1' },
+    ]));
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
   });
 
   it('reports rollback failure when user status audit rollback fails', async () => {
-    const calls = installScriptedSupabase([
+    const calls = installTenantScopedSupabase([
       { table: 'users', op: 'select', data: { status: 'active' } },
       { table: 'users', op: 'update' },
       { table: 'users', op: 'update', error: { message: 'rollback failed' } },
@@ -661,7 +722,7 @@ describe('user update audit rollback', () => {
   });
 
   it('rolls back user profile fields when audit logging fails', async () => {
-    const calls = installScriptedSupabase([
+    const calls = installTenantScopedSupabase([
       { table: 'users', op: 'select', data: { full_name: 'Old Name', role: 'ktv' } },
       { table: 'users', op: 'update' },
       { table: 'users', op: 'update' },
@@ -675,6 +736,10 @@ describe('user update audit rollback', () => {
       { full_name: 'New Name', role: 'manager' },
       { full_name: 'Old Name', role: 'ktv' },
     ]);
+    expect(calls.filter(c => c.table === 'users' && c.op === 'update')[1].filters).toEqual(expect.arrayContaining([
+      { field: 'id', value: 'user-1' },
+      { field: 'tenant_id', value: 'tenant-1' },
+    ]));
     expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
   });
 });
