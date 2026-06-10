@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo,useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Building, 
@@ -14,17 +14,32 @@ import {
   CheckCircle,
   HelpCircle
 } from 'lucide-react';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 
 interface OnboardingTourProps {
   forceOpen?: boolean;
   onCloseTour?: () => void;
+  brandName?: string;
+  tenantModuleKey?: TenantModuleKey | null;
 }
 
-const STEPS = [
+function buildSteps(brandName: string, tenantModuleKey: TenantModuleKey | null | undefined) {
+  const isBeautySpa = tenantModuleKey === 'beauty_spa';
+  const serviceDescription = isBeautySpa
+    ? 'Tạo các dịch vụ facial, body, công nghệ cao hoặc gói liệu trình riêng của spa; đồng thời thiết lập định mức mỹ phẩm, mask, tinh chất và vật tư tiêu hao. Khi kỹ thuật viên hoàn thành buổi dịch vụ, kho hàng sẽ được cập nhật theo định mức đã cấu hình.'
+    : 'Tạo các gói liệu trình chăm sóc cao cấp cho Mẹ và Bé, đồng thời thiết lập định mức vật tư tiêu hao như tinh dầu, khăn và dụng cụ chăm sóc. Mỗi khi kỹ thuật viên hoàn thành ca, kho hàng sẽ tự động trừ hàng tương ứng theo định mức.';
+  const serviceTip = isBeautySpa
+    ? 'Mẹo: Chia nhóm dịch vụ theo facial, body, công nghệ cao hoặc dưỡng sinh để lọc lịch và theo dõi hiệu suất rõ hơn.'
+    : 'Mẹo: Bật cảnh báo tồn kho tối thiểu tại phần Cài đặt để nhận tin nhắn Zalo/Dashboard khi vật tư sắp hết.';
+  const salaryDescription = isBeautySpa
+    ? `Thêm kỹ thuật viên vào hệ thống, phân vai trò chuyên môn và thiết lập hoa hồng linh hoạt theo dịch vụ, liệu trình hoặc doanh thu. ${brandName} tự động tổng hợp buổi hoàn thành, đánh giá khách hàng, thưởng/phạt và dữ liệu chấm công để hỗ trợ đối soát lương hằng tháng.`
+    : `Thêm KTV vào hệ thống, phân vai trò chuyên môn và thiết lập tỷ lệ hoa hồng hoặc thưởng rating. ${brandName} tự động tính điểm KPI từ đánh giá khách hàng và kỷ luật ca làm để tổng hợp lương thưởng hằng tháng.`;
+
+  return [
   {
     title: 'Thiết lập Chi nhánh',
     subtitle: 'Nền tảng vận hành đa chi nhánh',
-    description: 'Bắt đầu bằng việc cấu hình cơ sở vật chất và thông tin chi nhánh của bạn tại mục Cài đặt. Hệ thống hỗ trợ quản lý độc lập từng chi nhánh, phân quyền kho bãi và luồng tiền tệ riêng biệt nhưng báo cáo hợp nhất tại Bella HQ.',
+    description: 'Bắt đầu bằng việc cấu hình cơ sở vật chất và thông tin chi nhánh của bạn tại mục Cài đặt. Hệ thống hỗ trợ quản lý độc lập từng chi nhánh, phân quyền kho bãi và luồng tiền tệ riêng biệt nhưng vẫn có báo cáo hợp nhất tại cấp quản trị.',
     icon: Building,
     color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900/30',
     glowColor: 'rgba(59, 130, 246, 0.15)',
@@ -35,41 +50,48 @@ const STEPS = [
   {
     title: 'Quản lý Dịch vụ & Vật tư',
     subtitle: 'Tự động hóa hao phí và trừ kho',
-    description: 'Tạo các gói liệu trình chăm sóc cao cấp cho Mẹ và Bé, đồng thời thiết lập định mức vật tư tiêu hao (ví dụ: tinh dầu chàm, khăn gạc). Mỗi khi Kỹ thuật viên (KTV) bấm hoàn thành ca, kho hàng sẽ tự động trừ hàng tương ứng theo định mức.',
+    description: serviceDescription,
     icon: Package,
     color: 'text-rose-500 bg-rose-50 dark:bg-rose-950/30 border-rose-100 dark:border-rose-900/30',
     glowColor: 'rgba(244, 63, 94, 0.15)',
     actionLabel: 'Tạo dịch vụ & kho',
     actionLink: '/dashboard/inventory',
-    tip: 'Mẹo: Bật cảnh báo tồn kho tối thiểu tại phần Cài đặt để nhận tin nhắn Zalo/Dashboard khi vật tư sắp hết.'
+    tip: serviceTip
   },
   {
-    title: 'Quản lý & Tính Lương KTV',
+    title: 'Quản lý & Tính Lương Kỹ Thuật Viên',
     subtitle: 'Cấu hình hoa hồng và thưởng KPI linh hoạt',
-    description: 'Thêm KTV vào hệ thống, phân vai trò chuyên môn và thiết lập tỷ lệ hoa hồng hoặc thưởng rating. Bella Spa tự động tính điểm KPI (60% từ đánh giá của khách hàng, 40% từ kỷ luật ca làm) để tổng hợp lương thưởng tự động hàng tháng.',
+    description: salaryDescription,
     icon: Users,
     color: 'text-purple-500 bg-purple-50 dark:bg-purple-950/30 border-purple-100 dark:border-purple-900/30',
     glowColor: 'rgba(168, 85, 247, 0.15)',
-    actionLabel: 'Cấu hình Lương KTV',
+    actionLabel: 'Cấu hình Lương',
     actionLink: '/dashboard/settings?tab=salary',
-    tip: 'Mẹo: Quản trị viên có thể thay đổi mức thưởng cho mỗi ca 5 sao trực tiếp trong phần cấu hình Lương.'
+    tip: 'Mẹo: Quản trị viên có thể thay đổi mức thưởng, phạt hoặc hoa hồng trong phần cấu hình lương để phù hợp chính sách vận hành.'
   },
   {
     title: 'VietQR & Đối soát Tự động',
     subtitle: 'Thanh toán tức thì, không lo sai lệch',
-    description: 'Hệ thống tự động sinh mã VietQR động chứa mã Booking (ví dụ: BELLA1024) và số tiền cần thanh toán. Khi khách hàng quét mã chuyển khoản thành công, Webhook thông minh sẽ tự động xác nhận booking và cập nhật Doanh thu P&L ngay lập tức.',
+    description: 'Hệ thống tự động sinh mã VietQR động chứa mã lịch hẹn/dịch vụ và số tiền cần thanh toán. Khi khách hàng quét mã chuyển khoản thành công, hệ thống sẽ tự động xác nhận giao dịch và cập nhật doanh thu để đối soát nhanh hơn.',
     icon: QrCode,
     color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/30',
     glowColor: 'rgba(16, 185, 129, 0.15)',
     actionLabel: 'Trải nghiệm Booking',
     actionLink: '/dashboard/bookings',
-    tip: 'Mẹo: KTV làm thiếu hoặc lố giờ quá 5 phút so với chuẩn liệu trình sẽ nhận cảnh báo yêu cầu nhập lý do tại KTV Mobile App.'
+    tip: 'Mẹo: Kỹ thuật viên hoàn thành buổi dịch vụ trễ hoặc khác chuẩn thời lượng nên ghi chú lý do để quản lý dễ đối soát chất lượng.'
   }
 ];
+}
 
-export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTourProps) {
+export default function OnboardingTour({
+  forceOpen,
+  onCloseTour,
+  brandName = 'Spa ERP',
+  tenantModuleKey,
+}: OnboardingTourProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const steps = useMemo(() => buildSteps(brandName, tenantModuleKey), [brandName, tenantModuleKey]);
 
   useEffect(() => {
     if (forceOpen) {
@@ -88,7 +110,7 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
   }, [forceOpen]);
 
   const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
+    if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
       handleComplete();
@@ -111,7 +133,7 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
     handleComplete();
   };
 
-  const CurrentStepIcon = STEPS[currentStep].icon;
+  const CurrentStepIcon = steps[currentStep].icon;
 
   return (
     <>
@@ -152,7 +174,7 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
               transition={{ type: 'spring', damping: 25, stiffness: 180 }}
               className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-[3rem] shadow-2xl p-8 md:p-12 w-full max-w-2xl overflow-hidden relative z-10 flex flex-col justify-between h-auto min-h-[500px]"
               style={{
-                boxShadow: `0 30px 100px -10px ${STEPS[currentStep].glowColor}, 0 20px 50px -15px rgba(0,0,0,0.15)`
+                boxShadow: `0 30px 100px -10px ${steps[currentStep].glowColor}, 0 20px 50px -15px rgba(0,0,0,0.15)`
               }}
             >
               {/* Header section */}
@@ -160,7 +182,7 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
                 <div className="flex items-center gap-2.5">
                   <Sparkles className="w-5 h-5 text-primary animate-pulse" />
                   <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">
-                    Bắt đầu cùng Bella Spa
+                    Bắt đầu cùng {brandName}
                   </span>
                 </div>
                 <button 
@@ -173,7 +195,7 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
 
               {/* Steps Progress Indicator */}
               <div className="flex items-center gap-2 mb-10 shrink-0">
-                {STEPS.map((step, idx) => (
+                {steps.map((step, idx) => (
                   <div 
                     key={idx}
                     className="flex-1 h-1.5 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 relative"
@@ -195,28 +217,28 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
 
               {/* Interactive step description */}
               <div className="flex-1 flex flex-col md:flex-row gap-8 items-start mb-10">
-                <div className={`w-20 h-20 rounded-3xl shrink-0 border flex items-center justify-center shadow-lg transition-all duration-500 transform hover:scale-105 hover:-rotate-3 ${STEPS[currentStep].color}`}>
+                <div className={`w-20 h-20 rounded-3xl shrink-0 border flex items-center justify-center shadow-lg transition-all duration-500 transform hover:scale-105 hover:-rotate-3 ${steps[currentStep].color}`}>
                   <CurrentStepIcon className="w-10 h-10" />
                 </div>
                 <div className="space-y-4">
                   <div>
                     <span className="text-xs font-black uppercase tracking-wider text-primary">
-                      Bước {currentStep + 1} / {STEPS.length}
+                      Bước {currentStep + 1} / {steps.length}
                     </span>
                     <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mt-1.5">
-                      {STEPS[currentStep].title}
+                      {steps[currentStep].title}
                     </h2>
                     <h4 className="text-sm font-bold text-slate-500 dark:text-pink-200/60 uppercase tracking-widest mt-1">
-                      {STEPS[currentStep].subtitle}
+                      {steps[currentStep].subtitle}
                     </h4>
                   </div>
                   <p className="text-base text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                    {STEPS[currentStep].description}
+                    {steps[currentStep].description}
                   </p>
                   
                   {/* Tip alert box */}
                   <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/60 text-xs font-semibold text-slate-500 dark:text-slate-400 italic">
-                    {STEPS[currentStep].tip}
+                    {steps[currentStep].tip}
                   </div>
                 </div>
               </div>
@@ -244,12 +266,12 @@ export default function OnboardingTour({ forceOpen, onCloseTour }: OnboardingTou
                   <button
                     onClick={handleNext}
                     className={`px-8 py-4 rounded-2xl text-white transition-all font-black uppercase text-[10px] tracking-widest flex items-center gap-2 shadow-lg active:scale-95 ${
-                      currentStep === STEPS.length - 1
+                      currentStep === steps.length - 1
                         ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-100 dark:shadow-none'
                         : 'bg-primary hover:bg-primary-hover shadow-pink-100 dark:shadow-none'
                     }`}
                   >
-                    {currentStep === STEPS.length - 1 ? (
+                    {currentStep === steps.length - 1 ? (
                       <>
                         <CheckCircle className="w-4 h-4" />
                         <span>Hoàn thành</span>
