@@ -243,6 +243,17 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 - Commit: `ae973883` - `test: guard tenant scoped reads`.
 - Rui ro con lai: Can tiep tuc them guard theo tung man hinh neu phat hien read model nao con di truc tiep bo qua action tenant-scoped.
 
+### 2026-06-10 - KTV dashboard fallback Babycare truoc khi load tenant
+
+- Module/tenant: Beauty Spa.
+- Man hinh/luong: KTV mobile dashboard, danh sach ca dang thuc hien va lich hom nay.
+- Dau hieu: UI co the hien icon/copy Babycare trong khoanh thoi gian ngan khi trang vua load hoac F5.
+- Nguyen nhan goc: `tenantModuleKey` trong KTV dashboard duoc khoi tao mac dinh la `babycare` thay vi trang thai trung tinh.
+- Cach sua: Khoi tao `tenantModuleKey` bang `null`; `KtvSessionSections` dung presentation trung tinh cho den khi tenant settings load xong.
+- Test/guard da them: `src/__tests__/beauty-spa-module-isolation.test.ts` kiem tra KTV dashboard khong duoc `useState<TenantModuleKey>('babycare')`.
+- Commit: xem git history cua thay doi `fix: neutralize ktv module fallback`.
+- Rui ro con lai: Cac man hinh KTV khac can tiep tuc audit neu co state module hard-code Babycare.
+
 ## Quy Tac Cho AI Agent Tuong Lai
 
 Khi user yeu cau "them phan he nganh moi", "mo rong Beauty", "lam module nganh X", hoac "white-label cho spa/clinic/academy":
@@ -254,4 +265,3 @@ Khi user yeu cau "them phan he nganh moi", "mo rong Beauty", "lam module nganh X
 5. Chi de xuat viec chua lam; khong lap lai rule engine hoac refactor da co.
 6. Neu thay doi runtime, phai co test chung minh Bella Spa hien tai khong bi anh huong.
 7. Neu phat sinh loi moi, cap nhat "Lich Su Loi Moi" trong tai lieu nay.
-
