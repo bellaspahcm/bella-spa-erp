@@ -65,7 +65,7 @@ export async function createBooking(formData: CreateBookingInput): Promise<Creat
   }
   const customerId = customerResult.customerId;
 
-  const existingBooking = await findPendingBookingForCustomer(supabase, customerId);
+  const existingBooking = await findPendingBookingForCustomer(supabase, customerId, tenantId);
 
   const bookingPayload = await buildBookingPayload({
     validatedData,
