@@ -183,6 +183,40 @@ function daysFromToday(days) {
   return date.toISOString().slice(0, 10);
 }
 
+function asFiniteNumber(value, fallback = 0) {
+  const numeric = Number(value ?? fallback);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function asMoney(value) {
+  return Math.max(0, asFiniteNumber(value));
+}
+
+function normalizeDiscountPercent(value) {
+  return Math.max(0, Math.min(100, asFiniteNumber(value)));
+}
+
+function calculatePriceAfterDiscount(input) {
+  return asMoney(input.fullPrice) * (1 - normalizeDiscountPercent(input.discountPercent) / 100);
+}
+
+function calculateSessionRevenueRecognition(input) {
+  const targetPrice = Math.max(0, calculatePriceAfterDiscount(input));
+  const totalSessions = Math.max(1, asFiniteNumber(input.totalSessions, 1));
+  const currentSessionNumber = Math.max(1, asFiniteNumber(input.currentSessionNumber, 1));
+  const earnedRevenueAmount = targetPrice / totalSessions;
+  const revenueRecognizedBefore = earnedRevenueAmount * Math.max(0, currentSessionNumber - 1);
+  const deferredRevenueAvailable = Math.max(0, asMoney(input.totalPaid) - revenueRecognizedBefore);
+  const deferredRevenueAmount = Math.min(earnedRevenueAmount, deferredRevenueAvailable);
+  const receivableAmount = Math.max(0, earnedRevenueAmount - deferredRevenueAmount);
+
+  return {
+    earnedRevenueAmount,
+    deferredRevenueAmount,
+    receivableAmount,
+  };
+}
+
 function shortId(id) {
   return String(id || '').replace(/-/g, '').slice(0, 8).toUpperCase();
 }
@@ -207,6 +241,126 @@ async function mustInsert(client, table, payload) {
   const { data, error } = await client.from(table).insert(payload).select();
   if (error) throw new Error(`[${table}.insert] ${error.message}`);
   return data || [];
+}
+
+async function mustEnqueueAccountingEvent(client, event) {
+  const { data, error } = await client.rpc('enqueue_accounting_event', {
+    p_tenant_id: event.tenantId,
+    p_event_type: event.eventType,
+    p_reference_type: event.referenceType,
+    p_reference_id: event.referenceId,
+    p_payload: event.payload,
+  });
+
+  if (error) {
+    throw new Error(`[accounting_outbox.${event.eventType}] ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error(`[accounting_outbox.${event.eventType}] Missing outbox id for ${event.referenceId}`);
+  }
+
+  return data;
+}
+
+function buildPackageSaleOutboxEvent({ tenantId, revenueId, totalAmount, description }) {
+  return {
+    tenantId,
+    eventType: 'PACKAGE_SALE',
+    referenceType: 'REVENUE',
+    referenceId: revenueId,
+    payload: {
+      totalAmount,
+      vatRate: 0,
+      description: description || 'Xac nhan thanh toan goi dich vu',
+      branchId: tenantId,
+    },
+  };
+}
+
+function buildSessionDoneOutboxEvent({
+  tenantId,
+  sessionLogId,
+  bookingId,
+  ktvId,
+  earnedRevenueAmount,
+  deferredRevenueAmount,
+  receivableAmount,
+  commissionAmount,
+  description,
+}) {
+  return {
+    tenantId,
+    eventType: 'SESSION_DONE',
+    referenceType: 'SESSION_LOG',
+    referenceId: sessionLogId,
+    payload: {
+      earnedRevenueAmount,
+      deferredRevenueAmount,
+      receivableAmount,
+      bookingId,
+      commissionAmount,
+      ktvId,
+      branchId: tenantId,
+      ...(description ? { description } : {}),
+    },
+  };
+}
+
+async function mustUpdateById(client, table, id, tenantId, payload) {
+  const { data, error } = await client
+    .from(table)
+    .update(payload)
+    .eq('id', id)
+    .eq('tenant_id', tenantId)
+    .select('id')
+    .single();
+
+  if (error) throw new Error(`[${table}.update ${id}] ${error.message}`);
+  if (!data?.id) throw new Error(`[${table}.update ${id}] Missing updated row`);
+  return data;
+}
+
+async function recordDemoAuditLog(client, tenantId, changedById, params) {
+  await mustInsert(client, 'audit_logs', {
+    tenant_id: tenantId,
+    changed_by_id: changedById || null,
+    action: params.action,
+    table_name: params.tableName,
+    record_id: params.recordId,
+    old_data: params.oldData || null,
+    new_data: params.newData || null,
+  });
+}
+
+async function hasAccountingSideEffect(client, tenantId, eventType, referenceId) {
+  const { data: outbox, error: outboxError } = await client
+    .from('accounting_outbox')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .eq('event_type', eventType)
+    .eq('reference_id', referenceId)
+    .limit(1);
+
+  if (outboxError) throw new Error(`[accounting_outbox.select ${eventType}:${referenceId}] ${outboxError.message}`);
+  if ((outbox || []).length > 0) return true;
+
+  const { data: journals, error: journalError } = await client
+    .from('journal_entries')
+    .select('id')
+    .eq('tenant_id', tenantId)
+    .neq('status', 'canceled')
+    .eq('reference_type', eventType)
+    .eq('reference_id', referenceId)
+    .limit(1);
+
+  if (journalError) throw new Error(`[journal_entries.select ${eventType}:${referenceId}] ${journalError.message}`);
+  return (journals || []).length > 0;
+}
+
+function isPackageSaleRevenueType(revenueType) {
+  return ['deposit', 'remaining_payment', 'package_payment', 'package_sale']
+    .includes(String(revenueType || '').trim().toLowerCase());
 }
 
 async function optionalDeleteByTenant(client, table, tenantId) {
@@ -571,7 +725,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
       },
     ]);
 
-    await mustInsert(client, 'session_logs', [
+    const sessionLogs = await mustInsert(client, 'session_logs', [
       {
         booking_id: bookings[0].id,
         session_number: 1,
@@ -580,6 +734,8 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
         completed_date: daysFromToday(-2),
         completed_by_ktv_id: ktvUsers[0].id,
         status: 'completed',
+        business_event_type: 'SESSION_COMPLETED',
+        accounting_review_status: 'AUTO_POSTED',
         rating: 5,
         rating_comment: 'Khách demo hài lòng, da đủ ẩm sau buổi đầu.',
         notes: DEMO_MARKER,
@@ -617,6 +773,8 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
         completed_date: daysFromToday(-1),
         completed_by_ktv_id: ktvUsers[0].id,
         status: 'completed',
+        business_event_type: 'SESSION_COMPLETED',
+        accounting_review_status: 'AUTO_POSTED',
         rating: 5,
         rating_comment: 'Gội dưỡng sinh demo hoàn tất.',
         notes: DEMO_MARKER,
@@ -626,7 +784,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
       },
     ]);
 
-    await mustInsert(client, 'revenue', [
+    const revenues = await mustInsert(client, 'revenue', [
       {
         booking_id: bookings[0].id,
         amount: 300000,
@@ -635,6 +793,8 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
         received_date: daysFromToday(-2),
         recorded_by_id: authUser.id,
         status: 'confirmed',
+        business_event_type: 'CUSTOMER_DEPOSIT',
+        accounting_review_status: 'AUTO_POSTED',
         notes: DEMO_MARKER,
         tenant_id: tenantId,
       },
@@ -646,6 +806,8 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
         received_date: daysFromToday(0),
         recorded_by_id: authUser.id,
         status: 'confirmed',
+        business_event_type: 'CUSTOMER_DEPOSIT',
+        accounting_review_status: 'AUTO_POSTED',
         notes: DEMO_MARKER,
         tenant_id: tenantId,
       },
@@ -657,10 +819,64 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
         received_date: daysFromToday(-1),
         recorded_by_id: authUser.id,
         status: 'confirmed',
+        business_event_type: 'SESSION_COMPLETED_PAYMENT',
+        accounting_review_status: 'AUTO_POSTED',
         notes: DEMO_MARKER,
         tenant_id: tenantId,
       },
     ]);
+
+    await Promise.all(
+      revenues
+        .filter((revenue) => ['deposit', 'remaining_payment', 'package_payment', 'package_sale'].includes(String(revenue.revenue_type || '').toLowerCase()))
+        .map((revenue) => mustEnqueueAccountingEvent(client, buildPackageSaleOutboxEvent({
+          tenantId,
+          revenueId: revenue.id,
+          totalAmount: asMoney(revenue.amount),
+          description: `${DEMO_MARKER}: ${revenue.revenue_type} cho Beauty demo.`,
+        }))),
+    );
+
+    const revenueByBookingId = revenues.reduce((map, revenue) => {
+      if (!revenue.booking_id || revenue.status !== 'confirmed') return map;
+      const amount = String(revenue.revenue_type || '').toLowerCase() === 'refund'
+        ? -asMoney(revenue.amount)
+        : asMoney(revenue.amount);
+      map.set(revenue.booking_id, (map.get(revenue.booking_id) || 0) + amount);
+      return map;
+    }, new Map());
+    const bookingById = new Map(bookings.map((booking) => [booking.id, booking]));
+
+    await Promise.all(
+      sessionLogs
+        .filter((sessionLog) => sessionLog.status === 'completed')
+        .map((sessionLog) => {
+          const booking = bookingById.get(sessionLog.booking_id);
+          if (!booking) {
+            throw new Error(`[session_logs.${sessionLog.id}] Missing booking for SESSION_DONE outbox`);
+          }
+
+          const revenueRecognition = calculateSessionRevenueRecognition({
+            fullPrice: booking.full_price,
+            discountPercent: booking.discount_percent,
+            totalSessions: booking.total_sessions,
+            currentSessionNumber: sessionLog.session_number,
+            totalPaid: revenueByBookingId.get(booking.id) || 0,
+          });
+
+          return mustEnqueueAccountingEvent(client, buildSessionDoneOutboxEvent({
+            tenantId,
+            sessionLogId: sessionLog.id,
+            bookingId: booking.id,
+            ktvId: sessionLog.completed_by_ktv_id || booking.assigned_ktv_id || null,
+            earnedRevenueAmount: revenueRecognition.earnedRevenueAmount,
+            deferredRevenueAmount: revenueRecognition.deferredRevenueAmount,
+            receivableAmount: revenueRecognition.receivableAmount,
+            commissionAmount: asMoney(booking.ktv_commission),
+            description: `${DEMO_MARKER}: Hoan thanh buoi ${sessionLog.session_number || '--'}/${booking.total_sessions || 1} - ${booking.package_name || 'Beauty service'}.`,
+          }));
+        }),
+    );
 
     await mustInsert(client, 'expenses', [
       {
@@ -779,6 +995,198 @@ async function getBeautyDemoStatus(client = createSupabaseAdmin()) {
   return { exists: true, tenant, counts };
 }
 
+async function repairBeautyDemoAccounting(client = createSupabaseAdmin()) {
+  const tenant = await findDemoTenant(client);
+  if (!tenant) return { exists: false, updatedRevenue: 0, updatedSessions: 0, enqueuedPackageSale: 0, enqueuedSessionDone: 0 };
+  assertDemoTenantSafe(tenant);
+
+  const { data: adminUser, error: adminUserError } = await client
+    .from('users')
+    .select('id')
+    .eq('tenant_id', tenant.id)
+    .eq('email', DEMO_ADMIN_EMAIL)
+    .maybeSingle();
+  if (adminUserError) throw new Error(`[users.select demo admin] ${adminUserError.message}`);
+
+  const { data: revenues, error: revenuesError } = await client
+    .from('revenue')
+    .select('id, booking_id, amount, status, revenue_type, tenant_id, received_date, notes, payment_method, business_event_type, accounting_review_status')
+    .eq('tenant_id', tenant.id)
+    .eq('notes', DEMO_MARKER)
+    .eq('status', 'confirmed');
+  if (revenuesError) throw new Error(`[revenue.select repair] ${revenuesError.message}`);
+
+  const { data: sessionLogs, error: sessionLogsError } = await client
+    .from('session_logs')
+    .select('id, booking_id, status, completed_date, completed_by_ktv_id, tenant_id, session_number, notes, business_event_type, accounting_review_status')
+    .eq('tenant_id', tenant.id)
+    .eq('notes', DEMO_MARKER)
+    .eq('status', 'completed');
+  if (sessionLogsError) throw new Error(`[session_logs.select repair] ${sessionLogsError.message}`);
+
+  const bookingIds = Array.from(new Set([
+    ...(revenues || []).map((row) => row.booking_id).filter(Boolean),
+    ...(sessionLogs || []).map((row) => row.booking_id).filter(Boolean),
+  ]));
+
+  const bookings = [];
+  if (bookingIds.length > 0) {
+    const { data, error } = await client
+      .from('bookings')
+      .select('id, booking_number, package_name, tenant_id, customer_id, total_sessions, full_price, deposit_amount, discount_percent, ktv_commission, assigned_ktv_id')
+      .eq('tenant_id', tenant.id)
+      .in('id', bookingIds);
+    if (error) throw new Error(`[bookings.select repair] ${error.message}`);
+    bookings.push(...(data || []));
+  }
+
+  const bookingById = new Map(bookings.map((booking) => [booking.id, booking]));
+  const counters = {
+    exists: true,
+    updatedRevenue: 0,
+    updatedSessions: 0,
+    enqueuedPackageSale: 0,
+    enqueuedSessionDone: 0,
+  };
+
+  for (const revenue of revenues || []) {
+    const eventType = isPackageSaleRevenueType(revenue.revenue_type)
+      ? 'CUSTOMER_DEPOSIT'
+      : 'SESSION_COMPLETED_PAYMENT';
+    const metadataPatch = {};
+    if (!revenue.business_event_type) metadataPatch.business_event_type = eventType;
+    if (!revenue.accounting_review_status) metadataPatch.accounting_review_status = 'AUTO_POSTED';
+
+    if (Object.keys(metadataPatch).length > 0) {
+      await mustUpdateById(client, 'revenue', revenue.id, tenant.id, metadataPatch);
+      await recordDemoAuditLog(client, tenant.id, adminUser?.id, {
+        action: 'UPDATE',
+        tableName: 'revenue',
+        recordId: revenue.id,
+        oldData: {
+          business_event_type: revenue.business_event_type,
+          accounting_review_status: revenue.accounting_review_status,
+        },
+        newData: {
+          reason: 'beauty_demo_repair_accounting_metadata',
+          ...metadataPatch,
+        },
+      });
+      counters.updatedRevenue += 1;
+    }
+
+    if (!isPackageSaleRevenueType(revenue.revenue_type)) continue;
+    if (await hasAccountingSideEffect(client, tenant.id, 'PACKAGE_SALE', revenue.id)) continue;
+
+    const booking = bookingById.get(revenue.booking_id);
+    if (!booking) throw new Error(`[revenue.${revenue.id}] Missing booking for PACKAGE_SALE outbox`);
+
+    const outboxEvent = buildPackageSaleOutboxEvent({
+      tenantId: tenant.id,
+      revenueId: revenue.id,
+      totalAmount: asMoney(revenue.amount),
+      description: `${DEMO_MARKER}: Repair PACKAGE_SALE for ${booking.booking_number}.`,
+    });
+    await recordDemoAuditLog(client, tenant.id, adminUser?.id, {
+      action: 'INSERT',
+      tableName: 'accounting_outbox',
+      recordId: revenue.id,
+      oldData: {
+        existing_package_sale_side_effect: false,
+      },
+      newData: {
+        reason: 'beauty_demo_repair_missing_package_sale',
+        event_type: outboxEvent.eventType,
+        reference_type: outboxEvent.referenceType,
+        reference_id: outboxEvent.referenceId,
+        booking_id: booking.id,
+        booking_number: booking.booking_number,
+        payload: outboxEvent.payload,
+      },
+    });
+    await mustEnqueueAccountingEvent(client, outboxEvent);
+    counters.enqueuedPackageSale += 1;
+  }
+
+  const revenueByBookingId = (revenues || []).reduce((map, revenue) => {
+    if (!revenue.booking_id || revenue.status !== 'confirmed') return map;
+    const amount = String(revenue.revenue_type || '').toLowerCase() === 'refund'
+      ? -asMoney(revenue.amount)
+      : asMoney(revenue.amount);
+    map.set(revenue.booking_id, (map.get(revenue.booking_id) || 0) + amount);
+    return map;
+  }, new Map());
+
+  for (const sessionLog of sessionLogs || []) {
+    const metadataPatch = {};
+    if (!sessionLog.business_event_type) metadataPatch.business_event_type = 'SESSION_COMPLETED';
+    if (!sessionLog.accounting_review_status) metadataPatch.accounting_review_status = 'AUTO_POSTED';
+
+    if (Object.keys(metadataPatch).length > 0) {
+      await mustUpdateById(client, 'session_logs', sessionLog.id, tenant.id, metadataPatch);
+      await recordDemoAuditLog(client, tenant.id, adminUser?.id, {
+        action: 'UPDATE',
+        tableName: 'session_logs',
+        recordId: sessionLog.id,
+        oldData: {
+          business_event_type: sessionLog.business_event_type,
+          accounting_review_status: sessionLog.accounting_review_status,
+        },
+        newData: {
+          reason: 'beauty_demo_repair_accounting_metadata',
+          ...metadataPatch,
+        },
+      });
+      counters.updatedSessions += 1;
+    }
+
+    if (await hasAccountingSideEffect(client, tenant.id, 'SESSION_DONE', sessionLog.id)) continue;
+
+    const booking = bookingById.get(sessionLog.booking_id);
+    if (!booking) throw new Error(`[session_logs.${sessionLog.id}] Missing booking for SESSION_DONE outbox`);
+
+    const revenueRecognition = calculateSessionRevenueRecognition({
+      fullPrice: booking.full_price,
+      discountPercent: booking.discount_percent,
+      totalSessions: booking.total_sessions,
+      currentSessionNumber: sessionLog.session_number,
+      totalPaid: revenueByBookingId.get(booking.id) || 0,
+    });
+    const outboxEvent = buildSessionDoneOutboxEvent({
+      tenantId: tenant.id,
+      sessionLogId: sessionLog.id,
+      bookingId: booking.id,
+      ktvId: sessionLog.completed_by_ktv_id || booking.assigned_ktv_id || null,
+      earnedRevenueAmount: revenueRecognition.earnedRevenueAmount,
+      deferredRevenueAmount: revenueRecognition.deferredRevenueAmount,
+      receivableAmount: revenueRecognition.receivableAmount,
+      commissionAmount: asMoney(booking.ktv_commission),
+      description: `${DEMO_MARKER}: Repair SESSION_DONE ${sessionLog.session_number || '--'}/${booking.total_sessions || 1} - ${booking.package_name || 'Beauty service'}.`,
+    });
+    await recordDemoAuditLog(client, tenant.id, adminUser?.id, {
+      action: 'INSERT',
+      tableName: 'accounting_outbox',
+      recordId: sessionLog.id,
+      oldData: {
+        existing_session_done_side_effect: false,
+      },
+      newData: {
+        reason: 'beauty_demo_repair_missing_session_done',
+        event_type: outboxEvent.eventType,
+        reference_type: outboxEvent.referenceType,
+        reference_id: outboxEvent.referenceId,
+        booking_id: booking.id,
+        booking_number: booking.booking_number,
+        payload: outboxEvent.payload,
+      },
+    });
+    await mustEnqueueAccountingEvent(client, outboxEvent);
+    counters.enqueuedSessionDone += 1;
+  }
+
+  return counters;
+}
+
 function printCreateResult(result) {
   console.log('Beauty demo tenant created.');
   console.log(`Tenant ID   : ${result.tenantId}`);
@@ -802,6 +1210,19 @@ function printStatus(status) {
   console.log(`Counts      : ${JSON.stringify(status.counts)}`);
 }
 
+function printRepairResult(result) {
+  if (!result.exists) {
+    console.log('Beauty demo tenant does not exist. Nothing repaired.');
+    return;
+  }
+
+  console.log('Beauty demo accounting repair completed.');
+  console.log(`Updated revenue metadata : ${result.updatedRevenue}`);
+  console.log(`Updated session metadata : ${result.updatedSessions}`);
+  console.log(`Enqueued PACKAGE_SALE    : ${result.enqueuedPackageSale}`);
+  console.log(`Enqueued SESSION_DONE    : ${result.enqueuedSessionDone}`);
+}
+
 async function main(argv = process.argv.slice(2)) {
   const command = argv[0] || 'status';
   const client = createSupabaseAdmin();
@@ -823,7 +1244,12 @@ async function main(argv = process.argv.slice(2)) {
     return;
   }
 
-  throw new Error(`Unknown command "${command}". Use: create | status | cleanup --confirm`);
+  if (command === 'repair-accounting') {
+    printRepairResult(await repairBeautyDemoAccounting(client));
+    return;
+  }
+
+  throw new Error(`Unknown command "${command}". Use: create | status | repair-accounting | cleanup --confirm`);
 }
 
 if (require.main === module) {
@@ -845,4 +1271,5 @@ module.exports = {
   getBeautyDemoStatus,
   getSupabaseCredentials,
   readEnvFile,
+  repairBeautyDemoAccounting,
 };
