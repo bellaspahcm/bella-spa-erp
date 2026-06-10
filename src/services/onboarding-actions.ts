@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import {
+  normalizeTenantBrandThemeForModule,
+  toTenantBrandThemeJsonForModule,
   toTenantModuleJson,
   type TenantEnabledModules,
   type TenantModuleKey,
@@ -54,6 +56,12 @@ export interface RegisterTenantInput {
   adminPassword?: string;
   branchType?: 'owned' | 'franchise';
   businessModule?: RegisterTenantBusinessModule;
+  brandName?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  accentColor?: string;
+  portalDisplayName?: string;
+  invoiceDisplayName?: string;
 }
 
 function normalizeBusinessModule(value: unknown): RegisterTenantBusinessModule {
@@ -209,6 +217,20 @@ export async function registerNewTenant(input: RegisterTenantInput) {
       postOnboardingUpdate.enabled_modules = toTenantModuleJson(
         getEnabledModulesForBusinessModule(businessModule),
       );
+      const brandTheme = normalizeTenantBrandThemeForModule({
+        brandName: input.brandName || input.spaName,
+        logoUrl: input.logoUrl,
+        primaryColor: input.primaryColor,
+        accentColor: input.accentColor,
+        portalDisplayName: input.portalDisplayName || input.brandName || input.spaName,
+        invoiceDisplayName: input.invoiceDisplayName || input.brandName || input.spaName,
+        stylePreset: 'jade_wellness',
+        radiusStyle: 'soft',
+        buttonStyle: 'pill',
+        menuStyle: 'comfortable',
+      }, businessModule);
+      postOnboardingUpdate.logo_url = brandTheme.logoUrl;
+      postOnboardingUpdate.brand_theme = toTenantBrandThemeJsonForModule(brandTheme, businessModule);
     }
     if (input.branchType === 'franchise') {
       const today = new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'

@@ -22,6 +22,7 @@ type PackageRow = Database['public']['Tables']['packages']['Row'];
 type PromotionRow = Database['public']['Tables']['promotions']['Row'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
 type RevenueRow = Database['public']['Tables']['revenue']['Row'];
+type TenantRow = Database['public']['Tables']['tenants']['Row'];
 type SessionReviewInsert = Database['public']['Tables']['session_reviews']['Insert'];
 
 export type CustomerPortalBooking = BookingRow & {
@@ -31,7 +32,18 @@ export type CustomerPortalBooking = BookingRow & {
   session_logs?: (SessionLogRow & {
     completed_by_ktv?: { id: string; full_name: string | null; avatar_url: string | null } | null;
   })[];
-  tenants?: { id: string; name: string; qr_bank_code: string | null; qr_account_number: string | null; qr_account_name: string | null } | null;
+  tenants?: Pick<
+    TenantRow,
+    | 'id'
+    | 'name'
+    | 'contact_phone'
+    | 'logo_url'
+    | 'brand_theme'
+    | 'enabled_modules'
+    | 'qr_bank_code'
+    | 'qr_account_number'
+    | 'qr_account_name'
+  > | null;
   revenue?: RevenueRow[];
   active_promotions?: PromotionRow[];
 };
@@ -100,6 +112,10 @@ export async function getCustomerBookingByToken(token?: string) {
       tenants (
         id,
         name,
+        contact_phone,
+        logo_url,
+        brand_theme,
+        enabled_modules,
         qr_bank_code,
         qr_account_number,
         qr_account_name

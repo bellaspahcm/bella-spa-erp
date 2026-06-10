@@ -23,6 +23,8 @@ import {
   normalizeEnabledModules,
   normalizeEnabledModulesForSave,
   normalizeTenantBrandTheme,
+  normalizeTenantBrandThemeForModule,
+  resolveTenantBrandIdentity,
 } from '@/lib/business-rules/tenant-modules';
 
 describe('platform rule engines', () => {
@@ -179,6 +181,42 @@ describe('platform rule engines', () => {
       accentColor: '#F8A5C2',
       portalDisplayName: 'Portal khách hàng',
       invoiceDisplayName: 'Beauty Invoice',
+      stylePreset: 'bella_rose',
+      radiusStyle: 'soft',
+      buttonStyle: 'pill',
+      menuStyle: 'comfortable',
+    });
+    expect(normalizeTenantBrandThemeForModule({}, 'beauty_spa')).toEqual({
+      brandName: '',
+      logoUrl: '',
+      primaryColor: '#087F6B',
+      accentColor: '#7DD3C7',
+      portalDisplayName: '',
+      invoiceDisplayName: '',
+      stylePreset: 'jade_wellness',
+      radiusStyle: 'soft',
+      buttonStyle: 'pill',
+      menuStyle: 'comfortable',
+    });
+    expect(resolveTenantBrandIdentity({
+      enabledModules: { babycare: false, beauty_spa: true },
+      brandTheme: null,
+      surface: 'app',
+    })).toMatchObject({
+      displayName: 'Beauty Spa',
+      logoUrl: '',
+      primaryColor: '#087F6B',
+      isBeautySpa: true,
+    });
+    expect(resolveTenantBrandIdentity({
+      enabledModules: { babycare: true, beauty_spa: false },
+      brandTheme: null,
+      surface: 'app',
+    })).toMatchObject({
+      displayName: 'Bella Spa',
+      logoUrl: '/FullLogo_Transparent_NoBuffer.png',
+      primaryColor: '#A91555',
+      isBeautySpa: false,
     });
   });
 });

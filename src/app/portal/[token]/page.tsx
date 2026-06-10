@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, use } from 'react';
+import { useCallback, useEffect, useState, use, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { 
@@ -9,7 +9,6 @@ import {
   Star, 
   MapPin, 
   Phone, 
-  Heart,
   ShieldCheck,
   Gift,
   Sparkles,
@@ -25,6 +24,8 @@ import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
 import PortalChatWidget from '@/components/features/portal/PortalChatWidget';
 import { calculatePortalPaymentSummary } from './payment-utils';
+import { TenantBrandLogo } from '@/components/common/TenantBrandLogo';
+import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
 import type { CustomerPortalBooking } from '@/services/customer-actions';
 
 type CustomerPortalSession = NonNullable<CustomerPortalBooking['session_logs']>[number];
@@ -102,9 +103,32 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
 
   // Tìm buổi chăm sóc đã hoàn thành gần nhất chưa được đánh giá
   const pendingReviewSession = sessionLogs.find((s) => s.status === 'completed' && !s.rating);
+  const portalBrand = resolveTenantBrandIdentity({
+    enabledModules: booking.tenants?.enabled_modules,
+    brandTheme: booking.tenants?.brand_theme,
+    logoUrl: booking.tenants?.logo_url,
+    tenantName: booking.tenants?.name,
+    surface: 'portal',
+  });
+  const fallbackSupportPhone = portalBrand.isBeautySpa ? '' : '0865701493';
+  const supportPhone = booking.tenants?.contact_phone?.trim() || fallbackSupportPhone;
+  const supportPhoneNumber = supportPhone.replace(/[^\d+]/g, '');
+  const supportPhoneHref = supportPhoneNumber ? `tel:${supportPhoneNumber}` : '#';
+  const displaySupportPhone = supportPhone
+    ? supportPhone.replace(/^(\d{4})(\d{3})(\d+)$/, '$1 $2 $3')
+    : 'Chưa cập nhật';
+  const transferMemoPrefix = portalBrand.isBeautySpa
+    ? (portalBrand.monogram.replace(/[^A-Z0-9]/g, '').slice(0, 8) || 'SPA')
+    : 'BELLA';
+  const portalStyle = {
+    '--primary': portalBrand.primaryColor,
+    '--primary-hover': portalBrand.primaryHoverColor,
+    '--accent': portalBrand.accentColor,
+    '--ring': portalBrand.primaryColor,
+  } as CSSProperties;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
+    <div className="min-h-screen bg-slate-50 pb-20 font-sans" style={portalStyle}>
       {/* Hero Section */}
       <div className="bg-white px-6 pt-12 pb-10 rounded-b-[50px] shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32" />
@@ -112,11 +136,14 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
         <div className="relative z-10">
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-rose-100 dark:shadow-none">
-                 <Heart className="white w-6 h-6 fill-current text-white" />
-              </div>
+              <TenantBrandLogo
+                displayName={portalBrand.displayName}
+                logoUrl={portalBrand.logoUrl}
+                monogram={portalBrand.monogram}
+                className="h-12 w-12 rounded-2xl text-sm"
+              />
               <div>
-                 <h1 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Bella Spa Portal</h1>
+                 <h1 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{portalBrand.displayName}</h1>
                  <p className="text-xl sm:text-2xl font-black text-primary leading-tight">Chào mừng chị {booking.customers?.name_mother}</p>
               </div>
             </div>
@@ -143,9 +170,9 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 </p>
               </div>
               <div>
-                <a href="tel:0865701493" className="inline-flex items-center gap-1.5 text-[10px] font-black text-rose-500 uppercase tracking-wider bg-rose-50 border border-rose-100/60 px-3 py-1.5 rounded-full hover:bg-rose-100 transition-all active:scale-95 shadow-sm shadow-rose-50/50 dark:shadow-none">
+                <a href={supportPhoneHref} className="inline-flex items-center gap-1.5 text-[10px] font-black text-primary uppercase tracking-wider bg-primary/5 border border-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/10 transition-all active:scale-95 shadow-sm shadow-rose-50/50 dark:shadow-none">
                   <Phone className="w-3 h-3 fill-current" />
-                  <span>Hotline hỗ trợ: <strong className="font-black">0865 701 493</strong></span>
+                  <span>Hotline hỗ trợ: <strong className="font-black">{displaySupportPhone}</strong></span>
                 </a>
               </div>
             </div>
@@ -280,7 +307,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                 <div>
                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest">Thông báo thanh toán</h4>
                   <p className="text-xs text-slate-600 font-semibold mt-1">
-                    Spa chưa thiết lập tài khoản nhận thanh toán QR Code. Chị vui lòng liên hệ hotline <strong className="text-primary">0865 701 493</strong> để được hỗ trợ chuyển khoản thủ công.
+                    Spa chưa thiết lập tài khoản nhận thanh toán QR Code. Chị vui lòng liên hệ hotline <strong className="text-primary">{displaySupportPhone}</strong> để được hỗ trợ chuyển khoản thủ công.
                   </p>
                 </div>
               </div>
@@ -292,7 +319,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
           const showDepositTab = paymentSummary.showDepositTab;
           const effectivePaymentTab = paymentSummary.effectiveTab;
 
-          const transferMemo = `BELLA ${booking.booking_number}`;
+          const transferMemo = `${transferMemoPrefix} ${booking.booking_number}`;
           const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNumber}-compact.png?amount=${amountToPay}&addInfo=${encodeURIComponent(transferMemo)}&accountName=${encodeURIComponent(accountName || '')}`;
 
           return (
@@ -394,11 +421,11 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                     <div className="flex justify-between items-center text-xs border-t border-slate-200/40 pt-2.5 bg-rose-50/40 p-2 rounded-xl border border-rose-100/30">
                       <div>
                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block text-rose-500/80">Nội dung chuyển khoản</span>
-                        <strong className="text-rose-500 font-black text-sm tracking-wider">{transferMemo}</strong>
+                        <strong className="text-primary font-black text-sm tracking-wider">{transferMemo}</strong>
                       </div>
                       <button
                         onClick={() => copyToClipboard(transferMemo)}
-                        className="p-2 hover:bg-rose-100 rounded-lg text-rose-500 active:scale-95 transition-all"
+                        className="p-2 hover:bg-primary/10 rounded-lg text-primary active:scale-95 transition-all"
                         title="Sao chép nội dung chuyển khoản"
                       >
                         <Copy className="w-3.5 h-3.5" />
@@ -437,7 +464,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                   <span className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                 </h4>
                 <p className="text-xs text-slate-600 font-bold mt-1 leading-relaxed">
-                  Chị ơi, hãy dành 5s đánh giá chất lượng phục vụ của KTV <span className="text-rose-500 font-black">{pendingReviewSession.completed_by_ktv?.full_name || 'Bella Spa'}</span> ở buổi thứ <span className="text-rose-500 font-black">{pendingReviewSession.session_number}</span> để giúp Spa nâng cao chất lượng và tích điểm Loyalty nhé! 🥰
+                  Chị ơi, hãy dành 5s đánh giá chất lượng phục vụ của KTV <span className="text-primary font-black">{pendingReviewSession.completed_by_ktv?.full_name || portalBrand.displayName}</span> ở buổi thứ <span className="text-primary font-black">{pendingReviewSession.session_number}</span> để giúp Spa nâng cao chất lượng và tích điểm Loyalty nhé! 🥰
                 </p>
               </div>
             </div>
@@ -504,7 +531,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                       <div className="flex items-center gap-2 text-[11px] text-slate-500 font-bold">
                         <span>KTV thực hiện:</span>
                         <span className="text-primary font-black">
-                          {session.completed_by_ktv?.full_name || 'Bella Spa'}
+                          {session.completed_by_ktv?.full_name || portalBrand.displayName}
                           {session.completed_by_ktv?.id !== booking.assigned_ktv?.id && ' (Làm thay)'}
                         </span>
                       </div>
@@ -558,8 +585,8 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
            <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <Sparkles className="w-8 h-8 text-primary" />
            </div>
-           <h3 className="text-lg font-black text-slate-900 mb-2">Bella Spa & Healthcare</h3>
-           <p className="text-slate-500 text-xs mb-6 px-4">Tận tâm chăm sóc mẹ và bé với những liệu trình chuẩn y khoa và tình yêu thương.</p>
+           <h3 className="text-lg font-black text-slate-900 mb-2">{portalBrand.displayName}</h3>
+           <p className="text-slate-500 text-xs mb-6 px-4">Tận tâm chăm sóc khách hàng với những liệu trình chuyên nghiệp và dịch vụ chu đáo.</p>
            
            <div className="space-y-3">
               <div className="flex items-center justify-center gap-2 text-slate-500 text-xs">
@@ -596,7 +623,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
                    <Star className="w-6 h-6 sm:w-8 sm:h-8 fill-current" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-black text-slate-900">Đánh giá buổi {selectedSession.session_number}</h3>
-                <p className="text-slate-500 text-xs sm:text-sm mt-1">Ý kiến của chị giúp Bella Spa phục vụ tốt hơn</p>
+                <p className="text-slate-500 text-xs sm:text-sm mt-1">Ý kiến của chị giúp {portalBrand.displayName} phục vụ tốt hơn</p>
               </div>
 
               <div className="flex justify-center gap-2.5 sm:gap-3 mb-5 sm:mb-6">
@@ -636,7 +663,7 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
       {/* Floating CTA */}
       <div className="fixed bottom-6 left-6 right-6 z-50">
          <a 
-           href="tel:0865701493"
+           href={supportPhoneHref}
            className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 shadow-xl border border-white/10 active:scale-95 transition-all"
          >
             <Phone className="w-4 h-4" />
@@ -649,7 +676,8 @@ export default function CustomerPortal({ params }: { params: Promise<{ token: st
         token={token} 
         customerId={booking.customer_id}
         customerName={booking.customers?.name_mother}
-        phoneHotline="0865701493"
+        brandName={portalBrand.displayName}
+        phoneHotline={supportPhoneNumber}
       />
     </div>
   </div>

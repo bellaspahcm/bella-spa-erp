@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Building2, Mail, MapPin, Phone, RefreshCw, ShieldCheck, Sparkles, User, X } from 'lucide-react';
+import { Building2, Mail, MapPin, Palette, Phone, RefreshCw, ShieldCheck, Sparkles, User, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 export type HqBranchRegistrationInput = {
@@ -14,6 +14,12 @@ export type HqBranchRegistrationInput = {
   adminPassword: string;
   branchType: 'owned' | 'franchise';
   businessModule: 'babycare' | 'beauty_spa';
+  brandName: string;
+  logoUrl: string;
+  primaryColor: string;
+  accentColor: string;
+  portalDisplayName: string;
+  invoiceDisplayName: string;
 };
 
 interface HqBranchRegistrationModalProps {
@@ -33,6 +39,12 @@ const emptyForm: HqBranchRegistrationInput = {
   adminPassword: '',
   branchType: 'owned',
   businessModule: 'babycare',
+  brandName: '',
+  logoUrl: '',
+  primaryColor: '#087F6B',
+  accentColor: '#7DD3C7',
+  portalDisplayName: '',
+  invoiceDisplayName: '',
 };
 
 export function HqBranchRegistrationModal({
@@ -139,6 +151,98 @@ export function HqBranchRegistrationModal({
               </button>
             </div>
           </div>
+
+          {form.businessModule === 'beauty_spa' && (
+            <div className="space-y-4 rounded-[2rem] border border-emerald-100 bg-emerald-50/50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                  <Palette size={16} />
+                </div>
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-emerald-800">Nhận diện Beauty Spa</p>
+                  <p className="mt-1 text-xs font-bold leading-relaxed text-emerald-700/80">
+                    Chỉ áp dụng cho tenant Beauty Spa này. Bella ERP gốc và tenant Mother & Baby không bị đổi giao diện.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tên thương hiệu hiển thị</span>
+                  <input
+                    value={form.brandName}
+                    onChange={(event) => updateField('brandName', event.target.value)}
+                    className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-emerald-500"
+                    placeholder="VD: Jade Wellness Spa"
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Logo URL</span>
+                  <input
+                    value={form.logoUrl}
+                    onChange={(event) => updateField('logoUrl', event.target.value)}
+                    className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-emerald-500"
+                    placeholder="https://..."
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Màu chính</span>
+                  <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-2.5">
+                    <input
+                      type="color"
+                      value={form.primaryColor}
+                      onChange={(event) => updateField('primaryColor', event.target.value)}
+                      className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent p-0"
+                    />
+                    <input
+                      value={form.primaryColor}
+                      onChange={(event) => updateField('primaryColor', event.target.value)}
+                      className="min-w-0 flex-1 bg-transparent text-sm font-black text-slate-900 outline-none"
+                    />
+                  </div>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Màu nhấn</span>
+                  <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-2.5">
+                    <input
+                      type="color"
+                      value={form.accentColor}
+                      onChange={(event) => updateField('accentColor', event.target.value)}
+                      className="h-10 w-12 cursor-pointer rounded-xl border-0 bg-transparent p-0"
+                    />
+                    <input
+                      value={form.accentColor}
+                      onChange={(event) => updateField('accentColor', event.target.value)}
+                      className="min-w-0 flex-1 bg-transparent text-sm font-black text-slate-900 outline-none"
+                    />
+                  </div>
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tên trên portal</span>
+                  <input
+                    value={form.portalDisplayName}
+                    onChange={(event) => updateField('portalDisplayName', event.target.value)}
+                    className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-emerald-500"
+                    placeholder="Tên khách hàng nhìn thấy"
+                  />
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tên trên báo giá/hóa đơn</span>
+                  <input
+                    value={form.invoiceDisplayName}
+                    onChange={(event) => updateField('invoiceDisplayName', event.target.value)}
+                    className="w-full rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-emerald-500"
+                    placeholder="Tên dùng trên chứng từ"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <label className="space-y-2">

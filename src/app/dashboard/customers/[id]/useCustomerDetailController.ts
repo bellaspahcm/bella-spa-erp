@@ -7,7 +7,12 @@ import {
   getCustomerGenderPresentation,
   getTenantModulePresentationOrNeutral,
 } from '@/lib/business-rules/tenant-module-presentation';
-import { getDefaultTenantModuleKey, type TenantModuleKey } from '@/lib/business-rules/tenant-modules';
+import {
+  getDefaultTenantModuleKey,
+  resolveTenantBrandIdentity,
+  type ResolvedTenantBrandIdentity,
+  type TenantModuleKey,
+} from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
 import { parseIntegerInput, parseMoneyInput } from '@/lib/utils';
 import { generateShareToken, getBookingsByCustomerId, recordRemainingPayment, reusePackage, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
@@ -93,6 +98,9 @@ export function useCustomerDetailController() {
   });
   const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
   const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(null);
+  const [tenantBrand, setTenantBrand] = useState<ResolvedTenantBrandIdentity>(
+    resolveTenantBrandIdentity({ enabledModules: { babycare: true, beauty_spa: false } }),
+  );
   const [isExportingQuotation, setIsExportingQuotation] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
@@ -131,6 +139,13 @@ export function useCustomerDetailController() {
       const tenant = await getTenantSettings();
       const nextTenantModuleKey = getDefaultTenantModuleKey(tenant?.enabled_modules);
       setTenantModuleKey(nextTenantModuleKey);
+      setTenantBrand(resolveTenantBrandIdentity({
+        enabledModules: tenant?.enabled_modules,
+        brandTheme: tenant?.brand_theme,
+        logoUrl: tenant?.logo_url,
+        tenantName: tenant?.name,
+        surface: 'invoice',
+      }));
       const data = await getCustomerById(id);
       const bookings = (await getBookingsByCustomerId(id)) as CustomerDetailBooking[];
       const customerRecord = toCustomerDetailRecord(data, bookings, nextTenantModuleKey);
@@ -394,6 +409,13 @@ export function useCustomerDetailController() {
       phone: customer.phone || 'Chưa cập nhật',
       address: customer.address || 'Chưa cập nhật',
       serviceNote: `${activeBooking.package_name || activeBooking.packages?.name || 'Gói dịch vụ'} (Bắt đầu gói từ ${activeBooking.start_date || 'Chưa cập nhật'})`,
+      brand: {
+        displayName: tenantBrand.invoiceDisplayName || tenantBrand.displayName,
+        logoUrl: tenantBrand.logoUrl,
+        primaryColor: tenantBrand.primaryColor,
+        accentColor: tenantBrand.accentColor,
+        monogram: tenantBrand.monogram,
+      },
       items: [
         {
           id: 1,
@@ -413,7 +435,7 @@ export function useCustomerDetailController() {
         bankName: 'Ngân hàng BIDV',
       },
     };
-  }, [activeBooking, customer]);
+  }, [activeBooking, customer, tenantBrand]);
 
   const handleExportQuotation = useCallback(async () => {
     if (!quotationRef.current || !customer) return;

@@ -17,10 +17,16 @@ import { getTenantSettings, saveTenantSettings } from '@/services/tenant-actions
 import {
   DEFAULT_ENABLED_MODULES,
   DEFAULT_TENANT_BRAND_THEME,
+  getDefaultTenantModuleKey,
   normalizeEnabledModules,
-  normalizeTenantBrandTheme,
+  normalizeTenantBrandThemeForModule,
+  type TenantBrandButtonStyle,
+  type TenantBrandMenuStyle,
+  type TenantBrandRadiusStyle,
+  type TenantBrandStylePreset,
   type TenantBrandTheme,
   type TenantEnabledModules,
+  type TenantModuleKey,
 } from '@/lib/business-rules/tenant-modules';
 import { cn } from '@/lib/utils';
 
@@ -32,11 +38,59 @@ function FieldLabel({ children }: { children: ReactNode }) {
   );
 }
 
+const brandPresetOptions: Array<{
+  value: TenantBrandStylePreset;
+  label: string;
+  description: string;
+  primaryColor: string;
+  accentColor: string;
+}> = [
+  {
+    value: 'jade_wellness',
+    label: 'Jade Wellness',
+    description: 'Xanh ngọc sạch, an tâm, phù hợp Beauty Spa/wellness.',
+    primaryColor: '#087F6B',
+    accentColor: '#7DD3C7',
+  },
+  {
+    value: 'bella_rose',
+    label: 'Bella Rose',
+    description: 'Hồng thương hiệu Bella, dùng cho Mother & Baby/Bella ERP gốc.',
+    primaryColor: '#A91555',
+    accentColor: '#F8A5C2',
+  },
+  {
+    value: 'graphite_luxe',
+    label: 'Graphite Luxe',
+    description: 'Đen/xám cao cấp cho clinic phong cách premium.',
+    primaryColor: '#1F2937',
+    accentColor: '#C4A46A',
+  },
+];
+
+const radiusOptions: Array<{ value: TenantBrandRadiusStyle; label: string }> = [
+  { value: 'soft', label: 'Bo mềm' },
+  { value: 'balanced', label: 'Cân bằng' },
+  { value: 'compact', label: 'Gọn' },
+];
+
+const buttonOptions: Array<{ value: TenantBrandButtonStyle; label: string }> = [
+  { value: 'pill', label: 'Pill' },
+  { value: 'rounded', label: 'Rounded' },
+  { value: 'minimal', label: 'Minimal' },
+];
+
+const menuOptions: Array<{ value: TenantBrandMenuStyle; label: string }> = [
+  { value: 'comfortable', label: 'Dễ đọc' },
+  { value: 'compact', label: 'Gọn' },
+];
+
 export default function AppearanceTab() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [brandTheme, setBrandTheme] = useState<TenantBrandTheme>(DEFAULT_TENANT_BRAND_THEME);
   const [logoUrl, setLogoUrl] = useState('');
   const [enabledModules, setEnabledModules] = useState<TenantEnabledModules>(DEFAULT_ENABLED_MODULES);
+  const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
   const [isLoadingTenantConfig, setIsLoadingTenantConfig] = useState(true);
   const [isSavingTenantConfig, setIsSavingTenantConfig] = useState(false);
 
@@ -51,10 +105,12 @@ export default function AppearanceTab() {
       const tenant = await getTenantSettings();
       if (!tenant) return;
 
-      const normalizedBrandTheme = normalizeTenantBrandTheme(tenant.brand_theme);
+      const nextModuleKey = getDefaultTenantModuleKey(tenant.enabled_modules);
+      const normalizedBrandTheme = normalizeTenantBrandThemeForModule(tenant.brand_theme, nextModuleKey);
       setBrandTheme(normalizedBrandTheme);
       setLogoUrl(tenant.logo_url || normalizedBrandTheme.logoUrl || '');
       setEnabledModules(normalizeEnabledModules(tenant.enabled_modules));
+      setTenantModuleKey(nextModuleKey);
     } catch (error) {
       console.error('Tenant display config load failed', error);
       toast.error('Không thể tải cấu hình giao diện chi nhánh');
@@ -88,13 +144,21 @@ export default function AppearanceTab() {
     setBrandTheme((current) => ({ ...current, ...patch }));
   };
 
+  const applyBrandPreset = (preset: (typeof brandPresetOptions)[number]) => {
+    updateBrandTheme({
+      stylePreset: preset.value,
+      primaryColor: preset.primaryColor,
+      accentColor: preset.accentColor,
+    });
+  };
+
   async function handleSaveTenantConfig() {
     setIsSavingTenantConfig(true);
     try {
-      const nextBrandTheme = normalizeTenantBrandTheme({
+      const nextBrandTheme = normalizeTenantBrandThemeForModule({
         ...brandTheme,
         logoUrl,
-      });
+      }, tenantModuleKey);
 
       const result = await saveTenantSettings({
         logo_url: logoUrl,
@@ -317,6 +381,100 @@ export default function AppearanceTab() {
                   className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 outline-none transition focus:border-rose-300 focus:bg-white focus:ring-4 focus:ring-rose-50"
                 />
               </label>
+
+              <div className="space-y-3 md:col-span-2">
+                <FieldLabel>Mẫu nhận diện</FieldLabel>
+                <div className="grid gap-3 lg:grid-cols-3">
+                  {brandPresetOptions.map((preset) => {
+                    const isActive = brandTheme.stylePreset === preset.value;
+                    return (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        onClick={() => applyBrandPreset(preset)}
+                        className={cn(
+                          'rounded-2xl border p-4 text-left transition-all',
+                          isActive
+                            ? 'border-primary bg-primary/5 text-slate-900 shadow-sm ring-4 ring-primary/10'
+                            : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-primary/30 hover:bg-white',
+                        )}
+                      >
+                        <div className="mb-3 flex items-center gap-2">
+                          <span
+                            className="h-7 w-7 rounded-xl border border-white shadow-sm"
+                            style={{ backgroundColor: preset.primaryColor }}
+                          />
+                          <span
+                            className="h-7 w-7 rounded-xl border border-white shadow-sm"
+                            style={{ backgroundColor: preset.accentColor }}
+                          />
+                        </div>
+                        <p className="text-sm font-black">{preset.label}</p>
+                        <p className="mt-1 text-xs font-bold leading-relaxed text-slate-500">{preset.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:col-span-2 md:grid-cols-3">
+                <div className="space-y-2">
+                  <FieldLabel>Bo góc</FieldLabel>
+                  <div className="flex rounded-2xl border border-slate-100 bg-slate-50 p-1">
+                    {radiusOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => updateBrandTheme({ radiusStyle: option.value })}
+                        className={cn(
+                          'min-h-10 flex-1 rounded-xl px-3 text-xs font-black transition',
+                          brandTheme.radiusStyle === option.value ? 'bg-white text-primary shadow-sm' : 'text-slate-500',
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <FieldLabel>Kiểu nút</FieldLabel>
+                  <div className="flex rounded-2xl border border-slate-100 bg-slate-50 p-1">
+                    {buttonOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => updateBrandTheme({ buttonStyle: option.value })}
+                        className={cn(
+                          'min-h-10 flex-1 rounded-xl px-3 text-xs font-black transition',
+                          brandTheme.buttonStyle === option.value ? 'bg-white text-primary shadow-sm' : 'text-slate-500',
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <FieldLabel>Menu</FieldLabel>
+                  <div className="flex rounded-2xl border border-slate-100 bg-slate-50 p-1">
+                    {menuOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => updateBrandTheme({ menuStyle: option.value })}
+                        className={cn(
+                          'min-h-10 flex-1 rounded-xl px-3 text-xs font-black transition',
+                          brandTheme.menuStyle === option.value ? 'bg-white text-primary shadow-sm' : 'text-slate-500',
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="space-y-4 rounded-[2rem] border border-rose-100 bg-white p-5 shadow-sm">

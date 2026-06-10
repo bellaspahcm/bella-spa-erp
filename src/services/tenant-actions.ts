@@ -9,7 +9,9 @@ import { recordAuditLog } from './audit-actions';
 import { revalidatePath } from 'next/cache';
 import type { Database, Json } from '@/types/database.types';
 import {
+  getDefaultTenantModuleKey,
   toTenantBrandThemeJson,
+  toTenantBrandThemeJsonForModule,
   toTenantModuleJson,
   type TenantBrandTheme,
   type TenantEnabledModules,
@@ -177,7 +179,12 @@ export async function saveTenantSettings(settings: {
     if (settings.enabled_modules !== undefined) {
       updatePayload.enabled_modules = toTenantModuleJson(settings.enabled_modules);
     }
-    if (settings.brand_theme !== undefined) updatePayload.brand_theme = toTenantBrandThemeJson(settings.brand_theme);
+    if (settings.brand_theme !== undefined) {
+      const moduleKey = getDefaultTenantModuleKey(settings.enabled_modules ?? oldSettings.enabled_modules);
+      updatePayload.brand_theme = moduleKey === 'beauty_spa'
+        ? toTenantBrandThemeJsonForModule(settings.brand_theme, moduleKey)
+        : toTenantBrandThemeJson(settings.brand_theme);
+    }
     if (settings.qr_bank_code !== undefined) updatePayload.qr_bank_code = settings.qr_bank_code;
     if (settings.qr_account_number !== undefined) updatePayload.qr_account_number = settings.qr_account_number;
     if (settings.qr_account_name !== undefined) updatePayload.qr_account_name = settings.qr_account_name;

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
@@ -31,8 +30,8 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
-  getDefaultTenantModuleKey,
-  normalizeTenantBrandTheme,
+  resolveTenantBrandIdentity,
+  type ResolvedTenantBrandIdentity,
 } from '@/lib/business-rules/tenant-modules';
 
 import { getCurrentUser } from '@/services/user-actions';
@@ -40,6 +39,7 @@ import { getTenantSettings } from '@/services/tenant-actions';
 import { createClient } from '@/lib/supabase-client';
 import { createPageRefreshEvent } from '@/lib/page-refresh';
 import ThemeToggle from '@/components/common/ThemeToggle';
+import { TenantBrandLogo } from '@/components/common/TenantBrandLogo';
 import type { CurrentUser } from '@/types/domain';
 import {
   isSidebarItemAllowed,
@@ -59,21 +59,29 @@ type MenuLink = {
 };
 
 type SidebarMenuItem = MenuHeader | MenuLink;
-type TenantBrandDisplay = {
-  displayName: string;
-  logoUrl: string;
-  subtitle: string;
-};
+type TenantBrandDisplay = Pick<
+  ResolvedTenantBrandIdentity,
+  | 'displayName'
+  | 'logoUrl'
+  | 'subtitle'
+  | 'moduleKey'
+  | 'primaryColor'
+  | 'accentColor'
+  | 'primaryHoverColor'
+  | 'monogram'
+  | 'buttonStyle'
+  | 'menuStyle'
+  | 'radiusStyle'
+  | 'isBeautySpa'
+>;
 type CachedTenantBrandDisplay = TenantBrandDisplay & {
   tenantId: string;
 };
 
-const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
-  displayName: 'Spa ERP',
-  logoUrl: '/FullLogo_Transparent_NoBuffer.png',
-  subtitle: 'Management System',
-};
-const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v1';
+const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = resolveTenantBrandIdentity({
+  enabledModules: { babycare: true, beauty_spa: false },
+});
+const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v2';
 
 function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay {
   if (!value || typeof value !== 'object') return false;
@@ -82,7 +90,16 @@ function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay
     typeof source.tenantId === 'string' &&
     typeof source.displayName === 'string' &&
     typeof source.logoUrl === 'string' &&
-    typeof source.subtitle === 'string'
+    typeof source.subtitle === 'string' &&
+    (source.moduleKey === 'babycare' || source.moduleKey === 'beauty_spa') &&
+    typeof source.primaryColor === 'string' &&
+    typeof source.accentColor === 'string' &&
+    typeof source.primaryHoverColor === 'string' &&
+    typeof source.monogram === 'string' &&
+    typeof source.buttonStyle === 'string' &&
+    typeof source.menuStyle === 'string' &&
+    typeof source.radiusStyle === 'string' &&
+    typeof source.isBeautySpa === 'boolean'
   );
 }
 
@@ -94,8 +111,17 @@ function readCachedTenantBrand(tenantId: string | null | undefined): TenantBrand
     if (!isTenantBrandDisplay(parsed) || parsed.tenantId !== tenantId) return null;
     return {
       displayName: parsed.displayName,
-      logoUrl: getSafeLogoUrl(parsed.logoUrl),
+      logoUrl: parsed.logoUrl,
       subtitle: parsed.subtitle,
+      moduleKey: parsed.moduleKey,
+      primaryColor: parsed.primaryColor,
+      accentColor: parsed.accentColor,
+      primaryHoverColor: parsed.primaryHoverColor,
+      monogram: parsed.monogram,
+      buttonStyle: parsed.buttonStyle,
+      menuStyle: parsed.menuStyle,
+      radiusStyle: parsed.radiusStyle,
+      isBeautySpa: parsed.isBeautySpa,
     };
   } catch {
     return null;
@@ -115,22 +141,39 @@ function writeCachedTenantBrand(tenantId: string | null | undefined, brand: Tena
   }
 }
 
-function getSafeLogoUrl(logoUrl: string) {
-  return logoUrl.startsWith('/') ? logoUrl : DEFAULT_SIDEBAR_BRAND.logoUrl;
-}
-
 function resolveTenantBrandDisplay(settings: Awaited<ReturnType<typeof getTenantSettings>>): TenantBrandDisplay {
   if (!settings) return DEFAULT_SIDEBAR_BRAND;
 
-  const theme = normalizeTenantBrandTheme(settings.brand_theme);
-  const moduleKey = getDefaultTenantModuleKey(settings.enabled_modules);
-  const displayName = theme.brandName || theme.portalDisplayName || (moduleKey === 'beauty_spa' ? 'Beauty Spa' : 'Bella Spa');
+  return resolveTenantBrandIdentity({
+    enabledModules: settings.enabled_modules,
+    brandTheme: settings.brand_theme,
+    logoUrl: settings.logo_url,
+    tenantName: settings.name,
+    surface: 'app',
+  });
+}
 
-  return {
-    displayName,
-    logoUrl: getSafeLogoUrl(settings.logo_url || theme.logoUrl || DEFAULT_SIDEBAR_BRAND.logoUrl),
-    subtitle: moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' : DEFAULT_SIDEBAR_BRAND.subtitle,
-  };
+function applyTenantBrandRuntime(brand: TenantBrandDisplay) {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+
+  root.dataset.tenantModule = brand.moduleKey;
+  root.dataset.tenantBrandButton = brand.buttonStyle;
+  root.dataset.tenantBrandMenu = brand.menuStyle;
+  root.dataset.tenantBrandRadius = brand.radiusStyle;
+
+  if (brand.isBeautySpa) {
+    root.style.setProperty('--primary', brand.primaryColor);
+    root.style.setProperty('--primary-hover', brand.primaryHoverColor);
+    root.style.setProperty('--accent', brand.accentColor);
+    root.style.setProperty('--ring', brand.primaryColor);
+    return;
+  }
+
+  root.style.setProperty('--primary', '#9D174D');
+  root.style.setProperty('--primary-hover', '#831843');
+  root.style.setProperty('--accent', '#BE185D');
+  root.style.setProperty('--ring', '#9D174D');
 }
 
 function isMenuHeader(item: SidebarMenuItem): item is MenuHeader {
@@ -223,6 +266,10 @@ export function Sidebar() {
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    applyTenantBrandRuntime(tenantBrand);
+  }, [tenantBrand]);
 
   const handleNavigation = () => {
     setIsOpen(false);
@@ -331,21 +378,21 @@ export function Sidebar() {
         <div className="flex w-20 items-center justify-start">
           <button
             onClick={() => setIsOpen(true)}
-            className="p-2.5 rounded-xl text-[#BE185D] dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all"
+            className="p-2.5 rounded-xl text-primary dark:text-[#A67D44] hover:bg-rose-50 dark:hover:bg-[#1C1B19] active:scale-95 transition-all"
           >
             <Menu className="w-5.5 h-5.5" />
           </button>
         </div>
         
         <div className="flex items-center gap-2">
-          <Image
-            src={tenantBrand.logoUrl}
-            alt={tenantBrand.displayName}
-            width={28}
-            height={28}
-            className="w-7 h-7 object-contain"
+          <TenantBrandLogo
+            displayName={tenantBrand.displayName}
+            logoUrl={tenantBrand.logoUrl}
+            monogram={tenantBrand.monogram}
+            className="w-7 h-7 text-[10px]"
+            markClassName="rounded-xl"
           />
-          <span className="max-w-[9rem] truncate font-handwriting text-2xl text-[#BE185D] dark:text-[#A67D44] leading-none mt-1">
+          <span className="max-w-[9rem] truncate font-handwriting text-2xl text-primary dark:text-[#A67D44] leading-none mt-1">
             {tenantBrand.displayName}
           </span>
         </div>
@@ -357,12 +404,12 @@ export function Sidebar() {
             disabled={isMobileRefreshing}
             aria-label="Làm mới dữ liệu"
             title="Làm mới dữ liệu"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-pink-100 bg-white/80 text-[#BE185D] shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-70 dark:border-[#3E3A35] dark:bg-[#1C1B19] dark:text-[#A67D44] dark:hover:bg-[#5D1C34]/30"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-pink-100 bg-white/80 text-primary shadow-sm transition-all hover:bg-rose-50 active:scale-95 disabled:opacity-70 dark:border-[#3E3A35] dark:bg-[#1C1B19] dark:text-[#A67D44] dark:hover:bg-[#5D1C34]/30"
           >
             <RefreshCw className={cn('h-4 w-4', isMobileRefreshing && 'animate-spin')} />
           </button>
 
-          <div className="w-8 h-8 rounded-full bg-[#FFE4E6] dark:bg-[#5D1C34]/40 flex items-center justify-center text-[#BE185D] dark:text-[#A67D44] font-black text-xs border border-pink-100 dark:border-[#3E3A35]">
+          <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-[#5D1C34]/40 flex items-center justify-center text-primary dark:text-[#A67D44] font-black text-xs border border-pink-100 dark:border-[#3E3A35]">
             {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
           </div>
         </div>
@@ -394,16 +441,16 @@ export function Sidebar() {
           <Link href="/dashboard" onClick={handleNavigation} className="flex flex-col items-center group">
             <div className="relative mb-4">
               <div className="absolute inset-0 bg-primary/20 dark:bg-[#A67D44]/15 blur-2xl rounded-full scale-75 group-hover:scale-110 transition-transform duration-500" />
-              <Image
-                src={tenantBrand.logoUrl}
-                alt={tenantBrand.displayName}
-                width={96}
-                height={96}
-                className="w-24 h-24 object-contain relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500"
+              <TenantBrandLogo
+                displayName={tenantBrand.displayName}
+                logoUrl={tenantBrand.logoUrl}
+                monogram={tenantBrand.monogram}
+                className="w-24 h-24 relative z-10 transform group-hover:rotate-[5deg] transition-transform duration-500 text-2xl"
+                markClassName="rounded-[1.75rem]"
               />
             </div>
             <div className="text-center">
-              <h2 className="max-w-64 truncate text-[3.2rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm text-[#BE185D] dark:text-[#A67D44]">
+              <h2 className="max-w-64 truncate text-[3.2rem] font-handwriting leading-[0.8] mb-2 drop-shadow-sm text-primary dark:text-[#A67D44]">
                 {tenantBrand.displayName}
               </h2>
               <span className="text-[10px] font-extrabold text-[#8A6D7C] dark:text-[#CDBCAB] uppercase tracking-[0.25em] block mt-1">
@@ -415,7 +462,7 @@ export function Sidebar() {
           {/* Close button inside Drawer for Mobile */}
           <button
             onClick={() => setIsOpen(false)}
-            className="lg:hidden p-2 rounded-xl text-[#BE185D] dark:text-[#A67D44] hover:bg-white/60 dark:hover:bg-[#1C1B19]/50 active:scale-95 transition-all"
+            className="lg:hidden p-2 rounded-xl text-primary dark:text-[#A67D44] hover:bg-white/60 dark:hover:bg-[#1C1B19]/50 active:scale-95 transition-all"
           >
             <X className="w-5 h-5" />
           </button>
@@ -430,7 +477,7 @@ export function Sidebar() {
               return (
                 <div 
                   key={`header-${idx}`} 
-                  className="px-5 pt-3 pb-1 text-[9.5px] font-extrabold text-[#BE185D]/60 dark:text-[#A67D44]/60 uppercase tracking-[0.2em] relative z-10 select-none pointer-events-none mt-4 first:mt-1"
+                  className="px-5 pt-3 pb-1 text-[9.5px] font-extrabold text-primary/60 dark:text-[#A67D44]/60 uppercase tracking-[0.2em] relative z-10 select-none pointer-events-none mt-4 first:mt-1"
                 >
                   {item.label}
                 </div>
@@ -445,33 +492,33 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-4 px-5 py-3.5 rounded-[1.5rem] transition-all duration-300 relative group cursor-pointer border",
                     isActive
-                      ? "bg-white text-[#BE185D] border-[#F9A8D4] shadow-[0_8px_20px_rgba(219,39,119,0.12)] ring-1 ring-[#F9A8D4]/45 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
-                      : "text-[#8A6D7C] bg-transparent border-transparent hover:bg-white/70 hover:text-[#BE185D] hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50 dark:text-[#CDBCAB] dark:hover:bg-[#1C1B19]/50 dark:hover:text-[#EFE9E1] dark:hover:border-[#3E3A35]/50"
+                      ? "bg-white text-primary border-primary/20 shadow-[0_8px_20px_rgba(219,39,119,0.12)] ring-1 ring-primary/20 dark:bg-[#5D1C34]/30 dark:text-[#EFE9E1] dark:border-[#A67D44]/40 dark:ring-[#A67D44]/20 dark:shadow-none"
+                      : "text-[#8A6D7C] bg-transparent border-transparent hover:bg-white/70 hover:text-primary hover:shadow-[0_4px_12px_rgba(219,39,119,0.03)] hover:border-[#FFE4E6]/50 dark:text-[#CDBCAB] dark:hover:bg-[#1C1B19]/50 dark:hover:text-[#EFE9E1] dark:hover:border-[#3E3A35]/50"
                   )}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="desktop-active-rail"
-                      className="absolute left-1.5 top-1/2 hidden h-8 w-1 -translate-y-1/2 rounded-full bg-[#BE185D] shadow-[0_0_10px_rgba(190,24,93,0.35)] dark:bg-[#A67D44] dark:shadow-[0_0_10px_rgba(166,125,68,0.25)] lg:block"
+                      className="absolute left-1.5 top-1/2 hidden h-8 w-1 -translate-y-1/2 rounded-full bg-primary shadow-[0_0_10px_rgba(190,24,93,0.35)] dark:bg-[#A67D44] dark:shadow-[0_0_10px_rgba(166,125,68,0.25)] lg:block"
                     />
                   )}
                   <item.icon className={cn(
                     "w-[18px] h-[18px] transition-all duration-300",
-                    isActive 
-                      ? "text-[#BE185D] dark:text-[#A67D44] scale-105" 
-                      : "text-[#A07888] dark:text-[#CDBCAB]/80 group-hover:text-[#BE185D] dark:group-hover:text-[#A67D44]"
+                    isActive
+                      ? "text-primary dark:text-[#A67D44] scale-105"
+                      : "text-[#A07888] dark:text-[#CDBCAB]/80 group-hover:text-primary dark:group-hover:text-[#A67D44]"
                   )} />
                   <span className={cn(
                     "text-[14px] tracking-tight transition-all duration-300",
-                    isActive 
-                      ? "font-extrabold text-[#BE185D] dark:text-[#EFE9E1]" 
+                    isActive
+                      ? "font-extrabold text-primary dark:text-[#EFE9E1]"
                       : "font-semibold"
                   )}>{item.label}</span>
 
                   {isActive && (
                     <motion.div
                       layoutId="active-indicator"
-                      className="absolute right-5 w-1.5 h-1.5 bg-[#BE185D] dark:bg-[#A67D44] rounded-full shadow-[0_0_6px_rgba(219,39,119,0.4)] dark:shadow-[0_0_6px_rgba(166,125,68,0.4)]"
+                      className="absolute right-5 w-1.5 h-1.5 bg-primary dark:bg-[#A67D44] rounded-full shadow-[0_0_6px_rgba(219,39,119,0.4)] dark:shadow-[0_0_6px_rgba(166,125,68,0.4)]"
                     />
                   )}
                 </motion.div>
@@ -486,14 +533,14 @@ export function Sidebar() {
           <div className="bg-white/80 dark:bg-[#1C1B19] rounded-[1.25rem] shadow-[0_4px_20px_rgba(219,39,119,0.06)] dark:shadow-none border border-[#FFE4E6] dark:border-[#3E3A35] flex flex-col overflow-hidden transition-all duration-300 hover:border-rose-300 dark:hover:border-[#A67D44]/30">
             <div className="p-3 flex items-center gap-3">
               <div className="relative shrink-0">
-                <div className="w-9 h-9 bg-[#FFE4E6] dark:bg-[#5D1C34]/40 rounded-full flex items-center justify-center text-[#BE185D] dark:text-[#A67D44] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
+                <div className="w-9 h-9 bg-primary/10 dark:bg-[#5D1C34]/40 rounded-full flex items-center justify-center text-primary dark:text-[#A67D44] font-extrabold text-sm shadow-sm transition-transform duration-300 group-hover:scale-105">
                   {user?.full_name?.charAt(0)?.toUpperCase() || 'A'}
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-[#11100F] rounded-full" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-extrabold text-[#4C243B] dark:text-[#EFE9E1] truncate leading-tight">{user?.full_name || 'Admin Spa'}</p>
-                <p className="text-[9px] text-[#BE185D] dark:text-[#A67D44] font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
+                <p className="text-[9px] text-primary dark:text-[#A67D44] font-black uppercase tracking-[0.1em] mt-0.5">{roleLabel}</p>
               </div>
             </div>
             
@@ -506,7 +553,7 @@ export function Sidebar() {
                <button 
                  onClick={handleLogout} 
                  title="Đăng xuất"
-                 className="p-2 mr-1 rounded-xl text-[#8A6D7C] dark:text-[#CDBCAB] hover:bg-rose-50 hover:text-[#BE185D] dark:hover:bg-[#5D1C34]/40 dark:hover:text-[#A67D44] transition-all"
+                 className="p-2 mr-1 rounded-xl text-[#8A6D7C] dark:text-[#CDBCAB] hover:bg-rose-50 hover:text-primary dark:hover:bg-[#5D1C34]/40 dark:hover:text-[#A67D44] transition-all"
                >
                  <LogOut className="w-4 h-4" />
                </button>
