@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 
-import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { formatMoneyInput, parseDecimalInput, parseIntegerInput, parseMoneyInput } from '@/lib/utils';
 import { getInventoryItems, getPackageMaterials, upsertPackageMaterials } from '@/services/inventory-actions';
 import {
@@ -56,7 +55,7 @@ const EMPTY_ENABLED_MODULES: TenantEnabledModules = {
   beauty_spa: false,
 };
 
-const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
+const createDefaultPackages = (): PackageActionInput[] => [
   {
     name: 'Gói Bầu Thư Giãn Bella',
     price: 450000,
@@ -65,7 +64,6 @@ const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
     details: ['Ngâm chân thảo dược thải độc', 'Massage body thảo dược nhẹ nhàng', 'Chăm sóc da mặt cơ bản organic', 'Thư giãn vùng đầu, cổ, vai gáy'],
     offer: 'Tặng kèm trà sữa hạt organic sau liệu trình',
     status: 'inactive',
-    tenant_id: tenantId,
   },
   {
     name: 'Gói Bầu VIP Toàn Diện',
@@ -75,7 +73,6 @@ const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
     details: ['Rửa chân và xông chân đá muối Himalaya', 'Massage chuyên sâu thắt lưng, hông', 'Massage Thụy Điển kết hợp đá nóng bazan', 'Chăm sóc da mặt chuyên sâu sữa ong chúa', 'Gội đầu dưỡng sinh thảo dược tự nhiên'],
     offer: 'Ưu đãi trải nghiệm buổi đầu giảm 30%',
     status: 'inactive',
-    tenant_id: tenantId,
   },
   {
     name: 'Gói Phục Hồi Cơ Bản',
@@ -85,7 +82,6 @@ const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
     details: ['Xông tắm thảo dược Dao Đỏ tái tạo sinh lực', 'Massage thông tắc tia sữa, gọi sữa về', 'Massage bụng tống sản dịch bằng tinh dầu gừng', 'Quấn muối thảo dược giúp săn cơ bụng'],
     offer: 'Hỗ trợ tư vấn nuôi con bằng sữa mẹ miễn phí',
     status: 'inactive',
-    tenant_id: tenantId,
   },
   {
     name: 'Gói Eo Thon Dáng Ngọc VIP',
@@ -95,7 +91,6 @@ const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
     details: ['Chăm sóc đầy đủ gói Phục Hồi Cơ Bản', 'Đắp men rượu thuốc Bắc kết hợp chạy máy RF săn cơ', 'Đắp mặt nạ nghệ hạ thổ sáng hồng da', 'Massage body toàn thân giải tỏa trầm cảm sau sinh', 'Chăm sóc và tẩy tế bào chết body thảo mộc'],
     offer: 'Tặng 01 buổi massage mặt chuyên sâu',
     status: 'inactive',
-    tenant_id: tenantId,
   },
   {
     name: 'Tắm Bé Chuẩn Y Khoa',
@@ -105,7 +100,6 @@ const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
     details: ['Massage kích hoạt giác quan cơ/xương trước khi tắm', 'Tắm chuẩn y khoa, vệ sinh rốn, mắt, mũi, tai kỹ lưỡng', 'Hơ lá trầu giữ ấm ngực, thóp đầu và các khớp', 'Bôi tinh dầu tràm bảo vệ hô hấp'],
     offer: 'Tặng kèm tưa lưỡi thảo dược',
     status: 'inactive',
-    tenant_id: tenantId,
   },
   {
     name: 'Gói Bé Yêu Thông Minh VIP',
@@ -115,7 +109,6 @@ const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
     details: ['Massage nâng cao kích thích hệ tiêu hóa, chống đầy hơi', 'Tắm rửa sát khuẩn nước thảo dược tự nhiên', 'Hơ lá trầu ấm áp theo phương pháp cung đình', 'Bơi thủy liệu (Hydrotherapy) phát triển thể chất', 'Tập vận động phản xạ sớm nâng cao chỉ số EQ/IQ'],
     offer: 'Ưu đãi trải nghiệm giảm 20%',
     status: 'inactive',
-    tenant_id: tenantId,
   },
   {
     name: 'Gói Bella Home-Care Tiêu Chuẩn',
@@ -125,7 +118,6 @@ const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
     details: ['5 buổi Chăm Sóc Phục Hồi cho mẹ sau sinh tại nhà', '5 buổi Tắm Bé & Massage chuẩn y khoa tại nhà', 'KTV là điều dưỡng có chứng chỉ hành nghề y tế'],
     offer: 'Tặng thêm 01 hũ muối thảo dược quấn bụng trị giá 350k',
     status: 'inactive',
-    tenant_id: tenantId,
   },
   {
     name: 'Gói Hoàng Gia Bella Signature',
@@ -135,7 +127,6 @@ const createDefaultPackages = (tenantId: string): PackageActionInput[] => [
     details: ['10 buổi Chăm sóc Bầu VIP thư giãn giảm đau nhức', '15 buổi Liệu trình Phục Hồi Eo Thon Dáng Ngọc sau sinh', '15 buổi Tắm Bé & Bơi Thủy Liệu VIP kích thích phát triển', 'Miễn phí tư vấn dinh dưỡng cùng Bác sĩ Sản Nhi trong suốt thai kỳ'],
     offer: 'Tặng hộp quà Premium gồm 05 tinh dầu cao cấp và 01 túi thảo dược chườm mắt',
     status: 'inactive',
-    tenant_id: tenantId,
   },
 ];
 
@@ -486,24 +477,6 @@ export function useServicesPageState() {
     }
   };
 
-  const getTenantId = async () => {
-    const supabase = createBrowserClient();
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError) throw new Error(userError.message);
-    if (!user) throw new Error('Vui lòng đăng nhập để thực hiện');
-
-    const { data: profile, error: profileError } = await supabase
-      .from('users')
-      .select('tenant_id')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError) throw new Error(profileError.message);
-    if (!profile?.tenant_id) throw new Error('Lỗi hệ thống: Không xác định được Tenant ID');
-
-    return profile.tenant_id;
-  };
-
   const syncDefaultPackages = async () => {
     if (!enabledModules.babycare) {
       toast.error('Gói mặc định này chỉ dùng cho tenant đã bật đúng module ngành tương ứng.');
@@ -512,8 +485,7 @@ export function useServicesPageState() {
 
     setIsLoading(true);
     try {
-      const tenantId = await getTenantId();
-      const defaultPackages = createDefaultPackages(tenantId);
+      const defaultPackages = createDefaultPackages();
       const existingPackages = await getPackages();
 
       const existingNames = new Set((existingPackages || []).map(packageRow => packageRow.name));
@@ -544,7 +516,6 @@ export function useServicesPageState() {
     setIsSubmitting(true);
 
     try {
-      const tenantId = await getTenantId();
       const selectedModuleKey = enabledModules[form.moduleKey]
         ? form.moduleKey
         : getDefaultTenantModuleKey(enabledModules);
@@ -557,7 +528,6 @@ export function useServicesPageState() {
         offer: form.offer || '',
         ktv_commission: parseMoneyInput(form.ktvCommission),
         status: form.status,
-        tenant_id: tenantId,
         module_key: selectedModuleKey,
         service_kind: form.serviceKind,
         service_category: form.serviceCategory,

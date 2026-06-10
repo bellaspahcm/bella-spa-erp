@@ -44,6 +44,15 @@ describe('dashboard tenant isolation source guards', () => {
     expect(source).not.toMatch(/\.from\('customers'\)/);
   });
 
+  it('does not read tenant identity from browser-side user queries on the services page', () => {
+    const source = readSource('src/app/dashboard/services/hooks/useServicesPageState.ts');
+
+    expect(source).not.toContain('createBrowserClient');
+    expect(source).not.toContain('getTenantId');
+    expect(source).not.toMatch(/\.from\('users'\)/);
+    expect(source).not.toContain('tenant_id: tenantId');
+  });
+
   it('scopes staff list reads to the current tenant', () => {
     const source = readSource('src/services/user-actions.ts');
 
