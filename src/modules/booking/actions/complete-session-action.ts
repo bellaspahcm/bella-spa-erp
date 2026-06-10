@@ -19,13 +19,27 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   const supabase = await createClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id || null;
+
+  if (!tenantId) {
+    return { error: 'Không xác định được chi nhánh khi hoàn thành buổi dịch vụ.' };
+  }
 
   // 0. Security Check
-  const { data: existingLog } = await supabase
+  const { data: existingLog, error: existingLogError } = await supabase
     .from('session_logs')
     .select('*')
     .eq('id', sessionId)
+    .eq('tenant_id', tenantId)
     .single();
+
+  if (existingLogError || !existingLog) {
+    return { error: existingLogError?.message || 'Không tìm thấy session log trong chi nhánh hiện tại.' };
+  }
+
+  if (!existingLog.booking_id || existingLog.booking_id !== bookingId) {
+    return { error: 'Buổi dịch vụ không thuộc booking hiện tại.' };
+  }
 
   if (existingLog?.status === 'completed') {
     return { error: 'Buổi dịch vụ này đã hoàn thành trước đó (Idempotent)' };
@@ -40,6 +54,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     .from('bookings')
     .select('assigned_ktv_id, package_id, status')
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (bookingError || !bookingData) {
@@ -73,7 +88,8 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   const { error: sessionError } = await supabase
     .from('session_logs')
     .update(updatePayload)
-    .eq('id', sessionId);
+    .eq('id', sessionId)
+    .eq('tenant_id', tenantId);
 
   if (sessionError) {
     console.error('Error completing session:', sessionError);
@@ -82,7 +98,6 @@ export async function completeSession(sessionId: string, bookingId: string, cust
 
   // 3. Gọi helper dùng chung để chốt ca làm việc, trừ kho, tính lương KTV
   const today = getLocalDateString();
-  const tenantId = currentUser?.tenant_id || existingLog?.tenant_id;
   const ktvId = bookingData.assigned_ktv_id;
 
   const result = await processSessionCompletion(
@@ -104,7 +119,9 @@ export async function completeSession(sessionId: string, bookingId: string, cust
       status: existingLog?.status || 'scheduled',
       completed_date: null,
       completed_by_ktv_id: null
-    }).eq('id', sessionId);
+    })
+      .eq('id', sessionId)
+      .eq('tenant_id', tenantId);
 
     if (rollbackError) {
       return { error: `${result.error}; rollback session failed: ${rollbackError.message}` };
