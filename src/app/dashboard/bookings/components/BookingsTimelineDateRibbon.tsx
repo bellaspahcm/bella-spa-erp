@@ -95,7 +95,7 @@ export function BookingsTimelineDateRibbon({
               onClick={() => onSelectedDateChange(date)}
               className={`flex flex-col items-center justify-center w-12 h-14 rounded-2xl transition-all shrink-0 select-none ${
                 selected
-                  ? 'bg-gradient-to-br from-rose-500 to-rose-400 text-white shadow-md shadow-rose-200 dark:shadow-none scale-105'
+                  ? 'beauty-date-ribbon-day-active bg-gradient-to-br from-rose-500 to-rose-400 text-white shadow-md shadow-rose-200 dark:shadow-none scale-105'
                   : dateIsToday
                     ? 'bg-rose-50 text-rose-500 border border-rose-100'
                     : 'bg-slate-50 text-slate-600 hover:bg-slate-100'

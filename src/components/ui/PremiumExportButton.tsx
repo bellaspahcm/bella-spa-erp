@@ -42,7 +42,7 @@ export default function PremiumExportButton({ onExport, className }: PremiumExpo
         className="group flex w-full min-w-0 items-center justify-center gap-2 overflow-hidden rounded-2xl border border-slate-200 bg-white px-6 py-3 font-bold text-slate-700 shadow-sm transition-all hover:border-rose-200 hover:shadow-md active:scale-95 sm:w-auto"
       >
         <Download className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
-        <span className="text-sm font-black tracking-widest hidden md:inline">Xuất dữ liệu</span>
+        <span className="text-sm font-black tracking-wide sm:tracking-widest">Xuất dữ liệu</span>
         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 

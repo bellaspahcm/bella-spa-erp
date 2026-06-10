@@ -378,7 +378,14 @@ export function Sidebar() {
         return true;
       });
 
-  const filteredMenuItems = [...baseMenuItems];
+  const moduleAwareMenuItems = tenantBrand.isBeautySpa
+    ? baseMenuItems.map((item): SidebarMenuItem => {
+        if (isMenuHeader(item) || item.href !== '/dashboard/sessions') return item;
+        return { ...item, label: 'Liệu trình' };
+      })
+    : baseMenuItems;
+
+  const filteredMenuItems = [...moduleAwareMenuItems];
 
   // KTV gets a personal income shortcut instead
   if (user?.role?.toLowerCase() === 'ktv') {
