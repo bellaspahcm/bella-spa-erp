@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
 import { getCurrentUser } from './user-actions';
@@ -331,7 +332,7 @@ export async function addLoyaltyPoints(customerId: string, amount: number) {
  * Lấy danh sách khách hàng
  */
 export async function getCustomers() {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const tenantId = await getCurrentTenantId();
   if (!tenantId) {
     throw new Error(CUSTOMER_TENANT_ACCESS_ERROR);
@@ -353,7 +354,7 @@ export async function getCustomers() {
  * Lấy chi tiết khách hàng
  */
 export async function getCustomerById(id: string) {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const tenantId = await getCurrentTenantId();
   if (!tenantId) {
     throw new Error(CUSTOMER_TENANT_ACCESS_ERROR);

@@ -98,9 +98,7 @@ export function useCustomerDetailController() {
   });
   const [userRole, setUserRole] = useState<'admin' | 'ktv'>('ktv');
   const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey | null>(null);
-  const [tenantBrand, setTenantBrand] = useState<ResolvedTenantBrandIdentity>(
-    resolveTenantBrandIdentity({ enabledModules: { babycare: true, beauty_spa: false } }),
-  );
+  const [tenantBrand, setTenantBrand] = useState<ResolvedTenantBrandIdentity | null>(null);
   const [isExportingQuotation, setIsExportingQuotation] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isUpdatingCustomer, setIsUpdatingCustomer] = useState(false);
@@ -395,7 +393,7 @@ export function useCustomerDetailController() {
   }, [activeBooking, id, isRecordingPayment, loadData, paymentData, paymentFile]);
 
   const receiptData = useMemo<ReceiptData | null>(() => {
-    if (!customer || !activeBooking) return null;
+    if (!customer || !activeBooking || !tenantBrand) return null;
     const paymentState = calculateBookingPaymentState({
       fullPrice: activeBooking.full_price,
       discountPercent: activeBooking.discount_percent,
