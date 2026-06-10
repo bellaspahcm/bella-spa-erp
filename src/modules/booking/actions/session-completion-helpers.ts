@@ -37,6 +37,7 @@ type CompletionBooking = Pick<
   | 'package_name'
   | 'ktv_commission'
   | 'assigned_ktv_id'
+  | 'customer_id'
   | 'tenant_id'
   | 'full_price'
   | 'deposit_amount'
@@ -202,7 +203,7 @@ export async function syncBookingCompletionProgress(params: {
 
   const { data: currentBooking } = await supabase
     .from('bookings')
-    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, tenant_id, full_price, deposit_amount, discount_percent')
+    .select('total_sessions, completed_sessions, status, package_name, ktv_commission, assigned_ktv_id, customer_id, tenant_id, full_price, deposit_amount, discount_percent')
     .eq('id', bookingId)
     .single();
 
@@ -402,14 +403,19 @@ export async function ensureSessionReviewPlaceholder(params: {
 }) {
   const { supabase, sessionId, ktvId, tenantId, currentBooking } = params;
 
-  if (!currentBooking?.assigned_ktv_id) {
+  if (!currentBooking?.assigned_ktv_id || !currentBooking.customer_id) {
     return { success: true };
+  }
+
+  if (currentBooking.tenant_id !== tenantId) {
+    return { error: 'Booking không thuộc chi nhánh hiện tại, không thể tạo review chờ đánh giá.' };
   }
 
   const { data: existingReview, error: reviewLookupError } = await supabase
     .from('session_reviews')
     .select('id')
     .eq('session_log_id', sessionId)
+    .eq('tenant_id', tenantId)
     .maybeSingle();
 
   if (reviewLookupError) {
@@ -422,7 +428,7 @@ export async function ensureSessionReviewPlaceholder(params: {
 
   const reviewPayload: SessionReviewInsert = {
     session_log_id: sessionId,
-    reviewer_id: currentBooking.assigned_ktv_id,
+    reviewer_id: currentBooking.customer_id,
     ktv_id: ktvId,
     rating: 5,
     note: 'Chờ khách hàng đánh giá',

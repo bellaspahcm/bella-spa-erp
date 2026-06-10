@@ -227,7 +227,7 @@ describe('business health summary', () => {
     expect(summary.severity).toBe('critical');
     expect(summary.critical_count).toBeGreaterThan(0);
     expect(summary.dataset_counts.bookings).toBe(1);
-    expect(summary.groups).toHaveLength(7);
+    expect(summary.groups).toHaveLength(8);
     expect(summary.findings.map((finding) => finding.code)).toEqual(expect.arrayContaining([
       'deposit_paid_but_booking_still_pending',
       'portal_deposit_qr_should_be_closed',
