@@ -2,6 +2,7 @@ const {
   calculateBookingPaymentState,
   checkBookingPackageScope,
   checkBookingFinancialIntegrity,
+  checkTenantDataIsolation,
   checkCrossModuleSideEffects,
   checkInventory,
   checkLedger,
@@ -25,9 +26,61 @@ const emptyDataset = {
   journalLines: [],
   accountingOutbox: [],
   tenants: [],
+  customers: [],
 };
 
 describe('business invariant check script', () => {
+  it('flags booking/customer and session/booking tenant mismatches', () => {
+    const result = checkTenantDataIsolation({
+      ...emptyDataset,
+      customers: [
+        { id: 'customer-bella', tenant_id: 'tenant-bella', name_mother: 'Mẹ Bella' },
+        { id: 'customer-beauty', tenant_id: 'tenant-beauty', name_mother: 'Khách Beauty' },
+      ],
+      bookings: [
+        {
+          id: 'booking-bella',
+          booking_number: 'B-BELLA',
+          customer_id: 'customer-beauty',
+          tenant_id: 'tenant-bella',
+        },
+        {
+          id: 'booking-beauty',
+          booking_number: 'B-BEAUTY',
+          customer_id: 'customer-beauty',
+          tenant_id: 'tenant-beauty',
+        },
+      ],
+      sessionLogs: [
+        {
+          id: 'session-bella',
+          booking_id: 'booking-beauty',
+          tenant_id: 'tenant-bella',
+          status: 'completed',
+        },
+      ],
+    });
+
+    expect(result.name).toBe('tenant_data_isolation');
+    expect(result.criticalCount).toBe(2);
+    expect(result.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'booking_customer_tenant_mismatch',
+          recordId: 'booking-bella',
+          bookingTenantId: 'tenant-bella',
+          customerTenantId: 'tenant-beauty',
+        }),
+        expect.objectContaining({
+          code: 'session_booking_tenant_mismatch',
+          recordId: 'session-bella',
+          sessionTenantId: 'tenant-bella',
+          bookingTenantId: 'tenant-beauty',
+        }),
+      ])
+    );
+  });
+
   it('uses the same payment state semantics as the customer portal', () => {
     expect(
       calculateBookingPaymentState({

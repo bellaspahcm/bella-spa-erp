@@ -229,6 +229,7 @@ async function loadBusinessDataset({
     journalLines,
     accountingOutbox,
     tenants,
+    customers,
   ] = await Promise.all([
     fetchTableRows({
       ...common,
@@ -295,6 +296,11 @@ async function loadBusinessDataset({
       table: 'tenants',
       select: 'id,enabled_modules',
     }),
+    fetchTableRows({
+      ...common,
+      table: 'customers',
+      select: 'id,tenant_id,name_mother,phone',
+    }),
   ]);
 
   return {
@@ -310,6 +316,7 @@ async function loadBusinessDataset({
     journalLines,
     accountingOutbox,
     tenants,
+    customers,
   };
 }
 
@@ -468,6 +475,66 @@ function checkBookingPackageScope(dataset) {
   });
 
   return createResult('booking_package_scope', findings);
+}
+
+function checkTenantDataIsolation(dataset) {
+  const findings = [];
+  const customersById = indexBy(dataset.customers || [], 'id');
+  const bookingsById = indexBy(dataset.bookings || [], 'id');
+
+  (dataset.bookings || []).forEach((booking) => {
+    if (!booking.customer_id) return;
+
+    const customer = customersById.get(booking.customer_id);
+    const baseDetails = {
+      recordId: booking.id,
+      bookingId: booking.id,
+      bookingNumber: booking.booking_number,
+      customerId: booking.customer_id,
+      bookingTenantId: booking.tenant_id,
+      sourceTable: 'bookings',
+    };
+
+    if (!customer) {
+      addFinding(findings, CRITICAL, 'booking_customer_missing_customer', 'Booking customer_id must reference an existing customer.', baseDetails);
+      return;
+    }
+
+    if (customer.tenant_id !== booking.tenant_id) {
+      addFinding(findings, CRITICAL, 'booking_customer_tenant_mismatch', 'Booking customer must belong to the same tenant as the booking.', {
+        ...baseDetails,
+        customerTenantId: customer.tenant_id,
+      });
+    }
+  });
+
+  (dataset.sessionLogs || []).forEach((session) => {
+    if (!session.booking_id) return;
+
+    const booking = bookingsById.get(session.booking_id);
+    const baseDetails = {
+      recordId: session.id,
+      sessionLogId: session.id,
+      bookingId: session.booking_id,
+      sessionTenantId: session.tenant_id,
+      sourceTable: 'session_logs',
+    };
+
+    if (!booking) {
+      addFinding(findings, CRITICAL, 'session_booking_missing_booking', 'Session log booking_id must reference an existing booking.', baseDetails);
+      return;
+    }
+
+    if (booking.tenant_id !== session.tenant_id) {
+      addFinding(findings, CRITICAL, 'session_booking_tenant_mismatch', 'Session log booking must belong to the same tenant as the session.', {
+        ...baseDetails,
+        bookingNumber: booking.booking_number,
+        bookingTenantId: booking.tenant_id,
+      });
+    }
+  });
+
+  return createResult('tenant_data_isolation', findings);
 }
 
 function checkPaymentBookingRevenue(dataset) {
@@ -1157,6 +1224,7 @@ function runBusinessInvariantChecksOnDataset(dataset, options = {}) {
   };
 
   return [
+    checkTenantDataIsolation(dataset),
     checkBookingPackageScope(dataset),
     checkPaymentBookingRevenue(dataset),
     checkBookingFinancialIntegrity(dataset),
@@ -1301,6 +1369,7 @@ module.exports = {
   buildRestUrl,
   calculateBookingPaymentState,
   checkAccountingReadiness,
+  checkTenantDataIsolation,
   checkBookingPackageScope,
   checkBookingFinancialIntegrity,
   checkCrossModuleSideEffects,

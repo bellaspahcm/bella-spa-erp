@@ -140,6 +140,7 @@ describe('system monitor actions', () => {
       business_critical: 0,
       cron_smoke_open_alerts: 0,
       business_rule_open_alerts: 0,
+      tenant_isolation_issues: 0,
     }));
     expect(mockGetAccountingHealthSummary).toHaveBeenCalledWith('2026-06-01');
     expect(mockGetBusinessHealthSummary).toHaveBeenCalledWith('2026-06-01');
@@ -195,6 +196,42 @@ describe('system monitor actions', () => {
           id: 'business-rule-production-alerts',
           status: 'critical',
           value: '1',
+        }),
+      ])
+    );
+  });
+
+  it('surfaces tenant isolation issues as a dedicated data check', async () => {
+    mockGetBusinessHealthSummary.mockResolvedValue({
+      ...healthyBusinessSummary(),
+      severity: 'critical',
+      critical_count: 2,
+      can_operate_cleanly: false,
+      groups: [
+        {
+          id: 'tenant_data_isolation',
+          label: 'Cách ly dữ liệu chi nhánh',
+          description: 'Booking, khách hàng và ca liệu trình phải cùng tenant.',
+          status: 'fail',
+          critical_count: 2,
+          warning_count: 0,
+          checked_count: 1,
+          href: '/dashboard/accounting/health',
+          action_label: 'Xem lỗi dữ liệu',
+        },
+      ],
+    });
+
+    const summary = await getSystemMonitorSummary('2026-06-01');
+
+    expect(summary.overall_status).toBe('critical');
+    expect(summary.quick_metrics.tenant_isolation_issues).toBe(2);
+    expect(summary.sections.find((section) => section.id === 'data')?.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'tenant-data-isolation',
+          status: 'critical',
+          value: '2',
         }),
       ])
     );
