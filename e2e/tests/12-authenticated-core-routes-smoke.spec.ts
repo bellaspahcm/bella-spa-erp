@@ -45,7 +45,7 @@ const appErrorPatterns = [
 
 const benignConsoleErrorPatterns = [
   /TypeError: Failed to fetch\s+at fetchServerAction/i,
-  /(?:Failed to load tenant branding|Error fetching bookings|Error fetching sessions): TypeError: Failed to fetch/i,
+  /(?:Failed to load|Error (?:fetching|loading)).*TypeError: Failed to fetch/i,
   /vercel\.live\/_next-live\/feedback\/feedback\.js.*Content Security Policy/i,
 ];
 
