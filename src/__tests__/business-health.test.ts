@@ -110,6 +110,7 @@ beforeEach(() => {
     journal_entries: [],
     journal_lines: [],
     accounting_outbox: [],
+    customers: [],
     audit_logs: [],
   };
   tableErrors = {
@@ -124,6 +125,7 @@ beforeEach(() => {
     journal_entries: null,
     journal_lines: null,
     accounting_outbox: null,
+    customers: null,
     audit_logs: null,
   };
   setupTableMocks();
@@ -145,6 +147,14 @@ describe('business health summary', () => {
         customer_id: 'customer-1',
         package_id: 'package-1',
         package_name: 'Combo Mẹ & Bé VIP Toàn Diện',
+      },
+    ];
+    tableRows.customers = [
+      {
+        id: 'customer-1',
+        tenant_id: 'tenant-a',
+        name_mother: 'Mẹ Test',
+        phone: '0900000000',
       },
     ];
     tableRows.revenue = [
@@ -227,7 +237,7 @@ describe('business health summary', () => {
     expect(summary.severity).toBe('critical');
     expect(summary.critical_count).toBeGreaterThan(0);
     expect(summary.dataset_counts.bookings).toBe(1);
-    expect(summary.groups).toHaveLength(8);
+    expect(summary.groups).toHaveLength(9);
     expect(summary.findings.map((finding) => finding.code)).toEqual(expect.arrayContaining([
       'deposit_paid_but_booking_still_pending',
       'portal_deposit_qr_should_be_closed',

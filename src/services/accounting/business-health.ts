@@ -187,6 +187,10 @@ type AccountingOutboxRow = Pick<
   Database['public']['Tables']['accounting_outbox']['Row'],
   'id' | 'tenant_id' | 'event_type' | 'reference_type' | 'reference_id' | 'status' | 'retry_count' | 'max_retries' | 'last_error' | 'created_at'
 >;
+type CustomerRow = Pick<
+  Database['public']['Tables']['customers']['Row'],
+  'id' | 'tenant_id' | 'name_mother' | 'phone'
+>;
 
 type BusinessHealthDataset = {
   bookings: BookingRow[];
@@ -200,6 +204,7 @@ type BusinessHealthDataset = {
   journalEntries: JournalEntryRow[];
   journalLines: JournalLineRow[];
   accountingOutbox: AccountingOutboxRow[];
+  customers: CustomerRow[];
 };
 
 type InvariantFinding = {
@@ -209,6 +214,10 @@ type InvariantFinding = {
   recordId?: string;
   bookingId?: string;
   bookingNumber?: string;
+  bookingTenantId?: string;
+  customerId?: string;
+  customerTenantId?: string;
+  sessionTenantId?: string;
   sourceTable?: string;
   recordKey?: string;
   ktvId?: string;
@@ -290,6 +299,12 @@ const checks = invariantModule as BusinessInvariantModule;
 const MAX_ROWS = 20000;
 
 const GROUP_META: Record<string, Pick<BusinessHealthGroup, 'label' | 'description' | 'href' | 'action_label'>> = {
+  tenant_data_isolation: {
+    label: 'Cách ly dữ liệu chi nhánh',
+    description: 'Kiểm tra booking, khách hàng và ca liệu trình không bị lẫn dữ liệu giữa Bella Spa và Beauty Spa.',
+    href: '/dashboard/accounting/health',
+    action_label: 'Xem lỗi dữ liệu',
+  },
   payment_booking_revenue: {
     label: 'Thanh toán, booking & doanh thu',
     description: 'Đối chiếu tiền khách đã trả, trạng thái booking, công nợ và ghi nhận doanh thu.',
@@ -335,6 +350,10 @@ const GROUP_META: Record<string, Pick<BusinessHealthGroup, 'label' | 'descriptio
 };
 
 const FINDING_TITLE: Record<string, string> = {
+  booking_customer_missing_customer: 'Booking không tìm thấy hồ sơ khách hàng',
+  booking_customer_tenant_mismatch: 'Booking và khách hàng khác chi nhánh',
+  session_booking_missing_booking: 'Ca liệu trình không tìm thấy booking',
+  session_booking_tenant_mismatch: 'Ca liệu trình và booking khác chi nhánh',
   confirmed_revenue_non_positive: 'Khoản thu đã xác nhận nhưng số tiền không hợp lệ',
   package_revenue_missing_booking: 'Khoản thu gói dịch vụ chưa gắn với booking',
   revenue_booking_tenant_mismatch: 'Khoản thu và booking khác chi nhánh',
@@ -487,6 +506,7 @@ async function loadBusinessHealthDataset(supabase: SupabaseClient, tenantId: str
     inventoryLogs,
     journalEntries,
     accountingOutbox,
+    customers,
   ] = await Promise.all([
     queryRows<BookingRow>(
       supabase
@@ -568,6 +588,14 @@ async function loadBusinessHealthDataset(supabase: SupabaseClient, tenantId: str
         .limit(MAX_ROWS),
       'accounting_outbox'
     ),
+    queryRows<CustomerRow>(
+      supabase
+        .from('customers')
+        .select('id, tenant_id, name_mother, phone')
+        .eq('tenant_id', tenantId)
+        .limit(MAX_ROWS),
+      'customers'
+    ),
   ]);
 
   const journalLines = await loadJournalLines(supabase, journalEntries);
@@ -584,6 +612,7 @@ async function loadBusinessHealthDataset(supabase: SupabaseClient, tenantId: str
     journalEntries,
     journalLines,
     accountingOutbox,
+    customers,
   };
 }
 
@@ -634,6 +663,10 @@ function buildDetails(finding: InvariantFinding): BusinessHealthFindingDetail[] 
   addDetail(details, 'Bảng', finding.sourceTable);
   addDetail(details, 'Mã bản ghi', finding.recordId);
   addDetail(details, 'Booking', finding.bookingNumber ?? finding.bookingId);
+  addDetail(details, 'Tenant booking', finding.bookingTenantId);
+  addDetail(details, 'Khách hàng', finding.customerId);
+  addDetail(details, 'Tenant khách hàng', finding.customerTenantId);
+  addDetail(details, 'Tenant ca', finding.sessionTenantId);
   addDetail(details, 'KTV', finding.ktvId);
   addDetail(details, 'Khóa dữ liệu', finding.recordKey);
   addDetail(details, 'Outbox', finding.outboxId);

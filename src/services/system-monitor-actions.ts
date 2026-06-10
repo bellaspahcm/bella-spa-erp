@@ -52,6 +52,7 @@ export interface SystemMonitorSummary {
     cron_smoke_open_alerts: number;
     internal_worker_open_alerts: number;
     business_rule_open_alerts: number;
+    tenant_isolation_issues: number;
   };
 }
 
@@ -238,6 +239,8 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
   const cronSmokeOpenAlerts = openAlertRows.filter((row) => row.type === 'accounting_worker_cron_alert').length;
   const internalWorkerOpenAlerts = openAlertRows.filter((row) => row.type === 'accounting_worker_health_alert').length;
   const businessRuleOpenAlerts = openAlertRows.filter((row) => row.type === 'business_rule_health_alert').length;
+  const tenantIsolationGroup = businessHealth.groups.find((group) => group.id === 'tenant_data_isolation');
+  const tenantIsolationIssues = (tenantIsolationGroup?.critical_count ?? 0) + (tenantIsolationGroup?.warning_count ?? 0);
   const failedOutbox = accountingHealth.metrics.outbox_failed + accountingHealth.metrics.outbox_dead;
   const pendingOutbox = accountingHealth.metrics.outbox_pending + accountingHealth.metrics.outbox_processing;
 
@@ -316,6 +319,16 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
       href: '/dashboard/system-monitor',
     },
     {
+      id: 'tenant-data-isolation',
+      label: 'Cách ly Bella/Beauty',
+      status: tenantIsolationGroup?.critical_count ? 'critical' : tenantIsolationIssues > 0 ? 'warning' : 'healthy',
+      value: String(tenantIsolationIssues),
+      message: tenantIsolationIssues > 0
+        ? 'Có dữ liệu booking, khách hàng hoặc ca liệu trình đang lệch tenant; cần xử lý trước khi vận hành tiếp.'
+        : 'Không phát hiện booking, khách hàng hoặc ca liệu trình bị lẫn giữa các tenant.',
+      href: '/dashboard/accounting/health',
+    },
+    {
       id: 'outbox-blockers',
       label: 'Outbox failed/dead',
       status: failedOutbox > 0 ? 'critical' : pendingOutbox > 0 ? 'warning' : 'healthy',
@@ -392,6 +405,7 @@ export async function getSystemMonitorSummary(month?: string | null): Promise<Sy
       cron_smoke_open_alerts: cronSmokeOpenAlerts,
       internal_worker_open_alerts: internalWorkerOpenAlerts,
       business_rule_open_alerts: businessRuleOpenAlerts,
+      tenant_isolation_issues: tenantIsolationIssues,
     },
   };
 }
