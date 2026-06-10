@@ -89,6 +89,53 @@ async function assertRouteDoesNotLeak(
   }
 }
 
+async function sampleVisibleTextDuring(page: Page, action: () => Promise<void>): Promise<string> {
+  const samples: string[] = [];
+  let stopped = false;
+  const sampler = (async () => {
+    while (!stopped) {
+      samples.push(await page.locator("body").innerText({ timeout: 500 }).catch(() => ""));
+      await page.waitForTimeout(100).catch(() => {});
+    }
+  })();
+
+  try {
+    await action();
+    await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => {});
+    await page.waitForTimeout(500);
+  } finally {
+    stopped = true;
+    await sampler.catch(() => {});
+  }
+
+  return normalizeVietnamese(samples.join("\n"));
+}
+
+async function assertHardRefreshDoesNotFlashForbidden(
+  page: Page,
+  path: string,
+  expectedContent: RegExp,
+  forbiddenMarkers: string[],
+) {
+  await assertRouteDoesNotLeak(page, path, expectedContent, forbiddenMarkers);
+
+  const sampledText = await sampleVisibleTextDuring(page, async () => {
+    const response = await page.reload({ waitUntil: "domcontentloaded" });
+    expect(response?.status() ?? 0, `${path} reload must not return HTTP errors`).toBeLessThan(400);
+  });
+
+  await expect
+    .poll(
+      async () => normalizeVietnamese(await page.locator("body").innerText({ timeout: 5_000 }).catch(() => "")),
+      { message: `${path} should render expected content after hard refresh`, timeout: 25_000 },
+    )
+    .toMatch(expectedContent);
+
+  for (const marker of forbiddenMarkers) {
+    expect(sampledText, `${path} hard refresh must not flash "${marker}"`).not.toContain(normalizeVietnamese(marker));
+  }
+}
+
 async function cleanupTenantData(tenantId: string | null, ids: {
   customerId?: string;
   bookingId?: string;
@@ -306,6 +353,8 @@ test.describe("Bella HQ tenant isolation smoke", () => {
       "BEAUTY_DEMO_FRANCHISE_TEST",
     ];
     const beautyForbidden = [
+      "Bella Spa",
+      "Quản lý hồ sơ mẹ và bé",
       "Mẹ Leo",
       "Mẹ Tiên",
       "Bé Lu",
@@ -345,6 +394,12 @@ test.describe("Bella HQ tenant isolation smoke", () => {
       for (const route of branchRoutes) {
         await assertRouteDoesNotLeak(bellaPage, route.path, route.content, bellaForbidden);
       }
+      await assertHardRefreshDoesNotFlashForbidden(
+        bellaPage,
+        "/dashboard/customers",
+        /khach hang/i,
+        bellaForbidden,
+      );
     } finally {
       await bellaPage.context().close();
     }
@@ -354,6 +409,12 @@ test.describe("Bella HQ tenant isolation smoke", () => {
       for (const route of branchRoutes) {
         await assertRouteDoesNotLeak(beautyPage, route.path, route.content, beautyForbidden);
       }
+      await assertHardRefreshDoesNotFlashForbidden(
+        beautyPage,
+        "/dashboard/customers",
+        /khach hang/i,
+        beautyForbidden,
+      );
     } finally {
       await beautyPage.context().close();
     }

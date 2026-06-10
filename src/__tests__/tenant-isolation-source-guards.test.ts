@@ -73,11 +73,14 @@ describe('dashboard tenant isolation source guards', () => {
   it('does not fallback logged-in dashboard and booking views to babycare while tenant module is loading', () => {
     const dashboardSource = readSource('src/app/dashboard/page.tsx');
     const bookingsSource = readSource('src/app/dashboard/bookings/page.tsx');
+    const customersSource = readSource('src/app/dashboard/customers/page.tsx');
 
     expect(dashboardSource).not.toContain("tenantModuleKey ?? 'babycare'");
     expect(bookingsSource).not.toContain("tenantModuleKey ?? 'babycare'");
+    expect(customersSource).not.toContain("tenantModuleKey ?? 'babycare'");
     expect(dashboardSource).toContain('getTenantModulePresentationOrNeutral');
     expect(bookingsSource).toContain('Đang tải phân hệ dịch vụ');
+    expect(customersSource).toContain('getTenantModulePresentationOrNeutral(tenantModuleKey)');
   });
 
   it('passes tenant module context into session cards and details modal', () => {
