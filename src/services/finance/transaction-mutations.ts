@@ -86,11 +86,13 @@ async function deleteInsertedFinanceRow(
   supabase: SupabaseClient,
   table: 'expenses' | 'revenue',
   id: string,
+  tenantId: string,
 ) {
   const { error } = await supabase
     .from(table)
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('tenant_id', tenantId);
 
   return error?.message || '';
 }
@@ -469,7 +471,7 @@ export async function recordTransaction(data: {
           );
           assertOutboxEnqueued(enqueued, 'EXPENSE_RECORDED');
         } catch (outboxError) {
-          const rollbackError = await deleteInsertedFinanceRow(supabase, 'expenses', result.id);
+          const rollbackError = await deleteInsertedFinanceRow(supabase, 'expenses', result.id, tenantId);
           throw new Error(withRollbackFailure(outboxError, rollbackError));
         }
       }
@@ -545,7 +547,7 @@ export async function recordTransaction(data: {
           );
           assertOutboxEnqueued(enqueued, 'REFUND_ISSUED');
         } catch (outboxError) {
-          const rollbackError = await deleteInsertedFinanceRow(supabase, 'revenue', result.id);
+          const rollbackError = await deleteInsertedFinanceRow(supabase, 'revenue', result.id, tenantId);
           throw new Error(withRollbackFailure(outboxError, rollbackError));
         }
       } else if (dbStatus === 'confirmed' && result && isPackageSaleRevenueType(dbRevenueType)) {
@@ -563,7 +565,7 @@ export async function recordTransaction(data: {
           );
           assertOutboxEnqueued(enqueued, 'PACKAGE_SALE');
         } catch (outboxError) {
-          const rollbackError = await deleteInsertedFinanceRow(supabase, 'revenue', result.id);
+          const rollbackError = await deleteInsertedFinanceRow(supabase, 'revenue', result.id, tenantId);
           throw new Error(withRollbackFailure(outboxError, rollbackError));
         }
       }

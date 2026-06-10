@@ -86,6 +86,7 @@ type DbCall = {
   table: string;
   op: ScriptedResult['op'];
   payload?: unknown;
+  filters: Array<{ method: string; args: unknown[] }>;
 };
 
 class ScriptedQueryBuilder {
@@ -100,30 +101,34 @@ class ScriptedQueryBuilder {
   select() {
     if (!this.op) {
       this.op = 'select';
-      this.calls.push({ table: this.table, op: 'select' });
+      this.calls.push({ table: this.table, op: 'select', filters: [] });
     }
     return this;
   }
 
   update(payload: unknown) {
     this.op = 'update';
-    this.calls.push({ table: this.table, op: 'update', payload });
+    this.calls.push({ table: this.table, op: 'update', payload, filters: [] });
     return this;
   }
 
   insert(payload: unknown) {
     this.op = 'insert';
-    this.calls.push({ table: this.table, op: 'insert', payload });
+    this.calls.push({ table: this.table, op: 'insert', payload, filters: [] });
     return this;
   }
 
   delete() {
     this.op = 'delete';
-    this.calls.push({ table: this.table, op: 'delete' });
+    this.calls.push({ table: this.table, op: 'delete', filters: [] });
     return this;
   }
 
-  eq() { return this; }
+  eq(...args: unknown[]) {
+    const currentCall = this.calls[this.calls.length - 1];
+    currentCall?.filters.push({ method: 'eq', args });
+    return this;
+  }
 
   single() {
     return this.resolve();
@@ -376,6 +381,10 @@ describe('finance transaction mutation outbox rollbacks', () => {
     ).rejects.toThrow('Failed to enqueue PACKAGE_SALE accounting event');
 
     expect(calls.map(c => `${c.table}.${c.op}`)).toEqual(['revenue.insert', 'revenue.delete']);
+    expect(calls.find(c => c.table === 'revenue' && c.op === 'delete')?.filters).toEqual([
+      { method: 'eq', args: ['id', 'rev-new'] },
+      { method: 'eq', args: ['tenant_id', 'tenant-1'] },
+    ]);
   });
 
   it('reports rollback failure when deleting inserted confirmed revenue fails after outbox failure', async () => {
@@ -645,7 +654,7 @@ describe('finance transaction mutation outbox rollbacks', () => {
 
   it('reports rollback failure when deleting inserted expense fails after outbox failure', async () => {
     mockEnqueueWithAutoClient.mockRejectedValueOnce(new Error('record expense outbox failed'));
-    installScriptedSupabase([
+    const calls = installScriptedSupabase([
       {
         table: 'expenses',
         op: 'insert',
@@ -669,6 +678,11 @@ describe('finance transaction mutation outbox rollbacks', () => {
         status: 'confirmed',
       })
     ).rejects.toThrow(/record expense outbox failed.*rollback failed: delete failed/i);
+
+    expect(calls.find(c => c.table === 'expenses' && c.op === 'delete')?.filters).toEqual([
+      { method: 'eq', args: ['id', 'exp-new'] },
+      { method: 'eq', args: ['tenant_id', 'tenant-1'] },
+    ]);
   });
 
   it('restores salary record and expense state when salary paid outbox enqueue returns false', async () => {
