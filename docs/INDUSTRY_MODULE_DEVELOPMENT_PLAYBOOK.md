@@ -59,7 +59,7 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | Test blind spot | Co loi UI/data da sua thu cong nhung chua co guard | Test chua khoa dung invariant moi | Sau moi loi production/UI, them test guard nho nhat co the |
 | Retry duplicate | Webhook/cron/worker chay lai co nguy co nhan doi doanh thu/chi phi/but toan | Luong nhan event ngoai he thong thieu idempotency key hoac unique guard | Moi webhook/worker/sync phai co idempotency guard va test retry 2 lan |
 | Partial side effects | Action nhieu buoc loi giua chung nhung trang thai da bi cap nhat mot phan | Thieu transaction, snapshot rollback, hoac fail-closed contract | Multi-step write phai atomic hoac rollback ve snapshot khi bat ky buoc nao loi |
-| Direct ledger writes | Module nganh moi tu ghi `journal_entries`/`journal_lines` | Bo qua accounting outbox va worker TT133 | Phat sinh tai chinh phai day event qua accounting outbox, khong ghi so cai truc tiep |
+| Direct ledger writes | Module nganh moi tu ghi `journal_entries`/`journal_lines` | Bo qua accounting outbox va worker TT133 | Phat sinh tai chinh phai day event qua accounting outbox, khong ghi so cai truc tiep; guard bang `src/__tests__/accounting-ledger-boundary.test.ts` |
 | Token silent failure | Token Zalo/Meta/Telegram/CRM loi nhung UI/action van coi nhu rong/null | Credential refresh/lookup nuot loi hoac fallback gia | Token tich hop phai tenant-scoped, encrypted/hidden va loi phai bao ro |
 
 ## Vong Doi Bat Buoc Cho Mot Phan He Nganh Moi
@@ -158,6 +158,7 @@ Quy tac accounting outbox:
 - Accounting worker la noi xu ly tuan tu mapping TT133 va tao but toan so cai.
 - Payload phai co `tenant_id`, `event_type`, `reference_type`, `reference_id`, amount/currency, metadata can thiet va idempotency key.
 - Test bat buoc assert ca outbox record lan but toan/side effect cuoi cung khi worker xu ly.
+- Boundary nay duoc khoa bang `src/__tests__/accounting-ledger-boundary.test.ts`: chi `AccountingEngineService` duoc ghi truc tiep vao bang so cai.
 
 Neu phat hien logic lap lai qua 2-3 noi va co rui ro sai tien/ton kho/luong/accounting, moi duoc gom thanh rule engine. Khong tao engine chi vi muon "cho dep".
 
@@ -255,6 +256,7 @@ Mot phan he nganh moi chi duoc xem la xong khi:
 - Webhook/worker/sync lien quan co idempotency guard va test retry.
 - Multi-step action lien quan tien/kho/luong/accounting co transaction hoac rollback/fail-closed.
 - Phat sinh tai chinh di qua accounting outbox, khong ghi truc tiep vao so cai.
+- `src/__tests__/accounting-ledger-boundary.test.ts` pass neu co thay doi lien quan accounting/module nganh moi.
 - Token/API key tich hop tenant-scoped, khong leak ra UI va khong nuot loi refresh/read.
 - Demo tenant co the tao va xoa sach.
 - Test guard cho loi da sua da duoc commit.
