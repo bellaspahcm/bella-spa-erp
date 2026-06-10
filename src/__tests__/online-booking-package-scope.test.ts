@@ -40,6 +40,8 @@ describe('online booking package scope', () => {
   });
 
   it('blocks public online bookings before customer side effects when the package module is not enabled', async () => {
+    let tenantLookupCount = 0;
+
     mockFrom.mockImplementation((table: string) => {
       if (table === 'packages') {
         return createSingleRowBuilder({
@@ -51,9 +53,13 @@ describe('online booking package scope', () => {
       }
 
       if (table === 'tenants') {
+        tenantLookupCount += 1;
         return createSingleRowBuilder({
           id: 'tenant-a',
-          enabled_modules: { babycare: false, beauty_spa: true },
+          status: 'active',
+          enabled_modules: tenantLookupCount === 1
+            ? { babycare: true, beauty_spa: false }
+            : { babycare: false, beauty_spa: true },
         });
       }
 
@@ -71,6 +77,34 @@ describe('online booking package scope', () => {
     expect(result.error).toContain('Admin HQ');
     expect(mockFrom).toHaveBeenCalledWith('packages');
     expect(mockFrom).toHaveBeenCalledWith('tenants');
+    expect(mockFrom).not.toHaveBeenCalledWith('customers');
+    expect(mockFrom).not.toHaveBeenCalledWith('bookings');
+  });
+
+  it('blocks public online bookings when the configured public tenant is not babycare', async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'tenants') {
+        return createSingleRowBuilder({
+          id: 'tenant-a',
+          status: 'active',
+          enabled_modules: { babycare: false, beauty_spa: true },
+        });
+      }
+
+      return createSingleRowBuilder({ id: 'unexpected' });
+    });
+
+    const result = await submitOnlineBooking({
+      name_mother: 'Nguyen Thi A',
+      phone: '0901234567',
+      start_date: '2026-06-10',
+      package_id: 'pkg-babycare',
+      package_name: 'Babycare Package',
+    });
+
+    expect(result.error).toContain('Me & Be');
+    expect(mockFrom).toHaveBeenCalledWith('tenants');
+    expect(mockFrom).not.toHaveBeenCalledWith('packages');
     expect(mockFrom).not.toHaveBeenCalledWith('customers');
     expect(mockFrom).not.toHaveBeenCalledWith('bookings');
   });
