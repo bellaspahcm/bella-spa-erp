@@ -7,6 +7,7 @@ import {
   triggerBatchReminders,
   triggerZaloReminder,
 } from '@/services/crm-actions';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { CrmZaloConfig } from '../types';
 
 interface ZaloBatchSuccess {
@@ -19,9 +20,10 @@ interface ZaloBatchSuccess {
 interface UseCrmPageActionsInput {
   loadData: () => Promise<void>;
   zaloConfig: CrmZaloConfig;
+  tenantModuleKey?: TenantModuleKey | null;
 }
 
-export function useCrmPageActions({ loadData, zaloConfig }: UseCrmPageActionsInput) {
+export function useCrmPageActions({ loadData, zaloConfig, tenantModuleKey }: UseCrmPageActionsInput) {
   const [scanning, setScanning] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -68,15 +70,18 @@ export function useCrmPageActions({ loadData, zaloConfig }: UseCrmPageActionsInp
     }
   }, [loadData]);
 
-  const handleSendBirthday = useCallback(async (customerId: string, babyName: string) => {
-    const voucherCode = 'BELLA_BABY_1ST';
+  const handleSendBirthday = useCallback(async (customerId: string, customerDisplayName: string) => {
+    const voucherCode = tenantModuleKey === 'babycare' ? 'BELLA_BABY_1ST' : 'SPA_BIRTHDAY_10';
     setActionLoading(customerId);
     try {
       const res = await sendBirthdayGreeting(customerId, voucherCode);
       if (res.error) {
         alert(res.error);
       } else {
-        alert(`Đã gửi lời chúc mừng sinh nhật bé ${babyName} và gửi kèm voucher ${voucherCode} thành công!`);
+        const successMessage = tenantModuleKey === 'babycare'
+          ? `Đã gửi lời chúc mừng sinh nhật bé ${customerDisplayName} và gửi kèm voucher ${voucherCode} thành công!`
+          : `Đã gửi lời chúc mừng sinh nhật khách hàng ${customerDisplayName} và gửi kèm voucher ${voucherCode} thành công!`;
+        alert(successMessage);
         await loadData();
       }
     } catch (error) {
@@ -85,7 +90,7 @@ export function useCrmPageActions({ loadData, zaloConfig }: UseCrmPageActionsInp
     } finally {
       setActionLoading(null);
     }
-  }, [loadData]);
+  }, [loadData, tenantModuleKey]);
 
   const handleSaveConfig = useCallback(async () => {
     setActionLoading('save_zalo_config');

@@ -1,6 +1,7 @@
 'use client';
 
 import type { FormEvent } from 'react';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { parsePercentInput } from '@/lib/utils';
 import type { NewVoucherCampaign } from '../types';
 
@@ -9,9 +10,38 @@ interface CrmVoucherModalProps {
   onChange: (voucher: NewVoucherCampaign) => void;
   onClose: () => void;
   onSubmit: (event: FormEvent) => void;
+  tenantModuleKey?: TenantModuleKey | null;
 }
 
-export function CrmVoucherModal({ newVoucher, onChange, onClose, onSubmit }: CrmVoucherModalProps) {
+const BABYCARE_TARGET_OPTIONS = [
+  'Bé tròn 1 tuổi',
+  'Mẹ bầu sắp sinh',
+  'Trẻ sơ sinh',
+  'Khách hàng cũ kích hoạt lại',
+];
+
+const BEAUTY_TARGET_OPTIONS = [
+  'Khách chăm sóc da định kỳ',
+  'Khách liệu trình body',
+  'Khách công nghệ cao',
+  'Khách hàng cũ kích hoạt lại',
+];
+
+const NEUTRAL_TARGET_OPTIONS = [
+  'Khách cần chăm sóc lại',
+  'Khách hàng thân thiết',
+  'Khách quan tâm dịch vụ mới',
+  'Khách hàng cũ kích hoạt lại',
+];
+
+export function CrmVoucherModal({ newVoucher, onChange, onClose, onSubmit, tenantModuleKey }: CrmVoucherModalProps) {
+  const voucherTargetOptions = tenantModuleKey === 'babycare'
+    ? BABYCARE_TARGET_OPTIONS
+    : tenantModuleKey === 'beauty_spa'
+      ? BEAUTY_TARGET_OPTIONS
+      : NEUTRAL_TARGET_OPTIONS;
+  const codePlaceholder = tenantModuleKey === 'babycare' ? 'Ví dụ: WELCOME_BABY_15' : 'Ví dụ: SKINCARE_15';
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
       <div className="bg-white p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-300">
@@ -23,7 +53,7 @@ export function CrmVoucherModal({ newVoucher, onChange, onClose, onSubmit }: Crm
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Mã voucher</label>
             <input
               type="text"
-              placeholder="Ví dụ: WELCOME_BABY_15"
+              placeholder={codePlaceholder}
               required
               value={newVoucher.code}
               onChange={(event) => onChange({ ...newVoucher, code: event.target.value.toUpperCase() })}
@@ -51,10 +81,9 @@ export function CrmVoucherModal({ newVoucher, onChange, onClose, onSubmit }: Crm
               onChange={(event) => onChange({ ...newVoucher, target: event.target.value })}
               className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-100 focus:outline-none focus:border-rose-100 text-sm font-semibold"
             >
-              <option value="Bé tròn 1 tuổi">Bé tròn 1 tuổi</option>
-              <option value="Mẹ bầu sắp sinh">Mẹ bầu sắp sinh</option>
-              <option value="Trẻ sơ sinh">Trẻ sơ sinh</option>
-              <option value="Khách hàng cũ kích hoạt lại">Khách hàng cũ kích hoạt lại</option>
+              {voucherTargetOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
             </select>
           </div>
 

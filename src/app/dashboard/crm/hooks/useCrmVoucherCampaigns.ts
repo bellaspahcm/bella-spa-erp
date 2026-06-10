@@ -6,18 +6,35 @@ import {
   buildVoucherPromotionPayload,
   normalizePromotionDiscountPercent,
 } from '@/lib/business-rules/promotion';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { createPromotion, getPromotions } from '@/services/promotions-actions';
 import type { Database } from '@/types/database.types';
 import type { NewVoucherCampaign, VoucherCampaign } from '../types';
 
-const DEFAULT_VOUCHER_TARGET = 'Bé tròn 1 tuổi';
+const BABYCARE_DEFAULT_VOUCHER_TARGET = 'Bé tròn 1 tuổi';
+const BEAUTY_DEFAULT_VOUCHER_TARGET = 'Khách chăm sóc da định kỳ';
+const NEUTRAL_DEFAULT_VOUCHER_TARGET = 'Khách cần chăm sóc lại';
 
-const DEFAULT_NEW_VOUCHER: NewVoucherCampaign = {
-  code: '',
-  discount: 10,
-  target: DEFAULT_VOUCHER_TARGET,
-  status: 'active',
-};
+const MODULE_DEFAULT_TARGETS = new Set([
+  BABYCARE_DEFAULT_VOUCHER_TARGET,
+  BEAUTY_DEFAULT_VOUCHER_TARGET,
+  NEUTRAL_DEFAULT_VOUCHER_TARGET,
+]);
+
+function getDefaultVoucherTarget(moduleKey: TenantModuleKey | null | undefined) {
+  if (moduleKey === 'babycare') return BABYCARE_DEFAULT_VOUCHER_TARGET;
+  if (moduleKey === 'beauty_spa') return BEAUTY_DEFAULT_VOUCHER_TARGET;
+  return NEUTRAL_DEFAULT_VOUCHER_TARGET;
+}
+
+function createDefaultNewVoucher(moduleKey: TenantModuleKey | null | undefined): NewVoucherCampaign {
+  return {
+    code: '',
+    discount: 10,
+    target: getDefaultVoucherTarget(moduleKey),
+    status: 'active',
+  };
+}
 
 type PromotionRow = Database['public']['Tables']['promotions']['Row'];
 
@@ -36,12 +53,12 @@ function promotionToVoucher(promotion: PromotionRow): VoucherCampaign {
   };
 }
 
-export function useCrmVoucherCampaigns() {
+export function useCrmVoucherCampaigns(tenantModuleKey?: TenantModuleKey | null) {
   const [vouchers, setVouchers] = useState<VoucherCampaign[]>([]);
   const [isLoadingVouchers, setIsLoadingVouchers] = useState(true);
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [isVoucherModalOpen, setIsVoucherModalOpen] = useState(false);
-  const [newVoucher, setNewVoucher] = useState<NewVoucherCampaign>(DEFAULT_NEW_VOUCHER);
+  const [newVoucher, setNewVoucher] = useState<NewVoucherCampaign>(() => createDefaultNewVoucher(tenantModuleKey));
 
   const loadVouchers = useCallback(async () => {
     setIsLoadingVouchers(true);
@@ -64,6 +81,16 @@ export function useCrmVoucherCampaigns() {
 
     return () => window.clearTimeout(timeoutId);
   }, [loadVouchers]);
+
+  useEffect(() => {
+    setNewVoucher((current) => {
+      if (current.code.trim() || !MODULE_DEFAULT_TARGETS.has(current.target)) {
+        return current;
+      }
+
+      return { ...current, target: getDefaultVoucherTarget(tenantModuleKey) };
+    });
+  }, [tenantModuleKey]);
 
   const openVoucherModal = useCallback(() => {
     setIsVoucherModalOpen(true);
@@ -90,9 +117,9 @@ export function useCrmVoucherCampaigns() {
     }
 
     setIsVoucherModalOpen(false);
-    setNewVoucher(DEFAULT_NEW_VOUCHER);
+    setNewVoucher(createDefaultNewVoucher(tenantModuleKey));
     await loadVouchers();
-  }, [loadVouchers, newVoucher]);
+  }, [loadVouchers, newVoucher, tenantModuleKey]);
 
   return {
     vouchers,

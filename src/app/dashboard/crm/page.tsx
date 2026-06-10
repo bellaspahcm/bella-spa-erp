@@ -11,6 +11,7 @@ import { CrmRemindersTab } from './components/CrmRemindersTab';
 import { CrmTabs } from './components/CrmTabs';
 import { CrmVoucherModal } from './components/CrmVoucherModal';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { useCrmPageActions } from './hooks/useCrmPageActions';
 import { useCrmPageData } from './hooks/useCrmPageData';
 import { useCrmVoucherCampaigns } from './hooks/useCrmVoucherCampaigns';
@@ -18,6 +19,7 @@ import type { CrmTabId } from './types';
 
 export default function CRMPage() {
   const [activeTab, setActiveTab] = useState<CrmTabId>('overview');
+  const { tenantModuleKey } = useTenantModuleKey();
   const {
     stats,
     upcomingSessions,
@@ -36,7 +38,7 @@ export default function CRMPage() {
     handleSendSingleReminder,
     handleSendBirthday,
     handleSaveConfig,
-  } = useCrmPageActions({ loadData, zaloConfig });
+  } = useCrmPageActions({ loadData, zaloConfig, tenantModuleKey });
   const {
     vouchers,
     isLoadingVouchers,
@@ -47,7 +49,7 @@ export default function CRMPage() {
     openVoucherModal,
     closeVoucherModal,
     handleCreateVoucher,
-  } = useCrmVoucherCampaigns();
+  } = useCrmVoucherCampaigns(tenantModuleKey);
 
   usePageRefresh(loadData);
 
@@ -92,6 +94,7 @@ export default function CRMPage() {
               upcomingSessions={upcomingSessions}
               loadError={loadError}
               actionLoading={actionLoading}
+              tenantModuleKey={tenantModuleKey}
               onSendSingleReminder={handleSendSingleReminder}
             />
           )}
@@ -104,6 +107,7 @@ export default function CRMPage() {
               voucherError={voucherError}
               isLoadingVouchers={isLoadingVouchers}
               actionLoading={actionLoading}
+              tenantModuleKey={tenantModuleKey}
               onSendBirthday={handleSendBirthday}
               onOpenVoucherModal={openVoucherModal}
             />
@@ -121,6 +125,7 @@ export default function CRMPage() {
           onChange={setNewVoucher}
           onClose={closeVoucherModal}
           onSubmit={handleCreateVoucher}
+          tenantModuleKey={tenantModuleKey}
         />
       )}
     </div>
