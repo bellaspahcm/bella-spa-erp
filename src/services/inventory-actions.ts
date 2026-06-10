@@ -194,7 +194,7 @@ export async function getInventoryLogs(limit = 50) {
   const { data, error } = await supabase
     .from('inventory_logs')
     .select(`
-      id, change_amount, reason, notes, created_at,
+      id, change_amount, reason, notes, created_at, tenant_id,
       inventory_items!inventory_logs_item_id_fkey(name, unit)
     `)
     .eq('tenant_id', tenantId)
@@ -216,7 +216,7 @@ export async function getInventoryLogsByDateRange(dateFrom: string, dateTo: stri
   const { data, error } = await supabase
     .from('inventory_logs')
     .select(`
-      id, change_amount, reason, notes, created_at,
+      id, change_amount, reason, notes, created_at, tenant_id,
       inventory_items!inventory_logs_item_id_fkey(name, unit)
     `)
     .eq('tenant_id', tenantId)

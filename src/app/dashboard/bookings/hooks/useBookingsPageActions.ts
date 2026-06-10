@@ -3,11 +3,10 @@
 import { type FormEvent, useState } from 'react';
 import { toast } from 'sonner';
 
-import { createClient } from '@/lib/supabase-client';
 import { calculateBookingPaymentState } from '@/lib/business-rules/payment';
 import { getLocalDateString } from '@/lib/utils';
 import { createSessionLog, rescheduleSession, updateSessionLog } from '@/modules/booking/actions/session-actions';
-import { getBookingDetailsWithPayment } from '@/modules/booking/actions/lifecycle-actions';
+import { getBookingDetailsWithPayment, updateBooking } from '@/modules/booking/actions/lifecycle-actions';
 
 import type { BookingModalData } from '../components/BookingDayDetailModal';
 
@@ -106,15 +105,10 @@ export function useBookingsPageActions({
         }
       }
 
-      const supabase = createClient();
       if (modalData.ktvId) {
-        const { error } = await supabase
-          .from('bookings')
-          .update({ assigned_ktv_id: modalData.ktvId })
-          .eq('id', modalData.bookingId);
-
-        if (error) {
-          throw error;
+        const updateResult = await updateBooking(modalData.bookingId, { assigned_ktv_id: modalData.ktvId });
+        if (updateResult.error) {
+          throw new Error(updateResult.error);
         }
       }
 
