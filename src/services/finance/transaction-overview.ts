@@ -12,16 +12,22 @@ export async function getFinancialOverview() {
   if (currentUser?.role?.toLowerCase() === 'ktv') {
     return { totalBalance: 0, totalRevenueMonth: 0, totalExpenseMonth: 0, transactions: [] };
   }
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    throw new Error('[getFinancialOverview] Missing tenantId for current user');
+  }
 
   const [revenueResponse, expensesResponse] = await Promise.all([
     supabase
       .from('revenue')
       .select(`id, booking_id, amount, revenue_type, payment_method, received_date, status, notes,
                bookings(package_name, customers(name_mother, name_baby))`)
+      .eq('tenant_id', tenantId)
       .order('received_date', { ascending: false }),  // ✓ received_date exists
     supabase
       .from('expenses')
       .select('id, category, amount, description, expense_date, status')
+      .eq('tenant_id', tenantId)
       .order('expense_date', { ascending: false })    // ✓ expense_date exists
   ]);
 

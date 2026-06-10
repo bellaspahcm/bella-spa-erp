@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { createClient } from '@/lib/supabase-client';
 import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
-import { getCalendarSessions } from '@/modules/booking/actions/session-actions';
+import { getCalendarSessions, getSessionLogs } from '@/modules/booking/actions/session-actions';
 import { getUsers } from '@/services/user-actions';
 
 import type { BookingOption } from '../components/BookingCreateScheduleModal';
@@ -55,14 +55,8 @@ export function useBookingsPageData() {
   }, []);
 
   const fetchSessionHistory = useCallback(async (bookingId: string) => {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('session_logs')
-      .select('*')
-      .eq('booking_id', bookingId)
-      .order('session_number', { ascending: false });
-
-    setSessionHistory(data || []);
+    const data = await getSessionLogs(bookingId);
+    setSessionHistory((data || []).slice().sort((a, b) => (b.session_number || 0) - (a.session_number || 0)));
   }, []);
 
   const refreshBookingsPage = useCallback(async () => {
