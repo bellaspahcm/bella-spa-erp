@@ -7,6 +7,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # Project Knowledge Entry Points
 - Trước khi làm việc diện rộng, bắt đầu từ `docs/index.md`.
 - Với AI agent onboarding và lưu trữ context, làm theo `docs/AI_AGENT_ONBOARDING.md` và `docs/KNOWLEDGE_STORAGE_PROCESS.md`.
+- Khi khởi tạo, mở rộng, sửa lỗi hoặc thương mại hóa phân hệ ngành mới như Beauty Spa, bắt buộc đọc và cập nhật `docs/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md` để không lặp lại lỗi tenant/module/brand/demo data/accounting/UI đã gặp.
 
 # CRITICAL BELLA ERP DEVELOPMENT & TESTING RULES
 

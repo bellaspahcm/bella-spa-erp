@@ -25,6 +25,7 @@ Không thực hiện thay đổi kiến trúc rộng nếu chưa ghi rõ intent 
 | --- | --- |
 | Người mới hoặc AI agent bắt đầu | `docs/AI_AGENT_ONBOARDING.md` |
 | Quy tắc lưu trữ context và handoff | `docs/KNOWLEDGE_STORAGE_PROCESS.md` |
+| Quy trình phát triển phân hệ ngành mới, bài học Beauty Spa và checklist chống lặp lỗi | `docs/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md` |
 | Roadmap tách core platform đa ngành | `docs/plans/core-platform-extraction-roadmap.md` |
 | Nhật ký phát triển theo ngày | `docs/DEVELOPMENT_LOG.md` |
 | Một lát cắt triển khai cụ thể | `docs/implementation-artifacts/spec-*.md` |
