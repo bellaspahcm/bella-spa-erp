@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { getSupabase } from '@/lib/supabase-client';
 import { getLocalDateString } from '@/lib/utils';
 import {
   createInventoryRequest,
@@ -14,6 +13,8 @@ import {
 } from '@/services/inventory-transfer-actions';
 import {
   addInventoryItem,
+  getInventoryItems,
+  getInventoryLogs,
   getMonthlyReconciliation,
   restockItem,
   saveMonthlyReconciliation,
@@ -84,23 +85,13 @@ export function useInventoryPageState() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const sb = getSupabase();
-      const [itemsRes, logsRes] = await Promise.all([
-        sb.from('inventory_items').select('*').order('name'),
-        sb.from('inventory_logs')
-          .select(`
-            id, change_amount, reason, notes, created_at, tenant_id,
-            inventory_items!inventory_logs_item_id_fkey(name, unit)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(200),
+      const [itemsData, logsData] = await Promise.all([
+        getInventoryItems(),
+        getInventoryLogs(200),
       ]);
 
-      if (itemsRes.error) throw new Error(`[inventory] items: ${itemsRes.error.message}`);
-      if (logsRes.error) throw new Error(`[inventory] logs: ${logsRes.error.message}`);
-
-      setItems(itemsRes.data || []);
-      setLogs((logsRes.data || []) as InventoryLog[]);
+      setItems(itemsData || []);
+      setLogs((logsData || []) as InventoryLog[]);
     } catch (error) {
       console.error('[fetchData]', error);
       toast.error(getErrorMessage(error, 'Lỗi tải dữ liệu kho'));

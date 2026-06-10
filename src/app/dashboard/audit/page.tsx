@@ -554,13 +554,32 @@ export default function AuditPage() {
       const session = await resolveAuditSession();
       if (session.status === 'missing') return;
 
-      const { data: users, error: usersError } = await supabase.from('users').select('id, full_name');
+      const { data: userData, error: userDataError } = await supabase
+        .from('users')
+        .select('tenant_id')
+        .eq('id', session.userId)
+        .single();
+      if (userDataError) throw userDataError;
+      if (!userData?.tenant_id) return;
+
+      const tenantId = userData.tenant_id;
+
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, full_name')
+        .eq('tenant_id', tenantId);
       if (usersError) throw usersError;
 
-      const { data: packages, error: packagesError } = await supabase.from('packages').select('id, name');
+      const { data: packages, error: packagesError } = await supabase
+        .from('packages')
+        .select('id, name')
+        .eq('tenant_id', tenantId);
       if (packagesError) throw packagesError;
 
-      const { data: customers, error: customersError } = await supabase.from('customers').select('id, name_mother, name_baby');
+      const { data: customers, error: customersError } = await supabase
+        .from('customers')
+        .select('id, name_mother, name_baby')
+        .eq('tenant_id', tenantId);
       if (customersError) throw customersError;
       
       const uMap: Record<string, string> = {};
