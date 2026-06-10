@@ -5,6 +5,16 @@
 
 ---
 
+### 10/06/2026: Industry Module Development Playbook
+* **Muc tieu van hanh**:
+  * Luu lai bai hoc khoi tao, phat sinh loi va sua loi cua phan he Beauty Spa de cac phan he nganh moi khong lap lai loi tenant/module/brand/demo data/accounting/UI.
+  * Bien kinh nghiem Beauty Spa thanh quy trinh bat buoc cho AI agent va developer truoc khi mo rong sang nganh moi.
+* **Thay doi chinh**:
+  * Them `docs/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md`.
+  * Gan playbook vao `AGENTS.md` va `docs/index.md` de thanh entry point bat buoc.
+* **Kiem tra**:
+  * Thay doi chi la tai lieu/quy tac, khong doi runtime.
+
 ### 08/06/2026: Standardize Promotion Voucher Rules
 * **Muc tieu rule nho**:
   * Gom normalize/validate voucher code, phan tram giam gia va khoang ngay khuyen mai vao helper thuan.
