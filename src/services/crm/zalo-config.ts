@@ -40,7 +40,7 @@ export async function getZaloConfig(): Promise<ZaloConfig> {
 
   const { data, error } = await supabase
     .from('tenants')
-    .select('zalo_app_id, zalo_secret_key, zalo_oa_id, zalo_access_token, zalo_refresh_token, zalo_token_expires_at, zalo_template_reminder_id, zalo_template_birthday_id, zalo_auto_scan')
+    .select('zalo_app_id, zalo_oa_id, zalo_token_expires_at, zalo_template_reminder_id, zalo_template_birthday_id, zalo_auto_scan')
     .eq('id', tenantId)
     .limit(1);
 
@@ -56,10 +56,10 @@ export async function getZaloConfig(): Promise<ZaloConfig> {
 
   return {
     zalo_app_id: tenant.zalo_app_id || '',
-    zalo_secret_key: decrypt(tenant.zalo_secret_key || ''),
+    zalo_secret_key: '',
     zalo_oa_id: tenant.zalo_oa_id || '',
-    zalo_access_token: decrypt(tenant.zalo_access_token || ''),
-    zalo_refresh_token: decrypt(tenant.zalo_refresh_token || ''),
+    zalo_access_token: '',
+    zalo_refresh_token: '',
     zalo_token_expires_at: tenant.zalo_token_expires_at || '',
     zalo_template_reminder_id: tenant.zalo_template_reminder_id || '',
     zalo_template_birthday_id: tenant.zalo_template_birthday_id || '',
@@ -78,15 +78,16 @@ export async function saveZaloConfig(config: Partial<ZaloConfig>) {
 
   try {
     // Encrypt sensitive credential fields before saving to DB
-    const encryptedConfig = { ...config };
-    if (config.zalo_secret_key) {
-      encryptedConfig.zalo_secret_key = encrypt(config.zalo_secret_key);
-    }
-    if (config.zalo_access_token) {
-      encryptedConfig.zalo_access_token = encrypt(config.zalo_access_token);
-    }
-    if (config.zalo_refresh_token) {
-      encryptedConfig.zalo_refresh_token = encrypt(config.zalo_refresh_token);
+    const encryptedConfig: Partial<ZaloConfig> = { ...config };
+    const sensitiveFields = ['zalo_secret_key', 'zalo_access_token', 'zalo_refresh_token'] as const;
+
+    for (const field of sensitiveFields) {
+      const value = config[field];
+      if (typeof value === 'string' && value.trim()) {
+        encryptedConfig[field] = encrypt(value.trim());
+      } else {
+        delete encryptedConfig[field];
+      }
     }
 
     const { error } = await supabase
