@@ -35,8 +35,7 @@ UserPlus,
 X
 } from 'lucide-react';
 
-import { createClient as createBrowserClient } from '@/lib/supabase-client';
-import { createCustomer,deleteCustomer,updateCustomer } from '@/services/customer-actions';
+import { createCustomer,deleteCustomer,getCustomers,updateCustomer } from '@/services/customer-actions';
 import type { Database } from '@/types/database.types';
 import {
   isActiveCareBooking,
@@ -118,12 +117,7 @@ export default function CustomersPage() {
     setIsLoading(true);
     setIsSyncing(true);
     try {
-      const supabase = createBrowserClient();
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care, status, total_sessions, completed_sessions, revenue(amount, status, revenue_type))')
-        .order('name_mother', { ascending: true });
-      if (error) throw error;
+      const data = await getCustomers();
       
       const enrichedCustomers = ((data || []) as CustomerListItem[]).map((c) => {
         const displayBooking = selectCustomerDisplayBooking(c.bookings);

@@ -340,9 +340,9 @@ export async function getCustomers() {
 
   const { data, error } = await supabase
     .from('customers')
-    .select('*')
+    .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care, status, total_sessions, completed_sessions, revenue(amount, status, revenue_type))')
     .eq('tenant_id', tenantId)
-    .order('created_at', { ascending: false });
+    .order('name_mother', { ascending: true });
   
   if (error) {
     throw new Error(`Failed to fetch customers: ${error.message}`);

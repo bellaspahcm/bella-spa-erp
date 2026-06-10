@@ -42,10 +42,18 @@ function parseDateParts(dateString: string): [number, number, number] {
 export async function getSessionLogs(bookingId: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const { getCurrentUser } = await import('@/services/user-actions');
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    throw new Error('Failed to fetch session logs: missing tenant scope');
+  }
+
   const { data, error } = await supabase
     .from('session_logs')
     .select('*, ktv:users!session_logs_completed_by_ktv_id_fkey(full_name)')
     .eq('booking_id', bookingId)
+    .eq('tenant_id', tenantId)
     .order('session_number', { ascending: true });
 
   if (error) {
@@ -64,6 +72,10 @@ export async function getSessionsWithDetails() {
   const supabase = await createClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    throw new Error('Failed to fetch sessions with details: missing tenant scope');
+  }
 
   let query = supabase
     .from('bookings')
@@ -75,6 +87,7 @@ export async function getSessionsWithDetails() {
       packages!bookings_package_id_fkey(name, module_key, service_category),
       session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, start_time, end_time, status, notes, rating, rating_comment, completed_by_ktv_id, ktv:users!session_logs_completed_by_ktv_id_fkey(id, full_name), duration_warning_type, ktv_checkout_note, standard_duration, actual_duration, time_deviation)
     `)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   if (currentUser?.role?.toLowerCase() === 'ktv') {
@@ -146,6 +159,10 @@ export async function getCalendarSessions() {
   
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id;
+  if (!tenantId) {
+    throw new Error('Failed to fetch calendar sessions: missing tenant scope');
+  }
 
   let query = supabase
     .from('session_logs')
@@ -167,6 +184,7 @@ export async function getCalendarSessions() {
         )
       )
     `)
+    .eq('tenant_id', tenantId)
     .order('booking_id', { ascending: true })
     .order('session_number', { ascending: true });
 

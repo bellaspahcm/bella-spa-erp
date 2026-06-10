@@ -120,6 +120,7 @@ export default function DashboardPage() {
   const [quickNoteId, setQuickNoteId] = useState<string | null>(null);
   const [quickNoteValue, setQuickNoteValue] = useState('');
   const [userRole, setUserRole] = useState<'admin' | 'ktv' | null>(null);
+  const [tenantId, setTenantId] = useState<string | null>(null);
   const [isAllNotificationsOpen, setIsAllNotificationsOpen] = useState(false);
   const [notifSearch, setNotifSearch] = useState('');
   const [notifTab, setNotifTab] = useState('all');
@@ -144,9 +145,11 @@ export default function DashboardPage() {
         const profile = await getCurrentUser();
         if (!profile) {
           setUserRole('ktv');
+          setTenantId(null);
           router.replace('/ktv/dashboard');
           return;
         }
+        setTenantId(profile.tenant_id || null);
         const role = profile.role?.toLowerCase();
         if (role === 'ktv') {
           router.replace('/ktv/dashboard');
@@ -156,6 +159,7 @@ export default function DashboardPage() {
       } catch (error) {
         console.error('Error checking user role:', error);
         setUserRole('ktv');
+        setTenantId(null);
         router.replace('/ktv/dashboard');
       }
     }
@@ -175,6 +179,7 @@ export default function DashboardPage() {
 
   const fetchData = useCallback(async () => {
     if (userRole === null) return; // Wait for role to be identified
+    if (!tenantId) return;
     
     setIsRefreshing(true);
     try {
@@ -183,9 +188,13 @@ export default function DashboardPage() {
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       
       const sb = createClient();
+      const inventoryQuery = sb
+        .from('inventory_items')
+        .select('id, stock_level, min_stock_level, price_per_unit')
+        .eq('tenant_id', tenantId);
       const [{ statsData, sessionsData, ktvsData, alertsData, perfData }, invRes] = await Promise.all([
         getFullDashboardData(startDate, endDate, localToday),
-        sb.from('inventory_items').select('id, stock_level, min_stock_level, price_per_unit')
+        inventoryQuery
       ]);
 
       const invItems = invRes.data || [];
@@ -218,7 +227,7 @@ export default function DashboardPage() {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  }, [selectedMonth, selectedYear, userRole]);
+  }, [selectedMonth, selectedYear, tenantId, userRole]);
 
   usePageRefresh(fetchData);
 
