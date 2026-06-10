@@ -15,13 +15,14 @@ const mockCreateBrowserClient = jest.mocked(createBrowserClient);
 
 function mockSupabaseOrderResult(result: unknown) {
   const order = jest.fn().mockResolvedValue(result);
-  const eq = jest.fn(() => ({ order }));
+  const or = jest.fn(() => ({ order }));
+  const eq = jest.fn(() => ({ or, order }));
   const select = jest.fn(() => ({ eq }));
   const from = jest.fn(() => ({ select }));
 
   mockCreateBrowserClient.mockReturnValue({ from } as ReturnType<typeof createBrowserClient>);
 
-  return { eq, from, order, select };
+  return { eq, from, or, order, select };
 }
 
 describe('landing data hooks', () => {
@@ -61,7 +62,7 @@ describe('landing data hooks', () => {
   });
 
   it('loads package categories and service options when active packages exist', async () => {
-    mockSupabaseOrderResult({
+    const query = mockSupabaseOrderResult({
       data: [
         {
           id: 'pkg-1',
@@ -82,6 +83,7 @@ describe('landing data hooks', () => {
 
     await waitFor(() => expect(result.current.categories?.bau.packages[0]?.name).toBe('Gói Bầu Thư Giãn Bella'));
 
+    expect(query.or).toHaveBeenCalledWith('module_key.is.null,module_key.eq.babycare');
     expect(result.current.dataStatus).toBe('loaded');
     expect(result.current.dataError).toBeNull();
     expect(result.current.serviceOptions).toEqual(

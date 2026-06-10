@@ -43,6 +43,7 @@ export function useLandingPackages() {
           .from('packages')
           .select('*')
           .eq('status', 'active')
+          .or('module_key.is.null,module_key.eq.babycare')
           .order('name', { ascending: true });
 
         if (error) {
