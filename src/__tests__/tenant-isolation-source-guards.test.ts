@@ -103,4 +103,15 @@ describe('dashboard tenant isolation source guards', () => {
       /const DEFAULT_SIDEBAR_BRAND[\s\S]{0,180}enabledModules:\s*\{\s*babycare:\s*true,\s*beauty_spa:\s*false\s*\}/,
     );
   });
+
+  it('keeps first-run onboarding copy tenant-brand aware', () => {
+    const dashboardSource = readSource('src/app/dashboard/page.tsx');
+    const onboardingSource = readSource('src/components/features/dashboard/OnboardingTour.tsx');
+
+    expect(dashboardSource).toContain('<OnboardingTour brandName={businessLabel} tenantModuleKey={tenantModuleKey} />');
+    expect(onboardingSource).toContain('Bắt đầu cùng {brandName}');
+    expect(onboardingSource).not.toContain('Bắt đầu cùng Bella Spa');
+    expect(onboardingSource).not.toContain('Bella Spa tự động');
+    expect(onboardingSource).not.toContain('BELLA1024');
+  });
 });

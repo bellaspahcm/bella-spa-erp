@@ -973,7 +973,7 @@ export default function DashboardPage() {
       </AnimatePresence>
 
       {/* Premium Interactive Onboarding Tour */}
-      <OnboardingTour />
+      <OnboardingTour brandName={businessLabel} tenantModuleKey={tenantModuleKey} />
     </div>
   );
 }
