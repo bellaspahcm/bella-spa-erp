@@ -91,4 +91,13 @@ describe('dashboard tenant isolation source guards', () => {
     expect(sessionDetailsSource).toContain('getTenantModulePresentationOrNeutral');
     expect(sessionDetailsSource).not.toContain('Thẻ liệu trình: Khách');
   });
+
+  it('keeps sidebar startup branding neutral until the current tenant brand is loaded', () => {
+    const sidebarSource = readSource('src/components/layout/sidebar.tsx');
+
+    expect(sidebarSource).toContain("displayName: 'Spa ERP'");
+    expect(sidebarSource).not.toMatch(
+      /const DEFAULT_SIDEBAR_BRAND[\s\S]{0,180}enabledModules:\s*\{\s*babycare:\s*true,\s*beauty_spa:\s*false\s*\}/,
+    );
+  });
 });

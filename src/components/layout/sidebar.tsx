@@ -78,9 +78,20 @@ type CachedTenantBrandDisplay = TenantBrandDisplay & {
   tenantId: string;
 };
 
-const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = resolveTenantBrandIdentity({
-  enabledModules: { babycare: true, beauty_spa: false },
-});
+const DEFAULT_SIDEBAR_BRAND: TenantBrandDisplay = {
+  displayName: 'Spa ERP',
+  logoUrl: '',
+  subtitle: 'Management System',
+  moduleKey: 'babycare',
+  primaryColor: '#9D174D',
+  accentColor: '#BE185D',
+  primaryHoverColor: '#831843',
+  monogram: 'S',
+  buttonStyle: 'pill',
+  menuStyle: 'comfortable',
+  radiusStyle: 'soft',
+  isBeautySpa: false,
+};
 const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v2';
 
 function isTenantBrandDisplay(value: unknown): value is CachedTenantBrandDisplay {
