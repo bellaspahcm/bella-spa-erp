@@ -7,6 +7,7 @@ const DEMO_TENANT_NAME = 'Beauty Spa Franchise Demo - TEST';
 const DEMO_TENANT_EMAIL = 'beauty-demo-branch@bellaspa.test';
 const DEMO_ADMIN_EMAIL = 'admin.beauty.demo@bellaspa.test';
 const DEMO_HQ_NAME = 'Bella Spa Headquarter';
+const REQUIRED_DEMO_ACCOUNT_CODES = ['111', '112', '131', '334', '3387', '5111', '6421'];
 
 const ROLE_PERMISSIONS = {
   ktv_lead: {
@@ -333,6 +334,33 @@ async function recordDemoAuditLog(client, tenantId, changedById, params) {
   });
 }
 
+async function ensureDemoAccountingAccounts(client, tenantId) {
+  const { error: seedError } = await client.rpc('seed_default_coa', {
+    p_tenant_id: tenantId,
+  });
+
+  if (seedError) {
+    throw new Error(`[seed_default_coa ${tenantId}] ${seedError.message}`);
+  }
+
+  const { data, error } = await client
+    .from('accounting_accounts')
+    .select('account_code')
+    .eq('tenant_id', tenantId)
+    .eq('is_active', true)
+    .in('account_code', REQUIRED_DEMO_ACCOUNT_CODES);
+
+  if (error) throw new Error(`[accounting_accounts.verify] ${error.message}`);
+
+  const existing = new Set((data || []).map((account) => account.account_code));
+  const missing = REQUIRED_DEMO_ACCOUNT_CODES.filter((code) => !existing.has(code));
+  if (missing.length > 0) {
+    throw new Error(`Beauty demo tenant is missing accounting account(s): ${missing.join(', ')}`);
+  }
+
+  return existing.size;
+}
+
 async function hasAccountingSideEffect(client, tenantId, eventType, referenceId) {
   const { data: outbox, error: outboxError } = await client
     .from('accounting_outbox')
@@ -492,6 +520,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
 
     const tenantId = tenant.id;
     const suffix = shortId(tenantId);
+    const accountingAccounts = await ensureDemoAccountingAccounts(client, tenantId);
 
     await mustInsert(client, 'users', {
       id: authUser.id,
@@ -911,6 +940,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
         resources: 3,
         customers: customers.length,
         bookings: bookings.length,
+        accountingAccounts,
       },
     };
   } catch (error) {
@@ -981,7 +1011,7 @@ async function getBeautyDemoStatus(client = createSupabaseAdmin()) {
   if (!tenant) return { exists: false };
   assertDemoTenantSafe(tenant);
 
-  const tables = ['users', 'packages', 'booking_resources', 'customers', 'bookings', 'session_logs', 'revenue', 'expenses'];
+  const tables = ['users', 'packages', 'booking_resources', 'customers', 'bookings', 'session_logs', 'revenue', 'expenses', 'accounting_accounts'];
   const counts = {};
   for (const table of tables) {
     const { count, error } = await client
@@ -997,8 +1027,18 @@ async function getBeautyDemoStatus(client = createSupabaseAdmin()) {
 
 async function repairBeautyDemoAccounting(client = createSupabaseAdmin()) {
   const tenant = await findDemoTenant(client);
-  if (!tenant) return { exists: false, updatedRevenue: 0, updatedSessions: 0, enqueuedPackageSale: 0, enqueuedSessionDone: 0 };
+  if (!tenant) {
+    return {
+      exists: false,
+      accountingAccounts: 0,
+      updatedRevenue: 0,
+      updatedSessions: 0,
+      enqueuedPackageSale: 0,
+      enqueuedSessionDone: 0,
+    };
+  }
   assertDemoTenantSafe(tenant);
+  const accountingAccounts = await ensureDemoAccountingAccounts(client, tenant.id);
 
   const { data: adminUser, error: adminUserError } = await client
     .from('users')
@@ -1043,6 +1083,7 @@ async function repairBeautyDemoAccounting(client = createSupabaseAdmin()) {
   const bookingById = new Map(bookings.map((booking) => [booking.id, booking]));
   const counters = {
     exists: true,
+    accountingAccounts,
     updatedRevenue: 0,
     updatedSessions: 0,
     enqueuedPackageSale: 0,
@@ -1217,6 +1258,7 @@ function printRepairResult(result) {
   }
 
   console.log('Beauty demo accounting repair completed.');
+  console.log(`Verified accounting accounts: ${result.accountingAccounts}`);
   console.log(`Updated revenue metadata : ${result.updatedRevenue}`);
   console.log(`Updated session metadata : ${result.updatedSessions}`);
   console.log(`Enqueued PACKAGE_SALE    : ${result.enqueuedPackageSale}`);
