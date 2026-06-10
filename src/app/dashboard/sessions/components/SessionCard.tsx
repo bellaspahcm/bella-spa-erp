@@ -16,6 +16,8 @@ import {
   History, 
   ChevronRight 
 } from 'lucide-react';
+import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { cn, resolvePackageName } from '@/lib/utils';
 import { toast } from 'sonner';
 import { SessionBooking } from '../types';
@@ -24,6 +26,7 @@ interface SessionCardProps {
   booking: SessionBooking;
   idx: number;
   userRole: 'KTV' | 'admin' | '';
+  tenantModuleKey: TenantModuleKey | null;
   updatingId: string | null;
   isReusingId: string | null;
   onSelect: () => void;
@@ -35,6 +38,7 @@ export function SessionCard({
   booking,
   idx,
   userRole,
+  tenantModuleKey,
   updatingId,
   isReusingId,
   onSelect,
@@ -42,6 +46,7 @@ export function SessionCard({
   onReusePackage
 }: SessionCardProps) {
   const [quickNote, setQuickNote] = useState('');
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
   
   const completedCount = Number(booking.completed_sessions) || 0;
   const totalCount = Number(booking.total_sessions) || 15;
@@ -79,7 +84,7 @@ export function SessionCard({
 
   const handleReuseClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const customerLabel = `Khách ${booking.customers?.name_mother || ''}${booking.customers?.name_baby ? ` - Hồ sơ ${booking.customers.name_baby}` : ''}`;
+    const customerLabel = `${customerLabels.customerPrefix} ${booking.customers?.name_mother || ''}${booking.customers?.name_baby ? ` - ${customerLabels.secondaryPrefix} ${booking.customers.name_baby}` : ''}`;
     await onReusePackage(booking.id, customerLabel);
   };
 
@@ -103,7 +108,7 @@ export function SessionCard({
       <div className="flex-1 min-w-0 relative z-10">
         <div className="flex flex-wrap items-center gap-3 mb-2">
           <h3 className="max-w-full break-words text-lg font-black tracking-tight text-slate-900 uppercase sm:text-xl">
-            Khách {booking.customers?.name_mother} {booking.customers?.name_baby ? `- Hồ sơ ${booking.customers.name_baby}` : ''}
+            {customerLabels.customerPrefix} {booking.customers?.name_mother} {booking.customers?.name_baby ? `- ${customerLabels.secondaryPrefix} ${booking.customers.name_baby}` : ''}
           </h3>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="max-w-full break-words rounded-lg border border-primary/10 bg-rose-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-primary">

@@ -1,6 +1,8 @@
 'use client';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
+import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 import { reusePackage,syncBookingProgress } from '@/modules/booking/actions/lifecycle-actions';
@@ -51,6 +53,7 @@ interface SessionLogsDetailsModalProps {
   onClose: () => void;
   onSuccess?: () => void; // Callback to refresh main sessions list
   userRole: 'KTV' | 'admin' | '';
+  tenantModuleKey: TenantModuleKey | null;
 }
 
 export function SessionLogsDetailsModal({ 
@@ -58,7 +61,8 @@ export function SessionLogsDetailsModal({
   activeBooking, 
   onClose, 
   onSuccess,
-  userRole 
+  userRole,
+  tenantModuleKey,
 }: SessionLogsDetailsModalProps) {
   const [selectedSessionLog, setSelectedSessionLog] = useState<SessionLog | null>(null);
   const [currentNote, setCurrentNote] = useState('');
@@ -347,6 +351,10 @@ export function SessionLogsDetailsModal({
 
   if (!isOpen || !activeBooking) return null;
 
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+  const customerHeaderLabel = `${customerLabels.customerPrefix}: ${activeBooking.customers?.name_mother || 'Khách hàng'}${activeBooking.customers?.name_baby ? ` - ${customerLabels.secondaryPrefix}: ${activeBooking.customers.name_baby}` : ''}`;
+  const sessionHeaderTitle = tenantModuleKey === 'beauty_spa' ? 'Liệu trình & dịch vụ' : 'Thẻ liệu trình';
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
       <motion.div 
@@ -370,7 +378,7 @@ export function SessionLogsDetailsModal({
             </div>
             <div className="min-w-0">
               <h2 className="text-lg md:text-2xl font-black text-slate-900 uppercase tracking-tight leading-tight break-words">
-                Thẻ liệu trình: Khách {activeBooking.customers?.name_mother} {activeBooking.customers?.name_baby ? `- Hồ sơ ${activeBooking.customers.name_baby}` : ''}
+                {sessionHeaderTitle}: {customerHeaderLabel}
               </h2>
               <p className="mt-2 md:mt-0 text-slate-500 font-bold uppercase text-[9px] md:text-[10px] tracking-[0.16em] md:tracking-[0.2em] flex flex-wrap items-center gap-x-2 gap-y-1 md:gap-3">
                 <span className="text-primary">{activeBooking.package_name}</span>
@@ -794,7 +802,7 @@ export function SessionLogsDetailsModal({
 
                 {(activeBooking.completed_sessions || 0) >= (activeBooking.total_sessions || 21) && (
                    <button 
-                    onClick={() => handleReusePackage(activeBooking.id, `Khách ${activeBooking.customers?.name_mother || ''}${activeBooking.customers?.name_baby ? ` - Hồ sơ ${activeBooking.customers.name_baby}` : ''}` || 'Khách hàng')}
+                    onClick={() => handleReusePackage(activeBooking.id, customerHeaderLabel)}
                     disabled={isReusingId === activeBooking.id}
                     className="w-full mt-6 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[9px] shadow-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all relative z-10"
                   >
