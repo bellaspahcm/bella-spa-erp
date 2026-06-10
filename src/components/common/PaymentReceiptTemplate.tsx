@@ -2,7 +2,6 @@
 
 import React, { forwardRef } from "react";
 import { User, Phone, MapPin, Flower, CreditCard, Landmark } from "lucide-react";
-import Image from "next/image";
 
 export interface ReceiptItem {
   id: number;
@@ -20,6 +19,13 @@ export interface ReceiptData {
   phone: string;
   address: string;
   serviceNote: string;
+  brand?: {
+    displayName: string;
+    logoUrl?: string | null;
+    primaryColor: string;
+    accentColor: string;
+    monogram: string;
+  };
   items: ReceiptItem[];
   totalAmount: number;
   bankInfo: {
@@ -39,6 +45,16 @@ const formatCurrency = (amount: number) => {
 
 export const PaymentReceiptTemplate = forwardRef<HTMLDivElement, PaymentReceiptTemplateProps>(
   ({ data }, ref) => {
+    const brand = data.brand ?? {
+      displayName: 'Bella Spa',
+      logoUrl: '/images/logo.png',
+      primaryColor: '#e95e87',
+      accentColor: '#f9a8d4',
+      monogram: 'BS',
+    };
+    const receiptPrimary = brand.primaryColor || '#e95e87';
+    const receiptAccent = brand.accentColor || '#f9a8d4';
+
     return (
       <div
         ref={ref}
@@ -55,16 +71,28 @@ export const PaymentReceiptTemplate = forwardRef<HTMLDivElement, PaymentReceiptT
           {/* Header */}
           <div className="flex flex-col items-center justify-center mb-3">
             <div className="mb-1">
-              <Image src="/images/logo.png" alt="Bella Spa Logo" width={180} height={64} className="h-16 w-auto object-contain" />
+              {brand.logoUrl ? (
+                // Tenant logos are user-managed assets and may be external URLs.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brand.logoUrl} alt={`${brand.displayName} Logo`} className="h-16 max-w-[180px] object-contain" />
+              ) : (
+                <div
+                  className="flex h-16 w-16 items-center justify-center rounded-2xl text-lg font-black text-white"
+                  style={{ backgroundColor: receiptPrimary }}
+                >
+                  {brand.monogram}
+                </div>
+              )}
             </div>
             
-            <h1 className="text-2xl font-bold text-[#e6396e] tracking-wide mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-500">{brand.displayName}</p>
+            <h1 className="text-2xl font-bold tracking-wide mb-1" style={{ fontFamily: "'Playfair Display', serif", color: receiptPrimary }}>
               PHIẾU THÔNG TIN THANH TOÁN
             </h1>
             <div className="flex items-center justify-center w-full max-w-sm">
-              <div className="h-px bg-pink-300 flex-1"></div>
-              <Flower className="w-3.5 h-3.5 text-pink-500 mx-2" />
-              <div className="h-px bg-pink-300 flex-1"></div>
+              <div className="h-px flex-1" style={{ backgroundColor: receiptAccent }}></div>
+              <Flower className="w-3.5 h-3.5 mx-2" style={{ color: receiptPrimary }} />
+              <div className="h-px flex-1" style={{ backgroundColor: receiptAccent }}></div>
             </div>
           </div>
 
@@ -107,7 +135,7 @@ export const PaymentReceiptTemplate = forwardRef<HTMLDivElement, PaymentReceiptT
           <div className="border border-pink-200 bg-white rounded-xl overflow-hidden mb-3 shadow-sm">
             <table className="w-full text-xs text-center border-collapse">
               <thead>
-                <tr className="bg-[#e95e87] text-white">
+                <tr className="text-white" style={{ backgroundColor: receiptPrimary }}>
                   <th className="py-2 px-1 font-medium border-r border-pink-300 border-b border-pink-200 w-12">STT</th>
                   <th className="py-2 px-1 font-medium border-r border-pink-300 border-b border-pink-200">Tên DV</th>
                   <th className="py-2 px-1 font-medium border-r border-pink-300 border-b border-pink-200 w-28">Liệu trình (Buổi)</th>
@@ -150,10 +178,10 @@ export const PaymentReceiptTemplate = forwardRef<HTMLDivElement, PaymentReceiptT
               <div className="w-1/4"></div>
               <div className="flex w-1/2 justify-end p-1.5 pb-2 pr-2">
                 <div className="flex items-center overflow-hidden rounded-md border border-pink-300 w-[280px]">
-                  <div className="bg-[#e95e87] text-white font-medium py-1.5 px-4 w-1/2 text-center text-xs">
+                  <div className="text-white font-medium py-1.5 px-4 w-1/2 text-center text-xs" style={{ backgroundColor: receiptPrimary }}>
                     Tổng TT (VND)
                   </div>
-                  <div className="bg-white text-[#e95e87] font-bold py-1.5 px-4 w-1/2 text-center text-sm">
+                  <div className="bg-white font-bold py-1.5 px-4 w-1/2 text-center text-sm" style={{ color: receiptPrimary }}>
                     {formatCurrency(data.totalAmount)}
                   </div>
                 </div>
@@ -165,12 +193,12 @@ export const PaymentReceiptTemplate = forwardRef<HTMLDivElement, PaymentReceiptT
 
         {/* Bank Info Section at the bottom */}
         <div className="inline-block border border-pink-200 bg-white/80 backdrop-blur-sm rounded-xl py-2.5 px-4 shadow-sm w-[60%] self-start mb-2">
-          <h3 className="text-[#e95e87] font-bold text-xs mb-2 flex items-center">
+          <h3 className="font-bold text-xs mb-2 flex items-center" style={{ color: receiptPrimary }}>
             <Flower size={12} className="mr-1" /> *Thông tin thanh toán
           </h3>
           <div className="flex items-center gap-4">
             <div className="flex items-center text-xs">
-              <div className="w-7 h-7 rounded-full bg-[#e95e87] flex items-center justify-center mr-2 shrink-0 text-white shadow-sm">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center mr-2 shrink-0 text-white shadow-sm" style={{ backgroundColor: receiptPrimary }}>
                 <User size={12} />
               </div>
               <div className="flex flex-col">
@@ -180,7 +208,7 @@ export const PaymentReceiptTemplate = forwardRef<HTMLDivElement, PaymentReceiptT
             </div>
             
             <div className="flex items-center text-xs border-l border-pink-100 pl-4">
-              <div className="w-7 h-7 rounded-full bg-[#e95e87] flex items-center justify-center mr-2 shrink-0 text-white shadow-sm">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center mr-2 shrink-0 text-white shadow-sm" style={{ backgroundColor: receiptPrimary }}>
                 <CreditCard size={12} />
               </div>
               <div className="flex flex-col">
@@ -190,7 +218,7 @@ export const PaymentReceiptTemplate = forwardRef<HTMLDivElement, PaymentReceiptT
             </div>
             
             <div className="flex items-center text-xs border-l border-pink-100 pl-4">
-              <div className="w-7 h-7 rounded-full bg-[#e95e87] flex items-center justify-center mr-2 shrink-0 text-white shadow-sm">
+              <div className="w-7 h-7 rounded-full flex items-center justify-center mr-2 shrink-0 text-white shadow-sm" style={{ backgroundColor: receiptPrimary }}>
                 <Landmark size={12} />
               </div>
               <div className="flex flex-col">

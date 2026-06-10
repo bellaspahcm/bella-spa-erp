@@ -39,6 +39,7 @@ interface PortalChatWidgetProps {
   token: string;
   customerId?: string;
   customerName?: string;
+  brandName?: string;
   phoneHotline?: string;
 }
 
@@ -53,7 +54,8 @@ export default function PortalChatWidget({
   token,
   customerId,
   customerName = 'Khach hang',
-  phoneHotline = '0865701493',
+  brandName = 'Spa',
+  phoneHotline = '',
 }: PortalChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<PortalChatMessage[]>([]);
@@ -110,7 +112,7 @@ export default function PortalChatWidget({
             nextLastMessage.sender_type === 'staff' &&
             !isOpenRef.current
           ) {
-            toast.info('Ban co tin nhan moi tu Bella Spa!', {
+            toast.info(`Ban co tin nhan moi tu ${brandName}!`, {
               action: {
                 label: 'Xem ngay',
                 onClick: () => setIsOpen(true),
@@ -137,7 +139,7 @@ export default function PortalChatWidget({
       isFetchingRef.current = false;
       setIsInitialLoad(false);
     }
-  }, [handleMarkAsRead, token]);
+  }, [brandName, handleMarkAsRead, token]);
 
   const mergeRealtimeMessage = useCallback((incomingMessage: PortalChatMessage) => {
     setMessages((previousMessages) => {
@@ -156,14 +158,14 @@ export default function PortalChatWidget({
     });
 
     if (incomingMessage.sender_type === 'staff' && !isOpenRef.current) {
-      toast.info('Ban co tin nhan moi tu Bella Spa!', {
+      toast.info(`Ban co tin nhan moi tu ${brandName}!`, {
         action: {
           label: 'Xem ngay',
           onClick: () => setIsOpen(true),
         },
       });
     }
-  }, [handleMarkAsRead]);
+  }, [brandName, handleMarkAsRead]);
 
   const handleSendMessage = async (event?: FormEvent) => {
     event?.preventDefault();
@@ -301,7 +303,7 @@ export default function PortalChatWidget({
           onClick={() => setIsOpen(true)}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-xl shadow-pink-200 transition-all duration-300 hover:from-rose-600 hover:to-pink-700 dark:shadow-none"
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-xl shadow-pink-200 transition-all duration-300 hover:bg-primary-hover dark:shadow-none"
           title="Tro chuyen voi Spa"
           type="button"
         >
@@ -340,7 +342,7 @@ export default function PortalChatWidget({
               transition={{ type: 'spring', damping: 25, stiffness: 350 }}
               className="pointer-events-auto relative flex h-[85vh] w-full flex-col overflow-hidden rounded-t-[2rem] border border-pink-100/50 bg-white shadow-2xl md:h-[550px] md:w-[380px] md:rounded-[2rem]"
             >
-              <div className="flex shrink-0 items-center justify-between bg-gradient-to-r from-rose-500 to-pink-600 px-6 py-5 text-white shadow-lg shadow-pink-500/10">
+              <div className="flex shrink-0 items-center justify-between bg-primary px-6 py-5 text-white shadow-lg shadow-pink-500/10">
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20">
                     <Sparkles className="h-5 w-5 fill-current text-white" />
@@ -348,7 +350,7 @@ export default function PortalChatWidget({
                   </div>
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-black leading-tight tracking-wide">
-                      Bella Spa Support
+                      {brandName} Support
                     </h3>
                     <p className="mt-0.5 truncate text-[10px] font-bold text-white/80">
                       Dang hoat dong - Chao chi {customerName}
@@ -356,13 +358,15 @@ export default function PortalChatWidget({
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <a
-                    href={`tel:${phoneHotline}`}
-                    className="rounded-xl p-2 text-white/90 transition-all hover:bg-white/10 hover:text-white"
-                    title="Goi hotline ho tro"
-                  >
-                    <Phone className="h-4 w-4 fill-current" />
-                  </a>
+                  {phoneHotline && (
+                    <a
+                      href={`tel:${phoneHotline}`}
+                      className="rounded-xl p-2 text-white/90 transition-all hover:bg-white/10 hover:text-white"
+                      title="Goi hotline ho tro"
+                    >
+                      <Phone className="h-4 w-4 fill-current" />
+                    </a>
+                  )}
                   <button
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl p-2 text-white/90 transition-all hover:bg-white/10 hover:text-white"
@@ -393,7 +397,7 @@ export default function PortalChatWidget({
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="flex h-full flex-col items-center justify-center space-y-3 p-6 text-center text-slate-400">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-pink-100/50 text-primary">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <MessageSquare className="h-6 w-6" />
                     </div>
                     <div>
@@ -439,14 +443,14 @@ export default function PortalChatWidget({
                             <div className="max-w-[75%] space-y-1">
                               {!isCustomer && (
                                 <span className="ml-2 block text-[8px] font-bold uppercase tracking-wider text-slate-400">
-                                  Bella Spa Consultant
+                                  {brandName} Consultant
                                 </span>
                               )}
 
                               <div
                                 className={`rounded-3xl p-4 text-xs font-semibold leading-relaxed shadow-xs ${
                                   isCustomer
-                                    ? 'rounded-br-[1.5rem] rounded-tr-xs bg-rose-500 text-white shadow-rose-100'
+                                    ? 'rounded-br-[1.5rem] rounded-tr-xs bg-primary text-white shadow-rose-100'
                                     : 'rounded-bl-[1.5rem] rounded-tl-xs border border-pink-100/40 bg-white text-slate-800 shadow-slate-100'
                                 } ${message.isOptimistic ? 'animate-pulse opacity-70' : ''}`}
                               >

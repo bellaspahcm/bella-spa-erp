@@ -6,6 +6,16 @@ export type TenantModuleKey = (typeof TENANT_MODULE_KEYS)[number];
 
 export type TenantEnabledModules = Record<TenantModuleKey, boolean>;
 
+export const TENANT_BRAND_STYLE_PRESETS = ['bella_rose', 'jade_wellness', 'graphite_luxe'] as const;
+export const TENANT_BRAND_RADIUS_STYLES = ['soft', 'balanced', 'compact'] as const;
+export const TENANT_BRAND_BUTTON_STYLES = ['pill', 'rounded', 'minimal'] as const;
+export const TENANT_BRAND_MENU_STYLES = ['comfortable', 'compact'] as const;
+
+export type TenantBrandStylePreset = (typeof TENANT_BRAND_STYLE_PRESETS)[number];
+export type TenantBrandRadiusStyle = (typeof TENANT_BRAND_RADIUS_STYLES)[number];
+export type TenantBrandButtonStyle = (typeof TENANT_BRAND_BUTTON_STYLES)[number];
+export type TenantBrandMenuStyle = (typeof TENANT_BRAND_MENU_STYLES)[number];
+
 export type TenantBrandTheme = {
   brandName: string;
   logoUrl: string;
@@ -13,6 +23,22 @@ export type TenantBrandTheme = {
   accentColor: string;
   portalDisplayName: string;
   invoiceDisplayName: string;
+  stylePreset: TenantBrandStylePreset;
+  radiusStyle: TenantBrandRadiusStyle;
+  buttonStyle: TenantBrandButtonStyle;
+  menuStyle: TenantBrandMenuStyle;
+};
+
+export type TenantBrandSurface = 'app' | 'portal' | 'invoice';
+
+export type ResolvedTenantBrandIdentity = TenantBrandTheme & {
+  moduleKey: TenantModuleKey;
+  displayName: string;
+  subtitle: string;
+  logoUrl: string;
+  primaryHoverColor: string;
+  monogram: string;
+  isBeautySpa: boolean;
 };
 
 export const DEFAULT_ENABLED_MODULES: TenantEnabledModules = {
@@ -27,6 +53,23 @@ export const DEFAULT_TENANT_BRAND_THEME: TenantBrandTheme = {
   accentColor: '#F8A5C2',
   portalDisplayName: '',
   invoiceDisplayName: '',
+  stylePreset: 'bella_rose',
+  radiusStyle: 'soft',
+  buttonStyle: 'pill',
+  menuStyle: 'comfortable',
+};
+
+export const DEFAULT_BEAUTY_TENANT_BRAND_THEME: TenantBrandTheme = {
+  brandName: '',
+  logoUrl: '',
+  primaryColor: '#087F6B',
+  accentColor: '#7DD3C7',
+  portalDisplayName: '',
+  invoiceDisplayName: '',
+  stylePreset: 'jade_wellness',
+  radiusStyle: 'soft',
+  buttonStyle: 'pill',
+  menuStyle: 'comfortable',
 };
 
 const HEX_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
@@ -37,6 +80,10 @@ const TEXT_LIMITS: Record<keyof TenantBrandTheme, number> = {
   accentColor: 7,
   portalDisplayName: 100,
   invoiceDisplayName: 100,
+  stylePreset: 40,
+  radiusStyle: 40,
+  buttonStyle: 40,
+  menuStyle: 40,
 };
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
@@ -51,6 +98,44 @@ function cleanText(value: unknown, maxLength: number) {
 function cleanColor(value: unknown, fallback: string) {
   const text = cleanText(value, 7);
   return HEX_COLOR_PATTERN.test(text) ? text.toUpperCase() : fallback;
+}
+
+function cleanChoice<T extends readonly string[]>(value: unknown, choices: T, fallback: T[number]): T[number] {
+  const text = cleanText(value, 40);
+  return choices.includes(text) ? text : fallback;
+}
+
+function cleanLogoUrl(value: unknown) {
+  const text = cleanText(value, TEXT_LIMITS.logoUrl);
+  if (!text) return '';
+  if (text.startsWith('/')) return text;
+  try {
+    const url = new URL(text);
+    return url.protocol === 'https:' ? text : '';
+  } catch {
+    return '';
+  }
+}
+
+function darkenHexColor(hex: string) {
+  const normalized = cleanColor(hex, DEFAULT_TENANT_BRAND_THEME.primaryColor);
+  const value = normalized.slice(1);
+  const amount = 0.84;
+  const r = Math.max(0, Math.round(parseInt(value.slice(0, 2), 16) * amount));
+  const g = Math.max(0, Math.round(parseInt(value.slice(2, 4), 16) * amount));
+  const b = Math.max(0, Math.round(parseInt(value.slice(4, 6), 16) * amount));
+  return `#${[r, g, b].map((part) => part.toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+}
+
+function buildMonogram(displayName: string) {
+  const words = displayName
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter(Boolean);
+  const letters = words.length > 1
+    ? `${words[0][0] || ''}${words[1][0] || ''}`
+    : (words[0] || 'SP').slice(0, 2);
+  return letters.toUpperCase();
 }
 
 export function normalizeEnabledModules(value: unknown): TenantEnabledModules {
@@ -82,17 +167,35 @@ export function getDefaultTenantModuleKey(value: unknown): TenantModuleKey {
   return modules.babycare ? 'babycare' : 'beauty_spa';
 }
 
-export function normalizeTenantBrandTheme(value: unknown): TenantBrandTheme {
+export function getDefaultTenantBrandThemeForModule(moduleKey: TenantModuleKey): TenantBrandTheme {
+  return moduleKey === 'beauty_spa'
+    ? DEFAULT_BEAUTY_TENANT_BRAND_THEME
+    : DEFAULT_TENANT_BRAND_THEME;
+}
+
+export function normalizeTenantBrandThemeForModule(
+  value: unknown,
+  moduleKey: TenantModuleKey,
+): TenantBrandTheme {
   const source = isPlainRecord(value) ? value : {};
+  const fallback = getDefaultTenantBrandThemeForModule(moduleKey);
 
   return {
     brandName: cleanText(source.brandName, TEXT_LIMITS.brandName),
-    logoUrl: cleanText(source.logoUrl, TEXT_LIMITS.logoUrl),
-    primaryColor: cleanColor(source.primaryColor, DEFAULT_TENANT_BRAND_THEME.primaryColor),
-    accentColor: cleanColor(source.accentColor, DEFAULT_TENANT_BRAND_THEME.accentColor),
+    logoUrl: cleanLogoUrl(source.logoUrl),
+    primaryColor: cleanColor(source.primaryColor, fallback.primaryColor),
+    accentColor: cleanColor(source.accentColor, fallback.accentColor),
     portalDisplayName: cleanText(source.portalDisplayName, TEXT_LIMITS.portalDisplayName),
     invoiceDisplayName: cleanText(source.invoiceDisplayName, TEXT_LIMITS.invoiceDisplayName),
+    stylePreset: cleanChoice(source.stylePreset, TENANT_BRAND_STYLE_PRESETS, fallback.stylePreset),
+    radiusStyle: cleanChoice(source.radiusStyle, TENANT_BRAND_RADIUS_STYLES, fallback.radiusStyle),
+    buttonStyle: cleanChoice(source.buttonStyle, TENANT_BRAND_BUTTON_STYLES, fallback.buttonStyle),
+    menuStyle: cleanChoice(source.menuStyle, TENANT_BRAND_MENU_STYLES, fallback.menuStyle),
   };
+}
+
+export function normalizeTenantBrandTheme(value: unknown): TenantBrandTheme {
+  return normalizeTenantBrandThemeForModule(value, 'babycare');
 }
 
 export function isTenantModuleEnabled(
@@ -108,4 +211,49 @@ export function toTenantModuleJson(value: unknown): Json {
 
 export function toTenantBrandThemeJson(value: unknown): Json {
   return normalizeTenantBrandTheme(value) as unknown as Json;
+}
+
+export function toTenantBrandThemeJsonForModule(value: unknown, moduleKey: TenantModuleKey): Json {
+  return normalizeTenantBrandThemeForModule(value, moduleKey) as unknown as Json;
+}
+
+export function resolveTenantBrandIdentity(input: {
+  enabledModules?: unknown;
+  brandTheme?: unknown;
+  logoUrl?: string | null;
+  tenantName?: string | null;
+  surface?: TenantBrandSurface;
+}): ResolvedTenantBrandIdentity {
+  const moduleKey = getDefaultTenantModuleKey(input.enabledModules);
+  const theme = normalizeTenantBrandThemeForModule(input.brandTheme, moduleKey);
+  const tenantName = cleanText(input.tenantName, TEXT_LIMITS.brandName);
+  const explicitLogoUrl = cleanLogoUrl(input.logoUrl);
+  const defaultDisplayName = moduleKey === 'beauty_spa' ? 'Beauty Spa' : 'Bella Spa';
+  const baseDisplayName =
+    theme.brandName ||
+    (input.surface === 'portal' ? theme.portalDisplayName : '') ||
+    (input.surface === 'invoice' ? theme.invoiceDisplayName : '') ||
+    tenantName ||
+    defaultDisplayName;
+  const portalDisplayName = theme.portalDisplayName || theme.brandName || tenantName || defaultDisplayName;
+  const invoiceDisplayName = theme.invoiceDisplayName || theme.brandName || tenantName || defaultDisplayName;
+  const displayName =
+    input.surface === 'portal'
+      ? portalDisplayName
+      : input.surface === 'invoice'
+        ? invoiceDisplayName
+        : baseDisplayName;
+
+  return {
+    ...theme,
+    moduleKey,
+    displayName,
+    portalDisplayName,
+    invoiceDisplayName,
+    logoUrl: explicitLogoUrl || theme.logoUrl || (moduleKey === 'babycare' ? '/FullLogo_Transparent_NoBuffer.png' : ''),
+    subtitle: moduleKey === 'beauty_spa' ? 'Beauty Spa ERP' : 'Management System',
+    primaryHoverColor: darkenHexColor(theme.primaryColor),
+    monogram: buildMonogram(displayName),
+    isBeautySpa: moduleKey === 'beauty_spa',
+  };
 }
