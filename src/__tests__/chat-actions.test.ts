@@ -4,6 +4,12 @@ jest.mock('@/lib/supabase-server', () => ({
   createClient: (...args: unknown[]) => mockCreateClient(...args),
 }));
 
+const mockGetCurrentUser = jest.fn();
+jest.mock('@/services/user-actions', () => ({
+  getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
+}));
+
+
 type QueryResult = {
   data: unknown;
   error: { message: string } | null;
@@ -130,11 +136,11 @@ const customerRows = [
 ];
 
 function seedAuthContext() {
-  mockAuthGetUser.mockResolvedValue({
-    data: { user: { id: 'user-1' } },
-    error: null,
+  mockGetCurrentUser.mockResolvedValue({
+    id: 'user-1',
+    tenant_id: 'tenant-1',
+    role: 'staff',
   });
-  scriptedResults.push({ data: { tenant_id: 'tenant-1' }, error: null });
 }
 
 describe('dashboard chat actions', () => {
@@ -144,9 +150,10 @@ describe('dashboard chat actions', () => {
     scriptedResults = [];
     scriptedRpcResult = { data: [], error: null };
     mockCreateClient.mockResolvedValue(mockSupabase);
-    mockAuthGetUser.mockResolvedValue({
-      data: { user: { id: 'user-1' } },
-      error: null,
+    mockGetCurrentUser.mockResolvedValue({
+      id: 'user-1',
+      tenant_id: 'tenant-1',
+      role: 'staff',
     });
     mockRpc.mockImplementation(() => Promise.resolve(scriptedRpcResult));
   });
@@ -206,11 +213,6 @@ describe('dashboard chat actions', () => {
     expect(mockRpc).toHaveBeenCalledWith('get_chat_customers');
     expect(queryCalls).toEqual([
       expect.objectContaining({
-        table: 'users',
-        selectColumns: 'tenant_id',
-        filters: [{ method: 'eq', args: ['id', 'user-1'] }],
-      }),
-      expect.objectContaining({
         table: 'chat_messages',
         selectColumns: '*',
         filters: expect.arrayContaining([
@@ -255,7 +257,7 @@ describe('dashboard chat actions', () => {
       expect.objectContaining({ id: 'msg-1', tenant_id: 'tenant-1' }),
     ]);
 
-    expect(queryCalls[1]).toEqual(expect.objectContaining({
+    expect(queryCalls[0]).toEqual(expect.objectContaining({
       table: 'customers',
       selectColumns: 'tenant_id',
       filters: expect.arrayContaining([
@@ -264,7 +266,7 @@ describe('dashboard chat actions', () => {
       ]),
       single: true,
     }));
-    expect(queryCalls[2]).toEqual(expect.objectContaining({
+    expect(queryCalls[1]).toEqual(expect.objectContaining({
       table: 'chat_messages',
       selectColumns: '*',
       filters: expect.arrayContaining([
@@ -304,7 +306,7 @@ describe('dashboard chat actions', () => {
       })
     );
 
-    expect(queryCalls[2]).toEqual(expect.objectContaining({
+    expect(queryCalls[1]).toEqual(expect.objectContaining({
       table: 'chat_messages',
       operation: 'insert',
       payload: {
@@ -335,7 +337,7 @@ describe('dashboard chat actions', () => {
 
     await expect(markMessagesAsRead('cust-1')).resolves.toBeUndefined();
 
-    expect(queryCalls[2]).toEqual(expect.objectContaining({
+    expect(queryCalls[1]).toEqual(expect.objectContaining({
       table: 'chat_messages',
       operation: 'update',
       payload: { is_read: true },

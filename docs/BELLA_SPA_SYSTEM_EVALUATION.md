@@ -1,4 +1,26 @@
 # 📊 Đánh Giá Toàn Diện Hệ Thống Bella Spa ERP
+
+> [!IMPORTANT]
+> **Đánh giá mới nhất: [09/06/2026 — 91/100](./BELLA_SPA_SYSTEM_EVALUATION_2026_06_09.md)**
+> Hệ thống đã tích hợp phân hệ Beauty Spa, phân lập module đa ngành và hoàn thiện 122 test suites / 1194 test cases.
+
+---
+
+## 📋 Lịch Sử Đánh Giá
+
+| Ngày | Điểm | Hạng | Sự kiện chính |
+|------|:----:|------|---------------|
+| 19/05/2026 | 96/100 | Xuất sắc | Hoàn thành Giai đoạn 2.4 — Multi-View Bookings & Offline Mode |
+| [21/05/2026](./BELLA_SPA_SYSTEM_EVALUATION_2026_05_21.md) | 98/100 | Đặc biệt Xuất sắc — Enterprise Ready | Vá 100% lỗ hổng bảo mật, RLS toàn diện, 29 unit tests PASS |
+| **[09/06/2026](./BELLA_SPA_SYSTEM_EVALUATION_2026_06_09.md)** | **91/100** | **Production-Grade Franchise** | Tích hợp Beauty Spa, phân lập module đa ngành, 1194 test cases ✅ |
+
+> [!NOTE]
+> Điểm ngày 09/06 (91/100) được tính theo **bộ tiêu chí kỹ thuật 12 hạng mục có trọng số** (bao gồm khả năng mở rộng ngành và thương mại hóa), khác với bộ tiêu chí vận hành theo góc nhìn người dùng cuối của các lần đánh giá trước. Các hạng mục vận hành cốt lõi (Bảo mật, Chính xác nghiệp vụ, Testing) đều duy trì hoặc vượt điểm cao.
+
+---
+
+## Đánh Giá Gốc (19/05/2026)
+
 **Ngày đánh giá:** 19/05/2026
 **Trạng thái hệ thống:** Hoàn thành Giai đoạn 2.4 (Phase 2.4 / Multi-View Bookings & Centered Modals)
 

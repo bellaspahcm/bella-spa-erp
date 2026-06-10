@@ -73,6 +73,8 @@ function mockUnlockMonthUpdateFlow(options: {
         filterCalls.push({ table, payload: updatePayload, method: 'in', args: [field, value] });
         return chain;
       }),
+      order: jest.fn(() => chain),
+      limit: jest.fn(() => chain),
       then: (cb: any, onRejected?: any) => {
         if (operation === 'select') {
           return Promise.resolve({
@@ -148,6 +150,8 @@ function mockLockMonthSideEffectFlow(options: LockMonthFlowOptions = {}) {
         filterCalls.push({ table, payload, method: 'in', args: [field, value] });
         return chain;
       }),
+      order: jest.fn(() => chain),
+      limit: jest.fn(() => chain),
       single: jest.fn(() => Promise.resolve(resolveQuery())),
       maybeSingle: jest.fn(() => Promise.resolve(resolveMaybeSingle())),
       then: (cb: any) => Promise.resolve(resolveQuery()).then(cb),
@@ -271,6 +275,7 @@ beforeEach(() => {
         return chain;
       }),
       order: jest.fn(() => chain),
+      limit: jest.fn(() => chain),
       then: (cb: any) => Promise.resolve(resolve()).then(cb),
     };
     return chain;
@@ -316,6 +321,8 @@ describe('lockMonth', () => {
       const chain: any = {
         select: jest.fn(() => chain),
         eq: jest.fn(() => chain),
+        order: jest.fn(() => chain),
+        limit: jest.fn(() => chain),
         then: (cb: any, onRejected?: any) => {
           const data = table === 'accounting_outbox'
             ? [
@@ -366,6 +373,8 @@ describe('lockMonth', () => {
         lte: jest.fn(() => chain),
         lt: jest.fn(() => chain),
         in: jest.fn(() => chain),
+        order: jest.fn(() => chain),
+        limit: jest.fn(() => chain),
         then: (cb: any) => Promise.resolve({
           data: table === 'revenue' || table === 'expenses' || table === 'salary_records' ? [] : null,
           error: null,

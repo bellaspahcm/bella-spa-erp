@@ -87,6 +87,7 @@ class MockQueryBuilder {
   update(...args: any[]) { this.updateSpy(...args); return this; }
   insert(...args: any[]) { this.insertSpy(...args); return this; }
   delete(...args: any[]) { this.deleteSpy(...args); return this; }
+  limit(...args: any[]) { return this; }
   
   async single() {
     return { data: this.data, error: this.error };

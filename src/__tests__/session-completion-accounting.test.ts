@@ -131,6 +131,7 @@ describe('session completion accounting side effects', () => {
         total_sessions: 5,
         ktv_commission: 30000,
         assigned_ktv_id: 'ktv-1',
+        customer_id: 'customer-1',
         tenant_id: 'tenant-1',
         full_price: 500000,
         deposit_amount: 200000,
@@ -184,6 +185,7 @@ describe('session completion accounting side effects', () => {
         total_sessions: 5,
         ktv_commission: 30000,
         assigned_ktv_id: 'ktv-1',
+        customer_id: 'customer-1',
         tenant_id: 'tenant-1',
         full_price: 500000,
         deposit_amount: 200000,
@@ -231,6 +233,7 @@ describe('session completion accounting side effects', () => {
         total_sessions: 5,
         ktv_commission: 30000,
         assigned_ktv_id: 'ktv-1',
+        customer_id: 'customer-1',
         tenant_id: 'tenant-1',
         full_price: 500000,
         deposit_amount: 200000,
@@ -242,13 +245,55 @@ describe('session completion accounting side effects', () => {
       error: 'Không thể tạo review chờ đánh giá: review insert failed',
     });
     expect(calls).toEqual([
-      expect.objectContaining({ table: 'session_reviews', op: 'select' }),
+      expect.objectContaining({
+        table: 'session_reviews',
+        op: 'select',
+        filters: [
+          ['session_log_id', 'session-1'],
+          ['tenant_id', 'tenant-1'],
+        ],
+      }),
       expect.objectContaining({
         table: 'session_reviews',
         op: 'insert',
-        payload: [expect.objectContaining({ session_log_id: 'session-1', status: 'pending_review' })],
+        payload: [expect.objectContaining({
+          session_log_id: 'session-1',
+          reviewer_id: 'customer-1',
+          ktv_id: 'ktv-1',
+          status: 'pending_review',
+          tenant_id: 'tenant-1',
+        })],
       }),
     ]);
+  });
+
+  it('blocks review placeholder creation when booking belongs to another tenant', async () => {
+    const { calls, supabase } = createSupabaseMock();
+
+    const result = await ensureSessionReviewPlaceholder({
+      supabase: supabase as never,
+      sessionId: 'session-1',
+      ktvId: 'ktv-1',
+      tenantId: 'bella-tenant',
+      currentBooking: {
+        package_name: 'Gói dịch vụ',
+        completed_sessions: 1,
+        status: 'booked',
+        total_sessions: 5,
+        ktv_commission: 30000,
+        assigned_ktv_id: 'ktv-1',
+        customer_id: 'beauty-customer-1',
+        tenant_id: 'beauty-tenant',
+        full_price: 500000,
+        deposit_amount: 200000,
+        discount_percent: 0,
+      },
+    });
+
+    expect(result).toEqual({
+      error: 'Booking không thuộc chi nhánh hiện tại, không thể tạo review chờ đánh giá.',
+    });
+    expect(calls).toEqual([]);
   });
 
   it('creates confirmed revenue and PACKAGE_SALE outbox for single-session packages', async () => {
@@ -270,6 +315,7 @@ describe('session completion accounting side effects', () => {
         total_sessions: 5,
         ktv_commission: 30000,
         assigned_ktv_id: 'ktv-1',
+        customer_id: 'customer-1',
         tenant_id: 'tenant-1',
         full_price: 500000,
         deposit_amount: 200000,
@@ -335,6 +381,7 @@ describe('session completion accounting side effects', () => {
         total_sessions: 5,
         ktv_commission: 30000,
         assigned_ktv_id: 'ktv-1',
+        customer_id: 'customer-1',
         tenant_id: 'tenant-1',
         full_price: 500000,
         deposit_amount: 200000,
@@ -367,6 +414,7 @@ describe('session completion accounting side effects', () => {
       total_sessions: 5,
       ktv_commission: 30000,
       assigned_ktv_id: 'ktv-1',
+      customer_id: 'customer-1',
       tenant_id: 'tenant-1',
       full_price: 500000,
       deposit_amount: 0,
@@ -435,7 +483,7 @@ describe('session completion accounting side effects', () => {
         op: 'insert',
         payload: [expect.objectContaining({
           session_log_id: 'session-1',
-          reviewer_id: 'ktv-1',
+          reviewer_id: 'customer-1',
           ktv_id: 'ktv-1',
           status: 'pending_review',
           tenant_id: 'tenant-1',
@@ -477,6 +525,7 @@ describe('session completion accounting side effects', () => {
       total_sessions: 5,
       ktv_commission: 30000,
       assigned_ktv_id: 'ktv-1',
+      customer_id: 'customer-1',
       tenant_id: 'tenant-1',
       full_price: 500000,
       deposit_amount: 200000,
