@@ -549,7 +549,7 @@ export default function DashboardPage() {
                               <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Khách hàng</span>
                               <h3 className="font-bold text-sm md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
                                 Khách: {customerName}
-                                {babyName && <span className="text-rose-400 font-medium ml-1.5 text-xs md:text-base">- Hồ sơ: {babyName}</span>}
+                                {babyName && <span className="text-rose-400 font-medium ml-1.5 text-xs md:text-base">- {customerLabels.secondaryPrefix}: {babyName}</span>}
                               </h3>
                             </div>
                               <div className="mt-1 flex items-center gap-2 md:gap-3">
