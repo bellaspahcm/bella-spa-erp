@@ -1,8 +1,10 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Baby, CheckCircle2, Clock, RefreshCw, X } from 'lucide-react';
+import { Baby, CheckCircle2, Clock, RefreshCw, UserRound, X } from 'lucide-react';
 
+import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
+import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
 import type { KtvDashboardSession } from './KtvSessionSections';
 
 type KtvCheckoutConfirmModalProps = {
@@ -68,6 +70,9 @@ export function KtvCheckoutConfirmModal({
   onKtvCheckoutNoteChange,
   onConfirm,
 }: KtvCheckoutConfirmModalProps) {
+  const { tenantModuleKey } = useTenantModuleKey();
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+  const SecondaryProfileIcon = tenantModuleKey === 'babycare' ? Baby : UserRound;
   const timing = getCheckoutTiming(session);
   const isCheckoutDisabled = timing.isUnderTime && !ktvCheckoutNote.trim();
 
@@ -125,8 +130,10 @@ export function KtvCheckoutConfirmModal({
                       </span>
                       <div className="font-black text-sm text-slate-800 truncate">{session.bookings?.customers?.name_mother}</div>
                       <div className="text-xs text-rose-500 font-bold mt-0.5 flex items-center gap-1">
-                        <Baby className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Hồ sơ: {session.bookings?.customers?.name_baby || 'Chưa cập nhật'}</span>
+                        <SecondaryProfileIcon className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">
+                          {customerLabels.secondaryPrefix}: {session.bookings?.customers?.name_baby || customerLabels.secondaryFallback}
+                        </span>
                       </div>
                     </div>
                     <span className="bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0 ml-2">

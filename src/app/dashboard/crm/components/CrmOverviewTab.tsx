@@ -62,7 +62,7 @@ export function CrmOverviewTab({
           </h3>
           <div className="space-y-4 text-sm text-slate-600 font-medium">
             <p>
-              Bella Spa ERP đồng bộ với Zalo OA và Zalo Notification Service để nhắc lịch dịch vụ cho khách hàng.
+              Hệ thống đồng bộ với Zalo OA và Zalo Notification Service để nhắc lịch dịch vụ cho khách hàng.
               Khi bật tự động, hệ thống quét các ca dịch vụ sắp diễn ra và gửi ZNS theo mốc 2.5 giờ trước lịch hẹn.
             </p>
             <ul className="list-disc pl-5 space-y-2 text-slate-500">

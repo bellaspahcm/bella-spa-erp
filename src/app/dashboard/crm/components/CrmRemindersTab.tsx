@@ -1,12 +1,15 @@
 'use client';
 
 import { CheckCircle2, Clock } from 'lucide-react';
+import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { UpcomingCrmSession } from '../types';
 
 interface CrmRemindersTabProps {
   upcomingSessions: UpcomingCrmSession[];
   loadError: string | null;
   actionLoading: string | null;
+  tenantModuleKey?: TenantModuleKey | null;
   onSendSingleReminder: (sessionId: string) => void;
 }
 
@@ -14,8 +17,11 @@ export function CrmRemindersTab({
   upcomingSessions,
   loadError,
   actionLoading,
+  tenantModuleKey,
   onSendSingleReminder,
 }: CrmRemindersTabProps) {
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+
   return (
     <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-100/50 border border-slate-100/80 overflow-hidden">
       <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white/50 backdrop-blur-md">
@@ -66,7 +72,7 @@ export function CrmRemindersTab({
                       <div className="flex flex-col">
                         <span className="font-black text-sm text-slate-800">{customer?.name_mother || 'Khách hàng'}</span>
                         <span className="text-[11px] text-slate-400 font-bold">
-                          Hồ sơ: {customer?.name_baby || 'Chưa ghi nhận'} • SĐT: {customer?.phone || 'N/A'}
+                          {customerLabels.secondaryPrefix}: {customer?.name_baby || customerLabels.secondaryFallback} • SĐT: {customer?.phone || 'N/A'}
                         </span>
                       </div>
                     </td>

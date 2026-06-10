@@ -1,6 +1,8 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { getTenantPresentationFromModules } from '@/lib/business-rules/tenant-module-presentation';
+import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
 import { getCurrentUser } from '../user-actions';
 import { getLocalDateString } from '@/lib/utils';
 import { recordAuditLog } from '../audit-actions';
@@ -121,16 +123,14 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
       return { error: 'Không tìm thấy thông tin khách hàng.' };
     }
 
-    const motherName = customer.name_mother || 'Khách hàng';
-    const babyName = customer.name_baby ? `bé ${customer.name_baby}` : 'bé';
+    const customerName = customer.name_mother || 'Khách hàng';
     const timeStr = session.assigned_time ? session.assigned_time.substring(0, 5) : '08:00';
     const dateStr = session.assigned_date;
-    const ktvName = session.bookings?.assigned_ktv?.full_name || 'KTV Bella Spa';
 
     // Fetch tenant Zalo Template config
     const { data: tenantRows, error: tenantErr } = await supabase
       .from('tenants')
-      .select('zalo_template_reminder_id')
+      .select('name, contact_phone, logo_url, brand_theme, enabled_modules, zalo_template_reminder_id')
       .eq('id', tenantId)
       .limit(1);
 
@@ -139,10 +139,32 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
     }
 
     const tenant = pickFirstTenantRow(tenantRows);
+    const tenantBrand = resolveTenantBrandIdentity({
+      enabledModules: tenant?.enabled_modules,
+      brandTheme: tenant?.brand_theme,
+      logoUrl: tenant?.logo_url,
+      tenantName: tenant?.name,
+      surface: 'app',
+    });
+    const customerLabels = getTenantPresentationFromModules(tenant?.enabled_modules);
+    const packageName = session.bookings?.package_name || 'dịch vụ đã đặt';
+    const secondaryProfile = customer.name_baby
+      ? `${customerLabels.secondaryPrefix} ${customer.name_baby}`
+      : customerLabels.secondaryFallback;
+    const reminderTarget = tenantBrand.isBeautySpa ? packageName : secondaryProfile;
+    const fallbackAddress = tenantBrand.isBeautySpa ? 'Theo lịch hẹn' : 'Tại nhà';
+    const ktvName = session.bookings?.assigned_ktv?.full_name || `KTV ${tenantBrand.displayName}`;
+    const rawHotline = typeof tenant?.contact_phone === 'string' ? tenant.contact_phone.trim() : '';
+    const displayHotline = rawHotline
+      ? rawHotline.replace(/^(\d{4})(\d{3})(\d+)$/, '$1 $2 $3')
+      : 'chưa cập nhật';
     const templateId = tenant?.zalo_template_reminder_id || 'ZNS_REMINDER_V2';
 
     // Business standard message text for logs / simulated fallback
-    const message = `Kính gửi chị ${motherName}, Bella Spa xin nhắc lịch hẹn chăm sóc tại nhà cho ${babyName} vào lúc ${timeStr} hôm nay (${dateStr}). KTV phụ trách: ${ktvName}. Địa chỉ: ${session.address || 'Tại nhà'}. Hotline hỗ trợ: 0865 701 493.`;
+    const appointmentText = tenantBrand.isBeautySpa
+      ? `lịch hẹn ${packageName}`
+      : `lịch hẹn chăm sóc tại nhà cho ${secondaryProfile}`;
+    const message = `Kính gửi chị ${customerName}, ${tenantBrand.displayName} xin nhắc ${appointmentText} vào lúc ${timeStr} hôm nay (${dateStr}). KTV phụ trách: ${ktvName}. Địa chỉ: ${session.address || fallbackAddress}. Hotline hỗ trợ: ${displayHotline}.`;
 
     // Attempt real ZNS sending if phone is available
     let isRealSent = false;
@@ -153,12 +175,12 @@ export async function triggerZaloReminder(sessionLogId: string, tenantIdOverride
     const phoneVal = customer.phone;
     if (phoneVal) {
       const templateData = {
-        customer_name: motherName,
-        baby_name: babyName,
+        customer_name: customerName,
+        baby_name: reminderTarget,
         appointment_time: `${timeStr} ngày ${dateStr}`,
         ktv_name: ktvName,
-        address: session.address || 'Tại nhà',
-        hotline: '0865 701 493'
+        address: session.address || fallbackAddress,
+        hotline: displayHotline
       };
 
       const znsRes = await sendZaloZNS(tenantId as string, phoneVal as string, templateId, templateData);

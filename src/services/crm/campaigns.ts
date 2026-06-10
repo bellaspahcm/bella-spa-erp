@@ -1,6 +1,8 @@
 'use server';
 
 import { createClient } from '@/lib/supabase-server';
+import { getTenantPresentationFromModules } from '@/lib/business-rules/tenant-module-presentation';
+import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
 import { getCurrentUser } from '../user-actions';
 import { recordAuditLog } from '../audit-actions';
 import { pickFirstTenantRow } from './tenant-row';
@@ -105,15 +107,10 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
       return { error: 'Không tìm thấy khách hàng.' };
     }
 
-    const motherName = customer.name_mother || 'Chị';
-    const babyName = customer.name_baby || 'Bé';
-
-    const message = `Bella Spa chúc mừng sinh nhật tròn tuổi mới của bé ${babyName}! Mẹ ${motherName} ơi, nhân dịp đặc biệt này, Bella Spa thân gửi tặng gia đình Voucher giảm giá 10% gói liệu trình chăm sóc tiếp theo: [${voucherCode}]. Chúc bé luôn hay ăn chóng lớn, khỏe mạnh bình an! Hotline liên hệ đặt lịch: 0865 701 493.`;
-
     // Fetch tenant Zalo Template config
     const { data: tenantRows, error: tenantErr } = await supabase
       .from('tenants')
-      .select('zalo_template_birthday_id')
+      .select('name, contact_phone, logo_url, brand_theme, enabled_modules, zalo_template_birthday_id')
       .eq('id', tenantId)
       .limit(1);
 
@@ -122,7 +119,24 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
     }
 
     const tenant = pickFirstTenantRow(tenantRows);
+    const tenantBrand = resolveTenantBrandIdentity({
+      enabledModules: tenant?.enabled_modules,
+      brandTheme: tenant?.brand_theme,
+      logoUrl: tenant?.logo_url,
+      tenantName: tenant?.name,
+      surface: 'app',
+    });
+    const customerLabels = getTenantPresentationFromModules(tenant?.enabled_modules);
+    const customerName = customer.name_mother || 'Quý khách';
+    const secondaryProfile = customer.name_baby || (tenantBrand.isBeautySpa ? customerLabels.secondaryFallback : 'Bé');
+    const rawHotline = typeof tenant?.contact_phone === 'string' ? tenant.contact_phone.trim() : '';
+    const displayHotline = rawHotline
+      ? rawHotline.replace(/^(\d{4})(\d{3})(\d+)$/, '$1 $2 $3')
+      : 'chưa cập nhật';
     const templateId = tenant?.zalo_template_birthday_id || 'ZNS_BIRTHDAY_GIFT_V1';
+    const message = tenantBrand.isBeautySpa
+      ? `${tenantBrand.displayName} chúc mừng sinh nhật ${customerName}! Nhân dịp đặc biệt này, ${tenantBrand.displayName} thân gửi tặng voucher giảm giá 10% cho liệu trình/dịch vụ tiếp theo: [${voucherCode}]. Hotline liên hệ đặt lịch: ${displayHotline}.`
+      : `${tenantBrand.displayName} chúc mừng sinh nhật tròn tuổi mới của bé ${secondaryProfile}! Mẹ ${customerName} ơi, nhân dịp đặc biệt này, ${tenantBrand.displayName} thân gửi tặng gia đình voucher giảm giá 10% gói liệu trình chăm sóc tiếp theo: [${voucherCode}]. Chúc bé luôn hay ăn chóng lớn, khỏe mạnh bình an! Hotline liên hệ đặt lịch: ${displayHotline}.`;
 
     await incrementSmsCount(tenantId);
 
@@ -133,11 +147,11 @@ export async function sendBirthdayGreeting(customerId: string, voucherCode: stri
     const phoneVal = customer.phone;
     if (phoneVal) {
       const templateData = {
-        customer_name: motherName,
-        baby_name: babyName,
+        customer_name: customerName,
+        baby_name: tenantBrand.isBeautySpa ? customerName : secondaryProfile,
         voucher_code: voucherCode,
         discount_percent: '10%',
-        hotline: '0865 701 493'
+        hotline: displayHotline
       };
 
       const znsRes = await sendZaloZNS(tenantId as string, phoneVal as string, templateId, templateData);

@@ -1,6 +1,8 @@
 'use client';
 
 import { Gift, Percent, Plus, Tag } from 'lucide-react';
+import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
+import type { TenantModuleKey } from '@/lib/business-rules/tenant-modules';
 import type { BirthdayCustomer, VoucherCampaign } from '../types';
 
 interface CrmMarketingTabProps {
@@ -10,7 +12,8 @@ interface CrmMarketingTabProps {
   voucherError: string | null;
   isLoadingVouchers: boolean;
   actionLoading: string | null;
-  onSendBirthday: (customerId: string, babyName: string) => void;
+  tenantModuleKey?: TenantModuleKey | null;
+  onSendBirthday: (customerId: string, customerDisplayName: string) => void;
   onOpenVoucherModal: () => void;
 }
 
@@ -21,9 +24,12 @@ export function CrmMarketingTab({
   voucherError,
   isLoadingVouchers,
   actionLoading,
+  tenantModuleKey,
   onSendBirthday,
   onOpenVoucherModal,
 }: CrmMarketingTabProps) {
+  const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 bg-white rounded-[2.5rem] shadow-xl shadow-slate-100/50 border border-slate-100/80 overflow-hidden">
@@ -56,7 +62,9 @@ export function CrmMarketingTab({
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
                         <span className="font-black text-sm text-slate-800">{customer.name_mother || 'Khách hàng'}</span>
-                        <span className="text-[11px] text-slate-400 font-bold">Hồ sơ: {customer.name_baby || 'Chưa ghi nhận'} • SĐT: {customer.phone}</span>
+                        <span className="text-[11px] text-slate-400 font-bold">
+                          {customerLabels.secondaryPrefix}: {customer.name_baby || customerLabels.secondaryFallback} • SĐT: {customer.phone}
+                        </span>
                       </div>
                     </td>
                     <td className="py-4 px-6">
@@ -76,7 +84,12 @@ export function CrmMarketingTab({
                     </td>
                     <td className="py-4 px-6 text-center">
                       <button
-                        onClick={() => onSendBirthday(customer.id, customer.name_mother || customer.name_baby || 'khách hàng')}
+                        onClick={() => onSendBirthday(
+                          customer.id,
+                          tenantModuleKey === 'babycare'
+                            ? customer.name_baby || customer.name_mother || 'khách hàng'
+                            : customer.name_mother || customer.name_baby || 'khách hàng'
+                        )}
                         disabled={actionLoading === customer.id}
                         className="px-4 py-2 bg-gradient-to-r from-primary to-rose-500 hover:from-primary/95 hover:to-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-rose-100 dark:shadow-none hover:shadow-lg transition-all flex items-center gap-1.5 mx-auto disabled:opacity-50"
                       >
@@ -103,6 +116,7 @@ export function CrmMarketingTab({
               <p className="text-xs text-slate-400 font-medium">Các mã giảm giá áp dụng trong chiến dịch</p>
             </div>
             <button
+              aria-label="Tạo voucher mới"
               onClick={onOpenVoucherModal}
               className="p-2 bg-rose-50 hover:bg-primary hover:text-white rounded-xl text-primary transition-all active:scale-95 shadow-sm"
             >
