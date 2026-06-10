@@ -58,7 +58,7 @@ export function ActiveBookingPanel({
     : 0;
 
   return (
-          <div className="luxury-card-pink rounded-[3rem] p-5 relative shadow-2xl group sm:p-8">
+          <div className="active-booking-panel luxury-card-pink rounded-[3rem] p-5 relative shadow-2xl group sm:p-8">
             {/* Background Decorative Layer - Clipped */}
             <div className="absolute inset-0 overflow-hidden rounded-[3rem] pointer-events-none">
               <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-700 group-hover:scale-110" />

@@ -1268,6 +1268,44 @@ html[data-tenant-module="beauty_spa"] [class*="to-pink-"] {
   --tw-gradient-to: var(--beauty-em-2) var(--tw-gradient-to-position) !important;
 }
 
+html[data-tenant-module="beauty_spa"] .active-booking-panel {
+  color: #f8f6f2;
+}
+
+html[data-tenant-module="beauty_spa"] .active-booking-panel p,
+html[data-tenant-module="beauty_spa"] .active-booking-panel span:not([class*="text-slate-900"]):not([class*="text-rose-600"]),
+html[data-tenant-module="beauty_spa"] .active-booking-panel label {
+  color: rgba(248, 246, 242, 0.92) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .active-booking-panel h2,
+html[data-tenant-module="beauty_spa"] .active-booking-panel .text-white,
+html[data-tenant-module="beauty_spa"] .active-booking-panel [class*="text-white/"] {
+  color: #ffffff !important;
+}
+
+html[data-tenant-module="beauty_spa"] .active-booking-panel [class*="text-rose-100"],
+html[data-tenant-module="beauty_spa"] .active-booking-panel [class*="text-rose-200"],
+html[data-tenant-module="beauty_spa"] .active-booking-panel [class*="text-white/40"],
+html[data-tenant-module="beauty_spa"] .active-booking-panel [class*="text-white/60"] {
+  color: rgba(248, 246, 242, 0.82) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .active-booking-panel .bg-white p,
+html[data-tenant-module="beauty_spa"] .active-booking-panel .bg-white span,
+html[data-tenant-module="beauty_spa"] .active-booking-panel button.bg-white,
+html[data-tenant-module="beauty_spa"] .active-booking-panel button[class*="bg-white"] {
+  color: #0b2240 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .active-booking-panel button[class*="text-rose-600"] {
+  color: #074e44 !important;
+}
+
+html[data-tenant-module="beauty_spa"] .active-booking-panel button[disabled] {
+  color: rgba(248, 246, 242, 0.5) !important;
+}
+
 html[data-tenant-module="beauty_spa"] .bella-data-table th {
   color: var(--beauty-hint) !important;
   letter-spacing: 0.16em;
