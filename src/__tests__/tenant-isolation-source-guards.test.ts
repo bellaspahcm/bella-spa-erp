@@ -34,4 +34,21 @@ describe('dashboard tenant isolation source guards', () => {
       /\.from\('customers'\)[\s\S]{0,180}\.select\('id, name_mother, name_baby'\)[\s\S]{0,180}\.eq\('tenant_id', tenantId\)/,
     );
   });
+
+  it('keeps BookingModal customer and KTV pickers behind tenant-scoped server actions', () => {
+    const source = readSource('src/components/features/BookingModal.tsx');
+
+    expect(source).toContain('getScopedCustomers()');
+    expect(source).toContain('getUsers()');
+    expect(source).not.toMatch(/\.from\('users'\)/);
+    expect(source).not.toMatch(/\.from\('customers'\)/);
+  });
+
+  it('scopes staff list reads to the current tenant', () => {
+    const source = readSource('src/services/user-actions.ts');
+
+    expect(source).toMatch(
+      /export async function getUsers\(\)[\s\S]{0,500}\.from\('users'\)[\s\S]{0,260}\.eq\('tenant_id', tenantId\)/,
+    );
+  });
 });

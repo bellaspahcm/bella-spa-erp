@@ -10,9 +10,10 @@ import {
   type PaymentRevenueLike,
 } from '@/lib/business-rules/payment';
 import { getTenantModulePresentationOrNeutral } from '@/lib/business-rules/tenant-module-presentation';
-import { createClient as createBrowserClient } from '@/lib/supabase-client';
 import { cn,formatMoneyInput,formatNumberWithSeparator,getLocalDateString,parseIntegerInput,parseMoneyInput } from '@/lib/utils';
 import { createBooking,getBookingDetailsWithPayment,getDraftBooking,getPackages as getScopedPackages } from '@/modules/booking/actions/lifecycle-actions';
+import { getCustomers as getScopedCustomers } from '@/services/customer-actions';
+import { getUsers } from '@/services/user-actions';
 import type { Database } from '@/types/database.types';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
@@ -113,16 +114,13 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
 
   async function fetchKtvs() {
     try {
-      const supabase = createBrowserClient();
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, full_name')
-        .eq('role', 'ktv')
-        .eq('status', 'active')
-        .order('full_name', { ascending: true });
-        
-      if (error) throw error;
-      setKtvs(data || []);
+      const data = await getUsers();
+      setKtvs(
+        data
+          .filter((user) => user.role === 'ktv' && user.status === 'active')
+          .map((user) => ({ id: user.id, full_name: user.full_name }))
+          .sort((a, b) => a.full_name.localeCompare(b.full_name))
+      );
     } catch (error) {
       console.error('Error fetching KTVs:', error);
     }
@@ -131,16 +129,12 @@ export function BookingModal({ isOpen, onClose, onSuccess, preselectedCustomer }
   async function fetchCustomers() {
     setIsLoading(true);
     try {
-      const supabase = createBrowserClient();
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('status', 'active')
-        .order('name_mother', { ascending: true });
-        
-      if (error) throw error;
-      setCustomers(data || []);
-      setFilteredCustomers(data || []);
+      const data = await getScopedCustomers();
+      const activeCustomers = (data || [])
+        .filter((customer) => customer.status === 'active')
+        .sort((a, b) => (a.name_mother || '').localeCompare(b.name_mother || ''));
+      setCustomers(activeCustomers);
+      setFilteredCustomers(activeCustomers);
     } catch (error) {
       console.error('Error fetching customers:', error);
       toast.error('Không thể tải danh sách khách hàng');
