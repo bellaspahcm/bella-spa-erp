@@ -48,7 +48,10 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | Client direct query | Booking modal/list picker hien KTV/khach Beauty trong tai khoan Bella | UI query truc tiep tu browser vao `users`/`customers` thay vi qua server action tenant-scoped | Khong query client voi bang tenant-sensitive; dung server action co current tenant; them source guard |
 | Module isolation | Beauty tenant van hien text Me & Be, KTV, Combo Me Be | UI copy va filter bi hard-code theo Babycare | Dung module-aware copy, service category theo module, khong render babycare UI khi tenant chua load module |
 | Loading fallback | F5 hien Bella Spa mot luc roi moi chuyen Beauty Spa | Fallback mac dinh ve Bella/Babycare truoc khi tenant brand/module load xong | Non-Bella tenant khong fallback Bella; dung loading/neutral state den khi co tenant context |
+| First-paint theme flash | F5 Beauty Spa hien lop hong truoc khi chuyen sang Jade/Beauty | CSS root/meta theme-color mac dinh Bella truoc khi client xac dinh tenant | App shell phai bootstrap neutral/tenant-scoped truoc paint; session runtime cache chi duoc ghi sau khi tenant da xac thuc |
 | Brand isolation | Sidebar/header/portal co nguy co dung logo/mau Bella | Branding doc tu default chung hoac cache khong gan tenant | Cache brand phai kem `tenantId`; fallback Beauty trung tinh, khong fallback Bella |
+| Visual theme leakage | Giao dien rieng cua Beauty co nguy co doi mau/layout Bella ERP | CSS/class rieng cua nganh moi viet global, khong scope theo module marker | Moi theme UI rieng phai nam sau `html[data-tenant-module="..."]`; them source guard khoa selector khong duoc unscoped |
+| CTA/badge contrast | Nut chinh hoac badge quan trong bi mo/gan nhu mat chu | Selector theme qua rong match ca class mau dam, hoac dung animation giam opacity nhu `animate-pulse` | CTA/badge nghiep vu phai co class rieng theo module, mau nen/chu dat contrast ro; neu can nhap nhay thi dung glow/brightness, khong giam opacity |
 | Package/service scope | Goi dich vu Beauty va Babycare co nguy co dung lan | `packages` la bang dung chung, ban dau thieu module guard | `packages.module_key`, `validateBookingPackageScope`, test cross-module/cross-tenant |
 | Data vocabulary | Form khach Beauty con truong "Ho ten me", "Ho ten be", lich co "Combo Me Be" | Dung lai giao dien cu chua audit toan bo text | Truoc khi release module moi phai `rg` toan bo thuat ngu nganh cu va map sang dictionary module |
 | Hidden onboarding copy | Beauty admin van thay tour/huong dan "Bat dau cung Bella Spa" sau khi F5 | Chi audit cac trang chinh, bo sot onboarding/help/empty-state copy an | Moi module moi phai audit ca onboarding tour, tooltip, empty state, help text va first-run modal; copy phai nhan brand/module context |
@@ -179,6 +182,8 @@ Moi UI cua module moi phai:
 - Dung copy theo module, khong hard-code thuat ngu nganh cu.
 - Loading state khong hien tam du lieu/ngon ngu cua tenant khac.
 - Sidebar/header/portal/bao gia/hoa don doc brand theo tenant.
+- First paint tren app route phai dung neutral bootstrap hoac runtime brand cache da duoc ghi sau khi tenant xac thuc; khong de `:root`, `theme-color`, sidebar/header mac dinh Bella hien truoc khi module load xong.
+- Theme rieng cua nganh moi phai scope bang module marker, vi du `html[data-tenant-module="beauty_spa"]`; khong viet selector `.beauty-*` global lam anh huong Bella/Babycare.
 - Picker/list tren UI phai lay du lieu qua action tenant-scoped, khong doc truc tiep bang tenant-sensitive tu browser.
 - Dropdown, table, modal dung component/pattern chung cua he thong.
 - Mobile phai check truoc khi coi xong.
@@ -189,7 +194,7 @@ Checklist UI bat buoc:
 - Desktop: khong tran bang/filter/dropdown.
 - Mobile: khong cat noi dung, nut bam vua khung, table scroll trong box.
 - F5: giu dung tenant/module/tab hien tai.
-- Loading: khong flash Bella/Babycare tren Beauty/nganh moi.
+- Loading/first paint: khong flash Bella/Babycare/mau hong tren Beauty/nganh moi; neu chua co tenant context thi phai la neutral shell.
 - Empty/error state: noi dung dung nganh.
 
 ### Phase 5 - Demo Data Va Cleanup
@@ -294,6 +299,27 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 ```
 
 ## Lich Su Loi Moi
+
+### 2026-06-11 - Beauty CTA va badge quan trong bi mo
+
+- Module/tenant: Beauty Spa.
+- Man hinh/luong: Danh sach khach hang Beauty, nut "Them khach hang", badge "Dang co lieu trinh/dich vu".
+- Dau hieu: CTA va badge co chu trang nhung nen bi doi sang mau qua nhat; badge dang nhap nhay co luc gan nhu bien mat.
+- Nguyen nhan goc: CSS Beauty override selector `[class*="bg-rose-..."]` qua rong nen match ca class mau dam nhu `bg-rose-500`; badge dung `animate-pulse` lam opacity giam xuong khoang 0.5.
+- Cach sua: Gan class rieng `beauty-customer-add-cta` va `beauty-active-care-badge`; override trong ca `pending` va `beauty_spa`; doi nhap nhay sang glow/brightness de khong lam mo chu.
+- Test/guard da them: `npm.cmd run lint`, Playwright headless do computed style xac nhan nen gradient Jade/navy, chu trang, opacity `1`; luu anh verify `docs/beauty_customer_add_cta_visible.png` va `docs/beauty_customer_active_badge_visible.png`.
+- Bai hoc: Moi CTA/badge nghiep vu cua module moi phai duoc check contrast trong ca first-paint/pending va sau khi tenant resolve; khong dung animation giam opacity cho thong tin can theo doi.
+
+### 2026-06-11 - Beauty F5 flash lop hong truoc khi vao Jade theme
+
+- Module/tenant: Beauty Spa va Bella Spa.
+- Man hinh/luong: Dashboard app shell, sidebar/header, theme-color trinh duyet.
+- Dau hieu: Khi F5 tai khoan Beauty Spa, UI hien mot lop hong/Bella trong khoanh khac ngan roi moi chuyen sang mau xanh Jade.
+- Nguyen nhan goc: Root CSS variables va meta `theme-color` mac dinh Bella/Pink truoc khi client load tenant brand/module; runtime cache chua duoc bootstrap som.
+- Cach sua: Them bootstrap script trong root layout cho app routes de set `data-tenant-module="pending"` va CSS variables neutral truoc paint; ghi runtime brand cache vao `sessionStorage` sau khi tenant brand da duoc xac thuc; clear runtime cache khi vao login/logout; cap nhat theme-color khi apply brand.
+- Test/guard da them: `npm.cmd run lint`, `npm.cmd run build`, Playwright headless xac nhan early F5 khong con mau hong va reload Beauty vao thang `beauty_spa`/`#074E44`.
+- Commit: pending.
+- Rui ro con lai: Neu them route app shell moi ngoai `/dashboard` hoac `/ktv`, phai dua route do vao bootstrap guard hoac co layout brand bootstrap rieng.
 
 ### 2026-06-10 - Bella admin thay du lieu Beauty trong UI
 

@@ -106,10 +106,15 @@ export function SessionCard({
       </div>
       
       <div className="flex-1 min-w-0 relative z-10">
-        <div className="flex flex-wrap items-center gap-3 mb-2">
+        <div className="flex flex-wrap items-start gap-3 mb-2">
           <h3 className="max-w-full break-words text-lg font-black tracking-tight text-slate-900 uppercase sm:text-xl">
-            {customerLabels.customerPrefix} {booking.customers?.name_mother} {booking.customers?.name_baby ? `- ${customerLabels.secondaryPrefix} ${booking.customers.name_baby}` : ''}
+            {customerLabels.customerPrefix} {booking.customers?.name_mother}
           </h3>
+          {booking.customers?.name_baby && (
+            <p className="w-full break-words text-sm font-semibold text-primary/80">
+              {customerLabels.secondaryPrefix}: {booking.customers.name_baby}
+            </p>
+          )}
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <span className="max-w-full break-words rounded-lg border border-primary/10 bg-rose-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-primary">
               {resolvePackageName(booking)}

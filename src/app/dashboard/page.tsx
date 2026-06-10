@@ -476,12 +476,12 @@ export default function DashboardPage() {
             </Link>
           </div>
           
-          <div className="max-h-[1150px] overflow-y-auto pr-4 custom-scrollbar space-y-6">
+          <div className="dashboard-schedule-list max-h-[1150px] overflow-y-auto overflow-x-hidden custom-scrollbar space-y-6">
             {isLoading ? (
               [1, 2, 3].map((i) => (
                 <div 
                   key={i}
-                  className="bg-white/30 p-6 md:p-7 rounded-[2.5rem] border border-white/40 shadow-sm relative mb-5 flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 backdrop-blur-md animate-pulse"
+                  className="dashboard-schedule-card bg-white/30 p-6 md:p-7 rounded-[2.5rem] border border-white/40 shadow-sm relative mb-5 flex flex-col justify-between gap-6 md:gap-8 backdrop-blur-md animate-pulse"
                 >
                   <div className="flex flex-1 items-start gap-5 md:gap-7">
                     <SkeletonLoader variant="circular" width={80} height={80} className="shrink-0" />
@@ -501,7 +501,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-3 shrink-0 min-w-[200px] space-y-2">
+                  <div className="dashboard-schedule-actions grid w-full grid-cols-1 gap-3 2xl:grid-cols-3">
                     <SkeletonLoader variant="rectangular" width="100%" height={44} className="rounded-2xl" />
                     <SkeletonLoader variant="rectangular" width="100%" height={48} className="rounded-[1.25rem]" />
                     <SkeletonLoader variant="rectangular" width="100%" height={56} className="rounded-[1.25rem]" />
@@ -530,9 +530,9 @@ export default function DashboardPage() {
                   return (
                     <div 
                       key={session.id}
-                      className="group bg-white/30 hover:bg-white/60 p-6 md:p-7 rounded-[2.5rem] transition-all border border-white/40 hover:border-primary/10 shadow-sm hover:shadow-2xl hover:shadow-pink-100/30 dark:hover:shadow-none relative mb-5 last:mb-0 backdrop-blur-md"
+                      className="dashboard-schedule-card group bg-white/30 hover:bg-white/60 p-6 md:p-7 rounded-[2.5rem] transition-all border border-white/40 hover:border-primary/10 shadow-sm hover:shadow-2xl hover:shadow-pink-100/30 dark:hover:shadow-none relative mb-5 last:mb-0 backdrop-blur-md"
                     >
-                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8">
+                      <div className="flex flex-col justify-between gap-6 md:gap-8">
                         <div className="flex flex-1 items-start gap-3 md:gap-7">
                           {/* Avatar Section */}
                           <div className="relative shrink-0">
@@ -544,13 +544,17 @@ export default function DashboardPage() {
                             </div>
                           </div>
 
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 pt-0.5">
                             <div className="flex flex-col mb-2 md:mb-4">
                               <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Khách hàng</span>
-                              <h3 className="font-bold text-sm md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight truncate">
+                              <h3 className="font-bold text-sm md:text-2xl text-foreground group-hover:text-primary transition-colors tracking-tight leading-snug break-words">
                                 Khách: {customerName}
-                                {babyName && <span className="text-rose-400 font-medium ml-1.5 text-xs md:text-base">- {customerLabels.secondaryPrefix}: {babyName}</span>}
                               </h3>
+                              {babyName && (
+                                <p className="mt-1 text-xs md:text-sm font-semibold text-primary/80 leading-relaxed break-words">
+                                  {customerLabels.secondaryPrefix}: {babyName}
+                                </p>
+                              )}
                             </div>
                               <div className="mt-1 flex items-center gap-2 md:gap-3">
                                 <span className="text-[8px] md:text-[9px] font-black bg-primary/10 text-primary px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider">
@@ -592,33 +596,29 @@ export default function DashboardPage() {
                                   {booking?.completed_sessions || 0} / {booking?.total_sessions || 15} Buổi
                                 </span>
                               </div>
-                              <div className="h-1.5 md:h-2.5 w-full bg-slate-100/40 rounded-full overflow-hidden p-0.5 border border-white shadow-inner">
+                              <div className="dashboard-schedule-progress-track h-2 md:h-3 w-full rounded-full overflow-hidden p-0.5">
                                 <motion.div 
                                   initial={{ width: 0 }}
                                   animate={{ width: `${((booking?.completed_sessions || 0) / (booking?.total_sessions || 15)) * 100}%` }}
-                                  className="h-full bg-gradient-to-r from-primary via-rose-400 to-accent rounded-full shadow-[0_0_10px_rgba(219,39,119,0.3)]"
+                                  className="dashboard-schedule-progress-fill h-full rounded-full"
                                 />
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* Status & Actions - Side Layout */}
-                        <div className="flex flex-col gap-6 lg:gap-8 shrink-0 min-w-[200px]">
-                          <div className="flex flex-col gap-3 w-full">
+                        {/* Status & Actions */}
+                        <div className="w-full min-w-0">
+                          <div className="dashboard-schedule-actions grid w-full grid-cols-1 gap-3 2xl:grid-cols-3">
                             {/* Action Buttons - Detail moved here */}
-                            <div className="flex flex-col gap-2 mb-2">
                               <Link 
                                 href={`/dashboard/customers/${booking?.customers?.id}?bookingId=${booking?.id}`}
-                                className="w-full py-3.5 bg-white border-2 border-slate-100 hover:border-primary/20 text-slate-600 hover:text-primary rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-3 group/detail"
+                                className="min-h-12 w-full px-4 py-3.5 bg-white border-2 border-slate-100 hover:border-primary/20 text-slate-600 hover:text-primary rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-sm hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-3 group/detail"
                               >
                                 <User className="w-4 h-4 text-slate-400 group-hover/detail:text-primary transition-colors" />
                                 Xem chi tiết
                                 <ChevronRight className="w-4 h-4 group-hover/detail:translate-x-1 transition-transform" />
                               </Link>
-                              
-
-                            </div>
 
                             <AnimatePresence>
                               {quickNoteId === session.id ? (
@@ -627,7 +627,7 @@ export default function DashboardPage() {
                                   initial={{ opacity: 0, scale: 0.95 }}
                                   animate={{ opacity: 1, scale: 1 }}
                                   exit={{ opacity: 0, scale: 0.95 }}
-                                  className="relative"
+                                  className="relative min-w-0"
                                 >
                                   <input 
                                     autoFocus
@@ -655,7 +655,7 @@ export default function DashboardPage() {
                                     setQuickNoteId(session.id);
                                     setQuickNoteValue('');
                                   }}
-                                  className="flex items-center justify-center gap-3 px-6 py-4 bg-white/50 hover:bg-white text-slate-500 hover:text-primary border-2 border-dashed border-slate-200 hover:border-primary/40 rounded-[1.25rem] transition-all text-xs font-black uppercase tracking-widest group/note shadow-sm hover:shadow-lg"
+                                  className="min-h-12 flex items-center justify-center gap-3 px-4 py-4 bg-white/50 hover:bg-white text-slate-500 hover:text-primary border-2 border-dashed border-slate-200 hover:border-primary/40 rounded-[1.25rem] transition-all text-xs font-black uppercase tracking-widest group/note shadow-sm hover:shadow-lg"
                                 >
                                   <MessageSquare className="w-4 h-4 group-hover/note:scale-125 transition-transform duration-300" />
                                   Thêm ghi chú
@@ -666,7 +666,7 @@ export default function DashboardPage() {
                             <button 
                               onClick={() => handleCompleteSession(session.id, session.booking_id, quickNoteValue)}
                               disabled={updatingId === session.id}
-                              className="w-full px-8 py-5 bg-gradient-to-br from-primary to-[#831843] text-white rounded-[1.25rem] text-[11px] font-black uppercase tracking-[0.15em] hover:shadow-2xl hover:shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 relative overflow-hidden group/btn"
+                              className="min-h-12 w-full px-4 py-4 bg-gradient-to-br from-primary to-[#831843] text-white rounded-[1.25rem] text-[11px] font-black uppercase tracking-[0.15em] hover:shadow-2xl hover:shadow-primary/30 transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-50 relative overflow-hidden group/btn"
                             >
                               <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover/btn:translate-x-0 transition-transform duration-500" />
                               {updatingId === session.id ? (
@@ -674,7 +674,7 @@ export default function DashboardPage() {
                               ) : (
                                 <>
                                   <CheckCircle2 className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                                  <span>Hoàn thành buổi {(booking?.completed_sessions || 0) + 1}</span>
+                                  <span className="leading-tight text-center">Hoàn thành buổi {(booking?.completed_sessions || 0) + 1}</span>
                                 </>
                               )}
                             </button>

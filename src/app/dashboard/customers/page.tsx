@@ -400,7 +400,7 @@ export default function CustomersPage() {
           <PremiumExportButton />
           <button 
             onClick={handleAddNew}
-            className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 dark:shadow-none sm:px-6"
+            className="beauty-customer-add-cta flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-rose-500 px-4 py-3 font-bold text-white shadow-lg shadow-rose-200 transition-all hover:bg-rose-600 active:scale-95 dark:shadow-none sm:px-6"
           >
             <UserPlus className="w-5 h-5 shrink-0" />
             <span>Thêm khách hàng</span>
@@ -504,7 +504,7 @@ export default function CustomersPage() {
                   <motion.div 
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="flex items-center gap-2 bg-rose-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-rose-200 dark:shadow-none animate-pulse cursor-pointer"
+                    className="beauty-active-care-badge flex items-center gap-2 bg-rose-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-lg shadow-rose-200 dark:shadow-none cursor-pointer"
                     onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
                   >
                     <Sparkles className="w-3 h-3" />

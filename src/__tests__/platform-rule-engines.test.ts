@@ -189,8 +189,8 @@ describe('platform rule engines', () => {
     expect(normalizeTenantBrandThemeForModule({}, 'beauty_spa')).toEqual({
       brandName: '',
       logoUrl: '',
-      primaryColor: '#087F6B',
-      accentColor: '#7DD3C7',
+      primaryColor: '#074E44',
+      accentColor: '#C8A97A',
       portalDisplayName: '',
       invoiceDisplayName: '',
       stylePreset: 'jade_wellness',
@@ -205,7 +205,7 @@ describe('platform rule engines', () => {
     })).toMatchObject({
       displayName: 'Beauty Spa',
       logoUrl: '',
-      primaryColor: '#087F6B',
+      primaryColor: '#074E44',
       isBeautySpa: true,
     });
     expect(resolveTenantBrandIdentity({

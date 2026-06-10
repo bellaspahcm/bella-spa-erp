@@ -91,18 +91,17 @@ export function BookingsDayTimelineList({
                   </span>
                 </div>
 
-                <h3 className="mb-2 break-words text-lg font-extrabold text-slate-900 sm:text-xl">
+                <h3 className="mb-1 break-words text-lg font-extrabold text-slate-900 sm:text-xl">
                   {formatBookingCustomerLabel({
                     moduleKey: tenantModuleKey,
                     primaryName: session.bookings?.customers?.name_mother,
                   })}
-                  {session.bookings?.customers?.name_baby && (
-                    <span className="ml-0 block font-medium text-rose-400 sm:ml-2 sm:inline">
-                      {' '}
-                      - {customerLabels.secondaryPrefix}: {session.bookings.customers.name_baby}
-                    </span>
-                  )}
                 </h3>
+                {session.bookings?.customers?.name_baby && (
+                  <p className="mb-2 break-words text-sm font-semibold text-primary/80">
+                    {customerLabels.secondaryPrefix}: {session.bookings.customers.name_baby}
+                  </p>
+                )}
                 <p className="flex min-w-0 items-start gap-2 text-sm font-bold text-slate-500">
                   <LayoutGrid className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" />
                   <span className="break-words">{session.bookings?.packages?.name || session.bookings?.package_name || 'Gói liệu trình'}</span>

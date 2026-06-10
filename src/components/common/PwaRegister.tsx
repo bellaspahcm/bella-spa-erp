@@ -32,9 +32,41 @@ export default function PwaRegister() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // 1. Register the Service Worker in production
+    const isLocalDev =
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '[::1]' ||
+      process.env.NODE_ENV !== 'production';
+
+    const clearLocalPwaCache = async () => {
+      if (!('serviceWorker' in navigator)) return;
+
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(
+          cacheNames
+            .filter((cacheName) => cacheName.startsWith('bella-spa-erp'))
+            .map((cacheName) => caches.delete(cacheName))
+        );
+      }
+    };
+
+    let handleWindowLoad: (() => void) | undefined;
+
+    // 1. Register the Service Worker only in production. In local/dev, remove
+    // any old PWA cache so Next dev never serves stale interface chunks.
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+      handleWindowLoad = () => {
+        if (isLocalDev) {
+          clearLocalPwaCache().catch((error) => {
+            console.error('[PWA] Failed to clear local service worker cache:', error);
+          });
+          return;
+        }
+
         navigator.serviceWorker.register('/sw.js')
           .then((registration) => {
             console.log('[PWA] Service Worker registered with scope:', registration.scope);
@@ -42,19 +74,22 @@ export default function PwaRegister() {
           .catch((error) => {
             console.error('[PWA] Service Worker registration failed:', error);
           });
-      });
+      };
+
+      window.addEventListener('load', handleWindowLoad);
     }
+
+    let iosTimer: ReturnType<typeof setTimeout> | undefined;
 
     // 2. Detect if the device is iOS (Safari doesn't support beforeinstallprompt)
     if (isIOS) {
       // Show the iOS "Add to Home Screen" instructions after 5 seconds of loading the app
-      const timer = setTimeout(() => {
+      iosTimer = setTimeout(() => {
         const hasDismissed = localStorage.getItem('pwa_ios_banner_dismissed');
         if (!hasDismissed) {
           setShowBanner(true);
         }
       }, 5000);
-      return () => clearTimeout(timer);
     }
 
     // 3. Listen for Android/Chrome custom install prompt (A2HS)
@@ -74,15 +109,24 @@ export default function PwaRegister() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // 4. Listen for successful install
-    window.addEventListener('appinstalled', () => {
+    const handleAppInstalled = () => {
       console.log('[PWA] App successfully installed!');
       setShowBanner(false);
       setDeferredPrompt(null);
       toast.success('Cài đặt ứng dụng Bella Spa ERP thành công!');
-    });
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
+      if (handleWindowLoad) {
+        window.removeEventListener('load', handleWindowLoad);
+      }
+      if (iosTimer) {
+        clearTimeout(iosTimer);
+      }
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, [isIOS]);
 

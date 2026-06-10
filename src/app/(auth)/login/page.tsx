@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase-client';
 import { challengeAndVerify, needsMfaChallenge } from '@/lib/mfa';
@@ -11,12 +11,22 @@ type Stage =
   | { name: 'password' }
   | { name: 'mfa'; code: string };
 
+const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [stage, setStage] = useState<Stage>({ name: 'password' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.removeItem(RUNTIME_BRAND_CACHE_KEY);
+    } catch {
+      // Runtime cache only prevents first-paint theme flashes.
+    }
+  }, []);
 
   const finalizeLogin = () => {
     if (process.env.NODE_ENV === 'development') {
