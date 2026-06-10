@@ -26,6 +26,17 @@ describe('Beauty demo tenant lifecycle script', () => {
     expect(source).toContain("subscription_tier: 'enterprise'");
   });
 
+  it('seeds and verifies the demo accounting chart before posting demo journals', () => {
+    const source = readSource('scripts/beauty-demo-tenant.cjs');
+
+    expect(source).toContain("const REQUIRED_DEMO_ACCOUNT_CODES = ['111', '112', '131', '334', '3387', '5111', '6421']");
+    expect(source).toContain("client.rpc('seed_default_coa'");
+    expect(source).toContain(".from('accounting_accounts')");
+    expect(source).toContain('ensureDemoAccountingAccounts(client, tenantId)');
+    expect(source).toContain('ensureDemoAccountingAccounts(client, tenant.id)');
+    expect(source).toContain('Verified accounting accounts');
+  });
+
   it('requires explicit cleanup confirmation and avoids broad delete filters', () => {
     const source = readSource('scripts/beauty-demo-tenant.cjs');
 

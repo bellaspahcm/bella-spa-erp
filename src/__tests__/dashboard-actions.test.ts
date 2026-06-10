@@ -2,6 +2,7 @@ import {
   getDashboardStats,
   getImportantAlerts,
   getMonthlyPerformance,
+  getUpcomingSessions,
 } from '../services/dashboard-actions';
 
 jest.mock('server-only', () => ({}), { virtual: true });
@@ -9,6 +10,7 @@ jest.mock('server-only', () => ({}), { virtual: true });
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
 const mockRpc = jest.fn();
+const mockGetCalendarSessions = jest.fn();
 const queryFilters: Array<{ column: string; value: unknown }> = [];
 
 jest.mock('../services/user-actions', () => ({
@@ -20,6 +22,10 @@ jest.mock('../lib/supabase-server', () => ({
     from: mockFrom,
     rpc: mockRpc,
   })),
+}));
+
+jest.mock('@/modules/booking/actions/session-actions', () => ({
+  getCalendarSessions: (...args: unknown[]) => mockGetCalendarSessions(...args),
 }));
 
 class MockQueryBuilder {
@@ -55,6 +61,7 @@ describe('dashboard read actions', () => {
       tenant_id: 'tenant-1',
     });
     mockRpc.mockResolvedValue({ data: [], error: null });
+    mockGetCalendarSessions.mockResolvedValue([]);
   });
 
   it('propagates dashboard stats query failures instead of returning zeroes', async () => {
@@ -103,5 +110,25 @@ describe('dashboard read actions', () => {
     expect(mockFrom).not.toHaveBeenCalled();
     expect(mockRpc).not.toHaveBeenCalled();
     expect(queryFilters).toEqual([]);
+  });
+
+  it('loads upcoming sessions through the tenant-scoped calendar session action', async () => {
+    mockGetCalendarSessions.mockResolvedValueOnce([
+      { id: 'today-open', assigned_date: '2026-06-10', status: 'scheduled' },
+      { id: 'today-done', assigned_date: '2026-06-10', status: 'completed' },
+      { id: 'tomorrow-open', assigned_date: '2026-06-11', status: 'scheduled' },
+    ]);
+
+    await expect(getUpcomingSessions('2026-06-10')).resolves.toEqual([
+      expect.objectContaining({ id: 'today-open' }),
+    ]);
+
+    expect(mockGetCalendarSessions).toHaveBeenCalledTimes(1);
+  });
+
+  it('propagates upcoming session read failures instead of hiding tenant-scope issues', async () => {
+    mockGetCalendarSessions.mockRejectedValueOnce(new Error('tenant scoped calendar failed'));
+
+    await expect(getUpcomingSessions('2026-06-10')).rejects.toThrow('tenant scoped calendar failed');
   });
 });
