@@ -12,7 +12,8 @@ import { createClient } from '@/lib/supabase-client';
 import { cn } from '@/lib/utils';
 import { completeSession,saveSessionNote } from '@/modules/booking/actions/session-actions';
 import {
-getFullDashboardData,
+getDashboardPrimaryData,
+getDashboardSecondaryData,
 type DashboardAlert
 } from '@/services/dashboard-actions';
 import { markNotificationAsRead } from '@/services/notification-actions';
@@ -114,6 +115,7 @@ export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [isLoading, setIsLoading] = useState(true);
+  const [isSecondaryLoading, setIsSecondaryLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -181,6 +183,7 @@ export default function DashboardPage() {
     if (!tenantId) return;
     
     setIsRefreshing(true);
+    setIsSecondaryLoading(true);
     try {
       const { startDate, endDate } = getMonthRange(selectedMonth, selectedYear);
       const now = new Date();
@@ -191,8 +194,8 @@ export default function DashboardPage() {
         .from('inventory_items')
         .select('id, stock_level, min_stock_level, price_per_unit')
         .eq('tenant_id', tenantId);
-      const [{ statsData, sessionsData, ktvsData, alertsData, perfData }, invRes] = await Promise.all([
-        getFullDashboardData(startDate, endDate, localToday),
+      const [{ statsData, sessionsData }, invRes] = await Promise.all([
+        getDashboardPrimaryData(startDate, endDate, localToday),
         inventoryQuery
       ]);
 
@@ -212,16 +215,27 @@ export default function DashboardPage() {
       
       setStats(newStats);
       setSessions((sessionsData || []) as unknown as DashboardSession[]);
-      setTopKTVs((ktvsData || []).map((ktv) => ({
-        ...ktv,
-        rating: Number(ktv.rating) || 0,
-      })));
-      setPerformanceData((perfData || []) as DashboardPerformancePoint[]);
-      setAlerts(alertsData || []);
       setInventorySummary(invSummary || { totalItems: 0, lowStockCount: 0, totalValue: 0 });
+      setIsLoading(false);
+
+      try {
+        const { ktvsData, alertsData, perfData } = await getDashboardSecondaryData();
+        setTopKTVs((ktvsData || []).map((ktv) => ({
+          ...ktv,
+          rating: Number(ktv.rating) || 0,
+        })));
+        setPerformanceData((perfData || []) as DashboardPerformancePoint[]);
+        setAlerts(alertsData || []);
+      } catch (secondaryError) {
+        console.error('Error fetching dashboard secondary data:', secondaryError);
+        toast.error('Không thể tải dữ liệu phân tích dashboard');
+      } finally {
+        setIsSecondaryLoading(false);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast.error('Lỗi cập nhật dữ liệu');
+      setIsSecondaryLoading(false);
     } finally {
       setIsRefreshing(false);
       setIsLoading(false);
@@ -699,13 +713,13 @@ export default function DashboardPage() {
         </motion.div>
         
         {/* Sidebar Analytics Stack */}
-        <RevenueChart performanceData={performanceData} userRole={userRole} isLoading={isLoading} />
+        <RevenueChart performanceData={performanceData} userRole={userRole} isLoading={isSecondaryLoading} />
       </div>
 
       {/* New Sections: Top KTV & Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 mt-12">
         {/* Top KTV Xuất Sắc */}
-        <KtvPerformanceTable topKTVs={topKTVs} isLoading={isLoading} />
+        <KtvPerformanceTable topKTVs={topKTVs} isLoading={isSecondaryLoading} />
 
         {/* Cảnh báo quan trọng */}
         <motion.div 
@@ -723,7 +737,14 @@ export default function DashboardPage() {
           </div>
           
           <div className="space-y-4">
-            {alerts.slice(0, 5).map((alert, idx) => (
+            {isSecondaryLoading ? (
+              [1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="h-24 animate-pulse rounded-3xl border border-white/40 bg-white/30"
+                />
+              ))
+            ) : alerts.slice(0, 5).map((alert, idx) => (
               <div 
                 key={idx} 
                 onClick={async () => {

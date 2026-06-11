@@ -10,7 +10,6 @@ jest.mock('server-only', () => ({}), { virtual: true });
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
 const mockRpc = jest.fn();
-const mockGetCalendarSessions = jest.fn();
 const queryFilters: Array<{ column: string; value: unknown }> = [];
 
 jest.mock('../services/user-actions', () => ({
@@ -22,10 +21,6 @@ jest.mock('../lib/supabase-server', () => ({
     from: mockFrom,
     rpc: mockRpc,
   })),
-}));
-
-jest.mock('@/modules/booking/actions/session-actions', () => ({
-  getCalendarSessions: (...args: unknown[]) => mockGetCalendarSessions(...args),
 }));
 
 class MockQueryBuilder {
@@ -42,7 +37,10 @@ class MockQueryBuilder {
   }
   gte() { return this; }
   lt() { return this; }
-  not() { return this; }
+  not(column?: string, _operator?: string, value?: unknown) {
+    if (column) queryFilters.push({ column, value });
+    return this;
+  }
   order() { return this; }
   limit() { return this; }
 
@@ -61,7 +59,6 @@ describe('dashboard read actions', () => {
       tenant_id: 'tenant-1',
     });
     mockRpc.mockResolvedValue({ data: [], error: null });
-    mockGetCalendarSessions.mockResolvedValue([]);
   });
 
   it('propagates dashboard stats query failures instead of returning zeroes', async () => {
@@ -107,28 +104,53 @@ describe('dashboard read actions', () => {
     mockGetCurrentUser.mockResolvedValueOnce({ id: 'admin-1', role: 'admin', tenant_id: null });
     await expect(getImportantAlerts()).rejects.toThrow('Không xác định được đơn vị kinh doanh cho dashboard');
 
+    mockGetCurrentUser.mockResolvedValueOnce({ id: 'admin-1', role: 'admin', tenant_id: null });
+    await expect(getUpcomingSessions('2026-06-10')).rejects.toThrow('Không xác định được đơn vị kinh doanh cho dashboard');
+
     expect(mockFrom).not.toHaveBeenCalled();
     expect(mockRpc).not.toHaveBeenCalled();
     expect(queryFilters).toEqual([]);
   });
 
-  it('loads upcoming sessions through the tenant-scoped calendar session action', async () => {
-    mockGetCalendarSessions.mockResolvedValueOnce([
-      { id: 'today-open', assigned_date: '2026-06-10', status: 'scheduled' },
-      { id: 'today-done', assigned_date: '2026-06-10', status: 'completed' },
-      { id: 'tomorrow-open', assigned_date: '2026-06-11', status: 'scheduled' },
-    ]);
+  it('loads upcoming sessions through a direct tenant-scoped day query', async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'session_logs') {
+        return new MockQueryBuilder([
+          {
+            id: 'today-open',
+            assigned_date: '2026-06-10',
+            status: 'scheduled',
+            assigned_time: '09:00',
+            bookings: {
+              package_name: 'Tắm bé',
+              packages: null,
+            },
+          },
+        ]);
+      }
+      return new MockQueryBuilder([]);
+    });
 
     await expect(getUpcomingSessions('2026-06-10')).resolves.toEqual([
-      expect.objectContaining({ id: 'today-open' }),
+      expect.objectContaining({
+        id: 'today-open',
+        bookings: expect.objectContaining({ package_name: 'Tắm bé' }),
+      }),
     ]);
 
-    expect(mockGetCalendarSessions).toHaveBeenCalledTimes(1);
+    expect(mockFrom).toHaveBeenCalledWith('session_logs');
+    expect(queryFilters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+      { column: 'assigned_date', value: '2026-06-10' },
+      { column: 'status', value: 'completed' },
+    ]));
   });
 
   it('propagates upcoming session read failures instead of hiding tenant-scope issues', async () => {
-    mockGetCalendarSessions.mockRejectedValueOnce(new Error('tenant scoped calendar failed'));
+    mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'tenant scoped calendar failed' }));
 
-    await expect(getUpcomingSessions('2026-06-10')).rejects.toThrow('tenant scoped calendar failed');
+    await expect(getUpcomingSessions('2026-06-10')).rejects.toThrow(
+      'Failed to fetch dashboard upcoming sessions: tenant scoped calendar failed'
+    );
   });
 });

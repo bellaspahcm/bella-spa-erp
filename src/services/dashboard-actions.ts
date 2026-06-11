@@ -1,8 +1,10 @@
 'use server';
 import type { Database } from '@/types/database.types';
+import { resolvePackageName } from '@/lib/utils';
 import { getCurrentUser } from './user-actions';
 
 type KtvLeaderboardRow = Database['public']['Functions']['get_ktv_leaderboard']['Returns'][number];
+const DASHBOARD_UPCOMING_SESSIONS_LIMIT = 20;
 
 export interface DashboardAlert {
   id?: string;
@@ -206,23 +208,74 @@ export async function getDashboardStats(startDate?: string, endDate?: string, to
 
 // ─── getUpcomingSessions ──────────────────────────────────────────────────────
 interface UpcomingSession {
+  bookings?: {
+    package_name?: string | null;
+    packages?: {
+      name?: string | null;
+      module_key?: string | null;
+      service_category?: string | null;
+    } | null;
+  } | null;
   assigned_date: string | null;
   status: string | null;
   assigned_time: string | null;
 }
 
 export async function getUpcomingSessions(date?: string) {
-  const { getCalendarSessions } = await import('@/modules/booking/actions/session-actions');
-  const allSessions = await getCalendarSessions();
-
+  const { createClient } = await import('@/lib/supabase-server');
+  const supabase = await createClient();
+  const currentUser = await getCurrentUser();
+  const tenantId = requireDashboardTenant(currentUser);
   const todayStr = date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
 
-  const typedSessions = allSessions as unknown as UpcomingSession[];
+  let query = supabase
+    .from('session_logs')
+    .select(`
+      *,
+      bookings (
+        id,
+        package_name,
+        preferred_time,
+        completed_sessions,
+        total_sessions,
+        packages!bookings_package_id_fkey (name, module_key, service_category),
+        customers (
+          id,
+          name_mother,
+          name_baby
+        ),
+        assigned_ktv:users!bookings_assigned_ktv_id_fkey (
+          id,
+          full_name
+        )
+      )
+    `)
+    .eq('tenant_id', tenantId)
+    .eq('assigned_date', todayStr)
+    .not('status', 'eq', 'completed')
+    .order('assigned_time', { ascending: true, nullsFirst: false })
+    .order('session_number', { ascending: true })
+    .limit(DASHBOARD_UPCOMING_SESSIONS_LIMIT);
 
-  const todaySessions = typedSessions.filter((s) =>
-    s.assigned_date === todayStr && s.status !== 'completed'
-  );
-  return todaySessions.sort((a, b) => (a.assigned_time || '').localeCompare(b.assigned_time || ''));
+  if (currentUser?.role?.toLowerCase() === 'ktv') {
+    query = query.eq('bookings.assigned_ktv_id', currentUser.id);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to fetch dashboard upcoming sessions: ${error.message}`);
+  }
+
+  return ((data || []) as UpcomingSession[]).map((session) => ({
+    ...session,
+    bookings: session.bookings
+      ? {
+          ...session.bookings,
+          package_name: resolvePackageName(session.bookings),
+        }
+      : null,
+  }));
 }
 
 // ─── getTopTechnicians ────────────────────────────────────────────────────────
@@ -644,14 +697,31 @@ export async function getImportantAlerts() {
   }
 }
 
-// ─── getFullDashboardData ─────────────────────────────────────────────────────
-export async function getFullDashboardData(startDate?: string, endDate?: string, todayDate?: string) {
-  const [statsData, sessionsData, ktvsData, alertsData, perfData] = await Promise.all([
+// ─── Dashboard Data Bundles ───────────────────────────────────────────────────
+export async function getDashboardPrimaryData(startDate?: string, endDate?: string, todayDate?: string) {
+  const [statsData, sessionsData] = await Promise.all([
     getDashboardStats(startDate, endDate, todayDate),
     getUpcomingSessions(todayDate),
+  ]);
+
+  return { statsData, sessionsData };
+}
+
+export async function getDashboardSecondaryData() {
+  const [ktvsData, alertsData, perfData] = await Promise.all([
     getTopTechnicians(),
     getImportantAlerts(),
-    getMonthlyPerformance()
+    getMonthlyPerformance(),
+  ]);
+
+  return { ktvsData, alertsData, perfData };
+}
+
+// ─── getFullDashboardData ─────────────────────────────────────────────────────
+export async function getFullDashboardData(startDate?: string, endDate?: string, todayDate?: string) {
+  const [{ statsData, sessionsData }, { ktvsData, alertsData, perfData }] = await Promise.all([
+    getDashboardPrimaryData(startDate, endDate, todayDate),
+    getDashboardSecondaryData(),
   ]);
 
   return { statsData, sessionsData, ktvsData, alertsData, perfData };
