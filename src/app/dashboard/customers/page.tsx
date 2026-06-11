@@ -68,6 +68,7 @@ type CustomerActionResult =
   | Awaited<ReturnType<typeof createCustomer>>
   | Awaited<ReturnType<typeof updateCustomer>>;
 
+const INITIAL_CUSTOMER_LOAD_LIMIT = 80;
 const ALL_STATUS_FILTER = 'Tất cả trạng thái';
 const ACTIVE_CARE_PACKAGE_FILTER = 'Đang có gói liệu trình';
 
@@ -113,43 +114,65 @@ export default function CustomersPage() {
     gender_baby: 'unknown'
   });
 
+  const buildCustomerList = useCallback((data: CustomerListItem[]) => {
+    return ((data || []) as CustomerListItem[]).map((c) => {
+      const displayBooking = selectCustomerDisplayBooking(c.bookings);
+      const displayPaymentState = displayBooking
+        ? calculateBookingPaymentState({
+            fullPrice: displayBooking.full_price,
+            discountPercent: displayBooking.discount_percent,
+            depositAmount: displayBooking.deposit_amount,
+            bookingStatus: displayBooking.status,
+            revenues: displayBooking.revenue,
+          })
+        : null;
+      const displayDepositAmount: number | '' = displayPaymentState?.totalPaid ?? '';
+      const displayPackageName = displayBooking?.package_name || '';
+
+      return {
+        ...c,
+        deposit_amount: displayDepositAmount,
+        package_name: displayPackageName,
+        is_in_care: isActiveCareBooking(displayBooking),
+        is_fully_paid: displayPaymentState ? !displayPaymentState.hasOutstandingDebt : false
+      };
+    });
+  }, []);
+
   const loadCustomers = useCallback(async () => {
+    let keepSyncingInBackground = false;
     setIsLoading(true);
     setIsSyncing(true);
     try {
-      const data = await getCustomers();
-      
-      const enrichedCustomers = ((data || []) as CustomerListItem[]).map((c) => {
-        const displayBooking = selectCustomerDisplayBooking(c.bookings);
-        const displayPaymentState = displayBooking
-          ? calculateBookingPaymentState({
-              fullPrice: displayBooking.full_price,
-              discountPercent: displayBooking.discount_percent,
-              depositAmount: displayBooking.deposit_amount,
-              bookingStatus: displayBooking.status,
-              revenues: displayBooking.revenue,
-            })
-          : null;
-        const displayDepositAmount: number | '' = displayPaymentState?.totalPaid ?? '';
-        const displayPackageName = displayBooking?.package_name || '';
-          
-        return {
-          ...c,
-          deposit_amount: displayDepositAmount,
-          package_name: displayPackageName,
-          is_in_care: isActiveCareBooking(displayBooking),
-          is_fully_paid: displayPaymentState ? !displayPaymentState.hasOutstandingDebt : false
-        };
-      });
-      
-      setCustomers(enrichedCustomers);
+      const initialData = (await getCustomers({ limit: INITIAL_CUSTOMER_LOAD_LIMIT })) as CustomerListItem[];
+      setCustomers(buildCustomerList(initialData || []));
+      setIsLoading(false);
+
+      if ((initialData?.length || 0) >= INITIAL_CUSTOMER_LOAD_LIMIT) {
+        keepSyncingInBackground = true;
+        window.setTimeout(async () => {
+          try {
+            const fullData = (await getCustomers()) as CustomerListItem[];
+            setCustomers(buildCustomerList(fullData || []));
+          } catch (error) {
+            console.error('Error loading full customer list:', error);
+            toast.error('Không thể đồng bộ đầy đủ danh sách khách hàng');
+          } finally {
+            setIsSyncing(false);
+          }
+        }, 200);
+        return;
+      }
     } catch (error) {
       console.error('Error loading customers:', error);
+      toast.error(getErrorMessage(error, 'Không thể tải danh sách khách hàng'));
     } finally {
       setIsLoading(false);
-      setIsSyncing(false);
+      if (!keepSyncingInBackground) {
+        setIsSyncing(false);
+      }
     }
-  }, []);
+  }, [buildCustomerList]);
 
   const refreshCustomersPage = useCallback(async () => {
     await Promise.all([loadCustomers(), refreshTenantModuleKey()]);

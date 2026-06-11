@@ -75,6 +75,9 @@ type CustomerListBooking = Pick<
 type CustomerListRow = CustomerRow & {
   bookings?: CustomerListBooking[] | null;
 };
+type GetCustomersOptions = {
+  limit?: number;
+};
 
 const CUSTOMER_TENANT_ACCESS_ERROR = 'Không xác định được đơn vị kinh doanh của người dùng hiện tại.';
 
@@ -358,18 +361,25 @@ export async function addLoyaltyPoints(customerId: string, amount: number) {
 /**
  * Lấy danh sách khách hàng
  */
-export async function getCustomers() {
+export async function getCustomers(options: GetCustomersOptions = {}) {
   const supabase = await createDevelopmentBypassClient();
   const tenantId = await getCurrentTenantId();
   if (!tenantId) {
     throw new Error(CUSTOMER_TENANT_ACCESS_ERROR);
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('customers')
     .select('*, bookings(deposit_amount, package_name, full_price, discount_percent, created_at, is_in_care, status, total_sessions, completed_sessions, tenant_id, revenue(amount, status, revenue_type, tenant_id))')
     .eq('tenant_id', tenantId)
     .order('name_mother', { ascending: true });
+
+  const safeLimit = Number(options.limit || 0);
+  if (Number.isFinite(safeLimit) && safeLimit > 0) {
+    query = query.limit(Math.min(Math.floor(safeLimit), 200));
+  }
+
+  const { data, error } = await query;
   
   if (error) {
     throw new Error(`Failed to fetch customers: ${error.message}`);

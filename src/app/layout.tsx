@@ -54,16 +54,16 @@ const tenantThemeBootstrapScript = `
 
     root.dataset.tenantModule = "pending";
     setRootVars({
-      "--primary": "#0b2240",
-      "--primary-hover": "#074e44",
-      "--accent": "#c8a97a",
-      "--background": "#f8f6f2",
-      "--foreground": "#0b2240",
-      "--border": "rgba(200, 169, 122, 0.24)",
-      "--input": "rgba(200, 169, 122, 0.22)",
-      "--ring": "#0b2240",
+      "--primary": "#9D174D",
+      "--primary-hover": "#831843",
+      "--accent": "#BE185D",
+      "--background": "#FDF2F5",
+      "--foreground": "#0F172A",
+      "--border": "#FCE4EC",
+      "--input": "#FCE4EC",
+      "--ring": "#9D174D",
     });
-    setThemeColor("#F8F6F2");
+    setThemeColor("#FF85A2");
 
     const raw = window.sessionStorage.getItem("bella.runtime.brand.v1");
     if (!raw) return;
