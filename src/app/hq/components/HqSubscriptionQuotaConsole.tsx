@@ -30,6 +30,7 @@ type SubscriptionEntitlement = HqSubscriptionOverview['entitlements'][number];
 type SubscriptionTenant = HqSubscriptionOverview['tenants'][number];
 type SubscriptionOverride = HqSubscriptionOverview['overrides'][number];
 type UsageCounter = HqSubscriptionOverview['usageCounters'][number];
+type UsageSnapshot = HqSubscriptionOverview['usageSnapshots'][number];
 
 interface HqSubscriptionQuotaConsoleProps {
   refreshSignal: number;
@@ -42,6 +43,7 @@ const defaultOverview: HqSubscriptionOverview = {
   tenants: [],
   overrides: [],
   usageCounters: [],
+  usageSnapshots: [],
 };
 
 const selectButtonClassName =
@@ -52,6 +54,22 @@ const featureLabels: Record<string, string> = {
   customer: 'Khách hàng',
   sms: 'Zalo/SMS',
   branch: 'Chi nhánh',
+};
+
+const usageStatusLabels: Record<string, string> = {
+  ok: 'Ổn định',
+  near_limit: 'Sắp đầy',
+  limit_reached: 'Đạt giới hạn',
+  exceeded: 'Vượt gói',
+  unlimited: 'Không giới hạn',
+};
+
+const usageStatusPriority: Record<string, number> = {
+  unlimited: 0,
+  ok: 1,
+  near_limit: 2,
+  limit_reached: 3,
+  exceeded: 4,
 };
 
 const quotaFeatureOptions = [
@@ -90,6 +108,26 @@ function getTenantName(tenants: SubscriptionTenant[], tenantId: string) {
 function getPlanLabel(plans: SubscriptionPlan[], planCode?: string | null) {
   const plan = plans.find((item) => item.plan_code === planCode);
   return plan ? plan.display_name : planCode || 'Dùng thử';
+}
+
+function formatQuotaSnapshotValue(value: number, isUnlimited?: boolean) {
+  return isUnlimited ? 'Không giới hạn' : Number(value || 0).toLocaleString('vi-VN');
+}
+
+function getUsageStatusClassName(status: UsageSnapshot['overall_status']) {
+  if (status === 'exceeded') {
+    return 'bg-red-50 text-red-700 border-red-100 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/60';
+  }
+  if (status === 'limit_reached') {
+    return 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60';
+  }
+  if (status === 'near_limit') {
+    return 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60';
+  }
+  if (status === 'unlimited') {
+    return 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/60';
+  }
+  return 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60';
 }
 
 export function HqSubscriptionQuotaConsole({
@@ -149,6 +187,16 @@ export function HqSubscriptionQuotaConsole({
     () => overview.overrides.filter((override) => override.is_active),
     [overview.overrides]
   );
+
+  const visibleUsageSnapshots = useMemo(() => {
+    return overview.usageSnapshots
+      .filter((snapshot) => snapshot.tenant_name !== 'Bella Spa Headquarter')
+      .sort((a, b) => {
+        const statusDelta =
+          (usageStatusPriority[b.overall_status] || 0) - (usageStatusPriority[a.overall_status] || 0);
+        return statusDelta || a.tenant_name.localeCompare(b.tenant_name, 'vi');
+      });
+  }, [overview.usageSnapshots]);
 
   const selectedCatalogPlan = useMemo(
     () => overview.plans.find((plan) => plan.plan_code === catalogPlanCode),
@@ -499,6 +547,83 @@ export function HqSubscriptionQuotaConsole({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      <section className="bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35] rounded-[2.5rem] p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
+          <div>
+            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Sức khỏe gói đang dùng</h4>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+              HQ theo dõi KTV, khách hàng, Zalo/SMS và chi nhánh theo từng tenant
+            </p>
+          </div>
+          <span className="inline-flex w-fit items-center rounded-full border border-amber-100 bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+            Chi nhánh chuỗi cần owner model trước khi khóa cứng
+          </span>
+        </div>
+
+        {visibleUsageSnapshots.length === 0 ? (
+          <p className="py-10 text-center text-xs font-bold italic text-slate-400">Chưa có dữ liệu sử dụng gói của chi nhánh.</p>
+        ) : (
+          <div className="custom-scrollbar overflow-x-auto rounded-3xl border border-slate-100 dark:border-[#3E3A35]">
+            <table className="w-full min-w-[920px] text-left text-sm">
+              <thead className="bg-slate-50 dark:bg-[#11100F]">
+                <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <th className="px-5 py-4">Chi nhánh</th>
+                  <th className="px-5 py-4">Gói</th>
+                  <th className="px-5 py-4">Tình trạng</th>
+                  <th className="px-5 py-4">Hạn mức đang dùng</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]">
+                {visibleUsageSnapshots.map((snapshot) => (
+                  <tr key={snapshot.tenant_id} className="bg-white dark:bg-[#1C1B19]">
+                    <td className="px-5 py-4 align-top">
+                      <p className="font-black text-slate-900 dark:text-[#EFE9E1]">{snapshot.tenant_name}</p>
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {snapshot.is_franchise ? 'Nhượng quyền / SaaS' : 'Trực thuộc'}
+                      </p>
+                    </td>
+                    <td className="px-5 py-4 align-top">
+                      <p className="font-black text-slate-900 dark:text-[#EFE9E1]">{snapshot.plan_name}</p>
+                      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">{snapshot.plan_code}</p>
+                    </td>
+                    <td className="px-5 py-4 align-top">
+                      <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest ${getUsageStatusClassName(snapshot.overall_status)}`}>
+                        {usageStatusLabels[snapshot.overall_status] || snapshot.overall_status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+                        {snapshot.features.map((feature) => (
+                          <div
+                            key={feature.feature_key}
+                            className={`rounded-2xl border px-3 py-2 ${getUsageStatusClassName(feature.status)}`}
+                          >
+                            <p className="text-[9px] font-black uppercase tracking-widest opacity-80">
+                              {featureLabels[feature.feature_key] || feature.label}
+                            </p>
+                            <p className="mt-1 text-sm font-black">
+                              {Number(feature.current || 0).toLocaleString('vi-VN')} / {formatQuotaSnapshotValue(feature.max, feature.is_unlimited)}
+                            </p>
+                            {!feature.is_unlimited && (
+                              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/70 dark:bg-black/30">
+                                <div
+                                  className="h-full rounded-full bg-current"
+                                  style={{ width: `${Math.min(100, feature.usage_percent)}%` }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
