@@ -309,7 +309,8 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 - Nguyen nhan goc: Guard CI co tenant isolation co ban, nhung chua dong goi luong Beauty demo operational smoke co tao/xoa du lieu tam va xac nhan Bella admin khong thay marker.
 - Cach sua: Bo sung test vao `e2e/tests/13-tenant-isolation-smoke.spec.ts` va npm script `e2e:tenant-isolation`; test tao du lieu Beauty tam, xac nhan UI Beauty thay, progress/payment dung, Bella admin khong thay, cleanup ve 0.
 - Test/guard da them: `npm.cmd run e2e:tenant-isolation`.
-- Commit: pending.
+- CI guard: `.github/workflows/quality-security.yml` chay script `npm run e2e:tenant-isolation` trong buoc `Beauty/Bella tenant isolation smoke`; khong tao workflow rieng de tranh trung lap.
+- Commit: `6fd34fe8`.
 - Rui ro con lai: Smoke nay can Supabase service-role env va local dev auth; neu chay tren production/staging phai dung account E2E rieng, khong dung mock cookie.
 
 ### 2026-06-11 - Beauty CTA va badge quan trong bi mo
