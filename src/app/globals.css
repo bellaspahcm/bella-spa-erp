@@ -701,6 +701,17 @@ html[data-tenant-module="pending"] .beauty-erp-nav-item-active span {
   color: #ffffff !important;
 }
 
+html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(135deg, #0b2240, #074e44) !important;
+  border-color: rgba(200, 169, 122, 0.52) !important;
+  color: #ffffff !important;
+}
+
+html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover svg,
+html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover span {
+  color: #ffffff !important;
+}
+
 html[data-tenant-module="pending"] .beauty-erp-profile-card,
 html[data-tenant-module="pending"] .beauty-erp-avatar,
 html[data-tenant-module="pending"] .beauty-erp-icon-button {
@@ -1055,6 +1066,23 @@ html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active span {
   color: #ffffff !important;
 }
 
+html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: var(--beauty-border-strong) !important;
+  color: var(--beauty-em) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(135deg, var(--beauty-em), var(--beauty-em-2)) !important;
+  border-color: rgba(200, 169, 122, 0.64) !important;
+  color: #ffffff !important;
+}
+
+html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover svg,
+html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover span {
+  color: #ffffff !important;
+}
+
 html[data-tenant-module="beauty_spa"] .beauty-erp-profile-card,
 html[data-tenant-module="beauty_spa"] .beauty-erp-avatar,
 html[data-tenant-module="beauty_spa"] .beauty-erp-icon-button {
@@ -1326,4 +1354,339 @@ html[data-tenant-module="beauty_spa"] .bella-data-table th {
 
 html[data-tenant-module="beauty_spa"] .bella-data-table td {
   color: var(--beauty-text);
+}
+
+/* Beauty Spa dark skin, scoped so Bella ERP keeps its existing dark mode. */
+html.dark[data-tenant-module="beauty_spa"],
+html.dark[data-tenant-module="pending"] {
+  --beauty-night: #0B1F3A;
+  --beauty-deep: #143A51;
+  --beauty-taupe: #746C6B;
+  --beauty-gold: #C49A68;
+  --beauty-gold-2: #FFD66D;
+  --beauty-em: #FFD66D;
+  --beauty-em-2: #C49A68;
+  --beauty-sap: #0B1F3A;
+  --beauty-sap-2: #143A51;
+  --beauty-bg: #0B1F3A;
+  --beauty-card: #143A51;
+  --beauty-text: #F8F1E3;
+  --beauty-sub: #E7D2A7;
+  --beauty-hint: #C49A68;
+  --beauty-border: rgba(196, 154, 104, 0.3);
+  --beauty-border-strong: rgba(255, 214, 109, 0.48);
+  --beauty-shadow-sm: 0 10px 28px rgba(2, 12, 24, 0.26);
+  --beauty-shadow-md: 0 20px 56px rgba(2, 12, 24, 0.34);
+  --beauty-shadow-lg: 0 34px 84px rgba(2, 12, 24, 0.44);
+  --primary: var(--beauty-gold-2);
+  --primary-hover: var(--beauty-gold);
+  --primary-foreground: var(--beauty-night);
+  --secondary: var(--beauty-deep);
+  --secondary-foreground: var(--beauty-text);
+  --accent: var(--beauty-gold);
+  --accent-foreground: var(--beauty-night);
+  --background: var(--beauty-bg);
+  --foreground: var(--beauty-text);
+  --card: var(--beauty-card);
+  --card-foreground: var(--beauty-text);
+  --muted: rgba(20, 58, 81, 0.72);
+  --muted-foreground: var(--beauty-sub);
+  --border: var(--beauty-border);
+  --input: rgba(196, 154, 104, 0.34);
+  --ring: var(--beauty-gold-2);
+}
+
+html.dark[data-tenant-module="beauty_spa"] body,
+html.dark[data-tenant-module="pending"] body {
+  background-color: #0B1F3A !important;
+  background-image:
+    radial-gradient(circle at 14% 0%, rgba(255, 214, 109, 0.08) 0%, transparent 34%),
+    radial-gradient(circle at 100% 18%, rgba(196, 154, 104, 0.1) 0%, transparent 38%),
+    linear-gradient(135deg, #0B1F3A 0%, #143A51 58%, #0B1F3A 100%) !important;
+  color: var(--beauty-text) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] main[class*="bg-background"],
+html.dark[data-tenant-module="beauty_spa"] .bg-background\/30,
+html.dark[data-tenant-module="pending"] main[class*="bg-background"],
+html.dark[data-tenant-module="pending"] .bg-background\/30 {
+  background: transparent !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-mobile-header,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-sidebar,
+html.dark[data-tenant-module="pending"] .beauty-erp-mobile-header,
+html.dark[data-tenant-module="pending"] .beauty-erp-sidebar {
+  background:
+    linear-gradient(180deg, rgba(255, 214, 109, 0.05), transparent 30%),
+    linear-gradient(160deg, rgba(11, 31, 58, 0.98), rgba(20, 58, 81, 0.96)) !important;
+  border-color: rgba(196, 154, 104, 0.34) !important;
+  box-shadow: 18px 0 56px rgba(2, 12, 24, 0.36) !important;
+  color: var(--beauty-text) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-sidebar::before,
+html.dark[data-tenant-module="pending"] .beauty-erp-sidebar::before {
+  border-color: rgba(255, 214, 109, 0.14) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-logo-mark,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-logo-mark-large,
+html.dark[data-tenant-module="pending"] .beauty-erp-logo-mark,
+html.dark[data-tenant-module="pending"] .beauty-erp-logo-mark-large {
+  background: linear-gradient(145deg, #143A51 0%, #0B1F3A 100%) !important;
+  border: 1px solid rgba(255, 214, 109, 0.34) !important;
+  box-shadow: 0 18px 48px rgba(2, 12, 24, 0.42) !important;
+  color: #FFD66D !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-brand-script,
+html.dark[data-tenant-module="pending"] .beauty-erp-brand-script {
+  color: #FFD66D !important;
+  text-shadow: 0 10px 32px rgba(255, 214, 109, 0.12);
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-brand-subtitle,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-header,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-profile-role,
+html.dark[data-tenant-module="pending"] .beauty-erp-brand-subtitle,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-header,
+html.dark[data-tenant-module="pending"] .beauty-erp-profile-role {
+  color: #C49A68 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: rgba(248, 241, 227, 0.78) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item svg,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item svg {
+  color: rgba(231, 210, 167, 0.82) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active),
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) {
+  background: rgba(255, 214, 109, 0.1) !important;
+  border-color: rgba(255, 214, 109, 0.24) !important;
+  color: #FFD66D !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) svg,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) span,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) svg,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item:hover:not(.beauty-erp-nav-item-active) span {
+  color: #FFD66D !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover {
+  background: linear-gradient(135deg, #FFD66D 0%, #C49A68 100%) !important;
+  border-color: rgba(255, 214, 109, 0.54) !important;
+  box-shadow: 0 16px 36px rgba(255, 214, 109, 0.14) !important;
+  color: #0B1F3A !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active svg,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active span,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover svg,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover span,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active svg,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active span,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover svg,
+html.dark[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover span {
+  color: #0B1F3A !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-profile-card,
+html.dark[data-tenant-module="pending"] .beauty-erp-profile-card {
+  background: rgba(20, 58, 81, 0.82) !important;
+  border-color: rgba(196, 154, 104, 0.38) !important;
+  box-shadow: 0 18px 48px rgba(2, 12, 24, 0.34) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-profile-name,
+html.dark[data-tenant-module="pending"] .beauty-erp-profile-name {
+  color: #F8F1E3 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-avatar,
+html.dark[data-tenant-module="beauty_spa"] .beauty-erp-icon-button,
+html.dark[data-tenant-module="pending"] .beauty-erp-avatar,
+html.dark[data-tenant-module="pending"] .beauty-erp-icon-button {
+  background: rgba(11, 31, 58, 0.76) !important;
+  border-color: rgba(255, 214, 109, 0.24) !important;
+  color: #FFD66D !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] main h1,
+html.dark[data-tenant-module="beauty_spa"] main h2,
+html.dark[data-tenant-module="beauty_spa"] main h3 {
+  color: #F8F1E3 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] main [class*="text-slate-900"],
+html.dark[data-tenant-module="beauty_spa"] main [class*="text-slate-800"],
+html.dark[data-tenant-module="beauty_spa"] main [class*="text-slate-700"],
+html.dark[data-tenant-module="pending"] main [class*="text-slate-900"],
+html.dark[data-tenant-module="pending"] main [class*="text-slate-800"],
+html.dark[data-tenant-module="pending"] main [class*="text-slate-700"] {
+  color: #F8F1E3 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] p,
+html.dark[data-tenant-module="beauty_spa"] .text-muted-foreground,
+html.dark[data-tenant-module="beauty_spa"] [class*="text-slate-600"],
+html.dark[data-tenant-module="beauty_spa"] [class*="text-slate-500"],
+html.dark[data-tenant-module="beauty_spa"] [class*="text-slate-400"],
+html.dark[data-tenant-module="pending"] p,
+html.dark[data-tenant-module="pending"] .text-muted-foreground,
+html.dark[data-tenant-module="pending"] [class*="text-slate-600"],
+html.dark[data-tenant-module="pending"] [class*="text-slate-500"],
+html.dark[data-tenant-module="pending"] [class*="text-slate-400"] {
+  color: #E7D2A7 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .glass-pink,
+html.dark[data-tenant-module="beauty_spa"] .luxury-card-white,
+html.dark[data-tenant-module="beauty_spa"] .luxury-box-hover,
+html.dark[data-tenant-module="beauty_spa"] .bg-white,
+html.dark[data-tenant-module="beauty_spa"] [class*="bg-white"],
+html.dark[data-tenant-module="beauty_spa"] [class*="bg-slate-50"],
+html.dark[data-tenant-module="pending"] .glass-pink,
+html.dark[data-tenant-module="pending"] .luxury-card-white,
+html.dark[data-tenant-module="pending"] .luxury-box-hover,
+html.dark[data-tenant-module="pending"] .bg-white,
+html.dark[data-tenant-module="pending"] [class*="bg-white"],
+html.dark[data-tenant-module="pending"] [class*="bg-slate-50"] {
+  background:
+    linear-gradient(180deg, rgba(20, 58, 81, 0.84), rgba(11, 31, 58, 0.78)) !important;
+  border-color: rgba(196, 154, 104, 0.28) !important;
+  box-shadow: var(--beauty-shadow-md) !important;
+  color: #F8F1E3 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .glass-pink:hover,
+html.dark[data-tenant-module="beauty_spa"] .luxury-card-white:hover,
+html.dark[data-tenant-module="beauty_spa"] .luxury-box-hover:hover {
+  border-color: rgba(255, 214, 109, 0.38) !important;
+  box-shadow: var(--beauty-shadow-lg) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-customer-add-cta,
+html.dark[data-tenant-module="beauty_spa"] .beauty-active-care-badge,
+html.dark[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="bg-primary/"]),
+html.dark[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="bg-primary/"]),
+html.dark[data-tenant-module="beauty_spa"] button[class*="from-primary"],
+html.dark[data-tenant-module="beauty_spa"] a[class*="from-primary"],
+html.dark[data-tenant-module="pending"] .beauty-customer-add-cta,
+html.dark[data-tenant-module="pending"] .beauty-active-care-badge,
+html.dark[data-tenant-module="pending"] button[class*="bg-primary"]:not([class*="bg-primary/"]),
+html.dark[data-tenant-module="pending"] a[class*="bg-primary"]:not([class*="bg-primary/"]),
+html.dark[data-tenant-module="pending"] button[class*="from-primary"],
+html.dark[data-tenant-module="pending"] a[class*="from-primary"] {
+  background: linear-gradient(135deg, #FFD66D 0%, #C49A68 100%) !important;
+  border-color: rgba(255, 214, 109, 0.52) !important;
+  box-shadow: 0 16px 34px rgba(255, 214, 109, 0.14) !important;
+  color: #0B1F3A !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-customer-add-cta svg,
+html.dark[data-tenant-module="beauty_spa"] .beauty-customer-add-cta span,
+html.dark[data-tenant-module="beauty_spa"] .beauty-active-care-badge svg,
+html.dark[data-tenant-module="beauty_spa"] .beauty-active-care-badge span,
+html.dark[data-tenant-module="pending"] .beauty-customer-add-cta svg,
+html.dark[data-tenant-module="pending"] .beauty-customer-add-cta span,
+html.dark[data-tenant-module="pending"] .beauty-active-care-badge svg,
+html.dark[data-tenant-module="pending"] .beauty-active-care-badge span {
+  color: #0B1F3A !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-customer-add-cta:hover,
+html.dark[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
+html.dark[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
+html.dark[data-tenant-module="pending"] .beauty-customer-add-cta:hover,
+html.dark[data-tenant-module="pending"] button[class*="bg-primary"]:not([class*="bg-primary/"]):hover,
+html.dark[data-tenant-module="pending"] a[class*="bg-primary"]:not([class*="bg-primary/"]):hover {
+  background: linear-gradient(135deg, #C49A68 0%, #FFD66D 100%) !important;
+  color: #0B1F3A !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] input:not([type="checkbox"]):not([type="radio"]),
+html.dark[data-tenant-module="beauty_spa"] select,
+html.dark[data-tenant-module="beauty_spa"] textarea,
+html.dark[data-tenant-module="beauty_spa"] .premium-select,
+html.dark[data-tenant-module="beauty_spa"] [role="combobox"],
+html.dark[data-tenant-module="pending"] input:not([type="checkbox"]):not([type="radio"]),
+html.dark[data-tenant-module="pending"] select,
+html.dark[data-tenant-module="pending"] textarea,
+html.dark[data-tenant-module="pending"] .premium-select,
+html.dark[data-tenant-module="pending"] [role="combobox"] {
+  background-color: rgba(11, 31, 58, 0.72) !important;
+  border-color: rgba(196, 154, 104, 0.34) !important;
+  color: #F8F1E3 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 214, 109, 0.05) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] input::placeholder,
+html.dark[data-tenant-module="beauty_spa"] textarea::placeholder,
+html.dark[data-tenant-module="pending"] input::placeholder,
+html.dark[data-tenant-module="pending"] textarea::placeholder {
+  color: rgba(231, 210, 167, 0.72) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] input:not([type="checkbox"]):not([type="radio"]):focus,
+html.dark[data-tenant-module="beauty_spa"] select:focus,
+html.dark[data-tenant-module="beauty_spa"] textarea:focus,
+html.dark[data-tenant-module="pending"] input:not([type="checkbox"]):not([type="radio"]):focus,
+html.dark[data-tenant-module="pending"] select:focus,
+html.dark[data-tenant-module="pending"] textarea:focus {
+  border-color: #FFD66D !important;
+  box-shadow: 0 0 0 4px rgba(255, 214, 109, 0.12) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .bella-data-table th,
+html.dark[data-tenant-module="pending"] .bella-data-table th {
+  background: rgba(11, 31, 58, 0.88) !important;
+  border-color: rgba(196, 154, 104, 0.22) !important;
+  color: #FFD66D !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .bella-data-table td,
+html.dark[data-tenant-module="pending"] .bella-data-table td {
+  background: rgba(20, 58, 81, 0.42) !important;
+  border-color: rgba(196, 154, 104, 0.18) !important;
+  color: #F8F1E3 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .bella-data-table tr:hover td,
+html.dark[data-tenant-module="pending"] .bella-data-table tr:hover td {
+  background: rgba(255, 214, 109, 0.08) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .dashboard-schedule-card {
+  background:
+    linear-gradient(180deg, rgba(20, 58, 81, 0.88), rgba(11, 31, 58, 0.8)) !important;
+  border-color: rgba(196, 154, 104, 0.3) !important;
+  box-shadow: 0 22px 64px rgba(2, 12, 24, 0.32) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .dashboard-schedule-progress-track {
+  background: rgba(248, 241, 227, 0.12) !important;
+  border-color: rgba(196, 154, 104, 0.22) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .dashboard-schedule-progress-fill {
+  background: linear-gradient(90deg, #FFD66D, #C49A68) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .active-booking-panel {
+  background: linear-gradient(135deg, #143A51 0%, #0B1F3A 100%) !important;
+  border-color: rgba(255, 214, 109, 0.22) !important;
+  box-shadow: 0 24px 70px rgba(2, 12, 24, 0.38) !important;
 }
