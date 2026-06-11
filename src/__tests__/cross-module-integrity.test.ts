@@ -444,6 +444,7 @@ describe('Cross-Module End-to-End Integrity Tests', () => {
     const session = {
       id: 'session-1',
       booking_id: booking.id,
+      tenant_id: 'tenant-a',
       session_number: 1,
       status: 'scheduled'
     };
