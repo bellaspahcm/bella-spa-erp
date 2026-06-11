@@ -207,26 +207,73 @@ describe('HQ subscription actions', () => {
 
   it('loads plans, entitlements, tenants, overrides and usage counters for HQ', async () => {
     scriptedResults = [
-      { data: [{ plan_code: 'basic' }], error: null },
-      { data: [{ feature_key: 'sms' }], error: null },
-      { data: [{ id: 'tenant-1', name: 'Branch 1' }], error: null },
+      { data: [subscriptionPlanRow({ plan_code: 'basic', display_name: 'Cơ bản' })], error: null },
+      {
+        data: [
+          subscriptionEntitlementRow({ id: 'entitlement-ktv', plan_code: 'basic', feature_key: 'ktv', limit_value: 2 }),
+          subscriptionEntitlementRow({ id: 'entitlement-customer', plan_code: 'basic', feature_key: 'customer', limit_value: 3 }),
+          subscriptionEntitlementRow({ id: 'entitlement-sms', plan_code: 'basic', feature_key: 'sms', limit_value: 50 }),
+          subscriptionEntitlementRow({ id: 'entitlement-branch', plan_code: 'basic', feature_key: 'branch', limit_value: 1 }),
+        ],
+        error: null,
+      },
+      {
+        data: [
+          {
+            id: 'tenant-1',
+            name: 'Branch 1',
+            status: 'active',
+            subscription_tier: 'basic',
+            subscription_expires_at: null,
+            sms_allotment_used: 0,
+            franchise_agreement_date: '2026-06-01',
+            created_at: '2026-06-01T00:00:00.000Z',
+            updated_at: '2026-06-01T00:00:00.000Z',
+          },
+        ],
+        error: null,
+      },
       { data: [overrideRow()], error: null },
       { data: [usageCounterRow()], error: null },
+      {
+        data: [
+          { tenant_id: 'tenant-1', role: 'ktv' },
+          { tenant_id: 'tenant-1', role: 'ktv' },
+        ],
+        error: null,
+      },
+      { data: [{ tenant_id: 'tenant-1' }, { tenant_id: 'tenant-1' }], error: null },
     ];
 
     const overview = await getHqSubscriptionOverview();
 
     expect(overview.plans).toHaveLength(1);
-    expect(overview.entitlements).toHaveLength(1);
+    expect(overview.entitlements).toHaveLength(4);
     expect(overview.tenants).toHaveLength(1);
     expect(overview.overrides).toHaveLength(1);
     expect(overview.usageCounters).toHaveLength(1);
+    expect(overview.usageSnapshots).toEqual([
+      expect.objectContaining({
+        tenant_id: 'tenant-1',
+        tenant_name: 'Branch 1',
+        plan_code: 'basic',
+        overall_status: 'limit_reached',
+        features: expect.arrayContaining([
+          expect.objectContaining({ feature_key: 'ktv', current: 2, max: 2, status: 'limit_reached' }),
+          expect.objectContaining({ feature_key: 'customer', current: 2, max: 3, status: 'ok' }),
+          expect.objectContaining({ feature_key: 'sms', current: 42, max: 100, status: 'ok' }),
+          expect.objectContaining({ feature_key: 'branch', current: 1, max: 1, status: 'limit_reached' }),
+        ]),
+      }),
+    ]);
     expect(queryCalls.map((call) => call.table)).toEqual([
       'subscription_plans',
       'subscription_plan_entitlements',
       'tenants',
       'tenant_subscription_overrides',
       'tenant_usage_counters',
+      'users',
+      'customers',
     ]);
   });
 

@@ -34,6 +34,9 @@ describe('HQ subscription quota UI wiring', () => {
     expect(consoleSource).toContain('setTenantQuotaOverride');
     expect(consoleSource).toContain('resetTenantUsageCounter');
     expect(consoleSource).toContain("branch: 'Chi nhánh'");
+    expect(consoleSource).toContain('usageSnapshots');
+    expect(consoleSource).toContain('Sức khỏe gói đang dùng');
+    expect(consoleSource).toContain('Chi nhánh chuỗi cần owner model trước khi khóa cứng');
     expect(consoleSource).toContain('Quản lý bảng giá gói');
     expect(consoleSource).toContain('Hạn mức mặc định của gói');
     expect(consoleSource).toContain('toast.error(result.error');

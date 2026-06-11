@@ -6,8 +6,13 @@ import { recordAuditLog } from './audit-actions';
 import { checkHqAuth } from './hq-actions';
 import type { Database, Json } from '@/types/database.types';
 import {
+  UNLIMITED_QUOTA,
+  buildEffectiveSubscriptionLimits,
+  calculateUsagePercent,
+  normalizeSubscriptionFeatureKey,
   normalizeQuotaOverride,
   validateQuotaOverrideLimit,
+  type SubscriptionFeatureKey,
 } from '@/lib/business-rules/subscription';
 
 type TenantRow = Database['public']['Tables']['tenants']['Row'];
@@ -38,6 +43,43 @@ type SubscriptionEntitlementUpdate =
 type HqUser = {
   id: string;
   tenant_id: string | null;
+};
+
+type SubscriptionUsageStatus = 'ok' | 'near_limit' | 'limit_reached' | 'exceeded' | 'unlimited';
+
+type TenantUsageSourceRow = {
+  tenant_id: string | null;
+};
+
+type StaffUsageSourceRow = TenantUsageSourceRow & {
+  role: string | null;
+};
+
+type SubscriptionUsageFeatureSnapshot = {
+  feature_key: SubscriptionFeatureKey;
+  label: string;
+  current: number;
+  max: number;
+  is_unlimited: boolean;
+  usage_percent: number;
+  status: SubscriptionUsageStatus;
+};
+
+type SubscriptionUsageSnapshot = {
+  tenant_id: string;
+  tenant_name: string;
+  plan_code: string;
+  plan_name: string;
+  is_franchise: boolean;
+  overall_status: SubscriptionUsageStatus;
+  features: SubscriptionUsageFeatureSnapshot[];
+};
+
+const quotaSnapshotFeatureLabels: Record<SubscriptionFeatureKey, string> = {
+  ktv: 'KTV',
+  customer: 'Khach hang',
+  sms: 'Zalo/SMS',
+  branch: 'Chi nhanh',
 };
 
 export type UpdateTenantSubscriptionInput = {
@@ -194,6 +236,171 @@ function validateEnforcementMode(enforcementMode: string) {
   return ['soft', 'hard'].includes(enforcementMode);
 }
 
+function toSafeNumber(value: number | string | null | undefined) {
+  const numericValue = Number(value ?? 0);
+  return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
+function incrementTenantCount(map: Map<string, number>, tenantId: string | null | undefined, amount = 1) {
+  if (!tenantId) return;
+  map.set(tenantId, (map.get(tenantId) || 0) + amount);
+}
+
+function countRowsByTenant(rows: TenantUsageSourceRow[]) {
+  const countMap = new Map<string, number>();
+  rows.forEach((row) => incrementTenantCount(countMap, row.tenant_id));
+  return countMap;
+}
+
+function countKtvRowsByTenant(rows: StaffUsageSourceRow[]) {
+  const countMap = new Map<string, number>();
+  rows
+    .filter((row) => row.role === 'ktv')
+    .forEach((row) => incrementTenantCount(countMap, row.tenant_id));
+  return countMap;
+}
+
+function getLatestSmsUsageByTenant(usageCounters: TenantUsageCounterRow[]) {
+  const usageMap = new Map<string, number>();
+  usageCounters.forEach((counter) => {
+    if (counter.feature_key !== 'sms' || usageMap.has(counter.tenant_id)) return;
+    usageMap.set(counter.tenant_id, toSafeNumber(counter.used_value));
+  });
+  return usageMap;
+}
+
+function isOverrideCurrentlyActive(override: TenantSubscriptionOverrideRow, now: Date) {
+  if (!override.is_active) return false;
+  if (!override.expires_at) return true;
+  const expiresAt = new Date(override.expires_at);
+  if (Number.isNaN(expiresAt.getTime())) return false;
+  return expiresAt >= now;
+}
+
+function getEffectiveTenantEntitlements(input: {
+  planCode: string;
+  tenantId: string;
+  entitlements: SubscriptionEntitlementRow[];
+  overrides: TenantSubscriptionOverrideRow[];
+  now: Date;
+}) {
+  const byFeature = new Map<string, SubscriptionEntitlementRow | TenantSubscriptionOverrideRow>();
+
+  input.entitlements
+    .filter((row) => row.plan_code === input.planCode)
+    .forEach((row) => {
+      const featureKey = normalizeSubscriptionFeatureKey(row.feature_key);
+      if (featureKey) byFeature.set(featureKey, row);
+    });
+
+  input.overrides
+    .filter((row) => row.tenant_id === input.tenantId && isOverrideCurrentlyActive(row, input.now))
+    .forEach((row) => {
+      const featureKey = normalizeSubscriptionFeatureKey(row.feature_key);
+      if (featureKey) byFeature.set(featureKey, row);
+    });
+
+  return Array.from(byFeature.values());
+}
+
+function getLimitFromSnapshot(limits: ReturnType<typeof buildEffectiveSubscriptionLimits>, featureKey: SubscriptionFeatureKey) {
+  if (featureKey === 'ktv') return limits.maxKtv;
+  if (featureKey === 'customer') return limits.maxCustomers;
+  if (featureKey === 'sms') return limits.maxSms;
+  return limits.maxBranches;
+}
+
+function calculateQuotaStatus(current: number, max: number): SubscriptionUsageStatus {
+  if (max >= UNLIMITED_QUOTA) return 'unlimited';
+  if (max <= 0) return current > 0 ? 'exceeded' : 'ok';
+  if (current > max) return 'exceeded';
+  if (current === max) return 'limit_reached';
+  if (calculateUsagePercent(current, max) >= 80) return 'near_limit';
+  return 'ok';
+}
+
+const subscriptionUsageStatusPriority: Record<SubscriptionUsageStatus, number> = {
+  unlimited: 0,
+  ok: 1,
+  near_limit: 2,
+  limit_reached: 3,
+  exceeded: 4,
+};
+
+function pickOverallUsageStatus(features: SubscriptionUsageFeatureSnapshot[]) {
+  return features.reduce<SubscriptionUsageStatus>((status, feature) => {
+    return subscriptionUsageStatusPriority[feature.status] > subscriptionUsageStatusPriority[status]
+      ? feature.status
+      : status;
+  }, 'ok');
+}
+
+function buildSubscriptionUsageSnapshots(input: {
+  tenants: TenantRow[];
+  plans: SubscriptionPlanRow[];
+  entitlements: SubscriptionEntitlementRow[];
+  overrides: TenantSubscriptionOverrideRow[];
+  usageCounters: TenantUsageCounterRow[];
+  staffRows: StaffUsageSourceRow[];
+  customerRows: TenantUsageSourceRow[];
+  now?: Date;
+}): SubscriptionUsageSnapshot[] {
+  const now = input.now || new Date();
+  const planNames = new Map(input.plans.map((plan) => [plan.plan_code, plan.display_name]));
+  const ktvCounts = countKtvRowsByTenant(input.staffRows);
+  const customerCounts = countRowsByTenant(input.customerRows);
+  const smsUsage = getLatestSmsUsageByTenant(input.usageCounters);
+  const featureKeys: SubscriptionFeatureKey[] = ['ktv', 'customer', 'sms', 'branch'];
+
+  return input.tenants.map((tenant) => {
+    const planCode = tenant.subscription_tier || 'free_trial';
+    const tierName = planNames.get(planCode) || planCode;
+    const effectiveEntitlements = getEffectiveTenantEntitlements({
+      planCode,
+      tenantId: tenant.id,
+      entitlements: input.entitlements,
+      overrides: input.overrides,
+      now,
+    });
+    const limits = buildEffectiveSubscriptionLimits(tierName, effectiveEntitlements);
+    const isFranchise = Boolean(tenant.franchise_agreement_date);
+
+    const features = featureKeys.map((featureKey) => {
+      const max = getLimitFromSnapshot(limits, featureKey);
+      const current =
+        featureKey === 'ktv'
+          ? ktvCounts.get(tenant.id) || 0
+          : featureKey === 'customer'
+            ? customerCounts.get(tenant.id) || 0
+            : featureKey === 'sms'
+              ? smsUsage.get(tenant.id) || 0
+              : isFranchise
+                ? 1
+                : 0;
+      const isUnlimited = max >= UNLIMITED_QUOTA;
+      return {
+        feature_key: featureKey,
+        label: quotaSnapshotFeatureLabels[featureKey],
+        current,
+        max,
+        is_unlimited: isUnlimited,
+        usage_percent: calculateUsagePercent(current, max),
+        status: calculateQuotaStatus(current, max),
+      };
+    });
+
+    return {
+      tenant_id: tenant.id,
+      tenant_name: tenant.name,
+      plan_code: planCode,
+      plan_name: tierName,
+      is_franchise: isFranchise,
+      overall_status: pickOverallUsageStatus(features),
+      features,
+    };
+  });
+}
+
 export async function getHqSubscriptionOverview() {
   await requireHqAuth();
   const supabase = await createClient();
@@ -250,12 +457,44 @@ export async function getHqSubscriptionOverview() {
     );
   }
 
+  const { data: staffRows, error: staffRowsError } = await supabase
+    .from('users')
+    .select('tenant_id,role')
+    .eq('role', 'ktv');
+
+  if (staffRowsError) {
+    throw new Error(`[getHqSubscriptionOverview] users usage query failed: ${staffRowsError.message}`);
+  }
+
+  const { data: customerRows, error: customerRowsError } = await supabase
+    .from('customers')
+    .select('tenant_id');
+
+  if (customerRowsError) {
+    throw new Error(`[getHqSubscriptionOverview] customers usage query failed: ${customerRowsError.message}`);
+  }
+
+  const normalizedPlans = plans || [];
+  const normalizedEntitlements = entitlements || [];
+  const normalizedTenants = tenants || [];
+  const normalizedOverrides = overrides || [];
+  const normalizedUsageCounters = usageCounters || [];
+
   return {
-    plans: plans || [],
-    entitlements: entitlements || [],
-    tenants: tenants || [],
-    overrides: overrides || [],
-    usageCounters: usageCounters || [],
+    plans: normalizedPlans,
+    entitlements: normalizedEntitlements,
+    tenants: normalizedTenants,
+    overrides: normalizedOverrides,
+    usageCounters: normalizedUsageCounters,
+    usageSnapshots: buildSubscriptionUsageSnapshots({
+      tenants: normalizedTenants as TenantRow[],
+      plans: normalizedPlans as SubscriptionPlanRow[],
+      entitlements: normalizedEntitlements as SubscriptionEntitlementRow[],
+      overrides: normalizedOverrides as TenantSubscriptionOverrideRow[],
+      usageCounters: normalizedUsageCounters as TenantUsageCounterRow[],
+      staffRows: (staffRows || []) as StaffUsageSourceRow[],
+      customerRows: (customerRows || []) as TenantUsageSourceRow[],
+    }),
   };
 }
 
