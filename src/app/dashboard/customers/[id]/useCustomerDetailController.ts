@@ -129,12 +129,18 @@ export function useCustomerDetailController() {
   });
   const [isReusing, setIsReusing] = useState(false);
   const quotationRef = useRef<HTMLDivElement>(null);
+  const customerBookingIdsRef = useRef<Set<string>>(new Set());
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadData = useCallback(async () => {
     if (!id) return;
 
     try {
-      const tenant = await getTenantSettings();
+      const [tenant, data, bookings] = await Promise.all([
+        getTenantSettings(),
+        getCustomerById(id),
+        getBookingsByCustomerId(id) as Promise<CustomerDetailBooking[]>,
+      ]);
       const nextTenantModuleKey = getDefaultTenantModuleKey(tenant?.enabled_modules);
       setTenantModuleKey(nextTenantModuleKey);
       setTenantBrand(resolveTenantBrandIdentity({
@@ -144,8 +150,7 @@ export function useCustomerDetailController() {
         tenantName: tenant?.name,
         surface: 'invoice',
       }));
-      const data = await getCustomerById(id);
-      const bookings = (await getBookingsByCustomerId(id)) as CustomerDetailBooking[];
+      customerBookingIdsRef.current = new Set(bookings.map((booking) => booking.id));
       const customerRecord = toCustomerDetailRecord(data, bookings, nextTenantModuleKey);
 
       if (customerRecord) {
@@ -157,9 +162,8 @@ export function useCustomerDetailController() {
       toast.error('Lỗi khi tải dữ liệu');
     } finally {
       setLoading(false);
-      router.refresh();
     }
-  }, [id, router, targetBookingId]);
+  }, [id, targetBookingId]);
 
   const fetchKtvs = useCallback(async () => {
     try {
@@ -169,6 +173,16 @@ export function useCustomerDetailController() {
       console.error('Error fetching KTVs:', error);
     }
   }, []);
+
+  const scheduleDataReload = useCallback(() => {
+    if (reloadTimerRef.current) {
+      clearTimeout(reloadTimerRef.current);
+    }
+
+    reloadTimerRef.current = setTimeout(() => {
+      void loadData();
+    }, 400);
+  }, [loadData]);
 
   useEffect(() => {
     async function checkRole() {
@@ -190,17 +204,24 @@ export function useCustomerDetailController() {
     const channel = supabase
       .channel(`customer-detail-${id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `customer_id=eq.${id}` }, () => {
-        void loadData();
+        scheduleDataReload();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
-        void loadData();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, (payload) => {
+        const record = (payload.new || payload.old || {}) as { booking_id?: string | null };
+
+        if (!record.booking_id || customerBookingIdsRef.current.has(record.booking_id)) {
+          scheduleDataReload();
+        }
       })
       .subscribe();
 
     return () => {
+      if (reloadTimerRef.current) {
+        clearTimeout(reloadTimerRef.current);
+      }
       void supabase.removeChannel(channel);
     };
-  }, [fetchKtvs, id, loadData]);
+  }, [fetchKtvs, id, loadData, scheduleDataReload]);
 
   const refreshPageData = useCallback(async () => {
     await Promise.all([loadData(), fetchKtvs()]);
