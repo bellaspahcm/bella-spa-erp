@@ -54,57 +54,16 @@ const tenantThemeBootstrapScript = `
 
     root.dataset.tenantModule = "pending";
     setRootVars({
-      "--primary": "#9D174D",
-      "--primary-hover": "#831843",
-      "--accent": "#BE185D",
-      "--background": "#FDF2F5",
+      "--primary": "#334155",
+      "--primary-hover": "#1e293b",
+      "--accent": "#94a3b8",
+      "--background": "#f8fafc",
       "--foreground": "#0F172A",
-      "--border": "#FCE4EC",
-      "--input": "#FCE4EC",
-      "--ring": "#9D174D",
+      "--border": "#e2e8f0",
+      "--input": "#e2e8f0",
+      "--ring": "#64748b",
     });
-    setThemeColor("#FF85A2");
-
-    const raw = window.sessionStorage.getItem("bella.runtime.brand.v1");
-    if (!raw) return;
-
-    const brand = JSON.parse(raw);
-    if (!brand || (brand.moduleKey !== "babycare" && brand.moduleKey !== "beauty_spa")) return;
-
-    root.dataset.tenantModule = brand.moduleKey;
-    if (typeof brand.buttonStyle === "string") root.dataset.tenantBrandButton = brand.buttonStyle;
-    if (typeof brand.menuStyle === "string") root.dataset.tenantBrandMenu = brand.menuStyle;
-    if (typeof brand.radiusStyle === "string") root.dataset.tenantBrandRadius = brand.radiusStyle;
-
-    if (brand.moduleKey === "beauty_spa") {
-      const primary = typeof brand.primaryColor === "string" ? brand.primaryColor : "#074e44";
-      const hover = typeof brand.primaryHoverColor === "string" ? brand.primaryHoverColor : "#0a6357";
-      const accent = typeof brand.accentColor === "string" ? brand.accentColor : "#c8a97a";
-      setRootVars({
-        "--primary": primary,
-        "--primary-hover": hover,
-        "--accent": accent,
-        "--background": "#f8f6f2",
-        "--foreground": "#0b2240",
-        "--border": "rgba(200, 169, 122, 0.24)",
-        "--input": "rgba(200, 169, 122, 0.22)",
-        "--ring": primary,
-      });
-      setThemeColor(primary);
-      return;
-    }
-
-    setRootVars({
-      "--primary": "#9D174D",
-      "--primary-hover": "#831843",
-      "--accent": "#BE185D",
-      "--background": "#FDF2F5",
-      "--foreground": "#0F172A",
-      "--border": "#FCE4EC",
-      "--input": "#FCE4EC",
-      "--ring": "#9D174D",
-    });
-    setThemeColor("#FF85A2");
+    setThemeColor("#f8fafc");
   } catch {
     const path = window.location.pathname || "";
     if (
@@ -135,7 +94,7 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Bella ERP" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <meta name="theme-color" content="#FF85A2" />
+        <meta name="theme-color" content="#f8fafc" />
         <script dangerouslySetInnerHTML={{ __html: tenantThemeBootstrapScript }} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>

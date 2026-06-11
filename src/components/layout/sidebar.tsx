@@ -139,18 +139,6 @@ function toTenantBrandDisplay(parsed: CachedTenantBrandDisplay): TenantBrandDisp
   };
 }
 
-function readRuntimeTenantBrand(): TenantBrandDisplay | null {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    const parsed = JSON.parse(window.sessionStorage.getItem(RUNTIME_BRAND_CACHE_KEY) || 'null');
-    if (!isTenantBrandDisplay(parsed)) return null;
-    return toTenantBrandDisplay(parsed);
-  } catch {
-    return null;
-  }
-}
-
 function readCachedTenantBrand(tenantId: string | null | undefined): TenantBrandDisplay | null {
   if (!tenantId || typeof window === 'undefined') return null;
 
@@ -215,20 +203,15 @@ function applyTenantBrandRuntime(brand: TenantBrandDisplay) {
   root.dataset.tenantBrandMenu = brand.menuStyle;
   root.dataset.tenantBrandRadius = brand.radiusStyle;
 
-  if (brand.isBeautySpa) {
-    root.style.setProperty('--primary', brand.primaryColor);
-    root.style.setProperty('--primary-hover', brand.primaryHoverColor);
-    root.style.setProperty('--accent', brand.accentColor);
-    root.style.setProperty('--ring', brand.primaryColor);
-    themeMeta?.setAttribute('content', brand.primaryColor);
-    return;
+  for (const token of ['--background', '--foreground', '--border', '--input']) {
+    root.style.removeProperty(token);
   }
 
-  root.style.setProperty('--primary', '#9D174D');
-  root.style.setProperty('--primary-hover', '#831843');
-  root.style.setProperty('--accent', '#BE185D');
-  root.style.setProperty('--ring', '#9D174D');
-  themeMeta?.setAttribute('content', '#FF85A2');
+  root.style.setProperty('--primary', brand.primaryColor);
+  root.style.setProperty('--primary-hover', brand.primaryHoverColor);
+  root.style.setProperty('--accent', brand.accentColor);
+  root.style.setProperty('--ring', brand.primaryColor);
+  themeMeta?.setAttribute('content', brand.primaryColor);
 }
 
 function isMenuHeader(item: SidebarMenuItem): item is MenuHeader {
@@ -287,8 +270,8 @@ export function Sidebar() {
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [rolePermissions, setRolePermissions] = useState<RolePermissions | null>(null);
-  const [tenantBrand, setTenantBrand] = useState<TenantBrandDisplay>(() => readRuntimeTenantBrand() ?? NEUTRAL_SIDEBAR_BRAND);
-  const [isTenantBrandResolved, setIsTenantBrandResolved] = useState<boolean>(() => readRuntimeTenantBrand() !== null);
+  const [tenantBrand, setTenantBrand] = useState<TenantBrandDisplay>(NEUTRAL_SIDEBAR_BRAND);
+  const [isTenantBrandResolved, setIsTenantBrandResolved] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isMobileRefreshing, setIsMobileRefreshing] = useState(false);
 

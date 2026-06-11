@@ -1940,3 +1940,102 @@ html.dark[data-tenant-module="pending"] .beauty-alert-icon {
   border: 1px solid rgba(255, 214, 109, 0.22);
   color: #FFD66D !important;
 }
+/* Tenant brand controls. These are intentionally module-scoped so Beauty
+   white-label styling can change without pulling Bella ERP into the same skin. */
+html[data-tenant-brand-radius="soft"] {
+  --brand-card-radius: 2.5rem;
+  --brand-panel-radius: 2rem;
+  --brand-control-radius: 1.5rem;
+  --brand-button-radius: 999px;
+  --brand-menu-radius: 1.5rem;
+}
+
+html[data-tenant-brand-radius="balanced"] {
+  --brand-card-radius: 1.75rem;
+  --brand-panel-radius: 1.5rem;
+  --brand-control-radius: 1rem;
+  --brand-button-radius: 1.25rem;
+  --brand-menu-radius: 1rem;
+}
+
+html[data-tenant-brand-radius="compact"] {
+  --brand-card-radius: 1rem;
+  --brand-panel-radius: 0.875rem;
+  --brand-control-radius: 0.75rem;
+  --brand-button-radius: 0.75rem;
+  --brand-menu-radius: 0.75rem;
+}
+
+html[data-tenant-brand-button="pill"] {
+  --brand-button-radius: 999px;
+}
+
+html[data-tenant-brand-button="rounded"] {
+  --brand-button-radius: 1.25rem;
+}
+
+html[data-tenant-brand-button="minimal"] {
+  --brand-button-radius: 0.75rem;
+}
+
+html[data-tenant-module="beauty_spa"] .glass-pink,
+html[data-tenant-module="beauty_spa"] .luxury-card-white,
+html[data-tenant-module="beauty_spa"] .luxury-card-pink,
+html[data-tenant-module="beauty_spa"] .luxury-box-hover,
+html[data-tenant-module="beauty_spa"] .dashboard-schedule-card,
+html[data-tenant-module="beauty_spa"] .active-booking-panel,
+html[data-tenant-module="beauty_spa"] .bella-toolbar,
+html[data-tenant-module="beauty_spa"] .bella-pagination {
+  border-radius: var(--brand-card-radius, 2rem) !important;
+}
+
+html[data-tenant-module="beauty_spa"] input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+html[data-tenant-module="beauty_spa"] select,
+html[data-tenant-module="beauty_spa"] textarea,
+html[data-tenant-module="beauty_spa"] .premium-select,
+html[data-tenant-module="beauty_spa"] [role="combobox"],
+html[data-tenant-module="beauty_spa"] .beauty-theme-toggle {
+  border-radius: var(--brand-control-radius, 1.5rem) !important;
+}
+
+html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item {
+  border-radius: var(--brand-menu-radius, 1.5rem) !important;
+}
+
+html[data-tenant-brand-menu="compact"][data-tenant-module="beauty_spa"] .beauty-erp-nav-item {
+  gap: 0.75rem !important;
+  padding: 0.7rem 1rem !important;
+}
+
+html[data-tenant-brand-menu="compact"][data-tenant-module="beauty_spa"] .beauty-erp-nav-header {
+  margin-top: 0.55rem !important;
+  padding-bottom: 0.1rem !important;
+  padding-top: 0.55rem !important;
+}
+
+html[data-tenant-brand-button][data-tenant-module="beauty_spa"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button][data-tenant-module="beauty_spa"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button][data-tenant-module="beauty_spa"] .beauty-customer-add-cta,
+html[data-tenant-brand-button][data-tenant-module="beauty_spa"] .dashboard-schedule-actions > *,
+html[data-tenant-brand-button][data-tenant-module="beauty_spa"] .active-booking-panel button {
+  border-radius: var(--brand-button-radius, 999px) !important;
+}
+
+html[data-tenant-brand-button="pill"][data-tenant-module="beauty_spa"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button="pill"][data-tenant-module="beauty_spa"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button="pill"][data-tenant-module="beauty_spa"] .beauty-customer-add-cta {
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--primary) 24%, transparent) !important;
+}
+
+html[data-tenant-brand-button="rounded"][data-tenant-module="beauty_spa"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button="rounded"][data-tenant-module="beauty_spa"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button="rounded"][data-tenant-module="beauty_spa"] .beauty-customer-add-cta {
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 18%, transparent) !important;
+}
+
+html[data-tenant-brand-button="minimal"][data-tenant-module="beauty_spa"] :is(button, a)[class*="bg-primary"]:not([class*="bg-primary/"]),
+html[data-tenant-brand-button="minimal"][data-tenant-module="beauty_spa"] :is(button, a)[class*="from-primary"],
+html[data-tenant-brand-button="minimal"][data-tenant-module="beauty_spa"] .beauty-customer-add-cta {
+  box-shadow: none !important;
+  letter-spacing: 0.04em !important;
+}

@@ -31,19 +31,15 @@ async function applyDashboardTenantBrandRuntime() {
   root.dataset.tenantBrandMenu = brand.menuStyle;
   root.dataset.tenantBrandRadius = brand.radiusStyle;
 
-  if (brand.isBeautySpa) {
-    root.style.setProperty('--primary', brand.primaryColor);
-    root.style.setProperty('--primary-hover', brand.primaryHoverColor);
-    root.style.setProperty('--accent', brand.accentColor);
-    root.style.setProperty('--ring', brand.primaryColor);
-    themeMeta?.setAttribute('content', brand.primaryColor);
-  } else {
-    root.style.setProperty('--primary', '#9D174D');
-    root.style.setProperty('--primary-hover', '#831843');
-    root.style.setProperty('--accent', '#BE185D');
-    root.style.setProperty('--ring', '#9D174D');
-    themeMeta?.setAttribute('content', '#FF85A2');
+  for (const token of ['--background', '--foreground', '--border', '--input']) {
+    root.style.removeProperty(token);
   }
+
+  root.style.setProperty('--primary', brand.primaryColor);
+  root.style.setProperty('--primary-hover', brand.primaryHoverColor);
+  root.style.setProperty('--accent', brand.accentColor);
+  root.style.setProperty('--ring', brand.primaryColor);
+  themeMeta?.setAttribute('content', brand.primaryColor);
 
   try {
     window.sessionStorage.setItem(
@@ -84,10 +80,12 @@ export default function DashboardLayout({
           router.replace('/ktv/dashboard');
           return;
         }
-        setIsAuthorized(true);
-        void applyDashboardTenantBrandRuntime().catch((brandError) => {
+        try {
+          await applyDashboardTenantBrandRuntime();
+        } catch (brandError) {
           console.error('[DashboardLayout] Brand runtime apply failed:', brandError);
-        });
+        }
+        setIsAuthorized(true);
       } catch (err) {
         console.error('[DashboardLayout] Auth check failed:', err);
         router.replace('/login');
