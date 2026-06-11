@@ -1,11 +1,12 @@
 'use client';
 
-import { type FormEvent } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, X } from 'lucide-react';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { getLocalDateString } from '@/lib/utils';
+import type { BookingResourceOption } from './BookingDayDetailModal';
 
 export type BookingOption = {
   id: string;
@@ -26,6 +27,7 @@ type TimeRange = {
 type BookingCreateScheduleModalProps = {
   isOpen: boolean;
   allBookings: BookingOption[];
+  bookingResources?: BookingResourceOption[];
   selectedBookingId: string;
   defaultDate: string;
   createTimeRange: TimeRange;
@@ -39,6 +41,7 @@ type BookingCreateScheduleModalProps = {
 export function BookingCreateScheduleModal({
   isOpen,
   allBookings,
+  bookingResources = [],
   selectedBookingId,
   defaultDate,
   createTimeRange,
@@ -48,6 +51,17 @@ export function BookingCreateScheduleModal({
   onCreateTimeRangeChange,
   onSubmit,
 }: BookingCreateScheduleModalProps) {
+  const [selectedResourceId, setSelectedResourceId] = useState('');
+  const activeBookingResources = bookingResources.filter((resource) => (
+    resource.status === 'available' || resource.status === 'in_use'
+  ));
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedResourceId('');
+    }
+  }, [isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -127,6 +141,27 @@ export function BookingCreateScheduleModal({
                       className="mt-1 w-full rounded-2xl border-none bg-slate-50 px-4 py-4 font-bold text-slate-900 outline-none transition-all focus:ring-2 focus:ring-primary/20 sm:px-6"
                     />
                   </div>
+                  {activeBookingResources.length > 0 && (
+                    <div className="sm:col-span-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">
+                        Tài nguyên chăm sóc
+                      </label>
+                      <input type="hidden" name="booking_resource_id" value={selectedResourceId} />
+                      <PremiumSelect
+                        value={selectedResourceId}
+                        options={[
+                          { value: '', label: 'Chưa gán tài nguyên' },
+                          ...activeBookingResources.map((resource) => ({
+                            value: resource.id,
+                            label: `${resource.name}${resource.location_note ? ` - ${resource.location_note}` : ''}`,
+                          })),
+                        ]}
+                        onChange={setSelectedResourceId}
+                        placeholder="Chọn giường/phòng/máy..."
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>

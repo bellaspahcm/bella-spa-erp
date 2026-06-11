@@ -59,6 +59,7 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | Dark data table scroll | Bang Beauty dark co thanh truot ngang sang mau, nam lo ra ngoai cam giac khong thuoc card, hoac row/table khong lap day box | Wrapper/table khong dung chung `custom-scrollbar` + `bella-data-table`, hoac table dang `width: max-content` nen tao mang nen bi tach o mep phai | Moi bang du lieu Beauty phai dung table pattern chung; dark CSS module-scoped phai dat table `width: 100%`, wrapper scroll nam trong box, scrollbar theo tone xanh-vang va khong override Bella |
 | Core performance scope | De xuat toi uu lai route da toi uu hoac khong ro anh huong Bella/Beauty | Khong doi chieu git history/code truoc khi de xuat; route core dung chung bi nham la rieng Bella hoac rieng Beauty | Truoc moi de xuat toi uu, kiem tra commit/code hien co; ghi route, muc tieu, pham vi anh huong, commit va test; core route can regression Bella + tenant isolation neu co data read |
 | Package/service scope | Goi dich vu Beauty va Babycare co nguy co dung lan | `packages` la bang dung chung, ban dau thieu module guard | `packages.module_key`, `validateBookingPackageScope`, test cross-module/cross-tenant |
+| Resource booking | Beauty Spa co giuong/phong/may/ghe nhung lich buoi co nguy co dat trung tai nguyen cung ngay gio | Ban dau chi co danh muc `booking_resources`, chua gan tai nguyen vao tung buoi va chua guard conflict tren server | Tai nguyen dat lich phai gan o `session_logs.booking_resource_id`; create/update/reschedule session phai validate `tenant_id` + resource + ngay + gio + status active truoc khi ghi |
 | Data vocabulary | Form khach Beauty con truong "Ho ten me", "Ho ten be", lich co "Combo Me Be" | Dung lai giao dien cu chua audit toan bo text | Truoc khi release module moi phai `rg` toan bo thuat ngu nganh cu va map sang dictionary module |
 | Hidden onboarding copy | Beauty admin van thay tour/huong dan "Bat dau cung Bella Spa" sau khi F5 | Chi audit cac trang chinh, bo sot onboarding/help/empty-state copy an | Moi module moi phai audit ca onboarding tour, tooltip, empty state, help text va first-run modal; copy phai nhan brand/module context |
 | Demo tenant | Can tao demo Beauty de test nhung phai xoa sach | Demo seed ban dau chua co marker/cleanup chuan | Demo data phai co `DEMO_MARKER`, fixed ids/email, cleanup requires `--confirm`, khong delete bang filter rong |
@@ -144,6 +145,7 @@ Moi action doc/ghi du lieu phai:
 - Fail closed neu thieu tenant.
 - Filter `tenant_id` tren moi bang tenant-scoped.
 - Validate `module_key` khi dung bang shared.
+- Neu nganh co tai nguyen dat lich nhu giuong, phong, may, ghe thi tai nguyen phai duoc validate o server theo tung buoi/session. Khong duoc chi khoa bang UI.
 - Khong swallow database error.
 - Khong tao side effect ngoai transaction/rollback pattern.
 - Dung engine chung neu da ton tai: payment/booking/revenue/accounting/salary/inventory/session completion.

@@ -2,6 +2,7 @@
 
 import { getLocalDateString } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
+import { validateBookingResourceSchedule } from './booking-resource-schedule-guard';
 
 function addDaysToDateString(dateString: string, days: number) {
   const baseDate = new Date(dateString);
@@ -12,11 +13,19 @@ function addDaysToDateString(dateString: string, days: number) {
 export async function rescheduleSession(sessionId: string, newDate: string) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
+  const { getCurrentUser } = await import('@/services/user-actions');
+  const currentUser = await getCurrentUser();
+  const tenantId = currentUser?.tenant_id || null;
+
+  if (!tenantId) {
+    return { error: 'Khong xac dinh duoc chi nhanh khi doi lich.' };
+  }
 
   const { data: session, error: sessionError } = await supabase
     .from('session_logs')
-    .select('booking_id, assigned_date, session_number, status')
+    .select('booking_id, assigned_date, assigned_time, booking_resource_id, session_number, status')
     .eq('id', sessionId)
+    .eq('tenant_id', tenantId)
     .single();
 
   if (sessionError || !session) {
@@ -36,6 +45,7 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
       .from('bookings')
       .select('start_date')
       .eq('id', bookingId)
+      .eq('tenant_id', tenantId)
       .single();
 
     if (booking?.start_date) {
@@ -58,8 +68,9 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
 
   const { data: futureSessions, error: futureError } = await supabase
     .from('session_logs')
-    .select('id, session_number, assigned_date')
+    .select('id, session_number, assigned_date, assigned_time, booking_resource_id, status')
     .eq('booking_id', bookingId)
+    .eq('tenant_id', tenantId)
     .eq('status', 'scheduled')
     .gte('session_number', session.session_number)
     .order('session_number', { ascending: true });
@@ -78,8 +89,27 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
       id: futureSession.id,
       originalAssignedDate,
       newAssignedDate: addDaysToDateString(originalAssignedDate, diffDays),
+      assignedTime: futureSession.assigned_time,
+      bookingResourceId: futureSession.booking_resource_id,
+      status: futureSession.status,
     };
   });
+
+  for (const plannedUpdate of plannedUpdates) {
+    const resourceScheduleResult = await validateBookingResourceSchedule({
+      supabase,
+      tenantId,
+      sessionId: plannedUpdate.id,
+      bookingResourceId: plannedUpdate.bookingResourceId,
+      assignedDate: plannedUpdate.newAssignedDate,
+      assignedTime: plannedUpdate.assignedTime,
+      status: plannedUpdate.status,
+    });
+
+    if ('error' in resourceScheduleResult) {
+      return { error: resourceScheduleResult.error };
+    }
+  }
 
   const appliedUpdates: typeof plannedUpdates = [];
   const rollbackReschedule = async () => {
@@ -89,7 +119,8 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
       const { error: rollbackError } = await supabase
         .from('session_logs')
         .update({ assigned_date: appliedUpdate.originalAssignedDate })
-        .eq('id', appliedUpdate.id);
+        .eq('id', appliedUpdate.id)
+        .eq('tenant_id', tenantId);
 
       if (rollbackError) {
         rollbackErrors.push(`${appliedUpdate.id}: ${rollbackError.message}`);
@@ -103,7 +134,8 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
     const { error: updateError } = await supabase
       .from('session_logs')
       .update({ assigned_date: plannedUpdate.newAssignedDate })
-      .eq('id', plannedUpdate.id);
+      .eq('id', plannedUpdate.id)
+      .eq('tenant_id', tenantId);
 
     if (updateError) {
       const rollbackErrors = await rollbackReschedule();
@@ -146,6 +178,7 @@ export async function rescheduleSession(sessionId: string, newDate: string) {
     .from('bookings')
     .select('customer_id')
     .eq('id', bookingId)
+    .eq('tenant_id', tenantId)
     .single();
 
   const revalPaths = [

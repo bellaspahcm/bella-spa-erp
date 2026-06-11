@@ -8,6 +8,29 @@ const migrationSql = readFileSync(
   ),
   'utf8',
 );
+const resourceSessionMigrationSql = readFileSync(
+  path.join(
+    process.cwd(),
+    'supabase/migrations/20260611130000_add_session_booking_resource.sql',
+  ),
+  'utf8',
+);
+const resourceScheduleGuardSource = readFileSync(
+  path.join(process.cwd(), 'src/modules/booking/actions/booking-resource-schedule-guard.ts'),
+  'utf8',
+);
+const createSessionActionSource = readFileSync(
+  path.join(process.cwd(), 'src/modules/booking/actions/create-session-log-action.ts'),
+  'utf8',
+);
+const updateSessionActionSource = readFileSync(
+  path.join(process.cwd(), 'src/modules/booking/actions/update-session-log-action.ts'),
+  'utf8',
+);
+const rescheduleSessionActionSource = readFileSync(
+  path.join(process.cwd(), 'src/modules/booking/actions/reschedule-session-action.ts'),
+  'utf8',
+);
 
 describe('Beauty Spa phase 2 foundation schema', () => {
   it('extends packages instead of creating a parallel service table', () => {
@@ -27,5 +50,28 @@ describe('Beauty Spa phase 2 foundation schema', () => {
     expect(migrationSql).toContain('REVOKE ALL ON TABLE public.booking_resources FROM anon');
     expect(migrationSql).toContain('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.booking_resources TO authenticated');
     expect(migrationSql).toContain('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.booking_resources TO service_role');
+  });
+
+  it('links resources to individual sessions instead of whole bookings', () => {
+    expect(resourceSessionMigrationSql).toContain('ADD COLUMN IF NOT EXISTS booking_resource_id UUID NULL');
+    expect(resourceSessionMigrationSql).toContain('FOREIGN KEY (booking_resource_id)');
+    expect(resourceSessionMigrationSql).toContain('REFERENCES public.booking_resources(id)');
+    expect(resourceSessionMigrationSql).toContain('ON DELETE SET NULL');
+    expect(resourceSessionMigrationSql).toContain('idx_session_logs_booking_resource_schedule');
+    expect(resourceSessionMigrationSql).toContain('tenant_id, booking_resource_id, assigned_date, assigned_time');
+    expect(resourceSessionMigrationSql).toContain('WHERE booking_resource_id IS NOT NULL');
+    expect(resourceSessionMigrationSql).not.toContain('ALTER TABLE public.bookings');
+  });
+
+  it('guards create, update, and reschedule flows against resource double-booking', () => {
+    expect(resourceScheduleGuardSource).toContain(".eq('tenant_id', tenantId)");
+    expect(resourceScheduleGuardSource).toContain(".eq('booking_resource_id', bookingResource.id)");
+    expect(resourceScheduleGuardSource).toContain(".eq('assigned_date', assignedDate)");
+    expect(resourceScheduleGuardSource).toContain(".eq('assigned_time', assignedTime)");
+    expect(resourceScheduleGuardSource).toContain(".in('status', [...RESOURCE_ACTIVE_SESSION_STATUSES])");
+    expect(resourceScheduleGuardSource).toContain(".neq('id', sessionId)");
+    expect(createSessionActionSource).toContain('validateBookingResourceSchedule');
+    expect(updateSessionActionSource).toContain('validateBookingResourceSchedule');
+    expect(rescheduleSessionActionSource).toContain('validateBookingResourceSchedule');
   });
 });

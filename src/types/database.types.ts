@@ -2527,6 +2527,7 @@ export type Database = {
           assigned_date: string | null
           assigned_time: string | null
           booking_id: string
+          booking_resource_id: string | null
           business_event_type: string | null
           checkin_lat: number | null
           checkin_lon: number | null
@@ -2561,6 +2562,7 @@ export type Database = {
           assigned_date?: string | null
           assigned_time?: string | null
           booking_id: string
+          booking_resource_id?: string | null
           business_event_type?: string | null
           checkin_lat?: number | null
           checkin_lon?: number | null
@@ -2595,6 +2597,7 @@ export type Database = {
           assigned_date?: string | null
           assigned_time?: string | null
           booking_id?: string
+          booking_resource_id?: string | null
           business_event_type?: string | null
           checkin_lat?: number | null
           checkin_lon?: number | null
@@ -2621,6 +2624,13 @@ export type Database = {
           zalo_reminder_time?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "session_logs_booking_resource_id_fkey"
+            columns: ["booking_resource_id"]
+            isOneToOne: false
+            referencedRelation: "booking_resources"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "session_logs_booking_id_fkey"
             columns: ["booking_id"]

@@ -552,28 +552,38 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
   it('rolls back already rescheduled future sessions when a later session update fails', async () => {
     const updateCalls: Array<{ id: string; payload: any }> = [];
     const makeUpdateQuery = (error: { message: string } | null = null) => ({
-      update: (payload: any) => ({
-        eq: (_field: string, id: string) => {
-          updateCalls.push({ id, payload });
-          return Promise.resolve({ error });
-        },
-      }),
+      update: (payload: any) => {
+        const node: any = {
+          eq: (_field: string, id: string) => {
+            if (_field === 'id') {
+              updateCalls.push({ id, payload });
+            }
+            return node;
+          },
+          then: (cb: any) => Promise.resolve({ error }).then(cb),
+        };
+        return node;
+      },
     });
     const queryQueue = [
       {
-        select: () => ({
-          eq: () => ({
+        select: () => {
+          const chain: any = {
+            eq: () => chain,
             single: () => Promise.resolve({
               data: {
                 booking_id: 'booking-1',
                 assigned_date: '2026-06-10',
                 session_number: 2,
                 status: 'scheduled',
+                assigned_time: null,
+                booking_resource_id: null,
               },
               error: null,
             }),
-          }),
-        }),
+          };
+          return chain;
+        },
       },
       {
         select: () => {
@@ -582,8 +592,8 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
             gte: () => chain,
             order: () => Promise.resolve({
               data: [
-                { id: 'session-2', session_number: 2, assigned_date: '2026-06-10' },
-                { id: 'session-3', session_number: 3, assigned_date: '2026-06-11' },
+                { id: 'session-2', session_number: 2, assigned_date: '2026-06-10', assigned_time: null, booking_resource_id: null, status: 'scheduled' },
+                { id: 'session-3', session_number: 3, assigned_date: '2026-06-11', assigned_time: null, booking_resource_id: null, status: 'scheduled' },
               ],
               error: null,
             }),
@@ -615,28 +625,38 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
   it('rolls back all rescheduled sessions when reschedule audit logging fails', async () => {
     const updateCalls: Array<{ id: string; payload: any }> = [];
     const makeUpdateQuery = () => ({
-      update: (payload: any) => ({
-        eq: (_field: string, id: string) => {
-          updateCalls.push({ id, payload });
-          return Promise.resolve({ error: null });
-        },
-      }),
+      update: (payload: any) => {
+        const node: any = {
+          eq: (_field: string, id: string) => {
+            if (_field === 'id') {
+              updateCalls.push({ id, payload });
+            }
+            return node;
+          },
+          then: (cb: any) => Promise.resolve({ error: null }).then(cb),
+        };
+        return node;
+      },
     });
     const queryQueue = [
       {
-        select: () => ({
-          eq: () => ({
+        select: () => {
+          const chain: any = {
+            eq: () => chain,
             single: () => Promise.resolve({
               data: {
                 booking_id: 'booking-1',
                 assigned_date: '2026-06-10',
                 session_number: 2,
                 status: 'scheduled',
+                assigned_time: null,
+                booking_resource_id: null,
               },
               error: null,
             }),
-          }),
-        }),
+          };
+          return chain;
+        },
       },
       {
         select: () => {
@@ -645,8 +665,8 @@ describe('Transaction Safety & Rollback Integrity Tests', () => {
             gte: () => chain,
             order: () => Promise.resolve({
               data: [
-                { id: 'session-2', session_number: 2, assigned_date: '2026-06-10' },
-                { id: 'session-3', session_number: 3, assigned_date: '2026-06-11' },
+                { id: 'session-2', session_number: 2, assigned_date: '2026-06-10', assigned_time: null, booking_resource_id: null, status: 'scheduled' },
+                { id: 'session-3', session_number: 3, assigned_date: '2026-06-11', assigned_time: null, booking_resource_id: null, status: 'scheduled' },
               ],
               error: null,
             }),

@@ -7,12 +7,14 @@ type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type CustomerRow = Database['public']['Tables']['customers']['Row'];
 type PackageRow = Database['public']['Tables']['packages']['Row'];
 type SessionLogRow = Database['public']['Tables']['session_logs']['Row'];
+type BookingResourceRow = Database['public']['Tables']['booking_resources']['Row'];
 
 type SessionLogWithKtv = SessionLogRow & {
   ktv?: { id: string; full_name: string | null } | null;
+  booking_resource?: Pick<BookingResourceRow, 'id' | 'name' | 'resource_type' | 'status'> | null;
 };
 
-type PackageRef = Pick<PackageRow, 'name' | 'module_key' | 'service_category'>;
+type PackageRef = Pick<PackageRow, 'name' | 'module_key' | 'service_category' | 'requires_resource' | 'default_resource_type'>;
 
 type BookingWithSessionDetails = BookingRow & {
   customers?: Pick<CustomerRow, 'id' | 'name_mother' | 'name_baby' | 'phone' | 'dob_expected'> | null;
@@ -62,6 +64,7 @@ function getCreatedAtRange(options: GetSessionsWithDetailsOptions) {
 
 type CalendarSession = SessionLogRow & {
   bookings?: CalendarBooking | null;
+  booking_resource?: Pick<BookingResourceRow, 'id' | 'name' | 'resource_type' | 'status'> | null;
 };
 type EnrichedCalendarSession = Omit<CalendarSession, 'assigned_date'> & {
   assigned_date: string;
@@ -117,8 +120,8 @@ export async function getSessionsWithDetails(options: GetSessionsWithDetailsOpti
       preferred_time,
       customers(id, name_mother, name_baby, phone, dob_expected),
       assigned_ktv:users!bookings_assigned_ktv_id_fkey(id, full_name),
-      packages!bookings_package_id_fkey(name, module_key, service_category),
-      session_logs(id, booking_id, session_number, assigned_date, assigned_time, completed_date, start_time, end_time, status, notes, rating, rating_comment, completed_by_ktv_id, ktv:users!session_logs_completed_by_ktv_id_fkey(id, full_name), duration_warning_type, ktv_checkout_note, standard_duration, actual_duration, time_deviation)
+      packages!bookings_package_id_fkey(name, module_key, service_category, requires_resource, default_resource_type),
+      session_logs(id, booking_id, session_number, assigned_date, assigned_time, booking_resource_id, completed_date, start_time, end_time, status, notes, rating, rating_comment, completed_by_ktv_id, ktv:users!session_logs_completed_by_ktv_id_fkey(id, full_name), booking_resource:booking_resources!session_logs_booking_resource_id_fkey(id, name, resource_type, status), duration_warning_type, ktv_checkout_note, standard_duration, actual_duration, time_deviation)
     `)
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
@@ -209,7 +212,7 @@ export async function getCalendarSessions(options: GetCalendarSessionsOptions = 
       bookings (
         *,
         preferred_time,
-        packages!bookings_package_id_fkey (name, module_key, service_category),
+        packages!bookings_package_id_fkey (name, module_key, service_category, requires_resource, default_resource_type),
         customers (
           id,
           name_mother,
@@ -220,6 +223,12 @@ export async function getCalendarSessions(options: GetCalendarSessionsOptions = 
           id,
           full_name
         )
+      ),
+      booking_resource:booking_resources!session_logs_booking_resource_id_fkey (
+        id,
+        name,
+        resource_type,
+        status
       )
     `)
     .eq('tenant_id', tenantId)
