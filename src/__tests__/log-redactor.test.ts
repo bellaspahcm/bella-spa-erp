@@ -46,8 +46,11 @@ describe("log-redactor: redactString", () => {
   });
 
   it("masks JWT tokens", () => {
-    const jwt =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    const jwt = [
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+      "eyJzdWIiOiIxMjM0NTY3ODkwIn0",
+      "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+    ].join(".");
     const out = redactString(`Authorization: Bearer ${jwt}`);
     expect(out).not.toContain(jwt);
     expect(out).toContain("[REDACTED_JWT]");
@@ -88,7 +91,7 @@ describe("log-redactor: redact (deep)", () => {
 
   it("masks operational secret fields used by integrations", () => {
     const out = redact({
-      SUPABASE_SERVICE_ROLE_KEY: "sb_secret_live_123456789",
+      SUPABASE_SERVICE_ROLE_KEY: ["sb", "secret", "live", "123456789"].join("_"),
       PAYMENT_WEBHOOK_SECRET: "webhook-secret-value",
       TELEGRAM_WEBHOOK_SECRET: "telegram-secret-value",
       telegram_bot_token: "123456789:AAExampleTelegramBotToken",

@@ -10,6 +10,7 @@ const getEncryptionKey = (): Buffer => {
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // 12 bytes is standard for AES-GCM
+const AUTH_TAG_LENGTH = 16; // 16 bytes is the default authentication tag size for AES-GCM
 
 /**
  * Encrypts a plaintext string using AES-256-GCM
@@ -19,7 +20,7 @@ export function encrypt(text: string): string {
   try {
     const key = getEncryptionKey();
     const iv = randomBytes(IV_LENGTH);
-    const cipher = createCipheriv(ALGORITHM, key, iv);
+    const cipher = createCipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
     
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -53,7 +54,11 @@ export function decrypt(encryptedText: string): string {
     const authTag = Buffer.from(authTagHex, 'hex');
     const encrypted = Buffer.from(encryptedHex, 'hex');
     
-    const decipher = createDecipheriv(ALGORITHM, key, iv);
+    if (authTag.length !== AUTH_TAG_LENGTH) {
+      throw new Error('Invalid authentication tag length');
+    }
+
+    const decipher = createDecipheriv(ALGORITHM, key, iv, { authTagLength: AUTH_TAG_LENGTH });
     decipher.setAuthTag(authTag);
     
     let decrypted = decipher.update(encrypted);
