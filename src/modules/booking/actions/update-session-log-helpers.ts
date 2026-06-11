@@ -19,6 +19,7 @@ type AllowedUpdateKey =
   | 'status'
   | 'notes'
   | 'assigned_time'
+  | 'booking_resource_id'
   | 'business_event_type'
   | 'accounting_review_status'
   | 'accounting_metadata';
@@ -51,6 +52,10 @@ export function normalizeSessionLogUpdate(payload: UpdateSessionLogInput): Updat
     updates.notes = null;
   }
 
+  if (updates.booking_resource_id === '') {
+    updates.booking_resource_id = null;
+  }
+
   const safeUpdates: UpdateSessionLogInput = {};
   if (Object.prototype.hasOwnProperty.call(updates, 'assigned_date')) safeUpdates.assigned_date = updates.assigned_date;
   if (Object.prototype.hasOwnProperty.call(updates, 'completed_date')) safeUpdates.completed_date = updates.completed_date;
@@ -59,6 +64,7 @@ export function normalizeSessionLogUpdate(payload: UpdateSessionLogInput): Updat
   if (Object.prototype.hasOwnProperty.call(updates, 'status')) safeUpdates.status = updates.status;
   if (Object.prototype.hasOwnProperty.call(updates, 'notes')) safeUpdates.notes = updates.notes;
   if (Object.prototype.hasOwnProperty.call(updates, 'assigned_time')) safeUpdates.assigned_time = updates.assigned_time;
+  if (Object.prototype.hasOwnProperty.call(updates, 'booking_resource_id')) safeUpdates.booking_resource_id = updates.booking_resource_id;
   if (Object.prototype.hasOwnProperty.call(updates, 'business_event_type')) safeUpdates.business_event_type = updates.business_event_type;
   if (Object.prototype.hasOwnProperty.call(updates, 'accounting_review_status')) safeUpdates.accounting_review_status = updates.accounting_review_status;
   if (Object.prototype.hasOwnProperty.call(updates, 'accounting_metadata')) safeUpdates.accounting_metadata = updates.accounting_metadata;

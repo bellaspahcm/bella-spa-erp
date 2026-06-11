@@ -32,6 +32,14 @@ export type SessionHistoryItem = {
   notes?: string | null;
 };
 
+export type BookingResourceOption = {
+  id: string;
+  name: string;
+  resource_type?: string | null;
+  status?: string | null;
+  location_note?: string | null;
+};
+
 export type BookingModalData = {
   id: string;
   date: Date;
@@ -52,12 +60,18 @@ export type BookingModalData = {
   originalDateString?: string;
   contractId?: string;
   sessionCount?: string;
+  bookingResourceId?: string | null;
+  bookingResourceName?: string | null;
+  bookingResourceType?: string | null;
+  packageRequiresResource?: boolean | null;
+  packageDefaultResourceType?: string | null;
 };
 
 type BookingDayDetailModalProps = {
   isOpen: boolean;
   modalData: BookingModalData | null;
   ktvs: KtvOption[];
+  bookingResources?: BookingResourceOption[];
   sessionHistory: SessionHistoryItem[];
   isUpdating: boolean;
   onClose: () => void;
@@ -70,6 +84,7 @@ export function BookingDayDetailModal({
   isOpen,
   modalData,
   ktvs,
+  bookingResources = [],
   sessionHistory,
   isUpdating,
   onClose,
@@ -85,6 +100,24 @@ export function BookingDayDetailModal({
     if (!modalData) return;
     onModalDataChange({ ...modalData, ...updates });
   };
+  const defaultResourceType = modalData?.packageDefaultResourceType || null;
+  const resourceOptions = bookingResources
+    .filter((resource) => (
+      resource.status === 'available'
+      || resource.status === 'in_use'
+      || resource.id === modalData?.bookingResourceId
+    ))
+    .map((resource) => ({
+      value: resource.id,
+      label: `${resource.name}${resource.location_note ? ` - ${resource.location_note}` : ''}`,
+    }));
+  const matchingResourceOptions = defaultResourceType
+    ? resourceOptions.filter((option) => {
+      const resource = bookingResources.find((item) => item.id === option.value);
+      return resource?.resource_type === defaultResourceType || option.value === modalData?.bookingResourceId;
+    })
+    : resourceOptions;
+  const visibleResourceOptions = matchingResourceOptions.length > 0 ? matchingResourceOptions : resourceOptions;
 
   return (
     <AnimatePresence>
@@ -171,6 +204,29 @@ export function BookingDayDetailModal({
                         />
                       </div>
                     </div>
+                    {visibleResourceOptions.length > 0 && (
+                      <div>
+                        <p className="text-xs text-slate-400 font-bold mb-2 ml-1">
+                          Tài nguyên chăm sóc
+                        </p>
+                        <PremiumSelect
+                          value={modalData.bookingResourceId || ''}
+                          options={[
+                            { value: '', label: 'Chưa gán tài nguyên' },
+                            ...visibleResourceOptions,
+                          ]}
+                          onChange={(value) => {
+                            const resource = bookingResources.find((item) => item.id === value);
+                            updateModalData({
+                              bookingResourceId: value || null,
+                              bookingResourceName: resource?.name || null,
+                              bookingResourceType: resource?.resource_type || null,
+                            });
+                          }}
+                          placeholder="Chọn giường/phòng/máy..."
+                        />
+                      </div>
+                    )}
                     <div>
                       <p className="text-xs text-slate-400 font-bold mb-1">Địa chỉ</p>
                       <p className="break-words text-sm font-bold leading-relaxed text-slate-900">{modalData.location}</p>

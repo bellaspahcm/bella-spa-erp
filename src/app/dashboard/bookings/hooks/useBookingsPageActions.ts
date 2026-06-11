@@ -115,6 +115,7 @@ export function useBookingsPageActions({
       const result = await updateSessionLog(modalData.id, {
         assigned_date: modalData.dateString || getLocalDateString(modalData.date),
         assigned_time: modalData.time,
+        booking_resource_id: modalData.bookingResourceId || null,
         notes: modalData.contractDetail,
         status: modalData.status,
       });
@@ -147,6 +148,7 @@ export function useBookingsPageActions({
       const bookingId = formData.get('booking_id');
       const date = formData.get('date');
       const notes = formData.get('notes');
+      const bookingResourceId = formData.get('booking_resource_id');
 
       if (typeof bookingId !== 'string' || !bookingId) {
         toast.error('Thiếu thông tin booking để tạo lịch hẹn.');
@@ -157,6 +159,7 @@ export function useBookingsPageActions({
         booking_id: bookingId,
         assigned_date: typeof date === 'string' ? date : null,
         assigned_time: createTimeRange.start,
+        booking_resource_id: typeof bookingResourceId === 'string' && bookingResourceId ? bookingResourceId : null,
         notes: typeof notes === 'string' ? notes : null,
         status: 'scheduled',
       });

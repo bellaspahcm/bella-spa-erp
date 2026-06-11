@@ -20,6 +20,13 @@ export type TimelineSession = {
   session_number?: number | null;
   status?: string | null;
   completed_by_ktv_id?: string | null;
+  booking_resource_id?: string | null;
+  booking_resource?: {
+    id?: string | null;
+    name?: string | null;
+    resource_type?: string | null;
+    status?: string | null;
+  } | null;
   bookings?: {
     assigned_ktv_id?: string | null;
     booking_number?: string | null;
@@ -37,6 +44,8 @@ export type TimelineSession = {
       name?: string | null;
       module_key?: string | null;
       service_category?: string | null;
+      requires_resource?: boolean | null;
+      default_resource_type?: string | null;
     } | null;
     package_name?: string | null;
   } | null;
@@ -258,6 +267,11 @@ export function BookingsTimelineGrid({
                                 <p className="text-[9px] font-bold text-slate-400 truncate mt-0.5">
                                   {session.bookings?.packages?.name || session.bookings?.package_name || 'Liệu trình'}
                                 </p>
+                                {session.booking_resource?.name && (
+                                  <p className="text-[9px] font-black text-emerald-700 truncate mt-1">
+                                    {session.booking_resource.name}
+                                  </p>
+                                )}
                               </div>
                             );
                           })}

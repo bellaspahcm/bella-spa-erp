@@ -45,6 +45,7 @@ function BookingsContent() {
     isTenantModuleLoading,
     tenantModuleError,
     ktvs,
+    bookingResources,
     sessionHistory,
     tenantModuleKey,
     fetchSessions,
@@ -268,6 +269,7 @@ function BookingsContent() {
         isOpen={showDetailModal}
         modalData={modalData}
         ktvs={ktvs}
+        bookingResources={bookingResources}
         sessionHistory={sessionHistory}
         isUpdating={isUpdating}
         onClose={() => setShowDetailModal(false)}
@@ -278,6 +280,7 @@ function BookingsContent() {
       <BookingCreateScheduleModal
         isOpen={showCreateModal}
         allBookings={allBookings}
+        bookingResources={bookingResources}
         selectedBookingId={selectedBookingIdForCreate}
         defaultDate={createDate}
         createTimeRange={createTimeRange}

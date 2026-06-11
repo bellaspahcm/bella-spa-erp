@@ -7,11 +7,15 @@ import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
 import { createClient } from '@/lib/supabase-client';
 import { getBookings } from '@/modules/booking/actions/lifecycle-actions';
 import { getCalendarSessions, getSessionLogs } from '@/modules/booking/actions/session-actions';
+import { getBookingResources } from '@/services/booking-resource-actions';
 import { getUsers } from '@/services/user-actions';
+import type { Database } from '@/types/database.types';
 
 import type { BookingOption } from '../components/BookingCreateScheduleModal';
 import type { KtvOption, SessionHistoryItem } from '../components/BookingDayDetailModal';
 import type { TimelineSession } from '../components/BookingsTimelineGrid';
+
+type BookingResourceRow = Database['public']['Tables']['booking_resources']['Row'];
 
 function toDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -35,6 +39,7 @@ export function useBookingsPageData(currentMonth: Date) {
   const [allBookings, setAllBookings] = useState<BookingOption[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [ktvs, setKtvs] = useState<KtvOption[]>([]);
+  const [bookingResources, setBookingResources] = useState<BookingResourceRow[]>([]);
   const [sessionHistory, setSessionHistory] = useState<SessionHistoryItem[]>([]);
   const sessionsReloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const calendarSessionRange = useMemo(
@@ -76,14 +81,30 @@ export function useBookingsPageData(currentMonth: Date) {
     setKtvs(data.filter((user: KtvOption & { role?: string | null }) => user.role?.toLowerCase() === 'ktv'));
   }, []);
 
+  const fetchBookingResources = useCallback(async () => {
+    if (tenantModuleKey !== 'beauty_spa') {
+      setBookingResources([]);
+      return;
+    }
+
+    const result = await getBookingResources();
+    if (result.success) {
+      setBookingResources(result.data);
+      return;
+    }
+
+    console.error('Error fetching booking resources:', result.error);
+    setBookingResources([]);
+  }, [tenantModuleKey]);
+
   const fetchSessionHistory = useCallback(async (bookingId: string) => {
     const data = await getSessionLogs(bookingId);
     setSessionHistory((data || []).slice().sort((a, b) => (b.session_number || 0) - (a.session_number || 0)));
   }, []);
 
   const refreshBookingsPage = useCallback(async () => {
-    await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs(), refreshTenantModuleKey()]);
-  }, [fetchAllBookings, fetchKtvs, fetchSessions, refreshTenantModuleKey]);
+    await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs(), fetchBookingResources(), refreshTenantModuleKey()]);
+  }, [fetchAllBookings, fetchBookingResources, fetchKtvs, fetchSessions, refreshTenantModuleKey]);
 
   const scheduleSessionsReload = useCallback(() => {
     if (sessionsReloadTimerRef.current) {
@@ -102,6 +123,10 @@ export function useBookingsPageData(currentMonth: Date) {
   useEffect(() => {
     void fetchAllBookings();
   }, [fetchAllBookings]);
+
+  useEffect(() => {
+    void fetchBookingResources();
+  }, [fetchBookingResources]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -129,6 +154,7 @@ export function useBookingsPageData(currentMonth: Date) {
     allBookings,
     isSyncing,
     ktvs,
+    bookingResources,
     sessionHistory,
     tenantModuleKey,
     isTenantModuleLoading,

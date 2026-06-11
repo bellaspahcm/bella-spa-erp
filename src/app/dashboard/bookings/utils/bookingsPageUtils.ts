@@ -68,6 +68,11 @@ export function buildSessionModalData(
     originalDateString: session.assigned_date,
     status: session.status || undefined,
     sessionNumber: session.session_number || 1,
+    bookingResourceId: session.booking_resource_id || null,
+    bookingResourceName: session.booking_resource?.name || null,
+    bookingResourceType: session.booking_resource?.resource_type || null,
+    packageRequiresResource: session.bookings?.packages?.requires_resource || false,
+    packageDefaultResourceType: session.bookings?.packages?.default_resource_type || null,
     ...overrides,
   };
 }

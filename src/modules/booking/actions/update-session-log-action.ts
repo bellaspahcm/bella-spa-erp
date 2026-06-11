@@ -9,6 +9,7 @@ import {
   syncBookingProgressAfterSessionUpdate,
   type UpdateSessionLogInput,
 } from './update-session-log-helpers';
+import { validateBookingResourceSchedule } from './booking-resource-schedule-guard';
 
 export async function updateSessionLog(id: string, payload: UpdateSessionLogInput) {
   const { createClient } = await import('@/lib/supabase-server');
@@ -55,6 +56,27 @@ export async function updateSessionLog(id: string, payload: UpdateSessionLogInpu
   }
 
   const safeUpdates = completionDefaultsResult.data;
+  const resourceScheduleResult = await validateBookingResourceSchedule({
+    supabase,
+    tenantId,
+    sessionId: id,
+    bookingResourceId: Object.prototype.hasOwnProperty.call(safeUpdates, 'booking_resource_id')
+      ? safeUpdates.booking_resource_id
+      : existingLog.booking_resource_id,
+    assignedDate: Object.prototype.hasOwnProperty.call(safeUpdates, 'assigned_date')
+      ? safeUpdates.assigned_date
+      : existingLog.assigned_date,
+    assignedTime: Object.prototype.hasOwnProperty.call(safeUpdates, 'assigned_time')
+      ? safeUpdates.assigned_time
+      : existingLog.assigned_time,
+    status: Object.prototype.hasOwnProperty.call(safeUpdates, 'status')
+      ? safeUpdates.status
+      : existingLog.status,
+  });
+
+  if ('error' in resourceScheduleResult) {
+    return { error: resourceScheduleResult.error };
+  }
 
   const { data, error } = await supabase
     .from('session_logs')
