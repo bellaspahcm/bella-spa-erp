@@ -77,6 +77,9 @@ npm run e2e:report
 # Responsive visual smoke local
 npm run e2e:visual
 
+# Beauty Spa UAT smoke: tenant isolation, checkout, revenue, resource conflict
+npm run e2e:beauty-uat
+
 # Chạy 1 file cụ thể
 npx playwright test e2e/tests/01-booking-creation.spec.ts
 

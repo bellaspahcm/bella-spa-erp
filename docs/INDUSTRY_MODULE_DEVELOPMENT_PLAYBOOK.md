@@ -292,7 +292,7 @@ npm.cmd run db:rpc-grants:check
 Neu co giao dien:
 
 ```powershell
-npm.cmd run e2e:tenant-isolation
+npm.cmd run e2e:beauty-uat
 npx.cmd playwright test <route-smoke-spec>
 ```
 
@@ -338,6 +338,17 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 
 ## Lich Su Loi Moi
 
+### 2026-06-12 - Beauty UAT smoke phai gom ca van hanh va tai nguyen
+
+- Module/tenant: Beauty Spa va Bella Spa.
+- Man hinh/luong: Khach hang, lich hen, the lieu trinh, tai chinh, booking resource.
+- Dau hieu: Da co `e2e:tenant-isolation` va `14-beauty-resource-booking-smoke.spec.ts`, nhung file resource booking khong nam trong mot lenh UAT chuan nen de bi quen khi kiem tra truoc ban giao.
+- Nguyen nhan goc: Cac smoke test duoc them theo tung loi rieng, chua co entrypoint chung cho Beauty operation UAT.
+- Cach sua: Them `npm run e2e:beauty-uat` de chay ca `13-tenant-isolation-smoke` va `14-beauty-resource-booking-smoke`; CI quality/security dung lenh moi.
+- Test/guard da them: `npm.cmd run e2e:beauty-uat` la lenh UAT chuan khi co Playwright + Supabase service-role env; local static guard chay qua lint/build.
+- Commit: pending.
+- Rui ro con lai: UAT smoke nay van can env E2E dung va co the skip tren local neu khong co service-role; khong thay the kiem thu thu cong truoc go-live cho tung spa that.
+
 ### 2026-06-12 - Beauty branch quota va demo flow can khoa dung
 
 - Module/tenant: Beauty Spa va subscription core.
@@ -369,7 +380,7 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 - Nguyen nhan goc: Guard CI co tenant isolation co ban, nhung chua dong goi luong Beauty demo operational smoke co tao/xoa du lieu tam va xac nhan Bella admin khong thay marker.
 - Cach sua: Bo sung test vao `e2e/tests/13-tenant-isolation-smoke.spec.ts` va npm script `e2e:tenant-isolation`; test tao du lieu Beauty tam, xac nhan UI Beauty thay, progress/payment dung, Bella admin khong thay, cleanup ve 0.
 - Test/guard da them: `npm.cmd run e2e:tenant-isolation`.
-- CI guard: `.github/workflows/quality-security.yml` chay script `npm run e2e:tenant-isolation` trong buoc `Beauty/Bella tenant isolation smoke`; khong tao workflow rieng de tranh trung lap.
+- CI guard: Ban dau `.github/workflows/quality-security.yml` chay `npm run e2e:tenant-isolation`; tu 2026-06-12 da mo rong thanh `npm run e2e:beauty-uat` de gom ca resource booking smoke.
 - Commit: `6fd34fe8`.
 - Rui ro con lai: Smoke nay can Supabase service-role env va local dev auth; neu chay tren production/staging phai dung account E2E rieng, khong dung mock cookie.
 
