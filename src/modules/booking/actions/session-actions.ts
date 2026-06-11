@@ -42,8 +42,10 @@ export async function getSessionLogs(bookingId: string) {
   return getSessionLogsAction(bookingId);
 }
 
-export async function getSessionsWithDetails() {
-  return getSessionsWithDetailsAction();
+export async function getSessionsWithDetails(
+  options?: Parameters<typeof getSessionsWithDetailsAction>[0]
+) {
+  return getSessionsWithDetailsAction(options);
 }
 
 export async function getCalendarSessions() {

@@ -20,7 +20,7 @@ jest.mock('../lib/revalidate', () => ({
 
 const mockGetCurrentUser = jest.fn();
 const mockFrom = jest.fn();
-const queryFilters: Array<{ column: string; value: unknown }> = [];
+const queryFilters: Array<{ column: string; value: unknown; operator?: string }> = [];
 
 jest.mock('../services/user-actions', () => ({
   getCurrentUser: (...args: any[]) => mockGetCurrentUser(...args),
@@ -36,6 +36,14 @@ class MockQueryBuilder {
   select() { return this; }
   eq(column?: string, value?: unknown) {
     if (column) queryFilters.push({ column, value });
+    return this;
+  }
+  gte(column?: string, value?: unknown) {
+    if (column) queryFilters.push({ column, value, operator: 'gte' });
+    return this;
+  }
+  lt(column?: string, value?: unknown) {
+    if (column) queryFilters.push({ column, value, operator: 'lt' });
     return this;
   }
   order() { return this; }
@@ -72,6 +80,18 @@ describe('session read actions', () => {
 
     expect(queryFilters).toEqual(expect.arrayContaining([
       { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+  });
+
+  it('scopes session details to the selected year and month when provided', async () => {
+    mockFrom.mockReturnValue(new MockQueryBuilder([], null));
+
+    await expect(getSessionsWithDetails({ year: '2026', month: '06' })).resolves.toEqual([]);
+
+    expect(queryFilters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+      { column: 'created_at', value: '2026-06-01', operator: 'gte' },
+      { column: 'created_at', value: '2026-07-01', operator: 'lt' },
     ]));
   });
 

@@ -23,7 +23,7 @@ TrendingUp,
 UserCircle
 } from 'lucide-react';
 import { useRouter,useSearchParams } from 'next/navigation';
-import { Suspense,useCallback,useEffect,useMemo,useState } from 'react';
+import { Suspense,useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import { toast } from 'sonner';
 
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
@@ -44,6 +44,31 @@ function getErrorMessage(error: unknown, fallback = 'Loi khong xac dinh') {
   return fallback;
 }
 
+function SessionsListSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:gap-6">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div
+          key={index}
+          className="rounded-[2rem] border border-slate-100 bg-white/80 p-6 shadow-sm sm:rounded-[2.5rem] sm:p-8"
+        >
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-5">
+              <div className="h-16 w-16 shrink-0 animate-pulse rounded-full bg-slate-100" />
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="h-4 w-24 animate-pulse rounded-full bg-slate-100" />
+                <div className="h-6 w-full max-w-md animate-pulse rounded-full bg-slate-100" />
+                <div className="h-4 w-full max-w-xs animate-pulse rounded-full bg-slate-100" />
+              </div>
+            </div>
+            <div className="h-12 w-full animate-pulse rounded-2xl bg-slate-100 lg:w-56" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function SessionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -54,6 +79,8 @@ function SessionsContent() {
   const [sessions, setSessions] = useState<SessionBooking[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<SessionBooking[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [hasLoadedSessions, setHasLoadedSessions] = useState(false);
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -106,7 +133,8 @@ function SessionsContent() {
   const loadSessions = useCallback(async () => {
     setIsSyncing(true);
     try {
-      const data = await getSessionsWithDetails() as SessionBooking[];
+      const options = initialBookingId ? undefined : { year: yearFilter, month: monthFilter };
+      const data = await getSessionsWithDetails(options) as SessionBooking[];
       setSessions(data || []);
       return data;
     } catch (error: unknown) {
@@ -115,9 +143,20 @@ function SessionsContent() {
       toast.error('Khong the tai danh sach buoi dich vu: ' + getErrorMessage(error));
       return [];
     } finally {
+      setHasLoadedSessions(true);
       setIsSyncing(false);
     }
-  }, []);
+  }, [initialBookingId, monthFilter, yearFilter]);
+
+  const scheduleSessionsReload = useCallback(() => {
+    if (reloadTimerRef.current) {
+      clearTimeout(reloadTimerRef.current);
+    }
+
+    reloadTimerRef.current = setTimeout(() => {
+      void loadSessions();
+    }, 400);
+  }, [loadSessions]);
 
   useEffect(() => {
     loadSessions();
@@ -137,17 +176,20 @@ function SessionsContent() {
     const channel = supabase
       .channel('sessions-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
-        loadSessions();
+        scheduleSessionsReload();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
-        loadSessions();
+        scheduleSessionsReload();
       })
       .subscribe();
 
     return () => {
+      if (reloadTimerRef.current) {
+        clearTimeout(reloadTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, [loadPendingLeaves, loadSessions]);
+  }, [loadPendingLeaves, loadSessions, scheduleSessionsReload]);
 
   const handleSoftRefresh = useCallback(async () => {
     await Promise.all([
@@ -498,7 +540,9 @@ function SessionsContent() {
         </div>
       </div>
 
-      {displaySessions.length === 0 ? (
+      {isSyncing && !hasLoadedSessions ? (
+        <SessionsListSkeleton />
+      ) : displaySessions.length === 0 ? (
         <div className="rounded-[2rem] border border-dashed border-slate-200 bg-white p-10 text-center sm:rounded-[3rem] sm:p-20">
           <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <Search className="w-10 h-10 text-slate-300" />
