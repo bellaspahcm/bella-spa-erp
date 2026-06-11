@@ -712,7 +712,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden"
+          className="beauty-dashboard-panel beauty-alerts-panel glass-pink luxury-box-hover rounded-[3rem] p-10 shadow-sm border border-white relative overflow-hidden"
         >
           <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
           <div className="flex items-center gap-3 mb-8">
@@ -738,13 +738,14 @@ export default function DashboardPage() {
                     router.push(alert.link);
                   }
                 }}
-                className={`p-6 rounded-3xl flex items-center gap-6 border cursor-pointer hover:scale-[1.01] transition-all hover:shadow-md ${
+                data-alert-tone={alert.type}
+                className={`beauty-alert-item p-6 rounded-3xl flex items-center gap-6 border cursor-pointer hover:scale-[1.01] transition-all hover:shadow-md ${
                   alert.type === 'warning' ? 'bg-amber-50 border-amber-200' :
                   alert.type === 'success' ? 'bg-emerald-50 border-emerald-200' :
                   'bg-blue-50 border-blue-200'
                 }`}
               >
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm shrink-0 ${
+                <div className={`beauty-alert-icon w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm shrink-0 ${
                   alert.type === 'warning' ? 'bg-amber-100 text-amber-600' :
                   alert.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
                   'bg-blue-100 text-blue-600'
@@ -754,14 +755,14 @@ export default function DashboardPage() {
                    <Lightbulb className="w-6 h-6" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className={`font-bold text-lg ${
+                  <h3 className={`beauty-alert-title font-bold text-lg ${
                     alert.type === 'warning' ? 'text-amber-900' :
                     alert.type === 'success' ? 'text-emerald-900' :
                     'text-blue-900'
                   }`}>
                     {alert.title}
                   </h3>
-                  <p className={`font-semibold opacity-80 ${
+                  <p className={`beauty-alert-message font-semibold opacity-80 ${
                     alert.type === 'warning' ? 'text-amber-800' :
                     alert.type === 'success' ? 'text-emerald-800' :
                     'text-blue-800'

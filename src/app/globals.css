@@ -1812,3 +1812,76 @@ html.dark[data-tenant-module="beauty_spa"] .fixed.inset-0[class*="bg-[#1A0A0E]"]
 html.dark[data-tenant-module="pending"] .fixed.inset-0[class*="bg-[#1A0A0E]"] {
   background: rgba(2, 12, 24, 0.72) !important;
 }
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table-wrap,
+html.dark[data-tenant-module="pending"] .beauty-top-ktv-table-wrap {
+  width: 100%;
+  border: 1px solid rgba(196, 154, 104, 0.22);
+  border-radius: 1.5rem;
+  background: rgba(11, 31, 58, 0.32);
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table,
+html.dark[data-tenant-module="pending"] .beauty-top-ktv-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table th,
+html.dark[data-tenant-module="pending"] .beauty-top-ktv-table th {
+  background: rgba(11, 31, 58, 0.92) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table td,
+html.dark[data-tenant-module="pending"] .beauty-top-ktv-table td {
+  background: rgba(20, 58, 81, 0.48) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item,
+html.dark[data-tenant-module="pending"] .beauty-alert-item {
+  background:
+    linear-gradient(135deg, rgba(20, 58, 81, 0.82), rgba(11, 31, 58, 0.78)) !important;
+  border-color: rgba(196, 154, 104, 0.32) !important;
+  color: #F8F1E3 !important;
+  box-shadow: 0 18px 44px rgba(2, 12, 24, 0.24) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item[data-alert-tone="warning"],
+html.dark[data-tenant-module="pending"] .beauty-alert-item[data-alert-tone="warning"] {
+  background:
+    linear-gradient(135deg, rgba(255, 214, 109, 0.16), rgba(20, 58, 81, 0.78) 44%, rgba(11, 31, 58, 0.82)) !important;
+  border-color: rgba(255, 214, 109, 0.46) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item[data-alert-tone="success"],
+html.dark[data-tenant-module="pending"] .beauty-alert-item[data-alert-tone="success"] {
+  background:
+    linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(20, 58, 81, 0.78) 44%, rgba(11, 31, 58, 0.82)) !important;
+  border-color: rgba(74, 222, 128, 0.36) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item[data-alert-tone="info"],
+html.dark[data-tenant-module="pending"] .beauty-alert-item[data-alert-tone="info"] {
+  background:
+    linear-gradient(135deg, rgba(96, 165, 250, 0.14), rgba(20, 58, 81, 0.78) 44%, rgba(11, 31, 58, 0.82)) !important;
+  border-color: rgba(147, 197, 253, 0.34) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-alert-title,
+html.dark[data-tenant-module="pending"] .beauty-alert-title {
+  color: #F8F1E3 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-alert-message,
+html.dark[data-tenant-module="pending"] .beauty-alert-message {
+  color: #E7D2A7 !important;
+  opacity: 1 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-alert-icon,
+html.dark[data-tenant-module="pending"] .beauty-alert-icon {
+  background: rgba(11, 31, 58, 0.72) !important;
+  border: 1px solid rgba(255, 214, 109, 0.22);
+  color: #FFD66D !important;
+}
