@@ -13,6 +13,7 @@ export interface SubscriptionLimit {
   maxKtv: number;
   maxCustomers: number;
   maxSms: number;
+  maxBranches: number;
   tierName: string;
 }
 
@@ -120,7 +121,7 @@ export async function checkSubscriptionLimit(
       max: UNLIMITED_QUOTA,
       tier: 'hq_owned',
       isExpired: false,
-      limits: buildQuotaSnapshot('Spa truc thuoc', UNLIMITED_QUOTA, UNLIMITED_QUOTA, UNLIMITED_QUOTA),
+      limits: buildQuotaSnapshot('Spa truc thuoc', UNLIMITED_QUOTA, UNLIMITED_QUOTA, UNLIMITED_QUOTA, UNLIMITED_QUOTA),
     };
   }
 
@@ -168,6 +169,19 @@ export async function checkSubscriptionLimit(
       throw new Error(`[checkSubscriptionLimit] customers count failed: ${error.message}`);
     }
     const currentCount = count || 0;
+    const usage = calculateSubscriptionUsageState({ current: currentCount, entitlement: requested });
+    return {
+      isBlocked: usage.isBlocked,
+      current: usage.current,
+      max: usage.max,
+      tier,
+      isExpired: false,
+      limits,
+    };
+  }
+
+  if (limitType === 'branch') {
+    const currentCount = 1;
     const usage = calculateSubscriptionUsageState({ current: currentCount, entitlement: requested });
     return {
       isBlocked: usage.isBlocked,

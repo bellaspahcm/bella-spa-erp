@@ -1,6 +1,6 @@
 export const UNLIMITED_QUOTA = 999999;
 
-export type SubscriptionFeatureKey = 'ktv' | 'customer' | 'sms';
+export type SubscriptionFeatureKey = 'ktv' | 'customer' | 'sms' | 'branch';
 
 export type SubscriptionEntitlementLike = {
   feature_key: string;
@@ -12,12 +12,15 @@ export type SubscriptionLimitSnapshot = {
   maxKtv: number;
   maxCustomers: number;
   maxSms: number;
+  maxBranches: number;
   tierName: string;
 };
 
 export function normalizeSubscriptionFeatureKey(value: string | null | undefined): SubscriptionFeatureKey | null {
   const normalized = value?.trim().toLowerCase();
-  if (normalized === 'ktv' || normalized === 'customer' || normalized === 'sms') return normalized;
+  if (normalized === 'ktv' || normalized === 'customer' || normalized === 'sms' || normalized === 'branch') {
+    return normalized;
+  }
   return null;
 }
 
@@ -35,12 +38,14 @@ export function buildQuotaSnapshot(
   tierName: string,
   maxKtv: number,
   maxCustomers: number,
-  maxSms: number
+  maxSms: number,
+  maxBranches = 0
 ): SubscriptionLimitSnapshot {
   return {
     maxKtv,
     maxCustomers,
     maxSms,
+    maxBranches,
     tierName,
   };
 }
@@ -53,12 +58,14 @@ export function buildEffectiveSubscriptionLimits(
   const ktv = byFeature.get('ktv');
   const customer = byFeature.get('customer');
   const sms = byFeature.get('sms');
+  const branch = byFeature.get('branch');
 
   return buildQuotaSnapshot(
     tierName,
     ktv ? getEntitlementLimitValue(ktv) : 0,
     customer ? getEntitlementLimitValue(customer) : 0,
-    sms ? getEntitlementLimitValue(sms) : 0
+    sms ? getEntitlementLimitValue(sms) : 0,
+    branch ? getEntitlementLimitValue(branch) : 0
   );
 }
 

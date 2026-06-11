@@ -44,6 +44,7 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | Nhom | Loi da gap | Nguyen nhan | Cach sua/guard can giu |
 | --- | --- | --- | --- |
 | Module setup | Beauty Spa bi xem nhu tuy chon co the bat/tat | Thiet ke ban dau gan voi module toggle thay vi quy trinh thuong mai HQ cap | HQ-only setup, Beauty admin khong duoc doi module nganh |
+| Subscription catalog | Gia goi, tinh nang va han muc chi nhanh co nguy co nam trong code hoac sua tay SQL | Chua co UI/action HQ chinh catalog va default entitlement; quota chi nhanh neu dem toan cuc se khoa nham khach khac | Catalog goi va default entitlement phai do HQ sua qua audited action; `branch` la feature quota rieng; khong enforce branch limit neu chua co tenant owner ro rang |
 | Tenant isolation | Dang nhap Admin Bella Spa van thay khach/demo Beauty | Query/UI read model co diem thieu scope tenant hoac demo data chua tach sach | Moi action doc du lieu phai filter `tenant_id`; them guard test session/dashboard/customer/finance |
 | Client direct query | Booking modal/list picker hien KTV/khach Beauty trong tai khoan Bella | UI query truc tiep tu browser vao `users`/`customers` thay vi qua server action tenant-scoped | Khong query client voi bang tenant-sensitive; dung server action co current tenant; them source guard |
 | Module isolation | Beauty tenant van hien text Me & Be, KTV, Combo Me Be | UI copy va filter bi hard-code theo Babycare | Dung module-aware copy, service category theo module, khong render babycare UI khi tenant chua load module |

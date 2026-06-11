@@ -11,6 +11,11 @@ const smsUsageCounterMigrationSql = readFileSync(
   'utf8'
 );
 
+const branchQuotaMigrationSql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260611160000_add_branch_subscription_quota.sql'),
+  'utf8'
+);
+
 describe('subscription quota schema migration', () => {
   it('creates the Super Admin plan/quota foundation tables', () => {
     expect(migrationSql).toContain('CREATE TABLE IF NOT EXISTS public.subscription_plans');
@@ -61,5 +66,14 @@ describe('subscription quota schema migration', () => {
     expect(smsUsageCounterMigrationSql).toContain('used_value = 0');
     expect(smsUsageCounterMigrationSql).toContain('sms_allotment_used = 0');
     expect(smsUsageCounterMigrationSql).toContain('GRANT EXECUTE ON FUNCTION public.renew_tenant_subscription(TEXT, TEXT) TO authenticated, service_role');
+  });
+
+  it('adds branch count as a first-class subscription quota entitlement', () => {
+    expect(branchQuotaMigrationSql).toContain("feature_key");
+    expect(branchQuotaMigrationSql).toContain("('free_trial', 'branch', 1");
+    expect(branchQuotaMigrationSql).toContain("('basic', 'branch', 1");
+    expect(branchQuotaMigrationSql).toContain("('pro', 'branch', 3");
+    expect(branchQuotaMigrationSql).toContain("('enterprise', 'branch', NULL, TRUE");
+    expect(branchQuotaMigrationSql).toContain('ON CONFLICT (plan_code, feature_key) DO UPDATE');
   });
 });

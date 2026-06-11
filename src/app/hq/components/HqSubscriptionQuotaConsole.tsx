@@ -18,6 +18,8 @@ import {
   getHqSubscriptionOverview,
   resetTenantUsageCounter,
   setTenantQuotaOverride,
+  updateSubscriptionPlanCatalog,
+  updateSubscriptionPlanEntitlement,
   updateTenantSubscriptionPlan,
 } from '@/services/hq-subscription-actions';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
@@ -49,7 +51,15 @@ const featureLabels: Record<string, string> = {
   ktv: 'KTV',
   customer: 'Khách hàng',
   sms: 'Zalo/SMS',
+  branch: 'Chi nhánh',
 };
+
+const quotaFeatureOptions = [
+  { value: 'sms', label: 'Zalo/SMS', unit: 'message', resetPeriod: 'monthly' },
+  { value: 'ktv', label: 'KTV', unit: 'count', resetPeriod: 'none' },
+  { value: 'customer', label: 'Khách hàng', unit: 'count', resetPeriod: 'none' },
+  { value: 'branch', label: 'Chi nhánh', unit: 'count', resetPeriod: 'none' },
+];
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -93,6 +103,23 @@ export function HqSubscriptionQuotaConsole({
   const [planExpiryDate, setPlanExpiryDate] = useState('');
   const [submittingPlan, setSubmittingPlan] = useState(false);
 
+  const [catalogPlanCode, setCatalogPlanCode] = useState('');
+  const [catalogDisplayName, setCatalogDisplayName] = useState('');
+  const [catalogDescription, setCatalogDescription] = useState('');
+  const [catalogPriceMonthly, setCatalogPriceMonthly] = useState('0');
+  const [catalogSortOrder, setCatalogSortOrder] = useState('0');
+  const [catalogIsActive, setCatalogIsActive] = useState(true);
+  const [submittingCatalog, setSubmittingCatalog] = useState(false);
+
+  const [entitlementPlanCode, setEntitlementPlanCode] = useState('');
+  const [entitlementFeatureKey, setEntitlementFeatureKey] = useState('branch');
+  const [entitlementLimitValue, setEntitlementLimitValue] = useState('1');
+  const [entitlementIsUnlimited, setEntitlementIsUnlimited] = useState(false);
+  const [entitlementUnit, setEntitlementUnit] = useState('count');
+  const [entitlementResetPeriod, setEntitlementResetPeriod] = useState('none');
+  const [entitlementDescription, setEntitlementDescription] = useState('');
+  const [submittingEntitlement, setSubmittingEntitlement] = useState(false);
+
   const [overrideTenantId, setOverrideTenantId] = useState('');
   const [overrideFeatureKey, setOverrideFeatureKey] = useState('sms');
   const [overrideLimitValue, setOverrideLimitValue] = useState('100');
@@ -123,11 +150,53 @@ export function HqSubscriptionQuotaConsole({
     [overview.overrides]
   );
 
+  const selectedCatalogPlan = useMemo(
+    () => overview.plans.find((plan) => plan.plan_code === catalogPlanCode),
+    [catalogPlanCode, overview.plans]
+  );
+
+  const selectedCatalogEntitlement = useMemo(
+    () => (entitlementsByPlan[entitlementPlanCode] || []).find(
+      (entitlement) => entitlement.feature_key === entitlementFeatureKey
+    ),
+    [entitlementFeatureKey, entitlementPlanCode, entitlementsByPlan]
+  );
+
+  useEffect(() => {
+    if (!selectedCatalogPlan) return;
+    setCatalogDisplayName(selectedCatalogPlan.display_name);
+    setCatalogDescription(selectedCatalogPlan.description || '');
+    setCatalogPriceMonthly(String(Number(selectedCatalogPlan.price_monthly ?? 0)));
+    setCatalogSortOrder(String(Number(selectedCatalogPlan.sort_order ?? 0)));
+    setCatalogIsActive(selectedCatalogPlan.is_active);
+  }, [selectedCatalogPlan]);
+
+  useEffect(() => {
+    const option = quotaFeatureOptions.find((item) => item.value === entitlementFeatureKey);
+    if (selectedCatalogEntitlement) {
+      setEntitlementLimitValue(String(Number(selectedCatalogEntitlement.limit_value ?? 0)));
+      setEntitlementIsUnlimited(selectedCatalogEntitlement.is_unlimited);
+      setEntitlementUnit(selectedCatalogEntitlement.unit);
+      setEntitlementResetPeriod(selectedCatalogEntitlement.reset_period);
+      setEntitlementDescription(selectedCatalogEntitlement.description || '');
+      return;
+    }
+
+    setEntitlementLimitValue('0');
+    setEntitlementIsUnlimited(false);
+    setEntitlementUnit(option?.unit || 'count');
+    setEntitlementResetPeriod(option?.resetPeriod || 'none');
+    setEntitlementDescription('');
+  }, [entitlementFeatureKey, selectedCatalogEntitlement]);
+
   const loadOverview = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getHqSubscriptionOverview();
       setOverview(data);
+      const firstPlanCode = data.plans[0]?.plan_code || '';
+      setCatalogPlanCode((current) => current || firstPlanCode);
+      setEntitlementPlanCode((current) => current || firstPlanCode);
 
       const firstTenant = data.tenants.find((tenant) => tenant.name !== 'Bella Spa Headquarter');
       if (firstTenant) {
@@ -162,6 +231,85 @@ export function HqSubscriptionQuotaConsole({
     setSelectedTenantId(tenantId);
     setSelectedPlanCode(tenant?.subscription_tier || overview.plans[0]?.plan_code || '');
     setPlanExpiryDate(toDateInput(tenant?.subscription_expires_at));
+  };
+
+  const handleSaveCatalog = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const priceMonthly = Number(catalogPriceMonthly);
+    const sortOrder = Number(catalogSortOrder);
+    if (!catalogPlanCode || !catalogDisplayName.trim()) {
+      toast.error('Vui lòng chọn gói và nhập tên hiển thị.');
+      return;
+    }
+    if (!Number.isFinite(priceMonthly) || priceMonthly < 0) {
+      toast.error('Giá gói phải là số không âm.');
+      return;
+    }
+    if (!Number.isFinite(sortOrder) || sortOrder < 0) {
+      toast.error('Thứ tự hiển thị phải là số không âm.');
+      return;
+    }
+
+    setSubmittingCatalog(true);
+    try {
+      const result = await updateSubscriptionPlanCatalog({
+        planCode: catalogPlanCode,
+        displayName: catalogDisplayName,
+        description: catalogDescription || null,
+        priceMonthly,
+        isActive: catalogIsActive,
+        sortOrder,
+      });
+
+      if (result.success) {
+        toast.success('Đã cập nhật catalog gói thuê bao.');
+        await loadOverview();
+      } else {
+        toast.error(result.error || 'Cập nhật catalog gói thuê bao thất bại.');
+      }
+    } catch (error) {
+      toast.error('Lỗi cập nhật catalog gói thuê bao: ' + getErrorMessage(error));
+    } finally {
+      setSubmittingCatalog(false);
+    }
+  };
+
+  const handleSaveEntitlement = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const limitNumber = Number(entitlementLimitValue);
+    if (!entitlementPlanCode || !entitlementFeatureKey) {
+      toast.error('Vui lòng chọn gói và loại hạn mức.');
+      return;
+    }
+    if (!entitlementIsUnlimited && (!Number.isFinite(limitNumber) || limitNumber < 0)) {
+      toast.error('Hạn mức mặc định phải là số không âm hoặc bật không giới hạn.');
+      return;
+    }
+
+    setSubmittingEntitlement(true);
+    try {
+      const result = await updateSubscriptionPlanEntitlement({
+        planCode: entitlementPlanCode,
+        featureKey: entitlementFeatureKey,
+        limitValue: entitlementIsUnlimited ? null : limitNumber,
+        isUnlimited: entitlementIsUnlimited,
+        unit: entitlementUnit,
+        enforcementMode: 'hard',
+        resetPeriod: entitlementResetPeriod,
+        description: entitlementDescription || null,
+      });
+
+      if (result.success) {
+        toast.success('Đã cập nhật hạn mức mặc định của gói.');
+        await loadOverview();
+      } else {
+        toast.error(result.error || 'Cập nhật hạn mức mặc định thất bại.');
+      }
+    } catch (error) {
+      toast.error('Lỗi cập nhật hạn mức mặc định: ' + getErrorMessage(error));
+    } finally {
+      setSubmittingEntitlement(false);
+    }
   };
 
   const handleSavePlan = async (event: React.FormEvent) => {
@@ -356,6 +504,191 @@ export function HqSubscriptionQuotaConsole({
       </section>
 
       <section className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        <form onSubmit={handleSaveCatalog} className="xl:col-span-5 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35] rounded-[2.5rem] p-6 shadow-sm space-y-5">
+          <div>
+            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Quản lý bảng giá gói</h4>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">HQ chỉnh tên, giá và trạng thái gói SaaS</p>
+          </div>
+
+          <label className="block space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gói cần chỉnh</span>
+            <PremiumSelect
+              value={catalogPlanCode}
+              onChange={setCatalogPlanCode}
+              disabled={!hasPlans}
+              options={
+                hasPlans
+                  ? overview.plans.map((plan) => ({ value: plan.plan_code, label: plan.display_name }))
+                  : [{ value: '', label: 'Chưa có gói' }]
+              }
+              buttonClassName={selectButtonClassName}
+            />
+          </label>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="block space-y-2 sm:col-span-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tên hiển thị</span>
+              <input
+                value={catalogDisplayName}
+                onChange={(event) => setCatalogDisplayName(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Giá tháng</span>
+              <input
+                type="number"
+                min="0"
+                value={catalogPriceMonthly}
+                onChange={(event) => setCatalogPriceMonthly(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Thứ tự</span>
+              <input
+                type="number"
+                min="0"
+                value={catalogSortOrder}
+                onChange={(event) => setCatalogSortOrder(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+              />
+            </label>
+          </div>
+
+          <label className="block space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mô tả</span>
+            <textarea
+              value={catalogDescription}
+              onChange={(event) => setCatalogDescription(event.target.value)}
+              rows={3}
+              className="w-full resize-none rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+            />
+          </label>
+
+          <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-[#3E3A35] px-4 py-3 text-xs font-black uppercase tracking-wider text-slate-600 dark:text-[#CDBCAB]">
+            <input
+              type="checkbox"
+              checked={catalogIsActive}
+              onChange={(event) => setCatalogIsActive(event.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            Gói đang bán
+          </label>
+
+          <button
+            type="submit"
+            disabled={submittingCatalog || loading || !hasPlans || !catalogPlanCode}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary hover:bg-primary/90 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-white disabled:opacity-50"
+          >
+            {submittingCatalog ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+            Lưu bảng giá gói
+          </button>
+        </form>
+
+        <form onSubmit={handleSaveEntitlement} className="xl:col-span-7 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35] rounded-[2.5rem] p-6 shadow-sm space-y-5">
+          <div>
+            <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Hạn mức mặc định của gói</h4>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Bao gồm KTV, khách hàng, Zalo/SMS và số chi nhánh</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="block space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gói</span>
+              <PremiumSelect
+                value={entitlementPlanCode}
+                onChange={setEntitlementPlanCode}
+                disabled={!hasPlans}
+                options={
+                  hasPlans
+                    ? overview.plans.map((plan) => ({ value: plan.plan_code, label: plan.display_name }))
+                    : [{ value: '', label: 'Chưa có gói' }]
+                }
+                buttonClassName={selectButtonClassName}
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loại hạn mức</span>
+              <PremiumSelect
+                value={entitlementFeatureKey}
+                onChange={setEntitlementFeatureKey}
+                options={quotaFeatureOptions.map((option) => ({ value: option.value, label: option.label }))}
+                buttonClassName={selectButtonClassName}
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <label className="block space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Hạn mức</span>
+              <input
+                type="number"
+                min="0"
+                value={entitlementLimitValue}
+                onChange={(event) => setEntitlementLimitValue(event.target.value)}
+                disabled={entitlementIsUnlimited}
+                className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary disabled:bg-slate-100 disabled:text-slate-400"
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Đơn vị</span>
+              <PremiumSelect
+                value={entitlementUnit}
+                onChange={setEntitlementUnit}
+                options={[
+                  { value: 'count', label: 'Lượt' },
+                  { value: 'message', label: 'Tin' },
+                ]}
+                buttonClassName={selectButtonClassName}
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Chu kỳ</span>
+              <PremiumSelect
+                value={entitlementResetPeriod}
+                onChange={setEntitlementResetPeriod}
+                options={[
+                  { value: 'none', label: 'Không đặt lại' },
+                  { value: 'daily', label: 'Hàng ngày' },
+                  { value: 'monthly', label: 'Hàng tháng' },
+                  { value: 'yearly', label: 'Hàng năm' },
+                ]}
+                buttonClassName={selectButtonClassName}
+              />
+            </label>
+            <label className="inline-flex items-center gap-3 self-end rounded-2xl border border-slate-200 dark:border-[#3E3A35] px-4 py-3 text-xs font-black uppercase tracking-wider text-slate-600 dark:text-[#CDBCAB]">
+              <input
+                type="checkbox"
+                checked={entitlementIsUnlimited}
+                onChange={(event) => setEntitlementIsUnlimited(event.target.checked)}
+                className="h-4 w-4 accent-primary"
+              />
+              Không giới hạn
+            </label>
+          </div>
+
+          <label className="block space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ghi chú hạn mức</span>
+            <input
+              value={entitlementDescription}
+              onChange={(event) => setEntitlementDescription(event.target.value)}
+              placeholder="VD: Số chi nhánh/địa điểm được vận hành trong gói"
+              className="w-full rounded-2xl border border-slate-200 dark:border-[#3E3A35] bg-white dark:bg-[#11100F] px-4 py-3 text-sm font-bold outline-none focus:border-primary"
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={submittingEntitlement || loading || !hasPlans || !entitlementPlanCode}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 hover:bg-amber-600 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-slate-950 disabled:opacity-50"
+          >
+            {submittingEntitlement ? <RefreshCw size={14} className="animate-spin" /> : <SlidersHorizontal size={14} />}
+            Lưu hạn mức mặc định
+          </button>
+        </form>
+      </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
         <form onSubmit={handleSavePlan} className="xl:col-span-5 bg-white dark:bg-[#1C1B19] border border-slate-100 dark:border-[#3E3A35] rounded-[2.5rem] p-6 shadow-sm space-y-5">
           <div>
             <h4 className="text-xs font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-widest">Đổi gói thuê bao chi nhánh</h4>
@@ -443,12 +776,15 @@ export function HqSubscriptionQuotaConsole({
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tính năng</span>
               <PremiumSelect
                 value={overrideFeatureKey}
-                onChange={setOverrideFeatureKey}
-                options={[
-                  { value: 'sms', label: 'Zalo/SMS' },
-                  { value: 'ktv', label: 'KTV' },
-                  { value: 'customer', label: 'Khách hàng' },
-                ]}
+                onChange={(value) => {
+                  setOverrideFeatureKey(value);
+                  const option = quotaFeatureOptions.find((item) => item.value === value);
+                  if (option) {
+                    setOverrideUnit(option.unit);
+                    setOverrideResetPeriod(option.resetPeriod);
+                  }
+                }}
+                options={quotaFeatureOptions.map((option) => ({ value: option.value, label: option.label }))}
                 buttonClassName={selectButtonClassName}
               />
             </label>

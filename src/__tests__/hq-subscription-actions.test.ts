@@ -112,6 +112,8 @@ import {
   getHqSubscriptionOverview,
   resetTenantUsageCounter,
   setTenantQuotaOverride,
+  updateSubscriptionPlanCatalog,
+  updateSubscriptionPlanEntitlement,
   updateTenantSubscriptionPlan,
 } from '@/services/hq-subscription-actions';
 
@@ -147,6 +149,37 @@ function usageCounterRow(overrides: Partial<Record<string, unknown>> = {}) {
     metadata: { source: 'zalo' },
     last_increment_at: '2026-06-10T00:00:00.000Z',
     updated_at: '2026-06-10T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function subscriptionPlanRow(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    plan_code: 'pro',
+    display_name: 'Chuyên nghiệp',
+    description: 'Old plan description',
+    price_monthly: 999000,
+    is_active: true,
+    sort_order: 30,
+    created_at: '2026-06-01T00:00:00.000Z',
+    updated_at: '2026-06-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function subscriptionEntitlementRow(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: 'entitlement-1',
+    plan_code: 'pro',
+    feature_key: 'branch',
+    limit_value: 3,
+    is_unlimited: false,
+    unit: 'count',
+    enforcement_mode: 'hard',
+    reset_period: 'none',
+    description: 'Maximum active branches/locations.',
+    created_at: '2026-06-01T00:00:00.000Z',
+    updated_at: '2026-06-01T00:00:00.000Z',
     ...overrides,
   };
 }
@@ -195,6 +228,151 @@ describe('HQ subscription actions', () => {
       'tenant_subscription_overrides',
       'tenant_usage_counters',
     ]);
+  });
+
+  it('updates subscription plan catalog with audit and cache revalidation', async () => {
+    const existing = subscriptionPlanRow({ display_name: 'Pro old', price_monthly: 999000 });
+    const updated = subscriptionPlanRow({ display_name: 'Pro Beauty', price_monthly: 1299000 });
+    scriptedResults = [
+      { data: existing, error: null },
+      { data: updated, error: null },
+    ];
+
+    const res = await updateSubscriptionPlanCatalog({
+      planCode: ' pro ',
+      displayName: ' Pro Beauty ',
+      description: 'Beauty spa professional plan',
+      priceMonthly: 1299000,
+      isActive: true,
+      sortOrder: 20,
+    });
+
+    expect(res.success).toBe(true);
+    expect(queryCalls[1]).toMatchObject({
+      table: 'subscription_plans',
+      operation: 'update',
+      payload: expect.objectContaining({
+        display_name: 'Pro Beauty',
+        description: 'Beauty spa professional plan',
+        price_monthly: 1299000,
+        is_active: true,
+        sort_order: 20,
+      }),
+      filters: [{ column: 'plan_code', value: 'pro' }],
+    });
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'UPDATE',
+      table_name: 'subscription_plans',
+      record_id: 'pro',
+      old_data: expect.objectContaining({ display_name: 'Pro old' }),
+      new_data: expect.objectContaining({ display_name: 'Pro Beauty' }),
+    });
+    expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/hq');
+  });
+
+  it('rolls back subscription plan catalog updates when audit logging fails', async () => {
+    const existing = subscriptionPlanRow({ display_name: 'Pro old', updated_at: 'old-date' });
+    const updated = subscriptionPlanRow({ display_name: 'Pro Beauty', updated_at: 'new-date' });
+    mockRecordAuditLog.mockRejectedValueOnce(new Error('audit down'));
+    scriptedResults = [
+      { data: existing, error: null },
+      { data: updated, error: null },
+      { data: null, error: null },
+    ];
+
+    const res = await updateSubscriptionPlanCatalog({
+      planCode: 'pro',
+      displayName: 'Pro Beauty',
+      priceMonthly: 1299000,
+    });
+
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('Audit log failed after subscription plan catalog update: audit down');
+    expect(queryCalls[2]).toMatchObject({
+      table: 'subscription_plans',
+      operation: 'update',
+      payload: expect.objectContaining({
+        display_name: 'Pro old',
+        price_monthly: 999000,
+        updated_at: 'old-date',
+      }),
+      filters: [{ column: 'plan_code', value: 'pro' }],
+    });
+    expect(mockSafeRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('creates a default branch entitlement for a subscription plan with audit', async () => {
+    const inserted = subscriptionEntitlementRow({
+      id: 'entitlement-branch',
+      limit_value: 4,
+      description: 'Main spa plus 3 branches',
+    });
+    scriptedResults = [
+      { data: { plan_code: 'pro' }, error: null },
+      { data: null, error: null },
+      { data: inserted, error: null },
+    ];
+
+    const res = await updateSubscriptionPlanEntitlement({
+      planCode: 'pro',
+      featureKey: 'branch',
+      limitValue: 4,
+      isUnlimited: false,
+      unit: 'count',
+      enforcementMode: 'hard',
+      resetPeriod: 'none',
+      description: 'Main spa plus 3 branches',
+    });
+
+    expect(res.success).toBe(true);
+    expect(queryCalls[2]).toMatchObject({
+      table: 'subscription_plan_entitlements',
+      operation: 'insert',
+      payload: expect.objectContaining({
+        plan_code: 'pro',
+        feature_key: 'branch',
+        limit_value: 4,
+        is_unlimited: false,
+        unit: 'count',
+        reset_period: 'none',
+      }),
+    });
+    expect(mockRecordAuditLog).toHaveBeenCalledWith({
+      action: 'INSERT',
+      table_name: 'subscription_plan_entitlements',
+      record_id: 'entitlement-branch',
+      new_data: expect.objectContaining({ feature_key: 'branch', limit_value: 4 }),
+    });
+  });
+
+  it('restores an existing plan entitlement when audit logging fails', async () => {
+    const existing = subscriptionEntitlementRow({ limit_value: 3, updated_at: 'old-date' });
+    const updated = subscriptionEntitlementRow({ limit_value: 4, updated_at: 'new-date' });
+    mockRecordAuditLog.mockRejectedValueOnce(new Error('audit unavailable'));
+    scriptedResults = [
+      { data: { plan_code: 'pro' }, error: null },
+      { data: existing, error: null },
+      { data: updated, error: null },
+      { data: null, error: null },
+    ];
+
+    const res = await updateSubscriptionPlanEntitlement({
+      planCode: 'pro',
+      featureKey: 'branch',
+      limitValue: 4,
+    });
+
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('Audit log failed after plan entitlement update: audit unavailable');
+    expect(queryCalls[3]).toMatchObject({
+      table: 'subscription_plan_entitlements',
+      operation: 'update',
+      payload: expect.objectContaining({
+        limit_value: 3,
+        updated_at: 'old-date',
+      }),
+      filters: [{ column: 'id', value: 'entitlement-1' }],
+    });
   });
 
   it('updates a tenant subscription plan with audit and cache revalidation', async () => {

@@ -33,12 +33,14 @@ describe('platform rule engines', () => {
       { feature_key: 'ktv', is_unlimited: false, limit_value: 2 },
       { feature_key: 'customer', is_unlimited: true, limit_value: null },
       { feature_key: 'sms', is_unlimited: false, limit_value: '100' },
+      { feature_key: 'branch', is_unlimited: false, limit_value: 3 },
     ]);
 
     expect(limits).toEqual({
       maxKtv: 2,
       maxCustomers: UNLIMITED_QUOTA,
       maxSms: 100,
+      maxBranches: 3,
       tierName: 'Basic',
     });
     expect(calculateSubscriptionUsageState({
