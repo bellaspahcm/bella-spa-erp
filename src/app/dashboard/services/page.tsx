@@ -317,8 +317,8 @@ export default function ServicesPage() {
               </div>
             </div>
 
-            <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-100 bg-white">
-              <table className="min-w-[680px] w-full text-left">
+            <div className="min-w-0 overflow-x-auto overscroll-x-contain custom-scrollbar rounded-2xl border border-slate-100 bg-white">
+              <table className="bella-data-table min-w-[680px] w-full text-left">
                 <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-400">
                   <tr>
                     <th className="px-5 py-3">Tài nguyên</th>

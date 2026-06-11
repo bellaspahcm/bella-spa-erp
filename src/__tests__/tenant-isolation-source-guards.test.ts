@@ -144,6 +144,13 @@ describe('dashboard tenant isolation source guards', () => {
       'html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table-wrap',
     );
     expect(globalStyles).toContain(
+      'html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar:has(.bella-data-table)',
+    );
+    expect(globalStyles).toContain(
+      'html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar:has(.bella-data-table) .bella-data-table',
+    );
+    expect(globalStyles).toContain('scrollbar-color: rgba(255, 214, 109, 0.72) rgba(11, 31, 58, 0.76)');
+    expect(globalStyles).toContain(
       'html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item',
     );
     expect(globalStyles).not.toMatch(/(^|\n)\s*\.beauty-erp-/);
