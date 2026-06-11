@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useTenantModuleKey } from '@/hooks/useTenantModuleKey';
@@ -13,12 +13,34 @@ import type { BookingOption } from '../components/BookingCreateScheduleModal';
 import type { KtvOption, SessionHistoryItem } from '../components/BookingDayDetailModal';
 import type { TimelineSession } from '../components/BookingsTimelineGrid';
 
-export function useBookingsPageData() {
+function toDateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function getCalendarSessionRange(currentMonth: Date) {
+  const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  startDate.setDate(startDate.getDate() - 7);
+
+  const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+  endDate.setDate(endDate.getDate() + 7);
+
+  return {
+    startDate: toDateKey(startDate),
+    endDate: toDateKey(endDate),
+  };
+}
+
+export function useBookingsPageData(currentMonth: Date) {
   const [sessions, setSessions] = useState<TimelineSession[]>([]);
   const [allBookings, setAllBookings] = useState<BookingOption[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [ktvs, setKtvs] = useState<KtvOption[]>([]);
   const [sessionHistory, setSessionHistory] = useState<SessionHistoryItem[]>([]);
+  const sessionsReloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const calendarSessionRange = useMemo(
+    () => getCalendarSessionRange(currentMonth),
+    [currentMonth]
+  );
   const {
     tenantModuleKey,
     isTenantModuleLoading,
@@ -40,14 +62,14 @@ export function useBookingsPageData() {
   const fetchSessions = useCallback(async () => {
     setIsSyncing(true);
     try {
-      const data = await getCalendarSessions();
+      const data = await getCalendarSessions(calendarSessionRange);
       setSessions(data);
     } catch (error) {
       console.error('Error fetching sessions:', error);
     } finally {
       setIsSyncing(false);
     }
-  }, []);
+  }, [calendarSessionRange]);
 
   const fetchKtvs = useCallback(async () => {
     const data = await getUsers();
@@ -63,29 +85,44 @@ export function useBookingsPageData() {
     await Promise.all([fetchSessions(), fetchAllBookings(), fetchKtvs(), refreshTenantModuleKey()]);
   }, [fetchAllBookings, fetchKtvs, fetchSessions, refreshTenantModuleKey]);
 
+  const scheduleSessionsReload = useCallback(() => {
+    if (sessionsReloadTimerRef.current) {
+      clearTimeout(sessionsReloadTimerRef.current);
+    }
+
+    sessionsReloadTimerRef.current = setTimeout(() => {
+      void fetchSessions();
+    }, 400);
+  }, [fetchSessions]);
+
   useEffect(() => {
-    const initializeBookingsPage = async () => {
-      await refreshBookingsPage();
-    };
+    void Promise.all([fetchSessions(), fetchKtvs(), refreshTenantModuleKey()]);
+  }, [fetchKtvs, fetchSessions, refreshTenantModuleKey]);
 
-    void initializeBookingsPage();
+  useEffect(() => {
+    void fetchAllBookings();
+  }, [fetchAllBookings]);
 
+  useEffect(() => {
     const supabase = createClient();
     const channel = supabase
       .channel('bookings-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'session_logs' }, () => {
-        void fetchSessions();
+        scheduleSessionsReload();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
         void fetchAllBookings();
-        void fetchSessions();
+        scheduleSessionsReload();
       })
       .subscribe();
 
     return () => {
+      if (sessionsReloadTimerRef.current) {
+        clearTimeout(sessionsReloadTimerRef.current);
+      }
       void supabase.removeChannel(channel);
     };
-  }, [fetchAllBookings, fetchSessions, refreshBookingsPage]);
+  }, [fetchAllBookings, scheduleSessionsReload]);
 
   return {
     sessions,

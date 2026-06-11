@@ -51,7 +51,7 @@ function BookingsContent() {
     fetchAllBookings,
     fetchSessionHistory,
     refreshBookingsPage,
-  } = useBookingsPageData();
+  } = useBookingsPageData(currentMonth);
   const {
     isUpdating,
     showQrModal,
