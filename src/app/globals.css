@@ -1690,3 +1690,125 @@ html.dark[data-tenant-module="beauty_spa"] .active-booking-panel {
   border-color: rgba(255, 214, 109, 0.22) !important;
   box-shadow: 0 24px 70px rgba(2, 12, 24, 0.38) !important;
 }
+
+html.dark[data-tenant-module="beauty_spa"] [class*="bg-background"],
+html.dark[data-tenant-module="pending"] [class*="bg-background"] {
+  background: transparent !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .flex.h-screen.w-screen[class*="bg-background"],
+html.dark[data-tenant-module="pending"] .flex.h-screen.w-screen[class*="bg-background"] {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(255, 214, 109, 0.08) 0%, transparent 34%),
+    radial-gradient(circle at 100% 18%, rgba(196, 154, 104, 0.1) 0%, transparent 38%),
+    linear-gradient(135deg, #0B1F3A 0%, #143A51 58%, #0B1F3A 100%) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] [class*="from-white"],
+html.dark[data-tenant-module="beauty_spa"] [class*="via-white"],
+html.dark[data-tenant-module="beauty_spa"] [class*="to-white"],
+html.dark[data-tenant-module="beauty_spa"] [class*="bg-slate-100"],
+html.dark[data-tenant-module="beauty_spa"] [class*="bg-slate-200"],
+html.dark[data-tenant-module="pending"] [class*="from-white"],
+html.dark[data-tenant-module="pending"] [class*="via-white"],
+html.dark[data-tenant-module="pending"] [class*="to-white"],
+html.dark[data-tenant-module="pending"] [class*="bg-slate-100"],
+html.dark[data-tenant-module="pending"] [class*="bg-slate-200"] {
+  background:
+    linear-gradient(180deg, rgba(20, 58, 81, 0.86), rgba(11, 31, 58, 0.8)) !important;
+  border-color: rgba(196, 154, 104, 0.28) !important;
+  color: #F8F1E3 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .bella-toolbar,
+html.dark[data-tenant-module="beauty_spa"] .bella-pagination,
+html.dark[data-tenant-module="pending"] .bella-toolbar,
+html.dark[data-tenant-module="pending"] .bella-pagination {
+  background:
+    linear-gradient(180deg, rgba(20, 58, 81, 0.88), rgba(11, 31, 58, 0.78)) !important;
+  border-color: rgba(196, 154, 104, 0.3) !important;
+  box-shadow: 0 20px 56px rgba(2, 12, 24, 0.28) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle,
+html.dark[data-tenant-module="pending"] .beauty-theme-toggle {
+  background: rgba(11, 31, 58, 0.78) !important;
+  border-color: rgba(196, 154, 104, 0.38) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 214, 109, 0.06),
+    0 12px 28px rgba(2, 12, 24, 0.18) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle-skeleton,
+html.dark[data-tenant-module="pending"] .beauty-theme-toggle-skeleton {
+  background: rgba(20, 58, 81, 0.7) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle-active-light,
+html.dark[data-tenant-module="pending"] .beauty-theme-toggle-active-light {
+  background: linear-gradient(135deg, rgba(255, 214, 109, 0.92), rgba(196, 154, 104, 0.92)) !important;
+  border-color: rgba(255, 214, 109, 0.48) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle-active-dark,
+html.dark[data-tenant-module="pending"] .beauty-theme-toggle-active-dark {
+  background: linear-gradient(135deg, #FFD66D 0%, #C49A68 100%) !important;
+  border-color: rgba(255, 214, 109, 0.52) !important;
+  box-shadow: 0 8px 20px rgba(255, 214, 109, 0.12) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle button,
+html.dark[data-tenant-module="pending"] .beauty-theme-toggle button {
+  color: #E7D2A7 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .beauty-theme-toggle-button-active,
+html.dark[data-tenant-module="pending"] .beauty-theme-toggle-button-active {
+  color: #0B1F3A !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] button[class*="hover:bg-primary/"],
+html.dark[data-tenant-module="beauty_spa"] [class*="bg-primary/5"],
+html.dark[data-tenant-module="beauty_spa"] [class*="bg-primary/10"],
+html.dark[data-tenant-module="beauty_spa"] [class*="bg-primary/20"],
+html.dark[data-tenant-module="pending"] button[class*="hover:bg-primary/"],
+html.dark[data-tenant-module="pending"] [class*="bg-primary/5"],
+html.dark[data-tenant-module="pending"] [class*="bg-primary/10"],
+html.dark[data-tenant-module="pending"] [class*="bg-primary/20"] {
+  background: rgba(20, 58, 81, 0.68) !important;
+  border-color: rgba(196, 154, 104, 0.28) !important;
+  color: #F8F1E3 !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] button[class*="hover:bg-primary/"]:hover,
+html.dark[data-tenant-module="pending"] button[class*="hover:bg-primary/"]:hover {
+  background: rgba(255, 214, 109, 0.12) !important;
+  border-color: rgba(255, 214, 109, 0.38) !important;
+  color: #FFD66D !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] [class*="text-primary"],
+html.dark[data-tenant-module="pending"] [class*="text-primary"] {
+  color: #FFD66D !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] button[class*="bg-primary"]:not([class*="bg-primary/"]) [class*="text-primary"],
+html.dark[data-tenant-module="beauty_spa"] a[class*="bg-primary"]:not([class*="bg-primary/"]) [class*="text-primary"],
+html.dark[data-tenant-module="pending"] button[class*="bg-primary"]:not([class*="bg-primary/"]) [class*="text-primary"],
+html.dark[data-tenant-module="pending"] a[class*="bg-primary"]:not([class*="bg-primary/"]) [class*="text-primary"] {
+  color: #0B1F3A !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] [class*="border-white"],
+html.dark[data-tenant-module="beauty_spa"] [class*="border-slate-100"],
+html.dark[data-tenant-module="beauty_spa"] [class*="border-slate-200"],
+html.dark[data-tenant-module="pending"] [class*="border-white"],
+html.dark[data-tenant-module="pending"] [class*="border-slate-100"],
+html.dark[data-tenant-module="pending"] [class*="border-slate-200"] {
+  border-color: rgba(196, 154, 104, 0.28) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .fixed.inset-0[class*="bg-[#1A0A0E]"],
+html.dark[data-tenant-module="pending"] .fixed.inset-0[class*="bg-[#1A0A0E]"] {
+  background: rgba(2, 12, 24, 0.72) !important;
+}
