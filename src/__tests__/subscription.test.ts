@@ -4,6 +4,8 @@ import { NextRequest } from 'next/server';
 const createChainableMock = (resolvedValue: any, singleValueFn?: () => any) => {
   const chain: any = {
     eq: jest.fn(() => chain),
+    or: jest.fn(() => chain),
+    neq: jest.fn(() => chain),
     single: jest.fn(() => {
       if (singleValueFn) return singleValueFn();
       return Promise.resolve(resolvedValue);
@@ -324,13 +326,24 @@ describe('Subscription Constraints & Webhook Suite', () => {
           subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
           sms_allotment_used: 0,
           franchise_agreement_date: '2024-01-01T00:00:00Z',
+          parent_tenant_id: null,
         },
         error: null,
+      });
+      let tenantQueryCount = 0;
+      mockSupabaseServer.from = jest.fn().mockImplementation((table: string) => {
+        if (table === 'tenants') {
+          tenantQueryCount += 1;
+          return tenantQueryCount === 1
+            ? createChainableMock({}, mockSingleTenant)
+            : createChainableMock({ count: 2, error: null });
+        }
+        return createDefaultTableMock(table);
       });
 
       const res = await checkSubscriptionLimit('tenant-1', 'branch');
 
-      expect(res.current).toBe(1);
+      expect(res.current).toBe(2);
       expect(res.max).toBe(1);
       expect(res.limits.maxBranches).toBe(1);
       expect(res.isBlocked).toBe(true);

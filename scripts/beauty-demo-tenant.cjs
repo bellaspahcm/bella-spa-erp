@@ -630,7 +630,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
       },
     ]);
 
-    await mustInsert(client, 'booking_resources', [
+    const bookingResources = await mustInsert(client, 'booking_resources', [
       {
         tenant_id: tenantId,
         branch_tenant_id: tenantId,
@@ -757,6 +757,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
     const sessionLogs = await mustInsert(client, 'session_logs', [
       {
         booking_id: bookings[0].id,
+        booking_resource_id: bookingResources[0].id,
         session_number: 1,
         assigned_date: daysFromToday(-2),
         assigned_time: '10:00',
@@ -774,6 +775,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
       },
       {
         booking_id: bookings[0].id,
+        booking_resource_id: bookingResources[0].id,
         session_number: 2,
         assigned_date: daysFromToday(2),
         assigned_time: '10:00',
@@ -785,6 +787,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
       },
       {
         booking_id: bookings[1].id,
+        booking_resource_id: bookingResources[1].id,
         session_number: 1,
         assigned_date: daysFromToday(1),
         assigned_time: '14:30',
@@ -796,6 +799,7 @@ async function createBeautyDemoTenant(client = createSupabaseAdmin()) {
       },
       {
         booking_id: bookings[2].id,
+        booking_resource_id: bookingResources[2].id,
         session_number: 1,
         assigned_date: daysFromToday(-1),
         assigned_time: '16:00',
