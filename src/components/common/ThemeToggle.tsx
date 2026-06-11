@@ -46,18 +46,18 @@ export default function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="h-10 w-full bg-slate-100/50 dark:bg-slate-900/30 rounded-xl animate-pulse" />
+      <div className="beauty-theme-toggle-skeleton h-10 w-full bg-slate-100/50 dark:bg-slate-900/30 rounded-xl animate-pulse" />
     );
   }
 
   return (
-    <div className="w-full bg-[#FFF6F8] dark:bg-[#1C1B19] border border-[#FCE4EC] dark:border-[#3E3A35] p-1 rounded-2xl flex items-center justify-between gap-2 relative shadow-inner">
+    <div className="beauty-theme-toggle w-full bg-[#FFF6F8] dark:bg-[#1C1B19] border border-[#FCE4EC] dark:border-[#3E3A35] p-1 rounded-2xl flex items-center justify-between gap-2 relative shadow-inner">
       <div className="absolute inset-0 bg-gradient-to-r from-rose-200/5 to-rose-300/5 pointer-events-none rounded-2xl" />
       
       {/* Light Mode Pill */}
       <button
         onClick={() => toggleTheme('light')}
-        className={`flex-1 relative z-10 py-2 rounded-xl flex items-center justify-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide transition-all duration-300 ${
+        className={`beauty-theme-toggle-button ${theme === 'light' ? 'beauty-theme-toggle-button-active' : ''} flex-1 relative z-10 py-2 rounded-xl flex items-center justify-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide transition-all duration-300 ${
           theme === 'light'
             ? 'text-primary'
             : 'text-slate-500 hover:text-slate-700 dark:text-[#CDBCAB] dark:hover:text-slate-200'
@@ -66,7 +66,7 @@ export default function ThemeToggle() {
         {theme === 'light' && (
           <motion.div
             layoutId="active-theme-pill"
-            className="absolute inset-0 bg-white shadow-sm border border-[#FCE4EC] rounded-xl z-[-1]"
+            className="beauty-theme-toggle-active-light absolute inset-0 bg-white shadow-sm border border-[#FCE4EC] rounded-xl z-[-1]"
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
           />
         )}
@@ -77,7 +77,7 @@ export default function ThemeToggle() {
       {/* Dark Mode Pill */}
       <button
         onClick={() => toggleTheme('dark')}
-        className={`flex-1 relative z-10 py-2 rounded-xl flex items-center justify-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide transition-all duration-300 ${
+        className={`beauty-theme-toggle-button ${theme === 'dark' ? 'beauty-theme-toggle-button-active' : ''} flex-1 relative z-10 py-2 rounded-xl flex items-center justify-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide transition-all duration-300 ${
           theme === 'dark'
             ? 'text-white'
             : 'text-slate-500 hover:text-slate-700 dark:text-[#CDBCAB] dark:hover:text-slate-200'
@@ -86,7 +86,7 @@ export default function ThemeToggle() {
         {theme === 'dark' && (
           <motion.div
             layoutId="active-theme-pill"
-            className="absolute inset-0 bg-gradient-to-br from-[#5D1C34] to-[#11100F] shadow-md border border-[#A67D44]/30 rounded-xl z-[-1]"
+            className="beauty-theme-toggle-active-dark absolute inset-0 bg-gradient-to-br from-[#5D1C34] to-[#11100F] shadow-md border border-[#A67D44]/30 rounded-xl z-[-1]"
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
           />
         )}
