@@ -60,6 +60,7 @@ export function buildSessionModalData(
     contractDetail: session.notes || 'Không có ghi chú',
     bookingId: session.booking_id,
     ktvId: session.bookings?.assigned_ktv_id || undefined,
+    originalKtvId: session.bookings?.assigned_ktv_id || null,
     location: session.bookings?.customers?.address || 'Tại Spa',
     sessionCount: `${session.bookings?.completed_sessions || 0}/${session.bookings?.total_sessions || 15} buổi`,
     completedSessions: session.bookings?.completed_sessions || 0,

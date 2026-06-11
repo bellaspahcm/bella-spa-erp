@@ -10,6 +10,20 @@ type BookingResourceRow = Pick<
 const RESOURCE_ACTIVE_SESSION_STATUSES = ['scheduled', 'in_progress'] as const;
 const RESOURCE_AVAILABLE_STATUSES = ['available', 'in_use'] as const;
 
+function getTimeConflictVariants(timeValue: string) {
+  const match = timeValue.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!match) return [timeValue];
+
+  const hour = match[1].padStart(2, '0');
+  const minute = match[2];
+  const second = match[3] || '00';
+  return Array.from(new Set([
+    `${hour}:${minute}`,
+    `${hour}:${minute}:${second}`,
+    `${hour}:${minute}:00`,
+  ]));
+}
+
 type ValidateBookingResourceScheduleParams = {
   supabase: SupabaseServerClient;
   tenantId: string;
@@ -66,7 +80,7 @@ export async function validateBookingResourceSchedule(params: ValidateBookingRes
     .eq('tenant_id', tenantId)
     .eq('booking_resource_id', bookingResource.id)
     .eq('assigned_date', assignedDate)
-    .eq('assigned_time', assignedTime)
+    .in('assigned_time', getTimeConflictVariants(assignedTime))
     .in('status', [...RESOURCE_ACTIVE_SESSION_STATUSES])
     .limit(1);
 

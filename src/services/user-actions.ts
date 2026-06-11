@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import { getSupabaseAdminKey, getSupabaseAdminUrl } from '@/lib/supabase-admin-env';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { recordAuditLog } from './audit-actions';
 import { CurrentUser, StaffRecord } from '@/types/domain';
 import { randomBytes } from 'crypto';
@@ -205,7 +206,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
 
 export async function getUsers(): Promise<StaffRecord[]> {
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
 

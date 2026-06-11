@@ -105,8 +105,8 @@ export function useBookingsPageActions({
         }
       }
 
-      if (modalData.ktvId) {
-        const updateResult = await updateBooking(modalData.bookingId, { assigned_ktv_id: modalData.ktvId });
+      if ((modalData.ktvId || null) !== (modalData.originalKtvId || null)) {
+        const updateResult = await updateBooking(modalData.bookingId, { assigned_ktv_id: modalData.ktvId || null });
         if (updateResult.error) {
           throw new Error(updateResult.error);
         }
