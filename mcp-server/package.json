@@ -10,15 +10,15 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@supabase/supabase-js": "^2.105.4",
+    "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
-    "zod": "^3.23.8",
-    "date-fns": "^3.6.0"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5.4.5",
     "@types/node": "^20.12.12",
-    "tsx": "^4.10.1"
+    "tsx": "^4.10.1",
+    "typescript": "^5.4.5"
   }
 }
