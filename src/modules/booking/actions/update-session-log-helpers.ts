@@ -1,4 +1,5 @@
 import { getLocalDateString, sanitizeTime } from '@/lib/utils';
+import { buildCompletedSessionAccountingUpdate } from './session-completion-helpers';
 import { processSessionCompletion } from './session-completion-engine';
 import type { createClient } from '@/lib/supabase-server';
 import type { getCurrentUser } from '@/services/user-actions';
@@ -17,19 +18,12 @@ type AllowedUpdateKey =
   | 'address'
   | 'status'
   | 'notes'
-  | 'assigned_time';
+  | 'assigned_time'
+  | 'business_event_type'
+  | 'accounting_review_status'
+  | 'accounting_metadata';
 
 export type UpdateSessionLogInput = Partial<Pick<SessionLogUpdate, AllowedUpdateKey>>;
-
-const ALLOWED_UPDATE_KEYS: AllowedUpdateKey[] = [
-  'assigned_date',
-  'completed_date',
-  'completed_by_ktv_id',
-  'address',
-  'status',
-  'notes',
-  'assigned_time',
-];
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   if (error instanceof Error) return error.message;
@@ -58,11 +52,16 @@ export function normalizeSessionLogUpdate(payload: UpdateSessionLogInput): Updat
   }
 
   const safeUpdates: UpdateSessionLogInput = {};
-  for (const key of ALLOWED_UPDATE_KEYS) {
-    if (Object.prototype.hasOwnProperty.call(updates, key)) {
-      safeUpdates[key] = updates[key];
-    }
-  }
+  if (Object.prototype.hasOwnProperty.call(updates, 'assigned_date')) safeUpdates.assigned_date = updates.assigned_date;
+  if (Object.prototype.hasOwnProperty.call(updates, 'completed_date')) safeUpdates.completed_date = updates.completed_date;
+  if (Object.prototype.hasOwnProperty.call(updates, 'completed_by_ktv_id')) safeUpdates.completed_by_ktv_id = updates.completed_by_ktv_id;
+  if (Object.prototype.hasOwnProperty.call(updates, 'address')) safeUpdates.address = updates.address;
+  if (Object.prototype.hasOwnProperty.call(updates, 'status')) safeUpdates.status = updates.status;
+  if (Object.prototype.hasOwnProperty.call(updates, 'notes')) safeUpdates.notes = updates.notes;
+  if (Object.prototype.hasOwnProperty.call(updates, 'assigned_time')) safeUpdates.assigned_time = updates.assigned_time;
+  if (Object.prototype.hasOwnProperty.call(updates, 'business_event_type')) safeUpdates.business_event_type = updates.business_event_type;
+  if (Object.prototype.hasOwnProperty.call(updates, 'accounting_review_status')) safeUpdates.accounting_review_status = updates.accounting_review_status;
+  if (Object.prototype.hasOwnProperty.call(updates, 'accounting_metadata')) safeUpdates.accounting_metadata = updates.accounting_metadata;
 
   return safeUpdates;
 }
@@ -83,14 +82,22 @@ export async function applyCompletionDefaults(
   }
 
   const completedUpdates: UpdateSessionLogInput = { ...safeUpdates };
+  const completedDate = completedUpdates.completed_date || new Date().toISOString();
   if (!completedUpdates.completed_date) {
-    completedUpdates.completed_date = new Date().toISOString();
+    completedUpdates.completed_date = completedDate;
   }
+
+  let completionBooking: {
+    assigned_ktv_id: string | null;
+    full_price: number | string | null;
+    discount_percent: number | string | null;
+    total_sessions: number | string | null;
+  } | null = null;
 
   if (!completedUpdates.completed_by_ktv_id) {
     const { data: bookingData, error } = await supabase
       .from('bookings')
-      .select('assigned_ktv_id')
+      .select('assigned_ktv_id, full_price, discount_percent, total_sessions')
       .eq('id', bookingId)
       .eq('tenant_id', tenantId)
       .single();
@@ -99,10 +106,37 @@ export async function applyCompletionDefaults(
       return { error: error.message };
     }
 
-    if (bookingData?.assigned_ktv_id) {
-      completedUpdates.completed_by_ktv_id = bookingData.assigned_ktv_id;
+    completionBooking = bookingData;
+  } else {
+    const { data: bookingData, error } = await supabase
+      .from('bookings')
+      .select('assigned_ktv_id, full_price, discount_percent, total_sessions')
+      .eq('id', bookingId)
+      .eq('tenant_id', tenantId)
+      .single();
+
+    if (error) {
+      return { error: error.message };
     }
+
+    completionBooking = bookingData;
   }
+
+  if (completionBooking?.assigned_ktv_id && !completedUpdates.completed_by_ktv_id) {
+    completedUpdates.completed_by_ktv_id = completionBooking.assigned_ktv_id;
+  }
+
+  Object.assign(completedUpdates, buildCompletedSessionAccountingUpdate({
+    sessionId: existingLog.id,
+    bookingId,
+    completedByKtvId: completedUpdates.completed_by_ktv_id,
+    completedDate,
+    fullPrice: completionBooking?.full_price,
+    discountPercent: completionBooking?.discount_percent,
+    totalSessions: completionBooking?.total_sessions,
+    existingAccountingMetadata: existingLog.accounting_metadata,
+    existingAccountingReviewStatus: existingLog.accounting_review_status,
+  }));
 
   return { data: completedUpdates };
 }
@@ -159,6 +193,9 @@ export async function processCompletedSessionUpdate(params: {
         status: existingLog.status || 'scheduled',
         completed_date: existingLog.completed_date || null,
         completed_by_ktv_id: existingLog.completed_by_ktv_id || null,
+        business_event_type: existingLog.business_event_type,
+        accounting_review_status: existingLog.accounting_review_status,
+        accounting_metadata: existingLog.accounting_metadata,
       })
       .eq('id', sessionId)
       .eq('tenant_id', tenantId);

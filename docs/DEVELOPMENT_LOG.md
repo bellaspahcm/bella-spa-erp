@@ -5,6 +5,25 @@
 
 ---
 
+### 11/06/2026: Defer Beauty Spa Chain Expansion Until Core Stabilization
+* **Muc tieu san pham**:
+  * Luu lai ke hoach mo rong Beauty Spa theo mo hinh 1 spa chinh + nhieu chi nhanh con, nhung chua trien khai ngay.
+  * Khoa quyet dinh uu tien hien tai: on dinh Bella Spa va Beauty Spa tenant dau tien truoc khi thuong mai hoa mo hinh chuoi.
+  * Dong warning accounting readiness that: completed session logs thieu `business_event_type`.
+* **Thay doi chinh**:
+  * Them `docs/plans/beauty-spa-chain-expansion-deferred-plan.md`.
+  * Cap nhat `docs/index.md` de tro toi ke hoach deferred.
+  * `completeSession` va `updateSessionLog` tu gan `SESSION_REVENUE_RECOGNIZED` + accounting metadata khi buoi duoc chuyen sang `completed`.
+  * Them migration `20260611120000_backfill_completed_session_accounting_metadata.sql` va da apply remote de backfill cac completed session thieu metadata.
+* **Kiem tra**:
+  * `npm.cmd test -- src/__tests__/tenant-isolation-source-guards.test.ts src/__tests__/tenant-module-presentation.test.ts src/__tests__/package-actions.test.ts src/__tests__/online-booking-package-scope.test.ts --runInBand` pass, 4 suites / 34 tests.
+  * `npm.cmd test -- src/__tests__/complete-session-action.test.ts src/__tests__/session-completion-accounting.test.ts src/__tests__/business-invariants-check.test.ts --runInBand` pass, 3 suites / 28 tests.
+  * `npm.cmd run db:migration:check` pass, local/remote latest migration deu la `20260611120000`.
+  * `npm.cmd run db:business:check` pass, 9 check groups / 0 warning.
+  * `npm.cmd run test:critical` pass, 17 suites / 181 tests.
+  * `npm.cmd run lint` pass.
+  * `npm.cmd run build` pass.
+
 ### 10/06/2026: Industry Module Development Playbook
 * **Muc tieu van hanh**:
   * Luu lai bai hoc khoi tao, phat sinh loi va sua loi cua phan he Beauty Spa de cac phan he nganh moi khong lap lai loi tenant/module/brand/demo data/accounting/UI.

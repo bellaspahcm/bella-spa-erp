@@ -46,6 +46,9 @@ function createCompleteSessionSupabaseMock(options: {
     assigned_ktv_id: 'ktv-1',
     package_id: 'package-1',
     status: 'booked',
+    full_price: 6000000,
+    discount_percent: 25,
+    total_sessions: 30,
   };
 
   class QueryBuilder {
@@ -163,6 +166,15 @@ describe('completeSession wrapper rollback and revalidation', () => {
           status: 'completed',
           completed_by_ktv_id: 'ktv-1',
           notes: 'Hoan thanh',
+          business_event_type: 'SESSION_REVENUE_RECOGNIZED',
+          accounting_review_status: 'UNREVIEWED',
+          accounting_metadata: expect.objectContaining({
+            session_log_id: 'session-1',
+            booking_id: 'booking-1',
+            earned_revenue: 150000,
+            completed_by_ktv_id: 'ktv-1',
+            status: 'completed',
+          }),
         }),
         filters: [
           ['id', 'session-1'],
@@ -175,6 +187,9 @@ describe('completeSession wrapper rollback and revalidation', () => {
           status: 'scheduled',
           completed_date: null,
           completed_by_ktv_id: null,
+          business_event_type: undefined,
+          accounting_review_status: undefined,
+          accounting_metadata: undefined,
         },
         filters: [
           ['id', 'session-1'],
@@ -248,6 +263,15 @@ describe('completeSession wrapper rollback and revalidation', () => {
 
     expect(result).toEqual({ success: true });
     expect(updateCalls).toHaveLength(1);
+    expect(updateCalls[0]?.payload).toEqual(expect.objectContaining({
+      business_event_type: 'SESSION_REVENUE_RECOGNIZED',
+      accounting_review_status: 'UNREVIEWED',
+      accounting_metadata: expect.objectContaining({
+        session_log_id: 'session-1',
+        booking_id: 'booking-1',
+        earned_revenue: 150000,
+      }),
+    }));
     expect(mockSafeRevalidatePath).toHaveBeenCalledTimes(3);
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/bookings');
     expect(mockSafeRevalidatePath).toHaveBeenCalledWith('/dashboard/sessions');

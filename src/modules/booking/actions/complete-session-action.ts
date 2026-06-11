@@ -4,6 +4,7 @@ import { getLocalDateString } from '@/lib/utils';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import type { Database } from '@/types/database.types';
 import { processSessionCompletion } from './session-completion-engine';
+import { buildCompletedSessionAccountingUpdate } from './session-completion-helpers';
 
 function getErrorMessage(error: unknown, fallback = 'Lỗi hệ thống') {
   if (error instanceof Error) return error.message;
@@ -52,7 +53,7 @@ export async function completeSession(sessionId: string, bookingId: string, cust
   // 1. Get current booking to check assigned KTV and package
   const { data: bookingData, error: bookingError } = await supabase
     .from('bookings')
-    .select('assigned_ktv_id, package_id, status')
+    .select('assigned_ktv_id, package_id, status, full_price, discount_percent, total_sessions')
     .eq('id', bookingId)
     .eq('tenant_id', tenantId)
     .single();
@@ -69,15 +70,29 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     return { error: 'Chưa phân công KTV chính. Vui lòng phân công KTV trước khi xác nhận hoàn thành buổi.' };
   }
 
+  const completedDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
+  const completedByKtvId = bookingData.assigned_ktv_id;
+
   const updatePayload: Database['public']['Tables']['session_logs']['Update'] = {
     status: 'completed',
-    completed_date: new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Ho_Chi_Minh',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).format(new Date()),
-    completed_by_ktv_id: bookingData.assigned_ktv_id
+    completed_date: completedDate,
+    completed_by_ktv_id: completedByKtvId,
+    ...buildCompletedSessionAccountingUpdate({
+      sessionId,
+      bookingId,
+      completedByKtvId,
+      completedDate,
+      fullPrice: bookingData.full_price,
+      discountPercent: bookingData.discount_percent,
+      totalSessions: bookingData.total_sessions,
+      existingAccountingMetadata: existingLog.accounting_metadata,
+      existingAccountingReviewStatus: existingLog.accounting_review_status,
+    }),
   };
 
   if (customNote !== undefined) {
@@ -118,7 +133,10 @@ export async function completeSession(sessionId: string, bookingId: string, cust
     const { error: rollbackError } = await supabase.from('session_logs').update({
       status: existingLog?.status || 'scheduled',
       completed_date: null,
-      completed_by_ktv_id: null
+      completed_by_ktv_id: null,
+      business_event_type: existingLog.business_event_type,
+      accounting_review_status: existingLog.accounting_review_status,
+      accounting_metadata: existingLog.accounting_metadata,
     })
       .eq('id', sessionId)
       .eq('tenant_id', tenantId);
