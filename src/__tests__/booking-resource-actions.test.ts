@@ -96,8 +96,8 @@ const mockFrom = jest.fn((table: string) => {
   return new MockQueryBuilder(table, result);
 });
 
-jest.mock('@/lib/supabase-server', () => ({
-  createClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
+jest.mock('@/lib/supabase-dev-bypass-server', () => ({
+  createDevelopmentBypassClient: jest.fn(() => Promise.resolve({ from: mockFrom })),
 }));
 
 function queueResult(data: unknown, error: QueryError | null = null) {

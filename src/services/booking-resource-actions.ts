@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase-server';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import { safeRevalidatePath } from '@/lib/revalidate';
 import {
   buildBookingResourcePayload,
@@ -42,7 +42,7 @@ function toAuditJson(value: BookingResourceRow | BookingResourceInsert | Booking
 }
 
 async function rollbackCreateResource(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Awaited<ReturnType<typeof createDevelopmentBypassClient>>,
   resourceId: string,
   tenantId: string,
 ) {
@@ -56,7 +56,7 @@ async function rollbackCreateResource(
 }
 
 async function rollbackUpdateResource(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Awaited<ReturnType<typeof createDevelopmentBypassClient>>,
   resourceId: string,
   oldResource: BookingResourceRow,
   tenantId: string,
@@ -72,7 +72,7 @@ async function rollbackUpdateResource(
 }
 
 async function rollbackDeleteResource(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: Awaited<ReturnType<typeof createDevelopmentBypassClient>>,
   oldResource: BookingResourceRow,
 ) {
   const restorePayload: BookingResourceInsert = oldResource;
@@ -97,7 +97,7 @@ export async function getBookingResources(): Promise<BookingResourceListResult> 
     return { success: false, error: auth.error };
   }
 
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const { data, error } = await supabase
     .from('booking_resources')
     .select('*')
@@ -128,7 +128,7 @@ export async function createBookingResource(
     return { success: false, error: ruleResult.error };
   }
 
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const dbPayload: BookingResourceInsert = ruleResult.payload;
   const { data, error } = await supabase
     .from('booking_resources')
@@ -174,7 +174,7 @@ export async function updateBookingResource(
     return { success: false, error: auth.error };
   }
 
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const { data: oldResource, error: existingError } = await supabase
     .from('booking_resources')
     .select('*')
@@ -242,7 +242,7 @@ export async function deleteBookingResource(resourceId: string): Promise<Booking
     return { success: false, error: auth.error };
   }
 
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const { data: oldResource, error: existingError } = await supabase
     .from('booking_resources')
     .select('*')

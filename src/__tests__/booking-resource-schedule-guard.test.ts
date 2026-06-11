@@ -124,8 +124,36 @@ describe('validateBookingResourceSchedule', () => {
     expect(conflictQuery.eq).toHaveBeenCalledWith('tenant_id', 'tenant-a');
     expect(conflictQuery.eq).toHaveBeenCalledWith('booking_resource_id', 'resource-1');
     expect(conflictQuery.eq).toHaveBeenCalledWith('assigned_date', '2026-06-11');
-    expect(conflictQuery.eq).toHaveBeenCalledWith('assigned_time', '10:00:00');
+    expect(conflictQuery.in).toHaveBeenCalledWith('assigned_time', ['10:00', '10:00:00']);
     expect(conflictQuery.in).toHaveBeenCalledWith('status', ['scheduled', 'in_progress']);
+  });
+
+  it('checks both HH:MM and HH:MM:SS time variants to match database time columns', async () => {
+    const { supabase, conflictQuery } = makeSupabase(
+      {
+        data: {
+          id: 'resource-1',
+          name: 'Phong facial 01',
+          resource_type: 'room',
+          status: 'available',
+          tenant_id: 'tenant-a',
+        },
+        error: null,
+      },
+      { data: [], error: null },
+    );
+
+    const result = await validateBookingResourceSchedule({
+      supabase: supabase as never,
+      tenantId: 'tenant-a',
+      bookingResourceId: 'resource-1',
+      assignedDate: '2026-06-11',
+      assignedTime: '9:00',
+      status: 'scheduled',
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(conflictQuery.in).toHaveBeenCalledWith('assigned_time', ['09:00', '09:00:00']);
   });
 
   it('excludes the current session when validating an update', async () => {

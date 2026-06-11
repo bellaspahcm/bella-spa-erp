@@ -1,6 +1,7 @@
 'use server';
 
 import { getLocalDateString, resolvePackageName } from '@/lib/utils';
+import { createDevelopmentBypassClient } from '@/lib/supabase-dev-bypass-server';
 import type { Database } from '@/types/database.types';
 
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
@@ -76,8 +77,7 @@ function parseDateParts(dateString: string): [number, number, number] {
 }
 
 export async function getSessionLogs(bookingId: string) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
@@ -104,8 +104,7 @@ export async function getSessionLogs(bookingId: string) {
 }
 
 export async function getSessionsWithDetails(options: GetSessionsWithDetailsOptions = {}) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();
   const tenantId = currentUser?.tenant_id;
@@ -195,8 +194,7 @@ export async function getSessionsWithDetails(options: GetSessionsWithDetailsOpti
 }
 
 export async function getCalendarSessions(options: GetCalendarSessionsOptions = {}) {
-  const { createClient } = await import('@/lib/supabase-server');
-  const supabase = await createClient();
+  const supabase = await createDevelopmentBypassClient();
   
   const { getCurrentUser } = await import('@/services/user-actions');
   const currentUser = await getCurrentUser();

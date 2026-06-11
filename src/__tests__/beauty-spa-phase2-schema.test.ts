@@ -67,7 +67,7 @@ describe('Beauty Spa phase 2 foundation schema', () => {
     expect(resourceScheduleGuardSource).toContain(".eq('tenant_id', tenantId)");
     expect(resourceScheduleGuardSource).toContain(".eq('booking_resource_id', bookingResource.id)");
     expect(resourceScheduleGuardSource).toContain(".eq('assigned_date', assignedDate)");
-    expect(resourceScheduleGuardSource).toContain(".eq('assigned_time', assignedTime)");
+    expect(resourceScheduleGuardSource).toContain(".in('assigned_time', getTimeConflictVariants(assignedTime))");
     expect(resourceScheduleGuardSource).toContain(".in('status', [...RESOURCE_ACTIVE_SESSION_STATUSES])");
     expect(resourceScheduleGuardSource).toContain(".neq('id', sessionId)");
     expect(createSessionActionSource).toContain('validateBookingResourceSchedule');

@@ -47,6 +47,7 @@ export type BookingModalData = {
   customer?: string;
   ktv?: string;
   ktvId?: string;
+  originalKtvId?: string | null;
   location?: string;
   package?: string;
   sessionNumber?: number;
