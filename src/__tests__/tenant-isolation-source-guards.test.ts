@@ -107,11 +107,17 @@ describe('dashboard tenant isolation source guards', () => {
   it('keeps Beauty Spa visual theme scoped behind the tenant module marker', () => {
     const sidebarSource = readSource('src/components/layout/sidebar.tsx');
     const themeToggleSource = readSource('src/components/common/ThemeToggle.tsx');
+    const dashboardSource = readSource('src/app/dashboard/page.tsx');
+    const ktvTableSource = readSource('src/components/features/dashboard/KtvPerformanceTable.tsx');
     const globalStyles = readSource('src/app/globals.css');
 
     expect(sidebarSource).toContain('isBeautySpaShell && "beauty-erp-sidebar"');
     expect(themeToggleSource).toContain('beauty-theme-toggle');
     expect(themeToggleSource).toContain('beauty-theme-toggle-button-active');
+    expect(dashboardSource).toContain('beauty-alert-item');
+    expect(dashboardSource).toContain('data-alert-tone={alert.type}');
+    expect(ktvTableSource).toContain('beauty-top-ktv-table');
+    expect(ktvTableSource).toContain('w-full min-w-[760px]');
     expect(globalStyles).toContain('html[data-tenant-module="beauty_spa"] .beauty-erp-sidebar');
     expect(globalStyles).toContain(
       'html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover',
@@ -133,6 +139,12 @@ describe('dashboard tenant isolation source guards', () => {
     );
     expect(globalStyles).toContain(
       'html.dark[data-tenant-module="beauty_spa"] button[class*="hover:bg-primary/"]',
+    );
+    expect(globalStyles).toContain(
+      'html.dark[data-tenant-module="beauty_spa"] .beauty-top-ktv-table-wrap',
+    );
+    expect(globalStyles).toContain(
+      'html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item',
     );
     expect(globalStyles).not.toMatch(/(^|\n)\s*\.beauty-erp-/);
   });

@@ -25,7 +25,7 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
-        className="glass-pink luxury-box-hover rounded-[3rem] p-6 shadow-sm border border-white dark:border-white/5 relative overflow-hidden sm:p-10"
+        className="beauty-dashboard-panel beauty-top-ktv-panel glass-pink luxury-box-hover rounded-[3rem] p-6 shadow-sm border border-white dark:border-white/5 relative overflow-hidden sm:p-10"
       >
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
         <div className="flex items-center gap-3 mb-8">
@@ -33,8 +33,8 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
           <SkeletonLoader variant="text" width={220} height={28} className="rounded-md" />
         </div>
         
-        <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
-          <table className="bella-data-table min-w-[760px] table-fixed">
+        <div className="beauty-top-ktv-table-wrap overflow-x-auto overscroll-x-contain custom-scrollbar">
+          <table className="bella-data-table beauty-top-ktv-table w-full min-w-[760px] table-fixed">
             <thead>
               <tr className="text-left border-b border-pink-100">
                 <th className="w-[240px] px-5 pb-4"><SkeletonLoader variant="text" width={100} height={14} /></th>
@@ -74,7 +74,7 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.6 }}
-      className="glass-pink luxury-box-hover rounded-[3rem] p-6 shadow-sm border border-white relative overflow-hidden sm:p-10"
+      className="beauty-dashboard-panel beauty-top-ktv-panel glass-pink luxury-box-hover rounded-[3rem] p-6 shadow-sm border border-white relative overflow-hidden sm:p-10"
     >
       <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-primary/30 via-secondary/30 to-primary/30" />
       <div className="flex items-center gap-3 mb-8">
@@ -84,8 +84,8 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
         <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">Top KTV Xuất Sắc</h2>
       </div>
       
-      <div className="overflow-x-auto overscroll-x-contain custom-scrollbar">
-        <table className="bella-data-table min-w-[760px] table-fixed">
+      <div className="beauty-top-ktv-table-wrap overflow-x-auto overscroll-x-contain custom-scrollbar">
+        <table className="bella-data-table beauty-top-ktv-table w-full min-w-[760px] table-fixed">
           <thead>
             <tr className="text-left border-b border-pink-100">
               <th className="w-[240px] px-5 pb-4 font-bold text-xs uppercase tracking-widest text-muted-foreground whitespace-nowrap">
@@ -113,7 +113,7 @@ export function KtvPerformanceTable({ topKTVs, isLoading }: KtvPerformanceTableP
           </thead>
           <tbody className="divide-y divide-pink-50">
             {topKTVs.map((ktv, idx) => (
-              <tr key={idx} className="group hover:bg-white/40 transition-colors">
+              <tr key={idx} className="beauty-top-ktv-row group hover:bg-white/40 transition-colors">
                 <td className="px-5 py-6 font-bold text-foreground whitespace-nowrap">{ktv.name}</td>
                 <td className="px-5 py-6 font-bold text-muted-foreground whitespace-nowrap">{ktv.sessions} buổi</td>
                 <td className="px-5 py-6 font-bold text-muted-foreground whitespace-nowrap">
