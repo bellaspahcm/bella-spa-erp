@@ -1352,6 +1352,11 @@ html[data-tenant-module="beauty_spa"] .bella-data-table th {
   letter-spacing: 0.16em;
 }
 
+html[data-tenant-module="beauty_spa"] .bella-data-table {
+  min-width: max-content;
+  width: 100%;
+}
+
 html[data-tenant-module="beauty_spa"] .bella-data-table td {
   color: var(--beauty-text);
 }
@@ -1667,6 +1672,56 @@ html.dark[data-tenant-module="pending"] .bella-data-table td {
 html.dark[data-tenant-module="beauty_spa"] .bella-data-table tr:hover td,
 html.dark[data-tenant-module="pending"] .bella-data-table tr:hover td {
   background: rgba(255, 214, 109, 0.08) !important;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar,
+html.dark[data-tenant-module="pending"] .custom-scrollbar {
+  scrollbar-color: rgba(255, 214, 109, 0.72) rgba(11, 31, 58, 0.76);
+}
+
+html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar:has(.bella-data-table),
+html.dark[data-tenant-module="pending"] .custom-scrollbar:has(.bella-data-table) {
+  background:
+    linear-gradient(90deg, rgba(11, 31, 58, 0.82), rgba(20, 58, 81, 0.84)) !important;
+  border-color: rgba(196, 154, 104, 0.24) !important;
+  box-shadow:
+    inset -28px 0 26px -30px rgba(255, 214, 109, 0.22),
+    inset 28px 0 26px -30px rgba(255, 214, 109, 0.14) !important;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar:has(.bella-data-table) .bella-data-table,
+html.dark[data-tenant-module="pending"] .custom-scrollbar:has(.bella-data-table) .bella-data-table {
+  background: rgba(20, 58, 81, 0.54);
+  min-width: max-content;
+  width: 100%;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar::-webkit-scrollbar,
+html.dark[data-tenant-module="pending"] .custom-scrollbar::-webkit-scrollbar {
+  height: 10px;
+  width: 8px;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar::-webkit-scrollbar-track,
+html.dark[data-tenant-module="pending"] .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(11, 31, 58, 0.78) !important;
+  border: 3px solid rgba(20, 58, 81, 0.78);
+  border-radius: 999px;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar::-webkit-scrollbar-thumb,
+html.dark[data-tenant-module="pending"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #FFD66D, #C49A68) !important;
+  border: 2px solid rgba(11, 31, 58, 0.78);
+  border-radius: 999px;
+}
+
+html.dark[data-tenant-module="beauty_spa"] .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+html.dark[data-tenant-module="pending"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #FFE391, #D6AF78) !important;
 }
 
 html.dark[data-tenant-module="beauty_spa"] .dashboard-schedule-card {
