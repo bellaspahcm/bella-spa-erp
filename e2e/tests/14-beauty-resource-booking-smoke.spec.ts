@@ -23,6 +23,15 @@ function normalizeVietnamese(value: string) {
     .toLowerCase();
 }
 
+function getVietnamDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
 async function requireRow<T>(label: string, query: QueryResult<T>): Promise<T> {
   const { data, error } = await query;
   if (error || !data) {
@@ -65,7 +74,7 @@ test.describe("Beauty Spa resource booking smoke", () => {
   test("Beauty booking UI blocks double-booking a room and Bella admin does not see the Beauty marker", async ({ browser }) => {
     const client = admin();
     const marker = `E2E-BEAUTY-RESOURCE-${Date.now()}`;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getVietnamDateKey();
     const adminEmail = `${marker.toLowerCase()}@bellaspa.test`;
     const roomName = `${marker} Room 01`;
     const customerAName = `${marker} Customer A`;
