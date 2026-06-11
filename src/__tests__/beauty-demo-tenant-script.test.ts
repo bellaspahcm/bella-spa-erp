@@ -37,6 +37,32 @@ describe('Beauty demo tenant lifecycle script', () => {
     expect(source).toContain('Verified accounting accounts');
   });
 
+  it('covers the Beauty operating flow from service package to resource, session, revenue and accounting', () => {
+    const source = readSource('scripts/beauty-demo-tenant.cjs');
+
+    const packageIndex = source.indexOf("const packages = await mustInsert(client, 'packages'");
+    const resourceIndex = source.indexOf("const bookingResources = await mustInsert(client, 'booking_resources'");
+    const customerIndex = source.indexOf("const customers = await mustInsert(client, 'customers'");
+    const bookingIndex = source.indexOf("const bookings = await mustInsert(client, 'bookings'");
+    const sessionIndex = source.indexOf("const sessionLogs = await mustInsert(client, 'session_logs'");
+    const revenueIndex = source.indexOf("const revenues = await mustInsert(client, 'revenue'");
+
+    expect(packageIndex).toBeGreaterThan(-1);
+    expect(resourceIndex).toBeGreaterThan(packageIndex);
+    expect(customerIndex).toBeGreaterThan(resourceIndex);
+    expect(bookingIndex).toBeGreaterThan(customerIndex);
+    expect(sessionIndex).toBeGreaterThan(bookingIndex);
+    expect(revenueIndex).toBeGreaterThan(sessionIndex);
+
+    expect(source).toContain("module_key: 'beauty_spa'");
+    expect(source).toContain('booking_resource_id: bookingResources[0].id');
+    expect(source).toContain('booking_resource_id: bookingResources[1].id');
+    expect(source).toContain('booking_resource_id: bookingResources[2].id');
+    expect(source).toContain("mustEnqueueAccountingEvent(client, buildPackageSaleOutboxEvent");
+    expect(source).toContain("mustEnqueueAccountingEvent(client, buildSessionDoneOutboxEvent");
+    expect(source).toContain('commissionAmount: asMoney(booking.ktv_commission)');
+  });
+
   it('requires explicit cleanup confirmation and avoids broad delete filters', () => {
     const source = readSource('scripts/beauty-demo-tenant.cjs');
 

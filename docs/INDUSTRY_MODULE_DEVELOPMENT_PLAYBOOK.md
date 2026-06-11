@@ -45,8 +45,8 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | Nhom | Loi da gap | Nguyen nhan | Cach sua/guard can giu |
 | --- | --- | --- | --- |
 | Module setup | Beauty Spa bi xem nhu tuy chon co the bat/tat | Thiet ke ban dau gan voi module toggle thay vi quy trinh thuong mai HQ cap | HQ-only setup, Beauty admin khong duoc doi module nganh |
-| Subscription catalog | Gia goi, tinh nang va han muc chi nhanh co nguy co nam trong code hoac sua tay SQL | Chua co UI/action HQ chinh catalog va default entitlement; quota chi nhanh neu dem toan cuc se khoa nham khach khac | Catalog goi va default entitlement phai do HQ sua qua audited action; `branch` la feature quota rieng; khong enforce branch limit neu chua co tenant owner ro rang |
-| Subscription quota monitoring | HQ canh bao han muc co nguy co bi lam thu cong hoac dem sai neu chi doc tung bo dem | Chi co counter SMS, con KTV/khach hang can snapshot theo tenant de HQ thay tenant gan/vuot goi | HQ duoc tao read-model snapshot chi lay count theo `tenant_id`; neu hien thi `branch` thi ghi ro day la per-tenant preview, khong khoa chuoi khi chua co owner model |
+| Subscription catalog | Gia goi, tinh nang va han muc chi nhanh co nguy co nam trong code hoac sua tay SQL | Chua co UI/action HQ chinh catalog va default entitlement; quota chi nhanh neu dem toan cuc se khoa nham khach khac | Catalog goi va default entitlement phai do HQ sua qua audited action; `branch` la feature quota rieng; branch quota phai dem theo cum thuong mai root tenant + `parent_tenant_id`, khong hard-code current = 1 |
+| Subscription quota monitoring | HQ canh bao han muc co nguy co bi lam thu cong hoac dem sai neu chi doc tung bo dem | Chi co counter SMS, con KTV/khach hang/chi nhanh can snapshot theo tenant de HQ thay tenant gan/vuot goi | HQ duoc tao read-model snapshot chi lay count theo tenant/cum tenant dung scope; customer/KTV theo `tenant_id`, branch theo root + child tenants, khong dem toan cuc |
 | Tenant isolation | Dang nhap Admin Bella Spa van thay khach/demo Beauty | Query/UI read model co diem thieu scope tenant hoac demo data chua tach sach | Moi action doc du lieu phai filter `tenant_id`; them guard test session/dashboard/customer/finance |
 | Client direct query | Booking modal/list picker hien KTV/khach Beauty trong tai khoan Bella | UI query truc tiep tu browser vao `users`/`customers` thay vi qua server action tenant-scoped | Khong query client voi bang tenant-sensitive; dung server action co current tenant; them source guard |
 | Module isolation | Beauty tenant van hien text Me & Be, KTV, Combo Me Be | UI copy va filter bi hard-code theo Babycare | Dung module-aware copy, service category theo module, khong render babycare UI khi tenant chua load module |
@@ -337,6 +337,17 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 ```
 
 ## Lich Su Loi Moi
+
+### 2026-06-12 - Beauty branch quota va demo flow can khoa dung
+
+- Module/tenant: Beauty Spa va subscription core.
+- Man hinh/luong: HQ subscription quota, demo tenant, luong goi dich vu -> booking resource -> session -> revenue -> accounting outbox.
+- Dau hieu: Goi Beauty co nhieu chi nhanh se khong canh bao/chan dung neu branch quota hard-code current = 1; demo seed co danh muc giuong/may/ghe nhung session chua gan `booking_resource_id`.
+- Nguyen nhan goc: Entitlement `branch` da co nhung engine chua dem theo cum thuong mai root tenant + child tenants; demo flow chua noi tai nguyen vao buoi cham soc.
+- Cach sua: `checkSubscriptionLimit('branch')` dem root tenant va cac tenant co `parent_tenant_id` cung root; demo script gan `booking_resource_id` cho tung session Facial/Diode/Goi dau.
+- Test/guard da them: `src/__tests__/subscription.test.ts` va `src/__tests__/beauty-demo-tenant-script.test.ts` khoa branch quota va Beauty operating flow.
+- Commit: `test: harden beauty quota and demo flow`.
+- Rui ro con lai: Neu sau nay them mo hinh franchise co cap cha/con sau hon 1 tang, can mo rong owner model thay vi suy dien chi bang `parent_tenant_id`.
 
 ### 2026-06-11 - Core performance optimization scope can bi ghi log
 

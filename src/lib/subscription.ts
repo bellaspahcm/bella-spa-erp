@@ -97,11 +97,12 @@ export async function checkSubscriptionLimit(
     subscription_tier: string | null;
     subscription_expires_at: string | null;
     franchise_agreement_date: string | null;
+    parent_tenant_id: string | null;
   }
 
   const { data: tenant, error: tenantErr } = await (supabase
     .from('tenants')
-    .select('subscription_tier, subscription_expires_at, franchise_agreement_date')
+    .select('subscription_tier, subscription_expires_at, franchise_agreement_date, parent_tenant_id')
     .eq('id', tenantId)
     .single() as unknown as Promise<{ data: TenantSubscriptionRow | null; error: { message: string } | null }>);
 
@@ -181,7 +182,18 @@ export async function checkSubscriptionLimit(
   }
 
   if (limitType === 'branch') {
-    const currentCount = 1;
+    const commercialRootTenantId = tenant.parent_tenant_id || tenantId;
+    const { count, error } = await supabase
+      .from('tenants')
+      .select('*', { count: 'exact', head: true })
+      .or(`id.eq.${commercialRootTenantId},parent_tenant_id.eq.${commercialRootTenantId}`)
+      .neq('status', 'terminated');
+
+    if (error) {
+      throw new Error(`[checkSubscriptionLimit] branch tenants count failed: ${error.message}`);
+    }
+
+    const currentCount = count || 0;
     const usage = calculateSubscriptionUsageState({ current: currentCount, entitlement: requested });
     return {
       isBlocked: usage.isBlocked,
