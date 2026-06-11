@@ -106,6 +106,9 @@ export default function SalaryPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [matrixData, setMatrixData] = useState<KtvSessionMatrix | null>(null);
+  const [isMatrixLoading, setIsMatrixLoading] = useState(false);
+  const [matrixLoadError, setMatrixLoadError] = useState<string | null>(null);
+  const [hasLoadedMatrix, setHasLoadedMatrix] = useState(false);
   const [isExportingMatrix, setIsExportingMatrix] = useState(false);
   const [activeSalaryExportId, setActiveSalaryExportId] = useState<string | null>(null);
   const [activeSalaryAction, setActiveSalaryAction] = useState<string | null>(null);
@@ -205,22 +208,44 @@ export default function SalaryPage() {
     }
   }, []);
 
-  const refreshData = useCallback(async (options: { includeAttendance?: boolean } = {}) => {
+  const loadMatrixData = useCallback(async () => {
+    setIsMatrixLoading(true);
+    setMatrixLoadError(null);
     try {
-      const [salaryData, matrix] = await Promise.all([
-        getSalaryData(),
-        getKtvSessionMatrix(),
-      ]);
-      setKtvSalaries(salaryData || []);
+      const matrix = await getKtvSessionMatrix();
       setMatrixData(matrix || null);
+      setHasLoadedMatrix(true);
+    } catch (error) {
+      const message = getErrorMessage(error);
+      console.error('Session matrix data error:', error);
+      setMatrixLoadError(message);
+      toast.error('Không thể tải bảng đối soát số buổi: ' + message);
+    } finally {
+      setIsMatrixLoading(false);
+    }
+  }, []);
+
+  const refreshSalaryData = useCallback(async () => {
+    const salaryData = await getSalaryData();
+    setKtvSalaries(salaryData || []);
+  }, []);
+
+  const refreshData = useCallback(async (options: { includeAttendance?: boolean; includeMatrix?: boolean } = {}) => {
+    try {
+      await refreshSalaryData();
+
+      if (options.includeMatrix) {
+        void loadMatrixData();
+      }
 
       if (options.includeAttendance) {
         await loadAttendanceData();
       }
     } catch (error) {
       console.error('Refresh data error:', error);
+      toast.error('Không thể tải dữ liệu lương: ' + getErrorMessage(error));
     }
-  }, [loadAttendanceData]);
+  }, [loadAttendanceData, loadMatrixData, refreshSalaryData]);
 
   const handleTabChange = useCallback((tab: 'payroll' | 'attendance' | 'hr_profile') => {
     setActiveTab(tab);
@@ -232,8 +257,9 @@ export default function SalaryPage() {
   const handleSoftRefresh = useCallback(async () => {
     await refreshData({
       includeAttendance: hasLoadedAttendance || activeTab === 'attendance',
+      includeMatrix: hasLoadedMatrix || activeTab === 'payroll',
     });
-  }, [activeTab, hasLoadedAttendance, refreshData]);
+  }, [activeTab, hasLoadedAttendance, hasLoadedMatrix, refreshData]);
 
   usePageRefresh(handleSoftRefresh);
 
@@ -246,6 +272,7 @@ export default function SalaryPage() {
           toast.info(`Đã tự động xác nhận ${autoRes.count} bảng lương quá hạn 48h`);
         }
         await refreshData();
+        void loadMatrixData();
       } catch (error) {
         console.error('Fetch data error:', error);
       } finally {
@@ -253,7 +280,7 @@ export default function SalaryPage() {
       }
     }
     fetchData();
-  }, [refreshData]);
+  }, [loadMatrixData, refreshData]);
 
   const handleApprove = (id: string, name: string) => {
     showConfirm({
@@ -333,15 +360,13 @@ export default function SalaryPage() {
         const res = await publishAllSalaryRecords();
         if (res.success) {
           toast.success(`Đã gửi đối soát cho ${res.count} KTV`);
-          const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
-          setKtvSalaries(salary || []);
-          setMatrixData(matrix || null);
+          await refreshSalaryData();
+          void loadMatrixData();
         } else {
           toast.error(res.error || 'Lỗi khi gửi đối soát');
           if (res.count > 0) {
-            const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
-            setKtvSalaries(salary || []);
-            setMatrixData(matrix || null);
+            await refreshSalaryData();
+            void loadMatrixData();
           }
         }
         setIsLoading(false);
@@ -359,13 +384,11 @@ export default function SalaryPage() {
         const res = await finalizeAllSalaryRecords();
         if (res.success) {
           toast.success(`Đã chốt sổ ${res.count} bảng lương`);
-          const data = await getSalaryData();
-          setKtvSalaries(data || []);
+          await refreshSalaryData();
         } else {
           toast.error(res.error || 'Lỗi khi chốt sổ');
           if (res.count > 0) {
-            const data = await getSalaryData();
-            setKtvSalaries(data || []);
+            await refreshSalaryData();
           }
         }
         setIsLoading(false);
@@ -382,9 +405,8 @@ export default function SalaryPage() {
       const res = await publishSalaryRecord(ktvId);
       if (res.success) {
         toast.success(`Đã gửi đối soát cho ${ktvName}`);
-        const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
-        setKtvSalaries(salary || []);
-        setMatrixData(matrix || null);
+        await refreshSalaryData();
+        void loadMatrixData();
       } else {
         toast.error('Lỗi: ' + res.error);
       }
@@ -407,9 +429,8 @@ export default function SalaryPage() {
           const res = await adminConfirmOnBehalf(ktvId);
           if (res.success) {
             toast.success(`Đã xác nhận thay cho ${ktvName}`);
-            const [salary, matrix] = await Promise.all([getSalaryData(), getKtvSessionMatrix()]);
-            setKtvSalaries(salary || []);
-            setMatrixData(matrix || null);
+            await refreshSalaryData();
+            void loadMatrixData();
           } else {
             toast.error('Lỗi: ' + res.error);
           }
@@ -432,8 +453,7 @@ export default function SalaryPage() {
           const res = await finalizeSalaryRecord(ktvId);
           if (res.success) {
             toast.success(`Đã chốt sổ lương cho ${ktvName}`);
-            const data = await getSalaryData();
-            setKtvSalaries(data || []);
+            await refreshSalaryData();
           } else {
             toast.error(res.error || 'Lỗi khi chốt sổ');
           }
@@ -651,10 +671,31 @@ export default function SalaryPage() {
           </div>
 
           {/* Session Matrix Table */}
-          {isLoading ? (
+          {isLoading || isMatrixLoading || (!hasLoadedMatrix && !matrixLoadError) ? (
             <div className="rounded-[2rem] border border-slate-100 bg-white/80 p-4 shadow-sm dark:border-slate-800/60 dark:bg-zinc-900/60 sm:p-6 md:rounded-[2.5rem] md:p-8">
               <div className="h-6 w-48 mb-6"><SkeletonLoader variant="text" width={200} height={20} /></div>
               <SkeletonTable />
+            </div>
+          ) : matrixLoadError ? (
+            <div className="rounded-[2rem] border border-rose-100 bg-white/90 p-6 shadow-sm md:rounded-[2.5rem] md:p-8">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="mt-1 h-5 w-5 shrink-0 text-rose-500" />
+                  <div>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">
+                      Không thể tải bảng đối soát số buổi
+                    </h3>
+                    <p className="mt-1 text-sm font-medium text-slate-500">{matrixLoadError}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void loadMatrixData()}
+                  className="min-h-11 rounded-2xl bg-slate-900 px-5 text-xs font-black uppercase tracking-widest text-white shadow-sm transition-all hover:bg-primary"
+                >
+                  Tải lại
+                </button>
+              </div>
             </div>
           ) : (
             <SessionMatrixTable
