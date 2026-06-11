@@ -27,6 +27,7 @@
     "e2e": "playwright test",
     "e2e:auth-smoke": "playwright test e2e/tests/12-authenticated-core-routes-smoke.spec.ts",
     "e2e:tenant-isolation": "playwright test e2e/tests/13-tenant-isolation-smoke.spec.ts",
+    "e2e:beauty-uat": "playwright test e2e/tests/13-tenant-isolation-smoke.spec.ts e2e/tests/14-beauty-resource-booking-smoke.spec.ts",
     "e2e:visual": "node scripts/run-responsive-visual-smoke.mjs",
     "e2e:visual:assert": "node scripts/assert-playwright-results.mjs",
     "e2e:ui": "playwright test --ui",
