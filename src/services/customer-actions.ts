@@ -77,6 +77,7 @@ type CustomerListRow = CustomerRow & {
 };
 type GetCustomersOptions = {
   limit?: number;
+  offset?: number;
 };
 
 const CUSTOMER_TENANT_ACCESS_ERROR = 'Không xác định được đơn vị kinh doanh của người dùng hiện tại.';
@@ -375,8 +376,11 @@ export async function getCustomers(options: GetCustomersOptions = {}) {
     .order('name_mother', { ascending: true });
 
   const safeLimit = Number(options.limit || 0);
+  const safeOffset = Number(options.offset || 0);
   if (Number.isFinite(safeLimit) && safeLimit > 0) {
-    query = query.limit(Math.min(Math.floor(safeLimit), 200));
+    const limit = Math.min(Math.floor(safeLimit), 200);
+    const offset = Number.isFinite(safeOffset) && safeOffset > 0 ? Math.floor(safeOffset) : 0;
+    query = offset > 0 ? query.range(offset, offset + limit - 1) : query.limit(limit);
   }
 
   const { data, error } = await query;

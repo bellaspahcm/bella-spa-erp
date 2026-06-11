@@ -44,6 +44,7 @@ class MockQueryBuilder {
   public updateSpy = jest.fn().mockReturnThis();
   public insertSpy = jest.fn().mockReturnThis();
   public deleteSpy = jest.fn().mockReturnThis();
+  public rangeSpy = jest.fn().mockReturnThis();
   public filters: Array<{ column: string; value: unknown }> = [];
 
   constructor(private data: any = null, private error: any = null) {}
@@ -51,6 +52,10 @@ class MockQueryBuilder {
   select() { return this; }
   order() { return this; }
   limit() { return this; }
+  range(...args: any[]) {
+    this.rangeSpy(...args);
+    return this;
+  }
   eq(column: string, value: unknown) {
     this.filters.push({ column, value });
     return this;
@@ -138,6 +143,18 @@ describe('customer actions fail-fast behavior', () => {
         ],
       }),
     ]);
+  });
+
+  it('supports offset pagination for incremental customer list loading', async () => {
+    const listQuery = new MockQueryBuilder([]);
+    mockFrom.mockReturnValue(listQuery);
+
+    await expect(getCustomers({ limit: 120, offset: 80 })).resolves.toEqual([]);
+
+    expect(listQuery.rangeSpy).toHaveBeenCalledWith(80, 199);
+    expect(listQuery.filters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
   });
 
   it('scopes customer detail queries to the current tenant', async () => {

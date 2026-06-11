@@ -4,7 +4,7 @@ import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import { AnimatePresence,motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { useCallback,useEffect,useMemo,useState } from 'react';
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import { toast } from 'sonner';
 
 import { usePageRefresh } from '@/hooks/usePageRefresh';
@@ -69,6 +69,8 @@ type CustomerActionResult =
   | Awaited<ReturnType<typeof updateCustomer>>;
 
 const INITIAL_CUSTOMER_LOAD_LIMIT = 80;
+const BACKGROUND_CUSTOMER_LOAD_LIMIT = 120;
+const BACKGROUND_CUSTOMER_LOAD_DELAY_MS = 1200;
 const ALL_STATUS_FILTER = 'Tất cả trạng thái';
 const ACTIVE_CARE_PACKAGE_FILTER = 'Đang có gói liệu trình';
 
@@ -85,6 +87,8 @@ export default function CustomersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const customerLoadRequestRef = useRef(0);
+  const backgroundCustomerLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey, refreshTenantModuleKey } = useTenantModuleKey();
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -139,40 +143,83 @@ export default function CustomersPage() {
     });
   }, []);
 
+  const clearBackgroundCustomerLoad = useCallback(() => {
+    if (backgroundCustomerLoadTimerRef.current) {
+      clearTimeout(backgroundCustomerLoadTimerRef.current);
+      backgroundCustomerLoadTimerRef.current = null;
+    }
+  }, []);
+
+  const loadRemainingCustomersInBackground = useCallback(async (
+    requestId: number,
+    initialData: CustomerListItem[],
+  ) => {
+    let mergedCustomers = [...initialData];
+    let offset = initialData.length;
+
+    try {
+      while (customerLoadRequestRef.current === requestId) {
+        const nextChunk = (await getCustomers({
+          limit: BACKGROUND_CUSTOMER_LOAD_LIMIT,
+          offset,
+        })) as CustomerListItem[];
+
+        if (customerLoadRequestRef.current !== requestId) return;
+        if (!nextChunk.length) break;
+
+        mergedCustomers = [...mergedCustomers, ...nextChunk];
+        setCustomers(buildCustomerList(mergedCustomers));
+        offset += nextChunk.length;
+
+        if (nextChunk.length < BACKGROUND_CUSTOMER_LOAD_LIMIT) break;
+
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      }
+    } catch (error) {
+      if (customerLoadRequestRef.current !== requestId) return;
+      console.error('Error loading full customer list:', error);
+      toast.error('Không thể đồng bộ đầy đủ danh sách khách hàng');
+    } finally {
+      if (customerLoadRequestRef.current === requestId) {
+        setIsSyncing(false);
+      }
+    }
+  }, [buildCustomerList]);
+
   const loadCustomers = useCallback(async () => {
     let keepSyncingInBackground = false;
+    const requestId = customerLoadRequestRef.current + 1;
+    customerLoadRequestRef.current = requestId;
+    clearBackgroundCustomerLoad();
     setIsLoading(true);
     setIsSyncing(true);
     try {
       const initialData = (await getCustomers({ limit: INITIAL_CUSTOMER_LOAD_LIMIT })) as CustomerListItem[];
+      if (customerLoadRequestRef.current !== requestId) return;
+
       setCustomers(buildCustomerList(initialData || []));
       setIsLoading(false);
 
       if ((initialData?.length || 0) >= INITIAL_CUSTOMER_LOAD_LIMIT) {
         keepSyncingInBackground = true;
-        window.setTimeout(async () => {
-          try {
-            const fullData = (await getCustomers()) as CustomerListItem[];
-            setCustomers(buildCustomerList(fullData || []));
-          } catch (error) {
-            console.error('Error loading full customer list:', error);
-            toast.error('Không thể đồng bộ đầy đủ danh sách khách hàng');
-          } finally {
-            setIsSyncing(false);
-          }
-        }, 200);
+        backgroundCustomerLoadTimerRef.current = setTimeout(() => {
+          void loadRemainingCustomersInBackground(requestId, initialData || []);
+        }, BACKGROUND_CUSTOMER_LOAD_DELAY_MS);
         return;
       }
     } catch (error) {
+      if (customerLoadRequestRef.current !== requestId) return;
       console.error('Error loading customers:', error);
       toast.error(getErrorMessage(error, 'Không thể tải danh sách khách hàng'));
     } finally {
-      setIsLoading(false);
-      if (!keepSyncingInBackground) {
+      if (customerLoadRequestRef.current === requestId) {
+        setIsLoading(false);
+      }
+      if (customerLoadRequestRef.current === requestId && !keepSyncingInBackground) {
         setIsSyncing(false);
       }
     }
-  }, [buildCustomerList]);
+  }, [buildCustomerList, clearBackgroundCustomerLoad, loadRemainingCustomersInBackground]);
 
   const refreshCustomersPage = useCallback(async () => {
     await Promise.all([loadCustomers(), refreshTenantModuleKey()]);
@@ -181,6 +228,13 @@ export default function CustomersPage() {
   useEffect(() => {
     void refreshCustomersPage();
   }, [refreshCustomersPage]);
+
+  useEffect(() => {
+    return () => {
+      customerLoadRequestRef.current += 1;
+      clearBackgroundCustomerLoad();
+    };
+  }, [clearBackgroundCustomerLoad]);
 
   usePageRefresh(refreshCustomersPage);
 
