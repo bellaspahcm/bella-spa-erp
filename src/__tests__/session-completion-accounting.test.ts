@@ -25,6 +25,7 @@ jest.mock('@/modules/hr-salary/actions/admin-salary-actions', () => ({
 
 import { processSessionCompletion } from '../modules/booking/actions/session-completion-engine';
 import {
+  buildCompletedSessionAccountingUpdate,
   enqueueSessionDoneAccountingOutbox,
   ensureSessionReviewPlaceholder,
   recordSingleSessionRevenueIfNeeded,
@@ -108,6 +109,35 @@ describe('session completion accounting side effects', () => {
     mockAutoConsumeForSession.mockResolvedValue({ success: true, bypassed: true });
     mockRollbackInventoryConsumption.mockResolvedValue({ success: true });
     mockRecalculateAndSaveSalaryRecord.mockResolvedValue({ success: true });
+  });
+
+  it('builds completed session accounting metadata from booking value and discount', () => {
+    const patch = buildCompletedSessionAccountingUpdate({
+      sessionId: 'session-1',
+      bookingId: 'booking-1',
+      completedByKtvId: 'ktv-1',
+      completedDate: '2026-06-11',
+      fullPrice: 6000000,
+      discountPercent: 25,
+      totalSessions: 30,
+      existingAccountingMetadata: {
+        source: 'manual-update',
+      },
+    });
+
+    expect(patch).toEqual({
+      business_event_type: 'SESSION_REVENUE_RECOGNIZED',
+      accounting_review_status: 'UNREVIEWED',
+      accounting_metadata: expect.objectContaining({
+        source: 'manual-update',
+        session_log_id: 'session-1',
+        booking_id: 'booking-1',
+        earned_revenue: 150000,
+        completed_by_ktv_id: 'ktv-1',
+        completed_date: '2026-06-11',
+        status: 'completed',
+      }),
+    });
   });
 
   it('rolls back single-session revenue and booking progress when SESSION_DONE enqueue returns false', async () => {

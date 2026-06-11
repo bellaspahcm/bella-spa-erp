@@ -20,13 +20,14 @@ import {
   inferBusinessEventType,
   resolveAccountingReviewStatus,
 } from '@/services/accounting/template-rules';
-import type { Database } from '@/types/database.types';
+import type { Database, Json } from '@/types/database.types';
 import type { createClient } from '@/lib/supabase-server';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 type BookingRow = Database['public']['Tables']['bookings']['Row'];
 type BookingUpdate = Database['public']['Tables']['bookings']['Update'];
 type RevenueInsert = Database['public']['Tables']['revenue']['Insert'];
+type SessionLogUpdate = Database['public']['Tables']['session_logs']['Update'];
 type SessionReviewInsert = Database['public']['Tables']['session_reviews']['Insert'];
 
 type CompletionBooking = Pick<
@@ -104,6 +105,58 @@ export async function rollbackInventoryIfConsumed(sessionId: string, isInventory
   }
 
   return { success: true };
+}
+
+function isJsonObject(value: Json | null | undefined): value is { [key: string]: Json | undefined } {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function asFiniteNumber(value: number | string | null | undefined, fallback = 0) {
+  const numeric = Number(value ?? fallback);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function clampDiscountPercent(value: number | string | null | undefined) {
+  return Math.min(Math.max(asFiniteNumber(value), 0), 100);
+}
+
+export function buildCompletedSessionAccountingUpdate(input: {
+  sessionId: string;
+  bookingId: string;
+  completedByKtvId?: string | null;
+  completedDate?: string | null;
+  fullPrice?: number | string | null;
+  discountPercent?: number | string | null;
+  totalSessions?: number | string | null;
+  existingAccountingMetadata?: Json | null;
+  existingAccountingReviewStatus?: string | null;
+}): Pick<SessionLogUpdate, 'business_event_type' | 'accounting_review_status' | 'accounting_metadata'> {
+  const businessEventType = inferBusinessEventType({
+    sourceTable: 'session_logs',
+    status: 'completed',
+  });
+  const discountedPrice = Math.max(
+    0,
+    asFiniteNumber(input.fullPrice) * (1 - clampDiscountPercent(input.discountPercent) / 100),
+  );
+  const earnedRevenue = discountedPrice / Math.max(asFiniteNumber(input.totalSessions, 1), 1);
+  const accountingMetadata: { [key: string]: Json | undefined } = {
+    ...(isJsonObject(input.existingAccountingMetadata) ? input.existingAccountingMetadata : {}),
+    session_log_id: input.sessionId,
+    booking_id: input.bookingId,
+    earned_revenue: earnedRevenue,
+    completed_by_ktv_id: input.completedByKtvId ?? null,
+    completed_date: input.completedDate ?? null,
+    status: 'completed',
+  };
+
+  return {
+    business_event_type: businessEventType,
+    accounting_review_status: input.existingAccountingReviewStatus === 'POSTING_FAILED'
+      ? 'POSTING_FAILED'
+      : resolveAccountingReviewStatus(businessEventType, accountingMetadata),
+    accounting_metadata: accountingMetadata,
+  };
 }
 
 export async function restoreBookingProgress(

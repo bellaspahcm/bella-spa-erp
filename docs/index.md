@@ -27,6 +27,7 @@ Không thực hiện thay đổi kiến trúc rộng nếu chưa ghi rõ intent 
 | Quy tắc lưu trữ context và handoff | `docs/KNOWLEDGE_STORAGE_PROCESS.md` |
 | Quy trình phát triển phân hệ ngành mới, bài học Beauty Spa và checklist chống lặp lỗi | `docs/INDUSTRY_MODULE_DEVELOPMENT_PLAYBOOK.md` |
 | Roadmap tách core platform đa ngành | `docs/plans/core-platform-extraction-roadmap.md` |
+| Kế hoạch hoãn triển khai Beauty Spa chuỗi nhiều chi nhánh | `docs/plans/beauty-spa-chain-expansion-deferred-plan.md` |
 | Nhật ký phát triển theo ngày | `docs/DEVELOPMENT_LOG.md` |
 | Một lát cắt triển khai cụ thể | `docs/implementation-artifacts/spec-*.md` |
 | Điều tra trước khi sửa rủi ro cao | `docs/implementation-artifacts/investigations/*.md` |
