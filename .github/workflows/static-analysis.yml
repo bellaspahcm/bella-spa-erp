@@ -52,7 +52,7 @@ jobs:
 
       - name: Run Semgrep CE
         id: semgrep
-        run: semgrep scan --config auto --sarif --output semgrep-results.sarif
+        run: semgrep scan --config auto --sarif --output semgrep-results.sarif --error
         continue-on-error: true
 
       - name: Upload Semgrep SARIF
@@ -111,6 +111,16 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif
+
+      - name: Gate fixable high and critical vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
 
   sonarqube:
     name: SonarQube
