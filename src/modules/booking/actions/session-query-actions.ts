@@ -27,6 +27,30 @@ type CalendarBooking = BookingRow & {
   assigned_ktv?: { id: string; full_name: string | null } | null;
 };
 
+export type GetSessionsWithDetailsOptions = {
+  year?: string;
+  month?: string;
+};
+
+function getCreatedAtRange(options: GetSessionsWithDetailsOptions) {
+  const year = options.year && /^\d{4}$/.test(options.year) ? Number(options.year) : null;
+  if (!year) return null;
+
+  if (options.month && options.month !== 'all') {
+    const month = Number(options.month);
+    if (!Number.isInteger(month) || month < 1 || month > 12) return null;
+    const start = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = new Date(year, month, 1);
+    const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-01`;
+    return { start, end };
+  }
+
+  return {
+    start: `${year}-01-01`,
+    end: `${year + 1}-01-01`,
+  };
+}
+
 type CalendarSession = SessionLogRow & {
   bookings?: CalendarBooking | null;
 };
@@ -67,7 +91,7 @@ export async function getSessionLogs(bookingId: string) {
   return data;
 }
 
-export async function getSessionsWithDetails() {
+export async function getSessionsWithDetails(options: GetSessionsWithDetailsOptions = {}) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
   const { getCurrentUser } = await import('@/services/user-actions');
@@ -92,6 +116,11 @@ export async function getSessionsWithDetails() {
 
   if (currentUser?.role?.toLowerCase() === 'ktv') {
     query = query.eq('assigned_ktv_id', currentUser.id);
+  }
+
+  const createdAtRange = getCreatedAtRange(options);
+  if (createdAtRange) {
+    query = query.gte('created_at', createdAtRange.start).lt('created_at', createdAtRange.end);
   }
 
   const { data, error } = await query;
