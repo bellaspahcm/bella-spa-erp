@@ -48,6 +48,8 @@ export async function getSessionsWithDetails(
   return getSessionsWithDetailsAction(options);
 }
 
-export async function getCalendarSessions() {
-  return getCalendarSessionsAction();
+export async function getCalendarSessions(
+  options?: Parameters<typeof getCalendarSessionsAction>[0]
+) {
+  return getCalendarSessionsAction(options);
 }

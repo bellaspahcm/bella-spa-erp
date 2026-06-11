@@ -32,6 +32,15 @@ export type GetSessionsWithDetailsOptions = {
   month?: string;
 };
 
+export type GetCalendarSessionsOptions = {
+  startDate?: string;
+  endDate?: string;
+};
+
+function isIsoDate(value: string | undefined): value is string {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
 function getCreatedAtRange(options: GetSessionsWithDetailsOptions) {
   const year = options.year && /^\d{4}$/.test(options.year) ? Number(options.year) : null;
   if (!year) return null;
@@ -182,7 +191,7 @@ export async function getSessionsWithDetails(options: GetSessionsWithDetailsOpti
   return enrichedData;
 }
 
-export async function getCalendarSessions() {
+export async function getCalendarSessions(options: GetCalendarSessionsOptions = {}) {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
   
@@ -219,6 +228,14 @@ export async function getCalendarSessions() {
 
   if (currentUser?.role?.toLowerCase() === 'ktv') {
     query = query.eq('bookings.assigned_ktv_id', currentUser.id);
+  }
+
+  if (isIsoDate(options.startDate)) {
+    query = query.gte('assigned_date', options.startDate);
+  }
+
+  if (isIsoDate(options.endDate)) {
+    query = query.lt('assigned_date', options.endDate);
   }
 
   const { data, error } = await query;

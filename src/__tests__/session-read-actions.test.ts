@@ -105,6 +105,18 @@ describe('session read actions', () => {
     ]));
   });
 
+  it('scopes calendar sessions to the requested assigned date window', async () => {
+    mockFrom.mockReturnValue(new MockQueryBuilder([], null));
+
+    await expect(getCalendarSessions({ startDate: '2026-06-01', endDate: '2026-07-01' })).resolves.toEqual([]);
+
+    expect(queryFilters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+      { column: 'assigned_date', value: '2026-06-01', operator: 'gte' },
+      { column: 'assigned_date', value: '2026-07-01', operator: 'lt' },
+    ]));
+  });
+
   it('also scopes calendar sessions to the KTV when the current user is a KTV', async () => {
     mockGetCurrentUser.mockResolvedValueOnce({ id: 'ktv-1', role: 'ktv', tenant_id: 'tenant-1' });
     mockFrom.mockReturnValue(new MockQueryBuilder([], null));
