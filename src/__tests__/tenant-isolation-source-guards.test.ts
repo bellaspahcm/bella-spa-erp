@@ -110,6 +110,18 @@ describe('dashboard tenant isolation source guards', () => {
 
     expect(sidebarSource).toContain('isBeautySpaShell && "beauty-erp-sidebar"');
     expect(globalStyles).toContain('html[data-tenant-module="beauty_spa"] .beauty-erp-sidebar');
+    expect(globalStyles).toContain(
+      'html[data-tenant-module="pending"] .beauty-erp-nav-item-active:hover',
+    );
+    expect(globalStyles).toContain(
+      'html[data-tenant-module="beauty_spa"] .beauty-erp-nav-item-active:hover',
+    );
+    expect(globalStyles).toContain('html.dark[data-tenant-module="beauty_spa"]');
+    expect(globalStyles).toContain('html.dark[data-tenant-module="pending"]');
+    expect(globalStyles).toContain('--beauty-night: #0B1F3A');
+    expect(globalStyles).toContain('--beauty-deep: #143A51');
+    expect(globalStyles).toContain('--beauty-gold: #C49A68');
+    expect(globalStyles).toContain('--beauty-gold-2: #FFD66D');
     expect(globalStyles).not.toMatch(/(^|\n)\s*\.beauty-erp-/);
   });
 

@@ -323,6 +323,16 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 - Test/guard da them: `npm.cmd run lint`, Playwright headless do computed style xac nhan nen gradient Jade/navy, chu trang, opacity `1`; luu anh verify `docs/beauty_customer_add_cta_visible.png` va `docs/beauty_customer_active_badge_visible.png`.
 - Bai hoc: Moi CTA/badge nghiep vu cua module moi phai duoc check contrast trong ca first-paint/pending va sau khi tenant resolve; khong dung animation giam opacity cho thong tin can theo doi.
 
+### 2026-06-11 - Beauty dark mode bi Bella dark theme keo sai mau
+
+- Module/tenant: Beauty Spa.
+- Man hinh/luong: Dark mode toan dashboard Beauty, sidebar/menu, card, input, table va AI panel.
+- Dau hieu: Sidebar menu thanh pill den qua gat, chu bi mo, mot so vung van nen sang/hong, cac nut va box khong theo bo nhan dien Beauty.
+- Nguyen nhan goc: Beauty co light skin rieng nhung chua co dark skin scoped; cac rule `.dark ...` global cua Bella chen vao surface, text, button va sidebar cua Beauty.
+- Cach sua: Them Beauty dark palette scoped bang `html.dark[data-tenant-module="beauty_spa"]` va pending dark bootstrap; dung bo mau `#0B1F3A`, `#143A51`, `#746C6B`, `#C49A68`, `#FFD66D` cho body, sidebar, card, input, table va CTA.
+- Test/guard da them: `src/__tests__/tenant-isolation-source-guards.test.ts` khoa selector dark scoped va token mau chinh.
+- Bai hoc: Moi module co theme rieng phai co ca light/dark token va guard rieng; khong de `.dark` global cua san pham goc quyet dinh giao dien module moi.
+
 ### 2026-06-11 - Beauty F5 flash lop hong truoc khi vao Jade theme
 
 - Module/tenant: Beauty Spa va Bella Spa.
