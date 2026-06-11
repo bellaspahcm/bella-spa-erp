@@ -110,6 +110,17 @@ const defaultEntitlements = [
     reset_period: 'monthly',
     source: 'plan',
   },
+  {
+    tenant_id: 'tenant-1',
+    plan_code: 'basic',
+    feature_key: 'branch',
+    limit_value: 1,
+    is_unlimited: false,
+    unit: 'count',
+    enforcement_mode: 'hard',
+    reset_period: 'none',
+    source: 'plan',
+  },
 ];
 
 describe('Subscription Constraints & Webhook Suite', () => {
@@ -304,6 +315,25 @@ describe('Subscription Constraints & Webhook Suite', () => {
       expect(res.isBlocked).toBe(false);
       expect(res.current).toBe(10);
       expect(res.max).toBe(100);
+    });
+
+    it('exposes branch quota through the same subscription limit engine', async () => {
+      mockSingleTenant.mockResolvedValue({
+        data: {
+          subscription_tier: 'basic',
+          subscription_expires_at: new Date(Date.now() + 1000000).toISOString(),
+          sms_allotment_used: 0,
+          franchise_agreement_date: '2024-01-01T00:00:00Z',
+        },
+        error: null,
+      });
+
+      const res = await checkSubscriptionLimit('tenant-1', 'branch');
+
+      expect(res.current).toBe(1);
+      expect(res.max).toBe(1);
+      expect(res.limits.maxBranches).toBe(1);
+      expect(res.isBlocked).toBe(true);
     });
 
     it('throws instead of fail-opening when SMS usage RPC fails', async () => {

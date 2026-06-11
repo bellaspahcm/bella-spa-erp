@@ -24,6 +24,16 @@ type TenantUsageCounterInsert =
   Database['public']['Tables']['tenant_usage_counters']['Insert'];
 type TenantUsageCounterUpdate =
   Database['public']['Tables']['tenant_usage_counters']['Update'];
+type SubscriptionPlanRow =
+  Database['public']['Tables']['subscription_plans']['Row'];
+type SubscriptionPlanUpdate =
+  Database['public']['Tables']['subscription_plans']['Update'];
+type SubscriptionEntitlementRow =
+  Database['public']['Tables']['subscription_plan_entitlements']['Row'];
+type SubscriptionEntitlementInsert =
+  Database['public']['Tables']['subscription_plan_entitlements']['Insert'];
+type SubscriptionEntitlementUpdate =
+  Database['public']['Tables']['subscription_plan_entitlements']['Update'];
 
 type HqUser = {
   id: string;
@@ -54,6 +64,26 @@ export type ResetTenantUsageCounterInput = {
   periodStart: string;
   periodEnd: string;
   reason?: string | null;
+};
+
+export type UpdateSubscriptionPlanCatalogInput = {
+  planCode: string;
+  displayName: string;
+  description?: string | null;
+  priceMonthly: number;
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
+export type UpdateSubscriptionPlanEntitlementInput = {
+  planCode: string;
+  featureKey: string;
+  limitValue?: number | null;
+  isUnlimited?: boolean;
+  unit?: string;
+  enforcementMode?: string;
+  resetPeriod?: string;
+  description?: string | null;
 };
 
 function getErrorMessage(error: unknown, fallback = 'Loi khong xac dinh') {
@@ -123,8 +153,45 @@ function usageCounterAuditJson(row: TenantUsageCounterRow): Json {
   };
 }
 
+function subscriptionPlanAuditJson(row: SubscriptionPlanRow): Json {
+  return {
+    plan_code: row.plan_code,
+    display_name: row.display_name,
+    description: row.description,
+    price_monthly: row.price_monthly,
+    is_active: row.is_active,
+    sort_order: row.sort_order,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+function subscriptionEntitlementAuditJson(row: SubscriptionEntitlementRow): Json {
+  return {
+    id: row.id,
+    plan_code: row.plan_code,
+    feature_key: row.feature_key,
+    limit_value: row.limit_value,
+    is_unlimited: row.is_unlimited,
+    unit: row.unit,
+    enforcement_mode: row.enforcement_mode,
+    reset_period: row.reset_period,
+    description: row.description,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 function validateOverrideLimit(input: SetTenantQuotaOverrideInput) {
   return validateQuotaOverrideLimit(input);
+}
+
+function validateResetPeriod(resetPeriod: string) {
+  return ['none', 'daily', 'monthly', 'yearly'].includes(resetPeriod);
+}
+
+function validateEnforcementMode(enforcementMode: string) {
+  return ['soft', 'hard'].includes(enforcementMode);
 }
 
 export async function getHqSubscriptionOverview() {
@@ -190,6 +257,275 @@ export async function getHqSubscriptionOverview() {
     overrides: overrides || [],
     usageCounters: usageCounters || [],
   };
+}
+
+export async function updateSubscriptionPlanCatalog(input: UpdateSubscriptionPlanCatalogInput) {
+  try {
+    await requireHqAuth();
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error, 'Unauthorized') };
+  }
+
+  const planCode = input.planCode.trim();
+  const displayName = input.displayName.trim();
+  const priceMonthly = Number(input.priceMonthly);
+  const sortOrder = input.sortOrder === undefined ? undefined : Number(input.sortOrder);
+
+  if (!planCode || !displayName) {
+    return { success: false, error: 'Missing planCode or displayName for subscription plan catalog update.' };
+  }
+  if (!Number.isFinite(priceMonthly) || priceMonthly < 0) {
+    return { success: false, error: 'Subscription plan price must be a non-negative number.' };
+  }
+  if (sortOrder !== undefined && (!Number.isFinite(sortOrder) || sortOrder < 0)) {
+    return { success: false, error: 'Subscription plan sort order must be a non-negative number.' };
+  }
+
+  const supabase = await createClient();
+  const { data: existing, error: existingError } = await supabase
+    .from('subscription_plans')
+    .select('*')
+    .eq('plan_code', planCode)
+    .single();
+
+  if (existingError) {
+    return { success: false, error: `Failed to fetch subscription plan before catalog update: ${existingError.message}` };
+  }
+  if (!existing) {
+    return { success: false, error: 'Subscription plan not found for catalog update.' };
+  }
+
+  const updatePayload: SubscriptionPlanUpdate = {
+    display_name: displayName,
+    description: input.description ?? null,
+    price_monthly: priceMonthly,
+    is_active: input.isActive ?? existing.is_active,
+    sort_order: sortOrder ?? existing.sort_order,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: updated, error: updateError } = await supabase
+    .from('subscription_plans')
+    .update(updatePayload)
+    .eq('plan_code', planCode)
+    .select('*')
+    .single();
+
+  if (updateError) {
+    return { success: false, error: `Failed to update subscription plan catalog: ${updateError.message}` };
+  }
+
+  try {
+    await recordAuditLog({
+      action: 'UPDATE',
+      table_name: 'subscription_plans',
+      record_id: planCode,
+      old_data: subscriptionPlanAuditJson(existing),
+      new_data: subscriptionPlanAuditJson(updated),
+    });
+  } catch (auditError) {
+    const rollbackPayload: SubscriptionPlanUpdate = {
+      display_name: existing.display_name,
+      description: existing.description,
+      price_monthly: existing.price_monthly,
+      is_active: existing.is_active,
+      sort_order: existing.sort_order,
+      updated_at: existing.updated_at,
+    };
+    const { error: rollbackError } = await supabase
+      .from('subscription_plans')
+      .update(rollbackPayload)
+      .eq('plan_code', planCode);
+
+    if (rollbackError) {
+      return {
+        success: false,
+        error: `Audit log failed after subscription plan catalog update: ${getErrorMessage(auditError)}. Rollback failed: ${rollbackError.message}`,
+      };
+    }
+
+    return {
+      success: false,
+      error: `Audit log failed after subscription plan catalog update: ${getErrorMessage(auditError)}`,
+    };
+  }
+
+  await safeRevalidatePath('/hq');
+  await safeRevalidatePath('/dashboard/settings');
+
+  return { success: true, plan: updated };
+}
+
+export async function updateSubscriptionPlanEntitlement(input: UpdateSubscriptionPlanEntitlementInput) {
+  try {
+    await requireHqAuth();
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error, 'Unauthorized') };
+  }
+
+  const planCode = input.planCode.trim();
+  const featureKey = input.featureKey.trim();
+  const unit = input.unit?.trim() || 'count';
+  const enforcementMode = input.enforcementMode?.trim() || 'hard';
+  const resetPeriod = input.resetPeriod?.trim() || 'none';
+
+  if (!planCode || !featureKey) {
+    return { success: false, error: 'Missing planCode or featureKey for plan entitlement update.' };
+  }
+  if (!validateEnforcementMode(enforcementMode)) {
+    return { success: false, error: 'Plan entitlement enforcementMode must be soft or hard.' };
+  }
+  if (!validateResetPeriod(resetPeriod)) {
+    return { success: false, error: 'Plan entitlement resetPeriod must be none, daily, monthly or yearly.' };
+  }
+
+  const limitValidation = validateQuotaOverrideLimit(input);
+  if (limitValidation) {
+    return { success: false, error: limitValidation };
+  }
+
+  const supabase = await createClient();
+  const { data: plan, error: planError } = await supabase
+    .from('subscription_plans')
+    .select('plan_code')
+    .eq('plan_code', planCode)
+    .maybeSingle();
+
+  if (planError) {
+    return { success: false, error: `Failed to validate subscription plan for entitlement update: ${planError.message}` };
+  }
+  if (!plan) {
+    return { success: false, error: 'Subscription plan not found for entitlement update.' };
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from('subscription_plan_entitlements')
+    .select('*')
+    .eq('plan_code', planCode)
+    .eq('feature_key', featureKey)
+    .maybeSingle();
+
+  if (existingError) {
+    return { success: false, error: `Failed to fetch plan entitlement before update: ${existingError.message}` };
+  }
+
+  const now = new Date().toISOString();
+  const { isUnlimited, limitValue } = normalizeQuotaOverride(input);
+
+  if (existing) {
+    const updatePayload: SubscriptionEntitlementUpdate = {
+      limit_value: limitValue,
+      is_unlimited: isUnlimited,
+      unit,
+      enforcement_mode: enforcementMode,
+      reset_period: resetPeriod,
+      description: input.description ?? existing.description,
+      updated_at: now,
+    };
+
+    const { data: updated, error: updateError } = await supabase
+      .from('subscription_plan_entitlements')
+      .update(updatePayload)
+      .eq('id', existing.id)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      return { success: false, error: `Failed to update plan entitlement: ${updateError.message}` };
+    }
+
+    try {
+      await recordAuditLog({
+        action: 'UPDATE',
+        table_name: 'subscription_plan_entitlements',
+        record_id: existing.id,
+        old_data: subscriptionEntitlementAuditJson(existing),
+        new_data: subscriptionEntitlementAuditJson(updated),
+      });
+    } catch (auditError) {
+      const rollbackPayload: SubscriptionEntitlementUpdate = {
+        limit_value: existing.limit_value,
+        is_unlimited: existing.is_unlimited,
+        unit: existing.unit,
+        enforcement_mode: existing.enforcement_mode,
+        reset_period: existing.reset_period,
+        description: existing.description,
+        updated_at: existing.updated_at,
+      };
+      const { error: rollbackError } = await supabase
+        .from('subscription_plan_entitlements')
+        .update(rollbackPayload)
+        .eq('id', existing.id);
+
+      if (rollbackError) {
+        return {
+          success: false,
+          error: `Audit log failed after plan entitlement update: ${getErrorMessage(auditError)}. Rollback failed: ${rollbackError.message}`,
+        };
+      }
+
+      return {
+        success: false,
+        error: `Audit log failed after plan entitlement update: ${getErrorMessage(auditError)}`,
+      };
+    }
+
+    await safeRevalidatePath('/hq');
+    await safeRevalidatePath('/dashboard/settings');
+    return { success: true, entitlement: updated };
+  }
+
+  const insertPayload: SubscriptionEntitlementInsert = {
+    plan_code: planCode,
+    feature_key: featureKey,
+    limit_value: limitValue,
+    is_unlimited: isUnlimited,
+    unit,
+    enforcement_mode: enforcementMode,
+    reset_period: resetPeriod,
+    description: input.description ?? null,
+  };
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('subscription_plan_entitlements')
+    .insert(insertPayload)
+    .select('*')
+    .single();
+
+  if (insertError) {
+    return { success: false, error: `Failed to create plan entitlement: ${insertError.message}` };
+  }
+
+  try {
+    await recordAuditLog({
+      action: 'INSERT',
+      table_name: 'subscription_plan_entitlements',
+      record_id: inserted.id,
+      new_data: subscriptionEntitlementAuditJson(inserted),
+    });
+  } catch (auditError) {
+    const { error: rollbackError } = await supabase
+      .from('subscription_plan_entitlements')
+      .delete()
+      .eq('id', inserted.id);
+
+    if (rollbackError) {
+      return {
+        success: false,
+        error: `Audit log failed after plan entitlement insert: ${getErrorMessage(auditError)}. Rollback failed: ${rollbackError.message}`,
+      };
+    }
+
+    return {
+      success: false,
+      error: `Audit log failed after plan entitlement insert: ${getErrorMessage(auditError)}`,
+    };
+  }
+
+  await safeRevalidatePath('/hq');
+  await safeRevalidatePath('/dashboard/settings');
+
+  return { success: true, entitlement: inserted };
 }
 
 export async function updateTenantSubscriptionPlan(input: UpdateTenantSubscriptionInput) {

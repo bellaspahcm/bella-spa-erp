@@ -28,9 +28,14 @@ describe('HQ subscription quota UI wiring', () => {
     const consoleSource = read('src/app/hq/components/HqSubscriptionQuotaConsole.tsx');
 
     expect(consoleSource).toContain('getHqSubscriptionOverview');
+    expect(consoleSource).toContain('updateSubscriptionPlanCatalog');
+    expect(consoleSource).toContain('updateSubscriptionPlanEntitlement');
     expect(consoleSource).toContain('updateTenantSubscriptionPlan');
     expect(consoleSource).toContain('setTenantQuotaOverride');
     expect(consoleSource).toContain('resetTenantUsageCounter');
+    expect(consoleSource).toContain("branch: 'Chi nhánh'");
+    expect(consoleSource).toContain('Quản lý bảng giá gói');
+    expect(consoleSource).toContain('Hạn mức mặc định của gói');
     expect(consoleSource).toContain('toast.error(result.error');
     expect(consoleSource).toContain('window.confirm');
   });
