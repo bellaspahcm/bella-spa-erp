@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sidebar } from '@/components/layout/sidebar';
+import {
+  DashboardAuthLoadingShell,
+  DashboardAuthorizedShell,
+} from '@/components/layout/DashboardLoadingShell';
 import { getCurrentUser } from '@/services/user-actions';
 import { getTenantSettings } from '@/services/tenant-actions';
 import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
-import { Loader2 } from 'lucide-react';
 
 const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
 
@@ -82,8 +84,10 @@ export default function DashboardLayout({
           router.replace('/ktv/dashboard');
           return;
         }
-        await applyDashboardTenantBrandRuntime();
         setIsAuthorized(true);
+        void applyDashboardTenantBrandRuntime().catch((brandError) => {
+          console.error('[DashboardLayout] Brand runtime apply failed:', brandError);
+        });
       } catch (err) {
         console.error('[DashboardLayout] Auth check failed:', err);
         router.replace('/login');
@@ -128,20 +132,13 @@ export default function DashboardLayout({
   }
 
   if (isAuthorized === null) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <Loader2 className="w-10 h-10 animate-spin text-primary animate-pulse" />
-      </div>
-    );
+    return <DashboardAuthLoadingShell />;
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 flex flex-col min-w-0 pt-16 lg:pt-0 max-w-full overflow-x-hidden">
-        {children}
-      </main>
-    </div>
+    <DashboardAuthorizedShell>
+      {children}
+    </DashboardAuthorizedShell>
   );
 }
 

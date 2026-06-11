@@ -2,6 +2,8 @@
 
 import type { MappedTransaction, RevenueDBRow, ExpenseDBRow } from './types';
 
+const MAX_INITIAL_FINANCE_ROWS_PER_TYPE = 80;
+
 export async function getFinancialOverview() {
   const { createClient } = await import('@/lib/supabase-server');
   const supabase = await createClient();
@@ -17,20 +19,36 @@ export async function getFinancialOverview() {
     throw new Error('[getFinancialOverview] Missing tenantId for current user');
   }
 
-  const [revenueResponse, expensesResponse] = await Promise.all([
+  const [revenueTotalsResponse, expensesTotalsResponse, revenueResponse, expensesResponse] = await Promise.all([
+    supabase
+      .from('revenue')
+      .select('amount, status')
+      .eq('tenant_id', tenantId),
+    supabase
+      .from('expenses')
+      .select('amount, status')
+      .eq('tenant_id', tenantId),
     supabase
       .from('revenue')
       .select(`id, booking_id, amount, revenue_type, payment_method, received_date, status, notes,
                bookings(package_name, customers(name_mother, name_baby))`)
       .eq('tenant_id', tenantId)
-      .order('received_date', { ascending: false }),  // ✓ received_date exists
+      .order('received_date', { ascending: false })
+      .limit(MAX_INITIAL_FINANCE_ROWS_PER_TYPE),
     supabase
       .from('expenses')
       .select('id, category, amount, description, expense_date, status')
       .eq('tenant_id', tenantId)
-      .order('expense_date', { ascending: false })    // ✓ expense_date exists
+      .order('expense_date', { ascending: false })
+      .limit(MAX_INITIAL_FINANCE_ROWS_PER_TYPE)
   ]);
 
+  if (revenueTotalsResponse.error) {
+    throw new Error(`[getFinancialOverview] revenue total query failed: ${revenueTotalsResponse.error.message}`);
+  }
+  if (expensesTotalsResponse.error) {
+    throw new Error(`[getFinancialOverview] expenses total query failed: ${expensesTotalsResponse.error.message}`);
+  }
   if (revenueResponse.error) {
     throw new Error(`[getFinancialOverview] revenue query failed: ${revenueResponse.error.message}`);
   }
@@ -38,16 +56,18 @@ export async function getFinancialOverview() {
     throw new Error(`[getFinancialOverview] expenses query failed: ${expensesResponse.error.message}`);
   }
 
+  const revenueTotals = (revenueTotalsResponse.data as unknown as Pick<RevenueDBRow, 'amount' | 'status'>[]) || [];
+  const expensesTotals = (expensesTotalsResponse.data as unknown as Pick<ExpenseDBRow, 'amount' | 'status'>[]) || [];
   const revenueData = (revenueResponse.data as unknown as RevenueDBRow[]) || [];
   const expensesData = (expensesResponse.data as unknown as ExpenseDBRow[]) || [];
 
   // revenue.status === 'confirmed' (verified from DB)
-  const dbRevenue = revenueData
+  const dbRevenue = revenueTotals
     .filter((r) => r.status === 'confirmed')
     .reduce((acc: number, curr) => acc + (Number(curr.amount) || 0), 0);
 
   // expenses.status === 'approved' (verified from DB)
-  const dbExpense = expensesData
+  const dbExpense = expensesTotals
     .filter((e) => e.status === 'approved' || e.status === 'paid')
     .reduce((acc: number, curr) => acc + (Number(curr.amount) || 0), 0);
 

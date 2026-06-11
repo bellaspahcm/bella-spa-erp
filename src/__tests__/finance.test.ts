@@ -36,6 +36,10 @@ class MockQueryBuilder {
     return this;
   }
   order() { return this; }
+  limit(...args: unknown[]) {
+    this.filters.push({ method: 'limit', args });
+    return this;
+  }
   
   then(onfulfilled: any) {
     MockQueryBuilder.calls.push({
@@ -238,7 +242,7 @@ describe('getFinancialOverview', () => {
     MockQueryBuilder.errorsByTable.revenue = { message: 'revenue overview failed' };
 
     await expect(getFinancialOverview()).rejects.toThrow(
-      '[getFinancialOverview] revenue query failed: revenue overview failed'
+      '[getFinancialOverview] revenue total query failed: revenue overview failed'
     );
   });
 
@@ -246,7 +250,7 @@ describe('getFinancialOverview', () => {
     MockQueryBuilder.errorsByTable.expenses = { message: 'expenses overview failed' };
 
     await expect(getFinancialOverview()).rejects.toThrow(
-      '[getFinancialOverview] expenses query failed: expenses overview failed'
+      '[getFinancialOverview] expenses total query failed: expenses overview failed'
     );
   });
 
