@@ -591,7 +591,7 @@ export function SessionLogsDetailsModal({
                                       {coords}
                                     </a>
                                   ) : (
-                                    <p className="text-[10px] font-black text-slate-400">KhÃ´ng cÃ³ GPS</p>
+                                    <p className="text-[10px] font-black text-slate-400">Không có GPS</p>
                                   )}
                                 </div>
                               );

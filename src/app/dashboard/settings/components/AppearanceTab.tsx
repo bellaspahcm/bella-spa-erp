@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   BadgeCheck,
   CheckCircle2,
@@ -20,6 +20,7 @@ import {
   getDefaultTenantModuleKey,
   normalizeEnabledModules,
   normalizeTenantBrandThemeForModule,
+  resolveTenantBrandIdentity,
   type TenantBrandButtonStyle,
   type TenantBrandMenuStyle,
   type TenantBrandRadiusStyle,
@@ -29,6 +30,9 @@ import {
   type TenantModuleKey,
 } from '@/lib/business-rules/tenant-modules';
 import { cn } from '@/lib/utils';
+
+const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
+const SIDEBAR_BRAND_CACHE_KEY = 'bella.sidebar.brand.v2';
 
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
@@ -85,11 +89,65 @@ const menuOptions: Array<{ value: TenantBrandMenuStyle; label: string }> = [
   { value: 'compact', label: 'Gọn' },
 ];
 
+function hexToRgba(hex: string, alpha: number) {
+  const normalized = /^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : '#087F6B';
+  const value = normalized.slice(1);
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function applyBrandThemePreview(input: {
+  tenantId: string;
+  enabledModules: TenantEnabledModules;
+  brandTheme: TenantBrandTheme;
+  logoUrl: string;
+  persist?: boolean;
+}) {
+  if (typeof document === 'undefined') return;
+
+  const brand = resolveTenantBrandIdentity({
+    enabledModules: input.enabledModules,
+    brandTheme: { ...input.brandTheme, logoUrl: input.logoUrl },
+    logoUrl: input.logoUrl,
+    tenantName: input.brandTheme.brandName,
+    surface: 'app',
+  });
+
+  const root = document.documentElement;
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  root.dataset.tenantModule = brand.moduleKey;
+  root.dataset.tenantBrandButton = brand.buttonStyle;
+  root.dataset.tenantBrandMenu = brand.menuStyle;
+  root.dataset.tenantBrandRadius = brand.radiusStyle;
+  root.style.setProperty('--primary', brand.primaryColor);
+  root.style.setProperty('--primary-hover', brand.primaryHoverColor);
+  root.style.setProperty('--accent', brand.accentColor);
+  root.style.setProperty('--ring', brand.primaryColor);
+  themeMeta?.setAttribute('content', brand.primaryColor);
+
+  if (!input.persist || !input.tenantId) return;
+
+  const serialized = JSON.stringify({
+    tenantId: input.tenantId,
+    ...brand,
+  });
+
+  try {
+    window.sessionStorage.setItem(RUNTIME_BRAND_CACHE_KEY, serialized);
+    window.localStorage.setItem(SIDEBAR_BRAND_CACHE_KEY, serialized);
+  } catch {
+    // Brand cache is only a first-paint optimization.
+  }
+}
+
 export default function AppearanceTab() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [brandTheme, setBrandTheme] = useState<TenantBrandTheme>(DEFAULT_TENANT_BRAND_THEME);
   const [logoUrl, setLogoUrl] = useState('');
   const [enabledModules, setEnabledModules] = useState<TenantEnabledModules>(DEFAULT_ENABLED_MODULES);
+  const [tenantId, setTenantId] = useState('');
   const [tenantModuleKey, setTenantModuleKey] = useState<TenantModuleKey>('babycare');
   const [isLoadingTenantConfig, setIsLoadingTenantConfig] = useState(true);
   const [isSavingTenantConfig, setIsSavingTenantConfig] = useState(false);
@@ -107,6 +165,7 @@ export default function AppearanceTab() {
 
       const nextModuleKey = getDefaultTenantModuleKey(tenant.enabled_modules);
       const normalizedBrandTheme = normalizeTenantBrandThemeForModule(tenant.brand_theme, nextModuleKey);
+      setTenantId(tenant.id);
       setBrandTheme(normalizedBrandTheme);
       setLogoUrl(tenant.logo_url || normalizedBrandTheme.logoUrl || '');
       setEnabledModules(normalizeEnabledModules(tenant.enabled_modules));
@@ -122,6 +181,16 @@ export default function AppearanceTab() {
   useEffect(() => {
     loadTenantDisplayConfig();
   }, [loadTenantDisplayConfig]);
+
+  useEffect(() => {
+    if (isLoadingTenantConfig) return;
+    applyBrandThemePreview({
+      tenantId,
+      enabledModules,
+      brandTheme,
+      logoUrl,
+    });
+  }, [brandTheme, enabledModules, isLoadingTenantConfig, logoUrl, tenantId]);
 
   const handleThemeChange = (newTheme: 'light' | 'dark') => {
     if (theme === newTheme) return;
@@ -172,6 +241,13 @@ export default function AppearanceTab() {
 
       setBrandTheme(nextBrandTheme);
       setLogoUrl(nextBrandTheme.logoUrl);
+      applyBrandThemePreview({
+        tenantId,
+        enabledModules,
+        brandTheme: nextBrandTheme,
+        logoUrl: nextBrandTheme.logoUrl,
+        persist: true,
+      });
       toast.success('Đã lưu nhận diện thương hiệu');
     } catch (error) {
       console.error('Tenant display config save failed', error);
@@ -180,6 +256,11 @@ export default function AppearanceTab() {
       setIsSavingTenantConfig(false);
     }
   }
+
+  const activeLightModeStyle: CSSProperties = {
+    background: `linear-gradient(135deg, ${brandTheme.primaryColor} 0%, ${brandTheme.accentColor} 100%)`,
+    boxShadow: `0 24px 52px ${hexToRgba(brandTheme.primaryColor, 0.22)}`,
+  };
 
   return (
     <div className="space-y-8">
@@ -218,17 +299,18 @@ export default function AppearanceTab() {
           <button
             type="button"
             onClick={() => handleThemeChange('light')}
+            style={theme === 'light' ? activeLightModeStyle : undefined}
             className={cn(
               'relative overflow-hidden rounded-[2rem] p-8 text-left transition-all duration-300',
               theme === 'light'
-                ? 'bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-xl shadow-pink-200/50 scale-[1.01]'
+                ? 'text-white shadow-xl scale-[1.01]'
                 : 'border border-slate-200 bg-slate-100 text-slate-800 hover:bg-slate-200 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200',
             )}
           >
             <Sun className={cn('absolute right-4 top-4 h-6 w-6', theme === 'light' ? 'text-white/35' : 'text-slate-400')} />
             <h4 className="mb-2 text-xl font-bold">Soft Luxury</h4>
             <p className={cn('text-sm font-medium', theme === 'light' ? 'text-white/80' : 'text-slate-500 dark:text-slate-400')}>
-              Tông hồng pastel và bề mặt mềm, phù hợp màn hình vận hành ban ngày.
+              Tông màu nhận diện thương hiệu và bề mặt mềm, phù hợp màn hình vận hành ban ngày.
             </p>
             <div className="mt-6">
               {theme === 'light' ? (

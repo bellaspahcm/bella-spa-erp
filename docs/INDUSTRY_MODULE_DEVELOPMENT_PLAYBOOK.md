@@ -51,8 +51,9 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | Client direct query | Booking modal/list picker hien KTV/khach Beauty trong tai khoan Bella | UI query truc tiep tu browser vao `users`/`customers` thay vi qua server action tenant-scoped | Khong query client voi bang tenant-sensitive; dung server action co current tenant; them source guard |
 | Module isolation | Beauty tenant van hien text Me & Be, KTV, Combo Me Be | UI copy va filter bi hard-code theo Babycare | Dung module-aware copy, service category theo module, khong render babycare UI khi tenant chua load module |
 | Loading fallback | F5 hien Bella Spa mot luc roi moi chuyen Beauty Spa | Fallback mac dinh ve Bella/Babycare truoc khi tenant brand/module load xong | Non-Bella tenant khong fallback Bella; dung loading/neutral state den khi co tenant context |
-| First-paint theme flash | F5 Beauty Spa hien lop hong/pending hoac brand trung tinh truoc khi chuyen sang Jade/Beauty | CSS root/meta theme-color mac dinh Bella hoac app shell chi dua vao sidebar fetch de xac dinh tenant | App shell phai bootstrap neutral/tenant-scoped truoc paint; protected layout phai apply tenant brand runtime truoc khi render dashboard children; session runtime cache chi duoc ghi sau khi tenant da xac thuc |
+| First-paint theme flash | F5 Beauty/Bella hien mau hoac brand cua tenant truoc do truoc khi vao dung dashboard | CSS root/meta theme-color mac dinh Bella hoac root bootstrap doc runtime cache cu truoc khi xac thuc tenant hien tai | App shell phai bootstrap neutral truoc paint; khong doc runtime cache tenant cu tai root; protected layout phai apply tenant brand runtime truoc khi render dashboard children; session runtime cache chi duoc ghi sau khi tenant da xac thuc |
 | Brand isolation | Sidebar/header/portal co nguy co dung logo/mau Bella | Branding doc tu default chung hoac cache khong gan tenant | Cache brand phai kem `tenantId`; fallback Beauty trung tinh, khong fallback Bella |
+| Brand controls no-op | Mau he thong/bo goc/kieu nut/menu trong Setting co the luu nhung giao dien khong doi | UI setting cap nhat `brand_theme` nhung runtime root va CSS module khong tieu thu cac gia tri `primaryColor`, `radiusStyle`, `buttonStyle`, `menuStyle` | Setting preview phai apply CSS variables + `data-tenant-brand-*`; CSS chi scope theo module, vi du `html[data-tenant-module="beauty_spa"]`; them source guard |
 | Visual theme leakage | Giao dien rieng cua Beauty co nguy co doi mau/layout Bella ERP | CSS/class rieng cua nganh moi viet global, khong scope theo module marker | Moi theme UI rieng phai nam sau `html[data-tenant-module="..."]`; them source guard khoa selector khong duoc unscoped |
 | CTA/badge/active-state contrast | Nut chinh, badge quan trong hoac ngay/filter dang chon bi mo/gan nhu mat chu | Selector theme qua rong match ca class mau dam/gradient, hoac dung animation giam opacity nhu `animate-pulse` | CTA/badge/trang thai active phai co class rieng theo module, mau nen/chu dat contrast ro; neu can nhap nhay thi dung glow/brightness, khong giam opacity |
 | Dark dashboard surfaces | Beauty dark mode con alert pastel sang, chu chim va bang Top KTV khong lap day card | Dark skin chi override mau chung, thieu class rieng cho table/list quan trong | Table/list quan trong phai co class rieng nhu `beauty-top-ktv-table` va `beauty-alert-item`; dark CSS chi bam vao class do de khong anh huong Bella |
@@ -391,6 +392,26 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 - Test/guard da them: `npm.cmd run lint`, `npm.cmd run build`, Playwright headless xac nhan early F5 khong con mau hong va reload Beauty vao thang `beauty_spa`/`#074E44`.
 - Commit: pending.
 - Rui ro con lai: Neu them route app shell moi ngoai `/dashboard` hoac `/ktv`, phai dua route do vao bootstrap guard hoac co layout brand bootstrap rieng.
+
+### 2026-06-11 - Runtime brand cache cu lam Bella/Beauty nhiem mau nhau khi vao dashboard
+
+- Module/tenant: Beauty Spa va Bella Spa.
+- Man hinh/luong: Dashboard first paint, auth loading shell, sidebar initial brand.
+- Dau hieu: Khi dang nhap chuyen qua lai giua Bella Spa va Beauty Spa trong cung trinh duyet/tab, man hinh dau tien co the hien mau/brand cua tenant truoc do truoc khi ve dung tenant hien tai.
+- Nguyen nhan goc: Root bootstrap doc `bella.runtime.brand.v1` tu `sessionStorage` truoc khi biet user/tenant hien tai; sidebar cung khoi tao tu runtime cache cu.
+- Cach sua: Root bootstrap chi dat neutral pending tokens va khong doc runtime brand cache; dashboard layout doi `applyDashboardTenantBrandRuntime()` xong moi render children; sidebar khoi tao neutral va chi doc local cache sau khi co `tenant_id` cua current user.
+- Test/guard da them: `src/__tests__/tenant-isolation-source-guards.test.ts` khoa root khong doc `sessionStorage.getItem("bella.runtime.brand.v1")`, sidebar khong dung `readRuntimeTenantBrand`, va dashboard apply brand truoc `setIsAuthorized(true)`.
+- Bai hoc: Runtime cache chi duoc la toi uu sau khi da co tenant id hien tai. First paint khong duoc tin vao cache theo tab vi tenant co the da doi.
+
+### 2026-06-11 - Appearance brand controls luu nhung khong doi giao dien
+
+- Module/tenant: Beauty Spa white-label.
+- Man hinh/luong: Setting > Giao dien & Module, cac tuy chon mau he thong, bo goc, kieu nut va menu.
+- Dau hieu: Card `Soft Luxury` van hien hong Bella, nut `Bo goc`, `Kieu nut`, `Menu` co the chon/luu nhung nguoi dung khong thay thay doi ro tren giao dien.
+- Nguyen nhan goc: `brand_theme` da co cac field `primaryColor`, `accentColor`, `radiusStyle`, `buttonStyle`, `menuStyle`, nhung runtime root va CSS chua tieu thu day du cac field nay; mot so surface van hard-code mau hong/rose.
+- Cach sua: Appearance preview apply CSS variables va `data-tenant-brand-button/menu/radius`; light mode card dung mau brand dang chon; CSS brand controls chi scope trong `html[data-tenant-module="beauty_spa"]` de khong keo Bella ERP sang skin Beauty.
+- Test/guard da them: `src/__tests__/tenant-isolation-source-guards.test.ts` khoa `applyBrandThemePreview`, `activeLightModeStyle`, `data-tenant-brand-*`, va CSS token radius/button/menu.
+- Bai hoc: Moi setting white-label phai co ba lop: luu config, preview runtime ngay lap tuc, va CSS/component that su tieu thu config. Neu thieu lop 2 hoac 3 thi setting se thanh no-op.
 
 ### 2026-06-10 - Bella admin thay du lieu Beauty trong UI
 

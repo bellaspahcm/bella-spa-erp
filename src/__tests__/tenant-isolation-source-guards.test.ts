@@ -99,9 +99,31 @@ describe('dashboard tenant isolation source guards', () => {
     const sidebarSource = readSource('src/components/layout/sidebar.tsx');
 
     expect(sidebarSource).toContain("displayName: 'Spa ERP'");
+    expect(sidebarSource).toContain('useState<TenantBrandDisplay>(NEUTRAL_SIDEBAR_BRAND)');
+    expect(sidebarSource).not.toContain('readRuntimeTenantBrand');
     expect(sidebarSource).not.toMatch(
       /const DEFAULT_SIDEBAR_BRAND[\s\S]{0,180}enabledModules:\s*\{\s*babycare:\s*true,\s*beauty_spa:\s*false\s*\}/,
     );
+  });
+
+  it('does not apply stale tenant brand cache during root first paint', () => {
+    const rootLayoutSource = readSource('src/app/layout.tsx');
+    const dashboardLayoutSource = readSource('src/app/dashboard/layout.tsx');
+
+    expect(rootLayoutSource).toContain('root.dataset.tenantModule = "pending"');
+    expect(rootLayoutSource).toContain('"--primary": "#334155"');
+    expect(rootLayoutSource).not.toContain('sessionStorage.getItem("bella.runtime.brand.v1")');
+    expect(dashboardLayoutSource).toContain('await applyDashboardTenantBrandRuntime()');
+    expect(dashboardLayoutSource.indexOf('await applyDashboardTenantBrandRuntime()')).toBeLessThan(
+      dashboardLayoutSource.indexOf('setIsAuthorized(true)'),
+    );
+  });
+
+  it('keeps GPS empty-state copy encoded correctly', () => {
+    const sessionDetailsSource = readSource('src/app/dashboard/sessions/components/SessionLogsDetailsModal.tsx');
+
+    expect(sessionDetailsSource).toContain('Không có GPS');
+    expect(sessionDetailsSource).not.toContain('KhÃ´ng cÃ³ GPS');
   });
 
   it('keeps Beauty Spa visual theme scoped behind the tenant module marker', () => {
@@ -153,7 +175,30 @@ describe('dashboard tenant isolation source guards', () => {
     expect(globalStyles).toContain(
       'html.dark[data-tenant-module="beauty_spa"] .beauty-alert-item',
     );
+    expect(globalStyles).toContain('html[data-tenant-brand-radius="soft"]');
+    expect(globalStyles).toContain(
+      'html[data-tenant-brand-button][data-tenant-module="beauty_spa"]',
+    );
+    expect(globalStyles).toContain(
+      'html[data-tenant-brand-menu="compact"][data-tenant-module="beauty_spa"] .beauty-erp-nav-item',
+    );
     expect(globalStyles).not.toMatch(/(^|\n)\s*\.beauty-erp-/);
+  });
+
+  it('wires Beauty brand appearance controls into runtime preview and scoped CSS', () => {
+    const appearanceSource = readSource('src/app/dashboard/settings/components/AppearanceTab.tsx');
+    const globalStyles = readSource('src/app/globals.css');
+
+    expect(appearanceSource).toContain('applyBrandThemePreview');
+    expect(appearanceSource).toContain('activeLightModeStyle');
+    expect(appearanceSource).toContain('root.dataset.tenantBrandButton = brand.buttonStyle');
+    expect(appearanceSource).toContain('root.dataset.tenantBrandMenu = brand.menuStyle');
+    expect(appearanceSource).toContain('root.dataset.tenantBrandRadius = brand.radiusStyle');
+    expect(appearanceSource).not.toContain('from-pink-500 to-rose-600');
+    expect(globalStyles).toContain('--brand-card-radius');
+    expect(globalStyles).toContain('--brand-button-radius');
+    expect(globalStyles).toContain('--brand-menu-radius');
+    expect(globalStyles).toContain('html[data-tenant-brand-button="minimal"][data-tenant-module="beauty_spa"]');
   });
 
   it('keeps first-run onboarding copy tenant-brand aware', () => {
