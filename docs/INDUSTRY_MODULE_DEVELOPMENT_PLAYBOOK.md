@@ -19,6 +19,7 @@ Moi phan he nganh moi phai duoc phat trien theo vong doi trong tai lieu nay. Kho
 - UI co con hard-code thuat ngu cua nganh cu khong
 - demo data co tao/xoa an toan khong
 - co regression test de chung minh Bella Spa hien tai khong bi anh huong khong
+- thay doi toi uu hieu nang co dang tac dong vao route core dung chung hay chi module rieng
 
 Neu mot thay doi tao them nganh moi ma khong cap nhat playbook nay hoac artifact lien quan, task chua duoc xem la hoan tat.
 
@@ -56,6 +57,7 @@ Bang nay la nhat ky bai hoc thuc te. Khi lam nganh moi, bat buoc doi chieu tung 
 | CTA/badge/active-state contrast | Nut chinh, badge quan trong hoac ngay/filter dang chon bi mo/gan nhu mat chu | Selector theme qua rong match ca class mau dam/gradient, hoac dung animation giam opacity nhu `animate-pulse` | CTA/badge/trang thai active phai co class rieng theo module, mau nen/chu dat contrast ro; neu can nhap nhay thi dung glow/brightness, khong giam opacity |
 | Dark dashboard surfaces | Beauty dark mode con alert pastel sang, chu chim va bang Top KTV khong lap day card | Dark skin chi override mau chung, thieu class rieng cho table/list quan trong | Table/list quan trong phai co class rieng nhu `beauty-top-ktv-table` va `beauty-alert-item`; dark CSS chi bam vao class do de khong anh huong Bella |
 | Dark data table scroll | Bang Beauty dark co thanh truot ngang sang mau, nam lo ra ngoai cam giac khong thuoc card, hoac row/table khong lap day box | Wrapper/table khong dung chung `custom-scrollbar` + `bella-data-table`, hoac table dang `width: max-content` nen tao mang nen bi tach o mep phai | Moi bang du lieu Beauty phai dung table pattern chung; dark CSS module-scoped phai dat table `width: 100%`, wrapper scroll nam trong box, scrollbar theo tone xanh-vang va khong override Bella |
+| Core performance scope | De xuat toi uu lai route da toi uu hoac khong ro anh huong Bella/Beauty | Khong doi chieu git history/code truoc khi de xuat; route core dung chung bi nham la rieng Bella hoac rieng Beauty | Truoc moi de xuat toi uu, kiem tra commit/code hien co; ghi route, muc tieu, pham vi anh huong, commit va test; core route can regression Bella + tenant isolation neu co data read |
 | Package/service scope | Goi dich vu Beauty va Babycare co nguy co dung lan | `packages` la bang dung chung, ban dau thieu module guard | `packages.module_key`, `validateBookingPackageScope`, test cross-module/cross-tenant |
 | Data vocabulary | Form khach Beauty con truong "Ho ten me", "Ho ten be", lich co "Combo Me Be" | Dung lai giao dien cu chua audit toan bo text | Truoc khi release module moi phai `rg` toan bo thuat ngu nganh cu va map sang dictionary module |
 | Hidden onboarding copy | Beauty admin van thay tour/huong dan "Bat dau cung Bella Spa" sau khi F5 | Chi audit cac trang chinh, bo sot onboarding/help/empty-state copy an | Moi module moi phai audit ca onboarding tour, tooltip, empty state, help text va first-run modal; copy phai nhan brand/module context |
@@ -201,6 +203,32 @@ Checklist UI bat buoc:
 - Loading/first paint: khong flash Bella/Babycare/mau hong tren Beauty/nganh moi; neu chua co tenant context thi phai la neutral shell.
 - Empty/error state: noi dung dung nganh.
 
+### Phase 4b - Core Performance Va Pham Vi Anh Huong
+
+Mot so route la loi ERP dung chung cho Bella Spa va Beauty Spa. Toi uu cac route nay thuong co loi cho ca hai, nhung cung co rui ro lam ro ri du lieu neu load/read model bi sua sai.
+
+Core routes can xem la dung chung:
+
+- `/dashboard`
+- `/dashboard/sessions`
+- `/dashboard/bookings`
+- `/dashboard/customers`
+- `/dashboard/customers/[id]`
+- `/dashboard/finance`
+- `/dashboard/inventory`
+- `/dashboard/salary`
+- `/dashboard/accounting/*`
+
+Quy tac truoc khi de xuat hoac thuc hien toi uu:
+
+- Bat buoc kiem tra `git log --oneline` va `rg` dau hieu da toi uu, vi du `dynamic`, `Promise.all`, `limit`, `range`, `offset`, `setTimeout`, `reloadTimerRef`, `pageSize`.
+- Khong de xuat lai route da toi uu neu chua co bang chung moi: anh chup, thoi gian load, query cham, hoac bug nguoi dung vua gap.
+- Phan loai ro pham vi: core dung chung, Beauty theme-only, Bella-only, HQ-only, hay tenant demo-only.
+- Neu la core dung chung, phai noi ro thay doi se tac dong ca Bella Spa va Beauty Spa; tenant filter/module guard khong duoc thay doi khi chi toi uu performance.
+- Neu la Beauty theme-only, CSS/UI phai scope theo `html[data-tenant-module="beauty_spa"]` hoac class module rieng; khong de anh huong Bella ERP.
+- Moi toi uu performance nen ghi lai: route, muc tieu, cach lam, commit, test/build da chay, va pham vi anh huong.
+- Khong tao engine, abstraction hoac refactor lon chi de toi uu cam giac. Uu tien: lazy load, load theo tab, limit ban dau, background chunk, debounce realtime, va bo refresh thua.
+
 ### Phase 5 - Demo Data Va Cleanup
 
 Demo tenant cho nganh moi bat buoc co:
@@ -304,6 +332,18 @@ Khi tu nay ve sau phat hien loi trong Beauty Spa hoac nganh moi, them vao bang n
 ```
 
 ## Lich Su Loi Moi
+
+### 2026-06-11 - Core performance optimization scope can bi ghi log
+
+- Module/tenant: Bella Spa va Beauty Spa dung chung core dashboard.
+- Man hinh/luong: `/dashboard`, `/dashboard/salary`, `/dashboard/sessions`, `/dashboard/bookings`, `/dashboard/customers`, `/dashboard/customers/[id]`.
+- Dau hieu: Sau nhieu lan toi uu load, van co nguy co de xuat lai trang da toi uu neu chi nho theo cam tinh.
+- Nguyen nhan goc: Chua co log tap trung ve route nao da toi uu, pham vi anh huong Bella/Beauty, va commit nao chua minh.
+- Cach sua: Them Phase 4b trong playbook; bat buoc kiem tra git history/code truoc khi de xuat toi uu; chi tiep tuc khi co bang chung moi hoac do duoc diem cham thuc te.
+- Cac commit da ghi nhan: `0250df8a` dashboard initial loading, `49d0b51b` dashboard data loading phases, `fee69e2d` salary page initial loading, `e8f044cb` sessions page data loading, `764ce356` bookings calendar loading, `91f7fbcc` customer list incremental loading, `1b6ce05b` customer detail loading.
+- Pham vi anh huong: Cac route core tren co loi cho ca Bella Spa va Beauty Spa; thay doi theme Jade/dark Beauty thi chi duoc scope trong Beauty module.
+- Test/guard can giu: Khi doi core data loading, chay test lien quan route/action va `npm.cmd run lint`, `npm.cmd run build`; neu cham vao tenant read model thi them/chay tenant isolation guard.
+- Rui ro con lai: Neu toi uu mot route moi ma khong ghi vao playbook/log, AI agent sau co the de xuat trung lap hoac khong noi ro anh huong Bella/Beauty.
 
 ### 2026-06-11 - Beauty/Bella operational smoke chua duoc dong goi
 
