@@ -52,14 +52,14 @@ export async function sendZaloZNS(
     const result = await response.json();
     if (!response.ok || (result && result.error !== 0)) {
       const errMsg = result ? `${result.message} (Code: ${result.error})` : `HTTP ${response.status}`;
-      console.error(`Zalo ZNS send failed for phone ${cleanedPhone}:`, errMsg);
+      console.error('Zalo ZNS send failed for phone %s:', cleanedPhone, errMsg);
       return { success: false, error: `API Zalo báo lỗi: ${errMsg}`, data: result };
     }
 
-    console.log(`Zalo ZNS successfully sent to ${cleanedPhone}. Message ID:`, result?.data?.message_id);
+    console.log('Zalo ZNS successfully sent to %s. Message ID:', cleanedPhone, result?.data?.message_id);
     return { success: true, data: result };
   } catch (err: unknown) {
-    console.error(`Exception in sendZaloZNS for tenant ${tenantId}:`, err);
+    console.error('Exception in sendZaloZNS for tenant %s:', tenantId, err);
     return { success: false, error: err instanceof Error ? err.message : 'Lỗi kết nối API Zalo ZNS' };
   }
 }
@@ -310,7 +310,7 @@ export async function triggerBatchReminders(specificTenantId?: string) {
         .eq('zalo_reminder_sent', false);
 
       if (error) {
-        console.error(`Error scanning sessions for tenant ${tenantId}:`, error);
+        console.error('Error scanning sessions for tenant %s:', tenantId, error);
         errors.push(`Tenant ${tenantId}: ${error.message}`);
         continue;
       }

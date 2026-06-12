@@ -183,7 +183,7 @@ export async function GET(req: NextRequest) {
 
       } catch (innerErr: unknown) {
         appendTenantError(tenantErrors, tenant, innerErr);
-        console.error(`[AI Autopilot Cron] Lỗi xử lý tenant ${tenant.name}:`, getErrorMessage(innerErr));
+        console.error('[AI Autopilot Cron] Lỗi xử lý tenant %s:', tenant.name, getErrorMessage(innerErr));
       }
     }
 

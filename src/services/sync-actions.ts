@@ -62,7 +62,7 @@ export async function syncOfflineAction(action: OfflineAction) {
     // Successfully completed! Delete from IndexedDB queue
     await offlineDB.offlineQueue.delete(action.id);
   } catch (error: unknown) {
-    console.error(`[SyncService] Failed to sync offline action ${action.id}:`, error);
+    console.error('[SyncService] Failed to sync offline action %s:', action.id, error);
     
     // Set status to failed and increment retry count
     await offlineDB.offlineQueue.update(action.id, {

@@ -386,7 +386,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (renewErr) {
-          console.error(`[Payment Webhook] Failed to renew subscription for "${invoiceNumber}":`, renewErr);
+          console.error('[Payment Webhook] Failed to renew subscription for "%s":', invoiceNumber, renewErr);
           results.push({ transactionId, invoiceNumber, status: "failed", reason: renewErr.message });
           continue;
         }
@@ -419,7 +419,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (bookingErr || !booking) {
-        console.error(`[Payment Webhook] Booking "${bookingNumber}" not found or DB error:`, bookingErr);
+        console.error('[Payment Webhook] Booking "%s" not found or DB error:', bookingNumber, bookingErr);
         results.push({ transactionId, bookingNumber, status: "failed", reason: `Booking "${bookingNumber}" not found` });
         continue;
       }
@@ -431,7 +431,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (existingRevenueErr) {
-        console.error(`[Payment Webhook] Failed to check duplicate transaction for "${bookingNumber}":`, existingRevenueErr);
+        console.error('[Payment Webhook] Failed to check duplicate transaction for "%s":', bookingNumber, existingRevenueErr);
         results.push({ transactionId, bookingNumber, status: "failed", reason: existingRevenueErr });
         continue;
       }
@@ -439,7 +439,7 @@ export async function POST(request: NextRequest) {
       if (existingRevenue) {
         const ensureErr = await ensureWebhookRevenueSideEffects(supabase, booking, existingRevenue, tx);
         if (ensureErr) {
-          console.error(`[Payment Webhook] Failed to ensure side effects for existing revenue "${existingRevenue.id}":`, ensureErr);
+          console.error('[Payment Webhook] Failed to ensure side effects for existing revenue "%s":', existingRevenue.id, ensureErr);
           results.push({ transactionId, bookingNumber, status: "failed", revenueId: existingRevenue.id, reason: ensureErr });
           continue;
         }
@@ -499,7 +499,7 @@ export async function POST(request: NextRequest) {
           .eq("id", booking.id);
 
         if (updateErr) {
-          console.error(`[Payment Webhook] Failed to update booking status for "${bookingNumber}":`, updateErr);
+          console.error('[Payment Webhook] Failed to update booking status for "%s":', bookingNumber, updateErr);
           results.push({ transactionId, bookingNumber, status: "failed", reason: "Failed to update booking status" });
           continue;
         }
@@ -542,7 +542,7 @@ export async function POST(request: NextRequest) {
           );
 
           if (racedLookupErr) {
-            console.error(`[Payment Webhook] Failed to recover duplicate transaction for "${bookingNumber}":`, racedLookupErr);
+            console.error('[Payment Webhook] Failed to recover duplicate transaction for "%s":', bookingNumber, racedLookupErr);
             const bookingRollbackFailure = await rollbackBookingStatus();
             pushFailedTransaction(
               racedLookupErr,
@@ -554,7 +554,7 @@ export async function POST(request: NextRequest) {
           if (racedRevenue) {
             const ensureErr = await ensureWebhookRevenueSideEffects(supabase, booking, racedRevenue, tx);
             if (ensureErr) {
-              console.error(`[Payment Webhook] Failed to ensure side effects for raced revenue "${racedRevenue.id}":`, ensureErr);
+              console.error('[Payment Webhook] Failed to ensure side effects for raced revenue "%s":', racedRevenue.id, ensureErr);
               pushFailedTransaction(ensureErr);
               continue;
             }
@@ -570,7 +570,7 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        console.error(`[Payment Webhook] Failed to insert revenue for "${bookingNumber}":`, revErr);
+        console.error('[Payment Webhook] Failed to insert revenue for "%s":', bookingNumber, revErr);
         const bookingRollbackFailure = await rollbackBookingStatus();
         pushFailedTransaction(
           "Failed to insert revenue record",
@@ -599,7 +599,7 @@ export async function POST(request: NextRequest) {
 
       const ensureErr = await ensureWebhookRevenueSideEffects(supabase, booking, newRevenue, tx);
       if (ensureErr) {
-        console.error(`[Payment Webhook] Failed to ensure revenue side effects for "${newRevenue.id}":`, ensureErr);
+        console.error('[Payment Webhook] Failed to ensure revenue side effects for "%s":', newRevenue.id, ensureErr);
         await rollbackWebhookRevenue(ensureErr);
         continue;
       }

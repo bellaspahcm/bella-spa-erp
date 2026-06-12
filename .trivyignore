@@ -1,0 +1,5 @@
+# xlsx 0.18.5 is used only for server-side workbook generation and test parsing.
+# npm has no official patched release beyond 0.18.5; npm audit is allowlisted in
+# scripts/audit-production.mjs for the matching GHSA advisories.
+CVE-2023-30533
+CVE-2024-22363

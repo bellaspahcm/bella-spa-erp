@@ -35,7 +35,7 @@ async function post(table, data) {
   });
   if (!res.ok) {
     const error = await res.text();
-    console.error(`Error posting to ${table}:`, error);
+    console.error('Error posting to %s:', table, error);
     return null;
   }
   return await res.json();

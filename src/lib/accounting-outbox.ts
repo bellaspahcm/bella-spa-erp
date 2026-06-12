@@ -154,7 +154,7 @@ export async function enqueueAccountingEvent(
     });
 
     if (error) {
-      console.error(`${logPrefix} Failed to enqueue ${params.eventType} for ${params.referenceType}:${params.referenceId}:`, error.message);
+      console.error('%s Failed to enqueue %s for %s:%s:', logPrefix, params.eventType, params.referenceType, params.referenceId, error.message);
       return false;
     }
 
@@ -167,7 +167,7 @@ export async function enqueueAccountingEvent(
     return true;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`${logPrefix} Exception enqueuing ${params.eventType}:${params.referenceId}:`, msg);
+    console.warn('%s Exception enqueuing %s:%s:', logPrefix, params.eventType, params.referenceId, msg);
     return false;
   }
 }

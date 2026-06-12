@@ -637,7 +637,7 @@ export async function GET(req: NextRequest) {
         }
 
       } catch (err: unknown) {
-        console.error(`[Accounting Worker] Error processing event ${event.id}:`, err);
+        console.error('[Accounting Worker] Error processing event %s:', event.id, err);
         failureCount++;
 
         // Cập nhật trạng thái FAILED (exponential backoff)
@@ -648,7 +648,7 @@ export async function GET(req: NextRequest) {
         });
 
         if (failErr) {
-          console.error(`[Accounting Worker] Critical: Failed to mark outbox as failed for ${event.id}:`, failErr);
+          console.error('[Accounting Worker] Critical: Failed to mark outbox as failed for %s:', event.id, failErr);
           criticalFailureCount++;
           details.push({
             eventId: event.id,

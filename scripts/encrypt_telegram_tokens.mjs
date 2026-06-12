@@ -74,7 +74,7 @@ for (const cfg of configs || []) {
     .update({ telegram_bot_token: encryptedToken })
     .eq('id', cfg.id);
   if (updErr) {
-    console.error(`❌ ${cfg.id}: failed to update:`, updErr);
+    console.error('❌ %s: failed to update:', cfg.id, updErr);
   } else {
     console.log(`✅ ${cfg.id}: encrypted plaintext credential`);
     encrypted++;

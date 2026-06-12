@@ -331,7 +331,7 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
         .maybeSingle();
 
       if (existingPkgError) {
-        console.error(`Failed to check template distribution for tenant ${tenantId}:`, existingPkgError);
+        console.error('Failed to check template distribution for tenant %s:', tenantId, existingPkgError);
         results.push({ tenantId, success: false, error: existingPkgError.message });
         continue;
       }
@@ -355,7 +355,7 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
           .eq('id', existingPkg.id);
 
         if (upErr) {
-          console.error(`Failed to update template for tenant ${tenantId}:`, upErr);
+          console.error('Failed to update template for tenant %s:', tenantId, upErr);
           results.push({ tenantId, success: false, error: upErr.message });
         } else {
           results.push({ tenantId, success: true, action: 'updated', packageId: existingPkg.id });
@@ -375,7 +375,7 @@ export async function distributeTemplateToTenants(templateId: string, tenantIds:
           .single();
 
         if (inErr) {
-          console.error(`Failed to insert template for tenant ${tenantId}:`, inErr);
+          console.error('Failed to insert template for tenant %s:', tenantId, inErr);
           results.push({ tenantId, success: false, error: inErr.message });
         } else {
           results.push({ tenantId, success: true, action: 'created', packageId: inserted.id });
