@@ -1,4 +1,5 @@
 import {
+  getDashboardInventorySummary,
   getDashboardStats,
   getImportantAlerts,
   getMonthlyPerformance,
@@ -107,9 +108,44 @@ describe('dashboard read actions', () => {
     mockGetCurrentUser.mockResolvedValueOnce({ id: 'admin-1', role: 'admin', tenant_id: null });
     await expect(getUpcomingSessions('2026-06-10')).rejects.toThrow('Không xác định được đơn vị kinh doanh cho dashboard');
 
+    mockGetCurrentUser.mockResolvedValueOnce({ id: 'admin-1', role: 'admin', tenant_id: null });
+    await expect(getDashboardInventorySummary()).rejects.toThrow('Không xác định được đơn vị kinh doanh cho dashboard');
+
     expect(mockFrom).not.toHaveBeenCalled();
     expect(mockRpc).not.toHaveBeenCalled();
     expect(queryFilters).toEqual([]);
+  });
+
+  it('loads inventory summary through a tenant-scoped server query', async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'inventory_items') {
+        return new MockQueryBuilder([
+          { stock_level: 5, min_stock_level: 10, price_per_unit: 100_000 },
+          { stock_level: 12, min_stock_level: 10, price_per_unit: 50_000 },
+          { stock_level: null, min_stock_level: 1, price_per_unit: 25_000 },
+        ]);
+      }
+      return new MockQueryBuilder([]);
+    });
+
+    await expect(getDashboardInventorySummary()).resolves.toEqual({
+      totalItems: 3,
+      lowStockCount: 2,
+      totalValue: 1_100_000,
+    });
+
+    expect(mockFrom).toHaveBeenCalledWith('inventory_items');
+    expect(queryFilters).toEqual(expect.arrayContaining([
+      { column: 'tenant_id', value: 'tenant-1' },
+    ]));
+  });
+
+  it('propagates inventory summary read failures instead of hiding stock issues', async () => {
+    mockFrom.mockReturnValue(new MockQueryBuilder(null, { message: 'inventory blocked' }));
+
+    await expect(getDashboardInventorySummary()).rejects.toThrow(
+      'Failed to fetch dashboard inventory summary: inventory blocked'
+    );
   });
 
   it('loads upcoming sessions through a direct tenant-scoped day query', async () => {
