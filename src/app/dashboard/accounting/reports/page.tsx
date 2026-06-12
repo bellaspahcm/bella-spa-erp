@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   RefreshCw,
   Download,
@@ -29,6 +29,14 @@ import { usePageRefresh } from '@/hooks/usePageRefresh';
 type AccountRow = Awaited<ReturnType<typeof getAccounts>>[number];
 type AccountLedgerRow = AccountingReportRecord;
 type ExportableReportType = 'trial_balance' | 'income_statement' | 'balance_sheet' | 'cash_flow';
+type ReportCacheValue =
+  | { kind: 'trial_balance'; data: TrialBalanceExportRow[] }
+  | { kind: 'income_statement'; data: AccountingReportRecord | null }
+  | { kind: 'balance_sheet'; data: AccountingReportRecord | null }
+  | { kind: 'cash_flow'; data: AccountingReportRecord | null }
+  | { kind: 'account_ledger'; data: AccountLedgerRow[] };
+
+type ReportCacheKey = string;
 
 const toReportNumber = (value: string | number | null | undefined) => Number(value || 0);
 
@@ -56,6 +64,24 @@ const stickyHeaderCellClassName =
 const stickyBodyCellClassName =
   'bg-inherit';
 
+const getReportCacheKey = (input: {
+  activeTab: string;
+  asOfDate: string;
+  fromDate: string;
+  toDate: string;
+  selectedAccountId: string;
+}): ReportCacheKey => {
+  if (input.activeTab === 'trial_balance' || input.activeTab === 'balance_sheet') {
+    return `${input.activeTab}:${input.asOfDate}`;
+  }
+
+  if (input.activeTab === 'account_ledger') {
+    return `${input.activeTab}:${input.selectedAccountId}:${input.fromDate}:${input.toDate}`;
+  }
+
+  return `${input.activeTab}:${input.fromDate}:${input.toDate}`;
+};
+
 export default function AccountingReportsPage() {
   const [activeTab, setActiveTab] = useState<string>('trial_balance');
   const [loading, setLoading] = useState(true);
@@ -68,6 +94,7 @@ export default function AccountingReportsPage() {
   const [balanceSheet, setBalanceSheet] = useState<AccountingReportRecord | null>(null);
   const [accountLedger, setAccountLedger] = useState<AccountLedgerRow[]>([]);
   const [cashFlow, setCashFlow] = useState<AccountingReportRecord | null>(null);
+  const reportCacheRef = useRef(new Map<ReportCacheKey, ReportCacheValue>());
 
   // Filtering metadata
   const [asOfDate, setAsOfDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -96,23 +123,54 @@ export default function AccountingReportsPage() {
     loadAccounts();
   }, []);
 
-  const loadReportData = useCallback(async () => {
+  const applyReportData = useCallback((report: ReportCacheValue) => {
+    if (report.kind === 'trial_balance') {
+      setTrialBalance(report.data);
+    } else if (report.kind === 'income_statement') {
+      setIncomeStatement(report.data);
+    } else if (report.kind === 'balance_sheet') {
+      setBalanceSheet(report.data);
+    } else if (report.kind === 'cash_flow') {
+      setCashFlow(report.data);
+    } else if (report.kind === 'account_ledger') {
+      setAccountLedger(report.data);
+    }
+  }, []);
+
+  const loadReportData = useCallback(async (options?: { force?: boolean }) => {
+    const cacheKey = getReportCacheKey({ activeTab, asOfDate, fromDate, selectedAccountId, toDate });
+    const cachedReport = options?.force ? null : reportCacheRef.current.get(cacheKey);
+    if (cachedReport) {
+      applyReportData(cachedReport);
+      setLoading(false);
+      return;
+    }
+
+    if (options?.force) {
+      reportCacheRef.current.delete(cacheKey);
+    }
+
     setRefreshing(true);
     try {
       if (activeTab === 'trial_balance') {
         const data = await getTrialBalanceReport(asOfDate);
+        reportCacheRef.current.set(cacheKey, { kind: 'trial_balance', data: data || [] });
         setTrialBalance(data || []);
       } else if (activeTab === 'income_statement') {
         const data = await getIncomeStatementReport(fromDate, toDate);
+        reportCacheRef.current.set(cacheKey, { kind: 'income_statement', data });
         setIncomeStatement(data);
       } else if (activeTab === 'balance_sheet') {
         const data = await getBalanceSheetReport(asOfDate);
+        reportCacheRef.current.set(cacheKey, { kind: 'balance_sheet', data });
         setBalanceSheet(data);
       } else if (activeTab === 'cash_flow') {
         const data = await getCashFlowStatementReport(fromDate, toDate);
+        reportCacheRef.current.set(cacheKey, { kind: 'cash_flow', data });
         setCashFlow(data);
       } else if (activeTab === 'account_ledger' && selectedAccountId) {
         const data = await getAccountLedgerReport(selectedAccountId, fromDate, toDate);
+        reportCacheRef.current.set(cacheKey, { kind: 'account_ledger', data: data || [] });
         setAccountLedger(data || []);
       }
     } catch (err: unknown) {
@@ -122,7 +180,7 @@ export default function AccountingReportsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [activeTab, asOfDate, fromDate, selectedAccountId, toDate]);
+  }, [activeTab, applyReportData, asOfDate, fromDate, selectedAccountId, toDate]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -130,7 +188,7 @@ export default function AccountingReportsPage() {
     });
   }, [loadReportData]);
 
-  usePageRefresh(loadReportData);
+  usePageRefresh(() => loadReportData({ force: true }));
 
   // Trigger base64 compilation and force local browser download
   const handleExportExcel = async () => {
