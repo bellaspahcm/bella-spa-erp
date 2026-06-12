@@ -127,6 +127,7 @@ export default function DashboardPage() {
   const [notifSearch, setNotifSearch] = useState('');
   const [notifTab, setNotifTab] = useState('all');
   const dashboardRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dashboardSecondaryRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { tenantModuleKey } = useTenantModuleKey();
   const customerLabels = getTenantModulePresentationOrNeutral(tenantModuleKey);
   const businessLabel = tenantModuleKey === null
@@ -179,55 +180,64 @@ export default function DashboardPage() {
     return { startDate, endDate };
   };
 
-  const fetchData = useCallback(async () => {
+  const buildDashboardStats = useCallback((statsData: Awaited<ReturnType<typeof getDashboardPrimaryData>>['statsData']) => ([
+    { label: 'Tổng khách hàng', value: String(statsData.totalCustomers?.value || '0'), trend: Number(statsData.totalCustomers?.trend || 0), iconName: 'Users' as const, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Lịch hẹn hôm nay', value: String(statsData.todayBookings?.value || '0'), trend: Number(statsData.todayBookings?.trend || 0), iconName: 'Calendar' as const, color: 'text-rose-600', bg: 'bg-rose-50' },
+    ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: String(statsData.totalRevenue?.value || '0M'), trend: Number(statsData.totalRevenue?.trend || 0), iconName: 'DollarSign' as const, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
+    { label: 'Đánh giá KTV', value: String(statsData.avgRating?.value || '5.0'), trend: Number(statsData.avgRating?.trend || 0), iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
+  ]), [userRole]);
+
+  const fetchPrimaryData = useCallback(async () => {
     if (userRole === null) return; // Wait for role to be identified
     if (!tenantId) return;
-    
+
     setIsRefreshing(true);
-    setIsSecondaryLoading(true);
     try {
       const { startDate, endDate } = getMonthRange(selectedMonth, selectedYear);
       const now = new Date();
       const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      
+
       const { statsData, sessionsData, inventorySummary: nextInventorySummary } =
         await getDashboardPrimaryData(startDate, endDate, localToday);
 
-      const newStats = [
-        { label: 'Tổng khách hàng', value: String(statsData.totalCustomers?.value || '0'), trend: Number(statsData.totalCustomers?.trend || 0), iconName: 'Users' as const, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Lịch hẹn hôm nay', value: String(statsData.todayBookings?.value || '0'), trend: Number(statsData.todayBookings?.trend || 0), iconName: 'Calendar' as const, color: 'text-rose-600', bg: 'bg-rose-50' },
-        ...(userRole === 'admin' ? [{ label: 'Doanh thu tháng', value: String(statsData.totalRevenue?.value || '0M'), trend: Number(statsData.totalRevenue?.trend || 0), iconName: 'DollarSign' as const, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
-        { label: 'Đánh giá KTV', value: String(statsData.avgRating?.value || '5.0'), trend: Number(statsData.avgRating?.trend || 0), iconName: 'Star' as const, color: 'text-amber-600', bg: 'bg-amber-50' },
-      ];
-      
-      setStats(newStats);
+      setStats(buildDashboardStats(statsData));
       setSessions((sessionsData || []) as unknown as DashboardSession[]);
       setInventorySummary(nextInventorySummary || { totalItems: 0, lowStockCount: 0, totalValue: 0 });
       setIsLoading(false);
-
-      try {
-        const { ktvsData, alertsData, perfData } = await getDashboardSecondaryData();
-        setTopKTVs((ktvsData || []).map((ktv) => ({
-          ...ktv,
-          rating: Number(ktv.rating) || 0,
-        })));
-        setPerformanceData((perfData || []) as DashboardPerformancePoint[]);
-        setAlerts(alertsData || []);
-      } catch (secondaryError) {
-        console.error('Error fetching dashboard secondary data:', secondaryError);
-        toast.error('Không thể tải dữ liệu phân tích dashboard');
-      } finally {
-        setIsSecondaryLoading(false);
-      }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Error fetching dashboard primary data:', error);
       toast.error('Lỗi cập nhật dữ liệu');
-      setIsSecondaryLoading(false);
     } finally {
       setIsRefreshing(false);
       setIsLoading(false);
     }
-  }, [selectedMonth, selectedYear, tenantId, userRole]);
+  }, [buildDashboardStats, selectedMonth, selectedYear, tenantId, userRole]);
+
+  const fetchSecondaryData = useCallback(async () => {
+    if (userRole === null) return;
+    if (!tenantId) return;
+
+    setIsSecondaryLoading(true);
+    try {
+      const { ktvsData, alertsData, perfData } = await getDashboardSecondaryData();
+      setTopKTVs((ktvsData || []).map((ktv) => ({
+        ...ktv,
+        rating: Number(ktv.rating) || 0,
+      })));
+      setPerformanceData((perfData || []) as DashboardPerformancePoint[]);
+      setAlerts(alertsData || []);
+    } catch (error) {
+      console.error('Error fetching dashboard secondary data:', error);
+      toast.error('Không thể tải dữ liệu phân tích dashboard');
+    } finally {
+      setIsSecondaryLoading(false);
+    }
+  }, [tenantId, userRole]);
+
+  const fetchData = useCallback(async () => {
+    setIsSecondaryLoading(true);
+    await Promise.all([fetchPrimaryData(), fetchSecondaryData()]);
+  }, [fetchPrimaryData, fetchSecondaryData]);
 
   usePageRefresh(fetchData);
 
@@ -242,9 +252,20 @@ export default function DashboardPage() {
 
     dashboardRefreshTimerRef.current = setTimeout(() => {
       dashboardRefreshTimerRef.current = null;
-      void fetchData();
+      void Promise.all([fetchPrimaryData(), fetchSecondaryData()]);
     }, 500);
-  }, [fetchData]);
+  }, [fetchPrimaryData, fetchSecondaryData]);
+
+  const scheduleDashboardSecondaryRefresh = useCallback(() => {
+    if (dashboardSecondaryRefreshTimerRef.current) {
+      clearTimeout(dashboardSecondaryRefreshTimerRef.current);
+    }
+
+    dashboardSecondaryRefreshTimerRef.current = setTimeout(() => {
+      dashboardSecondaryRefreshTimerRef.current = null;
+      void fetchSecondaryData();
+    }, 500);
+  }, [fetchSecondaryData]);
 
   useEffect(() => {
     // REALTIME SUBSCRIPTION
@@ -264,7 +285,7 @@ export default function DashboardPage() {
         scheduleDashboardRefresh();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'app_notifications' }, () => {
-        scheduleDashboardRefresh();
+        scheduleDashboardSecondaryRefresh();
       })
       .subscribe();
 
@@ -272,9 +293,12 @@ export default function DashboardPage() {
       if (dashboardRefreshTimerRef.current) {
         clearTimeout(dashboardRefreshTimerRef.current);
       }
+      if (dashboardSecondaryRefreshTimerRef.current) {
+        clearTimeout(dashboardSecondaryRefreshTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, [scheduleDashboardRefresh]);
+  }, [scheduleDashboardRefresh, scheduleDashboardSecondaryRefresh]);
 
   const handleCompleteSession = async (sessionId: string, bookingId: string, note: string) => {
     setUpdatingId(sessionId);
