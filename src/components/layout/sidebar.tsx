@@ -34,9 +34,12 @@ import {
   type ResolvedTenantBrandIdentity,
 } from '@/lib/business-rules/tenant-modules';
 
-import { getCurrentUser } from '@/services/user-actions';
-import { getTenantSettings } from '@/services/tenant-actions';
 import { createClient } from '@/lib/supabase-client';
+import {
+  clearDashboardClientContextCache,
+  getCachedCurrentUser,
+  getCachedTenantSettings,
+} from '@/lib/dashboard-client-context';
 import { createPageRefreshEvent } from '@/lib/page-refresh';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import { TenantBrandLogo } from '@/components/common/TenantBrandLogo';
@@ -181,7 +184,7 @@ function clearTenantBrandRuntimeCache() {
   }
 }
 
-function resolveTenantBrandDisplay(settings: Awaited<ReturnType<typeof getTenantSettings>>): TenantBrandDisplay {
+function resolveTenantBrandDisplay(settings: Awaited<ReturnType<typeof getCachedTenantSettings>>): TenantBrandDisplay {
   if (!settings) return DEFAULT_SIDEBAR_BRAND;
 
   return resolveTenantBrandIdentity({
@@ -277,7 +280,7 @@ export function Sidebar() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const userData = await getCurrentUser();
+      const userData = await getCachedCurrentUser();
       setUser(userData);
 
       const cachedBrand = readCachedTenantBrand(userData?.tenant_id);
@@ -286,9 +289,9 @@ export function Sidebar() {
         setIsTenantBrandResolved(true);
       }
 
-      let settings: Awaited<ReturnType<typeof getTenantSettings>> = null;
+      let settings: Awaited<ReturnType<typeof getCachedTenantSettings>> = null;
       try {
-        settings = await getTenantSettings();
+        settings = await getCachedTenantSettings();
         const resolvedBrand = resolveTenantBrandDisplay(settings);
         setTenantBrand(resolvedBrand);
         setIsTenantBrandResolved(true);
@@ -408,6 +411,7 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     try {
+      clearDashboardClientContextCache();
       clearTenantBrandRuntimeCache();
       if (process.env.NODE_ENV === 'development') {
         document.cookie = 'mock_user_email=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';

@@ -22,11 +22,15 @@ import {
   Megaphone,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getTenantSettings, saveTenantSettings } from "@/services/tenant-actions";
+import { saveTenantSettings } from "@/services/tenant-actions";
 import { resolveTenantBrandIdentity } from "@/lib/business-rules/tenant-modules";
 import { usePageRefresh } from "@/hooks/usePageRefresh";
 import { cn } from "@/lib/utils";
 import { TenantGeneralSettings } from "@/types/domain";
+import {
+  clearDashboardClientContextCache,
+  getCachedTenantSettings,
+} from "@/lib/dashboard-client-context";
 
 import GeneralSettingsTab from "./components/GeneralSettingsTab";
 import SalaryConfigTab from "./components/SalaryConfigTab";
@@ -92,10 +96,10 @@ function SettingsContent() {
     }
   });
 
-  const loadSettings = useCallback(async () => {
+  const loadSettings = useCallback(async (options: { force?: boolean } = {}) => {
     setIsLoadingSettings(true);
     try {
-      const data = await getTenantSettings();
+      const data = await getCachedTenantSettings(options);
       if (data) {
         const brand = resolveTenantBrandIdentity({
           enabledModules: data.enabled_modules,
@@ -140,12 +144,11 @@ function SettingsContent() {
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
-    if (isSettingsTabId(tabFromUrl)) {
-      setActiveTab(tabFromUrl);
-    }
+    const nextTab = isSettingsTabId(tabFromUrl) ? tabFromUrl : DEFAULT_SETTINGS_TAB;
+    setActiveTab((currentTab) => (currentTab === nextTab ? currentTab : nextTab));
   }, [searchParams]);
 
-  usePageRefresh(loadSettings);
+  usePageRefresh(() => loadSettings({ force: true }));
 
   const handleTabChange = useCallback(
     (tabId: SettingsTabId) => {
@@ -159,7 +162,11 @@ function SettingsContent() {
       }
 
       const query = params.toString();
-      router.replace(query ? `/dashboard/settings?${query}` : "/dashboard/settings", { scroll: false });
+      const nextPath = query ? `/dashboard/settings?${query}` : "/dashboard/settings";
+      const currentPath = `${window.location.pathname}${window.location.search}`;
+      if (nextPath !== currentPath) {
+        router.replace(nextPath, { scroll: false });
+      }
     },
     [router, searchParams]
   );
@@ -169,6 +176,7 @@ function SettingsContent() {
     try {
       const res = await saveTenantSettings(generalSettings);
       if (res.success) {
+        clearDashboardClientContextCache();
         toast.success("Đã lưu cấu hình thành công!");
       } else {
         toast.error("Lỗi khi lưu: " + res.error);

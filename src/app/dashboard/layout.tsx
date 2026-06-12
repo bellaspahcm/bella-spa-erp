@@ -6,14 +6,15 @@ import {
   DashboardAuthLoadingShell,
   DashboardAuthorizedShell,
 } from '@/components/layout/DashboardLoadingShell';
-import { getCurrentUser } from '@/services/user-actions';
-import { getTenantSettings } from '@/services/tenant-actions';
 import { resolveTenantBrandIdentity } from '@/lib/business-rules/tenant-modules';
+import { getCachedCurrentUser, getCachedTenantSettings } from '@/lib/dashboard-client-context';
 
 const RUNTIME_BRAND_CACHE_KEY = 'bella.runtime.brand.v1';
 
-async function applyDashboardTenantBrandRuntime() {
-  const tenant = await getTenantSettings();
+async function applyDashboardTenantBrandRuntime(
+  tenantSettings?: Awaited<ReturnType<typeof getCachedTenantSettings>>,
+) {
+  const tenant = tenantSettings ?? await getCachedTenantSettings();
   if (!tenant || typeof document === 'undefined') return;
 
   const brand = resolveTenantBrandIdentity({
@@ -66,7 +67,7 @@ export default function DashboardLayout({
   useEffect(() => {
     async function checkAuth() {
       try {
-        const user = await getCurrentUser();
+        const user = await getCachedCurrentUser();
         if (!user) {
           router.replace('/login');
           return;
@@ -81,7 +82,8 @@ export default function DashboardLayout({
           return;
         }
         try {
-          await applyDashboardTenantBrandRuntime();
+          const tenant = await getCachedTenantSettings();
+          await applyDashboardTenantBrandRuntime(tenant);
         } catch (brandError) {
           console.error('[DashboardLayout] Brand runtime apply failed:', brandError);
         }
