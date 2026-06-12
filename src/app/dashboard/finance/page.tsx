@@ -6,6 +6,7 @@ import PremiumExportButton from '@/components/ui/PremiumExportButton';
 import { PremiumSelect } from '@/components/ui/PremiumSelect';
 import SkeletonLoader,{ SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { usePageRefresh } from '@/hooks/usePageRefresh';
+import { getCachedFinanceDashboardSnapshot } from '@/lib/finance-page-client-cache';
 import { createClient } from '@/lib/supabase-client';
 import { confirmTransaction,getFinanceDashboardSnapshot,type MappedTransaction } from '@/services/finance-actions';
 import { motion } from 'framer-motion';
@@ -22,7 +23,7 @@ Search,
 TrendingUp,
 Wallet
 } from 'lucide-react';
-import { useCallback,useEffect,useState } from 'react';
+import { useCallback,useEffect,useRef,useState } from 'react';
 import { toast } from 'sonner';
 
 type FinanceDashboardSnapshot = Awaited<ReturnType<typeof getFinanceDashboardSnapshot>>['data'];
@@ -69,15 +70,16 @@ export default function FinancePage() {
 
   const [sortConfig, setSortConfig] = useState<{ key: SortableTransactionKey, direction: 'asc' | 'desc' } | null>({ key: 'timestamp', direction: 'desc' });
   const [isConfirmingId, setIsConfirmingId] = useState<string | null>(null);
+  const realtimeRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  const fetchData = useCallback(async (month = selectedMonth) => {
+  const fetchData = useCallback(async (month = selectedMonth, options: { force?: boolean } = {}) => {
     setIsRefreshing(true);
     try {
-      const snapshot = await getFinanceDashboardSnapshot(month);
+      const snapshot = await getCachedFinanceDashboardSnapshot(month, options);
       setData(snapshot.data.overview);
       setPnlData(snapshot.data.monthlyPnl);
       setPerformanceData(snapshot.data.servicePerformance || []);
@@ -85,40 +87,6 @@ export default function FinancePage() {
       if (snapshot.errors.overview) toast.error(snapshot.errors.overview);
       if (snapshot.errors.monthlyPnl) toast.error(snapshot.errors.monthlyPnl);
       if (snapshot.errors.servicePerformance) toast.error(snapshot.errors.servicePerformance);
-
-      const overviewResult = {
-        status: 'fulfilled',
-        value: snapshot.data.overview,
-      } as PromiseSettledResult<FinancialOverview>;
-      const pnlResult = {
-        status: 'fulfilled',
-        value: snapshot.data.monthlyPnl,
-      } as PromiseSettledResult<MonthlyPnL>;
-      const perfResult = {
-        status: 'fulfilled',
-        value: snapshot.data.servicePerformance,
-      } as PromiseSettledResult<ServicePerformanceRow[]>;
-
-      if (overviewResult.status === 'fulfilled' && overviewResult.value) {
-        setData(overviewResult.value);
-      } else if (overviewResult.status === 'rejected') {
-        console.error('Overview failed:', overviewResult.reason);
-        toast.error('Không thể tải dữ liệu tài chính. Vui lòng thử lại.');
-      }
-
-      if (pnlResult.status === 'fulfilled') {
-        setPnlData(pnlResult.value);
-      } else {
-        console.error('P&L failed:', pnlResult.reason);
-        toast.error('Không thể tải báo cáo P&L. Vui lòng thử lại.');
-      }
-
-      if (perfResult.status === 'fulfilled') {
-        setPerformanceData(perfResult.value || []);
-      } else {
-        console.error('Service performance failed:', perfResult.reason);
-        toast.error('Không thể tải phân tích hiệu quả dịch vụ.');
-      }
     } catch (error) {
       console.error('Error fetching finance data:', error);
       toast.error(getErrorMessage(error, 'Không thể tải dữ liệu tài chính. Vui lòng thử lại.'));
@@ -133,7 +101,7 @@ export default function FinancePage() {
     setSelectedMonth(newMonth);
   };
 
-  usePageRefresh(() => fetchData(selectedMonth));
+  usePageRefresh(() => fetchData(selectedMonth, { force: true }));
 
   const handleConfirm = async (tx: MappedTransaction) => {
     if (!tx.dbId) {
@@ -154,7 +122,7 @@ export default function FinancePage() {
       }
 
       toast.success('Giao dịch đã được xác nhận thành công');
-      fetchData();
+      fetchData(selectedMonth, { force: true });
     } catch (error) {
       console.error('Confirm error:', error);
       toast.error(getErrorMessage(error, 'Lỗi khi xác nhận giao dịch. Vui lòng kiểm tra lại quyền truy cập hoặc kết nối mạng.'));
@@ -190,19 +158,35 @@ export default function FinancePage() {
   useEffect(() => {
     fetchData();
 
+    const scheduleRealtimeRefresh = () => {
+      if (realtimeRefreshTimerRef.current) {
+        clearTimeout(realtimeRefreshTimerRef.current);
+      }
+
+      realtimeRefreshTimerRef.current = setTimeout(() => {
+        void fetchData(selectedMonth, { force: true });
+      }, 500);
+    };
+
     // REALTIME SUBSCRIPTION
     const supabase = createClient();
     const channel = supabase
       .channel('finance-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue' }, () => {
-        fetchData();
+        scheduleRealtimeRefresh();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => {
+        scheduleRealtimeRefresh();
       })
       .subscribe();
 
     return () => {
+      if (realtimeRefreshTimerRef.current) {
+        clearTimeout(realtimeRefreshTimerRef.current);
+      }
       supabase.removeChannel(channel);
     };
-  }, [fetchData]);
+  }, [fetchData, selectedMonth]);
 
 
 
@@ -281,7 +265,7 @@ export default function FinancePage() {
           performance={performanceData} 
           selectedMonth={selectedMonth}
           onMonthChange={handleMonthChange}
-          onRefresh={() => fetchData(selectedMonth)}
+          onRefresh={() => fetchData(selectedMonth, { force: true })}
         />
       ) : (
         <div className="space-y-10">
@@ -539,7 +523,7 @@ export default function FinancePage() {
       <TransactionModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSuccess={fetchData}
+        onSuccess={() => fetchData(selectedMonth, { force: true })}
       />
     </div>
   );
