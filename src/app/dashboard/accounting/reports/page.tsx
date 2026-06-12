@@ -45,8 +45,12 @@ const dateInputClassName =
 const dateFieldClassName = 'grid w-full min-w-0 grid-cols-1 gap-1.5 sm:w-auto sm:min-w-[10.75rem]';
 const dateLabelClassName = 'text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest whitespace-nowrap';
 const reportTableWrapperClassName =
-  'w-full overflow-x-auto overscroll-x-contain rounded-2xl shadow-[inset_-18px_0_18px_-18px_rgba(15,23,42,0.45)] dark:shadow-[inset_-18px_0_18px_-18px_rgba(239,233,225,0.28)]';
-const reportTableClassName = 'w-max min-w-[64rem] border-collapse whitespace-nowrap';
+  'w-full max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-[#3E3A35]/50 dark:bg-[#11100F]/20';
+const reportTableClassName = 'w-full min-w-[64rem] table-fixed border-collapse';
+const reportWideTableClassName = 'w-full min-w-[72rem] table-fixed border-collapse';
+const reportLedgerTableClassName = 'w-full min-w-[78rem] table-fixed border-collapse';
+const reportLabelCellClassName = 'min-w-0 whitespace-normal break-words leading-relaxed';
+const reportNumericCellClassName = 'whitespace-nowrap tabular-nums';
 const stickyHeaderCellClassName =
   'bg-slate-50 dark:bg-[#11100F]';
 const stickyBodyCellClassName =
@@ -300,7 +304,17 @@ export default function AccountingReportsPage() {
           <div className="space-y-6">
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">BẢNG CÂN ĐỐI PHÁT SINH TÀI KHOẢN (TT 133/2016/TT-BTC)</h4>
             <div className={reportTableWrapperClassName}>
-              <table className={reportTableClassName}>
+              <table className={reportWideTableClassName}>
+                <colgroup>
+                  <col className="w-[8rem]" />
+                  <col className="w-[20rem]" />
+                  <col className="w-[8rem]" />
+                  <col className="w-[8rem]" />
+                  <col className="w-[8rem]" />
+                  <col className="w-[8rem]" />
+                  <col className="w-[8rem]" />
+                  <col className="w-[8rem]" />
+                </colgroup>
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
                     <th rowSpan={2} className={`${stickyHeaderCellClassName} px-4 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest border-r border-slate-100 dark:border-[#3E3A35]/20`}>Mã TK</th>
@@ -321,29 +335,29 @@ export default function AccountingReportsPage() {
                 <tbody className="divide-y divide-slate-100 dark:divide-[#3E3A35]/20 font-mono text-2xs">
                   {trialBalance.map((row) => (
                     <tr key={row.account_id} className="hover:bg-slate-50/40 dark:hover:bg-[#11100F]/10 transition-colors">
-                      <td className={`${stickyBodyCellClassName} px-4 py-3 font-black text-slate-800 dark:text-[#EFE9E1] border-r border-slate-100 dark:border-[#3E3A35]/20`}>{row.account_code}</td>
-                      <td className="px-4 py-3 font-sans font-semibold text-slate-600 dark:text-[#CDBCAB] border-r border-slate-100 dark:border-[#3E3A35]/20 text-xs">{row.account_name}</td>
+                      <td className={`${stickyBodyCellClassName} ${reportNumericCellClassName} px-4 py-3 font-black text-slate-800 dark:text-[#EFE9E1] border-r border-slate-100 dark:border-[#3E3A35]/20`}>{row.account_code}</td>
+                      <td className={`${reportLabelCellClassName} px-4 py-3 font-sans font-semibold text-slate-600 dark:text-[#CDBCAB] border-r border-slate-100 dark:border-[#3E3A35]/20 text-xs`}>{row.account_name}</td>
                       
-                      <td className="px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 text-slate-700 dark:text-[#EFE9E1]/85">{Number(row.opening_debit) > 0 ? Number(row.opening_debit).toLocaleString() : '-'}</td>
-                      <td className="px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 text-slate-700 dark:text-[#EFE9E1]/85">{Number(row.opening_credit) > 0 ? Number(row.opening_credit).toLocaleString() : '-'}</td>
+                      <td className={`${reportNumericCellClassName} px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 text-slate-700 dark:text-[#EFE9E1]/85`}>{Number(row.opening_debit) > 0 ? Number(row.opening_debit).toLocaleString() : '-'}</td>
+                      <td className={`${reportNumericCellClassName} px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 text-slate-700 dark:text-[#EFE9E1]/85`}>{Number(row.opening_credit) > 0 ? Number(row.opening_credit).toLocaleString() : '-'}</td>
                       
-                      <td className="px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 text-slate-700 dark:text-[#EFE9E1]/85">{Number(row.period_debit) > 0 ? Number(row.period_debit).toLocaleString() : '-'}</td>
-                      <td className="px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 text-slate-700 dark:text-[#EFE9E1]/85">{Number(row.period_credit) > 0 ? Number(row.period_credit).toLocaleString() : '-'}</td>
+                      <td className={`${reportNumericCellClassName} px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 text-slate-700 dark:text-[#EFE9E1]/85`}>{Number(row.period_debit) > 0 ? Number(row.period_debit).toLocaleString() : '-'}</td>
+                      <td className={`${reportNumericCellClassName} px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 text-slate-700 dark:text-[#EFE9E1]/85`}>{Number(row.period_credit) > 0 ? Number(row.period_credit).toLocaleString() : '-'}</td>
                       
-                      <td className="px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 font-black text-slate-900 dark:text-[#EFE9E1]">{Number(row.closing_debit) > 0 ? Number(row.closing_debit).toLocaleString() : '-'}</td>
-                      <td className="px-4 py-3 text-right font-black text-slate-900 dark:text-[#EFE9E1]">{Number(row.closing_credit) > 0 ? Number(row.closing_credit).toLocaleString() : '-'}</td>
+                      <td className={`${reportNumericCellClassName} px-4 py-3 text-right border-r border-slate-100 dark:border-[#3E3A35]/20 font-black text-slate-900 dark:text-[#EFE9E1]`}>{Number(row.closing_debit) > 0 ? Number(row.closing_debit).toLocaleString() : '-'}</td>
+                      <td className={`${reportNumericCellClassName} px-4 py-3 text-right font-black text-slate-900 dark:text-[#EFE9E1]`}>{Number(row.closing_credit) > 0 ? Number(row.closing_credit).toLocaleString() : '-'}</td>
                     </tr>
                   ))}
 
                   {/* Totals row */}
                   <tr className="bg-slate-50 dark:bg-[#11100F]/30 font-black border-t border-slate-200 dark:border-[#3E3A35]">
                     <td colSpan={2} className={`${stickyBodyCellClassName} px-4 py-4 font-sans text-xs text-slate-800 dark:text-[#EFE9E1] uppercase tracking-wider border-r border-slate-100 dark:border-[#3E3A35]/20`}>TỔNG CỘNG</td>
-                    <td className="px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20">{trialBalance.reduce((sum, r) => sum + Number(r.opening_debit), 0).toLocaleString()}đ</td>
-                    <td className="px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20">{trialBalance.reduce((sum, r) => sum + Number(r.opening_credit), 0).toLocaleString()}đ</td>
-                    <td className="px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20">{trialBalance.reduce((sum, r) => sum + Number(r.period_debit), 0).toLocaleString()}đ</td>
-                    <td className="px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20">{trialBalance.reduce((sum, r) => sum + Number(r.period_credit), 0).toLocaleString()}đ</td>
-                    <td className="px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20">{trialBalance.reduce((sum, r) => sum + Number(r.closing_debit), 0).toLocaleString()}đ</td>
-                    <td className="px-4 py-4 text-right">{trialBalance.reduce((sum, r) => sum + Number(r.closing_credit), 0).toLocaleString()}đ</td>
+                    <td className={`${reportNumericCellClassName} px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20`}>{trialBalance.reduce((sum, r) => sum + Number(r.opening_debit), 0).toLocaleString()}đ</td>
+                    <td className={`${reportNumericCellClassName} px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20`}>{trialBalance.reduce((sum, r) => sum + Number(r.opening_credit), 0).toLocaleString()}đ</td>
+                    <td className={`${reportNumericCellClassName} px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20`}>{trialBalance.reduce((sum, r) => sum + Number(r.period_debit), 0).toLocaleString()}đ</td>
+                    <td className={`${reportNumericCellClassName} px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20`}>{trialBalance.reduce((sum, r) => sum + Number(r.period_credit), 0).toLocaleString()}đ</td>
+                    <td className={`${reportNumericCellClassName} px-4 py-4 text-right border-r border-slate-100 dark:border-[#3E3A35]/20`}>{trialBalance.reduce((sum, r) => sum + Number(r.closing_debit), 0).toLocaleString()}đ</td>
+                    <td className={`${reportNumericCellClassName} px-4 py-4 text-right`}>{trialBalance.reduce((sum, r) => sum + Number(r.closing_credit), 0).toLocaleString()}đ</td>
                   </tr>
                 </tbody>
               </table>
@@ -357,6 +371,13 @@ export default function AccountingReportsPage() {
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH (TT 133/2016/TT-BTC)</h4>
             <div className={reportTableWrapperClassName}>
               <table className={reportTableClassName}>
+                <colgroup>
+                  <col className="w-[45%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[14%]" />
+                </colgroup>
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
                     <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Chỉ tiêu</th>
@@ -391,13 +412,13 @@ export default function AccountingReportsPage() {
                       <tr key={idx} className={`hover:bg-slate-50/40 dark:hover:bg-[#11100F]/10 transition-colors ${
                         item.isBold ? 'font-black bg-slate-50/20 dark:bg-[#11100F]/20 text-slate-900 dark:text-[#EFE9E1]' : 'text-slate-600 dark:text-[#CDBCAB]'
                       }`}>
-                        <td className={`${stickyBodyCellClassName} px-6 py-3.5 text-xs`}>{item.label}</td>
-                        <td className="px-6 py-3.5 text-center font-mono font-bold">{item.code}</td>
+                        <td className={`${stickyBodyCellClassName} ${reportLabelCellClassName} px-6 py-3.5 text-xs`}>{item.label}</td>
+                        <td className={`${reportNumericCellClassName} px-6 py-3.5 text-center font-mono font-bold`}>{item.code}</td>
                         <td className="px-6 py-3.5 text-center font-bold">—</td>
-                        <td className="px-6 py-3.5 text-right font-mono font-bold text-slate-900 dark:text-[#EFE9E1]">
+                        <td className={`${reportNumericCellClassName} px-6 py-3.5 text-right font-mono font-bold text-slate-900 dark:text-[#EFE9E1]`}>
                           {Number(item.val || 0).toLocaleString('vi-VN')}đ
                         </td>
-                        <td className="px-6 py-3.5 text-right font-mono text-slate-300">0đ</td>
+                        <td className={`${reportNumericCellClassName} px-6 py-3.5 text-right font-mono text-slate-300`}>0đ</td>
                       </tr>
                     ));
                   })()}
@@ -413,6 +434,13 @@ export default function AccountingReportsPage() {
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">BẢNG CÂN ĐỐI KẾ TOÁN (TT 133/2016/TT-BTC)</h4>
             <div className={reportTableWrapperClassName}>
               <table className={reportTableClassName}>
+                <colgroup>
+                  <col className="w-[45%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[14%]" />
+                </colgroup>
                 <thead>
                   <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
                     <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Tài sản / Nguồn vốn</th>
@@ -457,15 +485,15 @@ export default function AccountingReportsPage() {
                       <tr key={idx} className={`hover:bg-slate-50/40 dark:hover:bg-[#11100F]/10 transition-colors ${
                         item.isBold ? 'font-black bg-slate-50/20 dark:bg-[#11100F]/20 text-slate-900 dark:text-[#EFE9E1]' : 'text-slate-600 dark:text-[#CDBCAB]'
                       }`}>
-                        <td className={`${stickyBodyCellClassName} px-6 py-3.5 text-xs`}>{item.label}</td>
-                        <td className="px-6 py-3.5 text-center font-mono font-bold">{item.code}</td>
+                        <td className={`${stickyBodyCellClassName} ${reportLabelCellClassName} px-6 py-3.5 text-xs`}>{item.label}</td>
+                        <td className={`${reportNumericCellClassName} px-6 py-3.5 text-center font-mono font-bold`}>{item.code}</td>
                         <td className="px-6 py-3.5 text-center font-bold">—</td>
-                        <td className={`px-6 py-3.5 text-right font-mono font-bold ${
+                        <td className={`${reportNumericCellClassName} px-6 py-3.5 text-right font-mono font-bold ${
                           item.isRed ? 'text-red-500 font-extrabold' : 'text-slate-900 dark:text-[#EFE9E1]'
                         }`}>
                           {item.isRed ? `(${Math.abs(Number(item.val || 0)).toLocaleString('vi-VN')})` : `${Number(item.val || 0).toLocaleString('vi-VN')}đ`}
                         </td>
-                        <td className="px-6 py-3.5 text-right font-mono text-slate-300">0đ</td>
+                        <td className={`${reportNumericCellClassName} px-6 py-3.5 text-right font-mono text-slate-300`}>0đ</td>
                       </tr>
                     ));
                   })()}
@@ -520,6 +548,11 @@ export default function AccountingReportsPage() {
                 {/* ── Detail table ── */}
                 <div className={reportTableWrapperClassName}>
                   <table className={reportTableClassName}>
+                    <colgroup>
+                      <col className="w-[62%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[26%]" />
+                    </colgroup>
                     <thead>
                       <tr className="text-left bg-slate-50 dark:bg-[#11100F]/40 border-b border-slate-200 dark:border-[#3E3A35]/40">
                         <th className={`${stickyHeaderCellClassName} px-6 py-4 text-3xs font-black text-slate-400 dark:text-[#CDBCAB]/60 uppercase tracking-widest`}>Chỉ tiêu</th>
@@ -568,9 +601,9 @@ export default function AccountingReportsPage() {
                             item.isSection ? 'bg-pink-50/30 dark:bg-[#5D1C34]/20 font-black text-primary dark:text-[#A67D44] uppercase tracking-wider' :
                             'text-slate-600 dark:text-[#CDBCAB]'
                           }`}>
-                            <td className={`${stickyBodyCellClassName} px-6 py-3 text-xs`}>{item.label}</td>
-                            <td className="px-6 py-3 text-center font-mono font-bold">{item.code}</td>
-                            <td className={`px-6 py-3 text-right font-mono font-bold ${
+                            <td className={`${stickyBodyCellClassName} ${reportLabelCellClassName} px-6 py-3 text-xs`}>{item.label}</td>
+                            <td className={`${reportNumericCellClassName} px-6 py-3 text-center font-mono font-bold`}>{item.code}</td>
+                            <td className={`${reportNumericCellClassName} px-6 py-3 text-right font-mono font-bold ${
                               Number(item.val) < 0 ? 'text-rose-500' : ''
                             }`}>
                               {Number(item.val || 0).toLocaleString('vi-VN')}đ
@@ -602,10 +635,10 @@ export default function AccountingReportsPage() {
           <div className="space-y-6">
             <h4 className="text-sm font-black text-slate-900 dark:text-[#EFE9E1] uppercase tracking-wider text-center">SỔ CHI TIẾT TÀI KHOẢN KẾ TOÁN</h4>
             <div className={reportTableWrapperClassName}>
-              <table className="bella-data-table min-w-[82rem] whitespace-nowrap">
+              <table className={reportLedgerTableClassName}>
                 <colgroup>
                   <col className="w-[10rem]" />
-                  <col className="w-[32rem]" />
+                  <col className="w-[30rem]" />
                   <col className="w-[10rem]" />
                   <col className="w-[12rem]" />
                   <col className="w-[12rem]" />
@@ -632,9 +665,9 @@ export default function AccountingReportsPage() {
                           isOpening ? 'bg-slate-50/50 dark:bg-[#11100F]/20 font-black text-slate-900 dark:text-[#EFE9E1]' : 'text-slate-600 dark:text-[#CDBCAB]'
                         }`}
                       >
-                        <td className={`${stickyBodyCellClassName} px-6 py-3.5 font-mono text-2xs text-slate-500 dark:text-[#CDBCAB]/80`}>{row.entry_date}</td>
-                        <td className={`px-6 py-3.5 text-xs ${isOpening ? 'font-black' : 'font-medium'}`}>
-                          <span className="block max-w-[30rem] truncate" title={String(row.description ?? '')}>
+                        <td className={`${stickyBodyCellClassName} ${reportNumericCellClassName} px-6 py-3.5 font-mono text-2xs text-slate-500 dark:text-[#CDBCAB]/80`}>{row.entry_date}</td>
+                        <td className={`${reportLabelCellClassName} px-6 py-3.5 text-xs ${isOpening ? 'font-black' : 'font-medium'}`}>
+                          <span className="block" title={String(row.description ?? '')}>
                           {row.description}
                           </span>
                         </td>
@@ -647,13 +680,13 @@ export default function AccountingReportsPage() {
                             <span className="text-slate-300">—</span>
                           )}
                         </td>
-                        <td className="px-6 py-3.5 text-right font-mono font-bold text-emerald-600">
+                        <td className={`${reportNumericCellClassName} px-6 py-3.5 text-right font-mono font-bold text-emerald-600`}>
                           {Number(row.debit_amount) > 0 ? `${Number(row.debit_amount).toLocaleString()}đ` : '-'}
                         </td>
-                        <td className="px-6 py-3.5 text-right font-mono font-bold text-rose-600">
+                        <td className={`${reportNumericCellClassName} px-6 py-3.5 text-right font-mono font-bold text-rose-600`}>
                           {Number(row.credit_amount) > 0 ? `${Number(row.credit_amount).toLocaleString()}đ` : '-'}
                         </td>
-                        <td className="px-6 py-3.5 text-right font-mono font-black text-slate-900 dark:text-[#EFE9E1]">
+                        <td className={`${reportNumericCellClassName} px-6 py-3.5 text-right font-mono font-black text-slate-900 dark:text-[#EFE9E1]`}>
                           {Number(row.running_balance).toLocaleString('vi-VN')}đ
                         </td>
                       </tr>
